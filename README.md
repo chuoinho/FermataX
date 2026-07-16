@@ -1,72 +1,123 @@
-## !!!Be aware of scam!!! The sites like https://fermata-auto.com/ are 100% scam. This app is free and opensource!
+<div align="center">
+  <img src="extracted_logo/fermatax_app_logo.png" width="120" alt="FermataX logo">
 
+  <h1>FermataX</h1>
 
-## Fermata Media Player
-[<img alt="Get it on Google Play" height="60" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">](https://play.google.com/store/apps/details?id=me.aap.fermata)
+  <p>
+    A free, open source audio, video, IPTV, radio, and web media player
+    customized as a car-friendly media hub for Android Auto.
+  </p>
+
+  <p>
+    <img alt="Android" src="https://img.shields.io/badge/Android-5.0%2B-3DDC84?logo=android&logoColor=white">
+    <img alt="Android Auto" src="https://img.shields.io/badge/Android%20Auto-supported-4285F4?logo=androidauto&logoColor=white">
+    <img alt="Open Source" src="https://img.shields.io/badge/open%20source-yes-brightgreen">
+    <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0-blue">
+  </p>
+</div>
+
+> [!IMPORTANT]
+> FermataX is free and open source. If you paid for this app from an unofficial website or seller, you may have been scammed.
 
 ## About
-Fermata Media Player is a free, open source audio, video and TV player with a simple and intuitive interface. It is focused on playing media files organized in folders and playlists.
 
-Supported features:
+If you love [Fermata](https://github.com/AndreyPavlenko/Fermata), welcome to **FermataX**: a free, open source audio, video, TV player,... with a simple and intuitive interface.
 
-* Play media files organized in folders
-* IPTV addon with support for XMLTV EPG and Catchup
-* Remembers the last played track and position for each folder
-* Support for favorites and playlists
-* Support for CUE and M3U playlists
-* Support for bookmarks
-* Audio effects: Equalizer, Bass/Volume Boost and Virtualizer
-* Configure audio effects for individual tracks and folders
-* Configure playback speed for individual tracks and folders
-* Customizable titles and subtitles
-* Support for Android Auto
-* Support for Android TV
-* Show favorites and playlists on Android TV home screen
-* Pluggable media engines: MediaPlayer, ExoPlayer and VLC
-* Video player with support for subtitles and audio streams (VLC Engine only)
+FermataX is a fork of Fermata, customized as a media hub for Android Auto. It brings local media, IPTV/Xtream, Internet Radio, YouTube/Web media, Favorites, Recent, and playlists together in one car-friendly experience.
+
+## Highlights
+
+- **Dashboard-first navigation** for quick access on Android Auto screens.
+- **Customizable Dashboard and bottom navigation**: rearrange cards and nav items to match your habits.
+- **Xtream Codes support** with Live TV, Movies, and Series.
+- **IPTV source support** for M3U playlists, XMLTV EPG, and Catchup.
+- **Watch from beginning** and Catchup support for compatible Xtream sources.
+- **Internet Radio** with popular stations, top voted stations, countries, and tags.
+- **More media services** access inside the same media hub.
+- **Favorites, Recent, playlists, and local folders** available from the main screen.
+- **Car-friendly UI** designed for fast navigation and repeated daily use.
+
+## Screenshots
+
+| Dashboard | IPTV Sources |
+| --- | --- |
+| <img src="product_screenshots/Dashboard.png" alt="FermataX dashboard"> | <img src="product_screenshots/iptv.png" alt="FermataX IPTV source picker"> |
+
+| Podcasts | Internet Radio |
+| --- | --- |
+| <img src="product_screenshots/podcasts.png" alt="FermataX podcasts screen"> | <img src="product_screenshots/radio.png" alt="FermataX radio screen"> |
+
+## Disclaimer
+
+FermataX is a media player only. It does not provide, host, sell, or distribute any media content, playlists, TV channels, IPTV services, or Xtream accounts.
+
+Users are responsible for the sources they add.
 
 ## Building the project
-* Download and install the latest Android SDK or Android Studio from https://developer.android.com/studio/
-* Set the environment variable ANDROID_SDK_ROOT pointing to the SDK directory
+
+### Requirements
+
+- Install the latest Android SDK or Android Studio from https://developer.android.com/studio/
+- Set `ANDROID_SDK_ROOT` to your Android SDK directory.
+
 ```bash
-export ANDROID_SDK_ROOT=<path to android SDK>
+export ANDROID_SDK_ROOT=/path/to/android-sdk
 ```
 
-### Clone the repository
+On Windows PowerShell:
+
+```powershell
+$env:ANDROID_SDK_ROOT="C:\Users\<user>\AppData\Local\Android\Sdk"
+```
+
+### Clone
+
 ```bash
-git clone --recurse-submodules https://github.com/AndreyPavlenko/Fermata.git
-cd Fermata
+git clone https://github.com/chuoinho/FermataX.git
+cd FermataX
 ```
 
 ### Build AAB
+
 ```bash
-./gradlew bundleAutoRelease -PAPP_ID_SFX=.type.your.pkg.sfx.here
-find $PWD -name *.aab
+./gradlew :fermata:bundleAutoRelease
 ```
 
-### Build APK
-```bash
-./gradlew bundleAutoRelease -PAPP_ID_SFX=.type.your.pkg.sfx.here
-find $PWD -name *.apk
+Output:
+
+```text
+fermata/build/outputs/bundle/autoRelease/
 ```
 
-### Building in docker
+### Build Universal APK
+
 ```bash
-docker run -ti --name Fermata andreypavlenko/fermata
-```
-Enter the requested key alias and password, when prompted.
-Build the required package using the above commands.
-To copy the built package to the host machine, open a new terminal and run:
-```bash
-docker cp Fermata:/home/mobiledevops/Fermata/fermata/build/outputs/bundle/autoRelease/ .
+./gradlew :fermata:packageAutoReleaseUniversalApk
 ```
 
+Output:
 
-## Donation
-If you like the application, please consider making a donation:
+```text
+fermata/build/outputs/apk_from_bundle/autoRelease/
+```
 
-[PayPal](https://www.paypal.com/donate/?hosted_button_id=NP5Q3YDSCJ98N)
+On Windows, use `.\gradlew.bat` instead of `./gradlew`.
 
-[CloudTips](https://pay.cloudtips.ru/p/a03a73da)
 
-[Yandex Money](https://money.yandex.ru/to/410014661137336)
+## Donate
+
+If you enjoy this app or want to try my app installation service, feel free to buy me a coffee:
+
+<p>
+  <a href="https://ko-fi.com/fermatax">
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support FermataX on Ko-fi">
+  </a>
+</p>
+
+## Credits
+
+FermataX is based on [Fermata Media Player](https://github.com/AndreyPavlenko/Fermata) by Andrey Pavlenko.
+
+## License
+
+This project follows the upstream Fermata license. Please respect the original license and attribution requirements.
