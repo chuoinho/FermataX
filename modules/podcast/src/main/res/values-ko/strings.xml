@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">팟캐스트 추가</string>
+    <string name="podcast_search">팟캐스트 검색</string>
+    <string name="podcast_add_rss">RSS 피드 추가</string>
+    <string name="podcast_import_opml">OPML 가져오기</string>
+    <string name="podcast_subscribe">구독</string>
+    <string name="podcast_export_opml">OPML 내보내기</string>
+    <string name="podcast_export_failed">팟캐스트를 내보낼 수 없습니다</string>
+    <string name="podcast_export_private_title">비공개 팟캐스트 링크</string>
+    <string name="podcast_export_private_message">토큰이 포함된 비공개 피드 URL을 이 OPML 파일에 포함할까요?</string>
+    <string name="podcast_export_public_only">공개 항목만</string>
+    <string name="podcast_export_include_private">비공개 포함</string>
+    <string name="podcast_feed_url">피드 URL</string>
+    <string name="podcast_add_failed">이 팟캐스트를 추가할 수 없습니다</string>
+    <string name="podcast_import_failed">이 OPML 파일을 가져올 수 없습니다</string>
+    <string name="podcast_import_result">%1$d개 가져옴, %2$d개 실패</string>
+    <string name="podcast_edit_rss">RSS 피드 편집</string>
+    <string name="podcast_delete_title">팟캐스트 삭제</string>
+    <string name="podcast_delete_message">%1$s 및 다운로드한 에피소드를 삭제할까요?</string>
+    <string name="podcast_continue">이어서 듣기</string>
+    <string name="podcast_new_episodes">새 에피소드</string>
+    <string name="podcast_subscriptions">구독</string>
+    <string name="podcast_mark_played">재생 완료로 표시</string>
+    <string name="podcast_mark_unplayed">미재생으로 표시</string>
+    <string name="podcast_download">에피소드 다운로드</string>
+    <string name="podcast_delete_download">다운로드 삭제</string>
+</resources>

@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">首頁</string>
+    <string name="dashboard">儀表板</string>
+    <string name="open_dashboard">開啟儀表板</string>
+    <string name="dashboard_order">儀表板順序</string>
+    <string name="reset_dashboard_order">重設儀表板順序</string>
+    <string name="dashboard_order_sub">也控制導覽順序</string>
+    <string name="dashboard_now_playing">正在播放</string>
+    <string name="dashboard_continue">繼續觀看</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">啟動畫面與快速存取</string>
+    <string name="dashboard_folders_sub">本機檔案與資料夾</string>
+    <string name="dashboard_favorites_sub">已釘選的頻道與媒體</string>
+    <string name="dashboard_recent_sub">車載 hub 中最近播放</string>
+    <string name="dashboard_playlists_sub">已儲存的佇列與收藏</string>
+    <string name="dashboard_menu_sub">所有工具與設定</string>
+    <string name="dashboard_tv_sub">直播 TV、VOD 與影集</string>
+    <string name="dashboard_radio_sub">熱門電台與國家</string>
+    <string name="dashboard_youtube_sub">影片搜尋與播放</string>
+    <string name="dashboard_web_sub">開啟網頁媒體</string>
+    <string name="dashboard_felex_sub">學習與家教工具</string>
+    <string name="dashboard_addon_sub">Addon 捷徑</string>
+    <string name="dashboard_addon_disabled_sub">已在設定中停用</string>
+    <string name="addon_name_radio">網路廣播</string>
+
     
     
     
@@ -57,7 +81,6 @@
 
     <string name="nav_bar_pos">選單位置</string>
     <string name="nav_bar_pos_sub">目前位置: %1$s</string>
-    <string name="nav_bar_pos_bottom">下</string>
     <string name="nav_bar_pos_left">左</string>
     <string name="nav_bar_pos_right">右</string>
 
@@ -65,7 +88,7 @@
     <string name="lang">語言</string>
     <string name="trans_lang">翻譯語言</string>
     <string name="hide_bars">隱藏工具列</string>
-    <string name="hide_bars_sub">控制面板出現時隱藏工具列</string>
+    <string name="hide_bars_sub">控制面板出現時隱藏應用程式列</string>
     <string name="show_pg_up_down">顯示上移/下移按鈕</string>
     <string name="use_dpad_cursor">使用方向鍵瀏覽游標</string>
     <string name="fullscreen_mode">全螢幕模式</string>
@@ -322,9 +345,9 @@
     <string name="private_key">私密金鑰</string>
     <string name="private_key_pass">私密金鑰密碼</string>
 
-    <string name="donate">贊助</string>
-    <string name="donate_text">如果你喜歡這個程式，歡迎贊助開發者</string>
-    <string name="use_phone_for_donation">請使用手機贊助開發者</string>
+    <string name="donate">透過 Ko-fi 支持</string>
+    <string name="donate_text">透過 Ko-fi 支持 FermataX。</string>
+    <string name="use_phone_for_donation">請在手機上開啟 Ko-fi 以支持 FermataX。</string>
 
     <string name="timer">計時器</string>
     <string name="hours">小時</string>
@@ -369,12 +392,15 @@
     <string name="media_projection_action_text">正在開始</string>
 
     <string name="about">關於</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player is a free, open source audio and video player with a simple and
-        intuitive interface.</p>
-        <p><b>Author:</b> Andrey Pavlenko</p>
-        <p><b>Version:</b> %1$s (%2$d)</p>
-        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX 是 Fermata 的分支版本，已客製為 Android Auto 的媒體中心。</p>
+        <p>它將以 Dashboard 為核心的導覽、IPTV/Xtream、網路廣播、YouTube/Web 媒體、
+        本機檔案、我的最愛與最近項目整合為適合車內使用的體驗。</p>
+        <p>FermataX 不提供媒體內容、播放清單、電視頻道或 IPTV 帳號。
+        使用者須自行負責其新增的媒體來源。</p>
+        <p><b>原始專案:</b> Fermata by Andrey Pavlenko</p>
+        <p><b>版本:</b> %1$s (%2$d)</p>
+        <p><b>首頁:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">無法播放 %s</string>
@@ -388,4 +414,6 @@
     <string name="err_failed_to_download">無法下載 %1$s</string>
     <string name="err_no_audio_record_perm">無法取得錄音權限</string>
     <string name="err_failed_start_service">未能啟動服務：%s</string>
+    <string name="addon_name_podcast">Podcast</string>
+    <string name="dashboard_podcast_sub">節目、單集與離線收聽</string>
 </resources>

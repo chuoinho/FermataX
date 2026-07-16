@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="dashboard_content_padding">9dp</dimen>
+    <dimen name="dashboard_card_margin">5dp</dimen>
+
+    <dimen name="dashboard_tile_height">98dp</dimen>
+	<dimen name="dashboard_tile_padding">10dp</dimen>
+	<dimen name="dashboard_tile_icon_size">72dp</dimen>
+	<dimen name="dashboard_tile_icon_padding">3dp</dimen>
+    <dimen name="dashboard_tile_text_gap">12dp</dimen>
+    <dimen name="dashboard_tile_title_size">19sp</dimen>
+    <dimen name="dashboard_tile_subtitle_size">12sp</dimen>
+
+	<dimen name="dashboard_smart_height">144dp</dimen>
+    <dimen name="dashboard_smart_padding">14dp</dimen>
+	<dimen name="dashboard_smart_icon_size">86dp</dimen>
+	<dimen name="dashboard_smart_icon_padding">7dp</dimen>
+    <dimen name="dashboard_smart_text_gap">16dp</dimen>
+    <dimen name="dashboard_smart_eyebrow_size">13sp</dimen>
+    <dimen name="dashboard_smart_title_size">22sp</dimen>
+    <dimen name="dashboard_smart_subtitle_size">14sp</dimen>
+    <dimen name="dashboard_smart_action_width">46dp</dimen>
+    <dimen name="dashboard_smart_action_height">42dp</dimen>
+    <dimen name="dashboard_smart_action_gap">10dp</dimen>
+    <dimen name="dashboard_smart_action_padding">8dp</dimen>
+    <dimen name="dashboard_smart_action_top_gap">8dp</dimen>
+</resources>

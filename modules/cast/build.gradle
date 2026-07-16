@@ -11,6 +11,7 @@ ext {
     addons = [
             [
                     name   : 'cast',
+                    id     : 'cast_addon',
                     icon   : 'cast',
                     class  : 'me.aap.fermata.addon.cast.CastAddon',
                     enabled: false

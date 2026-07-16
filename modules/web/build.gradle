@@ -10,14 +10,20 @@ ext {
     addons = [
             [
                     name : 'youtube',
+                    id   : 'youtube_fragment',
                     icon : 'youtube',
                     class: 'me.aap.fermata.addon.web.yt.YoutubeAddon',
+                    fragment: true,
+					capabilities: 'dashboard,navigation,youtube',
                     order: 2
             ],
             [
                     name : 'web_browser',
+                    id   : 'web_browser_fragment',
                     icon : 'web',
                     class: 'me.aap.fermata.addon.web.WebBrowserAddon',
+                    fragment: true,
+					capabilities: 'dashboard,navigation,web',
                     order: 3
             ]
     ]

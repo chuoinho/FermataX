@@ -39,6 +39,7 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_DESKTOP_VERSION = Pref.b("YT_DESKTOP_VERSION", false);
 	private static final Pref<Supplier<String[]>> YT_BOOKMARKS = Pref.sa("YT_BOOKMARKS");
 	private static final Pref<Supplier<String>> VIDEO_SCALE = Pref.s("VIDEO_SCALE", VideoScale.CONTAIN::prefName);
+	private static final Pref<Supplier<String>> YT_LAST_URL = Pref.s("YT_LAST_URL", "https://m.youtube.com");
 	private static final Pref<BooleanSupplier> YT_OPEN_ON_START = Pref.b("YT_OPEN_ON_START", false);
 	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
 			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
@@ -163,6 +164,14 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 
 	void setScale(VideoScale scale) {
 		getPreferenceStore().applyStringPref(VIDEO_SCALE, scale.prefName());
+	}
+
+	String getLastYoutubeUrl() {
+		return getPreferenceStore().getStringPref(YT_LAST_URL);
+	}
+
+	void setLastYoutubeUrl(String url) {
+		getPreferenceStore().applyStringPref(YT_LAST_URL, url);
 	}
 
 	boolean autoHighestQuality() {

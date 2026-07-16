@@ -112,7 +112,7 @@ public class FermataVfsManager extends VfsManager {
 
 	private static VfsProvider loadProvider(String className, String moduleId) {
 		try {
-			return (VfsProvider) Class.forName(className).newInstance();
+			return (VfsProvider) Class.forName(className).getDeclaredConstructor().newInstance();
 		} catch (Throwable ex) {
 			Log.e("Failed to load module ", moduleId);
 			return null;

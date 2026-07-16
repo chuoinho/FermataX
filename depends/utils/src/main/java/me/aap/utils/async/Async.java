@@ -5,6 +5,8 @@ import androidx.annotation.NonNull;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 
 import me.aap.utils.app.App;
 import me.aap.utils.function.CheckedBiConsumer;
@@ -282,15 +284,46 @@ public class Async {
 	}
 
 	public static <T> FutureSupplier<T> schedule(CheckedSupplier<FutureSupplier<T>, Throwable> s,
-																							 long delay) {
-		Promise<T> p = new Promise<>();
-		App.get().getScheduler().schedule(() -> {
+																						 long delay) {
+		return schedule(App.get().getScheduler(), s, delay);
+	}
+
+	static <T> FutureSupplier<T> schedule(ScheduledExecutorService scheduler,
+														 CheckedSupplier<FutureSupplier<T>, Throwable> s, long delay) {
+		ScheduledPromise<T> p = new ScheduledPromise<>();
+		p.setTimer(scheduler.schedule(() -> {
+			if (p.isDone()) return;
 			try {
-				s.get().thenComplete(p);
+				FutureSupplier<T> task = s.get();
+				p.setTask(task);
+				if (!p.isDone()) task.thenComplete(p);
 			} catch (Throwable ex) {
 				p.completeExceptionally(ex);
 			}
-		}, delay, MILLISECONDS);
+		}, Math.max(0L, delay), MILLISECONDS));
 		return p;
+	}
+
+	private static final class ScheduledPromise<T> extends Promise<T> {
+		private Future<?> timer;
+		private FutureSupplier<T> task;
+
+		synchronized void setTimer(Future<?> timer) {
+			this.timer = timer;
+			if (isCancelled()) timer.cancel(false);
+		}
+
+		synchronized void setTask(FutureSupplier<T> task) {
+			this.task = task;
+			if (isCancelled()) task.cancel();
+		}
+
+		@Override
+		public synchronized boolean cancel(boolean mayInterruptIfRunning) {
+			boolean cancelled = super.cancel(mayInterruptIfRunning);
+			if (timer != null) timer.cancel(mayInterruptIfRunning);
+			if (task != null) task.cancel(mayInterruptIfRunning);
+			return cancelled;
+		}
 	}
 }

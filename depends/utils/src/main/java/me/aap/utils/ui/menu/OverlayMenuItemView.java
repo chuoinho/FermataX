@@ -29,6 +29,7 @@ import androidx.core.widget.TextViewCompat;
 import me.aap.utils.R;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.Function;
+import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.menu.OverlayMenu.Builder;
 import me.aap.utils.ui.menu.OverlayMenu.SelectionHandler;
 
@@ -141,7 +142,12 @@ public class OverlayMenuItemView extends AppCompatTextView implements OverlayMen
 
 	@Override
 	public OverlayMenuItem setTitle(@StringRes int title) {
-		setText(title);
+		Context ctx = getContext();
+		try {
+			ctx = ActivityDelegate.get(ctx).getLocalizedContext(ctx);
+		} catch (RuntimeException ignore) {
+		}
+		setText(ctx.getString(title));
 		return this;
 	}
 

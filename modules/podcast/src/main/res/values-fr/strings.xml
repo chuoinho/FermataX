@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">Ajouter un podcast</string>
+    <string name="podcast_search">Rechercher des podcasts</string>
+    <string name="podcast_add_rss">Ajouter un flux RSS</string>
+    <string name="podcast_import_opml">Importer OPML</string>
+    <string name="podcast_subscribe">S’abonner</string>
+    <string name="podcast_export_opml">Exporter l’OPML</string>
+    <string name="podcast_export_failed">Impossible d’exporter les podcasts</string>
+    <string name="podcast_export_private_title">Liens de podcasts privés</string>
+    <string name="podcast_export_private_message">Inclure les URL privées avec jeton dans ce fichier OPML ?</string>
+    <string name="podcast_export_public_only">Publics uniquement</string>
+    <string name="podcast_export_include_private">Inclure les privés</string>
+    <string name="podcast_feed_url">URL du flux</string>
+    <string name="podcast_add_failed">Impossible d’ajouter ce podcast</string>
+    <string name="podcast_import_failed">Impossible d’importer ce fichier OPML</string>
+    <string name="podcast_import_result">%1$d podcasts importés ; %2$d échecs</string>
+    <string name="podcast_edit_rss">Modifier le flux RSS</string>
+    <string name="podcast_delete_title">Supprimer le podcast</string>
+    <string name="podcast_delete_message">Supprimer %1$s et ses épisodes téléchargés ?</string>
+    <string name="podcast_continue">Reprendre l’écoute</string>
+    <string name="podcast_new_episodes">Nouveaux épisodes</string>
+    <string name="podcast_subscriptions">Abonnements</string>
+    <string name="podcast_mark_played">Marquer comme écouté</string>
+    <string name="podcast_mark_unplayed">Marquer comme non écouté</string>
+    <string name="podcast_download">Télécharger l’épisode</string>
+    <string name="podcast_delete_download">Supprimer le téléchargement</string>
+</resources>

@@ -50,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.provider.FermataContentProvider;
@@ -75,6 +74,7 @@ import me.aap.utils.ui.UiUtils;
  * @author Andrey Pavlenko
  */
 public class BitmapCache {
+	private static final long INVALID_BITMAP_TTL = 5 * 60 * 1000L;
 	private final File iconsCache;
 	private final File imageCache;
 	private final String iconsCacheUri;
@@ -83,7 +83,9 @@ public class BitmapCache {
 	private final Map<String, Ref> cache = new HashMap<>();
 	private final ReferenceQueue<Bitmap> refQueue = new ReferenceQueue<>();
 	private final PromiseQueue queue = new PromiseQueue(App.get().getExecutor());
-	private final Map<String, String> invalidBitmapUris = new ConcurrentHashMap<>();
+	private final ExpiringFailureCache invalidBitmapUris =
+			new ExpiringFailureCache(INVALID_BITMAP_TTL);
+	private final InFlightRequestCache<Bitmap> httpBitmapLoads = new InFlightRequestCache<>();
 
 	public BitmapCache() {
 		File cache = App.get().getExternalCacheDir();
@@ -233,6 +235,11 @@ public class BitmapCache {
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private FutureSupplier<Bitmap> loadHttpBitmap(String uri, String cacheUri, int size) {
+		String key = uri + '\n' + cacheUri + '\n' + size;
+		return httpBitmapLoads.getOrLoad(key, () -> loadHttpBitmapNow(uri, cacheUri, size));
+	}
+
+	private FutureSupplier<Bitmap> loadHttpBitmapNow(String uri, String cacheUri, int size) {
 		return downloadImage(uri).then(s -> {
 			if (s == null) return completedNull();
 			try (InputStream is = s.getFileStream(true)) {
@@ -241,22 +248,23 @@ public class BitmapCache {
 				if (bm == null) {
 					File f = s.getLocalFile();
 					if (f != null) f.delete();
-					invalidBitmapUris.put(uri, uri);
+					invalidBitmapUris.record(uri, System.currentTimeMillis());
 					return failed(new IOException("Failed to decode image: " + uri));
 				} else {
+					invalidBitmapUris.remove(uri);
 					if (size != 0) bm = resizedBitmap(bm, size);
 					if (cacheUri != null) bm = cacheBitmap(cacheUri, bm);
 					return completed(bm);
 				}
 			} catch (Exception ex) {
-				invalidBitmapUris.put(uri, uri);
+				invalidBitmapUris.record(uri, System.currentTimeMillis());
 				return failed(ex);
 			}
 		});
 	}
 
 	public FutureSupplier<Status> downloadImage(String uri) {
-		if (invalidBitmapUris.containsKey(uri)) {
+		if (invalidBitmapUris.contains(uri, System.currentTimeMillis())) {
 			Log.d("Invalid bitmap uri: ", uri);
 			return completedNull();
 		}
@@ -277,7 +285,7 @@ public class BitmapCache {
 		d.setReturnExistingOnFail(true);
 		return d.download(uri, dst, ip).onFailure(ex -> {
 			Log.d(ex, "Failed to download image: ", uri);
-			invalidBitmapUris.put(uri, uri);
+			invalidBitmapUris.record(uri, System.currentTimeMillis());
 		});
 	}
 

@@ -122,10 +122,18 @@ public class WebBrowserFragment extends MainActivityFragment
 		// Calling here onResume makes the video to not get freezed
 		// when you switch to another app and go back to Fermata
 		v.onResume();
+		if (!shouldRestoreFullScreenOnResume()) {
+			fullScreenOnResume = false;
+			return;
+		}
 		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> a.post(() -> {
 			FermataChromeClient chrome = v.getWebChromeClient();
 			if (chrome != null) chrome.enterFullScreen();
 		}));
+	}
+
+	protected boolean shouldRestoreFullScreenOnResume() {
+		return true;
 	}
 
 	protected void registerListeners(MainActivityDelegate a) {
@@ -191,18 +199,16 @@ public class WebBrowserFragment extends MainActivityFragment
 		FermataWebView v = getWebView();
 		if (v == null) return false;
 		FermataChromeClient chrome = v.getWebChromeClient();
+		boolean fullScreen = (chrome != null) && chrome.isFullScreen();
 
-		if ((chrome != null) && chrome.isFullScreen()) {
-			chrome.exitFullScreen();
-			return true;
-		}
-
-		if (v.canGoBack()) {
-			v.goBack();
-			return true;
-		}
-
-		return false;
+		return switch (WebBackNavigationPolicy.resolve(fullScreen, v.canGoBack())) {
+			case EXIT_FULLSCREEN -> v.exitFullScreenForBack();
+			case WEB_HISTORY -> {
+				v.goBack();
+				yield true;
+			}
+			case PARENT -> false;
+		};
 	}
 
 	@Override

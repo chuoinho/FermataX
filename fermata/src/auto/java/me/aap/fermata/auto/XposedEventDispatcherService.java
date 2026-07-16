@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import android.app.Service;
 import android.content.Intent;

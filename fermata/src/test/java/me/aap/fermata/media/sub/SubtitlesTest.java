@@ -1,24 +1,21 @@
 package me.aap.fermata.media.sub;
 
-import androidx.annotation.NonNull;
-
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Cancellable;
 import me.aap.utils.function.IntConsumer;
+import me.aap.utils.function.LongSupplier;
 
 /**
  * @author Andrey Pavlenko
@@ -137,47 +134,100 @@ Multi line
 		}
 
 		var sg = FileSubtitles.load(new ByteArrayInputStream(sb.toString().getBytes()));
-		var exec = new HandlerExecutor() {
-			final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-
-			@Override
-			public synchronized Cancellable schedule(@NonNull Runnable task, long delay) {
-				var f = scheduler.schedule(task, delay, TimeUnit.MILLISECONDS);
-				return new Cancellable() {
-					@Override
-					public boolean cancel() {
-						return f.cancel(false);
-					}
-				};
-			}
-		};
-		Semaphore sem = new Semaphore(0);
+		var clock = new TestClock();
+		var exec = new TestExecutor(clock);
 		BiConsumer<SubGrid.Position, Subtitles.Text> consumer = (p, t) -> {
 			if (t == null) return;
 			received.add(t.getText());
-			if (expect.size() == received.size()) sem.release();
 		};
-		SubScheduler sched = new SubScheduler(exec, sg, consumer);
-		sched.start(0, 0, 1);
-		sem.acquire();
-		assertArrayEquals(expect.toArray(), received.toArray());
+		SubScheduler sched = new SubScheduler(exec, sg, consumer, clock);
+		assertSchedulerRun(sched, exec, clock, received, expect, 0, 1);
+		assertSchedulerRun(sched, exec, clock, received, expect, 10, 1);
+		assertSchedulerRun(sched, exec, clock, received, expect, 10, 2);
+		assertSchedulerRun(sched, exec, clock, received, expect, 10, 0.5f);
+	}
 
-		sched.stop(false);
+	private static void assertSchedulerRun(SubScheduler scheduler, TestExecutor executor,
+														 TestClock clock, List<String> received, List<String> expected,
+														 int delay, float speed) {
 		received.clear();
-		sched.start(0, 10, 1);
-		sem.acquire();
-		assertArrayEquals(expect.toArray(), received.toArray());
+		clock.reset();
+		scheduler.start(0, delay, speed);
+		executor.runUntilIdle(2 * expected.size() + 10);
+		assertArrayEquals(expected.toArray(), received.toArray());
+		scheduler.stop(false);
+		executor.clear();
+	}
 
-		sched.stop(false);
-		received.clear();
-		sched.start(0, 10, 2);
-		sem.acquire();
-		assertArrayEquals(expect.toArray(), received.toArray());
+	private static final class TestClock implements LongSupplier {
+		private long time;
 
-		sched.stop(false);
-		received.clear();
-		sched.start(0, 10, 0.5f);
-		sem.acquire();
-		assertArrayEquals(expect.toArray(), received.toArray());
+		@Override
+		public long getAsLong() {
+			return time;
+		}
+
+		void reset() {
+			time = 0;
+		}
+	}
+
+	private static final class TestExecutor extends HandlerExecutor {
+		private final TestClock clock;
+		private final PriorityQueue<ScheduledTask> tasks = new PriorityQueue<>(
+				Comparator.comparingLong((ScheduledTask t) -> t.time).thenComparingLong(t -> t.sequence));
+		private long sequence;
+
+		TestExecutor(TestClock clock) {
+			this.clock = clock;
+		}
+
+		@Override
+		public synchronized Cancellable schedule(Runnable task, long delay) {
+			var scheduled = new ScheduledTask(task, clock.time + Math.max(0, delay), sequence++);
+			tasks.add(scheduled);
+			return scheduled;
+		}
+
+		void runUntilIdle(int maxTasks) {
+			int count = 0;
+			while (!tasks.isEmpty()) {
+				if (++count > maxTasks) fail("Subtitle scheduler did not become idle");
+				var task = tasks.remove();
+				if (task.cancelled) continue;
+				clock.time = task.time;
+				task.run();
+			}
+		}
+
+		void clear() {
+			tasks.clear();
+		}
+	}
+
+	private static final class ScheduledTask implements Runnable, Cancellable {
+		private final Runnable task;
+		private final long time;
+		private final long sequence;
+		private boolean cancelled;
+
+		ScheduledTask(Runnable task, long time, long sequence) {
+			this.task = task;
+			this.time = time;
+			this.sequence = sequence;
+		}
+
+		@Override
+		public void run() {
+			cancelled = true;
+			task.run();
+		}
+
+		@Override
+		public boolean cancel() {
+			if (cancelled) return false;
+			cancelled = true;
+			return true;
+		}
 	}
 }

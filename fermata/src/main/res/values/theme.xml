@@ -19,7 +19,7 @@
         <item name="appEqualizerStyle">@style/AppTheme.EqualizerStyle</item>
         <item name="appStreamProgressStyle">@style/AppTheme.StreamProgressStyle</item>
         <item name="appVideoInfoStyle">@style/AppTheme.VideoInfoStyle</item>
-        <item name="cornerRadius">5dp</item>
+        <item name="cornerRadius">13dp</item>
     </style>
 
     <style name="AppTheme.MediaItemStyle">
@@ -30,11 +30,11 @@
         <item name="android:textColor">@color/media_item_text_color</item>
         <item name="tint">@color/media_item_tint</item>
         <item name="indicatorColor">@color/media_item_tint</item>
-        <item name="elevation">20dp</item>
+        <item name="elevation">0dp</item>
     </style>
 
     <style name="AppTheme.ControlPanelStyle">
-        <item name="size">70dp</item>
+        <item name="size">74dp</item>
         <item name="tint">?attr/colorOnPrimary</item>
         <item name="android:colorBackground">?attr/colorPrimary</item>
         <item name="textAppearance">@style/AppTheme.ControlPanelTextAppearance</item>
@@ -61,7 +61,7 @@
     </style>
 
     <style name="AppTheme.StreamProgressStyle">
-        <item name="indicatorColor">#FFD600</item>
+        <item name="indicatorColor">#7AA7FF</item>
         <item name="trackColor">?attr/colorSecondary</item>
         <item name="trackCornerRadius">2dp</item>
     </style>

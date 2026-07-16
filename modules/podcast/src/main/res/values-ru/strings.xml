@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">Добавить подкаст</string>
+    <string name="podcast_search">Поиск подкастов</string>
+    <string name="podcast_add_rss">Добавить RSS-ленту</string>
+    <string name="podcast_import_opml">Импортировать OPML</string>
+    <string name="podcast_subscribe">Подписаться</string>
+    <string name="podcast_export_opml">Экспортировать OPML</string>
+    <string name="podcast_export_failed">Не удалось экспортировать подкасты</string>
+    <string name="podcast_export_private_title">Ссылки на частные подкасты</string>
+    <string name="podcast_export_private_message">Включить в OPML частные URL-адреса с токеном?</string>
+    <string name="podcast_export_public_only">Только общедоступные</string>
+    <string name="podcast_export_include_private">Включить частные</string>
+    <string name="podcast_feed_url">URL ленты</string>
+    <string name="podcast_add_failed">Не удалось добавить этот подкаст</string>
+    <string name="podcast_import_failed">Не удалось импортировать этот файл OPML</string>
+    <string name="podcast_import_result">Импортировано: %1$d; ошибок: %2$d</string>
+    <string name="podcast_edit_rss">Изменить RSS-ленту</string>
+    <string name="podcast_delete_title">Удалить подкаст</string>
+    <string name="podcast_delete_message">Удалить %1$s и загруженные выпуски?</string>
+    <string name="podcast_continue">Продолжить прослушивание</string>
+    <string name="podcast_new_episodes">Новые выпуски</string>
+    <string name="podcast_subscriptions">Подписки</string>
+    <string name="podcast_mark_played">Отметить прослушанным</string>
+    <string name="podcast_mark_unplayed">Отметить непрослушанным</string>
+    <string name="podcast_download">Скачать выпуск</string>
+    <string name="podcast_delete_download">Удалить загрузку</string>
+</resources>

@@ -49,7 +49,7 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.activity.VoiceCommand;
-import me.aap.fermata.ui.view.BodyLayout;
+import me.aap.fermata.ui.policy.BackNavigationPolicy;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.MediaItemMenuHandler;
@@ -193,12 +193,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	public boolean onBackPressed() {
 		MainActivityDelegate ad = getMainActivity();
-		BodyLayout b = ad.getBody();
 
-		if (b.isVideoMode()) {
-			b.setMode(BodyLayout.Mode.BOTH);
-			return true;
-		}
+		if (BackNavigationPolicy.leaveVideoMode(ad)) return true;
 
 		ListAdapter a = getAdapter();
 		BrowsableItem oldParent = a.getParent();
@@ -333,6 +329,17 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	protected boolean isRescanSupported() {
 		return false;
+	}
+
+	public boolean isAddSourceSupported() {
+		return false;
+	}
+
+	public void addSource() {
+	}
+
+	public int getAddSourceIcon() {
+		return R.drawable.playlist_add;
 	}
 
 	public boolean isGridSupported() {

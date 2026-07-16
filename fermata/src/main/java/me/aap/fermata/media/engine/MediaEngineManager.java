@@ -188,7 +188,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 
 	private boolean isProviderAvailable(String providerClass) {
 		try {
-			Class.forName(providerClass).newInstance();
+			Class.forName(providerClass).getDeclaredConstructor().newInstance();
 			return true;
 		} catch (Throwable ex) {
 			return false;
@@ -198,7 +198,8 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	private void setExoPlayer(boolean install) {
 		if (lib.getPrefs().getExoEnabledPref()) {
 			try {
-				exoPlayer = (MediaEngineProvider) Class.forName(EXO_PROV_CLASS).newInstance();
+				exoPlayer = (MediaEngineProvider) Class.forName(EXO_PROV_CLASS)
+						.getDeclaredConstructor().newInstance();
 				exoPlayer.init(lib.getContext());
 				return;
 			} catch (Throwable ex) {
@@ -217,7 +218,8 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	private void setVlcPlayer(boolean install) {
 		if (lib.getPrefs().getVlcEnabledPref()) {
 			try {
-				vlcPlayer = (MediaEngineProvider) Class.forName(VLC_PROV_CLASS).newInstance();
+				vlcPlayer = (MediaEngineProvider) Class.forName(VLC_PROV_CLASS)
+						.getDeclaredConstructor().newInstance();
 				vlcPlayer.init(lib.getContext());
 				return;
 			} catch (Throwable ex) {

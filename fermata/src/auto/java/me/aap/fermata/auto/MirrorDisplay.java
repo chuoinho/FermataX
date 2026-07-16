@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import static android.content.Context.POWER_SERVICE;
 import static android.content.Context.WINDOW_SERVICE;
@@ -371,9 +371,7 @@ public class MirrorDisplay {
 			session = Completed.completed(s);
 			started();
 		});
-		FermataApplication.get().getHandler().schedule(() -> {
-			if (!session.isDone()) drawMsg(R.string.unlock_phone_and_grant);
-		}, 500);
+		schedulePendingMessage(p, 500);
 	}
 
 	private void createSession(Promise<Session> p) {
@@ -410,8 +408,17 @@ public class MirrorDisplay {
 		FermataApplication.get().getHandler().schedule(() -> {
 			if (p.isDone()) return;
 			Log.i("Retrying to create media projection");
+			drawMsg(R.string.unlock_phone_and_grant);
 			createSession(p);
 		}, 3000);
+	}
+
+	private void schedulePendingMessage(Promise<Session> p, long delay) {
+		FermataApplication.get().getHandler().schedule(() -> {
+			if ((session != p) || p.isDone()) return;
+			drawMsg(R.string.unlock_phone_and_grant);
+			schedulePendingMessage(p, 3000);
+		}, delay);
 	}
 
 	private void drawMsg(@StringRes int msg) {

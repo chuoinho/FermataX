@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">Trang chủ</string>
+    <string name="dashboard">Bảng điều khiển</string>
+    <string name="open_dashboard">Mở bảng điều khiển</string>
+    <string name="dashboard_order">Thứ tự bảng điều khiển</string>
+    <string name="reset_dashboard_order">Đặt lại thứ tự bảng điều khiển</string>
+    <string name="dashboard_order_sub">Cũng điều khiển thứ tự thanh điều hướng</string>
+    <string name="dashboard_now_playing">Đang phát</string>
+    <string name="dashboard_continue">Xem tiếp</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">Màn hình bắt đầu và truy cập nhanh</string>
+    <string name="dashboard_folders_sub">Tệp và thư mục cục bộ</string>
+    <string name="dashboard_favorites_sub">Kênh và media đã ghim</string>
+    <string name="dashboard_recent_sub">Đã phát gần đây trong media hub xe</string>
+    <string name="dashboard_playlists_sub">Hàng đợi và bộ sưu tập đã lưu</string>
+    <string name="dashboard_menu_sub">Tất cả công cụ và cài đặt</string>
+    <string name="dashboard_tv_sub">TV trực tiếp, VOD và series</string>
+    <string name="dashboard_radio_sub">Đài và quốc gia phổ biến</string>
+    <string name="dashboard_youtube_sub">Tìm kiếm và phát video</string>
+    <string name="dashboard_web_sub">Mở media web</string>
+    <string name="dashboard_felex_sub">Công cụ học và tutor</string>
+    <string name="dashboard_addon_sub">Lối tắt addon</string>
+    <string name="dashboard_addon_disabled_sub">Đã tắt trong cài đặt</string>
+    <string name="addon_name_radio">Radio</string>
+
     
     
     
@@ -52,7 +76,6 @@
 
     <string name="nav_bar_pos">Vị trí thanh điều hướng</string>
     <string name="nav_bar_pos_sub">Vị trí hiện tại: %1$s</string>
-    <string name="nav_bar_pos_bottom">Bên dưới</string>
     <string name="nav_bar_pos_left">Bên trái</string>
     <string name="nav_bar_pos_right">Bên phải</string>
 
@@ -60,7 +83,7 @@
     <string name="lang">Ngôn Ngữ</string>
     <string name="trans_lang">Ngôn ngữ dịch</string>
     <string name="hide_bars">Ẩn thanh điều hướng</string>
-    <string name="hide_bars_sub">Ẩn thanh điều hướng trên và dưới khi bảng điều khiển xuất hiện</string>
+    <string name="hide_bars_sub">Ẩn các thanh của ứng dụng khi bảng điều khiển xuất hiện</string>
     <string name="show_pg_up_down">Hiển thị nút lên/xuống trang</string>
     <string name="use_dpad_cursor">Sử dụng con trỏ để điều hướng D-pad</string>
     <string name="fullscreen_mode">Chế độ toàn màn hình</string>
@@ -315,15 +338,17 @@
     <string name="private_key">Private key</string>
     <string name="private_key_pass">Private key password</string>
 
-    <string name="donate">Ủng hộ nhà phát triển</string>
-    <string name="donate_text">Nếu bạn thích ứng dụng này, vui lòng ủng hộ chúng thôi.</string>
-    <string name="use_phone_for_donation">Vui lòng sử dụng điện thoại của bạn để ủng hộ.</string>
+    <string name="donate">Ủng hộ qua Ko-fi</string>
+    <string name="donate_text">Ủng hộ FermataX qua Ko-fi.</string>
+    <string name="use_phone_for_donation">Mở Ko-fi trên điện thoại để ủng hộ FermataX.</string>
 
     <string name="timer">Hẹn giờ</string>
     <string name="hours">Giờ</string>
     <string name="minutes">Phút</string>
 
     <string name="enable">Cho phép</string>
+    <string name="edit_dashboard">Chỉnh sửa bảng điều khiển</string>
+    <string name="done">Xong</string>
     <string name="move_left">Di chuyển sang trái</string>
     <string name="move_right">Di chuyển sang phải</string>
     <string name="move_up">Di chuyển sang lên trên</string>
@@ -361,13 +386,16 @@
     <string name="accessibility_dsc">Dịch vụ trợ năng được Fermata Mirror sử dụng để mô phỏng các sự kiện trên màn hình cảm ứng.</string>
     <string name="media_projection_action_text">Bắt đầu ngay</string>
 
-    <string name="about">About</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player is a free, open source audio and video player with a simple and
-        intuitive interface.</p>
-        <p><b>Author:</b> Andrey Pavlenko</p>
-        <p><b>Version:</b> %1$s (%2$d)</p>
-        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+    <string name="about">Giới thiệu</string>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX là một bản fork của Fermata, được tùy biến thành media hub cho Android Auto.</p>
+        <p>Ứng dụng kết hợp điều hướng ưu tiên Dashboard, IPTV/Xtream, Internet Radio, YouTube/Web media,
+        file cục bộ, Yêu thích và Gần đây trong một trải nghiệm thân thiện cho xe.</p>
+        <p>FermataX không cung cấp nội dung media, playlist, kênh TV hoặc tài khoản IPTV.
+        Người dùng tự chịu trách nhiệm với các nguồn mình thêm vào.</p>
+        <p><b>Dự án gốc:</b> Fermata by Andrey Pavlenko</p>
+        <p><b>Phiên bản:</b> %1$s (%2$d)</p>
+        <p><b>Trang chủ:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Lỗi phát nhạc %s</string>
@@ -380,4 +408,6 @@
     <string name="err_failed_install_module">Không cài đặt được mô-đun: %1$s</string>
     <string name="err_failed_to_download">Không thể tải xuống %1$s</string>
     <string name="err_no_audio_record_perm">Không được cấp quyền ghi âm</string>
+    <string name="addon_name_podcast">Podcast</string>
+    <string name="dashboard_podcast_sub">Chương trình, tập và nghe ngoại tuyến</string>
 </resources>

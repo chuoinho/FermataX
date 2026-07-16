@@ -1,0 +1,30 @@
+android {
+    namespace = "me.aap.fermata.addon.podcast"
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+ext {
+    addons = [
+            [
+                    name : 'podcast',
+                    id   : 'podcast_fragment',
+                    icon : 'podcast',
+                    class: 'me.aap.fermata.addon.podcast.PodcastAddon',
+                    fragment: true,
+                    capabilities: 'dashboard,navigation,podcast',
+                    order: 5
+            ]
+    ]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation libs.androidxMedia
+    implementation libs.androidxAppcompat
+    implementation libs.androidMaterial
+    testImplementation libs.robolectric
+}

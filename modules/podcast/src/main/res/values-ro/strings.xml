@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">Adaugă podcast</string>
+    <string name="podcast_search">Caută podcasturi</string>
+    <string name="podcast_add_rss">Adaugă flux RSS</string>
+    <string name="podcast_import_opml">Importă OPML</string>
+    <string name="podcast_subscribe">Abonează-te</string>
+    <string name="podcast_export_opml">Exportă OPML</string>
+    <string name="podcast_export_failed">Podcasturile nu au putut fi exportate</string>
+    <string name="podcast_export_private_title">Linkuri de podcast private</string>
+    <string name="podcast_export_private_message">Include adresele private cu token în acest fișier OPML?</string>
+    <string name="podcast_export_public_only">Doar publice</string>
+    <string name="podcast_export_include_private">Include private</string>
+    <string name="podcast_feed_url">URL flux</string>
+    <string name="podcast_add_failed">Acest podcast nu a putut fi adăugat</string>
+    <string name="podcast_import_failed">Acest fișier OPML nu a putut fi importat</string>
+    <string name="podcast_import_result">S-au importat %1$d podcasturi; %2$d au eșuat</string>
+    <string name="podcast_edit_rss">Editează fluxul RSS</string>
+    <string name="podcast_delete_title">Elimină podcastul</string>
+    <string name="podcast_delete_message">Elimini %1$s și episoadele descărcate?</string>
+    <string name="podcast_continue">Continuă ascultarea</string>
+    <string name="podcast_new_episodes">Episoade noi</string>
+    <string name="podcast_subscriptions">Abonamente</string>
+    <string name="podcast_mark_played">Marchează ca ascultat</string>
+    <string name="podcast_mark_unplayed">Marchează ca neascultat</string>
+    <string name="podcast_download">Descarcă episodul</string>
+    <string name="podcast_delete_download">Șterge descărcarea</string>
+</resources>

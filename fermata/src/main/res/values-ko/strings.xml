@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">홈</string>
+    <string name="dashboard">대시보드</string>
+    <string name="open_dashboard">대시보드 열기</string>
+    <string name="dashboard_order">대시보드 순서</string>
+    <string name="reset_dashboard_order">대시보드 순서 초기화</string>
+    <string name="dashboard_order_sub">탐색 순서도 함께 제어합니다</string>
+    <string name="dashboard_now_playing">지금 재생 중</string>
+    <string name="dashboard_continue">이어보기</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">시작 화면 및 빠른 접근</string>
+    <string name="dashboard_folders_sub">로컬 파일과 폴더</string>
+    <string name="dashboard_favorites_sub">고정된 채널과 미디어</string>
+    <string name="dashboard_recent_sub">차량 허브에서 최근 재생</string>
+    <string name="dashboard_playlists_sub">저장된 대기열과 컬렉션</string>
+    <string name="dashboard_menu_sub">모든 도구와 설정</string>
+    <string name="dashboard_tv_sub">라이브 TV, VOD 및 시리즈</string>
+    <string name="dashboard_radio_sub">인기 방송국과 국가</string>
+    <string name="dashboard_youtube_sub">동영상 검색 및 재생</string>
+    <string name="dashboard_web_sub">웹 미디어 열기</string>
+    <string name="dashboard_felex_sub">학습 및 튜터 도구</string>
+    <string name="dashboard_addon_sub">애드온 바로가기</string>
+    <string name="dashboard_addon_disabled_sub">설정에서 비활성화됨</string>
+    <string name="addon_name_radio">라디오</string>
+
     
     
     
@@ -57,7 +81,6 @@
 
     <string name="nav_bar_pos">네비게이션바 위치</string>
     <string name="nav_bar_pos_sub">현재 위치: %1$s</string>
-    <string name="nav_bar_pos_bottom">아래</string>
     <string name="nav_bar_pos_left">왼쪽</string>
     <string name="nav_bar_pos_right">오른쪽</string>
 
@@ -65,7 +88,7 @@
     <string name="lang">언어</string>
     <string name="trans_lang">번역 언어</string>
     <string name="hide_bars">바 숨기기</string>
-    <string name="hide_bars_sub">재생 컨트롤 패널이 열리면 위, 아래 바를 숨김</string>
+    <string name="hide_bars_sub">컨트롤 패널이 나타나면 앱 바 숨기기</string>
     <string name="show_pg_up_down">페이지 업/다운 버튼을 표시</string>
     <string name="use_dpad_cursor">D-pad 네비게이션을 위한 커서를 사용</string>
     <string name="fullscreen_mode">풀스크린 모드</string>
@@ -322,9 +345,9 @@
     <string name="private_key">개인열쇠</string>
     <string name="private_key_pass">개인열쇠 비밀번호</string>
 
-    <string name="donate">개발자에게 커피 한잔 보내기</string>
-    <string name="donate_text">이 어플리케이션이 마음에 드신다면, 저에게 커피 한잔을 사주시는 것이 어떤가요.</string>
-    <string name="use_phone_for_donation">커피를 주실 때는 스마트폰으로 해주세요.</string>
+    <string name="donate">Ko-fi로 후원</string>
+    <string name="donate_text">Ko-fi에서 FermataX를 후원해 주세요.</string>
+    <string name="use_phone_for_donation">FermataX를 후원하려면 휴대전화에서 Ko-fi를 여세요.</string>
 
     <string name="timer">타이머</string>
     <string name="hours">시</string>
@@ -369,11 +392,14 @@
     <string name="media_projection_action_text">지금 시작 합니다</string>
 
     <string name="about">앱정보</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player (페르마타 미디어 플레이어)는 간결하고 직관적인
-        무료 오픈소스 오디오, 비디오 플레이어 입니다.</p>
-        <p><b>제작자:</b> Andrey Pavlenko</p>
-        <p><b>앱버전:</b> %1$s (%2$d)</p>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX는 Fermata의 포크로, Android Auto용 미디어 허브로 맞춤화되었습니다.</p>
+        <p>Dashboard 중심 탐색, IPTV/Xtream, 인터넷 라디오, YouTube/Web 미디어,
+        로컬 파일, 즐겨찾기, 최근 항목을 차량 친화적인 경험으로 통합합니다.</p>
+        <p>FermataX는 미디어 콘텐츠, 재생목록, TV 채널 또는 IPTV 계정을 제공하지 않습니다.
+        사용자가 추가한 소스에 대한 책임은 사용자에게 있습니다.</p>
+        <p><b>원본 프로젝트:</b> Fermata by Andrey Pavlenko</p>
+        <p><b>버전:</b> %1$s (%2$d)</p>
         <p><b>홈페이지:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
@@ -388,4 +414,6 @@
     <string name="err_failed_to_download">다운로드에 실패했습니다 %1$s</string>
     <string name="err_no_audio_record_perm">음성녹음 권한이 부여되지 않았습니다</string>
     <string name="err_failed_start_service">서비스 시작 실패: %s</string>
+    <string name="addon_name_podcast">팟캐스트</string>
+    <string name="dashboard_podcast_sub">프로그램, 에피소드 및 오프라인 재생</string>
 </resources>

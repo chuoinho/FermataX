@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarActivityService;
@@ -26,12 +26,14 @@ public class CarService extends CarActivityService {
 	@Override
 	public void onDestroy() {
 		Log.d("Destroying CarService: " + this);
-		FermataMediaServiceConnection s = MainCarActivity.service;
-		if (s == null) return;
-		MainCarActivity.service = null;
-		MediaSessionCallback cb = s.getMediaSessionCallback();
-		if ((cb != null) && cb.isPlaying()) cb.onPause();
-		s.disconnect();
-		super.onDestroy();
+		try {
+			FermataMediaServiceConnection s = MainCarActivity.takeServiceForShutdown();
+			if (s == null) return;
+			MediaSessionCallback cb = s.getMediaSessionCallback();
+			if ((cb != null) && cb.isPlaying()) cb.onPause();
+			s.disconnect();
+		} finally {
+			super.onDestroy();
+		}
 	}
 }

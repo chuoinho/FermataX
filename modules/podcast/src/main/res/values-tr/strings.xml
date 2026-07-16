@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">Podcast ekle</string>
+    <string name="podcast_search">Podcast ara</string>
+    <string name="podcast_add_rss">RSS akışı ekle</string>
+    <string name="podcast_import_opml">OPML içe aktar</string>
+    <string name="podcast_subscribe">Abone ol</string>
+    <string name="podcast_export_opml">OPML dışa aktar</string>
+    <string name="podcast_export_failed">Podcastlar dışa aktarılamadı</string>
+    <string name="podcast_export_private_title">Özel podcast bağlantıları</string>
+    <string name="podcast_export_private_message">Özel token içeren akış URL’leri bu OPML dosyasına eklensin mi?</string>
+    <string name="podcast_export_public_only">Yalnızca herkese açık</string>
+    <string name="podcast_export_include_private">Özel olanları ekle</string>
+    <string name="podcast_feed_url">Akış URL’si</string>
+    <string name="podcast_add_failed">Bu podcast eklenemedi</string>
+    <string name="podcast_import_failed">Bu OPML dosyası içe aktarılamadı</string>
+    <string name="podcast_import_result">%1$d podcast içe aktarıldı; %2$d başarısız</string>
+    <string name="podcast_edit_rss">RSS akışını düzenle</string>
+    <string name="podcast_delete_title">Podcastı kaldır</string>
+    <string name="podcast_delete_message">%1$s ve indirilen bölümleri kaldırılsın mı?</string>
+    <string name="podcast_continue">Dinlemeye devam et</string>
+    <string name="podcast_new_episodes">Yeni bölümler</string>
+    <string name="podcast_subscriptions">Abonelikler</string>
+    <string name="podcast_mark_played">Dinlendi olarak işaretle</string>
+    <string name="podcast_mark_unplayed">Dinlenmedi olarak işaretle</string>
+    <string name="podcast_download">Bölümü indir</string>
+    <string name="podcast_delete_download">İndirmeyi sil</string>
+</resources>

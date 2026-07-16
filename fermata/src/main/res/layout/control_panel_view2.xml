@@ -35,7 +35,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/barrier">
 
-        <androidx.appcompat.widget.AppCompatImageView
+        <me.aap.utils.ui.view.ImageButton
             android:id="@+id/show_hide_bars_icon"
             style="?attr/appControlPanelStyle"
             android:layout_width="match_parent"
@@ -44,6 +44,9 @@
             android:layout_marginEnd="2dp"
             android:layout_weight="1"
             android:adjustViewBounds="true"
+            android:background="@drawable/focusable_shape_transparent"
+            android:clickable="false"
+            android:focusable="false"
             android:scaleType="fitCenter"
             android:src="@drawable/collapse" />
 
@@ -94,9 +97,9 @@
     <me.aap.utils.ui.view.ImageButton
         android:id="@+id/control_play_pause"
         style="?attr/appControlPanelStyle"
-        android:layout_width="0dp"
+        android:layout_width="72dp"
         android:layout_height="32dp"
-        android:background="@drawable/focusable_shape_transparent"
+        android:background="@drawable/aa_play_button_bg"
         android:clickable="true"
         android:focusable="true"
         android:longClickable="true"
@@ -104,6 +107,7 @@
         android:paddingRight="16dp"
         android:scaleType="fitCenter"
         android:src="@drawable/play_pause"
+        app:tint="?android:attr/colorBackground"
         app:layout_constraintEnd_toStartOf="@id/control_ff"
         app:layout_constraintStart_toEndOf="@id/control_rw"
         app:layout_constraintTop_toBottomOf="@id/barrier" />
@@ -138,8 +142,25 @@
         android:paddingRight="16dp"
         android:scaleType="fitCenter"
         android:src="@drawable/next"
-        app:layout_constraintEnd_toStartOf="@id/control_menu_button"
+        app:layout_constraintEnd_toStartOf="@id/control_favorite"
         app:layout_constraintStart_toEndOf="@id/control_ff"
+        app:layout_constraintTop_toBottomOf="@id/barrier" />
+
+    <me.aap.utils.ui.view.ImageButton
+        android:id="@+id/control_favorite"
+        style="?attr/appControlPanelStyle"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/favorite"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/control_menu_button"
+        app:layout_constraintStart_toEndOf="@id/control_next"
         app:layout_constraintTop_toBottomOf="@id/barrier" />
 
     <LinearLayout
@@ -152,7 +173,7 @@
         android:nextFocusRight="@id/show_hide_bars"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/control_next"
+        app:layout_constraintStart_toEndOf="@id/control_favorite"
         app:layout_constraintTop_toBottomOf="@id/barrier">
 
         <com.google.android.material.textview.MaterialTextView

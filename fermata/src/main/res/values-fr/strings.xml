@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">Accueil</string>
+    <string name="dashboard">Tableau de bord</string>
+    <string name="open_dashboard">Ouvrir le tableau de bord</string>
+    <string name="dashboard_order">Ordre du tableau de bord</string>
+    <string name="reset_dashboard_order">Réinitialiser l\'ordre du tableau de bord</string>
+    <string name="dashboard_order_sub">Contrôle aussi l\'ordre de la navigation</string>
+    <string name="dashboard_now_playing">Lecture en cours</string>
+    <string name="dashboard_continue">Continuer à regarder</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">Écran d\'accueil et accès rapide</string>
+    <string name="dashboard_folders_sub">Fichiers et dossiers locaux</string>
+    <string name="dashboard_favorites_sub">Chaînes et médias épinglés</string>
+    <string name="dashboard_recent_sub">Lus récemment dans le hub voiture</string>
+    <string name="dashboard_playlists_sub">Files d\'attente et collections enregistrées</string>
+    <string name="dashboard_menu_sub">Tous les outils et réglages</string>
+    <string name="dashboard_tv_sub">TV en direct, VOD et séries</string>
+    <string name="dashboard_radio_sub">Stations et pays populaires</string>
+    <string name="dashboard_youtube_sub">Recherche et lecture vidéo</string>
+    <string name="dashboard_web_sub">Ouvrir les médias web</string>
+    <string name="dashboard_felex_sub">Outils d\'apprentissage et de tutorat</string>
+    <string name="dashboard_addon_sub">Raccourci d\'addon</string>
+    <string name="dashboard_addon_disabled_sub">Désactivé dans les réglages</string>
+    <string name="addon_name_radio">Radio</string>
+
     
     
     
@@ -57,7 +81,6 @@
 
     <string name="nav_bar_pos">Position de la barre de navigation</string>
     <string name="nav_bar_pos_sub">Position actuelle : %1$s</string>
-    <string name="nav_bar_pos_bottom">Bas</string>
     <string name="nav_bar_pos_left">Gauche</string>
     <string name="nav_bar_pos_right">Droite</string>
 
@@ -65,7 +88,7 @@
     <string name="lang">Langue</string>
     <string name="trans_lang">Langue de traduction</string>
     <string name="hide_bars">Masquer les barres</string>
-    <string name="hide_bars_sub">Masquer les barres supérieure et inférieure lorsque le panneau de contrôle apparaît</string>
+    <string name="hide_bars_sub">Masquer les barres de l\'application lorsque le panneau de contrôle apparaît</string>
     <string name="show_pg_up_down">Afficher les boutons de page haut/bas</string>
     <string name="use_dpad_cursor">Utiliser le curseur pour la navigation avec la croix directionnelle</string>
     <string name="fullscreen_mode">Mode plein écran</string>
@@ -322,9 +345,9 @@
     <string name="private_key">Clé privée</string>
     <string name="private_key_pass">Mot de passe de la clé privée</string>
 
-    <string name="donate">Offrir un café au développeur</string>
-    <string name="donate_text">Si vous aimez l\'application, vous pouvez m\'offrir un café.</string>
-    <string name="use_phone_for_donation">Vous pouvez utiliser votre téléphone pour offrir un café.</string>
+    <string name="donate">Soutenir sur Ko-fi</string>
+    <string name="donate_text">Soutenez FermataX sur Ko-fi.</string>
+    <string name="use_phone_for_donation">Ouvrez Ko-fi sur votre téléphone pour soutenir FermataX.</string>
 
     <string name="timer">Minuteur</string>
     <string name="hours">Heures</string>
@@ -369,12 +392,15 @@
     <string name="media_projection_action_text">Commencer maintenant</string>
 
     <string name="about">À propos</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player est un lecteur audio et vidéo gratuit et open source avec une interface simple et
-        intuitive.</p>
-        <p><b>Auteur :</b> Andrey Pavlenko</p>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX est un fork de Fermata, adapté comme hub multimédia pour Android Auto.</p>
+        <p>Il réunit une navigation centrée sur le Dashboard, IPTV/Xtream, la radio Internet, les médias YouTube/Web,
+        les fichiers locaux, les favoris et les éléments récents dans une expérience adaptée à la voiture.</p>
+        <p>FermataX ne fournit aucun contenu média, playlist, chaîne TV ou compte IPTV.
+        Les utilisateurs sont responsables des sources ajoutées.</p>
+        <p><b>Projet original :</b> Fermata by Andrey Pavlenko</p>
         <p><b>Version :</b> %1$s (%2$d)</p>
-        <p><b>Page d\'accueil :</b> <a href="%3$s">%3$s</a></p>
+        <p><b>Page web :</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Impossible de lire %s</string>
@@ -388,4 +414,6 @@
     <string name="err_failed_to_download">Échec du téléchargement de %1$s</string>
     <string name="err_no_audio_record_perm">Autorisation d\'enregistrement audio non accordée</string>
     <string name="err_failed_start_service"><![CDATA[Échec du démarrage du service : %s]]></string>
+    <string name="addon_name_podcast">Podcasts</string>
+    <string name="dashboard_podcast_sub">Émissions, épisodes et écoute hors ligne</string>
 </resources>

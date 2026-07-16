@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">Podcast hinzufügen</string>
+    <string name="podcast_search">Podcasts suchen</string>
+    <string name="podcast_add_rss">RSS-Feed hinzufügen</string>
+    <string name="podcast_import_opml">OPML importieren</string>
+    <string name="podcast_subscribe">Abonnieren</string>
+    <string name="podcast_export_opml">OPML exportieren</string>
+    <string name="podcast_export_failed">Podcasts konnten nicht exportiert werden</string>
+    <string name="podcast_export_private_title">Private Podcast-Links</string>
+    <string name="podcast_export_private_message">Private Feed-URLs mit Token in diese OPML-Datei aufnehmen?</string>
+    <string name="podcast_export_public_only">Nur öffentlich</string>
+    <string name="podcast_export_include_private">Private einschließen</string>
+    <string name="podcast_feed_url">Feed-URL</string>
+    <string name="podcast_add_failed">Dieser Podcast konnte nicht hinzugefügt werden</string>
+    <string name="podcast_import_failed">Diese OPML-Datei konnte nicht importiert werden</string>
+    <string name="podcast_import_result">%1$d Podcasts importiert; %2$d fehlgeschlagen</string>
+    <string name="podcast_edit_rss">RSS-Feed bearbeiten</string>
+    <string name="podcast_delete_title">Podcast entfernen</string>
+    <string name="podcast_delete_message">%1$s und die heruntergeladenen Folgen entfernen?</string>
+    <string name="podcast_continue">Weiterhören</string>
+    <string name="podcast_new_episodes">Neue Folgen</string>
+    <string name="podcast_subscriptions">Abonnements</string>
+    <string name="podcast_mark_played">Als gehört markieren</string>
+    <string name="podcast_mark_unplayed">Als ungehört markieren</string>
+    <string name="podcast_download">Folge herunterladen</string>
+    <string name="podcast_delete_download">Download löschen</string>
+</resources>

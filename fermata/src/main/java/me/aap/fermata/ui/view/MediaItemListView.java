@@ -326,9 +326,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		ControlPanelView p = a.getControlPanel();
 		if (isVisible(p)) return p.focusSearch();
 
-		NavBarView n = a.getNavBar();
-		if (isVisible(n) && n.isBottom()) return n.focusSearch();
-
 		List<MediaItemWrapper> list = getAdapter().getList();
 		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
 	}

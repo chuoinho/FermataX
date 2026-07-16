@@ -1,17 +1,19 @@
 package me.aap.fermata.addon.web.yt;
 
+import static me.aap.fermata.util.Utils.dynCtx;
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
+
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
@@ -24,12 +26,15 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
+import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.function.LongSupplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.ToolBarView;
 
 /**
@@ -39,7 +44,6 @@ import me.aap.utils.ui.view.ToolBarView;
 @SuppressWarnings("unused")
 public class YoutubeFragment extends WebBrowserFragment implements FermataServiceUiBinder.Listener {
 	private static final String DEFAULT_URL = "https://m.youtube.com";
-	private static final Set<String> DEFAULT_URLS = new HashSet<>(Arrays.asList(DEFAULT_URL, DEFAULT_URL + '/'));
 	private static final Pref<LongSupplier> RESUME_POS = Pref.l("YT_RESUME_POS", 0L);
 	private boolean playOnResume;
 
@@ -51,6 +55,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+		dynCtx(requireContext());
 		return inflater.inflate(R.layout.youtube, container, false);
 	}
 
@@ -69,6 +74,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			url = DEFAULT_URL;
 			pause = false;
 		}
+		String startUrl = url;
 
 		MainActivityDelegate.getActivityDelegate(view.getContext()).onSuccess(a -> {
 			YoutubeWebView webView = a.findViewById(R.id.ytWebView);
@@ -78,7 +84,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			webView.init(addon, webClient, chromeClient);
 			registerListeners(a);
 			webView.loadUrl(DEFAULT_URL);
-			if (!DEFAULT_URL.equals(url)) a.post(() -> webView.loadUrl(url));
+			if (!DEFAULT_URL.equals(startUrl)) a.post(() -> webView.loadUrl(startUrl));
 			a.postDelayed(() -> {
 				PreferenceStore ps = addon.getPreferenceStore();
 				long pos = ps.getLongPref(RESUME_POS);
@@ -123,12 +129,19 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	@Override
 	protected void registerListeners(MainActivityDelegate a) {
 		super.registerListeners(a);
+		a.addBroadcastListener(this, FRAGMENT_CHANGED);
 		a.getMediaServiceBinder().addBroadcastListener(this);
 	}
 
 	protected void unregisterListeners(MainActivityDelegate a) {
 		super.unregisterListeners(a);
 		a.getMediaServiceBinder().removeBroadcastListener(this);
+	}
+
+	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		super.onActivityEvent(a, e);
+		if ((e == FRAGMENT_CHANGED) && (a.getActiveFragment() == this)) syncPlaybackStateSoon();
 	}
 
 	@Override
@@ -150,7 +163,11 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	@Override
 	public void onResume() {
 		super.onResume();
-		if (BuildConfig.AUTO || !playOnResume) return;
+		if (BuildConfig.AUTO) {
+			syncPlaybackStateSoon();
+			return;
+		}
+		if (!playOnResume) return;
 		playOnResume = false;
 		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
@@ -158,6 +175,19 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 				b.getMediaSessionCallback().onPlay();
 			}
 		});
+	}
+
+	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		if (!hidden && BuildConfig.AUTO) syncPlaybackStateSoon();
+	}
+
+	private void syncPlaybackStateSoon() {
+		YoutubeWebView v = getWebView();
+		if (v == null) return;
+		v.post(v::syncPlaybackState);
+		v.postDelayed(v::syncPlaybackState, 600L);
 	}
 
 	public void loadUrl(String url) {
@@ -169,16 +199,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	public void onPlayableChanged(MediaLib.PlayableItem oldItem, MediaLib.PlayableItem newItem) {
 		if (isHidden()) return;
 
-		if (YoutubeMediaEngine.isYoutubeItem(newItem)) {
-			FermataWebView v = getWebView();
-			MainActivityDelegate a = MainActivityDelegate.get(getContext());
-			if (v == null) return;
-
-			FermataChromeClient chrome = v.getWebChromeClient();
-			if (chrome == null) return;
-
-			if (!DEFAULT_URLS.contains(getUrl())) chrome.enterFullScreen();
-		} else if (YoutubeMediaEngine.isYoutubeItem(oldItem)) {
+		if (!YoutubeMediaEngine.isYoutubeItem(newItem) && YoutubeMediaEngine.isYoutubeItem(oldItem)) {
 			FermataWebView v = getWebView();
 			if (v == null) return;
 			FermataChromeClient chrome = v.getWebChromeClient();
@@ -188,7 +209,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 
 	@Override
 	public ToolBarView.Mediator getToolBarMediator() {
-		return ToolBarView.Mediator.Invisible.instance;
+		return YoutubeToolBarMediator.instance;
 	}
 
 	@Override
@@ -197,6 +218,13 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 		if (v == null) return false;
 		FermataChromeClient chrome = v.getWebChromeClient();
 		return (chrome != null) && (chrome.isFullScreen() || (v.getScrollY() > 0));
+	}
+
+	@Override
+	public boolean onBackPressed() {
+		YoutubeWebView v = getWebView();
+		if ((v != null) && v.exitPlaybackFullScreenForBack()) return true;
+		return super.onBackPressed();
 	}
 
 	@Nullable
@@ -217,5 +245,60 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	@Override
 	protected String getSearchUrl() {
 		return "https://www.youtube.com/results?search_query=";
+	}
+
+	@Override
+	protected boolean shouldRestoreFullScreenOnResume() {
+		return false;
+	}
+
+	private static final class YoutubeToolBarMediator implements ToolBarView.Mediator.BackTitle {
+		static final YoutubeToolBarMediator instance = new YoutubeToolBarMediator();
+
+		@Override
+		public void enable(ToolBarView tb, ActivityFragment f) {
+			ToolBarView.Mediator.BackTitle.super.enable(tb, f);
+			updateVisibility(tb, f);
+		}
+
+		@Override
+		public void onActivityEvent(ToolBarView tb, ActivityDelegate a, long e) {
+			ToolBarView.Mediator.BackTitle.super.onActivityEvent(tb, a, e);
+			ActivityFragment f = a.getActiveFragment();
+			if (f != null) updateVisibility(tb, f);
+		}
+
+		@Override
+		public void onClick(View v) {
+			ActivityDelegate.get(v.getContext()).onBackPressed();
+		}
+
+		@Override
+		public int getBackButtonVisibility(ActivityFragment f) {
+			return shouldShowBack(f) ? VISIBLE : GONE;
+		}
+
+		private void updateVisibility(ToolBarView tb, ActivityFragment f) {
+			boolean showBack = shouldShowBack(f);
+			View b = tb.findViewById(getBackButtonId());
+			if (b != null) b.setVisibility(showBack ? VISIBLE : GONE);
+			MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
+			boolean visible = showBack && !a.isBarsHidden();
+			tb.setVisibility(visible ? VISIBLE : GONE);
+			if (!visible) return;
+
+			PlaybackSnapshot snapshot = a.getMediaSessionCallback().getPlaybackSnapshot();
+			if (!YoutubeMediaEngine.isYoutubeItem(snapshot.getItem())) return;
+			TextView title = tb.findViewById(getTitleId());
+			if (title != null) title.setText(snapshot.getDisplayTitle());
+		}
+
+		private boolean shouldShowBack(ActivityFragment f) {
+			if (!(f instanceof YoutubeFragment y)) return false;
+			FermataWebView v = y.getWebView();
+			if (v == null) return false;
+			FermataChromeClient c = v.getWebChromeClient();
+			return ((c != null) && c.isFullScreen()) || v.canGoBack() || !y.isRootPage();
+		}
 	}
 }

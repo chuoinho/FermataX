@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/dashboard_tile_height"
+    android:layout_margin="@dimen/dashboard_card_margin"
+    android:background="@drawable/media_item_bg"
+    android:clickable="true"
+    android:focusable="true"
+    android:minHeight="@dimen/dashboard_tile_height"
+    android:padding="@dimen/dashboard_tile_padding">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/dashboard_item_icon"
+        android:layout_width="@dimen/dashboard_tile_icon_size"
+        android:layout_height="@dimen/dashboard_tile_icon_size"
+        android:contentDescription="@null"
+        android:padding="@dimen/dashboard_tile_icon_padding"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="?attr/colorOnSecondary" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/dashboard_item_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="start"
+        android:maxLines="1"
+        android:textSize="@dimen/dashboard_tile_title_size"
+        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceListItem"
+        app:layout_constraintBottom_toTopOf="@id/dashboard_item_subtitle"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_item_edit_actions"
+        app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_goneMarginBottom="0dp"
+        app:layout_goneMarginEnd="0dp"
+        android:layout_marginStart="@dimen/dashboard_tile_text_gap" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/dashboard_item_subtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="start"
+        android:maxLines="1"
+        android:textSize="@dimen/dashboard_tile_subtitle_size"
+        android:alpha="0.58"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="?android:attr/textColorSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_item_edit_actions"
+        app:layout_constraintStart_toStartOf="@id/dashboard_item_title"
+        app:layout_constraintTop_toBottomOf="@id/dashboard_item_title"
+        app:layout_goneMarginEnd="0dp" />
+
+    <LinearLayout
+        android:id="@+id/dashboard_item_actions"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_play_pause"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/focusable_shape_transparent"
+            android:contentDescription="@string/action_play_pause"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/play_pause"
+            app:tint="?attr/colorOnSecondary" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_favorite"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/focusable_shape_transparent"
+            android:contentDescription="@string/favorites_add"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/favorite"
+            app:tint="?attr/colorOnSecondary" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_back_to_list"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/focusable_shape_transparent"
+            android:contentDescription="@string/dashboard_back_to_list"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/view_list"
+            app:tint="?attr/colorOnSecondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/dashboard_item_edit_actions"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_move_earlier"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/focusable_shape_transparent"
+            android:contentDescription="@string/move_left"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/move_left"
+            app:tint="?attr/colorOnSecondary" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_move_later"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/focusable_shape_transparent"
+            android:contentDescription="@string/move_right"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/move_right"
+            app:tint="?attr/colorOnSecondary" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">ទំព័រដើម</string>
+    <string name="dashboard">ផ្ទាំងគ្រប់គ្រង</string>
+    <string name="open_dashboard">បើកផ្ទាំងគ្រប់គ្រង</string>
+    <string name="dashboard_order">លំដាប់ផ្ទាំងគ្រប់គ្រង</string>
+    <string name="reset_dashboard_order">កំណត់លំដាប់ផ្ទាំងគ្រប់គ្រងឡើងវិញ</string>
+    <string name="dashboard_order_sub">ក៏គ្រប់គ្រងលំដាប់របាររុករក</string>
+    <string name="dashboard_now_playing">កំពុងចាក់</string>
+    <string name="dashboard_continue">បន្តមើល</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">អេក្រង់ចាប់ផ្ដើម និងចូលប្រើរហ័ស</string>
+    <string name="dashboard_folders_sub">ឯកសារ និងថតក្នុងម៉ាស៊ីន</string>
+    <string name="dashboard_favorites_sub">ឆានែល និងមេឌៀដែលបានដោត</string>
+    <string name="dashboard_recent_sub">បានចាក់ថ្មីៗក្នុង hub រថយន្ត</string>
+    <string name="dashboard_playlists_sub">ជួរ និងបណ្តុំដែលបានរក្សាទុក</string>
+    <string name="dashboard_menu_sub">ឧបករណ៍ និងការកំណត់ទាំងអស់</string>
+    <string name="dashboard_tv_sub">TV ផ្ទាល់, VOD និងស៊េរី</string>
+    <string name="dashboard_radio_sub">ស្ថានីយ និងប្រទេសពេញនិយម</string>
+    <string name="dashboard_youtube_sub">ស្វែងរក និងចាក់វីដេអូ</string>
+    <string name="dashboard_web_sub">បើកមេឌៀលើเว็บ</string>
+    <string name="dashboard_felex_sub">ឧបករណ៍រៀន និងបង្រៀន</string>
+    <string name="dashboard_addon_sub">ផ្លូវកាត់ addon</string>
+    <string name="dashboard_addon_disabled_sub">បានបិទក្នុងការកំណត់</string>
+    <string name="addon_name_radio">វិទ្យុ</string>
+
     
     
     
@@ -52,7 +76,6 @@
 
     <string name="nav_bar_pos">ទីតាំង Navbar</string>
     <string name="nav_bar_pos_sub">ទីតាំងបច្ចុប្បន្ន៖ %1$s</string>
-    <string name="nav_bar_pos_bottom">បាត</string>
     <string name="nav_bar_pos_left">ឆ្វេង</string>
     <string name="nav_bar_pos_right">ស្តាំ</string>
 
@@ -60,7 +83,7 @@
     <string name="lang">ភាសា</string>
     <string name="trans_lang">ភាសាបកប្រែ</string>
     <string name="hide_bars">លាក់​របារ</string>
-    <string name="hide_bars_sub">លាក់របារខាងលើ និងខាងក្រោម នៅពេលផ្ទាំងបញ្ជាលេចឡើង</string>
+    <string name="hide_bars_sub">លាក់របារកម្មវិធី នៅពេលផ្ទាំងបញ្ជាលេចឡើង</string>
     <string name="show_pg_up_down">បង្ហាញទំព័រឡើង/ចុះក្រោម</string>
     <string name="use_dpad_cursor">ប្រើទស្សន៍ទ្រនិចសម្រាប់ការរុករក D-pad</string>
     <string name="fullscreen_mode">របៀបពេញអេក្រង់</string>
@@ -315,9 +338,9 @@
     <string name="private_key">សោឯកជន</string>
     <string name="private_key_pass">ពាក្យសម្ងាត់សោឯកជន</string>
 
-    <string name="donate">ផ្តល់ជូនអ្នកអភិវឌ្ឍន៍នូវកាហ្វេមួយ</string>
-    <string name="donate_text">ប្រសិន​បើ​អ្នក​ចូល​ចិត្ត​កម្មវិធី អ្នក​អាច​ទិញ​កាហ្វេ​ឱ្យ​ខ្ញុំ​បាន។</string>
-    <string name="use_phone_for_donation">អ្នកអាចប្រើទូរសព្ទរបស់អ្នកដើម្បីបរិច្ចាគកាហ្វេ។</string>
+    <string name="donate">គាំទ្រតាម Ko-fi</string>
+    <string name="donate_text">គាំទ្រ FermataX តាម Ko-fi។</string>
+    <string name="use_phone_for_donation">បើក Ko-fi នៅលើទូរសព្ទដើម្បីគាំទ្រ FermataX។</string>
 
     <string name="timer">កម្មវិធីកំណត់ម៉ោង</string>
     <string name="hours">ម៉ោង</string>
@@ -362,12 +385,16 @@
     <string name="media_projection_action_text">ចាប់ផ្តើមឥឡូវនេះ</string>
 
     <string name="about">អំពី</string>
-    <string name="about_html"><![CDATA[<H1 តម្រឹម = \"មជ្ឈមណ្ឌល\"> កម្មវិធីចាក់មេឌៀហ្វឺម៉ាហ្គាតា </ h1>
-        <p> អ្នកលេងមេឌៀហ្វូម៉ាតាគឺជាកម្មវិធីចាក់អូឌីយ៉ូប្រភពនិងវីដេអូឥតគិតថ្លៃដែលមានលក្ខណៈសាមញ្ញនិង
-        ចំណុចប្រទាក់វិចារណញាណ។ </ p>
-        <p> <b> អ្នកនិពន្ធ: </ b> andrey pavlenko </ p>
-        <p> <p> ព្រីនៈ </ b>% 1 $ s (% 2 $ d) </ p>
-        <p> <b> ទំព័រដើម: </ b> <A HREF = \"% 3 $ s\">% 3 $ s </a> </ p>]]></string>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX គឺជាកំណែ fork របស់ Fermata ដែលបានកែសម្រួលឱ្យជា media hub សម្រាប់ Android Auto។</p>
+        <p>វារួមបញ្ចូលការរុករកផ្តោតលើ Dashboard, IPTV/Xtream, វិទ្យុអ៊ីនធឺណិត, មេឌៀ YouTube/Web,
+        ឯកសារមូលដ្ឋាន, Favorites និង Recent ទៅក្នុងបទពិសោធន៍ងាយប្រើក្នុងរថយន្ត។</p>
+        <p>FermataX មិនផ្តល់មាតិកាមេឌៀ បញ្ជីចាក់ ប៉ុស្តិ៍ TV ឬគណនី IPTV ទេ។
+        អ្នកប្រើទទួលខុសត្រូវចំពោះប្រភពដែលបានបន្ថែម។</p>
+        <p><b>គម្រោងដើម:</b> Fermata by Andrey Pavlenko</p>
+        <p><b>កំណែ:</b> %1$s (%2$d)</p>
+        <p><b>ទំព័រដើម:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
 
     <string name="err_failed_to_play">បាន​បរាជ័យ​ក្នុង​ការ​លេង %s</string>
     <string name="err_failed_to_play_cause">បាន​បរាជ័យ​ក្នុង​ការ​លេង %1$s៖ %2$s</string>
@@ -379,4 +406,6 @@
     <string name="err_failed_install_module">បាន​បរាជ័យ​ក្នុង​ការ​ដំឡើង​ម៉ូឌុល៖ %1$s</string>
     <string name="err_failed_to_download">បាន​បរាជ័យ​ក្នុង​ការ​ទាញ​យក %1$s</string>
     <string name="err_no_audio_record_perm">ការ​អនុញ្ញាត​ថត​សំឡេង​មិន​ត្រូវ​បាន​ផ្តល់​ទេ</string>
+    <string name="addon_name_podcast">ផតខាស</string>
+    <string name="dashboard_podcast_sub">កម្មវិធី ភាគ និងការស្តាប់ក្រៅបណ្តាញ</string>
 </resources>

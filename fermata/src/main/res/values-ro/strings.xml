@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">Acasă</string>
+    <string name="dashboard">Panou</string>
+    <string name="open_dashboard">Deschide panoul</string>
+    <string name="dashboard_order">Ordinea panoului</string>
+    <string name="reset_dashboard_order">Resetează ordinea panoului</string>
+    <string name="dashboard_order_sub">Controlează și ordinea navigării</string>
+    <string name="dashboard_now_playing">Redare acum</string>
+    <string name="dashboard_continue">Continuă vizionarea</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">Ecran de start și acces rapid</string>
+    <string name="dashboard_folders_sub">Fișiere și foldere locale</string>
+    <string name="dashboard_favorites_sub">Canale și media fixate</string>
+    <string name="dashboard_recent_sub">Redate recent în hubul auto</string>
+    <string name="dashboard_playlists_sub">Cozi și colecții salvate</string>
+    <string name="dashboard_menu_sub">Toate uneltele și setările</string>
+    <string name="dashboard_tv_sub">TV live, VOD și seriale</string>
+    <string name="dashboard_radio_sub">Posturi și țări populare</string>
+    <string name="dashboard_youtube_sub">Căutare și redare video</string>
+    <string name="dashboard_web_sub">Deschide media web</string>
+    <string name="dashboard_felex_sub">Unelte de învățare și tutor</string>
+    <string name="dashboard_addon_sub">Scurtătură addon</string>
+    <string name="dashboard_addon_disabled_sub">Dezactivat în setări</string>
+    <string name="addon_name_radio">Radio</string>
+
     
     
     
@@ -52,7 +76,6 @@
 
     <string name="nav_bar_pos">Poziția barei de navigare</string>
     <string name="nav_bar_pos_sub">Poziția curentă: %1$s</string>
-    <string name="nav_bar_pos_bottom">Jos</string>
     <string name="nav_bar_pos_left">Stânga</string>
     <string name="nav_bar_pos_right">Drepta</string>
 
@@ -60,7 +83,7 @@
     <string name="lang">Limbă</string>
     <string name="trans_lang">Limba de traducere</string>
     <string name="hide_bars">Ascunde barele</string>
-    <string name="hide_bars_sub">Ascunde barele de sus și de jos când apare panoul de control</string>
+    <string name="hide_bars_sub">Ascunde barele aplicației când apare panoul de control</string>
     <string name="show_pg_up_down">Arată butoanele sus/jos ale paginii</string>
     <string name="use_dpad_cursor">Utilizează cursorul pentru navigarea D-pad</string>
     <string name="fullscreen_mode">Modul Ecran complet</string>
@@ -315,9 +338,9 @@
     <string name="private_key">Cheie privată</string>
     <string name="private_key_pass">Parola cheii private</string>
 
-    <string name="donate">Cafea pentru dezvoltator</string>
-    <string name="donate_text">Dacă îți place aplicația, ia în considerare să-mi cumperi o cafea.</string>
-    <string name="use_phone_for_donation">Folosește-ți telefonul pentru a cumpăra o cafea.</string>
+    <string name="donate">Susține pe Ko-fi</string>
+    <string name="donate_text">Susține FermataX pe Ko-fi.</string>
+    <string name="use_phone_for_donation">Deschide Ko-fi pe telefon pentru a susține FermataX.</string>
 
     <string name="timer">Temporizator</string>
     <string name="hours">Ore</string>
@@ -362,12 +385,15 @@
     <string name="media_projection_action_text">Începe acum</string>
 
     <string name="about">Despre</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player este un player audio și video gratis, open source  cu o interfață simplă și
-        intuitivă.</p>
-        <p><b>Author:</b> Andrey Pavlenko</p>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX este un fork al Fermata, personalizat ca hub media pentru Android Auto.</p>
+        <p>Combină navigarea orientată pe Dashboard, IPTV/Xtream, radio pe Internet, media YouTube/Web,
+        fișiere locale, Favorite și Recente într-o experiență potrivită pentru mașină.</p>
+        <p>FermataX nu furnizează conținut media, playlisturi, canale TV sau conturi IPTV.
+        Utilizatorii sunt responsabili pentru sursele pe care le adaugă.</p>
+        <p><b>Proiect original:</b> Fermata by Andrey Pavlenko</p>
         <p><b>Versiune:</b> %1$s (%2$d)</p>
-        <p><b>Pagina principală:</b> <a href="%3$s">%3$s</a></p>
+        <p><b>Pagină principală:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Redare eșuată %s</string>
@@ -380,4 +406,6 @@
     <string name="err_failed_install_module">Instalarea modulului a eșuat: %1$s</string>
     <string name="err_failed_to_download">Eroare la descărcare %1$s</string>
     <string name="err_no_audio_record_perm">Permisiunea de înregistrare audio nu este acordată</string>
+    <string name="addon_name_podcast">Podcasturi</string>
+    <string name="dashboard_podcast_sub">Emisiuni, episoade și ascultare offline</string>
 </resources>

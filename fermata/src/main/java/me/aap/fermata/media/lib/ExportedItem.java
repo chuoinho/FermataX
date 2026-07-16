@@ -10,12 +10,14 @@ import android.support.v4.media.MediaMetadataCompat;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Map;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import me.aap.fermata.media.engine.MetadataBuilder;
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -148,6 +150,16 @@ public class ExportedItem extends PlayableItemBase {
 	}
 
 	@Override
+	public boolean isRecentEligible() {
+		return orig.isRecentEligible();
+	}
+
+	@Override
+	public boolean isLocationSensitive() {
+		return orig.isLocationSensitive();
+	}
+
+	@Override
 	public boolean isSeekable() {
 		return orig.isSeekable();
 	}
@@ -223,6 +235,19 @@ public class ExportedItem extends PlayableItemBase {
 	@Nullable
 	public String getUserAgent() {
 		return orig.getUserAgent();
+	}
+
+	@NonNull
+	@Override
+	public Map<String, String> getRequestHeaders() {
+		return orig.getRequestHeaders();
+	}
+
+	@Override
+	@Nullable
+	public MediaEngine getMediaEngine(@Nullable MediaEngine current,
+			MediaEngine.Listener listener) {
+		return orig.getMediaEngine(current, listener);
 	}
 
 	@NonNull

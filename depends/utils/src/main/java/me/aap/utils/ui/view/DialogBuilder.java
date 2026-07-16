@@ -20,6 +20,7 @@ import androidx.appcompat.content.res.AppCompatResources;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import me.aap.utils.R;
+import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.menu.OverlayMenu;
 
 /**
@@ -29,12 +30,21 @@ public interface DialogBuilder {
 
 	Context getContext();
 
+	default Context getResourceContext() {
+		Context ctx = getContext();
+		try {
+			return ActivityDelegate.get(ctx).getLocalizedContext(ctx);
+		} catch (RuntimeException ex) {
+			return ctx;
+		}
+	}
+
 	default DialogBuilder setTitle(@StringRes int title) {
 		return setTitle(ID_NULL, title);
 	}
 
 	default DialogBuilder setTitle(@DrawableRes int icon, @StringRes int title) {
-		Context ctx = getContext();
+		Context ctx = getResourceContext();
 		Drawable i = (icon != ID_NULL) ? AppCompatResources.getDrawable(ctx, icon) : null;
 		CharSequence t = (title != ID_NULL) ? ctx.getString(title) : null;
 		return setTitle(i, t);
@@ -47,14 +57,14 @@ public interface DialogBuilder {
 	DialogBuilder setTitle(@Nullable Drawable icon, @Nullable CharSequence title);
 
 	default DialogBuilder setMessage(@StringRes int message) {
-		return setMessage(getContext().getString(message));
+		return setMessage(getResourceContext().getString(message));
 	}
 
 	DialogBuilder setMessage(@NonNull CharSequence message);
 
 	default DialogBuilder setPositiveButton(@StringRes int text,
 																					@Nullable DialogInterface.OnClickListener listener) {
-		return setPositiveButton(getContext().getString(text), listener);
+		return setPositiveButton(getResourceContext().getString(text), listener);
 	}
 
 	DialogBuilder setPositiveButton(@NonNull CharSequence text,
@@ -62,7 +72,7 @@ public interface DialogBuilder {
 
 	default DialogBuilder setNegativeButton(@StringRes int text,
 																					@Nullable DialogInterface.OnClickListener listener) {
-		return setNegativeButton(getContext().getString(text), listener);
+		return setNegativeButton(getResourceContext().getString(text), listener);
 	}
 
 	DialogBuilder setNegativeButton(@NonNull CharSequence text,
@@ -70,7 +80,7 @@ public interface DialogBuilder {
 
 	default DialogBuilder setNeutralButton(@StringRes int text,
 																				 @Nullable DialogInterface.OnClickListener listener) {
-		return setNeutralButton(getContext().getString(text), listener);
+		return setNeutralButton(getResourceContext().getString(text), listener);
 	}
 
 	DialogBuilder setNeutralButton(@NonNull CharSequence text,
@@ -78,7 +88,7 @@ public interface DialogBuilder {
 
 	default DialogBuilder setSingleChoiceItems(@ArrayRes int itemsId, int checkedItem,
 																						 @Nullable DialogInterface.OnClickListener listener) {
-		return setSingleChoiceItems(getContext().getResources().getTextArray(itemsId), checkedItem, listener);
+		return setSingleChoiceItems(getResourceContext().getResources().getTextArray(itemsId), checkedItem, listener);
 	}
 
 	DialogBuilder setSingleChoiceItems(@NonNull CharSequence[] items, int checkedItem,

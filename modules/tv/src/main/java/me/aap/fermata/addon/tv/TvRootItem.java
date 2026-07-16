@@ -3,63 +3,65 @@ package me.aap.fermata.addon.tv;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.aap.fermata.addon.tv.m3u.TvM3uEpgItem;
 import me.aap.fermata.addon.tv.m3u.TvM3uFile;
-import me.aap.fermata.addon.tv.m3u.TvM3uFileSystem;
-import me.aap.fermata.addon.tv.m3u.TvM3uFileSystemProvider;
+import me.aap.fermata.addon.tv.m3u.TvM3uEpgItem;
 import me.aap.fermata.addon.tv.m3u.TvM3uGroupItem;
 import me.aap.fermata.addon.tv.m3u.TvM3uItem;
 import me.aap.fermata.addon.tv.m3u.TvM3uTrackItem;
+import me.aap.fermata.addon.tv.xtream.XtreamAccount;
+import me.aap.fermata.addon.tv.xtream.XtreamCatchupFolder;
+import me.aap.fermata.addon.tv.xtream.XtreamCategoryItem;
+import me.aap.fermata.addon.tv.xtream.XtreamEpgItem;
+import me.aap.fermata.addon.tv.xtream.XtreamEpisodeItem;
+import me.aap.fermata.addon.tv.xtream.XtreamMovieItem;
+import me.aap.fermata.addon.tv.xtream.XtreamSeasonItem;
+import me.aap.fermata.addon.tv.xtream.XtreamSectionItem;
+import me.aap.fermata.addon.tv.xtream.XtreamSeriesCategoryItem;
+import me.aap.fermata.addon.tv.xtream.XtreamSeriesItem;
+import me.aap.fermata.addon.tv.xtream.XtreamSourceItem;
+import me.aap.fermata.addon.tv.xtream.XtreamTrackItem;
+import me.aap.fermata.addon.tv.xtream.XtreamVodCategoryItem;
+import me.aap.fermata.addon.tv.xtream.XtreamWatchFromBeginningItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ItemContainer;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
-import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
-import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
 
 import static me.aap.utils.async.Async.forEach;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.collection.CollectionUtils.contains;
 
 /**
  * @author Andrey Pavlenko
  */
-public class TvRootItem extends ItemContainer<TvM3uItem> implements TvItem {
+public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 	public static final String ID = "TV";
-	private static final Pref<IntSupplier> SOURCE_COUNTER = Pref.i("SOURCE_COUNTER", 0).withInheritance(false);
-	private static final Pref<Supplier<int[]>> SOURCE_IDS = Pref.ia("SOURCE_IDS", () -> new int[0]).withInheritance(false);
 	private final DefaultMediaLib lib;
+	private final TvSourceRepository sources;
+	private final M3uSourceHandler m3uSources;
+	private final XtreamSourceHandler xtreamSources;
+	private final TvItemFactory itemFactory;
 
 	public TvRootItem(DefaultMediaLib lib) {
 		super(ID, null, null);
 		this.lib = lib;
+		sources = new TvSourceRepository(this);
+		m3uSources = new M3uSourceHandler(this, sources);
+		xtreamSources = new XtreamSourceHandler(this, sources);
+		itemFactory = new TvItemFactory(this);
 	}
 
 	@Nullable
 	public FutureSupplier<? extends Item> getItem(@Nullable String scheme, String id) {
-		if (scheme == null) return ID.equals(id) ? completed(this) : null;
-
-		switch (scheme) {
-			case TvM3uItem.SCHEME:
-				return create(toSourceId(id));
-			case TvM3uGroupItem.SCHEME:
-				return TvM3uGroupItem.create(this, id);
-			case TvM3uTrackItem.SCHEME:
-				return TvM3uTrackItem.create(this, id);
-			case TvM3uEpgItem.SCHEME:
-				return TvM3uEpgItem.create(this, id);
-			default:
-				return null;
-		}
+		return itemFactory.getItem(scheme, id);
 	}
 
 
@@ -108,12 +110,12 @@ public class TvRootItem extends ItemContainer<TvM3uItem> implements TvItem {
 
 	@Override
 	protected FutureSupplier<List<Item>> listChildren() {
-		int[] ids = getIntArrayPref(SOURCE_IDS);
+		int[] ids = sources.getSourceIds();
 		List<Integer> idList = new ArrayList<>(ids.length);
 		for (int i : ids) idList.add(i);
 		List<Item> children = new ArrayList<>(ids.length);
 		return forEach(id -> {
-			FutureSupplier<TvM3uItem> f = create(id);
+			FutureSupplier<? extends TvSourceItem> f = createSource(id);
 			if (f != null) return f.onSuccess(i -> {
 				if (i != null) children.add(i);
 			});
@@ -127,70 +129,67 @@ public class TvRootItem extends ItemContainer<TvM3uItem> implements TvItem {
 	}
 
 	@Override
-	protected void saveChildren(List<TvM3uItem> children) {
-		applyIntArrayPref(SOURCE_IDS, CollectionUtils.map(children,
-				(i, t, a) -> a[i] = toSourceId(t.getId()), int[]::new));
+	protected void saveChildren(List<TvSourceItem> children) {
+		sources.setSourceIds(CollectionUtils.map(children,
+				(i, t, a) -> a[i] = t.getSourceId(), int[]::new));
 	}
 
 	@Override
 	public boolean isChildItemId(String id) {
 		return id.startsWith(TvM3uTrackItem.SCHEME)
 				|| id.startsWith(TvM3uGroupItem.SCHEME)
-				|| id.startsWith(TvM3uItem.SCHEME);
+				|| id.startsWith(TvM3uEpgItem.SCHEME)
+				|| id.startsWith(TvM3uItem.SCHEME)
+				|| id.startsWith(XtreamTrackItem.SCHEME)
+				|| id.startsWith(XtreamEpgItem.SCHEME)
+				|| id.startsWith(XtreamCatchupFolder.SCHEME)
+				|| id.startsWith(XtreamWatchFromBeginningItem.SCHEME)
+				|| id.startsWith(XtreamMovieItem.SCHEME)
+				|| id.startsWith(XtreamEpisodeItem.SCHEME)
+				|| id.startsWith(XtreamSeasonItem.SCHEME)
+				|| id.startsWith(XtreamSeriesItem.SCHEME)
+				|| id.startsWith(XtreamSeriesCategoryItem.SCHEME)
+				|| id.startsWith(XtreamVodCategoryItem.SCHEME)
+				|| id.startsWith(XtreamCategoryItem.SCHEME)
+				|| id.startsWith(XtreamSectionItem.SCHEME)
+				|| id.startsWith(XtreamSourceItem.SCHEME);
 	}
 
 	public void addSource(TvM3uFile m3u) {
-		int counter = getIntPref(SOURCE_COUNTER) + 1;
-		Pref<Supplier<String>> id = Pref.s("M3UID#" + counter);
-
-		try (PreferenceStore.Edit e = editPreferenceStore()) {
-			e.setIntPref(SOURCE_COUNTER, counter);
-			e.setStringPref(id, TvM3uFileSystem.getInstance().toId(m3u.getRid()));
-		}
-
-		addItem(TvM3uItem.create(this, m3u, counter));
+		m3uSources.addSource(m3u);
 	}
 
 	@Override
-	protected void itemRemoved(TvM3uItem i) {
+	protected void itemRemoved(TvSourceItem i) {
 		super.itemRemoved(i);
-		TvM3uFileSystemProvider.removeSource(i.getResource());
-	}
-
-	private FutureSupplier<TvM3uItem> create(int srcId) {
-		if (!contains(getIntArrayPref(SOURCE_IDS), srcId)) return null;
-		String m3uId = getStringPref(Pref.s("M3UID#" + srcId));
-		if (m3uId == null) return null;
-		return TvM3uItem.create(this, srcId, m3uId).onFailure(err -> {
-			Log.e(err, "Failed to load source: ", m3uId);
-			if (err instanceof MalformedURLException) removeSource(srcId);
-		}).ifNull(() -> {
-			Log.e("Failed to load source: ", m3uId);
-			removeSource(srcId);
-			return null;
-		});
-	}
-
-	private void removeSource(int srcId) {
-		int[] ids = getIntArrayPref(SOURCE_IDS);
-		if (ids.length == 0) return;
-
-		int[] newIds = new int[ids.length - 1];
-		boolean removed = false;
-
-		for (int i = 0, j = 0; i < ids.length; i++) {
-			if (ids[i] == srcId) removed = true;
-			else if (j < newIds.length) newIds[j++] = ids[i];
-			else return;
-		}
-
-		if (removed) {
-			Log.i("Removing source: ", srcId);
-			applyIntArrayPref(SOURCE_IDS, newIds);
+		if (i instanceof TvM3uItem) {
+			m3uSources.sourceRemoved((TvM3uItem) i);
+		} else if (i instanceof XtreamSourceItem) {
+			xtreamSources.sourceRemoved((XtreamSourceItem) i);
 		}
 	}
 
-	private int toSourceId(String id) {
-		return Integer.parseInt(id.substring(6));
+	public void addSource(XtreamAccount account) {
+		xtreamSources.addSource(account);
+	}
+
+	public void updateSource(XtreamAccount account) {
+		xtreamSources.updateSource(account);
+	}
+
+	FutureSupplier<? extends TvSourceItem> createSource(int srcId) {
+		if (!sources.hasSource(srcId)) return null;
+		if (TvSourceItem.TYPE_XTREAM.equals(sources.getSourceType(srcId))) {
+			return xtreamSources.create(srcId);
+		}
+		return m3uSources.create(srcId);
+	}
+
+	static String getSourceType(PreferenceStore ps, int sourceId) {
+		return TvSourceRepository.getSourceType(ps, sourceId);
+	}
+
+	static Pref<Supplier<String>> sourceTypePref(int sourceId) {
+		return TvSourceRepository.sourceTypePref(sourceId);
 	}
 }

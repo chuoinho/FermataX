@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">ポッドキャストを追加</string>
+    <string name="podcast_search">ポッドキャストを検索</string>
+    <string name="podcast_add_rss">RSSフィードを追加</string>
+    <string name="podcast_import_opml">OPMLをインポート</string>
+    <string name="podcast_subscribe">購読</string>
+    <string name="podcast_export_opml">OPMLをエクスポート</string>
+    <string name="podcast_export_failed">ポッドキャストをエクスポートできませんでした</string>
+    <string name="podcast_export_private_title">非公開ポッドキャストのリンク</string>
+    <string name="podcast_export_private_message">トークンを含む非公開フィードURLをこのOPMLファイルに含めますか？</string>
+    <string name="podcast_export_public_only">公開のみ</string>
+    <string name="podcast_export_include_private">非公開を含める</string>
+    <string name="podcast_feed_url">フィードURL</string>
+    <string name="podcast_add_failed">このポッドキャストを追加できませんでした</string>
+    <string name="podcast_import_failed">このOPMLファイルをインポートできませんでした</string>
+    <string name="podcast_import_result">%1$d件をインポート、%2$d件失敗</string>
+    <string name="podcast_edit_rss">RSSフィードを編集</string>
+    <string name="podcast_delete_title">ポッドキャストを削除</string>
+    <string name="podcast_delete_message">%1$sとダウンロード済みのエピソードを削除しますか？</string>
+    <string name="podcast_continue">続きを聴く</string>
+    <string name="podcast_new_episodes">新着エピソード</string>
+    <string name="podcast_subscriptions">購読中</string>
+    <string name="podcast_mark_played">再生済みにする</string>
+    <string name="podcast_mark_unplayed">未再生にする</string>
+    <string name="podcast_download">エピソードをダウンロード</string>
+    <string name="podcast_delete_download">ダウンロードを削除</string>
+</resources>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">Dodaj podcast</string>
+    <string name="podcast_search">Pretraži podcaste</string>
+    <string name="podcast_add_rss">Dodaj RSS izvor</string>
+    <string name="podcast_import_opml">Uvezi OPML</string>
+    <string name="podcast_subscribe">Pretplati se</string>
+    <string name="podcast_export_opml">Izvezi OPML</string>
+    <string name="podcast_export_failed">Podcaste nije moguće izvesti</string>
+    <string name="podcast_export_private_title">Privatne poveznice podcasta</string>
+    <string name="podcast_export_private_message">Uključiti privatne URL-ove izvora s tokenom u ovu OPML datoteku?</string>
+    <string name="podcast_export_public_only">Samo javni</string>
+    <string name="podcast_export_include_private">Uključi privatne</string>
+    <string name="podcast_feed_url">URL izvora</string>
+    <string name="podcast_add_failed">Ovaj podcast nije moguće dodati</string>
+    <string name="podcast_import_failed">Ovu OPML datoteku nije moguće uvesti</string>
+    <string name="podcast_import_result">Uvezeno podcasta: %1$d; neuspješno: %2$d</string>
+    <string name="podcast_edit_rss">Uredi RSS izvor</string>
+    <string name="podcast_delete_title">Ukloni podcast</string>
+    <string name="podcast_delete_message">Ukloniti %1$s i preuzete epizode?</string>
+    <string name="podcast_continue">Nastavi slušati</string>
+    <string name="podcast_new_episodes">Nove epizode</string>
+    <string name="podcast_subscriptions">Pretplate</string>
+    <string name="podcast_mark_played">Označi kao poslušano</string>
+    <string name="podcast_mark_unplayed">Označi kao neposlušano</string>
+    <string name="podcast_download">Preuzmi epizodu</string>
+    <string name="podcast_delete_download">Izbriši preuzimanje</string>
+</resources>

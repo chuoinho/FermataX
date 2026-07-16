@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">Add podcast</string>
+    <string name="podcast_search">Search podcasts</string>
+    <string name="podcast_add_rss">Add RSS feed</string>
+    <string name="podcast_import_opml">Import OPML</string>
+	<string name="podcast_export_opml">Export OPML</string>
+	<string name="podcast_export_failed">Could not export podcasts</string>
+	<string name="podcast_export_private_title">Private podcast links</string>
+	<string name="podcast_export_private_message">Include private token feed URLs in this OPML file?</string>
+	<string name="podcast_export_public_only">Public only</string>
+	<string name="podcast_export_include_private">Include private</string>
+	<string name="podcast_feed_url">Feed URL</string>
+    <string name="podcast_subscribe">Subscribe</string>
+	<string name="podcast_add_failed">Could not add this podcast</string>
+	<string name="podcast_import_failed">Could not import this OPML file</string>
+	<string name="podcast_import_result">Imported %1$d podcasts; %2$d failed</string>
+	<string name="podcast_edit_rss">Edit RSS feed</string>
+	<string name="podcast_delete_title">Remove podcast</string>
+	<string name="podcast_delete_message">Remove %1$s and its downloaded episodes?</string>
+	<string name="podcast_continue">Continue listening</string>
+	<string name="podcast_new_episodes">New episodes</string>
+	<string name="podcast_subscriptions">Subscriptions</string>
+	<string name="podcast_mark_played">Mark played</string>
+	<string name="podcast_mark_unplayed">Mark unplayed</string>
+	<string name="podcast_download">Download episode</string>
+	<string name="podcast_delete_download">Delete download</string>
+</resources>

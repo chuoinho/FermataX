@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import static android.os.SystemClock.uptimeMillis;
 import static android.view.MotionEvent.ACTION_DOWN;
@@ -71,6 +71,7 @@ public class MirrorServiceFS extends CarAppService {
 	}
 
 	private final class MirrorScreen extends Screen implements SurfaceCallback {
+		private static final long SCROLL_UP_DELAY_MS = 120L;
 		private final HandlerExecutor handler = FermataApplication.get().getHandler();
 		private float scrollStartX;
 		private float scrollStartY;
@@ -120,7 +121,7 @@ public class MirrorServiceFS extends CarAppService {
 				scrollY = scrollStartY;
 				if (!md.motionEvent(time, time, ACTION_DOWN, scrollX, scrollY)) return;
 				scrollDownTime = time;
-				scheduleScrollUp(500);
+				scheduleScrollUp(SCROLL_UP_DELAY_MS);
 			}
 			scrollX -= distanceX;
 			scrollY -= distanceY;
@@ -131,7 +132,7 @@ public class MirrorServiceFS extends CarAppService {
 			scrollUp = handler.schedule(() -> {
 				if (scrollUp == null) return;
 				var time = uptimeMillis();
-				var end = scrollMoveTime + delay;
+				var end = scrollMoveTime + SCROLL_UP_DELAY_MS;
 				if (end > time) {
 					scheduleScrollUp(end - time);
 				} else {

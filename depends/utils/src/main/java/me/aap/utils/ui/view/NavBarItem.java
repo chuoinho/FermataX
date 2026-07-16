@@ -24,7 +24,6 @@ public interface NavBarItem {
 
 	static NavBarItem create(Context ctx, @IdRes int id, @DrawableRes int icon, @StringRes int text, boolean pinned) {
 		Drawable i = AppCompatResources.getDrawable(ctx, icon);
-		CharSequence t = ctx.getString(text);
 		return new NavBarItem() {
 			@Override
 			public int getId() {
@@ -38,7 +37,7 @@ public interface NavBarItem {
 
 			@Override
 			public CharSequence getText() {
-				return t;
+				return ctx.getString(text);
 			}
 
 			@Override

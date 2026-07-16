@@ -3,7 +3,7 @@
 
     <dist:module
         dist:instant="false"
-        dist:title="@string/module_name_web"
+        dist:title="@string/module_name_tv"
         tools:node="replace">
         <dist:delivery>
             <dist:install-time />

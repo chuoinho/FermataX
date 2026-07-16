@@ -35,6 +35,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 
 	@Override
 	public boolean getMediaMetadata(MetadataBuilder meta, PlayableItem item) {
+		if (item.isLocationSensitive()) return false;
 		MediaMetadataRetriever mmr = null;
 
 		try {
@@ -93,7 +94,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 
 			return true;
 		} catch (Throwable ex) {
-			Log.d(ex, "Failed to retrieve media metadata of ", item.getLocation());
+			Log.d(ex, "Failed to retrieve media metadata of ", item.getId());
 			return false;
 		} finally {
 			if (mmr != null) {
@@ -108,6 +109,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 
 	public boolean getDuration(MetadataBuilder meta, PlayableItem item) {
 		if (meta.getDuration() != 0) return true;
+		if (item.isLocationSensitive()) return false;
 
 		MediaPlayer mp = null;
 		try {
@@ -116,7 +118,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 			meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
 			return true;
 		} catch (Throwable ex2) {
-			Log.d(ex2, "Failed to retrieve duration of ", item.getLocation());
+			Log.d(ex2, "Failed to retrieve duration of ", item.getId());
 			return false;
 		} finally {
 			if (mp != null) mp.release();

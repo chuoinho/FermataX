@@ -13,10 +13,18 @@ import android.content.res.Resources;
 
 import androidx.annotation.Nullable;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Objects;
+
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.R;
-import me.aap.fermata.addon.tv.TvItem;
 import me.aap.fermata.addon.tv.TvRootItem;
+import me.aap.fermata.addon.tv.TvSourceItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.M3uGroupItem;
 import me.aap.fermata.media.lib.M3uItem;
@@ -33,7 +41,7 @@ import me.aap.utils.vfs.VirtualResource;
 /**
  * @author Andrey Pavlenko
  */
-public class TvM3uItem extends M3uItem implements TvItem {
+public class TvM3uItem extends M3uItem implements TvSourceItem {
 	public static final String SCHEME = "tvm3u";
 	private String tvgUrl;
 	private final FutureRef<XmlTv> xmlTv = new FutureRef<XmlTv>() {
@@ -86,12 +94,23 @@ public class TvM3uItem extends M3uItem implements TvItem {
 
 		TvM3uFileSystem fs = TvM3uFileSystem.getInstance();
 		Rid rid = fs.toRid(m3uId);
+		prepareRemoteSource(fs.createM3uFile(rid));
 		return fs.getResource(rid).map(m3u -> (m3u != null) ? create(root, m3u, id) : null);
 	}
 
 	@Override
 	protected String getScheme() {
 		return SCHEME;
+	}
+
+	@Override
+	public int getSourceId() {
+		return Integer.parseInt(getId().substring(SCHEME.length() + 1));
+	}
+
+	@Override
+	public String getSourceType() {
+		return TYPE_M3U;
 	}
 
 	@Override
@@ -175,6 +194,13 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		return (TvM3uFile) super.getResource();
 	}
 
+	@Override
+	public FutureSupplier<Void> refresh() {
+		TvM3uFile file = getResource();
+		prepareRemoteSource(file);
+		return super.refresh();
+	}
+
 	public String getEpgUrl() {
 		String url = getResource().getEpgUrl();
 		return ((url != null) && !url.isEmpty()) ? url : tvgUrl;
@@ -186,5 +212,57 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		tvgUrl = url = url.trim();
 		TvM3uFile f = getResource();
 		if (f.getEpgUrl() == null) f.setEpgUrl(url);
+	}
+
+	private static void prepareRemoteSource(TvM3uFile file) {
+		String oldUrl = file.getUrl();
+		KnownProviders.configure(file.getPrefs());
+		boolean changed = !Objects.equals(oldUrl, file.getUrl());
+		boolean invalid = clearInvalidRemoteCache(file);
+		if (changed || invalid) file.clearStamps();
+	}
+
+	private static boolean clearInvalidRemoteCache(TvM3uFile file) {
+		if (!isRemote(file)) return false;
+		File cache = file.getLocalFile();
+		if (!cache.isFile()) return false;
+
+		try (InputStreamReader reader = new InputStreamReader(new FileInputStream(cache),
+				StandardCharsets.UTF_8)) {
+			char[] buf = new char[(int) Math.min(cache.length(), 4096)];
+			int len = reader.read(buf);
+			String sample = (len > 0) ? new String(buf, 0, len) : "";
+			if (!isInvalidPlaylistCache(sample, cache.length())) return false;
+		} catch (IOException ex) {
+			Log.e(ex, "Failed to inspect cached M3U file: ", cache);
+		}
+
+		if (!cache.delete()) Log.e("Failed to delete invalid M3U cache file ", cache);
+		return true;
+	}
+
+	private static boolean isInvalidPlaylistCache(String sample, long length) {
+		String text = sample.trim().toLowerCase(Locale.ROOT);
+		if (text.isEmpty()) return true;
+		if (text.startsWith("#extm3u") || text.contains("#extinf:")) return false;
+		if (text.startsWith("429:") || text.startsWith("403:") || text.startsWith("404:") ||
+				text.startsWith("500:") || text.startsWith("502:") || text.startsWith("503:") ||
+				text.startsWith("<!doctype") || text.startsWith("<html")) return true;
+		if (text.contains("too many requests") || text.contains("rate limit") ||
+				text.contains("access denied") || text.contains("not found")) return true;
+		return (length < 8192) && isPlainText(text);
+	}
+
+	private static boolean isPlainText(String text) {
+		for (int i = 0, len = text.length(); i < len; i++) {
+			char c = text.charAt(i);
+			if ((c < 0x20) && (c != '\n') && (c != '\r') && (c != '\t')) return false;
+		}
+		return true;
+	}
+
+	private static boolean isRemote(TvM3uFile file) {
+		String url = file.getUrl();
+		return (url != null) && !url.startsWith("/") && !url.startsWith("content://");
 	}
 }

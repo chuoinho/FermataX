@@ -7,14 +7,19 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_FOUND;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PAUSED;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PLAYING;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_READY;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_TOUCHED;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.webkit.CookieManager;
-
+import android.view.MotionEvent;
+import android.view.ViewConfiguration;
 import androidx.annotation.NonNull;
 
+import org.json.JSONTokener;
+
 import java.util.List;
+import java.util.Locale;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.web.FermataChromeClient;
@@ -40,7 +45,14 @@ public class YoutubeWebView extends FermataWebView {
 					"  }\n" +
 					"  window.__fermataQ = null;\n" +
 					"}\n";
+	private static final long MANUAL_FULLSCREEN_GESTURE_WINDOW_MS = 1000L;
 	private YoutubeJsInterface js;
+	private float videoTapX;
+	private float videoTapY;
+	private long videoTapTime;
+	private float playbackTapX;
+	private float playbackTapY;
+	private long playbackTapTime;
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -84,6 +96,14 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		handlePlaybackIntentTouch(event);
+		grantManualFullScreenEntry(event);
+		handleAutoVideoTouch(event);
+		return super.onTouchEvent(event);
+	}
+
+	@Override
 	public void goBack() {
 		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
 		if (cb.getEngine() instanceof YoutubeMediaEngine) cb.onStop();
@@ -91,11 +111,96 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	@Override
+	protected void onUserExitFullScreen() {
+		if (js != null) js.onUserExitFullScreen();
+	}
+
+	boolean exitPlaybackFullScreenForBack() {
+		MainActivityDelegate a = MainActivityDelegate.get(getContext());
+		FermataChromeClient chrome = getWebChromeClient();
+		boolean browserFullScreen = (chrome != null) && chrome.isFullScreen();
+
+		// Invalidate pending auto-entry before changing either asynchronous fullscreen state.
+		if ((js == null) || !js.onPlayerBack(a.isVideoMode(), browserFullScreen)) return false;
+
+		if (chrome != null) chrome.cancelPendingFullScreenEntry();
+		if (browserFullScreen) chrome.exitFullScreen();
+		else a.setVideoMode(false, null);
+		a.setBarsHidden(false);
+		return true;
+	}
+
+	boolean acceptsBrowserFullScreen(long request) {
+		return (js != null) && js.acceptsBrowserFullScreen(request);
+	}
+
+	private void grantManualFullScreenEntry(MotionEvent event) {
+		if ((js == null) || (event.getActionMasked() != MotionEvent.ACTION_UP)) return;
+		long permit = js.grantManualFullScreenEntry();
+		if (permit == YoutubeFullscreenGate.NO_REQUEST) return;
+		postDelayed(() -> {
+			if (js != null) js.expireManualFullScreenEntry(permit);
+		}, MANUAL_FULLSCREEN_GESTURE_WINDOW_MS);
+	}
+
+	private void handlePlaybackIntentTouch(MotionEvent event) {
+		if (!BuildConfig.AUTO || (js == null)) return;
+		switch (event.getActionMasked()) {
+			case MotionEvent.ACTION_DOWN -> {
+				playbackTapX = event.getX();
+				playbackTapY = event.getY();
+				playbackTapTime = event.getEventTime();
+			}
+			case MotionEvent.ACTION_UP -> {
+				if (playbackTapTime == 0L) return;
+				float dx = Math.abs(event.getX() - playbackTapX);
+				float dy = Math.abs(event.getY() - playbackTapY);
+				int slop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+				long elapsed = event.getEventTime() - playbackTapTime;
+				playbackTapTime = 0L;
+				if ((elapsed <= ViewConfiguration.getDoubleTapTimeout()) &&
+						(dx <= slop) && (dy <= slop)) {
+					js.onPlaybackGesture(event.getEventTime());
+				}
+			}
+			case MotionEvent.ACTION_CANCEL -> playbackTapTime = 0L;
+		}
+	}
+
+	private void handleAutoVideoTouch(MotionEvent event) {
+		if (!BuildConfig.AUTO) return;
+		MainActivityDelegate a = MainActivityDelegate.get(getContext());
+		if (!a.isVideoMode() || a.getBody().isBothMode()) return;
+		MediaSessionCallback cb = a.getMediaSessionCallback();
+		if (!(cb.getEngine() instanceof YoutubeMediaEngine)) return;
+
+		switch (event.getActionMasked()) {
+			case MotionEvent.ACTION_DOWN -> {
+				videoTapX = event.getX();
+				videoTapY = event.getY();
+				videoTapTime = event.getEventTime();
+			}
+			case MotionEvent.ACTION_UP -> {
+				if (videoTapTime == 0L) return;
+				float dx = Math.abs(event.getX() - videoTapX);
+				float dy = Math.abs(event.getY() - videoTapY);
+				int slop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+				long elapsed = event.getEventTime() - videoTapTime;
+				videoTapTime = 0L;
+				if ((elapsed <= ViewConfiguration.getDoubleTapTimeout()) && (dx <= slop) && (dy <= slop))
+					a.getControlPanel().onTouch(null);
+			}
+			case MotionEvent.ACTION_CANCEL -> videoTapTime = 0L;
+		}
+	}
+
+	@Override
 	protected void pageLoaded(String uri) {
+		getAddon().setLastYoutubeUrl(uri);
 		attachListeners();
 		injectSponsorBlock();
 		addFocusHighlight();
-		CookieManager.getInstance().flush();
+		flushCookiesSoon();
 	}
 
 	protected void submitForm() {
@@ -110,28 +215,81 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void attachListeners() {
-		String debug = BuildConfig.D ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
+		String debug = BuildConfig.D ? "event(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
-		loadUrl("javascript:\n" +
-				"function attachVideoListeners(v) {\n" +
-				"  if (v.getAttribute('FermataAttached') === 'true') return;\n" +
-				"  v.setAttribute('FermataAttached', 'true');\n" +
-				"  v.setAttribute('style', 'object-fit:" + scale + "');\n" + debug +
-				"  if ((v.currentTime > 0) && !v.paused && !v.ended) " + JS_EVENT + "(" + JS_VIDEO_PLAYING +
-				", v.currentSrc);\n" +
-				"  v.addEventListener('playing', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PLAYING +
-				", v.currentSrc);});\n" +
-				"  v.addEventListener('pause', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PAUSED +
-				", v.currentSrc);});\n" +
-				"  v.addEventListener('ended', function(e) {" + JS_EVENT + "(" + JS_VIDEO_ENDED +
-				", null);});\n" +
-				"}\n" +
-				"function findVideo() {\n" +
-				"  var video = document.querySelectorAll('video');" +
-				"  video.forEach(attachVideoListeners);\n" +
-				"   setTimeout(findVideo, 1000);\n" +
-				"}\n" +
-				"findVideo();");
+		evaluateJavascript(String.format(Locale.ROOT, """
+				(function() {
+				  const scale = '%s';
+				  const state = window.__fermataVideoState || (window.__fermataVideoState = {});
+				  if (state.observer) state.observer.disconnect();
+				  if (state.urlTimer) clearInterval(state.urlTimer);
+				  state.lastUrl = location.href;
+				  function event(code, data) {
+				    try { %s(code, data); } catch (err) {}
+				  }
+				  function isVideoPage() {
+				    return location.pathname === '/watch' || location.pathname.startsWith('/shorts/');
+				  }
+				  function videoUrl(v) {
+				    return (v && (v.currentSrc || v.src)) || location.href || '';
+				  }
+				  function notifyState(v) {
+				    if (!v) return;
+				    v.style.objectFit = scale;
+				    if (!isVideoPage()) return;
+				    if (!v.paused && !v.ended) event(%d, videoUrl(v));
+				    else event(%d, videoUrl(v));
+				  }
+				  function attachVideoListeners(v) {
+				    if (!v || v.__fermataAttached) {
+				      notifyState(v);
+				      return;
+				    }
+				    v.__fermataAttached = true;
+				    v.style.objectFit = scale;
+				    %s
+				    notifyState(v);
+				    v.addEventListener('playing', function() { event(%d, videoUrl(v)); });
+				    v.addEventListener('pause', function() { event(%d, videoUrl(v)); });
+				    v.addEventListener('ended', function() { event(%d, null); });
+				    v.addEventListener('click', function() { event(%d, null); }, true);
+				    v.addEventListener('touchend', function() { event(%d, null); }, true);
+				  }
+				  function scan(root) {
+				    if (!root) return;
+				    if (root.tagName === 'VIDEO') attachVideoListeners(root);
+				    if (root.querySelectorAll) root.querySelectorAll('video').forEach(attachVideoListeners);
+				  }
+				  function scanDocument() { scan(document); }
+				  scan(document);
+				  state.observer = new MutationObserver(function(records) {
+				    records.forEach(function(record) {
+				      record.addedNodes.forEach(scan);
+				    });
+				  });
+				  if (document.documentElement) {
+				    state.observer.observe(document.documentElement, { childList: true, subtree: true });
+				  }
+				  state.urlTimer = setInterval(function() {
+				    if (state.lastUrl !== location.href) {
+				      state.lastUrl = location.href;
+				      setTimeout(scanDocument, 250);
+				    }
+				  }, 500);
+				})();""", scale, JS_EVENT, JS_VIDEO_PLAYING, JS_VIDEO_READY, debug, JS_VIDEO_PLAYING,
+				JS_VIDEO_PAUSED, JS_VIDEO_ENDED, JS_VIDEO_TOUCHED, JS_VIDEO_TOUCHED), null);
+	}
+
+	void syncPlaybackState() {
+		evaluateJavascript(String.format(Locale.ROOT, """
+				(function() {
+				  var v = document.querySelector('video');
+				  if (!v) return;
+				  if ((location.pathname !== '/watch') && !location.pathname.startsWith('/shorts/')) return;
+				  var url = v.currentSrc || v.src || location.href || '';
+				  if (!v.paused && !v.ended) %s(%d, url);
+				  else %s(%d, url);
+				})();""", JS_EVENT, JS_VIDEO_PLAYING, JS_EVENT, JS_VIDEO_READY), null);
 	}
 
 	private void injectSponsorBlock() {
@@ -146,11 +304,50 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	protected boolean requestFullScreen() {
-		loadUrl("javascript: var v = document.querySelector('video');\n" +
-				"if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
-				"else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
-				"else " + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen not found in ' + v);");
+		evaluateJavascript("var v = document.querySelector('video');\n" +
+				"if (v && ('webkitRequestFullscreen' in v)) v.webkitRequestFullscreen();\n" +
+				"else if (v && ('requestFullscreen' in v)) v.requestFullscreen();\n" +
+				"else " + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen not found in ' + v);", null);
 		return true;
+	}
+
+	void setImmersiveVideoMode(boolean enabled) {
+		evaluateJavascript(String.format(Locale.ROOT, """
+				(function(enabled) {
+				  const id = 'fermata-yt-immersive-style';
+				  let style = document.getElementById(id);
+				  if (enabled) {
+				    if (!style) {
+				      style = document.createElement('style');
+				      style.id = id;
+				      style.textContent = `
+				        html.fermata-yt-immersive,
+				        html.fermata-yt-immersive body {
+				          background: #000 !important;
+				          overflow: hidden !important;
+				        }
+				        html.fermata-yt-immersive body *:not(video) {
+				          visibility: hidden !important;
+				        }
+				        html.fermata-yt-immersive video {
+				          visibility: visible !important;
+				          position: fixed !important;
+				          inset: 0 !important;
+				          width: 100vw !important;
+				          height: 100vh !important;
+				          max-width: none !important;
+				          max-height: none !important;
+				          object-fit: contain !important;
+				          background: #000 !important;
+				          z-index: 2147483647 !important;
+				        }`;
+				      document.documentElement.appendChild(style);
+				    }
+				    document.documentElement.classList.add('fermata-yt-immersive');
+				  } else {
+				    document.documentElement.classList.remove('fermata-yt-immersive');
+				  }
+				})(%s);""", enabled ? "true" : "false"), null);
 	}
 
 	void play() {
@@ -177,14 +374,13 @@ public class YoutubeWebView extends FermataWebView {
 	private void prevNext(boolean next) {
 		FermataChromeClient chrome = getWebChromeClient();
 		if (chrome == null) return;
-		chrome.exitFullScreen().thenRun(() -> evaluateJavascript("""
+		chrome.exitFullScreen().thenRun(() -> evaluateJavascript(String.format(Locale.ROOT, """
 				function prevNextVideo() {
 				  const buttons = document.querySelectorAll('button.player-middle-controls-prev-next-button');
-				  console.log('Prev/Next buttons:', buttons);
 				  if (buttons) buttons[%d].click();
 				}
 				setTimeout(prevNextVideo, 600);
-				""".formatted(next ? 1 : 0), null));
+				""", next ? 1 : 0), null));
 	}
 
 	FutureSupplier<Long> getDuration() {
@@ -355,15 +551,25 @@ public class YoutubeWebView extends FermataWebView {
 
 	FutureSupplier<String> getVideoTitle() {
 		Promise<String> p = new Promise<>();
-		evaluateJavascript("document.title", p::complete);
+		evaluateJavascript("document.title", value -> p.complete(decodeJavascriptString(value)));
 		return p;
+	}
+
+	private static String decodeJavascriptString(String value) {
+		if ((value == null) || value.equals("null")) return "";
+		try {
+			Object decoded = new JSONTokener(value).nextValue();
+			return (decoded instanceof String) ? (String) decoded : value;
+		} catch (Exception ex) {
+			return value;
+		}
 	}
 
 	void setScale(YoutubeAddon.VideoScale scale) {
 		getAddon().setScale(scale);
 		String p = scale.prefName();
-		loadUrl("javascript:" +
+		evaluateJavascript(
 				"document.querySelectorAll('video')" +
-				".forEach(v=> v.setAttribute('style', 'object-fit:" + p + "'));");
+				".forEach(v => v.style.objectFit = '" + p + "');", null);
 	}
 }

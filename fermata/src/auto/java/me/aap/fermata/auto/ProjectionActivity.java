@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
@@ -6,13 +6,20 @@ import static android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.provider.Settings;
+
+import androidx.core.app.NotificationCompat;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -24,6 +31,8 @@ import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.activity.AppActivity;
 
 public class ProjectionActivity extends ActivityBase {
+	private static final int REQUEST_TIMEOUT_MS = 5000;
+	private static final int NOTIFICATION_ID = 3;
 	private static Promise<Intent> promise;
 	private static boolean starting;
 
@@ -40,8 +49,15 @@ public class ProjectionActivity extends ActivityBase {
 			var intent = new Intent(app, ProjectionActivity.class);
 			intent.setFlags(FLAG_ACTIVITY_NEW_TASK);
 			app.startActivity(intent);
+			app.getHandler().schedule(() -> {
+				if ((promise != p) || p.isDone() || starting) return;
+				Log.e("ProjectionActivity did not start. Prompting from notification.");
+				showPermissionNotification(app);
+				p.completeExceptionally(new IllegalStateException("Projection permission screen did not open"));
+			}, REQUEST_TIMEOUT_MS);
 		} catch (Exception err) {
 			Log.e(err, "Failed to start ProjectionActivity");
+			showPermissionNotification(FermataApplication.get());
 			p.completeExceptionally(err);
 		}
 		return p;
@@ -56,6 +72,7 @@ public class ProjectionActivity extends ActivityBase {
 	@Override
 	protected void onStart() {
 		super.onStart();
+		cancelPermissionNotification(this);
 		if (starting) return;
 		var p = promise;
 		if (p == null) {
@@ -142,6 +159,44 @@ public class ProjectionActivity extends ActivityBase {
 				getString(R.string.media_projection_action_text));
 		var mm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
 		return startActivityForResult(mm::createScreenCaptureIntent);
+	}
+
+	private static void showPermissionNotification(Context ctx) {
+		try {
+			var nmgr = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+			if (nmgr == null) return;
+			var chid = "FermataProjectionPermission";
+			if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				nmgr.createNotificationChannel(new NotificationChannel(chid,
+						ctx.getString(R.string.app_name), NotificationManager.IMPORTANCE_HIGH));
+			}
+			var intent = new Intent(ctx, ProjectionActivity.class);
+			intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
+			var flags = PendingIntent.FLAG_UPDATE_CURRENT |
+					(VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
+			var pending = PendingIntent.getActivity(ctx, 0, intent, flags);
+			var notif = new NotificationCompat.Builder(ctx, chid)
+					.setSmallIcon(R.drawable.notification)
+					.setContentTitle(ctx.getString(R.string.app_name))
+					.setContentText(ctx.getString(R.string.unlock_phone_and_grant))
+					.setContentIntent(pending)
+					.setAutoCancel(true)
+					.setPriority(NotificationCompat.PRIORITY_HIGH)
+					.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+					.build();
+			nmgr.notify(NOTIFICATION_ID, notif);
+		} catch (Exception err) {
+			Log.e(err, "Failed to show projection permission notification");
+		}
+	}
+
+	private static void cancelPermissionNotification(Context ctx) {
+		try {
+			var nmgr = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+			if (nmgr != null) nmgr.cancel(NOTIFICATION_ID);
+		} catch (Exception err) {
+			Log.d(err, "Failed to cancel projection permission notification");
+		}
 	}
 
 	@Override

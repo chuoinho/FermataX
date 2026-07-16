@@ -1,11 +1,11 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import static android.os.SystemClock.uptimeMillis;
 import static android.view.MotionEvent.ACTION_DOWN;
 import static android.view.MotionEvent.ACTION_MOVE;
 import static android.view.MotionEvent.ACTION_UP;
 import static android.view.MotionEvent.obtain;
-import static me.aap.fermata.auto.AccessibilityEventDispatcherService.getWindowCount;
+import static me.app.fermatax.auto.AccessibilityEventDispatcherService.getWindowCount;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 

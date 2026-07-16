@@ -31,9 +31,12 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 public class ChatAddon implements FermataFragmentAddon {
 	private static final AddonInfo info = FermataAddon.findAddonInfo(ChatAddon.class.getName());
 	private static final Pref<Supplier<String>> OPENAI_KEY = Pref.s("OPENAI_KEY", "");
+	private static final int DEFAULT_MODEL = 0;
+	private static final int CURRENT_MODEL_LIST_VERSION = 1;
 	private static final String[] MODELS =
-			new String[]{"gpt-4o", "chatgpt-4o-latest", "gpt-4o-mini", "o1", "o1-mini", "o1-preview"};
-	private static final Pref<IntSupplier> MODEL = Pref.i("MODEL", 2);
+			new String[]{"gpt-5.4-mini", "gpt-5.5", "gpt-5.4", "gpt-5.4-nano", "gpt-5.3-chat-latest"};
+	private static final Pref<IntSupplier> MODEL = Pref.i("MODEL", DEFAULT_MODEL);
+	private static final Pref<IntSupplier> MODEL_LIST_VERSION = Pref.i("MODEL_LIST_VERSION", 0);
 	private static final Pref<Supplier<String>> MODEL_OTHER = Pref.s("MODEL_OTHER", "");
 	private static final Pref<Supplier<String>> CHAT_LANG =
 			Pref.s("CHAT_LANG", () -> Locale.getDefault().toLanguageTag());
@@ -61,11 +64,12 @@ public class ChatAddon implements FermataFragmentAddon {
 
 	public String getModel() {
 		var ps = FermataApplication.get().getPreferenceStore();
+		migrateModelPreference(ps);
 		var other = ps.getStringPref(MODEL_OTHER).trim();
 		if (!other.isEmpty()) return other;
 		int i = ps.getIntPref(MODEL);
 		return (i >= 0) && (i < MODELS.length) ? MODELS[i] :
-				MODELS[MODEL.getDefaultValue().getAsInt()];
+				MODELS[DEFAULT_MODEL];
 	}
 
 	public String getGetChatLang() {
@@ -75,6 +79,7 @@ public class ChatAddon implements FermataFragmentAddon {
 	@Override
 	public void contributeSettings(Context ctx, PreferenceStore store, PreferenceSet set,
 																 ChangeableCondition visibility) {
+		migrateModelPreference(store);
 		set.addStringPref(o -> {
 			String keyUrl = "https://platform.openai.com/api-keys";
 			String sub = App.get().getString(R.string.openai_key_sub, keyUrl);
@@ -96,7 +101,7 @@ public class ChatAddon implements FermataFragmentAddon {
 			o.store = store;
 			o.pref = MODEL_OTHER;
 			o.title = R.string.openai_model_other;
-			o.stringHint = "gpt-4-turbo";
+			o.stringHint = "gpt-5.5";
 		});
 		set.addTtsLocalePref(o -> {
 			o.store = store;
@@ -105,5 +110,11 @@ public class ChatAddon implements FermataFragmentAddon {
 			o.subtitle = me.aap.fermata.R.string.string_format;
 			o.formatSubtitle = true;
 		});
+	}
+
+	private void migrateModelPreference(PreferenceStore store) {
+		if (store.getIntPref(MODEL_LIST_VERSION) >= CURRENT_MODEL_LIST_VERSION) return;
+		if (store.hasPref(MODEL, false)) store.applyIntPref(MODEL, DEFAULT_MODEL);
+		store.applyIntPref(false, MODEL_LIST_VERSION, CURRENT_MODEL_LIST_VERSION);
 	}
 }

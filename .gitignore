@@ -6,7 +6,17 @@
 .classpath
 build/
 dist/
+artifacts/
 .cxx/
+*.apk
+*.aab
+aa-menu*.xml
+aa-settings.xml
+window_views_dump/
+window_views_raw/
+.agents/
+.codex/
+.codex-adb/
 *.iml
 local.properties
 google-services.json

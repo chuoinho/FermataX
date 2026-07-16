@@ -125,7 +125,7 @@ public class HttpFileDownloader {
 				var path = o.url.getPath();
 				if ((path != null) && (path.endsWith(".gzip") || path.endsWith(".gz"))) enc = "gzip";
 			}
-			var status = new DownloadStatus(src, dst, resp.getContentLength());
+			var status = new DownloadStatus(o.url, dst, resp.getContentLength());
 			status.setEtag(resp.getEtag());
 			status.setCharset(resp.getCharset());
 			status.setEncoding(enc);
@@ -136,6 +136,14 @@ public class HttpFileDownloader {
 				if (listener != null) listener.onSuccess(status);
 				p.complete(status);
 				return completedVoid();
+			}
+
+			int statusCode = resp.getStatusCode();
+			if ((statusCode < HttpStatusCode.OK) || (statusCode >= 300)) {
+				completeExceptionally(p,
+						new HttpException("HTTP " + statusCode + " while downloading " + o.url),
+						status, listener);
+				return resp.skipPayload();
 			}
 
 			File tmp = null;

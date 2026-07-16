@@ -3,6 +3,7 @@ package me.aap.utils.ui;
 import static android.content.Context.CLIPBOARD_SERVICE;
 import static android.graphics.Bitmap.Config.ARGB_8888;
 import static android.os.Build.VERSION.SDK_INT;
+import static android.text.InputType.TYPE_CLASS_TEXT;
 import static android.view.KeyEvent.KEYCODE_DPAD_DOWN;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
@@ -172,9 +173,13 @@ public class UiUtils {
 	}
 
 	public static FutureSupplier<String> queryText(Context ctx, @StringRes int title,
-																								 @DrawableRes int icon, CharSequence initText) {
-		Promise<String> p = new Promise<>();
+																	 @DrawableRes int icon, CharSequence initText) {
 		ActivityDelegate a = ActivityDelegate.get(ctx);
+		FutureSupplier<String> direct = a.getAppActivity().requestTextInput(
+				ctx.getText(title), initText, TYPE_CLASS_TEXT);
+		if (direct != null) return direct;
+
+		Promise<String> p = new Promise<>();
 		EditText text = a.createEditText(ctx);
 		text.setSingleLine();
 		text.setText(initText);

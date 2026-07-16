@@ -1,11 +1,11 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
 import static android.os.SystemClock.uptimeMillis;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
-import static me.aap.fermata.auto.MirrorDisplay.disableAccelRotation;
+import static me.app.fermatax.auto.MirrorDisplay.disableAccelRotation;
 import static me.aap.utils.ui.UiUtils.toPx;
 
 import android.annotation.SuppressLint;
@@ -33,6 +33,7 @@ import com.google.android.apps.auto.sdk.CarActivity;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.concurrent.ReschedulableTask;
 
@@ -115,6 +116,11 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 	}
 
 	static void onBackButtonClick() {
+		if (dispatchActiveActivityBack()) {
+			disableAccelRotation();
+			return;
+		}
+
 		var d = EventDispatcher.get();
 		if (!d.back()) {
 			var vm = (WindowManager) FermataApplication.get().getSystemService(WINDOW_SERVICE);
@@ -130,6 +136,22 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			d.motionEvent(time, time + 50, MotionEvent.ACTION_UP, size.x * 0.5f, y);
 		}
 		disableAccelRotation();
+	}
+
+	private static boolean dispatchActiveActivityBack() {
+		var a = MainActivity.getActiveInstance();
+		if (a != null) {
+			a.getActivityDelegate().onSuccess(MainActivityDelegate::onBackPressed);
+			return true;
+		}
+
+		var launcher = LauncherActivity.getActiveInstance();
+		if (launcher != null) {
+			launcher.getOnBackPressedDispatcher().onBackPressed();
+			return true;
+		}
+
+		return false;
 	}
 
 	private static void startLauncher() {

@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import static android.view.KeyEvent.KEYCODE_BACK;
 import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
@@ -31,6 +31,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.inputmethod.EditorInfo;
 import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.TextView.OnEditorActionListener;
@@ -47,30 +48,48 @@ import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
+import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.function.Cancellable;
+import me.aap.utils.function.Function;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
+import me.aap.utils.ui.view.TextChangedListener;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MainCarActivity extends CarActivity implements FermataActivity {
-	static FermataMediaServiceConnection service;
+	private static final DirectAppStartupCoordinator<FermataMediaServiceConnection> STARTUP =
+			new DirectAppStartupCoordinator<>(FermataMediaServiceConnection::isConnected,
+					FermataMediaServiceConnection::disconnect);
 	@SuppressWarnings("unchecked")
 	@NonNull
 	private FutureSupplier<MainActivityDelegate> delegate =
 			(FutureSupplier<MainActivityDelegate>) NO_DELEGATE;
 	private CarEditText editText;
+	private EditText activeInput;
 	private TextWatcher textWatcher;
+	private CarKeyboardOverlay keyboardOverlay;
+	private CarTextInputSession textInputSession;
+	private Promise<MainActivityDelegate> delegatePromise;
+	private MainActivityDelegate createdDelegate;
+	private Function<Context, ActivityDelegate> contextDelegate;
+	private long startupGeneration;
+	private boolean resumed;
+	private boolean delegateResumed;
+	private boolean destroyed;
+	private boolean finishRequested;
 
 	@NonNull
 	@Override
@@ -88,17 +107,14 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		MainActivityDelegate.setTheme(this, true);
 		super.onCreate(savedInstanceState);
 		initCarActivity(this);
-		FermataMediaServiceConnection s = service;
-
-		if ((s != null) && s.isConnected()) {
-			onCreate(savedInstanceState, s);
-		} else {
-			delegate = FermataMediaServiceConnection.connect(this).main()
-					.onFailure(err -> showAlert(getContext(), String.valueOf(err))).map(c -> {
-						service = c;
-						return onCreate(savedInstanceState, c);
-					});
-		}
+		int notifColor = FermataMediaServiceConnection.resolveNotificationColor(this);
+		DirectAppStartupCoordinator.Startup<FermataMediaServiceConnection> startup =
+				STARTUP.begin(() -> FermataMediaServiceConnection.connect(notifColor));
+		startupGeneration = startup.getGeneration();
+		Promise<MainActivityDelegate> promise = delegatePromise = new Promise<>();
+		delegate = promise;
+		startup.getConnection().main().onCompletion((connection, failure) ->
+				completeStartup(savedInstanceState, startupGeneration, promise, connection, failure));
 	}
 
 	static void initCarActivity(CarActivity a) {
@@ -108,27 +124,108 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		ctrl.getMenuController().hideMenuButton();
 	}
 
-	private MainActivityDelegate onCreate(Bundle state, FermataMediaServiceConnection s) {
-		MainActivityDelegate d = new MainActivityDelegate(this, s.createBinder());
-		ActivityDelegate.setContextToDelegate(ctx -> d);
-		delegate = completed(d);
-		d.onActivityCreate(state);
-		return d;
+	private void completeStartup(Bundle state, long generation, Promise<MainActivityDelegate> promise,
+			FermataMediaServiceConnection connection, Throwable failure) {
+		if (failure != null) {
+			STARTUP.uiFailed(generation);
+			if (!destroyed && STARTUP.isCurrent(generation)) {
+				showAlert(getContext(), String.valueOf(failure));
+			}
+			promise.completeExceptionally(failure);
+			return;
+		}
+		if (destroyed || !STARTUP.beginUi(generation, connection)) {
+			promise.cancel();
+			return;
+		}
+
+		MainActivityDelegate d = null;
+		try {
+			MainActivityDelegate created =
+					new MainActivityDelegate(this, connection.createBinder());
+			d = created;
+			createdDelegate = created;
+			contextDelegate = ctx -> created;
+			ActivityDelegate.setContextToDelegate(contextDelegate);
+			// Views can synchronously resolve the delegate while onActivityCreate inflates the layout.
+			delegate = completed(created);
+			created.onActivityCreate(state);
+			if (resumed) resumeDelegate(created);
+			if (finishRequested) created.onActivityFinish();
+			STARTUP.uiReady(generation);
+			promise.complete(created);
+		} catch (Throwable error) {
+			Log.e(error, "Direct AA startup failed while attaching UI");
+			if (d != null) {
+				try {
+					d.onActivityDestroy();
+				} catch (Throwable cleanupError) {
+					Log.e(cleanupError, "Failed to clean up incomplete AA startup");
+				}
+			}
+			createdDelegate = null;
+			delegateResumed = false;
+			clearOwnedContextDelegate();
+			delegate = (FutureSupplier<MainActivityDelegate>) NO_DELEGATE;
+			STARTUP.uiFailed(generation);
+			promise.completeExceptionally(error);
+			if (!destroyed && STARTUP.isCurrent(generation)) {
+				showAlert(getContext(), String.valueOf(error));
+			}
+		}
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		getActivityDelegate().onSuccess(MainActivityDelegate::onActivityResume);
+		resumed = true;
+		MainActivityDelegate d = createdDelegate;
+		if (d != null) resumeDelegate(d);
+	}
+
+	@Override
+	public void onPause() {
+		super.onPause();
+		resumed = false;
+		MainActivityDelegate d = createdDelegate;
+		if ((d == null) || !delegateResumed) return;
+		delegateResumed = false;
+		d.onActivityPause();
+		MediaSessionCallback callback = d.getMediaSessionCallback();
+		PlayableItem item = callback.getCurrentItem();
+		if ((item != null) && item.isVideo() && callback.isPlaying()) callback.onPause();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public void onDestroy() {
+		stopInput();
+		destroyed = true;
 		super.onDestroy();
-		getActivityDelegate().onSuccess(MainActivityDelegate::onActivityDestroy)
-				.thenRun(() -> ActivityDelegate.setContextToDelegate(null));
+		MainActivityDelegate d = createdDelegate;
+		createdDelegate = null;
+		delegateResumed = false;
+		if (d != null) d.onActivityDestroy();
+		STARTUP.activityDestroyed(startupGeneration);
+		clearOwnedContextDelegate();
+		Promise<MainActivityDelegate> promise = delegatePromise;
+		delegatePromise = null;
+		if ((promise != null) && !promise.isDone()) promise.cancel();
 		delegate = (FutureSupplier<MainActivityDelegate>) NO_DELEGATE;
+	}
+
+	private void resumeDelegate(MainActivityDelegate d) {
+		if (delegateResumed) return;
+		delegateResumed = true;
+		d.onActivityResume();
+	}
+
+	private void clearOwnedContextDelegate() {
+		Function<Context, ActivityDelegate> owner = contextDelegate;
+		contextDelegate = null;
+		if ((owner != null) && (ActivityDelegate.getContextToDelegate() == owner)) {
+			ActivityDelegate.setContextToDelegate(null);
+		}
 	}
 
 	@Override
@@ -166,7 +263,13 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	public void finish() {
-		getActivityDelegate().onSuccess(MainActivityDelegate::onActivityFinish);
+		finishRequested = true;
+		MainActivityDelegate d = createdDelegate;
+		if (d != null) d.onActivityFinish();
+	}
+
+	static FermataMediaServiceConnection takeServiceForShutdown() {
+		return STARTUP.shutdown();
 	}
 
 	@Override
@@ -185,21 +288,18 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	public EditText startInput(TextWatcher w) {
+		cancelTextInputSession();
 		if (editText == null) editText = new CarEditText(this);
-		if (textWatcher != null) editText.removeTextChangedListener(textWatcher);
-		editText.addTextChangedListener(w);
-		textWatcher = w;
+		setActiveInput(editText, w);
 		getActivityDelegate().onSuccess(a -> {
 			if (a.getPrefs().getVoiceControlEnabledPref()) {
 				a.startSpeechRecognizer(null, true).onCompletion((q, err) -> {
 					stopInput();
 					if (err instanceof OperationCanceledException) {
-						textWatcher = w;
-						editText.removeTextChangedListener(w);
-						editText.addTextChangedListener(w);
+						setActiveInput(editText, w);
 						if (w instanceof OnEditorActionListener)
 							editText.setOnEditorActionListener((OnEditorActionListener) w);
-						a().startInput(editText);
+						startCarInput(editText, false);
 					} else if ((q != null) && !q.isEmpty()) {
 						editText.setText(q.get(0));
 						w.afterTextChanged(editText.getText());
@@ -208,44 +308,140 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 					}
 				});
 			} else {
-				a().startInput(editText);
+				startCarInput(editText, false);
 			}
 		});
 		return editText;
 	}
 
-	public void stopInput() {
-		if (editText != null) {
-			if (textWatcher != null) editText.removeTextChangedListener(textWatcher);
-			editText.setOnEditorActionListener(null);
+	@Override
+	public EditText startInput(EditText target, boolean submitOnEnter, TextWatcher w) {
+		cancelTextInputSession();
+		if (!(target instanceof CarEditText input)) {
+			return startInput(w);
+		}
+		setActiveInput(input, w);
+		startCarInput(input, submitOnEnter);
+		return input;
+	}
+
+	private void setActiveInput(EditText input, TextWatcher w) {
+		if ((activeInput != null) && (textWatcher != null)) {
+			activeInput.removeTextChangedListener(textWatcher);
+			activeInput.setOnEditorActionListener(null);
 		}
 
+		activeInput = input;
+		textWatcher = w;
+		input.setOnEditorActionListener(null);
+		input.addTextChangedListener(w);
+	}
+
+	private void startCarInput(CarEditText input, boolean submitOnEnter) {
+		getWindow().getDecorView().post(() -> {
+			if (input != activeInput) return;
+			input.requestFocus();
+			getKeyboardOverlay().show(input, submitOnEnter);
+		});
+	}
+
+	private CarKeyboardOverlay getKeyboardOverlay() {
+		if (keyboardOverlay == null) keyboardOverlay = new CarKeyboardOverlay(this);
+		return keyboardOverlay;
+	}
+
+	@Override
+	public FutureSupplier<String> requestTextInput(CharSequence title, CharSequence initialText,
+			int inputType) {
+		stopInput();
+		CarEditText input = new CarEditText(this);
+		input.setHint(title);
+		input.setSingleLine(true);
+		input.setInputType(inputType);
+		input.setText(initialText == null ? "" : initialText);
+		input.setSelection(input.getText().length());
+
+		CarTextInputSession session = new CarTextInputSession();
+		textInputSession = session;
+		setActiveInput(input, (TextChangedListener) text -> {
+		});
+		input.setOnEditorActionListener((view, actionId, event) -> {
+			if ((actionId != EditorInfo.IME_ACTION_DONE) &&
+					(actionId != EditorInfo.IME_ACTION_GO) &&
+					(actionId != EditorInfo.IME_ACTION_SEARCH)) return false;
+			if (textInputSession == session) session.submit(input.getText());
+			return true;
+		});
+		startCarInput(input, true);
+		session.getResult().onCompletion((value, error) ->
+				getWindow().getDecorView().post(() -> finishTextInputSession(session)));
+		return session.getResult();
+	}
+
+	public void stopInput() {
+		cancelTextInputSession();
+		stopInputView();
+	}
+
+	private void stopInputView() {
+		if (keyboardOverlay != null) keyboardOverlay.dismiss();
+		if (activeInput != null) {
+			if (textWatcher != null) activeInput.removeTextChangedListener(textWatcher);
+			activeInput.setOnEditorActionListener(null);
+		}
+
+		activeInput = null;
+		textWatcher = null;
 		a().stopInput();
 	}
 
+	private void cancelTextInputSession() {
+		CarTextInputSession session = textInputSession;
+		if (session == null) return;
+		textInputSession = null;
+		if (!session.isDone()) session.cancel();
+	}
+
+	private void finishTextInputSession(CarTextInputSession session) {
+		if (textInputSession != session) return;
+		textInputSession = null;
+		stopInputView();
+	}
+
 	public boolean isInputActive() {
-		return a().isInputActive();
+		// The in-app keyboard owns projected text input. The legacy car input manager can
+		// remain active after its surface is dismissed and would make the touch interceptor
+		// consume every subsequent tap.
+		return (keyboardOverlay != null) && keyboardOverlay.isShowing();
 	}
 
 	public EditText createEditText(Context ctx) {
 		CarEditText et = new CarEditText(ctx);
 		et.setOnClickListener(v -> {
-			if (!a().isInputActive()) a().startInput(et);
+			if ((keyboardOverlay == null) || !keyboardOverlay.isShowing()) {
+				et.requestFocus();
+				getKeyboardOverlay().show(et, false);
+			}
 		});
 		return et;
 	}
 
 	@Override
 	public boolean setTextInput(String text) {
-		if ((editText == null) || !isInputActive()) return false;
-		editText.setText(text);
-		stopInput();
+		if (activeInput == null) return false;
+		activeInput.setText(text);
+		CarTextInputSession session = textInputSession;
+		if (session == null) stopInput();
+		else session.submit(text);
 		return true;
 	}
 
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent keyEvent) {
 		Log.i(keyEvent);
+		if ((keyboardOverlay != null) && keyboardOverlay.isShowing()) {
+			if (keyCode == KEYCODE_BACK) return true;
+		}
 		MainActivityDelegate d = delegate.peek();
 		if (d == null) return super.onKeyUp(keyCode, keyEvent);
 
@@ -271,12 +467,19 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			}
 		}
 
-		return d.onKeyUp(keyCode, keyEvent, super::onKeyDown);
+		return d.onKeyUp(keyCode, keyEvent, super::onKeyUp);
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public void onBackPressed() {
+		getActivityDelegate().onSuccess(MainActivityDelegate::onBackPressed);
 	}
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent keyEvent) {
 		Log.i(keyEvent);
+		if ((keyboardOverlay != null) && keyboardOverlay.onKeyDown(keyCode, keyEvent)) return true;
 		MainActivityDelegate d = delegate.peek();
 		if (d == null) return super.onKeyDown(keyCode, keyEvent);
 		if (!d.getPrefs().useDpadCursor(d)) return d.onKeyDown(keyCode, keyEvent, super::onKeyDown);

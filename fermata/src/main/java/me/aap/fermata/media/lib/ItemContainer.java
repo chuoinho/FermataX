@@ -198,12 +198,12 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	private void setNewChildren(List<C> c) {
+	protected void setNewChildren(List<C> c) {
 		super.setChildren((List) c);
 	}
 
 	@SuppressWarnings("unchecked")
-	private C toChildItem(Item i) {
+	protected C toChildItem(Item i) {
 		String id = i.getId();
 		if (isChildItemId(id)) return (C) i;
 		if (!(i instanceof PlayableItem)) throw new IllegalArgumentException("Unsupported child: " + i);

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">إضافة بودكاست</string>
+    <string name="podcast_search">البحث عن بودكاست</string>
+    <string name="podcast_add_rss">إضافة موجز RSS</string>
+    <string name="podcast_import_opml">استيراد OPML</string>
+    <string name="podcast_subscribe">اشتراك</string>
+    <string name="podcast_export_opml">تصدير OPML</string>
+    <string name="podcast_export_failed">تعذر تصدير البودكاست</string>
+    <string name="podcast_export_private_title">روابط البودكاست الخاصة</string>
+    <string name="podcast_export_private_message">هل تريد تضمين عناوين الخلاصات الخاصة التي تحتوي على رمز في ملف OPML؟</string>
+    <string name="podcast_export_public_only">العامة فقط</string>
+    <string name="podcast_export_include_private">تضمين الخاصة</string>
+    <string name="podcast_feed_url">عنوان الخلاصة</string>
+    <string name="podcast_add_failed">تعذرت إضافة هذا البودكاست</string>
+    <string name="podcast_import_failed">تعذر استيراد ملف OPML</string>
+    <string name="podcast_import_result">تم استيراد %1$d بودكاست؛ فشل %2$d</string>
+    <string name="podcast_edit_rss">تعديل خلاصة RSS</string>
+    <string name="podcast_delete_title">إزالة البودكاست</string>
+    <string name="podcast_delete_message">هل تريد إزالة %1$s وحلقاته المنزلة؟</string>
+    <string name="podcast_continue">متابعة الاستماع</string>
+    <string name="podcast_new_episodes">حلقات جديدة</string>
+    <string name="podcast_subscriptions">الاشتراكات</string>
+    <string name="podcast_mark_played">وضع علامة تم الاستماع</string>
+    <string name="podcast_mark_unplayed">وضع علامة لم يتم الاستماع</string>
+    <string name="podcast_download">تنزيل الحلقة</string>
+    <string name="podcast_delete_download">حذف التنزيل</string>
+</resources>

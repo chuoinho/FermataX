@@ -11,6 +11,9 @@
     <string name="full_screen">Full screen</string>
     <string name="full_screen_exit">Exit full screen</string>
     <string name="url" translatable="false">URL</string>
+    <string name="retry">Retry</string>
+    <string name="web_page_load_failed">Page failed to load</string>
+    <string name="web_page_load_failed_msg">Could not load:\n%1$s\n\nReason: %2$s\n\nWebView: %3$s</string>
     <string name="video_scaling_fill_proportional">Fill proportional</string>
     <string name="video_quality">Video quality</string>
     <string name="open_on_start">Open on start</string>

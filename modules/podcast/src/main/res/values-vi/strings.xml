@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">Thêm podcast</string>
+    <string name="podcast_search">Tìm podcast</string>
+    <string name="podcast_add_rss">Thêm nguồn RSS</string>
+    <string name="podcast_import_opml">Nhập OPML</string>
+    <string name="podcast_subscribe">Đăng ký</string>
+    <string name="podcast_export_opml">Xuất OPML</string>
+    <string name="podcast_export_failed">Không thể xuất podcast</string>
+    <string name="podcast_export_private_title">Liên kết podcast riêng tư</string>
+    <string name="podcast_export_private_message">Bao gồm URL nguồn có token riêng tư trong tệp OPML này?</string>
+    <string name="podcast_export_public_only">Chỉ nguồn công khai</string>
+    <string name="podcast_export_include_private">Bao gồm nguồn riêng tư</string>
+    <string name="podcast_feed_url">URL nguồn</string>
+    <string name="podcast_add_failed">Không thể thêm podcast này</string>
+    <string name="podcast_import_failed">Không thể nhập tệp OPML này</string>
+    <string name="podcast_import_result">Đã nhập %1$d podcast; %2$d lỗi</string>
+    <string name="podcast_edit_rss">Sửa nguồn RSS</string>
+    <string name="podcast_delete_title">Xóa podcast</string>
+    <string name="podcast_delete_message">Xóa %1$s và các tập đã tải xuống?</string>
+    <string name="podcast_continue">Nghe tiếp</string>
+    <string name="podcast_new_episodes">Tập mới</string>
+    <string name="podcast_subscriptions">Podcast đã đăng ký</string>
+    <string name="podcast_mark_played">Đánh dấu đã nghe</string>
+    <string name="podcast_mark_unplayed">Đánh dấu chưa nghe</string>
+    <string name="podcast_download">Tải tập xuống</string>
+    <string name="podcast_delete_download">Xóa bản tải xuống</string>
+</resources>

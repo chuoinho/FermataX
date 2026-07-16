@@ -6,7 +6,6 @@ import android.content.Intent;
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PreferenceSet;
@@ -46,10 +45,6 @@ public interface FermataAddon {
 
 	@NonNull
 	static AddonInfo findAddonInfo(String name) {
-		boolean cn = name.indexOf('.') > 0;
-		for (AddonInfo ai : BuildConfig.ADDONS) {
-			if (name.equals(cn ? ai.className : ai.moduleName)) return ai;
-		}
-		throw new RuntimeException("Addon not found: " + name);
+		return AddonRegistry.get().require(name);
 	}
 }

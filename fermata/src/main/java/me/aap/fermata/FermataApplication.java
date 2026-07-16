@@ -13,10 +13,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.File;
-import java.util.Locale;
-
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.engine.BitmapCache;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
@@ -51,16 +50,9 @@ public class FermataApplication extends NetSplitCompatApp {
 	@Override
 	protected void attachBaseContext(Context ctx) {
 		var ps = SharedPreferenceStore.create(ctx.getSharedPreferences("fermata", MODE_PRIVATE));
-		if (ps.hasPref(LOCALE)) {
-			var loc = MainActivityPrefs.Lang.get(ps.getIntPref(LOCALE)).locale;
-			var cfg = ctx.getResources().getConfiguration();
-			cfg.setLocale(loc);
-			Locale.setDefault(loc);
-			ctx = ctx.createConfigurationContext(cfg);
-		} else {
-			preferenceStore = ps;
-		}
-		super.attachBaseContext(ctx);
+		preferenceStore = ps;
+		var loc = MainActivityPrefs.Lang.get(ps.getIntPref(LOCALE)).locale;
+		super.attachBaseContext(MainActivityDelegate.createLocaleContext(ctx, loc));
 	}
 
 	public boolean isConnectedToAuto() {
@@ -164,7 +156,7 @@ public class FermataApplication extends NetSplitCompatApp {
 				Log.i("Starting XposedEventDispatcherService");
 				var i = new Intent();
 				i.setComponent(
-						new ComponentName(this, "me.aap.fermata.auto" + ".XposedEventDispatcherService"));
+						new ComponentName(this, "me.app.fermatax.auto" + ".XposedEventDispatcherService"));
 				bindService(i, eventService, Context.BIND_AUTO_CREATE);
 			} catch (Exception err) {
 				eventService = null;

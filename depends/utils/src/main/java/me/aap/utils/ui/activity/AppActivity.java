@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources.Theme;
 import android.os.Bundle;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
@@ -73,6 +74,33 @@ public interface AppActivity {
 
 	default EditText createEditText(Context ctx) {
 		return new TextInputEditText(ctx, null, androidx.appcompat.R.attr.editTextStyle);
+	}
+
+	/**
+	 * Lets projected activities own the complete text-input surface. Returning {@code null}
+	 * keeps the regular dialog/IME path.
+	 */
+	@Nullable
+	default FutureSupplier<String> requestTextInput(CharSequence title, CharSequence initialText,
+			int inputType) {
+		return null;
+	}
+
+	@Nullable
+	default EditText startInput(TextWatcher w) {
+		return null;
+	}
+
+	@Nullable
+	default EditText startInput(EditText target, boolean submitOnEnter, TextWatcher w) {
+		return startInput(w);
+	}
+
+	default void stopInput() {
+	}
+
+	default boolean isInputActive() {
+		return false;
 	}
 
 	default DialogBuilder createDialogBuilder(Context ctx) {

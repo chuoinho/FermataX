@@ -5,11 +5,13 @@ import static android.view.View.FOCUS_UP;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.LEFT;
+import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.RIGHT;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_DATE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_FILE_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NONE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_RND;
+import static me.aap.fermata.ui.activity.MainActivityListener.MODE_CHANGED;
 import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
@@ -21,6 +23,7 @@ import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
@@ -30,6 +33,7 @@ import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.policy.ChromePolicy;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.utils.ui.activity.ActivityDelegate;
@@ -60,7 +64,12 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
 		}
 
-		if ((f instanceof MediaLibFragment) && a.getPrefs().getShowPgUpDownPref(a)) {
+		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isAddSourceSupported()) {
+			addButton(tb, ((MediaLibFragment) f).getAddSourceIcon(),
+					ToolBarMediator::onAddSourceButtonClick, R.id.tool_add_source);
+		}
+
+		if (!BuildConfig.AUTO && (f instanceof MediaLibFragment) && a.getPrefs().getShowPgUpDownPref(a)) {
 			addButton(tb, R.drawable.pg_down, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_down, LEFT);
 			addButton(tb, R.drawable.pg_up, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_up, LEFT);
 		} else {
@@ -88,10 +97,19 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	public void onActivityEvent(ToolBarView view, ActivityDelegate a, long e) {
 		ToolBarView.Mediator.BackTitleFilter.super.onActivityEvent(view, a, e);
 
-		if ((e == FRAGMENT_CHANGED) || e == FRAGMENT_CONTENT_CHANGED) {
+		if ((e == FRAGMENT_CHANGED) || (e == FRAGMENT_CONTENT_CHANGED) || (e == MODE_CHANGED)) {
 			ActivityFragment f = a.getActiveFragment();
-			if (f != null) setButtonsVisibility(view, f);
+			if (f != null) {
+				setButtonVisibility(view, me.aap.utils.R.id.tool_bar_back_button, getBackButtonVisibility(f));
+				setButtonsVisibility(view, f);
+			}
 		}
+	}
+
+	private static void onAddSourceButtonClick(View v) {
+		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
+		MediaLibFragment f = a.getActiveMediaLibFragment();
+		if ((f != null) && f.isAddSourceSupported()) f.addSource();
 	}
 
 	@Nullable
@@ -133,6 +151,9 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			setButtonVisibility(tb, R.id.tool_grid, VISIBLE);
 			setButtonVisibility(tb, R.id.tool_sort, b.sortChildrenEnabled() ? VISIBLE : GONE);
 		}
+
+		setButtonVisibility(tb, R.id.tool_add_source, ((MediaLibFragment) f).isAddSourceSupported() ?
+				VISIBLE : GONE);
 	}
 
 	private static void setButtonVisibility(ToolBarView tb, @IdRes int id, int visibility) {
@@ -310,5 +331,23 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	private static void setSortBy(MediaLibFragment.ListAdapter adapter, int sortBy) {
 		BrowsableItem p = adapter.getParent();
 		p.updateSorting().main().thenRun(() -> p.getPrefs().setSortByPref(sortBy));
+	}
+
+	@Override
+	public int getBackButtonVisibility(ActivityFragment f) {
+		if (!BuildConfig.AUTO) {
+			return ToolBarView.Mediator.BackTitleFilter.super.getBackButtonVisibility(f);
+		}
+
+		MainActivityDelegate a = MainActivityDelegate.get(f.requireContext());
+		return ChromePolicy.getAutoTopBackVisibility(a, f);
+	}
+
+	@Override
+	public int getBackButtonSide(ToolBarView tb) {
+		if (BuildConfig.AUTO && MainActivityDelegate.get(tb.getContext()).getNavBar().isRight()) {
+			return RIGHT;
+		}
+		return LEFT;
 	}
 }

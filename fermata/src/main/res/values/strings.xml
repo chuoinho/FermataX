@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile_release" translatable="false">Fermata</string>
-    <string name="app_name_auto_release" translatable="false">Fermata Auto</string>
-    <string name="app_name_mobile_debug" translatable="false">Debug Fermata</string>
-    <string name="app_name_auto_debug" translatable="false">Debug Fermata Auto</string>
-    <string name="mirror_service_name_release" translatable="false">Fermata Mirror</string>
-    <string name="mirror_service_name_debug" translatable="false">Debug Fermata Mirror</string>
-    <string name="mirror_fs_service_name_release" translatable="false">FS Fermata Mirror</string>
-    <string name="mirror_fs_service_name_debug" translatable="false">Debug FS Fermata Mirror</string>
+    <string name="app_name_mobile_release" translatable="false">fermataX</string>
+    <string name="app_name_auto_release" translatable="false">fermataX</string>
+    <string name="app_name_mobile_debug" translatable="false">Debug fermataX</string>
+    <string name="app_name_auto_debug" translatable="false">Debug fermataX</string>
+    <string name="mirror_service_name_release" translatable="false">fermataX Mirror</string>
+    <string name="mirror_service_name_debug" translatable="false">Debug fermataX Mirror</string>
+    <string name="mirror_fs_service_name_release" translatable="false">FS fermataX Mirror</string>
+    <string name="mirror_fs_service_name_debug" translatable="false">Debug FS fermataX Mirror</string>
     <string name="media_service_name_mobile_release" translatable="false">@string/app_name_mobile_release</string>
-    <string name="media_service_name_auto_release" translatable="false">Fermata Media Service</string>
+    <string name="media_service_name_auto_release" translatable="false">fermataX Media Service</string>
     <string name="media_service_name_mobile_debug" translatable="false">@string/app_name_mobile_debug</string>
-    <string name="media_service_name_auto_debug" translatable="false">Debug Fermata Media Service</string>
+    <string name="media_service_name_auto_debug" translatable="false">Debug fermataX Media Service</string>
     <string name="engine_mp_name" translatable="false">MediaPlayer</string>
     <string name="engine_exo_name" translatable="false">ExoPlayer</string>
     <string name="engine_vlc_name" translatable="false">VLC</string>
@@ -21,9 +21,37 @@
     <string name="module_name_smb" translatable="false">SMB</string>
     <string name="module_name_web" translatable="false">Web</string>
     <string name="module_name_tv" translatable="false">TV</string>
+    <string name="module_name_radio" translatable="false">Internet Radio</string>
+    <string name="module_name_podcast" translatable="false">Podcast</string>
 
     <string name="addons">Addons</string>
+    <string name="home">Home</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="open_dashboard">Open dashboard</string>
+    <string name="dashboard_order">Dashboard order</string>
+    <string name="reset_dashboard_order">Reset dashboard order</string>
+    <string name="dashboard_order_sub">Also controls the navigation order</string>
+    <string name="dashboard_now_playing">Now playing</string>
+    <string name="dashboard_continue">Continue watching</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">Start screen and quick access</string>
+    <string name="dashboard_folders_sub">Local files and folders</string>
+    <string name="dashboard_favorites_sub">Pinned channels and media</string>
+    <string name="dashboard_recent_sub">Recently played across the car hub</string>
+    <string name="dashboard_playlists_sub">Saved queues and collections</string>
+    <string name="dashboard_menu_sub">All tools and settings</string>
+    <string name="dashboard_tv_sub">Live TV, VOD and series</string>
+    <string name="dashboard_radio_sub">Popular stations and countries</string>
+    <string name="dashboard_podcast_sub">Shows, episodes and offline listening</string>
+    <string name="dashboard_youtube_sub">Video search and playback</string>
+    <string name="dashboard_web_sub">Open web media</string>
+    <string name="dashboard_back_to_list">Back to list</string>
+    <string name="dashboard_felex_sub">Learning and tutor tools</string>
+    <string name="dashboard_addon_sub">Addon shortcut</string>
+    <string name="dashboard_addon_disabled_sub">Disabled in settings</string>
     <string name="addon_name_tv">TV</string>
+    <string name="addon_name_radio">Radio</string>
+    <string name="addon_name_podcast">Podcasts</string>
     <string name="addon_name_web_browser">Web browser</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
     <string name="addon_name_felex" translatable="false">Felex</string>
@@ -58,7 +86,6 @@
 
     <string name="nav_bar_pos">Navigation bar position</string>
     <string name="nav_bar_pos_sub">Current position: %1$s</string>
-    <string name="nav_bar_pos_bottom">Bottom</string>
     <string name="nav_bar_pos_left">Left</string>
     <string name="nav_bar_pos_right">Right</string>
 
@@ -66,7 +93,7 @@
     <string name="lang">Language</string>
     <string name="trans_lang">Translation language</string>
     <string name="hide_bars">Hide bars</string>
-    <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
+    <string name="hide_bars_sub">Hide app bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
     <string name="use_dpad_cursor">Use cursor for D-pad navigation</string>
     <string name="fullscreen_mode">Fullscreen mode</string>
@@ -210,6 +237,7 @@
 
     <string name="folders">Folders</string>
     <string name="favorites">Favorites</string>
+    <string name="recent">Recent</string>
     <string name="playlists">Playlists</string>
     <string name="search">Search</string>
     <string name="filter">Filter</string>
@@ -323,15 +351,17 @@
     <string name="private_key">Private key</string>
     <string name="private_key_pass">Private key password</string>
 
-    <string name="donate">Coffee for developer</string>
-    <string name="donate_text">If you like the application, please consider buying me a coffee.</string>
-    <string name="use_phone_for_donation">Please use your phone to buy a coffee.</string>
+    <string name="donate">Support on Ko-fi</string>
+    <string name="donate_text">Support FermataX on Ko-fi.</string>
+    <string name="use_phone_for_donation">Open Ko-fi on your phone to support FermataX.</string>
 
     <string name="timer">Timer</string>
     <string name="hours">Hours</string>
     <string name="minutes">Minutes</string>
 
     <string name="enable">Enable</string>
+    <string name="edit_dashboard">Edit dashboard</string>
+    <string name="done">Done</string>
     <string name="move_left">Move left</string>
     <string name="move_right">Move right</string>
     <string name="move_up">Move up</string>
@@ -370,10 +400,13 @@
     <string name="media_projection_action_text">Start now</string>
 
     <string name="about">About</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player is a free, open source audio and video player with a simple and
-        intuitive interface.</p>
-        <p><b>Author:</b> Andrey Pavlenko</p>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX is a fork of Fermata, customized as a media hub for Android Auto.</p>
+        <p>It combines dashboard-first navigation, IPTV/Xtream, Internet Radio, YouTube/Web media,
+        local files, Favorites, and Recent in a car-friendly experience.</p>
+        <p>FermataX does not provide media content, playlists, TV channels, or IPTV accounts.
+        Users are responsible for the sources they add.</p>
+        <p><b>Original project:</b> Fermata by Andrey Pavlenko</p>
         <p><b>Version:</b> %1$s (%2$d)</p>
         <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>

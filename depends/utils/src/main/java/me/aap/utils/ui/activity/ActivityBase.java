@@ -31,7 +31,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
-import me.aap.utils.async.Completable;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.function.Supplier;
@@ -43,7 +42,8 @@ import me.aap.utils.log.Log;
 public abstract class ActivityBase extends AppCompatActivity implements AppActivity {
 	private static final int GRANT_PERM_REQ = 1;
 	private static ActivityBase instance;
-	private static Completable<AppActivity> pendingConsumer;
+	private static final PendingActivityBroker<AppActivity> pendingActivities =
+			new PendingActivityBroker<>();
 	private Promise<int[]> checkPermissions;
 	private ActivityResultLauncher<StartActivityPromise> activityLauncher;
 	@NonNull
@@ -61,27 +61,21 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 			if (nmgr != null) nmgr.createNotificationChannel(nc);
 		}
 
-		ActivityBase i = instance;
-		Completable<AppActivity> pending = pendingConsumer;
+		PendingActivityBroker.Request<AppActivity> request;
+		synchronized (ActivityBase.class) {
+			ActivityBase current = instance;
+			if (current != null) return completed((A) current).main();
+			request = pendingActivities.acquire();
+		}
 
-		if (i != null) {
-			if (pending != null) {
-				pending.complete(i);
-				pendingConsumer = null;
-			}
-
-			return completed((A) i).main();
-		} else {
-			if (pending != null) pending.cancel();
-			Promise<A> p = new Promise<>();
-			pendingConsumer = (Completable) p;
+		if (request.first()) {
 			NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, channelId);
 			b.setSmallIcon(icon).setContentTitle(title).setContentText(text);
 			Intent intent = new Intent(ctx, c);
 			b.setFullScreenIntent(PendingIntent.getActivity(ctx, 0, intent, FLAG_IMMUTABLE), true);
 			NotificationManagerCompat.from(ctx).notify(0, b.build());
-			return p.main();
 		}
+		return ((FutureSupplier<A>) (FutureSupplier<?>) request.future()).main();
 	}
 
 	@NonNull
@@ -106,15 +100,12 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 			} else {
 				delegate = completed(d);
 				d.onActivityCreate(savedInstanceState);
-				instance = this;
+				synchronized (ActivityBase.class) {
+					instance = this;
+				}
 			}
 
-			if (pendingConsumer != null) {
-				Completable<AppActivity> c = pendingConsumer;
-				pendingConsumer = null;
-				if (err != null) c.completeExceptionally(err);
-				else c.complete(this);
-			}
+			pendingActivities.complete(this, err);
 		});
 	}
 
@@ -166,7 +157,9 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 		delegate.onSuccess(ActivityDelegate::onActivityDestroy);
 		super.onDestroy();
 		delegate = NO_DELEGATE;
-		instance = null;
+		synchronized (ActivityBase.class) {
+			if (instance == this) instance = null;
+		}
 	}
 
 	@CallSuper

@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import android.content.Context;
 import android.os.SystemClock;
@@ -36,6 +36,10 @@ public class CarEditText extends CarRestrictedEditText implements CarEditable {
 
 	@Override
 	public void onEditorAction(int actionCode) {
+		// Let the standard TextView listener handle form submission first. The custom
+		// projected keyboard calls this method directly for its Done action.
+		super.onEditorAction(actionCode);
+
 		if (keyListener != null) {
 			switch (actionCode) {
 				case EditorInfo.IME_ACTION_GO:

@@ -22,6 +22,8 @@ public class TvAddon implements MediaLibAddon {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(TvAddon.class.getName());
 	private static TvRootItem root;
+	private final TvSourceRefreshCoordinator refreshCoordinator =
+			new TvSourceRefreshCoordinator();
 
 	@IdRes
 	@Override
@@ -46,9 +48,26 @@ public class TvAddon implements MediaLibAddon {
 		return (i instanceof TvItem);
 	}
 
-	public TvRootItem getRootItem(DefaultMediaLib lib) {
-		if ((root == null) || (root.getLib() != lib)) root = new TvRootItem(lib);
+	public synchronized TvRootItem getRootItem(DefaultMediaLib lib) {
+		if ((root == null) || (root.getLib() != lib)) {
+			refreshCoordinator.reset();
+			root = new TvRootItem(lib);
+		}
 		return root;
+	}
+
+	TvSourceRefreshCoordinator getRefreshCoordinator() {
+		return refreshCoordinator;
+	}
+
+	@Override
+	public void start() {
+		refreshCoordinator.start();
+	}
+
+	@Override
+	public void stop() {
+		refreshCoordinator.stop();
 	}
 
 	@Nullable

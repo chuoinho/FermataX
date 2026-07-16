@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:dist="http://schemas.android.com/apk/distribution"
-    split="sftp"
+    split="cast"
     android:isFeatureSplit="true">
 
     <dist:module

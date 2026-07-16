@@ -17,10 +17,6 @@
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
 
-    <uses-feature
-        android:name="android.hardware.type.automotive"
-        android:required="true" />
-
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -29,6 +25,29 @@
 
 
     <application android:icon="@drawable/launcher">
+		<activity android:name="me.aap.fermata.ui.activity.MainActivity">
+			<intent-filter tools:node="remove">
+				<action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+
+        <service
+            android:name="me.aap.fermata.media.service.FermataMediaService"
+			tools:node="remove" />
+
+		<service
+			android:name="me.app.fermatax.auto.AutoFermataMediaService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            android:icon="@drawable/media_service_icon"
+            android:label="@string/media_service_name">
+			<intent-filter>
+				<action android:name="android.intent.action.MEDIA_BUTTON" />
+			</intent-filter>
+		</service>
+
         <meta-data
             android:name="xposedmodule"
             android:value="true" />
@@ -47,7 +66,7 @@
             tools:ignore="MetadataTagInsideApplicationTag" />
 
         <service
-            android:name="me.aap.fermata.auto.CarService"
+            android:name="me.app.fermatax.auto.CarService"
             android:exported="true"
             android:label="@string/app_name"
             tools:ignore="ExportedService">
@@ -60,7 +79,7 @@
         </service>
 
         <service
-            android:name="me.aap.fermata.auto.MirrorService"
+            android:name="me.app.fermatax.auto.MirrorService"
             android:exported="true"
             android:icon="@drawable/mirror"
             android:label="@string/mirror_service_name"
@@ -74,7 +93,7 @@
         </service>
 
         <service
-            android:name="me.aap.fermata.auto.MirrorServiceFS"
+            android:name="me.app.fermatax.auto.MirrorServiceFS"
             android:exported="true"
             android:icon="@drawable/mirror_fs"
             android:label="@string/mirror_fs_service_name"
@@ -86,25 +105,25 @@
         </service>
 
         <activity
-            android:name="me.aap.fermata.auto.ProjectionActivity"
+            android:name="me.app.fermatax.auto.ProjectionActivity"
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleInstance" />
 
         <activity
-            android:name="me.aap.fermata.auto.LauncherActivity"
+            android:name="me.app.fermatax.auto.LauncherActivity"
             android:configChanges="colorMode|keyboard|keyboardHidden|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleInstance" />
 
         <service
-            android:name="me.aap.fermata.auto.ProjectionService"
+            android:name="me.app.fermatax.auto.ProjectionService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
         <service
-            android:name="me.aap.fermata.auto.AccessibilityEventDispatcherService"
+            android:name="me.app.fermatax.auto.AccessibilityEventDispatcherService"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
@@ -116,7 +135,7 @@
         </service>
 
         <service
-            android:name="me.aap.fermata.auto.XposedEventDispatcherService"
+            android:name="me.app.fermatax.auto.XposedEventDispatcherService"
             android:exported="true"
             tools:ignore="ExportedService" />
 
@@ -130,13 +149,5 @@
                 android:resource="@xml/filepaths" />
         </provider>
 
-        <!-- Auto start MediaService when connected to bluetooth (AA?) -->
-        <receiver
-            android:name="me.aap.fermata.auto.MediaServiceStarter"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
-            </intent-filter>
-        </receiver>
     </application>
 </manifest>

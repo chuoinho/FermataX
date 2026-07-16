@@ -58,6 +58,10 @@ public class FermataChromeClient extends WebChromeClient {
 		return web;
 	}
 
+	protected FermataChromeClient createReplacement(FermataWebView web) {
+		return new FermataChromeClient(web, fullScreenView);
+	}
+
 	@Override
 	public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
 		Context ctx = view.getContext();
@@ -198,6 +202,15 @@ public class FermataChromeClient extends WebChromeClient {
 		}
 
 		return req;
+	}
+
+	/** Cancels an app-initiated fullscreen request that has not reached custom-view state yet. */
+	public boolean cancelPendingFullScreenEntry() {
+		if (fullScreenReq == null) return false;
+		Promise<Void> req = fullScreenReq;
+		fullScreenReq = null;
+		req.cancel();
+		return true;
 	}
 
 	public FutureSupplier<Void> exitFullScreen() {

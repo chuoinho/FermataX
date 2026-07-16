@@ -111,6 +111,7 @@ public class VideoView extends FrameLayout
 				FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
 				lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL;
 				setLayoutParams(lp);
+				setOnTouchListener((v, e) -> VideoView.this.onTouchEvent(e));
 				getHolder().addCallback(VideoView.this);
 			}
 		});
@@ -121,6 +122,7 @@ public class VideoView extends FrameLayout
 				setLayoutParams(lp);
 				setZOrderMediaOverlay(true);
 				setZOrderOnTop(true);
+				setOnTouchListener((v, e) -> VideoView.this.onTouchEvent(e));
 				getHolder().setFormat(PixelFormat.TRANSLUCENT);
 				getHolder().addCallback(VideoView.this);
 			}
@@ -455,7 +457,7 @@ public class VideoView extends FrameLayout
 			}
 		}
 
-		return super.onKeyUp(keyCode, event);
+		return super.onKeyDown(keyCode, event);
 	}
 
 	private boolean onTouch(@NonNull MotionEvent e) {

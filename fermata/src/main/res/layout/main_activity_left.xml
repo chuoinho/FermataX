@@ -19,7 +19,7 @@
         app:layout_constraintVertical_weight="1"
         app:position="LEFT" />
 
-    <me.aap.utils.ui.view.ToolBarView
+    <me.aap.fermata.ui.view.FermataToolBarView
         android:id="@+id/tool_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

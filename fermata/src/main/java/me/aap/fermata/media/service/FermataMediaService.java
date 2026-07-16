@@ -53,8 +53,6 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
-import me.aap.fermata.addon.FermataAddon;
-import me.aap.fermata.addon.FermataMediaServiceAddon;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -95,6 +93,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private DefaultMediaLib lib;
 	private MediaSessionCompat session;
 	MediaSessionCallback callback;
+	private final MediaServiceRuntimeGate runtimeGate = new MediaServiceRuntimeGate();
 
 	private BroadcastReceiver intentReceiver;
 	private int notifColor;
@@ -125,7 +124,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		callback = new MediaSessionCallback(this, session, lib,
 				PlaybackControlPrefs.create(FermataApplication.get().getDefaultSharedPreferences()),
 				FermataApplication.get().getHandler());
-		callback.onPrepare();
+		if (runtimeGate.takeAutomaticPrepare(BuildConfig.AUTO)) callback.onPrepare();
 		session.setCallback(callback);
 
 		Intent mediaButtonIntent =
@@ -135,17 +134,15 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		notifColor = Color.parseColor(DEFAULT_NOTIF_COLOR);
 		App.get().getScheduler().schedule(lib::cleanUpPrefs, 1, TimeUnit.HOURS);
 		Log.d("FermataMediaService created");
-		for (FermataAddon a : AddonManager.get().getAddons()) {
-			if (a instanceof FermataMediaServiceAddon)
-				((FermataMediaServiceAddon) a).onServiceCreate(callback);
+		if (runtimeGate.takeAddonAttachOnCreate(BuildConfig.AUTO)) {
+			AddonManager.get().onServiceCreate(callback);
 		}
 	}
 
 	@Override
 	public void onDestroy() {
-		for (FermataAddon a : AddonManager.get().getAddons()) {
-			if (a instanceof FermataMediaServiceAddon)
-				((FermataMediaServiceAddon) a).onServiceDestroy(callback);
+		if (runtimeGate.takeAddonDetachOnDestroy()) {
+			AddonManager.get().onServiceDestroy(callback);
 		}
 		super.onDestroy();
 		NotificationManagerCompat.from(this).cancel(NOTIF_ID);
@@ -164,6 +161,10 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@Override
 	public IBinder onBind(Intent intent) {
+		if (ACTION_MEDIA_SERVICE.equals(intent.getAction()) &&
+				runtimeGate.takeAddonAttachOnInternalBind()) {
+			AddonManager.get().onServiceCreate(callback);
+		}
 		if (BuildConfig.D || !intent.hasExtra(INTENT_ATTR_NOTIF_COLOR)) {
 			var poi = FermataApplication.get().getAddonManager().getAddon("poi");
 			if (poi != null) poi.start();

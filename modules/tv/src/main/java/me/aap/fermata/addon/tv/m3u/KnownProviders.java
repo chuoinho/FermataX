@@ -15,6 +15,7 @@ class KnownProviders {
 	static void configure(PreferenceStore ps) {
 		String playlistUrl = ps.getStringPref(URL);
 		if (isNullOrBlank(playlistUrl)) return;
+		configureKnownMirror(ps, playlistUrl);
 		String host = Uri.parse(playlistUrl).getHost();
 		if (host == null) return;
 		int i1 = host.lastIndexOf('.');
@@ -33,6 +34,24 @@ class KnownProviders {
 			case "ilooktv":
 			case "ilook-tv":
 				configure(ps, "http://epg.it999.ru/epg2.xml.gz", TvM3uFile.CATCHUP_TYPE_SHIFT);
+		}
+	}
+
+	private static void configureKnownMirror(PreferenceStore ps, String playlistUrl) {
+		String normalized = playlistUrl.trim();
+		String mirror = null;
+
+		if ("http://bit.ly/tvqq".equalsIgnoreCase(normalized) ||
+				"https://bit.ly/tvqq".equalsIgnoreCase(normalized) ||
+				normalized.equalsIgnoreCase(
+						"https://raw.githubusercontent.com/chuoinho/IPTV/refs/heads/master/123.m3u")) {
+			mirror = "https://cdn.jsdelivr.net/gh/chuoinho/IPTV@master/123.m3u";
+		}
+
+		if ((mirror != null) && !mirror.equals(normalized)) {
+			try (PreferenceStore.Edit e = ps.editPreferenceStore()) {
+				e.setStringPref(URL, mirror);
+			}
 		}
 	}
 

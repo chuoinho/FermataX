@@ -31,8 +31,13 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.util.Pair;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -73,6 +78,7 @@ import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
@@ -220,11 +226,34 @@ public class PreferenceView extends ConstraintLayout {
 
 	private void setStringPreference(StringOpts o, @LayoutRes int layout) {
 		setPreference(layout, o);
-		setOnClickListener(o.clickListener);
-		EditText t = findViewById(R.id.pref_footer);
+		EditText t = activityEditText(R.id.pref_footer);
 		boolean[] ignoreChange = new boolean[1];
+		setOnClickListener(v -> {
+			if (o.clickListener != null) o.clickListener.onClick(v);
+			else focusTextInput(t, o.submitOnEnter);
+		});
+		t.setOnClickListener(v -> focusTextInput(t, o.submitOnEnter));
+		t.setOnTouchListener((v, event) -> {
+			if (event.getAction() == MotionEvent.ACTION_UP) t.post(() -> focusTextInput(t, o.submitOnEnter));
+			return false;
+		});
+		if (o.maxLines == 1) t.setSingleLine(true);
 		t.setMaxLines(o.maxLines);
+		if (o.inputType != 0) t.setInputType(o.inputType);
+		if (o.imeOptions != 0) t.setImeOptions(o.imeOptions);
+		t.setSelectAllOnFocus(o.selectAllOnFocus);
 		t.setOnKeyListener(UiUtils::dpadFocusHelper);
+		if (o.submitOnEnter) {
+			t.setOnEditorActionListener((v, actionId, event) -> {
+				if ((actionId == EditorInfo.IME_ACTION_DONE) ||
+						(actionId == EditorInfo.IME_ACTION_GO) ||
+						((event != null) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) &&
+								(event.getAction() == KeyEvent.ACTION_UP))) {
+					return clickDialogOkIfVisible();
+				}
+				return false;
+			});
+		}
 		t.setText(o.store.getStringPref(o.pref));
 		t.addTextChangedListener(new TextWatcher() {
 			@Override
@@ -267,6 +296,102 @@ public class PreferenceView extends ConstraintLayout {
 				ignoreChange[0] = false;
 			}
 		});
+	}
+
+	private boolean clickDialogOkIfVisible() {
+		View ok = ActivityDelegate.get(getContext()).getToolBar().findViewById(R.id.file_picker_ok);
+		if ((ok == null) || (ok.getVisibility() != View.VISIBLE) || !ok.isEnabled()) return false;
+		ok.performClick();
+		return true;
+	}
+
+	private EditText activityEditText(int id) {
+		EditText old = findViewById(id);
+		EditText t = ActivityDelegate.get(getContext()).createEditText(getContext());
+		if (t.getClass() == old.getClass()) return old;
+
+		ViewGroup parent = (ViewGroup) old.getParent();
+		int index = parent.indexOfChild(old);
+		parent.removeViewAt(index);
+		t.setId(old.getId());
+		t.setLayoutParams(old.getLayoutParams());
+		t.setVisibility(old.getVisibility());
+		t.setEnabled(old.isEnabled());
+		t.setFocusable(true);
+		t.setFocusableInTouchMode(true);
+		t.setBackground(old.getBackground());
+		t.setHint(old.getHint());
+		t.setContentDescription(old.getContentDescription());
+		t.setTextAlignment(old.getTextAlignment());
+		t.setTextDirection(old.getTextDirection());
+		t.setPaddingRelative(old.getPaddingStart(), old.getPaddingTop(), old.getPaddingEnd(),
+				old.getPaddingBottom());
+		t.setMinWidth(old.getMinWidth());
+		t.setMinHeight(old.getMinHeight());
+		t.setGravity(old.getGravity());
+		t.setInputType(old.getInputType());
+		t.setTextColor(old.getTextColors());
+		t.setHintTextColor(old.getHintTextColors());
+		t.setTextSize(COMPLEX_UNIT_PX, old.getTextSize());
+		parent.addView(t, index);
+		return t;
+	}
+
+	private void focusTextInput(EditText t, boolean submitOnEnter) {
+		t.requestFocus();
+		t.post(() -> {
+			t.requestFocus();
+			if (startActivityTextInput(t, submitOnEnter)) return;
+			if (getContext().getSystemService(Context.INPUT_METHOD_SERVICE) instanceof InputMethodManager imm) {
+				imm.showSoftInput(t, InputMethodManager.SHOW_IMPLICIT);
+			}
+		});
+	}
+
+	private boolean startActivityTextInput(EditText target, boolean submitOnEnter) {
+		AppActivity activity = ActivityDelegate.get(getContext()).getAppActivity();
+		boolean[] settingInput = new boolean[1];
+		EditText input = activity.startInput(target, submitOnEnter, new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+			}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+			}
+
+			@Override
+			public void afterTextChanged(Editable s) {
+				if (settingInput[0]) return;
+				String value = s.toString();
+				if (value.contentEquals(target.getText())) return;
+				target.setText(value);
+				target.setSelection(target.getText().length());
+			}
+		});
+		if (input == null) return false;
+
+		input.setInputType(target.getInputType());
+		input.setImeOptions(target.getImeOptions());
+		input.setSingleLine(target.getMaxLines() == 1);
+		if (submitOnEnter) {
+			input.setOnEditorActionListener((v, actionId, event) -> {
+				if ((actionId == EditorInfo.IME_ACTION_DONE) ||
+						(actionId == EditorInfo.IME_ACTION_GO) ||
+						((event != null) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) &&
+								(event.getAction() == KeyEvent.ACTION_UP))) {
+					activity.stopInput();
+					return clickDialogOkIfVisible();
+				}
+				return false;
+			});
+		}
+
+		settingInput[0] = true;
+		input.setText(target.getText());
+		input.setSelection(input.getText().length());
+		settingInput[0] = false;
+		return true;
 	}
 
 	private void setFilePreference(FileOpts o) {
@@ -363,14 +488,33 @@ public class PreferenceView extends ConstraintLayout {
 																			 IntFunction<String> fromInt, ToIntFunction<String> toInt,
 																			 BiConsumer<EditText, SeekBar> viewConfigurator) {
 		setPreference(R.layout.number_pref_layout, o);
-		EditText t = findViewById(R.id.pref_value);
+		EditText t = activityEditText(R.id.pref_value);
 		SeekBar sb = findViewById(R.id.pref_footer);
 		boolean[] ignoreChange = new boolean[1];
 		String initValue = get.get();
+		setOnClickListener(v -> focusTextInput(t, o.submitOnEnter));
+		t.setOnClickListener(v -> focusTextInput(t, o.submitOnEnter));
+		t.setOnTouchListener((v, event) -> {
+			if (event.getAction() == MotionEvent.ACTION_UP) t.post(() -> focusTextInput(t, o.submitOnEnter));
+			return false;
+		});
 
 		if (viewConfigurator != null) viewConfigurator.accept(t, sb);
 
 		t.setEms(o.ems);
+		if (o.imeOptions != 0) t.setImeOptions(o.imeOptions);
+		t.setSelectAllOnFocus(o.selectAllOnFocus);
+		if (o.submitOnEnter) {
+			t.setOnEditorActionListener((v, actionId, event) -> {
+				if ((actionId == EditorInfo.IME_ACTION_DONE) ||
+						(actionId == EditorInfo.IME_ACTION_GO) ||
+						((event != null) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) &&
+								(event.getAction() == KeyEvent.ACTION_UP))) {
+					return clickDialogOkIfVisible();
+				}
+				return false;
+			});
+		}
 		t.setText(initValue);
 		t.setOnKeyListener(UiUtils::dpadFocusHelper);
 		t.addTextChangedListener(new TextWatcher() {
@@ -677,8 +821,12 @@ public class PreferenceView extends ConstraintLayout {
 		public int hint = ID_NULL;
 		public String stringHint;
 		public int maxLines = 1;
+		public int inputType;
+		public int imeOptions;
 		public boolean trim;
 		public boolean removeBlank;
+		public boolean selectAllOnFocus;
+		public boolean submitOnEnter;
 		public OnClickListener clickListener;
 	}
 
@@ -687,7 +835,10 @@ public class PreferenceView extends ConstraintLayout {
 		public int seekMax = 100;
 		public int seekScale = 1;
 		public int ems = 2;
+		public int imeOptions;
 		public boolean showProgress = true;
+		public boolean selectAllOnFocus;
+		public boolean submitOnEnter;
 	}
 
 	public static class IntOpts extends NumberOpts<IntSupplier> {}

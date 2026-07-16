@@ -49,6 +49,7 @@ import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.LocaleList;
 import android.os.OperationCanceledException;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
@@ -87,19 +88,19 @@ import java.util.List;
 import java.util.Locale;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.action.Action;
 import me.aap.fermata.action.Key;
+import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
-import me.aap.fermata.addon.FermataActivityAddon;
+import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.addon.FermataAddon;
-import me.aap.fermata.addon.FermataFragmentAddon;
-import me.aap.fermata.addon.MediaLibAddon;
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ExportedItem;
-import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.IntentPlayable;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -109,17 +110,23 @@ import me.aap.fermata.media.lib.MediaLib.Playlist;
 import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.media.service.MediaServiceRuntimeGate;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.MediaSessionCallbackAssistant;
 import me.aap.fermata.ui.fragment.AudioEffectsFragment;
+import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.fragment.NavBarMediator;
 import me.aap.fermata.ui.fragment.PlaylistsFragment;
+import me.aap.fermata.ui.fragment.RecentFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.SubtitlesFragment;
+import me.aap.fermata.ui.policy.BackNavigationPolicy;
+import me.aap.fermata.ui.policy.ItemRoutePolicy;
+import me.aap.fermata.ui.policy.PlaybackLayoutPolicy;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
@@ -189,13 +196,33 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public static Context attachBaseContext(Context ctx) {
 		MainActivityPrefs prefs = Prefs.instance;
-		if (!prefs.hasPref(LOCALE)) return ctx;
+		return createLocaleContext(ctx, prefs.getLocalePref());
+	}
 
-		var cfg = ctx.getResources().getConfiguration();
-		var loc = prefs.getLocalePref();
-		cfg.setLocale(loc);
+	@NonNull
+	@Override
+	public Context getLocalizedContext(@NonNull Context ctx) {
+		return createLocaleContext(ctx, getPrefs().getLocalePref());
+	}
+
+	public static Context createLocaleContext(Context ctx, Locale loc) {
+		var cfg = new Configuration(ctx.getResources().getConfiguration());
+		setConfigLocale(cfg, loc);
 		Locale.setDefault(loc);
 		return ctx.createConfigurationContext(cfg);
+	}
+
+	@SuppressWarnings("deprecation")
+	private static void updateLocaleResources(Context ctx, Locale loc) {
+		Resources res = ctx.getResources();
+		var cfg = new Configuration(res.getConfiguration());
+		setConfigLocale(cfg, loc);
+		res.updateConfiguration(cfg, res.getDisplayMetrics());
+	}
+
+	private static void setConfigLocale(Configuration cfg, Locale loc) {
+		if (VERSION.SDK_INT >= VERSION_CODES.N) cfg.setLocales(new LocaleList(loc));
+		else cfg.setLocale(loc);
 	}
 
 	public static Uri toIntentUri(String action, String itemId) {
@@ -228,7 +255,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		int navId;
 		int fragmentId;
 
-		if (state != null) {
+		if ((state != null) && state.getBoolean("restoreFragment", false)) {
 			navId = state.getInt("navId", ID_NULL);
 			fragmentId = state.getInt("fragmentId", ID_NULL);
 		} else {
@@ -242,13 +269,12 @@ public class MainActivityDelegate extends ActivityDelegate
 		b.getMediaSessionCallback().getSession().setSessionActivity(
 				PendingIntent.getActivity(ctx, 0, new Intent(ctx, a.getClass()), FLAG_IMMUTABLE));
 		b.getMediaSessionCallback().addAssistant(this, isCarActivityNotMirror() ? 0 : 1);
-		if (b.getCurrentItem() == null) b.getMediaSessionCallback().onPrepare();
+		if (MediaServiceRuntimeGate.allowsAutomaticPrepare(BuildConfig.AUTO)) {
+			b.getMediaSessionCallback().prepareIfIdle();
+		}
 		init();
 
-		for (FermataAddon addon : AddonManager.get().getAddons()) {
-			if (addon instanceof FermataActivityAddon)
-				((FermataActivityAddon) addon).onActivityCreate(this);
-		}
+		AddonManager.get().onActivityCreate(this);
 
 		String[] perms = getRequiredPermissions();
 		a.checkPermissions(perms).onCompletion((result, fail) -> {
@@ -333,29 +359,21 @@ public class MainActivityDelegate extends ActivityDelegate
 			return;
 		}
 
-		String showAddon = getPrefs().getShowAddonOnStartPref();
-		if (showAddon != null) {
-			FermataAddon addon = AddonManager.get().getAddon(showAddon);
+		showDashboard();
+		checkUpdates();
+	}
 
-			if (addon instanceof FermataFragmentAddon) {
-				showFragment(((FermataFragmentAddon) addon).getFragmentId());
-				checkUpdates();
-				return;
-			}
-		}
-
-		FutureSupplier<Boolean> f = goToCurrent().onCompletion((ok, fail1) -> {
-			if ((fail1 != null) && !isCancellation(fail1)) {
-				Log.e(fail1, "Last played track not found");
-			}
-			if ((ok == null) || !ok) showFragment(R.id.folders_fragment);
-			checkUpdates();
-		});
-
-		if (!f.isDone() || f.isFailed() || !Boolean.TRUE.equals(f.peek())) {
-			showFragment(R.id.folders_fragment);
-			setContentLoading(f);
-		}
+	public void showDashboard() {
+		hideActiveMenu();
+		BodyLayout body = getBody();
+		if (!body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
+		View active = getNavBar().findViewById(getActiveNavItemId());
+		View dashboard = getNavBar().findViewById(R.id.dashboard_fragment);
+		if ((active != null) && (active != dashboard)) active.setSelected(false);
+		if (dashboard != null) dashboard.setSelected(true);
+		ActivityFragment f = showFragment(R.id.dashboard_fragment);
+		setActiveNavItemId(R.id.dashboard_fragment);
+		if (f instanceof DashboardFragment d) d.showHome();
 	}
 
 	private void checkUpdates() {
@@ -375,6 +393,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	protected void onActivitySaveInstanceState(@NonNull Bundle outState) {
 		super.onActivitySaveInstanceState(outState);
 		if (isRecreating()) {
+			outState.putBoolean("restoreFragment", true);
 			outState.putInt("navId", getActiveNavItemId());
 			outState.putInt("fragmentId", getActiveFragmentId());
 		}
@@ -385,23 +404,42 @@ public class MainActivityDelegate extends ActivityDelegate
 		else getHandler().post(super::recreate);
 	}
 
+	private void refreshLocale() {
+		Locale loc = getPrefs().getLocalePref();
+		Locale.setDefault(loc);
+		updateLocaleResources(App.get(), loc);
+		updateLocaleResources(getContext(), loc);
+
+		NavBarView nb = navBar;
+		if (nb != null) {
+			updateLocaleResources(nb.getContext(), loc);
+			navBarMediator.reload(nb);
+		}
+
+		ToolBarView tb = toolBar;
+		if (tb != null) {
+			updateLocaleResources(tb.getContext(), loc);
+			ToolBarView.Mediator m = tb.getMediator();
+			if (m != null) {
+				m.disable(tb);
+				m.enable(tb, getActiveFragment());
+			}
+		}
+
+		if (getActiveFragment() instanceof DashboardFragment dashboard) dashboard.reload();
+	}
+
 	@Override
 	public void onActivityResume() {
 		super.onActivityResume();
 		checkMirroringMode(true);
-		for (FermataAddon addon : AddonManager.get().getAddons()) {
-			if (addon instanceof FermataActivityAddon)
-				((FermataActivityAddon) addon).onActivityResume(this);
-		}
+		AddonManager.get().onActivityResume(this);
 	}
 
 	@Override
-	protected void onActivityPause() {
+	public void onActivityPause() {
 		super.onActivityPause();
-		for (FermataAddon addon : AddonManager.get().getAddons()) {
-			if (addon instanceof FermataActivityAddon)
-				((FermataActivityAddon) addon).onActivityPause(this);
-		}
+		AddonManager.get().onActivityPause(this);
 	}
 
 	@Override
@@ -412,10 +450,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		getPrefs().removeBroadcastListener(this);
 		if (speechListener != null) speechListener.destroy();
 
-		for (FermataAddon addon : AddonManager.get().getAddons()) {
-			if (addon instanceof FermataActivityAddon)
-				((FermataActivityAddon) addon).onActivityDestroy(this);
-		}
+		AddonManager.get().onActivityDestroy(this);
 
 		if (me.aap.utils.BuildConfig.D) {
 			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
@@ -584,24 +619,40 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public void setBarsHidden(boolean barsHidden) {
-		App.get().getHandler().post(() -> {
-			this.barsHidden = barsHidden;
-			int visibility = barsHidden ? GONE : VISIBLE;
-			ToolBarView tb = getToolBar();
-			if (tb.getMediator() != ToolBarView.Mediator.Invisible.instance) tb.setVisibility(visibility);
-			getNavBar().setVisibility(visibility);
-		});
+		App.get().getHandler().post(() -> setBarsHiddenNow(barsHidden));
+	}
+
+	public void setBarsHiddenNow(boolean barsHidden) {
+		if (!barsHidden && AUTO && videoMode && !isCurrentSplitMode()) {
+			ControlPanelView cp = getControlPanel();
+			if ((cp == null) || !cp.isVideoControlsVisible()) return;
+		}
+
+		this.barsHidden = barsHidden;
+		int visibility = barsHidden ? GONE : VISIBLE;
+		ToolBarView tb = getToolBar();
+		if (tb.getMediator() != ToolBarView.Mediator.Invisible.instance) tb.setVisibility(visibility);
+		getNavBar().setVisibility(visibility);
+	}
+
+	private boolean isCurrentSplitMode() {
+		MediaEngine engine = getMediaServiceBinder().getCurrentEngine();
+		return getBody().isBothMode() && (engine != null) && engine.isSplitModeSupported();
 	}
 
 	public void setVideoMode(boolean videoMode, @Nullable VideoView v) {
-		if (videoMode == this.videoMode) return;
 		ControlPanelView cp = getControlPanel();
+
+		if (videoMode == this.videoMode) {
+			if (videoMode && (cp != null)) cp.enableVideoMode(v);
+			return;
+		}
 
 		if (videoMode) {
 			this.videoMode = true;
 			setSystemUiVisibility();
 			keepScreenOn(true);
-			cp.enableVideoMode(v);
+			if (cp != null) cp.enableVideoMode(v);
 		} else {
 			this.videoMode = false;
 			setSystemUiVisibility();
@@ -692,7 +743,7 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public void backToNavFragment() {
 		int id = getActiveNavItemId();
-		showFragment((id == ID_NULL) ? R.id.folders_fragment : id);
+		showFragment((id == ID_NULL) ? R.id.dashboard_fragment : id);
 	}
 
 	@Override
@@ -704,15 +755,52 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public ActivityFragment showFragment(int id, Object input) {
 		BodyLayout b = getBody();
-		if (b.isVideoMode()) b.setMode(BodyLayout.Mode.BOTH);
+		if (b.isVideoMode()) b.setMode(PlaybackLayoutPolicy.getModeAfterLeavingVideo(isCarActivity()));
 		return super.showFragment(id, input);
 	}
 
+	public boolean showFragmentWhenReady(int id) {
+		return showFragmentWhenReady(id, null);
+	}
+
+	public boolean showFragmentWhenReady(int id, @Nullable Object input) {
+		AddonManager mgr = FermataApplication.get().getAddonManager();
+		AddonInfo info = mgr.getAddonInfo(id);
+		if ((info == null) || !info.hasFragment) {
+			showFragment(id, input);
+			return true;
+		}
+
+		AddonState state = mgr.getAddonState(info);
+		if (state == AddonState.LOADED) {
+			showFragment(id, input);
+			return true;
+		}
+		if (state == AddonState.DISABLED) {
+			showAlert(getContext(), R.string.dashboard_addon_disabled_sub);
+			return false;
+		}
+
+		FutureSupplier<FermataAddon> loading = mgr.getOrInstallAddon(info.className).main(getHandler());
+		setContentLoading(loading);
+		loading.onSuccess(addon -> showFragment(id, input)).onFailure(err -> {
+			if (!isCancellation(err)) {
+				String msg = err.getLocalizedMessage();
+				showAlert(getContext(), (msg != null) ? msg : err.toString());
+			}
+		});
+		return true;
+	}
+
 	protected ActivityFragment createFragment(int id) {
-		if (id == R.id.folders_fragment) {
+		if (id == R.id.dashboard_fragment) {
+			return new DashboardFragment();
+		} else if (id == R.id.folders_fragment) {
 			return new FoldersFragment();
 		} else if (id == R.id.favorites_fragment) {
 			return new FavoritesFragment();
+		} else if (id == R.id.recent_fragment) {
+			return new RecentFragment();
 		} else if (id == R.id.playlists_fragment) {
 			return new PlaylistsFragment();
 		} else if (id == R.id.settings_fragment) {
@@ -759,34 +847,24 @@ public class MainActivityDelegate extends ActivityDelegate
 				getLib().getLastPlayedItem().main().map(this::goToItem) : completed(goToItem(pi));
 	}
 
+	public void onPlayerBackPressed() {
+		BackNavigationPolicy.handlePlayerBack(this);
+	}
+
 	public FutureSupplier<Item> goToItem(String id) {
 		return getLib().getItem(id).main(getHandler()).map(i -> goToItem(i) ? i : null);
 	}
 
 	public boolean goToItem(Item i) {
 		if (i == null) return false;
-		BrowsableItem root = i.getRoot();
+		int fragmentId = ItemRoutePolicy.getFragmentId(i);
 
-		if (root instanceof MediaLib.Folders) {
-			showFragment(R.id.folders_fragment);
-		} else if (root instanceof MediaLib.Favorites) {
-			showFragment(R.id.favorites_fragment);
-		} else if (root instanceof MediaLib.Playlists) {
-			showFragment(R.id.playlists_fragment);
-		} else if (root instanceof ExtRoot) {
-			if ("youtube".equals(root.getId())) {
-				showFragment(R.id.youtube_fragment);
-				return true;
-			}
-		} else {
-			MediaLibAddon a = AddonManager.get().getMediaLibAddon(root);
-			if (a != null) {
-				showFragment(a.getFragmentId());
-			} else {
-				Log.d("Unsupported item: ", i);
-				return false;
-			}
+		if (fragmentId == 0) {
+			Log.d("Unsupported item: ", i);
+			return false;
 		}
+
+		showFragment(fragmentId);
 
 		FermataApplication.get().getHandler().post(() -> {
 			ActivityFragment f = getActiveFragment();
@@ -801,6 +879,16 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	protected boolean exitOnBackPressed() {
 		return !isCarActivityNotMirror();
+	}
+
+	@Override
+	public void onBackPressed() {
+		if (!AUTO) {
+			super.onBackPressed();
+			return;
+		}
+
+		BackNavigationPolicy.handleAutoActivityBack(this);
 	}
 
 	@Override
@@ -996,6 +1084,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		controlPanel = a.findViewById(R.id.control_panel);
 		floatingButton = a.findViewById(R.id.floating_button);
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
+		if (AUTO) floatingButton.setVisibility(GONE);
 		controlPanel.bind(getMediaServiceBinder());
 
 		if (VERSION.SDK_INT >= VERSION_CODES.VANILLA_ICE_CREAM && !a.isCarActivity()) {
@@ -1016,7 +1105,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		return switch (prefs.getNavBarPosPref(this)) {
 			case NavBarView.POSITION_LEFT -> R.layout.main_activity_left;
 			case NavBarView.POSITION_RIGHT -> R.layout.main_activity_right;
-			default -> R.layout.main_activity;
+			default -> R.layout.main_activity_left;
 		};
 	}
 
@@ -1080,7 +1169,8 @@ public class MainActivityDelegate extends ActivityDelegate
 		} else if (prefs.contains(CLOCK_POS)) {
 			getBody().getVideoView().setClockPos(getPrefs().getClockPosPref());
 		} else if (prefs.contains(LOCALE)) {
-			recreate();
+			if (AUTO && isCarActivityNotMirror()) refreshLocale();
+			else recreate();
 		}
 	}
 

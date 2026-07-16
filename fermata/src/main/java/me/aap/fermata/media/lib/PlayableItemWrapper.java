@@ -8,7 +8,9 @@ import android.support.v4.media.MediaMetadataCompat;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Map;
 
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.utils.async.FutureSupplier;
@@ -131,6 +133,16 @@ public class PlayableItemWrapper implements PlayableItem {
 	}
 
 	@Override
+	public boolean isRecentEligible() {
+		return getItem().isRecentEligible();
+	}
+
+	@Override
+	public boolean isLocationSensitive() {
+		return getItem().isLocationSensitive();
+	}
+
+	@Override
 	public boolean isSeekable() {
 		return getItem().isSeekable();
 	}
@@ -232,6 +244,19 @@ public class PlayableItemWrapper implements PlayableItem {
 	@Nullable
 	public String getUserAgent() {
 		return getItem().getUserAgent();
+	}
+
+	@NonNull
+	@Override
+	public Map<String, String> getRequestHeaders() {
+		return getItem().getRequestHeaders();
+	}
+
+	@Override
+	@Nullable
+	public MediaEngine getMediaEngine(@Nullable MediaEngine current,
+			MediaEngine.Listener listener) {
+		return getItem().getMediaEngine(current, listener);
 	}
 
 	@Override

@@ -7,7 +7,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.core.widget.TextViewCompat;
 
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ import java.util.List;
 import me.aap.utils.R;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
+import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.menu.OverlayMenuItemView;
 import me.aap.utils.ui.menu.OverlayMenuView;
@@ -45,6 +48,17 @@ public abstract class CustomizableNavBarMediator implements NavBarView.Mediator,
 
 	protected boolean canSwap(NavBarView nb) {
 		return false;
+	}
+
+	protected CharSequence getText(NavBarView nb, @StringRes int text) {
+		return nb.getContext().getString(text);
+	}
+
+	protected OverlayMenuItem addItem(NavBarView nb, OverlayMenu.Builder b, int id,
+																		int icon, @StringRes int title) {
+		Context ctx = nb.getContext();
+		return b.addItem(id, ResourcesCompat.getDrawable(ctx.getResources(), icon, ctx.getTheme()),
+				getText(nb, title));
 	}
 
 	@Override
@@ -167,14 +181,14 @@ public abstract class CustomizableNavBarMediator implements NavBarView.Mediator,
 			if (nb.getPosition() == POSITION_BOTTOM) {
 				if (idx != 0) {
 					OverlayMenuItemView item = (OverlayMenuItemView)
-							b.addItem(R.id.left, R.drawable.move_left, R.string.move_left);
+							addItem(nb, b, R.id.left, R.drawable.move_left, R.string.move_left);
 					item.setHandler(i -> swap(nb, btn.getId(), nb.getChildAt(idx - 1).getId()));
 					item.setTextColor(tint);
 					TextViewCompat.setCompoundDrawableTintList(item, tint);
 				}
 				if (idx != (count - 1)) {
 					OverlayMenuItemView item = (OverlayMenuItemView)
-							b.addItem(R.id.right, R.drawable.move_right, R.string.move_right);
+							addItem(nb, b, R.id.right, R.drawable.move_right, R.string.move_right);
 					item.setHandler(i -> swap(nb, btn.getId(), nb.getChildAt(idx + 1).getId()));
 					item.setTextColor(tint);
 					TextViewCompat.setCompoundDrawableTintList(item, tint);
@@ -182,14 +196,14 @@ public abstract class CustomizableNavBarMediator implements NavBarView.Mediator,
 			} else {
 				if (idx != 0) {
 					OverlayMenuItemView item = (OverlayMenuItemView)
-							b.addItem(R.id.up, R.drawable.move_up, R.string.move_up);
+							addItem(nb, b, R.id.up, R.drawable.move_up, R.string.move_up);
 					item.setHandler(i -> swap(nb, btn.getId(), nb.getChildAt(idx - 1).getId()));
 					item.setTextColor(tint);
 					TextViewCompat.setCompoundDrawableTintList(item, tint);
 				}
 				if (idx != (count - 1)) {
 					OverlayMenuItemView item = (OverlayMenuItemView)
-							b.addItem(R.id.down, R.drawable.move_down, R.string.move_down);
+							addItem(nb, b, R.id.down, R.drawable.move_down, R.string.move_down);
 					item.setHandler(i -> swap(nb, btn.getId(), nb.getChildAt(idx + 1).getId()));
 					item.setTextColor(tint);
 					TextViewCompat.setCompoundDrawableTintList(item, tint);

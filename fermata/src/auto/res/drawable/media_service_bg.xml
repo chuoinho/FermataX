@@ -4,7 +4,7 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <gradient
-        android:endColor="#4E6AA2"
-        android:startColor="#1e4322"
+        android:endColor="#2BB8A8"
+        android:startColor="#0B4F3A"
         android:type="linear" />
 </shape>

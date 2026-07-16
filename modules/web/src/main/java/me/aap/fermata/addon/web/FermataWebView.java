@@ -20,6 +20,7 @@ import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.CookieManager;
 import android.webkit.WebSettings;
@@ -48,6 +49,7 @@ import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.TextChangedListener;
 import me.aap.utils.ui.view.ToolBarView;
+import org.json.JSONObject;
 
 /**
  * @author Andrey Pavlenko
@@ -59,6 +61,8 @@ public class FermataWebView extends WebView
 	private WebBrowserAddon addon;
 	private FermataWebClient webClient;
 	private FermataChromeClient chrome;
+	private String lastUrl;
+	private long cookieFlushStamp;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -101,6 +105,12 @@ public class FermataWebView extends WebView
 
 		setDesktopMode(addon, false);
 		setForceDark(addon, false);
+	}
+
+	@Override
+	public void loadUrl(@NonNull String url) {
+		if (!isScriptUrl(url)) lastUrl = url;
+		super.loadUrl(url);
 	}
 
 	@Override
@@ -220,8 +230,20 @@ public class FermataWebView extends WebView
 		return chrome;
 	}
 
+	public boolean exitFullScreenForBack() {
+		FermataChromeClient c = getWebChromeClient();
+		if ((c == null) || !c.isFullScreen()) return false;
+		onUserExitFullScreen();
+		c.exitFullScreen();
+		return true;
+	}
+
+	protected void onUserExitFullScreen() {
+	}
+
 	protected void pageLoaded(String uri) {
 		addFocusHighlight();
+		lastUrl = uri;
 		getAddon().setLastUrl(uri);
 		getActivity().onSuccess(a -> {
 			ActivityFragment f = a.getActiveFragment();
@@ -235,17 +257,91 @@ public class FermataWebView extends WebView
 				wm.setButtonsVisibility(tb, canGoBack(), canGoForward());
 			}
 
-			CookieManager.getInstance().flush();
+			flushCookiesSoon();
 		});
 	}
 
 	protected void addFocusHighlight() {
 		evaluateJavascript("""
 				(function() {
+				  if (document.getElementById('fermata-focus-style')) return;
 				  var style = document.createElement('style');
+				  style.id = 'fermata-focus-style';
 				  style.innerHTML = ':focus {outline: 2px solid blue !important; border-radius: 5px;}';
-				  document.head.appendChild(style);
+				  (document.head || document.documentElement).appendChild(style);
 				})()""", null);
+	}
+
+	protected void flushCookiesSoon() {
+		long stamp = ++cookieFlushStamp;
+		postDelayed(() -> {
+			if (stamp == cookieFlushStamp) CookieManager.getInstance().flush();
+		}, 750);
+	}
+
+	boolean recoverRenderProcess() {
+		Log.e("WebView renderer process is gone. Recreating WebView.");
+
+		if (!(getParent() instanceof ViewGroup parent)) {
+			destroy();
+			return true;
+		}
+
+		int index = parent.indexOfChild(this);
+		ViewGroup.LayoutParams lp = getLayoutParams();
+		int id = getId();
+		int visibility = getVisibility();
+		String url = getRecoveryUrl();
+
+		try {
+			FermataChromeClient oldChrome = getWebChromeClient();
+			if ((oldChrome != null) && oldChrome.isFullScreen()) oldChrome.exitFullScreen();
+
+			FermataWebView web = getClass().getConstructor(Context.class).newInstance(getContext());
+			web.setId(id);
+			web.setVisibility(visibility);
+			web.setLayoutParams(lp);
+
+			FermataWebClient client = (webClient == null) ? new FermataWebClient() : webClient.createReplacement();
+			FermataChromeClient chromeClient = (oldChrome == null) ? null : oldChrome.createReplacement(web);
+
+			if ((addon == null) || (chromeClient == null)) {
+				parent.removeView(this);
+				destroy();
+				return true;
+			}
+
+			web.init(addon, client, chromeClient);
+			parent.removeView(this);
+			destroy();
+			parent.addView(web, index, lp);
+			if ((url != null) && !url.isEmpty()) web.loadUrl(url);
+		} catch (Throwable ex) {
+			Log.e(ex, "Failed to recreate WebView after renderer process loss");
+			parent.removeView(this);
+			destroy();
+		}
+
+		return true;
+	}
+
+	protected String getRecoveryUrl() {
+		String current = getUrl();
+		if ((current != null) && !isScriptUrl(current)) return current;
+		if ((lastUrl != null) && !isScriptUrl(lastUrl)) return lastUrl;
+		WebBrowserAddon a = getAddon();
+		return selectRecoveryUrl(current, lastUrl, (a == null) ? null : a.getLastUrl());
+	}
+
+	static String selectRecoveryUrl(String currentUrl, String lastUrl, String addonLastUrl) {
+		String url = currentUrl;
+		if ((url == null) || isScriptUrl(url)) url = lastUrl;
+		if ((url == null) || isScriptUrl(url)) url = addonLastUrl;
+		return ((url == null) || isScriptUrl(url)) ? null : url;
+	}
+
+	static boolean isScriptUrl(String url) {
+		return (url != null) && url.regionMatches(true, 0, "javascript:", 0, 11);
 	}
 
 	protected boolean requestFullScreen() {
@@ -276,15 +372,17 @@ public class FermataWebView extends WebView
 		if (!BuildConfig.AUTO) return;
 
 		Log.d(text);
-		loadUrl(
-				"javascript:\n" + "var e =  document.activeElement;\n" + "var text = '" + text + "';\n" +
-						"if (e.isContentEditable) e.innerText = text;\n" + "else e.value = text;\n" +
-						"e.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));\n" +
-						"e.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));\n" +
-						"e.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: " +
-						"'insertText' }));\n" +
-						"e.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));\n" +
-						"e.dispatchEvent(new Event('change', { bubbles: true }));");
+		evaluateJavascript("var e = document.activeElement;\n" +
+				"var text = " + JSONObject.quote(text == null ? "" : text.toString()) + ";\n" +
+				"if (e != null) {\n" +
+				"  if (e.isContentEditable) e.innerText = text;\n" +
+				"  else e.value = text;\n" +
+				"  e.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));\n" +
+				"  e.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));\n" +
+				"  e.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));\n" +
+				"  e.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));\n" +
+				"  e.dispatchEvent(new Event('change', { bubbles: true }));\n" +
+				"}", null);
 	}
 
 

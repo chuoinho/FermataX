@@ -35,6 +35,7 @@ import me.aap.utils.ui.UiUtils;
 public class NavButtonView extends LinearLayoutCompat {
 	private final NavBarView navBar;
 	private final int pad;
+	private int iconPadding = -1;
 
 	public NavButtonView(NavBarView navBar) {
 		super(navBar.getContext());
@@ -52,7 +53,7 @@ public class NavButtonView extends LinearLayoutCompat {
 		lp.weight = 1;
 		lp.gravity = Gravity.CENTER;
 		img.setLayoutParams(lp);
-		img.setAlpha(0.5f);
+		img.setAlpha(0.36f);
 		ImageViewCompat.setImageTintList(img, ColorStateList.valueOf(navBar.getTint()));
 		addView(img);
 
@@ -74,13 +75,27 @@ public class NavButtonView extends LinearLayoutCompat {
 
 		if (selected) {
 			i.setAlpha(1f);
-			i.setPadding(0, 0, 0, 0);
 		} else {
-			i.setAlpha(0.5f);
-			i.setPadding(0, pad, 0, pad);
+			i.setAlpha(0.36f);
 		}
+		applyIconPadding(i, selected);
 		TextView t = getText();
 		if (t != null) t.setVisibility(selected ? VISIBLE : GONE);
+	}
+
+	public void setIconPadding(int padding) {
+		iconPadding = padding;
+		applyIconPadding(getIcon(), isSelected());
+	}
+
+	private void applyIconPadding(ImageView icon, boolean selected) {
+		if (iconPadding >= 0) {
+			icon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding);
+		} else if (selected) {
+			icon.setPadding(0, 0, 0, 0);
+		} else {
+			icon.setPadding(0, pad, 0, pad);
+		}
 	}
 
 	public void setIcon(Drawable icon) {

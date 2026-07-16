@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">បន្ថែមផតខាស</string>
+    <string name="podcast_search">ស្វែងរកផតខាស</string>
+    <string name="podcast_add_rss">បន្ថែម RSS feed</string>
+    <string name="podcast_import_opml">នាំចូល OPML</string>
+    <string name="podcast_subscribe">ជាវ</string>
+    <string name="podcast_export_opml">នាំចេញ OPML</string>
+    <string name="podcast_export_failed">មិនអាចនាំចេញផតខាសបានទេ</string>
+    <string name="podcast_export_private_title">តំណផតខាសឯកជន</string>
+    <string name="podcast_export_private_message">រួមបញ្ចូល URL ប្រភពឯកជនដែលមានថូខិនក្នុងឯកសារ OPML នេះឬ?</string>
+    <string name="podcast_export_public_only">សាធារណៈប៉ុណ្ណោះ</string>
+    <string name="podcast_export_include_private">រួមបញ្ចូលឯកជន</string>
+    <string name="podcast_feed_url">URL ប្រភព</string>
+    <string name="podcast_add_failed">មិនអាចបន្ថែមផតខាសនេះបានទេ</string>
+    <string name="podcast_import_failed">មិនអាចនាំចូលឯកសារ OPML នេះបានទេ</string>
+    <string name="podcast_import_result">បាននាំចូល %1$d ផតខាស; បរាជ័យ %2$d</string>
+    <string name="podcast_edit_rss">កែសម្រួលប្រភព RSS</string>
+    <string name="podcast_delete_title">លុបផតខាស</string>
+    <string name="podcast_delete_message">លុប %1$s និងភាគដែលបានទាញយកឬ?</string>
+    <string name="podcast_continue">បន្តស្តាប់</string>
+    <string name="podcast_new_episodes">ភាគថ្មី</string>
+    <string name="podcast_subscriptions">ការជាវ</string>
+    <string name="podcast_mark_played">សម្គាល់ថាបានស្តាប់</string>
+    <string name="podcast_mark_unplayed">សម្គាល់ថាមិនទាន់ស្តាប់</string>
+    <string name="podcast_download">ទាញយកភាគ</string>
+    <string name="podcast_delete_download">លុបការទាញយក</string>
+</resources>

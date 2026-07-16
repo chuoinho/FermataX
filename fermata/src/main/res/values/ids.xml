@@ -24,13 +24,20 @@
 
     <item name="menu" type="id" />
 
+    <item name="dashboard_fragment" type="id" />
+    <item name="dashboard_settings" type="id" />
+    <item name="dashboard_edit" type="id" />
+    <item name="dashboard_menu" type="id" />
     <item name="folders_fragment" type="id" />
     <item name="favorites_fragment" type="id" />
+    <item name="recent_fragment" type="id" />
     <item name="playlists_fragment" type="id" />
     <item name="settings_fragment" type="id" />
     <item name="audio_effects_fragment" type="id" />
     <item name="subtitles_fragment" type="id" />
     <item name="tv_fragment" type="id" />
+    <item name="radio_fragment" type="id" />
+    <item name="podcast_fragment" type="id" />
     <item name="youtube_fragment" type="id" />
     <item name="web_browser_fragment" type="id" />
     <item name="felex_fragment" type="id" />
@@ -135,6 +142,8 @@
     <item name="vfs_sftp" type="id" />
     <item name="vfs_smb" type="id" />
     <item name="m3u_playlist" type="id" />
+    <item name="xtream_source" type="id" />
+    <item name="tool_add_source" type="id" />
 
     <item name="car_edit_text" type="id" />
     <item name="share" type="id" />

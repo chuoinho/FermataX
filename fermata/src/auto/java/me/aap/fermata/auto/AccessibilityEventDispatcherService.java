@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import static android.accessibilityservice.GestureDescription.getMaxGestureDuration;
 import static android.view.Display.DEFAULT_DISPLAY;

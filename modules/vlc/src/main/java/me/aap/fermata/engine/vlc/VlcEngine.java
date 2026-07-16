@@ -38,6 +38,8 @@ import org.videolan.libvlc.interfaces.IVLCVout;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.AudioEffects;
@@ -108,6 +110,20 @@ public class VlcEngine extends MediaEngineBase
 				if ((scheme != null) && scheme.startsWith("http")) {
 					String agent = source.getUserAgent();
 					if (agent != null) media.addOption(":http-user-agent='" + agent + "'");
+					String authorization = source.getRequestHeaders().get("Authorization");
+					if ((authorization != null) && authorization.regionMatches(true, 0,
+							"Basic ", 0, 6)) {
+						try {
+							String value = new String(Base64.getDecoder().decode(
+									authorization.substring(6).trim()), StandardCharsets.UTF_8);
+							int separator = value.indexOf(':');
+							if (separator != -1) {
+								media.addOption(":http-user=" + value.substring(0, separator));
+								media.addOption(":http-pwd=" + value.substring(separator + 1));
+							}
+						} catch (IllegalArgumentException ignored) {
+						}
+					}
 				}
 			}
 

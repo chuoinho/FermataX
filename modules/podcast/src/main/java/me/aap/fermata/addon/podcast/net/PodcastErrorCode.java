@@ -1,0 +1,19 @@
+package me.aap.fermata.addon.podcast.net;
+
+public enum PodcastErrorCode {
+	DNS,
+	TLS,
+	TIMEOUT,
+	OFFLINE,
+	AUTH_REQUIRED,
+	AUTH_REJECTED,
+	NOT_FOUND,
+	RATE_LIMITED,
+	SERVER,
+	HTTP,
+	TOO_LARGE,
+	INVALID_CONTENT,
+	REDIRECT_REJECTED,
+	SECURE_STORAGE_UNAVAILABLE,
+	CANCELLED
+}

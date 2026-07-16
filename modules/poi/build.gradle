@@ -11,6 +11,7 @@ ext {
     addons = [
             [
                     name   : 'poi',
+                    id     : 'poi_addon',
                     icon   : 'poi',
                     class  : 'me.aap.fermata.addon.poi.PoiAddon',
                     enabled: false,

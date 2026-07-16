@@ -27,6 +27,7 @@ import androidx.media3.common.util.Util;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.datasource.ResolvingDataSource;
 import androidx.media3.datasource.cronet.CronetDataSource;
 import androidx.media3.datasource.cronet.CronetUtil;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
@@ -46,6 +47,7 @@ import java.net.CookiePolicy;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 import me.aap.fermata.BuildConfig;
@@ -77,19 +79,28 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	private static final DataSource.Factory httpDsFactory;
 
 	static {
-		CronetEngine cre = CronetUtil.buildCronetEngine(FermataApplication.get(),
-				"Fermata/" + BuildConfig.VERSION_NAME, true);
-		if (cre != null) {
-			httpDsFactory = new CronetDataSource.Factory(cre, Executors.newSingleThreadExecutor());
-		} else {
-			CookieManager cookieManager = new CookieManager();
-			cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
-			CookieHandler.setDefault(cookieManager);
-			httpDsFactory = new DefaultHttpDataSource.Factory();
+		httpDsFactory = createHttpDataSourceFactory();
+	}
+
+	private static DataSource.Factory createHttpDataSourceFactory() {
+		try {
+			CronetEngine cre = CronetUtil.buildCronetEngine(FermataApplication.get(),
+					"Fermata/" + BuildConfig.VERSION_NAME, true);
+			if (cre != null) {
+				return new CronetDataSource.Factory(cre, Executors.newSingleThreadExecutor());
+			}
+		} catch (Throwable err) {
+			Log.w(err, "Cronet is unavailable. Falling back to the default HTTP data source.");
 		}
+
+		CookieManager cookieManager = new CookieManager();
+		cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
+		CookieHandler.setDefault(cookieManager);
+		return new DefaultHttpDataSource.Factory();
 	}
 
 	private final Accessor accessor = new Accessor(this);
+	private final Context context;
 	private final Timeline.Period period = new Timeline.Period();
 	private final PendingLoadAudioProcessor audioProc = new PendingLoadAudioProcessor(accessor);
 	private final ExoPlayer player;
@@ -102,6 +113,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
 		super(listener);
+		context = ctx;
 		DefaultDataSource.Factory dsFactory = new DefaultDataSource.Factory(ctx, httpDsFactory);
 		MediaSource.Factory msFactory =
 				new DefaultMediaSourceFactory(ctx).setDataSourceFactory(dsFactory);
@@ -164,7 +176,17 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		Uri uri = source.getLocation();
 		MediaItem m = MediaItem.fromUri(uri);
 		isHls = Util.inferContentType(uri) == C.CONTENT_TYPE_HLS;
-		player.setMediaItem(m);
+		Map<String, String> headers = source.getRequestHeaders();
+		if (headers.isEmpty()) {
+			player.setMediaItem(m);
+		} else {
+			DataSource.Factory resolving = new ResolvingDataSource.Factory(httpDsFactory,
+					dataSpec -> dataSpec.withAdditionalHeaders(headers));
+			DefaultDataSource.Factory dataSource = new DefaultDataSource.Factory(context, resolving);
+			MediaSource mediaSource = new DefaultMediaSourceFactory(context)
+					.setDataSourceFactory(dataSource).createMediaSource(m);
+			player.setMediaSource(mediaSource);
+		}
 		player.prepare();
 	}
 

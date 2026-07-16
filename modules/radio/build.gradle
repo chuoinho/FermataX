@@ -1,0 +1,29 @@
+android {
+    namespace = "me.aap.fermata.addon.radio"
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+ext {
+    addons = [
+            [
+                    name : 'radio',
+                    id   : 'radio_fragment',
+                    icon : 'radio',
+                    class: 'me.aap.fermata.addon.radio.RadioAddon',
+                    fragment: true,
+					capabilities: 'dashboard,navigation,radio',
+                    order: 4
+            ]
+    ]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation libs.androidxMedia
+    implementation libs.androidxAppcompat
+    implementation libs.androidMaterial
+}

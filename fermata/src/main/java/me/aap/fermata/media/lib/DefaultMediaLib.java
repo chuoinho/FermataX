@@ -57,6 +57,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	private final SharedPreferences sharedPreferences;
 	private final DefaultFolders folders;
 	private final DefaultFavorites favorites;
+	private final DefaultRecent recent;
 	private final DefaultPlaylists playlists;
 	private final MediaEngineManager mediaEngineManager;
 	private final MetadataRetriever metadataRetriever;
@@ -72,6 +73,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		metadataRetriever = new MetadataRetriever(mediaEngineManager);
 		folders = new DefaultFolders(this);
 		favorites = new DefaultFavorites(this);
+		recent = new DefaultRecent(this);
 		playlists = new DefaultPlaylists(this);
 		atvInterface = AtvInterface.create(this);
 		addBroadcastListener(this);
@@ -112,6 +114,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			return switch (id) {
 				case DefaultFolders.ID -> completed(getFolders());
 				case DefaultFavorites.ID -> completed(getFavorites());
+				case DefaultRecent.ID -> completed(getRecent());
 				case DefaultPlaylists.ID -> completed(getPlaylists());
 				default -> ifNull(AddonManager.get().getItem(this, null, id), completedNull());
 			};
@@ -128,6 +131,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 				case M3uGroupItem.SCHEME -> M3uGroupItem.create(this, id);
 				case M3uTrackItem.SCHEME -> M3uTrackItem.create(this, id);
 				case DefaultFavorites.SCHEME -> getFavorites().getItem(id);
+				case DefaultRecent.SCHEME -> getRecent().getItem(id);
 				case DefaultPlaylists.SCHEME -> getPlaylists().getItem(id);
 				default -> ifNull(AddonManager.get().getItem(this, scheme, id), completedNull());
 			};
@@ -162,12 +166,13 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		result.detach();
 
 		if (getRootId().equals(parentMediaId)) {
-			List<MediaItem> items = new ArrayList<>(4);
+			List<MediaItem> items = new ArrayList<>(5);
 			getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem())
 					.onSuccess(i -> {
 						if (i != null) items.add(i);
 					}).then(v -> getFolders().asMediaItem()).onSuccess(items::add)
 					.then(v -> getFavorites().asMediaItem()).onSuccess(items::add)
+					.then(v -> getRecent().asMediaItem()).onSuccess(items::add)
 					.then(v -> getPlaylists().asMediaItem()).onSuccess(items::add)
 
 					.then(v -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add),
@@ -227,6 +232,10 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@Override
 	public long getLastPlayedPosition(PlayableItem i) {
+		if (i instanceof PlaybackProgressItem progress) {
+			long position = progress.getResumePosition();
+			if (position >= 0) return position;
+		}
 		long pos = i.getPrefs().getPositionPref();
 		if ((pos != 0) || i.isVideo()) return pos;
 		BrowsableItemPrefs p = i.getParent().getPrefs();
@@ -244,6 +253,12 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	@Override
 	public DefaultFavorites getFavorites() {
 		return favorites;
+	}
+
+	@NonNull
+	@Override
+	public DefaultRecent getRecent() {
+		return recent;
 	}
 
 	@NonNull

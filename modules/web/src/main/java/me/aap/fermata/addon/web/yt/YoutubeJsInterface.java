@@ -15,6 +15,8 @@ public class YoutubeJsInterface extends FermataJsInterface {
 	public static final int JS_VIDEO_PAUSED = JS_LAST + 3;
 	public static final int JS_VIDEO_ENDED = JS_LAST + 4;
 	public static final int JS_VIDEO_QUALITIES = JS_LAST + 5;
+	public static final int JS_VIDEO_READY = JS_LAST + 6;
+	public static final int JS_VIDEO_TOUCHED = JS_LAST + 7;
 	private final YoutubeMediaEngine engine;
 	private Promise<String> result;
 
@@ -28,6 +30,30 @@ public class YoutubeJsInterface extends FermataJsInterface {
 		return result = new Promise<>();
 	}
 
+	void onUserExitFullScreen() {
+		engine.onUserExitFullScreen();
+	}
+
+	boolean onPlayerBack(boolean appVideoMode, boolean browserFullScreen) {
+		return engine.onPlayerBack(appVideoMode, browserFullScreen);
+	}
+
+	boolean acceptsBrowserFullScreen(long request) {
+		return engine.acceptsBrowserFullScreen(request);
+	}
+
+	long grantManualFullScreenEntry() {
+		return engine.grantManualFullScreenEntry();
+	}
+
+	void expireManualFullScreenEntry(long permit) {
+		engine.expireManualFullScreenEntry(permit);
+	}
+
+	void onPlaybackGesture(long eventTime) {
+		engine.onPlaybackGesture(eventTime);
+	}
+
 	protected void handleEvent(int event, String data) {
 		switch (event) {
 			case JS_VIDEO_FOUND:
@@ -36,6 +62,13 @@ public class YoutubeJsInterface extends FermataJsInterface {
 			case JS_VIDEO_PLAYING:
 				Log.d("Video playing");
 				engine.playing(data);
+				break;
+			case JS_VIDEO_READY:
+				Log.d("Video ready");
+				engine.ready(data);
+				break;
+			case JS_VIDEO_TOUCHED:
+				engine.touched();
 				break;
 			case JS_VIDEO_PAUSED:
 				Log.d("Video paused");

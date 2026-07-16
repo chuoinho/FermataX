@@ -1,9 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="sub_ch">Channels: %1$d.</string>
+    <string name="sub_movies">Movies: %1$d.</string>
+    <string name="sub_series">Series: %1$d.</string>
+    <string name="sub_seasons">Seasons: %1$d.</string>
+    <string name="sub_episodes">Episodes: %1$d.</string>
     <string name="sub_gr">Groups: %1$d.</string>
     <string name="sub_ch_gr">Channels: %1$d. Groups: %2$d.</string>
-    <string name="add_tv_source">Add M3U IPTV source</string>
+    <string name="add_tv_source">Add IPTV source</string>
+    <string name="add_xtream_source">Add Xtream Codes source</string>
+    <string name="tv_source_name">Source name</string>
+    <string name="xtream_codes" translatable="false">Xtream Codes</string>
+    <string name="xtream_live_tv">Live TV</string>
+    <string name="xtream_movies">Movies</string>
+    <string name="xtream_series">Series</string>
+    <string name="xtream_source_subtitle">Live TV / Movies / Series</string>
+    <string name="xtream_watch_from_beginning">Watch from beginning</string>
+    <string name="xtream_catchup_last_24h">Last 24h</string>
+    <string name="xtream_catchup_yesterday">Yesterday</string>
+    <string name="xtream_next">Next</string>
+    <string name="xtream_catchup_programs">Programs: %1$d.</string>
+    <string name="xtream_scheme">Protocol</string>
+    <string name="xtream_scheme_cur">Current protocol: %1$s</string>
+    <string name="xtream_output">Output format</string>
+    <string name="xtream_output_cur">Current output format: %1$s</string>
     <string name="epg" translatable="false">EPG</string>
     <string name="epg_url" translatable="false">XMLTV URL</string>
     <string name="epg_time_shift">EPG time shift (hours)</string>

@@ -115,6 +115,7 @@ import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
+import me.aap.fermata.media.lib.PlaybackProgressItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
@@ -124,6 +125,7 @@ import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Async;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BiConsumer;
@@ -183,12 +185,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private boolean playOnAudioFocus;
 	private boolean isMuted;
 	private boolean tryAnotherEngine;
-	@NonNull
-	private PlaybackStateCompat currentState;
 	private Queue<Prioritized<VideoView>> videoView;
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
 	private MediaMetadataCompat metadata;
+	private PlaybackSnapshot playbackSnapshot;
+	private long playbackSnapshotRevision;
+	private String retryStreamId;
+	private int streamRetryAttempt;
+	private long streamStartedAt;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session,
 															MediaLib lib,
@@ -221,8 +226,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_FAVORITES_REMOVE,
 						ctx.getString(R.string.favorites_remove), R.drawable.favorite_filled).build();
 
-		currentState = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS).build();
-		setPlaybackState(currentState);
+		PlaybackStateCompat initialState =
+				new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS).build();
+		setPlaybackState(initialState);
 		session.setActive(true);
 
 		audioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
@@ -276,16 +282,42 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	public void setEngine(MediaEngine engine) {
-		if (this.engine == engine) return;
+		switchEngine(engine);
+	}
+
+	public boolean startExternalPlayback(@NonNull MediaEngine engine) {
+		switchEngine(engine);
+
+		if (!engine.requestAudioFocus(audioManager, audioFocusReq)) {
+			Log.i("Audio focus request failed");
+			onStop(false);
+			return false;
+		}
+
+		onEngineStarted(engine);
+		return true;
+	}
+
+	private void switchEngine(@NonNull MediaEngine engine) {
+		if (this.engine == engine) {
+			session.setActive(true);
+			return;
+		}
 		playerTask.cancel();
-		onStop();
+		onStop(false);
 		this.engine = engine;
+		session.setActive(true);
 	}
 
 	@Nullable
 	public PlayableItem getCurrentItem() {
 		MediaEngine eng = getEngine();
 		return (eng == null) ? null : eng.getSource();
+	}
+
+	@NonNull
+	public PlaybackSnapshot getPlaybackSnapshot() {
+		return playbackSnapshot;
 	}
 
 	public MediaSessionCompat getSession() {
@@ -428,6 +460,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask = prepare();
 	}
 
+	public void prepareIfIdle() {
+		if ((getCurrentItem() != null) || !playerTask.isDone()) return;
+		onPrepare();
+	}
+
 	private FutureSupplier<Void> prepare() {
 		int st = getPlaybackState().getState();
 
@@ -555,7 +592,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		eng.pause();
 		eng.getPosition().and(eng.getSpeed()).main().onSuccess(h -> {
 			if (eng != getEngine()) return;
-			long qid = currentState.getActiveQueueItemId();
+			long qid = getPlaybackState().getActiveQueueItemId();
 			setLastPlayed(i, h.value1);
 			PlaybackStateCompat state = createPlayingState(i, true, qid, h.value1, h.value2);
 			setPlaybackState(state);
@@ -564,6 +601,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onStop() {
+		playerTask.cancel();
+		resetStreamRetry();
 		onStop(true);
 	}
 
@@ -580,6 +619,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private FutureSupplier<?> onStop(MediaEngine eng, long pos) {
+		boolean current = eng == engine;
+
 		if (eng != null) {
 			if (pos != -1) {
 				PlayableItem i = eng.getSource();
@@ -589,10 +630,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			eng.stop();
 			eng.releaseAudioFocus(audioManager, audioFocusReq);
 			eng.close();
-			if (eng == engine) engine = null;
+			if (current) engine = null;
 		}
 
-		stopped();
+		if (current || (eng == null)) stopped();
 		return completedVoid();
 	}
 
@@ -874,6 +915,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onEngineBuffering(MediaEngine engine, int percent) {
+		if (engine != getEngine()) return;
 		if (isPlaying()) return;
 		PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(STATE_BUFFERING, 0, 1.0f).build();
@@ -882,12 +924,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onEnginePrepared(MediaEngine engine) {
+		if (engine != getEngine()) return;
 		playerTask.cancel();
 		PlayableItem i = engine.getSource();
 		if (i != null) onEnginePrepared(engine, i);
 	}
 
 	private void onEnginePrepared(MediaEngine engine, PlayableItem i) {
+		if (engine != getEngine()) return;
 		long pos = lib.getLastPlayedPosition(i);
 
 		if (pos > 0) {
@@ -919,12 +963,20 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onEngineStarted(MediaEngine engine) {
+		if (engine != getEngine()) return;
+		PlayableItem source = engine.getSource();
+		if (source instanceof StreamItem) streamStartedAt = System.currentTimeMillis();
+		else resetStreamRetry();
 		engine.getPosition().and(engine.getSpeed()).main()
-				.onSuccess(h -> setPlayingState(engine, true, h.value1, h.value2));
+				.onSuccess(h -> {
+					if (engine == getEngine()) setPlayingState(engine, true, h.value1, h.value2);
+				});
 	}
 
 	private void setPlayingState(MediaEngine engine, boolean playing, long pos, float speed) {
+		if (engine != getEngine()) return;
 		PlayableItem i = engine.getSource();
+		if (i == null) return;
 		BrowsableItemPrefs prefs = i.getParent().getPrefs();
 		int shuffle = prefs.getShufflePref() ? SHUFFLE_MODE_ALL : SHUFFLE_MODE_NONE;
 		int repeat;
@@ -978,13 +1030,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				if (getCurrentItem() != i) return;
 				PlaybackStateCompat s =
 						createPlayingState(i, !isPlaying(), getQid.peek(0L), position, speed);
-				session.setMetadata(m);
+				setSessionMetadata(m, false);
 				setPlaybackState(s);
 			}));
 		}
 
 		PlaybackStateCompat s = createPlayingState(i, !playing, getQid.peek(0L), pos, speed);
-		session.setMetadata(md);
+		setSessionMetadata(md, false);
 		setPlaybackState(s);
 	}
 
@@ -1020,6 +1072,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onEngineEnded(MediaEngine engine) {
+		if (engine != getEngine()) return;
 		playerTask.cancel();
 		playerTask = engineEnded(engine);
 	}
@@ -1029,9 +1082,28 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (i != null) {
 			if (i instanceof StreamItem) {
-				Log.w("Failed to play stream? Retrying ", i);
-				playItem(i, 0);
-				return playerTask;
+				long now = System.currentTimeMillis();
+				long played = (streamStartedAt == 0L) ? 0L : Math.max(0L, now - streamStartedAt);
+				boolean sameStream = i.getId().equals(retryStreamId);
+				int attempt = StreamRetryPolicy.nextAttempt(streamRetryAttempt, sameStream, played);
+
+				if (!StreamRetryPolicy.canRetry(attempt)) {
+					Log.w("Stream retry limit reached: ", i);
+					resetStreamRetry();
+					onStop(false);
+					return completedVoid();
+				}
+
+				retryStreamId = i.getId();
+				streamRetryAttempt = attempt;
+				long delay = StreamRetryPolicy.delay(attempt);
+				Log.w("Stream ended. Retrying in ", delay, " ms (", attempt, "/",
+						StreamRetryPolicy.MAX_ATTEMPTS, "): ", i);
+				return Async.<Object>schedule(() -> {
+					if ((engine != getEngine()) || (engine.getSource() != i))
+						return completedVoid().cast();
+					return createPlayItemTask(i, 0).cast();
+				}, delay);
 			}
 
 			if (i.isVideo()) i.getPrefs().setWatchedPref(true);
@@ -1059,28 +1131,37 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onVideoSizeChanged(MediaEngine engine, int width, int height) {
+		if (engine != getEngine()) return;
 		VideoView v = getVideoView();
 		if (v != null) v.setSurfaceSize(engine);
 	}
 
 	@Override
 	public void onSubtitleStreamChanged(MediaEngine engine, @Nullable SubtitleStreamInfo info) {
+		if (engine != getEngine()) return;
 		fireBroadcastEvent(l -> l.onSubtitleStreamChanged(this, info));
 	}
 
 	@Override
 	public void onEngineError(MediaEngine engine, Throwable ex) {
+		if (engine != getEngine()) return;
 		String msg;
 		PlayableItem i = engine.getSource();
+		boolean sensitive = (i != null) && i.isLocationSensitive();
 
-		if (TextUtils.isEmpty(ex.getLocalizedMessage())) {
+		if (sensitive || TextUtils.isEmpty(ex.getLocalizedMessage())) {
 			msg = lib.getContext().getResources().getString(R.string.err_failed_to_play, i);
 		} else {
 			msg = lib.getContext().getResources()
 					.getString(R.string.err_failed_to_play_cause, i, ex.getLocalizedMessage());
 		}
 
-		Log.w(ex, msg);
+		if (sensitive) {
+			Log.w("Failed to play sensitive item ", i.getId(), " (",
+					ex.getClass().getSimpleName(), ')');
+		} else {
+			Log.w(ex, msg);
+		}
 
 		if (tryAnotherEngine && (engine.getSource() != null)) {
 			this.engine = getEngineManager().createAnotherEngine(engine, this);
@@ -1108,7 +1189,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			return;
 
 		if (text == null) {
-			session.setMetadata(metadata);
+			setSessionMetadata(metadata, true);
 			return;
 		}
 
@@ -1141,7 +1222,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private void setMetadata(MediaMetadataCompat metadata) {
 		this.metadata = metadata;
+		setSessionMetadata(metadata, true);
+	}
+
+	private void setSessionMetadata(MediaMetadataCompat metadata, boolean notify) {
 		session.setMetadata(metadata);
+		updatePlaybackSnapshot(getPlaybackState(), metadata, notify);
 	}
 
 	@Override
@@ -1181,11 +1267,22 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	public void playItem(PlayableItem i, long pos) {
 		playerTask.cancel();
+		resetStreamRetry();
+		playerTask = createPlayItemTask(i, pos);
+	}
+
+	private FutureSupplier<?> createPlayItemTask(PlayableItem i, long pos) {
 		setLastPlayed(i, pos);
 		PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(STATE_CONNECTING, 0, 1.0f).build();
 		setPlaybackState(state);
-		playerTask = prepareItem(i).onSuccess(pi -> playPreparedItem(i, pos));
+		return prepareItem(i).onSuccess(pi -> playPreparedItem(i, pos));
+	}
+
+	private void resetStreamRetry() {
+		retryStreamId = null;
+		streamRetryAttempt = 0;
+		streamStartedAt = 0L;
 	}
 
 	private void playPreparedItem(PlayableItem i, long pos) {
@@ -1278,31 +1375,53 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void setPlaybackState(PlaybackStateCompat state) {
-		currentState = state;
+		int st = state.getState();
+		if ((st != STATE_NONE) && (st != STATE_STOPPED)) session.setActive(true);
 		session.setPlaybackState(state);
+		MediaMetadataCompat metadata = (playbackSnapshot == null)
+				? null : playbackSnapshot.getMetadata();
+		PlaybackSnapshot previous = playbackSnapshot;
+		PlaybackSnapshot current = updatePlaybackSnapshot(state, metadata, false);
 		service.updateNotification(state.getState(), getCurrentItem());
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
+		fireBroadcastEvent(l -> l.onPlaybackSnapshotChanged(this, previous, current));
 
-		if (state.getState() == STATE_PLAYING) {
+		if (st == STATE_PLAYING) {
 			MediaEngine engine = getEngine();
 			if (engine == null) {
 				stopTimer();
 				return;
 			}
 			PlayableItem i = engine.getSource();
+			if (i == null) {
+				stopTimer();
+				return;
+			}
 			if (i.isTimerRequired()) startTimer(i, state.getPosition(), state.getPlaybackSpeed());
 		} else {
 			stopTimer();
 		}
 	}
 
+	private PlaybackSnapshot updatePlaybackSnapshot(PlaybackStateCompat state,
+			@Nullable MediaMetadataCompat metadata, boolean notify) {
+		PlaybackSnapshot previous = playbackSnapshot;
+		PlaybackSnapshot current = new PlaybackSnapshot(++playbackSnapshotRevision,
+				getCurrentItem(), state, metadata);
+		playbackSnapshot = current;
+		if (notify) {
+			fireBroadcastEvent(l -> l.onPlaybackSnapshotChanged(this, previous, current));
+		}
+		return current;
+	}
+
 	@NonNull
 	public PlaybackStateCompat getPlaybackState() {
-		return currentState;
+		return playbackSnapshot.getState();
 	}
 
 	public boolean isPlaying() {
-		return currentState.getState() == PlaybackStateCompat.STATE_PLAYING;
+		return getPlaybackState().getState() == PlaybackStateCompat.STATE_PLAYING;
 	}
 
 	private float getSpeed(PlayableItem i) {
@@ -1318,7 +1437,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void start(MediaEngine engine, float speed) {
-		Log.i("Start playing ", engine.getSource().getLocation(), " with ",
+		Log.i("Start playing ", engine.getSource().getId(), " with ",
 				engine.getClass().getSimpleName());
 		engine.setSpeed(speed);
 		engine.start();
@@ -1440,6 +1559,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void setLastPlayed(PlayableItem i, long position) {
+		lib.getRecent().addItem(i);
 		if (i.isExternal()) return;
 
 		if (position < 0) {
@@ -1455,6 +1575,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			String id;
 			MediaLibPrefs libPrefs = lib.getPrefs();
 			BrowsableItemPrefs p;
+			boolean completed = (dur > 0) && ((dur - position) <= 1000);
+
+			if (i instanceof PlaybackProgressItem progress) {
+				long savedPosition = completed ? 0 : Math.max(position, 0);
+				progress.savePlaybackProgress(savedPosition, completed).onFailure(error ->
+						Log.e(error, "Failed to save playback progress for ", i.getId()));
+			}
 
 			if (i.isStream() || (dur <= 0)) {
 				id = i.getId();
@@ -1466,7 +1593,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				return;
 			}
 
-			if ((dur - position) <= 1000) {
+			if (completed) {
 				i.getNextPlayable().onCompletion((next, fail) -> {
 					if (next == null) next = i;
 
@@ -1558,6 +1685,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	public interface Listener {
 		default void onPlaybackStateChanged(MediaSessionCallback cb, PlaybackStateCompat state) {}
+
+		default void onPlaybackSnapshotChanged(MediaSessionCallback cb,
+				@Nullable PlaybackSnapshot previous, @NonNull PlaybackSnapshot current) {}
 
 		default void onSubtitleStreamChanged(MediaSessionCallback cb,
 																				 @Nullable SubtitleStreamInfo info) {}

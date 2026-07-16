@@ -15,6 +15,7 @@ import java.util.List;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.function.Function;
+import me.aap.utils.ui.activity.ActivityDelegate;
 
 import static me.aap.utils.async.Completed.completedVoid;
 
@@ -51,24 +52,33 @@ public interface OverlayMenu {
 
 		OverlayMenuItem addItem(int id, Drawable icon, CharSequence title, int relativeToId, boolean after);
 
+		static Context getResourceContext(OverlayMenu menu) {
+			Context ctx = menu.getContext();
+			try {
+				return ActivityDelegate.get(ctx).getLocalizedContext(ctx);
+			} catch (RuntimeException ex) {
+				return ctx;
+			}
+		}
+
 		default OverlayMenuItem addItem(int id, @DrawableRes int icon, @StringRes int title) {
-			Context ctx = getMenu().getContext();
+			Context ctx = getResourceContext(getMenu());
 			Resources r = ctx.getResources();
 			return addItem(id, ResourcesCompat.getDrawable(r, icon, ctx.getTheme()), r.getString(title));
 		}
 
 		default OverlayMenuItem addItem(int id, Drawable icon, @StringRes int title) {
-			return addItem(id, icon, getMenu().getContext().getResources().getString(title));
+			return addItem(id, icon, getResourceContext(getMenu()).getString(title));
 		}
 
 		default OverlayMenuItem addItem(int id, @DrawableRes int icon, CharSequence title) {
-			Context ctx = getMenu().getContext();
+			Context ctx = getResourceContext(getMenu());
 			Resources r = ctx.getResources();
 			return addItem(id, ResourcesCompat.getDrawable(r, icon, ctx.getTheme()), title);
 		}
 
 		default OverlayMenuItem addItem(int id, @StringRes int title) {
-			return addItem(id, getMenu().getContext().getResources().getString(title));
+			return addItem(id, getResourceContext(getMenu()).getString(title));
 		}
 
 		default OverlayMenuItem addItem(int id, CharSequence title) {
@@ -76,23 +86,23 @@ public interface OverlayMenu {
 		}
 
 		default OverlayMenuItem addItem(int id, @DrawableRes int icon, @StringRes int title, int relativeToId, boolean after) {
-			Context ctx = getMenu().getContext();
+			Context ctx = getResourceContext(getMenu());
 			Resources r = ctx.getResources();
 			return addItem(id, ResourcesCompat.getDrawable(r, icon, ctx.getTheme()), r.getString(title), relativeToId, after);
 		}
 
 		default OverlayMenuItem addItem(int id, Drawable icon, @StringRes int title, int relativeToId, boolean after) {
-			return addItem(id, icon, getMenu().getContext().getResources().getString(title), relativeToId, after);
+			return addItem(id, icon, getResourceContext(getMenu()).getString(title), relativeToId, after);
 		}
 
 		default OverlayMenuItem addItem(int id, @DrawableRes int icon, CharSequence title, int relativeToId, boolean after) {
-			Context ctx = getMenu().getContext();
+			Context ctx = getResourceContext(getMenu());
 			Resources r = ctx.getResources();
 			return addItem(id, ResourcesCompat.getDrawable(r, icon, ctx.getTheme()), title, relativeToId, after);
 		}
 
 		default OverlayMenuItem addItem(int id, @StringRes int title, int relativeToId, boolean after) {
-			return addItem(id, getMenu().getContext().getResources().getString(title), relativeToId, after);
+			return addItem(id, getResourceContext(getMenu()).getString(title), relativeToId, after);
 		}
 
 		default OverlayMenuItem addItem(int id, CharSequence title, int relativeToId, boolean after) {
@@ -104,7 +114,7 @@ public interface OverlayMenu {
 		Builder setTitle(CharSequence title);
 
 		default Builder setTitle(@StringRes int title) {
-			return setTitle(getMenu().getContext().getString(title));
+			return setTitle(getResourceContext(getMenu()).getString(title));
 		}
 
 		View inflate(@LayoutRes int layout);

@@ -151,6 +151,11 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 		return getAppActivity().getContext();
 	}
 
+	@Nonnull
+	public Context getLocalizedContext(@Nonnull Context ctx) {
+		return ctx;
+	}
+
 	protected void onActivityCreate(@Nullable Bundle savedInstanceState) {
 		Log.d("onActivityCreate");
 		setUncaughtExceptionHandler();

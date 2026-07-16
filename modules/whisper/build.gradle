@@ -31,6 +31,7 @@ ext {
     addons = [
             [
                     name       : 'whisper',
+                    id         : 'whisper_addon',
                     icon       : 'subgen',
                     class      : 'me.aap.fermata.whisper.WhisperAddon',
                     hasSettings: false

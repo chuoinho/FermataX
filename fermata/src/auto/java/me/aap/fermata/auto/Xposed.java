@@ -1,4 +1,4 @@
-package me.aap.fermata.auto;
+package me.app.fermatax.auto;
 
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
@@ -21,7 +21,7 @@ import static de.robv.android.xposed.XposedHelpers.getAdditionalInstanceField;
 import static de.robv.android.xposed.XposedHelpers.removeAdditionalInstanceField;
 import static de.robv.android.xposed.XposedHelpers.setAdditionalInstanceField;
 import static me.aap.fermata.BuildConfig.APPLICATION_ID;
-import static me.aap.fermata.auto.LauncherActivity.INTENT_EXTRA_MODE;
+import static me.app.fermatax.auto.LauncherActivity.INTENT_EXTRA_MODE;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -57,7 +57,7 @@ public class Xposed implements IXposedHookLoadPackage {
 	private static final String EV_SRV_CON_FIELD = "__fermata_event_dispatcher_service__";
 	private static final String PKG_MGR_CLASS = "android.content.pm.IPackageManager.Stub.Proxy";
 	private static final String DISPATCHER_CLASS_NAME =
-			"me.aap.fermata.auto.XposedEventDispatcherService";
+			"me.app.fermatax.auto.XposedEventDispatcherService";
 
 	@Override
 	public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {

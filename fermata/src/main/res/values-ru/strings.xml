@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">Главная</string>
+    <string name="dashboard">Панель</string>
+    <string name="open_dashboard">Открыть панель</string>
+    <string name="dashboard_order">Порядок панели</string>
+    <string name="reset_dashboard_order">Сбросить порядок панели</string>
+    <string name="dashboard_order_sub">Также управляет порядком навигации</string>
+    <string name="dashboard_now_playing">Сейчас играет</string>
+    <string name="dashboard_continue">Продолжить просмотр</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">Стартовый экран и быстрый доступ</string>
+    <string name="dashboard_folders_sub">Локальные файлы и папки</string>
+    <string name="dashboard_favorites_sub">Закрепленные каналы и медиа</string>
+    <string name="dashboard_recent_sub">Недавно воспроизведено в авто-хабе</string>
+    <string name="dashboard_playlists_sub">Сохраненные очереди и коллекции</string>
+    <string name="dashboard_menu_sub">Все инструменты и настройки</string>
+    <string name="dashboard_tv_sub">Live TV, VOD и сериалы</string>
+    <string name="dashboard_radio_sub">Популярные станции и страны</string>
+    <string name="dashboard_youtube_sub">Поиск и воспроизведение видео</string>
+    <string name="dashboard_web_sub">Открыть веб-медиа</string>
+    <string name="dashboard_felex_sub">Инструменты обучения и тьютора</string>
+    <string name="dashboard_addon_sub">Ярлык дополнения</string>
+    <string name="dashboard_addon_disabled_sub">Отключено в настройках</string>
+    <string name="addon_name_radio">Радио</string>
+
     
     
     
@@ -52,7 +76,6 @@
 
     <string name="nav_bar_pos">Расположении панели навигации</string>
     <string name="nav_bar_pos_sub">Текущее расположение: %1$s</string>
-    <string name="nav_bar_pos_bottom">Внизу</string>
     <string name="nav_bar_pos_left">Слева</string>
     <string name="nav_bar_pos_right">Справа</string>
 
@@ -60,7 +83,7 @@
     <string name="lang">Язык</string>
     <string name="trans_lang">Язык перевода</string>
     <string name="hide_bars">Скрывать панели</string>
-    <string name="hide_bars_sub">Скрывать верхнюю и нижнюю панель, когда появляется панель управления</string>
+    <string name="hide_bars_sub">Скрывать панели приложения, когда появляется панель управления</string>
     <string name="show_pg_up_down">Показывать кнопки вверх/вниз</string>
     <string name="use_dpad_cursor">Использовать курсор для D-pad навигации</string>
     <string name="fullscreen_mode">Полноэкранный режим</string>
@@ -315,9 +338,9 @@
     <string name="private_key">Приватный ключ</string>
     <string name="private_key_pass">Пароль приватного ключа</string>
 
-    <string name="donate">Кофе разработчику</string>
-    <string name="donate_text">Если вам нравится приложение, вы можете купить мне кофе.</string>
-    <string name="use_phone_for_donation">Пожалуйста, воспользуйтесь телефоном, чтобы купить кофе.</string>
+    <string name="donate">Поддержать через Ko-fi</string>
+    <string name="donate_text">Поддержите FermataX через Ko-fi.</string>
+    <string name="use_phone_for_donation">Откройте Ko-fi на телефоне, чтобы поддержать FermataX.</string>
 
     <string name="timer">Таймер</string>
     <string name="hours">Часы</string>
@@ -362,10 +385,13 @@
     <string name="media_projection_action_text">Начать</string>
 
     <string name="about">О приложении</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player - это бесплатный, с открытым исходным кодом, аудио и видео плеер
-        с простым и интуитивным интерфейсом.</p>
-        <p><b>Автор:</b> Андрей Павленко</p>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX — это форк Fermata, настроенный как медиа-хаб для Android Auto.</p>
+        <p>Он объединяет навигацию через Dashboard, IPTV/Xtream, интернет-радио, медиа YouTube/Web,
+        локальные файлы, Избранное и Недавние в удобном для автомобиля интерфейсе.</p>
+        <p>FermataX не предоставляет медиаконтент, плейлисты, ТВ-каналы или IPTV-аккаунты.
+        Пользователи отвечают за добавленные источники.</p>
+        <p><b>Исходный проект:</b> Fermata by Andrey Pavlenko</p>
         <p><b>Версия:</b> %1$s (%2$d)</p>
         <p><b>Домашняя страница:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
@@ -380,4 +406,6 @@
     <string name="err_failed_install_module">Не удалось установить модуль: %1$s</string>
     <string name="err_failed_to_download">Не удалось скачать %1$s</string>
     <string name="err_no_audio_record_perm">Нет разрешения на запись аудио</string>
+    <string name="addon_name_podcast">Подкасты</string>
+    <string name="dashboard_podcast_sub">Шоу, эпизоды и прослушивание офлайн</string>
 </resources>

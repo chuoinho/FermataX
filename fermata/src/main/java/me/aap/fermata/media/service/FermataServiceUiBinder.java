@@ -22,9 +22,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Objects;
-
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -44,7 +43,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	private final MediaSessionCallback sessionCallback;
 	private final MediaControllerCallback callback;
 	private final MediaControllerCompat mediaController;
-	private PlayableItem currentItem;
+	private PlaybackSnapshot deliveredSnapshot;
 	private boolean bound;
 	@Nullable
 	private View playPauseButton;
@@ -91,7 +90,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 	@Nullable
 	public PlayableItem getCurrentItem() {
-		return currentItem;
+		return (deliveredSnapshot == null) ? null : deliveredSnapshot.getItem();
 	}
 
 	@Nullable
@@ -255,8 +254,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		bound = false;
 		callback.stopProgressUpdate();
 		mediaController.unregisterCallback(callback);
-		currentItem = null;
-		callback.stopProgressUpdate();
+		deliveredSnapshot = null;
 		if (progressBar != null) progressBar.setOnSeekBarChangeListener(null);
 		unbindButtons(playPauseButton, prevButton, nextButton, rwButton, ffButton);
 		playPauseButton = prevButton = nextButton = rwButton = ffButton = null;
@@ -306,6 +304,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		@Override
 		public void onPlaybackStateChanged(PlaybackStateCompat state) {
 			if ((state == null) || !bound) return;
+			fireBroadcastEvent(l -> l.onPlaybackStateChanged(state));
 
 			switch (state.getState()) {
 				case PlaybackStateCompat.STATE_PAUSED:
@@ -313,7 +312,9 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 					playPause(state.getState());
 					break;
 				case PlaybackStateCompat.STATE_ERROR:
-					String err = state.getErrorMessage().toString();
+					String fallback = getLib().getContext().getString(R.string.err_failed_to_play,
+							sessionCallback.getCurrentItem());
+					String err = normalizePlaybackError(state.getErrorMessage(), fallback);
 					fireBroadcastEvent(l -> l.onPlaybackError(err));
 				case PlaybackStateCompat.STATE_NONE:
 				case PlaybackStateCompat.STATE_STOPPED:
@@ -332,12 +333,13 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 					break;
 			}
 
-			PlayableItem i = sessionCallback.getCurrentItem();
-			if (!Objects.equals(currentItem, i)) {
-				PlayableItem old = currentItem;
-				currentItem = i;
+			PlaybackSnapshot snapshot = sessionCallback.getPlaybackSnapshot();
+			PlayableItem i = snapshot.getItem();
+			if (!snapshot.hasSameItem(deliveredSnapshot)) {
+				PlayableItem old = (deliveredSnapshot == null) ? null : deliveredSnapshot.getItem();
 				fireBroadcastEvent(l -> l.onPlayableChanged(old, i));
 			}
+			deliveredSnapshot = snapshot;
 		}
 
 		void pauseProgressUpdate(boolean pause) {
@@ -442,12 +444,12 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 				duration = i.isStream() ? eng.getDuration() : i.getDuration();
 				duration.main().onCompletion((dur, fail) -> {
 					if (fail != null) {
-						Log.d(fail);
+						logProgressFailure(i, fail);
 						resetProgressBar();
 					} else {
 						getPos.onCompletion((pos, f) -> {
 							if (f != null) {
-								Log.d(f);
+								logProgressFailure(i, f);
 								resetProgressBar();
 							} else if ((sessionCallback.getEngine() == eng) && (i == eng.getSource())) {
 								playPause(eng, st, (int) (dur / 1000), (int) (pos / 1000));
@@ -459,6 +461,15 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 				});
 			} else {
 				resetProgressBar();
+			}
+		}
+
+		private void logProgressFailure(PlayableItem item, Throwable failure) {
+			if (item.isLocationSensitive()) {
+				Log.d("Failed to query progress for sensitive item ", item.getId(), " (",
+						failure.getClass().getSimpleName(), ')');
+			} else {
+				Log.d(failure);
 			}
 		}
 
@@ -534,9 +545,16 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		}
 	}
 
+	static String normalizePlaybackError(CharSequence error, String fallback) {
+		return ((error == null) || (error.length() == 0)) ? fallback : error.toString();
+	}
+
 	public interface Listener {
 
 		void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem);
+
+		default void onPlaybackStateChanged(PlaybackStateCompat state) {
+		}
 
 		default void onPlaybackError(String message) {
 		}

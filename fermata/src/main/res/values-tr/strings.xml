@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">Ana sayfa</string>
+    <string name="dashboard">Pano</string>
+    <string name="open_dashboard">Panoyu aç</string>
+    <string name="dashboard_order">Pano sırası</string>
+    <string name="reset_dashboard_order">Pano sırasını sıfırla</string>
+    <string name="dashboard_order_sub">Gezinme sırasını da kontrol eder</string>
+    <string name="dashboard_now_playing">Şimdi oynatılıyor</string>
+    <string name="dashboard_continue">İzlemeye devam et</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">Başlangıç ekranı ve hızlı erişim</string>
+    <string name="dashboard_folders_sub">Yerel dosyalar ve klasörler</string>
+    <string name="dashboard_favorites_sub">Sabitlenmiş kanallar ve medya</string>
+    <string name="dashboard_recent_sub">Araç hub\'ında son oynatılanlar</string>
+    <string name="dashboard_playlists_sub">Kaydedilmiş kuyruklar ve koleksiyonlar</string>
+    <string name="dashboard_menu_sub">Tüm araçlar ve ayarlar</string>
+    <string name="dashboard_tv_sub">Canlı TV, VOD ve diziler</string>
+    <string name="dashboard_radio_sub">Popüler istasyonlar ve ülkeler</string>
+    <string name="dashboard_youtube_sub">Video arama ve oynatma</string>
+    <string name="dashboard_web_sub">Web medyasını aç</string>
+    <string name="dashboard_felex_sub">Öğrenme ve eğitmen araçları</string>
+    <string name="dashboard_addon_sub">Addon kısayolu</string>
+    <string name="dashboard_addon_disabled_sub">Ayarlarda devre dışı</string>
+    <string name="addon_name_radio">Radyo</string>
+
     
     
     
@@ -52,7 +76,6 @@
 
     <string name="nav_bar_pos">Gezinme çubuğu konumu</string>
     <string name="nav_bar_pos_sub">Mevcut konum: %1$s</string>
-    <string name="nav_bar_pos_bottom">Altta</string>
     <string name="nav_bar_pos_left">Solda</string>
     <string name="nav_bar_pos_right">Sağda</string>
 
@@ -60,7 +83,7 @@
     <string name="lang">Diller</string>
     <string name="trans_lang">Çeviri dili</string>
     <string name="hide_bars">Çubukları gizle</string>
-    <string name="hide_bars_sub">Kontrol paneli göründüğünde üst ve alt çubukları gizleyin</string>
+    <string name="hide_bars_sub">Kontrol paneli göründüğünde uygulama çubuklarını gizle</string>
     <string name="show_pg_up_down">Sayfa yukarı/aşağı düğmeleri göster</string>
     <string name="use_dpad_cursor">D-pad navigasyonu için imleci kullanın</string>
     <string name="fullscreen_mode">Tam ekran modu</string>
@@ -315,9 +338,9 @@
     <string name="private_key">Özel anahtar</string>
     <string name="private_key_pass">Özel anahtar şifresi</string>
 
-    <string name="donate">Bağış</string>
-    <string name="donate_text">Uygulamayı beğendiyseniz, Lütfen bana bir kahve almayı düşünün.</string>
-    <string name="use_phone_for_donation">Lütfen bir kahve satın almak için telefonunuzu kullanın.</string>
+    <string name="donate">Ko-fi ile destekle</string>
+    <string name="donate_text">FermataX projesini Ko-fi ile destekleyin.</string>
+    <string name="use_phone_for_donation">FermataX projesini desteklemek için telefonunuzda Ko-fi açın.</string>
 
     <string name="timer">Süre</string>
     <string name="hours">Hours</string>
@@ -362,12 +385,15 @@
     <string name="media_projection_action_text">Şimdi başlat</string>
 
     <string name="about">Hakkında</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player is a free, open source audio and video player with a simple and
-        intuitive interface.</p>
-        <p><b>Author:</b> Andrey Pavlenko</p>
-        <p><b>Version:</b> %1$s (%2$d)</p>
-        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX, Android Auto için bir medya merkezi olarak özelleştirilmiş Fermata tabanlı bir fork sürümüdür.</p>
+        <p>Dashboard öncelikli gezinme, IPTV/Xtream, İnternet Radyosu, YouTube/Web medyası,
+        yerel dosyalar, Favoriler ve Son Kullanılanlar özelliklerini araç dostu bir deneyimde birleştirir.</p>
+        <p>FermataX medya içeriği, oynatma listesi, TV kanalı veya IPTV hesabı sağlamaz.
+        Kullanıcılar ekledikleri kaynaklardan sorumludur.</p>
+        <p><b>Orijinal proje:</b> Fermata by Andrey Pavlenko</p>
+        <p><b>Sürüm:</b> %1$s (%2$d)</p>
+        <p><b>Ana sayfa:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Oynatılamıyor: %s</string>
@@ -380,4 +406,6 @@
     <string name="err_failed_install_module">Modül yüklenemiyor: %1$s</string>
     <string name="err_failed_to_download">İndirilemiyor: %1$s</string>
     <string name="err_no_audio_record_perm">Ses kayıt izni verilmedi</string>
+    <string name="addon_name_podcast">Podcastlar</string>
+    <string name="dashboard_podcast_sub">Programlar, bölümler ve çevrimdışı dinleme</string>
 </resources>

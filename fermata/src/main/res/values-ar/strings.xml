@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">الرئيسية</string>
+    <string name="dashboard">لوحة التحكم</string>
+    <string name="open_dashboard">فتح لوحة التحكم</string>
+    <string name="dashboard_order">ترتيب لوحة التحكم</string>
+    <string name="reset_dashboard_order">إعادة ترتيب لوحة التحكم</string>
+    <string name="dashboard_order_sub">يتحكم أيضًا في ترتيب شريط التنقل</string>
+    <string name="dashboard_now_playing">يتم التشغيل الآن</string>
+    <string name="dashboard_continue">متابعة المشاهدة</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">شاشة البدء والوصول السريع</string>
+    <string name="dashboard_folders_sub">الملفات والمجلدات المحلية</string>
+    <string name="dashboard_favorites_sub">القنوات والوسائط المثبتة</string>
+    <string name="dashboard_recent_sub">ما تم تشغيله مؤخرًا في مركز السيارة</string>
+    <string name="dashboard_playlists_sub">قوائم محفوظة ومجموعات</string>
+    <string name="dashboard_menu_sub">كل الأدوات والإعدادات</string>
+    <string name="dashboard_tv_sub">بث مباشر، VOD ومسلسلات</string>
+    <string name="dashboard_radio_sub">محطات ودول شائعة</string>
+    <string name="dashboard_youtube_sub">بحث وتشغيل الفيديو</string>
+    <string name="dashboard_web_sub">فتح وسائط الويب</string>
+    <string name="dashboard_felex_sub">أدوات التعلم والتدريب</string>
+    <string name="dashboard_addon_sub">اختصار إضافة</string>
+    <string name="dashboard_addon_disabled_sub">معطل في الإعدادات</string>
+    <string name="addon_name_radio">راديو</string>
+
     
     
     
@@ -52,7 +76,6 @@
 
     <string name="nav_bar_pos">موضع شريط التنقل</string>
     <string name="nav_bar_pos_sub">عرض ايقونات التنقل على الجهة:</string>
-    <string name="nav_bar_pos_bottom">أسفل</string>
     <string name="nav_bar_pos_left">يسار</string>
     <string name="nav_bar_pos_right">يمين</string>
 
@@ -60,7 +83,7 @@
     <string name="lang">اللغة</string>
     <string name="trans_lang">لغة الترجمة</string>
     <string name="hide_bars">إخفاء الأشرطة</string>
-    <string name="hide_bars_sub">إخفاء الأشرطة العلوية والسفلية عند ظهور لوحة التحكم</string>
+    <string name="hide_bars_sub">إخفاء أشرطة التطبيق عند ظهور لوحة التحكم</string>
     <string name="show_pg_up_down">إظهار أزرار الصفحة لأعلى/لأسفل</string>
     <string name="use_dpad_cursor">استخدم المؤشر للتنقل</string>
     <string name="fullscreen_mode">وضع ملء الشاشة</string>
@@ -315,9 +338,9 @@
     <string name="private_key">Private key</string>
     <string name="private_key_pass">Private key password</string>
 
-    <string name="donate">شراء قهوة للمطور</string>
-    <string name="donate_text">في حال اعجبك التطبيق يرجى التطوع بقهوة للمطور</string>
-    <string name="use_phone_for_donation">عن طريق الهاتف</string>
+    <string name="donate">الدعم عبر Ko-fi</string>
+    <string name="donate_text">ادعم FermataX عبر Ko-fi.</string>
+    <string name="use_phone_for_donation">افتح Ko-fi على هاتفك لدعم FermataX.</string>
 
     <string name="timer">مؤقت</string>
     <string name="hours">الساعات</string>
@@ -362,9 +385,16 @@
     <string name="media_projection_action_text">بدأ</string>
 
     <string name="about">عن التطبيق</string>
-    <string name="about_html">
-    <![CDATA[ <H1 align="center">Fermata Media Player</H1> <p>Fermata Media Player is a free, open source audio and video player with a simple and intuitive interface.</p> <p><b>Author:</b> Andrey Pavlenko</p> <p><b>Version:</b> %1$s (%2$d)</p> <p><b>Home page:</b> <a href="%3$s">%3$s</a></p> ]]>
-    </string>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX هو نسخة متفرعة من Fermata، مخصصة لتكون مركز وسائط لنظام Android Auto.</p>
+        <p>يجمع بين التنقل المعتمد على Dashboard و IPTV/Xtream وراديو الإنترنت ووسائط YouTube/Web
+        والملفات المحلية والمفضلة والحديثة في تجربة مناسبة للسيارة.</p>
+        <p>لا يوفر FermataX محتوى وسائط أو قوائم تشغيل أو قنوات TV أو حسابات IPTV.
+        يتحمل المستخدم مسؤولية المصادر التي يضيفها.</p>
+        <p><b>المشروع الأصلي:</b> Fermata by Andrey Pavlenko</p>
+        <p><b>الإصدار:</b> %1$s (%2$d)</p>
+        <p><b>الصفحة الرئيسية:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
 
     <string name="err_failed_to_play">فشل التشغيل %s</string>
     <string name="err_failed_to_play_cause">فشل التشغيل بسبب %1$s: %2$s</string>
@@ -376,4 +406,6 @@
     <string name="err_failed_install_module">فشل التثبيت: %1$s</string>
     <string name="err_failed_to_download">فشل التحميل %1$s</string>
     <string name="err_no_audio_record_perm">لم يتم منح أذونات الموسيقى والصوتيات</string>
+    <string name="addon_name_podcast">البودكاست</string>
+    <string name="dashboard_podcast_sub">برامج وحلقات واستماع دون اتصال</string>
 </resources>

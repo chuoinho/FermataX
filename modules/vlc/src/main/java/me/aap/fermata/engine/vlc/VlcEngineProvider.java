@@ -86,6 +86,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 
 	@Override
 	public boolean getMediaMetadata(MetadataBuilder meta, PlayableItem item) {
+		if (item.isLocationSensitive()) return false;
 		Media media = null;
 		ParcelFileDescriptor fd = null;
 
@@ -151,7 +152,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 
 			return true;
 		} catch (Throwable ex) {
-			Log.d(ex, "Failed to retrieve media metadata of " + item.getLocation());
+			Log.d(ex, "Failed to retrieve media metadata of " + item.getId());
 			return false;
 		} finally {
 			if (media != null) media.release();

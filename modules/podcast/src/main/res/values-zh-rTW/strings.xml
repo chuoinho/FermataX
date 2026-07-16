@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="podcast_add">新增 Podcast</string>
+    <string name="podcast_search">搜尋 Podcast</string>
+    <string name="podcast_add_rss">新增 RSS 來源</string>
+    <string name="podcast_import_opml">匯入 OPML</string>
+    <string name="podcast_subscribe">訂閱</string>
+    <string name="podcast_export_opml">匯出 OPML</string>
+    <string name="podcast_export_failed">無法匯出 Podcast</string>
+    <string name="podcast_export_private_title">私人 Podcast 連結</string>
+    <string name="podcast_export_private_message">要在此 OPML 檔案中包含帶有權杖的私人來源網址嗎？</string>
+    <string name="podcast_export_public_only">僅公開來源</string>
+    <string name="podcast_export_include_private">包含私人來源</string>
+    <string name="podcast_feed_url">來源網址</string>
+    <string name="podcast_add_failed">無法新增此 Podcast</string>
+    <string name="podcast_import_failed">無法匯入此 OPML 檔案</string>
+    <string name="podcast_import_result">已匯入 %1$d 個 Podcast；%2$d 個失敗</string>
+    <string name="podcast_edit_rss">編輯 RSS 來源</string>
+    <string name="podcast_delete_title">移除 Podcast</string>
+    <string name="podcast_delete_message">要移除 %1$s 及其已下載的單集嗎？</string>
+    <string name="podcast_continue">繼續收聽</string>
+    <string name="podcast_new_episodes">最新單集</string>
+    <string name="podcast_subscriptions">訂閱內容</string>
+    <string name="podcast_mark_played">標記為已收聽</string>
+    <string name="podcast_mark_unplayed">標記為未收聽</string>
+    <string name="podcast_download">下載單集</string>
+    <string name="podcast_delete_download">刪除下載</string>
+</resources>

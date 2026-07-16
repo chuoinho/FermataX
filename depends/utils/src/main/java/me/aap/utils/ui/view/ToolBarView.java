@@ -363,7 +363,7 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 				if (backOnTitleClick()) t.setOnClickListener(this);
 
 				ImageButton b = createBackButton(tb);
-				addView(tb, b, getBackButtonId(), LEFT);
+				addView(tb, b, getBackButtonId(), getBackButtonSide(tb));
 				b.setVisibility(getBackButtonVisibility(f));
 			}
 
@@ -404,9 +404,11 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 						androidx.appcompat.R.attr.toolbarStyle);
 				t.setTextAppearance(tb.textAppearance);
 				t.setMaxLines(1);
+				t.setMinWidth(0);
 				t.setFocusable(false);
 				t.setEllipsize(TextUtils.TruncateAt.END);
 				ConstraintLayout.LayoutParams lp = setLayoutParams(t, 0, WRAP_CONTENT);
+				lp.constrainedWidth = true;
 				lp.horizontalWeight = 2;
 				lp.endToEnd = PARENT_ID;
 				return t;
@@ -414,6 +416,10 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 
 			default boolean backOnTitleClick() {
 				return true;
+			}
+
+			default int getBackButtonSide(ToolBarView tb) {
+				return LEFT;
 			}
 
 			@IdRes
@@ -466,6 +472,21 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 				ForcedVisibilityButton fb = tb.findViewById(getFilterButtonId());
 				ConstraintLayout.LayoutParams flp = (ConstraintLayout.LayoutParams) f.getLayoutParams();
 				ConstraintLayout.LayoutParams tlp = (ConstraintLayout.LayoutParams) t.getLayoutParams();
+				boolean backRight = getBackButtonSide(tb) == RIGHT;
+
+				if (backRight) {
+					ConstraintLayout.LayoutParams blp =
+							(ConstraintLayout.LayoutParams) bb.getLayoutParams();
+					ConstraintLayout.LayoutParams fblp =
+							(ConstraintLayout.LayoutParams) fb.getLayoutParams();
+					fblp.endToStart = getBackButtonId();
+					fblp.endToEnd = UNSET;
+					blp.startToEnd = getFilterButtonId();
+					blp.endToStart = UNSET;
+					blp.endToEnd = PARENT_ID;
+					fblp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
+					blp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
+				}
 
 				if (visible) {
 					bb.forceVisibility(true);
@@ -475,9 +496,9 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 					f.requestFocus();
 
 					flp.horizontalWeight = 2;
-					flp.startToEnd = getBackButtonId();
-					flp.endToStart = getFilterButtonId();
-					flp.startToStart = UNSET;
+					flp.startToStart = backRight ? PARENT_ID : UNSET;
+					flp.startToEnd = backRight ? UNSET : getBackButtonId();
+					flp.endToStart = backRight ? getBackButtonId() : getFilterButtonId();
 					flp.endToEnd = UNSET;
 
 					tlp.horizontalWeight = 0;
@@ -494,9 +515,9 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 					f.clearFocus();
 
 					tlp.horizontalWeight = 2;
-					tlp.startToEnd = getBackButtonId();
+					tlp.startToStart = backRight ? PARENT_ID : UNSET;
+					tlp.startToEnd = backRight ? UNSET : getBackButtonId();
 					tlp.endToStart = getFilterButtonId();
-					tlp.startToStart = UNSET;
 					tlp.endToEnd = UNSET;
 
 					flp.horizontalWeight = 0;

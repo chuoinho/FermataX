@@ -24,7 +24,6 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.io.IoUtils;
-import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpConnection;
 import me.aap.utils.net.http.HttpHeader;
 import me.aap.utils.net.http.HttpMethod;
@@ -94,7 +93,6 @@ class ChatGpt implements EventBroadcaster<ChatGpt.Listener> {
 					json.put("model", addon.getModel());
 					json.put("temperature", 0.4f);
 					json.put("messages", new JSONArray(jsonMessages));
-					Log.d("Request: ", json.toString());
 					return b.build(ByteBuffer.wrap(json.toString().getBytes(UTF_8)));
 				} catch (JSONException ex) {
 					p.completeExceptionally(ex);
@@ -116,7 +114,6 @@ class ChatGpt implements EventBroadcaster<ChatGpt.Listener> {
 					if (perr != null) return failed(perr);
 					bb = IoUtils.getFrom(bb);
 					String jsonString = new String(bb.array(), bb.arrayOffset(), bb.remaining(), UTF_8);
-					Log.d("Response: ", jsonString);
 					JSONObject json = new JSONObject(jsonString);
 					String response = json.getJSONArray("choices").getJSONObject(0).getJSONObject("message")
 							.getString("content").trim();

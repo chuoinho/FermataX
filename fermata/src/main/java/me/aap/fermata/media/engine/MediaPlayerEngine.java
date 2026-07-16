@@ -16,6 +16,8 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -68,8 +70,11 @@ public class MediaPlayerEngine extends MediaEngineBase
 				player.setDataSource(ctx, u);
 			} else if ((scheme != null) && scheme.startsWith("http")) {
 				String agent = source.getUserAgent();
-				if (agent != null) {
-					player.setDataSource(ctx, u, Collections.singletonMap("User-Agent", agent));
+				Map<String, String> requestHeaders = source.getRequestHeaders();
+				if ((agent != null) || !requestHeaders.isEmpty()) {
+					Map<String, String> headers = new HashMap<>(requestHeaders);
+					if (agent != null) headers.putIfAbsent("User-Agent", agent);
+					player.setDataSource(ctx, u, headers);
 				} else {
 					player.setDataSource(u.toString());
 				}

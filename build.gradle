@@ -19,12 +19,14 @@ ext {
     addons = [
             [
                     name       : 'translate',
+                    id         : 'translate_addon',
                     icon       : 'translate',
                     class      : 'me.aap.fermata.addon.TranslateAddon',
                     hasSettings: false
             ],
             [
                     name   : 'subgen',
+                    id     : 'subgen_addon',
                     icon   : 'subgen',
                     class  : 'me.aap.fermata.addon.SubGenAddon',
                     depends: 'exoplayer,translate'
@@ -148,11 +150,16 @@ gradle.projectsEvaluated {
     addonInfo.append('me.aap.utils.collection.CollectionUtils.sort(new me.aap.fermata.addon.AddonInfo[] {\n')
     addons.forEach {
         def name = it['name']
+        def id = it.containsKey('id') ? "R.id.${it['id']}" : "0"
+		def capabilities = it.get('capabilities',
+				it.get('fragment', false) ? 'dashboard,navigation' : '')
         addonInfo.append("  new me.aap.fermata.addon.AddonInfo(" +
                 "\"${it.get('module', name)}\", \"${it['class']}\", " +
+                "${id}, " +
                 "R.string.addon_name_${name}, R.drawable.${it['icon']}, " +
-                "${it['order']}, ${it['hasSettings']}, ${it['enabled']}, " +
-                "${it.get('auto', false)}, \"${it.get('depends', "")}\"),\n")
+                "${it['order']}, ${it['hasSettings']}, ${it.get('fragment', false)}, ${it['enabled']}, " +
+                "${it.get('auto', false)}, \"${it.get('depends', "")}\", " +
+				"\"${capabilities}\"),\n")
     }
 
     def infoStr = addonInfo.append('})').toString()

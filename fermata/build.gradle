@@ -3,7 +3,7 @@ if (gradle.ext.enableGoogleServices) apply plugin: 'com.google.gms.google-servic
 android {
     defaultConfig {
         namespace = 'me.aap.fermata'
-        applicationId project.getProperties().getOrDefault('APP_ID', 'me.aap.fermata')
+        applicationId project.getProperties().getOrDefault('APP_ID', 'me.app.fermataX')
         versionCode VERSION_CODE
         versionName VERSION_NAME
         base.archivesName = "fermata-$versionName"
@@ -100,6 +100,7 @@ dependencies {
     implementation libs.androidxMedia
     implementation libs.androidxAppcompat
     implementation libs.androidMaterial
+	implementation libs.androidxSecurityCrypto
     implementation libs.androidxConstraintlayout
     implementation libs.androidxSwiperefreshlayout
     implementation libs.googlePlayFeatureDelivery

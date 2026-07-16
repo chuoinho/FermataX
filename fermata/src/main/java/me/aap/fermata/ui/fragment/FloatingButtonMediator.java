@@ -10,6 +10,7 @@ import android.view.View;
 
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemListView;
@@ -24,6 +25,18 @@ import me.aap.utils.ui.view.ToolBarView;
  */
 public class FloatingButtonMediator implements BackMenu {
 	public static final FloatingButtonMediator instance = new FloatingButtonMediator();
+
+	@Override
+	public void enable(FloatingButton fb, ActivityFragment f) {
+		BackMenu.super.enable(fb, f);
+		if (BuildConfig.AUTO) fb.setVisibility(View.GONE);
+	}
+
+	@Override
+	public void onActivityEvent(FloatingButton fb, me.aap.utils.ui.activity.ActivityDelegate a, long e) {
+		BackMenu.super.onActivityEvent(fb, a, e);
+		if (BuildConfig.AUTO) fb.setVisibility(View.GONE);
+	}
 
 	@Override
 	public int getIcon(FloatingButton fb) {

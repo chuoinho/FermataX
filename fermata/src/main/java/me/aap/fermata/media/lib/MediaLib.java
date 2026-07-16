@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 import me.aap.fermata.R;
@@ -75,6 +76,9 @@ public interface MediaLib {
 
 	@NonNull
 	Favorites getFavorites();
+
+	@NonNull
+	Recent getRecent();
 
 	@NonNull
 	Playlists getPlaylists();
@@ -310,6 +314,20 @@ public interface MediaLib {
 
 		boolean isVideo();
 
+		/**
+		 * Whether this item represents user content that may be persisted in Recent.
+		 * Playback engines can return internal transport items for next/previous actions;
+		 * those items must opt out rather than leaking implementation details into history.
+		 */
+		default boolean isRecentEligible() {
+			return true;
+		}
+
+		/** Whether the playback location contains credentials or another private token. */
+		default boolean isLocationSensitive() {
+			return false;
+		}
+
 		default boolean isSeekable() {
 			if (isStream()) return false;
 			VirtualFileSystem.Provider p = getResource().getVirtualFileSystem().getProvider();
@@ -399,6 +417,11 @@ public interface MediaLib {
 		@Nullable
 		default String getUserAgent() {
 			return null;
+		}
+
+		@NonNull
+		default Map<String, String> getRequestHeaders() {
+			return java.util.Collections.emptyMap();
 		}
 
 		@Nullable
@@ -729,6 +752,23 @@ public interface MediaLib {
 		@Override
 		default int getIcon() {
 			return R.drawable.favorite_filled;
+		}
+	}
+
+	interface Recent extends BrowsableItem {
+
+		boolean isRecentItemId(String id);
+
+		FutureSupplier<Void> addItem(PlayableItem i);
+
+		FutureSupplier<Void> removeItem(int idx);
+
+		@SuppressWarnings("UnusedReturnValue")
+		FutureSupplier<Void> moveItem(int fromPosition, int toPosition);
+
+		@Override
+		default int getIcon() {
+			return R.drawable.timer;
 		}
 	}
 

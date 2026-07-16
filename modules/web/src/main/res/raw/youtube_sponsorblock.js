@@ -42,9 +42,7 @@
       const idx = parts.findIndex((part) => ['shorts', 'embed', 'v'].includes(part));
       if ((idx !== -1) && isVideoId(parts[idx + 1])) return parts[idx + 1];
       if ((parsed.hostname === 'youtu.be') && isVideoId(parts[0])) return parts[0];
-    } catch (err) {
-      console.debug('SponsorBlock video ID parse failed', err);
-    }
+    } catch (err) {}
 
     return null;
   }
@@ -158,11 +156,8 @@
       } else if (response.ok) {
         state.segments = normalizeSegments(segmentsForVideo(await response.json(), videoId));
         state.loadedKey = key;
-      } else {
-        console.debug('SponsorBlock request failed', response.status);
       }
     } catch (err) {
-      console.debug('SponsorBlock unavailable', err);
     } finally {
       if (state.pendingKey === key) state.pendingKey = null;
     }

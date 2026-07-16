@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">ホーム</string>
+    <string name="dashboard">ダッシュボード</string>
+    <string name="open_dashboard">ダッシュボードを開く</string>
+    <string name="dashboard_order">ダッシュボードの順序</string>
+    <string name="reset_dashboard_order">ダッシュボード順序をリセット</string>
+    <string name="dashboard_order_sub">ナビの順序も制御します</string>
+    <string name="dashboard_now_playing">再生中</string>
+    <string name="dashboard_continue">続きから見る</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">開始画面とクイックアクセス</string>
+    <string name="dashboard_folders_sub">ローカルファイルとフォルダー</string>
+    <string name="dashboard_favorites_sub">ピン留めしたチャンネルとメディア</string>
+    <string name="dashboard_recent_sub">車載ハブで最近再生</string>
+    <string name="dashboard_playlists_sub">保存したキューとコレクション</string>
+    <string name="dashboard_menu_sub">すべてのツールと設定</string>
+    <string name="dashboard_tv_sub">ライブTV、VOD、シリーズ</string>
+    <string name="dashboard_radio_sub">人気の局と国</string>
+    <string name="dashboard_youtube_sub">動画検索と再生</string>
+    <string name="dashboard_web_sub">Webメディアを開く</string>
+    <string name="dashboard_felex_sub">学習とチューターのツール</string>
+    <string name="dashboard_addon_sub">アドオンショートカット</string>
+    <string name="dashboard_addon_disabled_sub">設定で無効</string>
+    <string name="addon_name_radio">ラジオ</string>
+
     
     
     
@@ -57,7 +81,6 @@
 
     <string name="nav_bar_pos">ナビゲーションバーの位置</string>
     <string name="nav_bar_pos_sub">現在の位置: %1$s</string>
-    <string name="nav_bar_pos_bottom">下側</string>
     <string name="nav_bar_pos_left">左側</string>
     <string name="nav_bar_pos_right">右側</string>
 
@@ -65,7 +88,7 @@
     <string name="lang">言語</string>
     <string name="trans_lang">翻訳言語</string>
     <string name="hide_bars">バーを隠す</string>
-    <string name="hide_bars_sub">コントロールパネルが表示されたときに上部と下部のバーを非表示にします</string>
+    <string name="hide_bars_sub">コントロールパネルが表示されたときにアプリのバーを非表示にします</string>
     <string name="show_pg_up_down">ページアップ/ページダウンボタンを表示</string>
     <string name="use_dpad_cursor">D-pad(十字キー)ナビゲーションによるカーソルを使用する</string>
     <string name="fullscreen_mode">フルスクリーンモード</string>
@@ -322,9 +345,9 @@
     <string name="private_key">プライベートキー</string>
     <string name="private_key_pass">プライベートキーパスワード</string>
 
-    <string name="donate">開発者にコーヒーを寄付</string>
-    <string name="donate_text">このアプリケーションが気に入っていただけましたら、私にコーヒーを奢って頂くことをご検討ください。</string>
-    <string name="use_phone_for_donation">コーヒーを購入していただく際は、スマートフォンをご使用ください。</string>
+    <string name="donate">Ko-fi で支援</string>
+    <string name="donate_text">Ko-fi で FermataX を支援できます。</string>
+    <string name="use_phone_for_donation">FermataX を支援するには、スマートフォンで Ko-fi を開いてください。</string>
 
     <string name="timer">タイマー</string>
     <string name="hours">時</string>
@@ -368,13 +391,16 @@
     <string name="accessibility_dsc">アクセシビリティサービスは、Fermata Mirror によってタッチスクリーンをシミュレートするために使用されます。</string>
     <string name="media_projection_action_text">今すぐ始めましょう</string>
 
-    <string name="about">About</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player is a free, open source audio and video player with a simple and
-        intuitive interface.</p>
-        <p><b>Author:</b> Andrey Pavlenko</p>
-        <p><b>Version:</b> %1$s (%2$d)</p>
-        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+    <string name="about">FermataX について</string>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX は Fermata のフォークで、Android Auto 向けのメディアハブとしてカスタマイズされています。</p>
+        <p>Dashboard を中心にしたナビゲーション、IPTV/Xtream、インターネットラジオ、YouTube/Web メディア、
+        ローカルファイル、お気に入り、最近再生した項目を、車内で使いやすい体験にまとめます。</p>
+        <p>FermataX はメディアコンテンツ、プレイリスト、TV チャンネル、IPTV アカウントを提供しません。
+        追加するソースについてはユーザー自身が責任を負います。</p>
+        <p><b>元のプロジェクト:</b> Fermata by Andrey Pavlenko</p>
+        <p><b>バージョン:</b> %1$s (%2$d)</p>
+        <p><b>ホームページ:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">再生に失敗しました %s</string>
@@ -388,4 +414,6 @@
     <string name="err_failed_to_download">ダウンロードに失敗しました %1$s</string>
     <string name="err_no_audio_record_perm">音声録音の許可が与えられていません</string>
     <string name="err_failed_start_service">サービス開始失敗:%s</string>
+    <string name="addon_name_podcast">ポッドキャスト</string>
+    <string name="dashboard_podcast_sub">番組、エピソード、オフライン再生</string>
 </resources>

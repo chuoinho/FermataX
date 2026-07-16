@@ -2,12 +2,14 @@ package me.aap.fermata.ui.view;
 
 import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 import static android.util.TypedValue.COMPLEX_UNIT_PX;
+import static android.util.TypedValue.COMPLEX_UNIT_SP;
 import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_END_TIME;
 import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_START_TIME;
 import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.misc.MiscUtils.ifNull;
 import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
+import static me.aap.utils.ui.UiUtils.toIntPx;
 import static me.aap.utils.ui.UiUtils.toPx;
 import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
 
@@ -124,7 +126,7 @@ public class MediaItemView extends ConstraintLayout
 		setTextAppearance(ctx, getSubtitle(), subtitleTextAppearance, size);
 		if (!grid) {
 			int iconSize = (int) (getTitle().getTextSize() + getSubtitle().getTextSize() + toPx(ctx,
-					10));
+					14));
 			ImageView i = getIcon();
 			ViewGroup.LayoutParams lp = i.getLayoutParams();
 			lp.height = iconSize;
@@ -194,6 +196,7 @@ public class MediaItemView extends ConstraintLayout
 	private FutureSupplier<MediaDescriptionCompat> load(MediaItemWrapper w, boolean showLoading) {
 		cancelLoading();
 		Item i = w.getItem();
+		configureItemChrome(i);
 
 		if (i instanceof EpgItem) {
 			EpgItem e = (EpgItem) i;
@@ -299,6 +302,31 @@ public class MediaItemView extends ConstraintLayout
 			icon.setImageResource(i.getIcon());
 			getSubtitle().setText("");
 		}
+	}
+
+	private void configureItemChrome(Item item) {
+		MainActivityDelegate a = getMainActivity();
+		boolean sourceHeader = a.isCarActivity() && !a.isGridView() && isTvSourceItem(item);
+		ImageView icon = getIcon();
+
+		if (sourceHeader) {
+			setMinimumHeight(toIntPx(getContext(), 76));
+			setBackgroundResource(R.drawable.dashboard_source_header_bg);
+			icon.setVisibility(GONE);
+			getTitle().setTextSize(COMPLEX_UNIT_SP, 22);
+			getTitle().setTypeface(null, Typeface.BOLD);
+			getSubtitle().setTextSize(COMPLEX_UNIT_SP, 13);
+		} else {
+			setMinimumHeight(toIntPx(getContext(), 62));
+			setBackgroundResource(R.drawable.media_item_bg);
+			icon.setVisibility(VISIBLE);
+			setSize(getContext(), a.isGridView(), a.getPrefs().getTextIconSizePref(a));
+		}
+	}
+
+	private static boolean isTvSourceItem(Item item) {
+		String id = item.getId();
+		return (id != null) && (id.startsWith("tvm3u:") || id.startsWith("tvx:"));
 	}
 
 	private static Drawable getLoadingDrawable(Context ctx) {
@@ -468,6 +496,8 @@ public class MediaItemView extends ConstraintLayout
 	}
 
 	private void setState(int surfaceType, boolean activated) {
+		Item item = getItem();
+		if ((item != null) && isTvSourceItem(item)) surfaceType = Typeface.BOLD;
 		TextView t = getTitle();
 		t.setTypeface(null, surfaceType);
 		t.setActivated(activated);

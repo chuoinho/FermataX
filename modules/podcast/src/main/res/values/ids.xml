@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="podcast_search" type="id" />
+    <item name="podcast_add_rss" type="id" />
+    <item name="podcast_import_opml" type="id" />
+	<item name="podcast_export_opml" type="id" />
+	<item name="podcast_mark_played" type="id" />
+	<item name="podcast_mark_unplayed" type="id" />
+	<item name="podcast_download" type="id" />
+	<item name="podcast_delete_download" type="id" />
+</resources>

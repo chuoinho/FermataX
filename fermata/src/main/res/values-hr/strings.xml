@@ -1,4 +1,28 @@
 <resources>
+    <string name="home">Početna</string>
+    <string name="dashboard">Nadzorna ploča</string>
+    <string name="open_dashboard">Otvori nadzornu ploču</string>
+    <string name="dashboard_order">Redoslijed nadzorne ploče</string>
+    <string name="reset_dashboard_order">Vrati redoslijed nadzorne ploče</string>
+    <string name="dashboard_order_sub">Upravlja i redoslijedom navigacije</string>
+    <string name="dashboard_now_playing">Trenutno se reproducira</string>
+    <string name="dashboard_continue">Nastavi gledati</string>
+    <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_home_sub">Početni zaslon i brzi pristup</string>
+    <string name="dashboard_folders_sub">Lokalne datoteke i mape</string>
+    <string name="dashboard_favorites_sub">Prikvačeni kanali i mediji</string>
+    <string name="dashboard_recent_sub">Nedavno reproducirano u automobilskom hubu</string>
+    <string name="dashboard_playlists_sub">Spremljeni redovi čekanja i zbirke</string>
+    <string name="dashboard_menu_sub">Svi alati i postavke</string>
+    <string name="dashboard_tv_sub">TV uživo, VOD i serije</string>
+    <string name="dashboard_radio_sub">Popularne stanice i države</string>
+    <string name="dashboard_youtube_sub">Pretraživanje i reprodukcija videa</string>
+    <string name="dashboard_web_sub">Otvori web medije</string>
+    <string name="dashboard_felex_sub">Alati za učenje i tutor</string>
+    <string name="dashboard_addon_sub">Prečac dodatka</string>
+    <string name="dashboard_addon_disabled_sub">Onemogućeno u postavkama</string>
+    <string name="addon_name_radio">Radio</string>
+
     
     
     
@@ -52,7 +76,6 @@
 
     <string name="nav_bar_pos">Pozicija navigacijske trake</string>
     <string name="nav_bar_pos_sub">Trenutna pozicija: %1$s</string>
-    <string name="nav_bar_pos_bottom">Dolje</string>
     <string name="nav_bar_pos_left">Lijevo</string>
     <string name="nav_bar_pos_right">Desno</string>
 
@@ -60,7 +83,7 @@
     <string name="lang">Jezik</string>
     <string name="trans_lang">Jezik prijevoda</string>
     <string name="hide_bars">Sakrij trake</string>
-    <string name="hide_bars_sub">Sakrij gornje i donje trake kada se pojavi kontrolna ploča</string>
+    <string name="hide_bars_sub">Sakrij trake aplikacije kada se pojavi kontrolna ploča</string>
     <string name="show_pg_up_down">Prikaži gumbe za stranicu gore/dolje</string>
     <string name="use_dpad_cursor">Koristi pokazivač za navigaciju s D-pada</string>
     <string name="fullscreen_mode">Puni zaslon</string>
@@ -315,9 +338,9 @@
     <string name="private_key">Privatni ključ</string>
     <string name="private_key_pass">Lozinka privatnog ključa</string>
 
-    <string name="donate">Kava za razvojnog programera</string>
-    <string name="donate_text">Ako vam se sviđa aplikacija, molimo razmislite o kupnji kave.</string>
-    <string name="use_phone_for_donation">Molimo koristite svoj telefon za kupnju kave.</string>
+    <string name="donate">Podrži na Ko-fi</string>
+    <string name="donate_text">Podržite FermataX na Ko-fi.</string>
+    <string name="use_phone_for_donation">Otvorite Ko-fi na telefonu kako biste podržali FermataX.</string>
 
     <string name="timer">Tajmer</string>
     <string name="hours">Sati</string>
@@ -361,13 +384,17 @@
     <string name="accessibility_dsc">Usluga pristupačnosti koristi se od strane Fermata Mirror za simuliranje događaja na zaslonu osjetljivom na dodir.</string>
     <string name="media_projection_action_text">Započni sada</string>
 
-    <string name="about"> O programu</string>
-    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-<p>Fermata Media Player" je besplatni, otvorenokodni audio i video player s jednostavnim i intuitivnim sučeljem.</p>
-<p><b>Autor:</b> Andrey Pavlenko</p>
-<p><b>Verzija:</b> %1$s (%2$d)</p>
-<p><b>Početna strancia:</b> <a href="%3$s">%3$s</a></p>
-]]></string>
+    <string name="about">O programu</string>
+    <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
+        <p>FermataX je fork Fermate, prilagođen kao medijsko središte za Android Auto.</p>
+        <p>Objedinjuje navigaciju usmjerenu na Dashboard, IPTV/Xtream, internetski radio, YouTube/Web medije,
+        lokalne datoteke, Favorite i Nedavno u iskustvo prikladno za automobil.</p>
+        <p>FermataX ne pruža medijski sadržaj, playliste, TV kanale ni IPTV račune.
+        Korisnici su odgovorni za izvore koje dodaju.</p>
+        <p><b>Izvorni projekt:</b> Fermata by Andrey Pavlenko</p>
+        <p><b>Verzija:</b> %1$s (%2$d)</p>
+        <p><b>Početna stranica:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
 
     <string name="err_failed_to_play">Nije uspjelo reproduciranje %s</string>
     <string name="err_failed_to_play_cause">Nije uspjelo reproduciranje %1$s: %2$s</string>
@@ -379,4 +406,6 @@
     <string name="err_failed_install_module">Nije uspjelo instaliranje modula: %1$s</string>
     <string name="err_failed_to_download">Nije uspjelo preuzimanje %1$s</string>
     <string name="err_no_audio_record_perm">Dozvola za snimanje zvuka nije odobrena</string>
+    <string name="addon_name_podcast">Podcasti</string>
+    <string name="dashboard_podcast_sub">Emisije, epizode i slušanje izvan mreže</string>
 </resources>
