@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
+import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.fermata.addon.FermataMediaServiceAddon;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -24,7 +25,7 @@ import me.aap.fermata.addon.podcast.download.PodcastDownloadCoordinator;
 
 @Keep
 @SuppressWarnings("unused")
-public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAddon,
+public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAddon, VoiceSearchAddon,
 		MediaSessionCallback.Listener {
 	private static final long PROGRESS_WRITE_INTERVAL_MS = 15_000;
 	@NonNull
@@ -42,6 +43,12 @@ public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAdd
 	@Override
 	public int getAddonId() {
 		return me.aap.fermata.R.id.podcast_fragment;
+	}
+
+	@NonNull
+	@Override
+	public String getVoiceTarget() {
+		return "podcast";
 	}
 
 	@NonNull

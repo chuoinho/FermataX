@@ -23,6 +23,7 @@
     <string name="module_name_tv" translatable="false">TV</string>
     <string name="module_name_radio" translatable="false">Internet Radio</string>
     <string name="module_name_podcast" translatable="false">Podcast</string>
+    <string name="module_name_audiobook" translatable="false">Audiobook</string>
 
     <string name="addons">Addons</string>
     <string name="home">Home</string>
@@ -43,6 +44,7 @@
     <string name="dashboard_tv_sub">Live TV, VOD and series</string>
     <string name="dashboard_radio_sub">Popular stations and countries</string>
     <string name="dashboard_podcast_sub">Shows, episodes and offline listening</string>
+    <string name="dashboard_audiobook_sub">Books, chapters and offline listening</string>
     <string name="dashboard_youtube_sub">Video search and playback</string>
     <string name="dashboard_web_sub">Open web media</string>
     <string name="dashboard_back_to_list">Back to list</string>
@@ -52,6 +54,7 @@
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_radio">Radio</string>
     <string name="addon_name_podcast">Podcasts</string>
+    <string name="addon_name_audiobook">Audiobooks</string>
     <string name="addon_name_web_browser">Web browser</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
     <string name="addon_name_felex" translatable="false">Felex</string>
@@ -422,4 +425,28 @@
     <string name="err_failed_to_download">Failed to download %1$s</string>
     <string name="err_no_audio_record_perm">Audio recording permission is not granted</string>
     <string name="err_failed_start_service">Failed to start service: %s</string>
+
+    <string name="initial_setup">Initial setup</string>
+    <string name="initial_setup_subtitle">Choose the controls and language for this device.</string>
+    <string name="initial_setup_nav_position">Navigation bar position</string>
+    <string name="initial_setup_left">Left</string>
+    <string name="initial_setup_right">Right</string>
+    <string name="initial_setup_app_language">App language</string>
+    <string name="initial_setup_voice_enabled">Enable voice control</string>
+    <string name="initial_setup_voice_language">Voice language</string>
+    <string name="initial_setup_voice_same_app">Same as app</string>
+    <string name="initial_setup_voice_system">System language</string>
+    <string name="initial_setup_voice_english">English</string>
+    <string name="initial_setup_voice_vietnamese">Vietnamese</string>
+    <string name="initial_setup_voice_auto">Auto detect English/Vietnamese</string>
+    <string name="initial_setup_test_microphone">Test microphone</string>
+    <string name="initial_setup_test_disabled">Voice control is disabled.</string>
+    <string name="initial_setup_test_running">Listening...</string>
+    <string name="initial_setup_test_success">Microphone test: %1$s</string>
+    <string name="initial_setup_test_failed">Microphone test failed. You can continue and enable it later.</string>
+    <string name="initial_setup_continue">Continue to dashboard</string>
+    <string name="initial_setup_reopen">Open initial setup</string>
+    <string name="initial_setup_reopen_sub">Change device, app language, or voice preferences.</string>
+    <string name="voice_control_auto_language">Auto-detect voice language</string>
+    <string name="voice_control_auto_language_sub">Use Android 14 language detection with the selected language as fallback.</string>
 </resources>

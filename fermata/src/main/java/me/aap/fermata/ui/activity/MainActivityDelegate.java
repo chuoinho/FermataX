@@ -22,6 +22,7 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CLOCK_POS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_AUTO_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 import static me.aap.utils.async.Completed.completed;
@@ -96,6 +97,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
@@ -117,6 +119,7 @@ import me.aap.fermata.ui.fragment.AudioEffectsFragment;
 import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
+import me.aap.fermata.ui.fragment.InitialSetupFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.fragment.NavBarMediator;
@@ -130,6 +133,9 @@ import me.aap.fermata.ui.policy.PlaybackLayoutPolicy;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.fermata.ui.voice.VoiceIntent;
+import me.aap.fermata.ui.voice.VoiceIntentParser;
+import me.aap.fermata.ui.voice.VoiceSession;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
@@ -177,6 +183,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	private int brightness = 255;
 	private SpeechListener speechListener;
 	private VoiceCommandHandler voiceCommandHandler;
+	private final VoiceSession voiceSession = new VoiceSession();
 
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
@@ -254,6 +261,8 @@ public class MainActivityDelegate extends ActivityDelegate
 		getPrefs().addBroadcastListener(this);
 		int navId;
 		int fragmentId;
+		boolean initialSetup = !isCarActivityNotMirror() &&
+				getPrefs().shouldShowInitialSetup(this);
 
 		if ((state != null) && state.getBoolean("restoreFragment", false)) {
 			navId = state.getInt("navId", ID_NULL);
@@ -262,6 +271,14 @@ public class MainActivityDelegate extends ActivityDelegate
 			navId = ID_NULL;
 			fragmentId = ID_NULL;
 		}
+		if ((fragmentId == R.id.initial_setup_fragment) &&
+				getPrefs().getBooleanPref(MainActivityPrefs.INITIAL_SETUP_COMPLETED)) {
+			// A locale/nav recreation after setup must land on the normal Dashboard.
+			navId = ID_NULL;
+			fragmentId = ID_NULL;
+		}
+		final int restoredNavId = navId;
+		final int restoredFragmentId = fragmentId;
 
 		AppActivity a = getAppActivity();
 		FermataServiceUiBinder b = getMediaServiceBinder();
@@ -285,19 +302,19 @@ public class MainActivityDelegate extends ActivityDelegate
 						". Result: " + Arrays.toString(result));
 			}
 
-			if (fragmentId != ID_NULL) {
-				setActiveNavItemId(navId);
-				showFragment(fragmentId);
+			if (restoredFragmentId != ID_NULL) {
+				setActiveNavItemId(restoredNavId);
+				showFragment(restoredFragmentId);
 				return;
 			}
 
 			if ((intent != null) && !Intent.ACTION_MAIN.equals(intent.getAction())) {
 				handleIntent(intent).onCompletion((r, err) -> {
 					if (err != null) Log.e(err, "Failed to handle intent ", intent);
-					if ((r == null) || !r) defaultIntent();
+					if ((r == null) || !r) defaultIntent(initialSetup);
 				});
 			} else {
-				defaultIntent();
+				defaultIntent(initialSetup);
 			}
 		});
 	}
@@ -353,13 +370,18 @@ public class MainActivityDelegate extends ActivityDelegate
 		return completed(false);
 	}
 
-	private void defaultIntent() {
+	private void defaultIntent(boolean initialSetup) {
 		if (getActiveFragment() != null) {
 			checkUpdates();
 			return;
 		}
 
-		showDashboard();
+		if (initialSetup) {
+			setActiveNavItemId(ID_NULL);
+			showFragment(R.id.initial_setup_fragment);
+		} else {
+			showDashboard();
+		}
 		checkUpdates();
 	}
 
@@ -754,6 +776,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Nullable
 	@Override
 	public ActivityFragment showFragment(int id, Object input) {
+		voiceSession.clear();
 		BodyLayout b = getBody();
 		if (b.isVideoMode()) b.setMode(PlaybackLayoutPolicy.getModeAfterLeavingVideo(isCarActivity()));
 		return super.showFragment(id, input);
@@ -805,6 +828,8 @@ public class MainActivityDelegate extends ActivityDelegate
 			return new PlaylistsFragment();
 		} else if (id == R.id.settings_fragment) {
 			return new SettingsFragment();
+		} else if (id == R.id.initial_setup_fragment) {
+			return new InitialSetupFragment();
 		} else if (id == R.id.audio_effects_fragment) {
 			return new AudioEffectsFragment();
 		} else if (id == R.id.subtitles_fragment) {
@@ -910,8 +935,109 @@ public class MainActivityDelegate extends ActivityDelegate
 			voiceSearch(getCurrentFocus());
 	}
 
+	@Override
+	public boolean handleVoiceSearch(String query) {
+		if (!getPrefs().getVoiceControlEnabledPref()) return false;
+		Locale locale = Locale.forLanguageTag(getPrefs().getVoiceControlLang(this));
+		String command = VoiceIntentParser.mediaSearchCommand(query, locale);
+		if (command == null) return false;
+		VoiceIntent intent = VoiceIntentParser.parse(command, locale);
+		if ((intent == null) || !canRouteVoiceIntent(intent)) return false;
+		post(() -> {
+			VoiceCommandHandler handler = voiceCommandHandler;
+			if (handler == null) handler = voiceCommandHandler = new VoiceCommandHandler(this);
+			if (!handler.handle(command)) Log.w("Failed to handle media voice search: ", query);
+		});
+		return true;
+	}
+
+	private boolean canRouteVoiceIntent(VoiceIntent intent) {
+		if (intent.getKind() == VoiceIntent.Kind.PLAYBACK) return true;
+		if (intent.getKind() == VoiceIntent.Kind.SELECTION)
+			return voiceSession.isSelectionActive(System.currentTimeMillis());
+		String target = intent.getAddon();
+		if (target != null) return AddonManager.get().getVoiceAddonInfo(target) != null;
+		MainActivityFragment fragment = getActiveMainActivityFragment();
+		return (fragment != null) && fragment.isVoiceCommandsSupported();
+	}
+
+	public void beginVoiceSelection(List<PlayableItem> items) {
+		List<VoiceSession.Option> options = new ArrayList<>(Math.min(3, items.size()));
+		for (PlayableItem item : items) {
+			if (item == null) continue;
+			options.add(new VoiceSession.Option(item.getId(), item.getName(), null));
+			if (options.size() == 3) break;
+		}
+		voiceSession.beginSelection(options, System.currentTimeMillis());
+	}
+
+	public void beginVoiceSelectionOptions(List<VoiceSession.Option> options) {
+		voiceSession.beginSelection(options, System.currentTimeMillis());
+	}
+
+	public void clearVoiceSelection() {
+		voiceSession.clear();
+	}
+
+	/** Returns true while an active selection owns the next voice utterance. */
+	public boolean resolveVoiceSelection(String phrase) {
+		long now = System.currentTimeMillis();
+		if (!voiceSession.isSelectionActive(now)) {
+			voiceSession.clear();
+			return false;
+		}
+		VoiceIntent intent = VoiceIntentParser.parse(phrase, getPrefs().getLocalePref());
+		if ((intent == null) || (intent.getKind() != VoiceIntent.Kind.SELECTION)) {
+			voiceSession.clear();
+			return false;
+		}
+
+		VoiceSession.Option option = voiceSession.resolveSelection(phrase, getPrefs().getLocalePref(), now);
+		if (option == null) return true;
+		String target = option.getVoiceTarget();
+		if (target != null) {
+			if (!resolveVoiceSelection(target, option.getStableId(), 0))
+				Log.e("Failed to route voice selection to addon ", target);
+			return true;
+		}
+		for (FermataAddon addon : AddonManager.get().getAddons()) {
+			if ((addon instanceof VoiceSearchAddon voice) &&
+					voice.resolveVoiceSelection(this, option.getStableId())) return true;
+		}
+		getLib().getItem(option.getStableId()).main(getHandler()).onSuccess(item -> {
+			if (item instanceof PlayableItem playable) {
+				getMediaServiceBinder().playItem(playable);
+				goToItem(playable);
+			}
+		});
+		return true;
+	}
+
+	private boolean resolveVoiceSelection(String target, String stableId, int attempt) {
+		AddonManager manager = AddonManager.get();
+		AddonInfo info = manager.getVoiceAddonInfo(target);
+		if (info == null) return false;
+
+		FermataAddon addon = manager.getAddon(info.className);
+		ActivityFragment active = getActiveFragment();
+		boolean activeTarget = (active != null) && (active.getFragmentId() == info.addonId);
+		if (activeTarget && (addon instanceof VoiceSearchAddon voice) &&
+				voice.resolveVoiceSelection(this, stableId)) return true;
+		if (attempt >= 100) return false;
+		if (!activeTarget && !showFragmentWhenReady(info.addonId)) return false;
+		post(() -> {
+			if (!resolveVoiceSelection(target, stableId, attempt + 1) && (attempt == 99))
+				Log.e("Failed to resolve voice selection for addon ", target);
+		});
+		return true;
+	}
+
 	private void voiceSearch(View focus) {
-		startSpeechRecognizer().onSuccess(q -> {
+		boolean textInput = (focus instanceof EditText) || getAppActivity().isInputActive();
+		if (textInput) voiceSession.beginTextInput();
+		else if (voiceSession.getMode() != VoiceSession.Mode.SELECTION) voiceSession.beginCommand();
+		startSpeechRecognizer(null, textInput).onSuccess(q -> {
+			if ((q == null) || q.isEmpty()) return;
 			if (focus instanceof EditText) {
 				((EditText) focus).setText(q.get(0));
 				focus.requestFocus();
@@ -922,6 +1048,8 @@ public class MainActivityDelegate extends ActivityDelegate
 				if (h == null) h = voiceCommandHandler = new VoiceCommandHandler(this);
 				h.handle(q);
 			}
+		}).onCompletion((result, fail) -> {
+			if (textInput) voiceSession.beginCommand();
 		});
 	}
 
@@ -947,6 +1075,12 @@ public class MainActivityDelegate extends ActivityDelegate
 			i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
 			i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang);
 			i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+			if ((VERSION.SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE) && (locale == null) &&
+					getPrefs().getBooleanPref(VOICE_CONTROL_AUTO_LANG)) {
+				i.putExtra(RecognizerIntent.EXTRA_ENABLE_LANGUAGE_DETECTION, true);
+				i.putStringArrayListExtra(RecognizerIntent.EXTRA_LANGUAGE_DETECTION_ALLOWED_LANGUAGES,
+						new ArrayList<>(List.of("en-US", "vi-VN")));
+			}
 			speechListener = new SpeechListener(p, textInput);
 			speechListener.start(i);
 			return p;
@@ -978,7 +1112,11 @@ public class MainActivityDelegate extends ActivityDelegate
 		EditText t = getAppActivity().createEditText(ctx);
 		if (isCarActivity() && getPrefs().getVoiceControlEnabledPref()) {
 			t.setOnLongClickListener(v -> {
-				startSpeechRecognizer().onSuccess(q -> t.setText(q.get(0)));
+			voiceSession.beginTextInput();
+				startSpeechRecognizer(null, true).onSuccess(q -> {
+					if ((q != null) && !q.isEmpty()) t.setText(q.get(0));
+				})
+						.onCompletion((result, fail) -> voiceSession.beginCommand());
 				return true;
 			});
 		}
@@ -1156,8 +1294,10 @@ public class MainActivityDelegate extends ActivityDelegate
 		} else if (prefs.contains(VOICE_CONTROl_ENABLED)) {
 			if (!getPrefs().getVoiceControlEnabledPref()) {
 				getPrefs().applyBooleanPref(VOICE_CONTROl_FB, false);
+				fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 				return;
 			}
+			fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 			getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
 				if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
 				if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
@@ -1389,7 +1529,8 @@ public class MainActivityDelegate extends ActivityDelegate
 		@Override
 		public void onResults(Bundle b) {
 			List<String> r = b.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-			if ((r != null) && !r.isEmpty()) text.setText(r.get(0));
+			if (r == null) r = List.of();
+			if (!r.isEmpty()) text.setText(r.get(0));
 			postDelayed(MainActivityDelegate.this::hideActiveMenu, 1000);
 			promise.complete(r);
 		}

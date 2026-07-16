@@ -31,6 +31,8 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
+import me.aap.fermata.ui.voice.VoiceIntent;
+import me.aap.fermata.ui.voice.VoiceIntentParser;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.PatternCompat;
 import me.aap.utils.text.SharedTextBuilder;
@@ -119,8 +121,11 @@ class VoiceCommandHandler {
 	public boolean handle(String cmd) {
 		init();
 		cmd = subst(cmd);
+		if (activity.resolveVoiceSelection(cmd)) return true;
 
 		AddonManager amgr = AddonManager.get();
+		VoiceIntent parsed = VoiceIntentParser.parse(cmd, Locale.forLanguageTag(lang));
+		if ((parsed != null) && handleParsed(parsed, amgr)) return true;
 
 		if (amgr.hasAddon(R.id.chat_addon)) {
 			Matcher m = cChat.matcher(cmd);
@@ -237,6 +242,51 @@ class VoiceCommandHandler {
 		}
 
 		return false;
+	}
+
+	private boolean handleParsed(VoiceIntent intent, AddonManager addons) {
+		if (intent.getKind() == VoiceIntent.Kind.SELECTION) return false;
+
+		if (intent.getKind() == VoiceIntent.Kind.PLAYBACK) {
+			VoiceIntent.PlaybackAction action = intent.getPlaybackAction();
+			if (action == null) return false;
+			switch (action) {
+				case PLAY -> activity.getMediaSessionCallback().play().thenRun(activity::goToCurrent);
+				case PAUSE -> activity.getMediaSessionCallback().onPause();
+				case STOP -> activity.getMediaSessionCallback().onStop();
+				case OPEN_CURRENT -> activity.goToCurrent();
+				case PLAY_FAVORITES -> {
+					activity.showFragment(R.id.favorites_fragment);
+					playFavorites(0);
+				}
+			}
+			return true;
+		}
+
+		String query = intent.getQuery();
+		VoiceIntent.SearchAction action = intent.getSearchAction();
+		if ((query == null) || query.isBlank() || (action == null)) return false;
+		int legacyAction = switch (action) {
+			case PLAY -> VoiceCommand.ACTION_PLAY;
+			case FIND -> VoiceCommand.ACTION_FIND;
+			case OPEN -> VoiceCommand.ACTION_OPEN;
+		};
+		VoiceCommand command = new VoiceCommand(query, legacyAction);
+		String target = intent.getAddon();
+
+		if (target == null) {
+			MainActivityFragment fragment = activity.getActiveMainActivityFragment();
+			if ((fragment == null) || !fragment.isVoiceCommandsSupported()) return false;
+			fragment.voiceCommand(command);
+			return true;
+		}
+
+		// Use generated addon metadata first so an enabled dynamic feature can be
+		// loaded on demand. The runtime contract still validates the loaded addon.
+		var info = addons.getVoiceAddonInfo(target);
+		if ((info == null) || !activity.showFragmentWhenReady(info.addonId)) return false;
+		searchInFragment(info.addonId, command, 0);
+		return true;
 	}
 
 	private void searchInFragment(@IdRes int id, VoiceCommand cmd, int attempt) {

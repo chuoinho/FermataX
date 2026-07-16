@@ -58,8 +58,11 @@ public class YoutubeChromeClient extends FermataChromeClient {
 	}
 
 	protected void setFullScreen(MainActivityDelegate a, boolean fullScreen) {
-		a.setVideoMode(fullScreen, getFullScreenView());
-		if (BuildConfig.AUTO) a.setBarsHidden(fullScreen);
+		if (BuildConfig.AUTO) {
+			((YoutubeWebView) getWebView()).onBrowserFullScreenChanged(fullScreen);
+		} else {
+			a.setVideoMode(fullScreen, getFullScreenView());
+		}
 	}
 
 	@Override
@@ -89,7 +92,8 @@ public class YoutubeChromeClient extends FermataChromeClient {
 
 	@Override
 	public boolean canEnterFullScreen() {
-		MainActivityDelegate a = MainActivityDelegate.get(getWebView().getContext());
+		MainActivityDelegate a = getLiveActivity(getWebView().getContext());
+		if (a == null) return false;
 		MediaSessionCallback cb = a.getMediaSessionCallback();
 		if (!((cb.getEngine() instanceof YoutubeMediaEngine))) return false;
 		int st = cb.getPlaybackState().getState();
@@ -98,7 +102,9 @@ public class YoutubeChromeClient extends FermataChromeClient {
 
 	protected boolean onTouchEvent(View v, MotionEvent event) {
 		if (!isFullScreen()) return false;
-		MainActivityDelegate.get(v.getContext()).getControlPanel().onVideoViewTouch(getFullScreenView(), event);
+		MainActivityDelegate a = getLiveActivity(v.getContext());
+		if (a == null) return false;
+		a.getControlPanel().onVideoViewTouch(getFullScreenView(), event);
 		return true;
 	}
 

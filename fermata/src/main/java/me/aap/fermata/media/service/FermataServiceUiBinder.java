@@ -11,6 +11,7 @@ import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_START_TIME;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -333,13 +334,26 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 					break;
 			}
 
+			deliverSnapshot(sessionCallback.getPlaybackSnapshot());
+		}
+
+		@Override
+		public void onMetadataChanged(@Nullable MediaMetadataCompat metadata) {
+			if (!bound) return;
 			PlaybackSnapshot snapshot = sessionCallback.getPlaybackSnapshot();
+			deliverSnapshot(snapshot);
+			fireBroadcastEvent(l -> l.onPlaybackMetadataChanged(snapshot));
+		}
+
+		private void deliverSnapshot(PlaybackSnapshot snapshot) {
+			PlaybackSnapshot previous = deliveredSnapshot;
 			PlayableItem i = snapshot.getItem();
-			if (!snapshot.hasSameItem(deliveredSnapshot)) {
-				PlayableItem old = (deliveredSnapshot == null) ? null : deliveredSnapshot.getItem();
+			// Publish the new snapshot before callbacks query getCurrentItem().
+			deliveredSnapshot = snapshot;
+			if (!snapshot.hasSameItem(previous)) {
+				PlayableItem old = (previous == null) ? null : previous.getItem();
 				fireBroadcastEvent(l -> l.onPlayableChanged(old, i));
 			}
-			deliveredSnapshot = snapshot;
 		}
 
 		void pauseProgressUpdate(boolean pause) {
@@ -554,6 +568,9 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem);
 
 		default void onPlaybackStateChanged(PlaybackStateCompat state) {
+		}
+
+		default void onPlaybackMetadataChanged(PlaybackSnapshot snapshot) {
 		}
 
 		default void onPlaybackError(String message) {

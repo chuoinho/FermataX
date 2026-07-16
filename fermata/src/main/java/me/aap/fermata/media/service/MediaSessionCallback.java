@@ -568,6 +568,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onPlayFromSearch(String query, Bundle extras) {
 		Log.i("Search query received: " + query);
+		MediaSessionCallbackAssistant assistant = getAssistant();
+		if ((assistant != this) && assistant.handleVoiceSearch(query)) {
+			Log.i("Routing media search to voice command handler: " + query);
+			return;
+		}
 		getMediaLib().getMetadataRetriever().queryId(query).onSuccess(id -> {
 			if (id != null) {
 				Log.i("Playing media from search: " + id);
@@ -1024,7 +1029,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			assertNotNull(md);
 		} else {
 			MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
-			b.putString(METADATA_KEY_DISPLAY_TITLE, i.getResource().getName());
+			b.putString(METADATA_KEY_DISPLAY_TITLE, i.getName());
 			md = b.build();
 			update.set(m -> engine.getPosition().main().onSuccess(position -> {
 				if (getCurrentItem() != i) return;

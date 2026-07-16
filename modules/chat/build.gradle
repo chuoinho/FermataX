@@ -15,7 +15,8 @@ ext {
                     icon : 'chat',
                     class: 'me.aap.fermata.addon.chat.ChatAddon',
                     fragment: true,
-					capabilities: 'dashboard,navigation',
+					capabilities: 'dashboard,navigation,chatgpt,voice_search',
+					voiceTarget: 'chatgpt',
                     order: 5
             ]
     ]

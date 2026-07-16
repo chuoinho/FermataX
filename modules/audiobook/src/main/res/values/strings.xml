@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="audiobook_continue">Continue listening</string>
+    <string name="audiobook_library">Library</string>
+    <string name="audiobook_downloads">Downloads</string>
+    <string name="audiobook_discover">Discover free books</string>
+    <string name="audiobook_sources">Sources</string>
+    <string name="audiobook_source_local">Local folder</string>
+    <string name="audiobook_source_librivox">LibriVox</string>
+    <string name="audiobook_source_audiobookshelf">Audiobookshelf</string>
+    <string name="audiobook_source_opds">OPDS catalog</string>
+    <string name="audiobook_add_folder">Add audiobook folder</string>
+    <string name="audiobook_add_source">Add audiobook source</string>
+    <string name="audiobook_add_audiobookshelf">Add Audiobookshelf</string>
+    <string name="audiobook_add_opds">Add OPDS catalog</string>
+    <string name="audiobook_server_url">Server URL</string>
+    <string name="audiobook_bearer_token">Bearer token (optional)</string>
+    <string name="audiobook_add_failed">Could not add audiobook source</string>
+    <string name="audiobook_delete_source_title">Remove audiobook source?</string>
+    <string name="audiobook_delete_source_message">Remove %1$s and its listening history?</string>
+    <string name="audiobook_search_librivox">Search LibriVox</string>
+    <string name="audiobook_popular">Popular free books</string>
+    <string name="audiobook_latest">Recently added</string>
+    <string name="audiobook_add_to_library">Add to library</string>
+    <string name="audiobook_import_failed">Could not add this audiobook</string>
+    <string name="audiobook_download_book">Download book</string>
+    <string name="audiobook_delete_download">Remove download</string>
+    <string name="audiobook_download_failed">Audiobook download failed</string>
+</resources>

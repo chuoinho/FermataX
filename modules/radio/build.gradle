@@ -14,7 +14,8 @@ ext {
                     icon : 'radio',
                     class: 'me.aap.fermata.addon.radio.RadioAddon',
                     fragment: true,
-					capabilities: 'dashboard,navigation,radio',
+					capabilities: 'dashboard,navigation,radio,voice_search',
+					voiceTarget: 'radio',
                     order: 4
             ]
     ]

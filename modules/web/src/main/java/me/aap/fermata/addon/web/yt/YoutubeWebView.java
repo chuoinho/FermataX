@@ -16,10 +16,15 @@ import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import androidx.annotation.NonNull;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.web.FermataChromeClient;
@@ -27,6 +32,7 @@ import me.aap.fermata.addon.web.FermataJsInterface;
 import me.aap.fermata.addon.web.FermataWebView;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.voice.VoiceSession;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
@@ -36,6 +42,41 @@ import me.aap.utils.pref.PreferenceStore;
  * @author Andrey Pavlenko
  */
 public class YoutubeWebView extends FermataWebView {
+	private static final int VOICE_RESULTS_MAX_ATTEMPTS = 12;
+	private static final long VOICE_RESULTS_RETRY_MS = 350L;
+	private static final String PLAYBACK_SIGNAL_JS = """
+			function fermataVideoTitle() {
+			  var player = document.querySelector('#movie_player') ||
+			      document.querySelector('.html5-video-player');
+			  try {
+			    if (player && typeof player.getVideoData === 'function') {
+			      var data = player.getVideoData();
+			      if (data && data.title) return data.title;
+			    }
+			  } catch (err) {}
+			  var selectors = [
+			    'h1.ytd-watch-metadata yt-formatted-string',
+			    'h1.title yt-formatted-string',
+			    'ytm-slim-video-metadata-section-renderer h1',
+			    'ytm-video-description-header-renderer h1'
+			  ];
+			  for (var i = 0; i < selectors.length; i++) {
+			    var element = document.querySelector(selectors[i]);
+			    if (element && element.textContent && element.textContent.trim()) {
+			      return element.textContent.trim();
+			    }
+			  }
+			  var meta = document.querySelector('meta[property="og:title"], meta[name="title"]');
+			  if (meta && meta.content) return meta.content;
+			  return document.title || '';
+			}
+			function fermataVideoSignal(video) {
+			  var page = location.href || '';
+			  var media = (video && (video.currentSrc || video.src)) || page;
+			  return 'ytv1|' + encodeURIComponent(page) + '|' +
+			      encodeURIComponent(media) + '|' + encodeURIComponent(fermataVideoTitle());
+			}
+			""";
 	private static final String CLEAR_HIGHEST_VIDEO_QUALITY_JS =
 			"function clearFermataQ() {\n" +
 					"  if (!window.__fermataQ) return;\n" +
@@ -53,6 +94,41 @@ public class YoutubeWebView extends FermataWebView {
 	private float playbackTapX;
 	private float playbackTapY;
 	private long playbackTapTime;
+	private boolean pendingVoiceSearch;
+	private boolean voiceSearchCollecting;
+	private int voiceSearchGeneration;
+	private static final String VOICE_RESULTS_JS = """
+			(function() {
+			  const rows = document.querySelectorAll(
+			      'ytd-video-renderer, ytm-video-with-context-renderer');
+			  const seen = {};
+			  const result = [];
+			  for (const row of rows) {
+			    try {
+			      const titleElement = row.querySelector(
+			          'a#video-title, #video-title, h3.media-item-headline, .media-item-headline');
+			      const link = (titleElement && titleElement.closest('a[href*="/watch?v="]')) ||
+			          row.querySelector('a[href*="/watch?v="]');
+			      if (!link) continue;
+			      const u = new URL(link.href, location.href);
+			      const id = u.searchParams.get('v');
+			      if (!id || seen[id]) continue;
+			      let title = link.getAttribute('title') ||
+			          (titleElement && titleElement.textContent) || '';
+			      title = title.replace(/\\s+/g, ' ').trim();
+			      if (!title) continue;
+			      const channelElement = row.querySelector(
+			          '#channel-name a, #channel-name, .byline, ' +
+			          'ytm-badge-and-byline-renderer [class*="ItemByline"]');
+			      const channel = (channelElement && channelElement.textContent) || '';
+			      seen[id] = true;
+			      result.push({id: id, title: title, channel: channel.replace(/\\s+/g, ' ').trim()});
+			      if (result.length >= 3) break;
+			    } catch (ignore) {}
+			  }
+			  return JSON.stringify(result);
+			})()
+			""";
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -95,6 +171,83 @@ public class YoutubeWebView extends FermataWebView {
 		super.loadUrl(url);
 	}
 
+	void prepareVoiceSearch() {
+		voiceSearchGeneration++;
+		pendingVoiceSearch = true;
+		voiceSearchCollecting = false;
+	}
+
+	void collectVoiceSearchResults(String url) {
+		if (!pendingVoiceSearch || voiceSearchCollecting || !isVoiceSearchResultsUrl(url)) return;
+		voiceSearchCollecting = true;
+		collectVoiceSearchResults(voiceSearchGeneration, 0);
+	}
+
+	private void collectVoiceSearchResults(int generation, int attempt) {
+		if (!isCurrentVoiceSearch(generation)) return;
+		if (!isVoiceSearchResultsUrl(getUrl())) {
+			finishVoiceSearch(generation);
+			return;
+		}
+		evaluateJavascript(VOICE_RESULTS_JS, value -> {
+			if (!isCurrentVoiceSearch(generation)) return;
+			try {
+				JSONArray array = new JSONArray(decodeJavascriptString(value));
+				List<VoiceSession.Option> options = new ArrayList<>(Math.min(3, array.length()));
+				for (int i = 0; i < array.length() && i < 3; i++) {
+					JSONObject item = array.getJSONObject(i);
+					String id = item.optString("id", "");
+					String title = item.optString("title", "");
+					if (id.isEmpty() || title.isEmpty()) continue;
+					options.add(new VoiceSession.Option("youtube:" + id, title,
+							item.optString("channel", ""), "youtube"));
+				}
+				if (!options.isEmpty()) {
+					finishVoiceSearch(generation);
+					MainActivityDelegate.get(getContext()).beginVoiceSelectionOptions(options);
+					return;
+				}
+			} catch (Exception err) {
+				Log.d(err, "Failed to parse YouTube voice results");
+			}
+			if (attempt + 1 >= VOICE_RESULTS_MAX_ATTEMPTS) {
+				finishVoiceSearch(generation);
+			} else {
+				postDelayed(() -> collectVoiceSearchResults(generation, attempt + 1),
+						VOICE_RESULTS_RETRY_MS);
+			}
+		});
+	}
+
+	private boolean isCurrentVoiceSearch(int generation) {
+		return pendingVoiceSearch && voiceSearchCollecting &&
+				(generation == voiceSearchGeneration);
+	}
+
+	private void finishVoiceSearch(int generation) {
+		if (generation != voiceSearchGeneration) return;
+		pendingVoiceSearch = false;
+		voiceSearchCollecting = false;
+	}
+
+	static boolean isVoiceSearchResultsUrl(String url) {
+		if ((url == null) || url.isBlank()) return false;
+		URI uri;
+		try {
+			uri = new URI(url);
+		} catch (URISyntaxException ex) {
+			return false;
+		}
+		String host = uri.getHost();
+		return "/results".equals(uri.getPath()) && (host != null) &&
+				(host.equals("youtube.com") || host.endsWith(".youtube.com"));
+	}
+
+	void playVoiceVideo(String videoId) {
+		if (js != null) js.armExplicitPlayback();
+		loadUrl("https://www.youtube.com/watch?v=" + videoId);
+	}
+
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		handlePlaybackIntentTouch(event);
@@ -120,18 +273,15 @@ public class YoutubeWebView extends FermataWebView {
 		FermataChromeClient chrome = getWebChromeClient();
 		boolean browserFullScreen = (chrome != null) && chrome.isFullScreen();
 
-		// Invalidate pending auto-entry before changing either asynchronous fullscreen state.
-		if ((js == null) || !js.onPlayerBack(a.isVideoMode(), browserFullScreen)) return false;
-
-		if (chrome != null) chrome.cancelPendingFullScreenEntry();
-		if (browserFullScreen) chrome.exitFullScreen();
-		else a.setVideoMode(false, null);
-		a.setBarsHidden(false);
-		return true;
+		return (js != null) && js.onPlayerBack(a.isVideoMode(), browserFullScreen);
 	}
 
 	boolean acceptsBrowserFullScreen(long request) {
 		return (js != null) && js.acceptsBrowserFullScreen(request);
+	}
+
+	void onBrowserFullScreenChanged(boolean fullScreen) {
+		if (js != null) js.onBrowserFullScreenChanged(fullScreen);
 	}
 
 	private void grantManualFullScreenEntry(MotionEvent event) {
@@ -227,18 +377,23 @@ public class YoutubeWebView extends FermataWebView {
 				  function event(code, data) {
 				    try { %s(code, data); } catch (err) {}
 				  }
+				  %s
 				  function isVideoPage() {
 				    return location.pathname === '/watch' || location.pathname.startsWith('/shorts/');
 				  }
-				  function videoUrl(v) {
-				    return (v && (v.currentSrc || v.src)) || location.href || '';
+				  function emitState(code, v) {
+				    var signal = fermataVideoSignal(v);
+				    if ((state.lastEvent === code) && (state.lastSignal === signal)) return;
+				    state.lastEvent = code;
+				    state.lastSignal = signal;
+				    event(code, signal);
 				  }
 				  function notifyState(v) {
 				    if (!v) return;
 				    v.style.objectFit = scale;
 				    if (!isVideoPage()) return;
-				    if (!v.paused && !v.ended) event(%d, videoUrl(v));
-				    else event(%d, videoUrl(v));
+				    if (!v.paused && !v.ended) emitState(%d, v);
+				    else emitState(%d, v);
 				  }
 				  function attachVideoListeners(v) {
 				    if (!v || v.__fermataAttached) {
@@ -249,8 +404,8 @@ public class YoutubeWebView extends FermataWebView {
 				    v.style.objectFit = scale;
 				    %s
 				    notifyState(v);
-				    v.addEventListener('playing', function() { event(%d, videoUrl(v)); });
-				    v.addEventListener('pause', function() { event(%d, videoUrl(v)); });
+				    v.addEventListener('playing', function() { emitState(%d, v); });
+				    v.addEventListener('pause', function() { emitState(%d, v); });
 				    v.addEventListener('ended', function() { event(%d, null); });
 				    v.addEventListener('click', function() { event(%d, null); }, true);
 				    v.addEventListener('touchend', function() { event(%d, null); }, true);
@@ -266,6 +421,7 @@ public class YoutubeWebView extends FermataWebView {
 				    records.forEach(function(record) {
 				      record.addedNodes.forEach(scan);
 				    });
+				    notifyState(document.querySelector('video'));
 				  });
 				  if (document.documentElement) {
 				    state.observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -276,20 +432,22 @@ public class YoutubeWebView extends FermataWebView {
 				      setTimeout(scanDocument, 250);
 				    }
 				  }, 500);
-				})();""", scale, JS_EVENT, JS_VIDEO_PLAYING, JS_VIDEO_READY, debug, JS_VIDEO_PLAYING,
+				})();""", scale, JS_EVENT, PLAYBACK_SIGNAL_JS, JS_VIDEO_PLAYING, JS_VIDEO_READY, debug, JS_VIDEO_PLAYING,
 				JS_VIDEO_PAUSED, JS_VIDEO_ENDED, JS_VIDEO_TOUCHED, JS_VIDEO_TOUCHED), null);
 	}
 
 	void syncPlaybackState() {
 		evaluateJavascript(String.format(Locale.ROOT, """
 				(function() {
+				  %s
 				  var v = document.querySelector('video');
 				  if (!v) return;
 				  if ((location.pathname !== '/watch') && !location.pathname.startsWith('/shorts/')) return;
-				  var url = v.currentSrc || v.src || location.href || '';
-				  if (!v.paused && !v.ended) %s(%d, url);
-				  else %s(%d, url);
-				})();""", JS_EVENT, JS_VIDEO_PLAYING, JS_EVENT, JS_VIDEO_READY), null);
+				  var signal = fermataVideoSignal(v);
+				  if (!v.paused && !v.ended) %s(%d, signal);
+				  else %s(%d, signal);
+				})();""", PLAYBACK_SIGNAL_JS, JS_EVENT, JS_VIDEO_PLAYING, JS_EVENT,
+				JS_VIDEO_READY), null);
 	}
 
 	private void injectSponsorBlock() {
@@ -551,7 +709,9 @@ public class YoutubeWebView extends FermataWebView {
 
 	FutureSupplier<String> getVideoTitle() {
 		Promise<String> p = new Promise<>();
-		evaluateJavascript("document.title", value -> p.complete(decodeJavascriptString(value)));
+		evaluateJavascript("(function(){" + PLAYBACK_SIGNAL_JS +
+				"return fermataVideoTitle();})()",
+				value -> p.complete(decodeJavascriptString(value)));
 		return p;
 	}
 

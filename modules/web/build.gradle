@@ -14,7 +14,8 @@ ext {
                     icon : 'youtube',
                     class: 'me.aap.fermata.addon.web.yt.YoutubeAddon',
                     fragment: true,
-					capabilities: 'dashboard,navigation,youtube',
+					capabilities: 'dashboard,navigation,youtube,voice_search',
+					voiceTarget: 'youtube',
                     order: 2
             ],
             [
@@ -23,7 +24,8 @@ ext {
                     icon : 'web',
                     class: 'me.aap.fermata.addon.web.WebBrowserAddon',
                     fragment: true,
-					capabilities: 'dashboard,navigation,web',
+					capabilities: 'dashboard,navigation,web,voice_search',
+					voiceTarget: 'web',
                     order: 3
             ]
     ]

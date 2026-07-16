@@ -28,6 +28,7 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.VoiceCommand;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.function.LongSupplier;
 import me.aap.utils.pref.PreferenceStore;
@@ -193,6 +194,23 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	public void loadUrl(String url) {
 		FermataWebView v = getWebView();
 		if (v != null) v.loadUrl(url);
+	}
+
+	@Override
+	public void voiceCommand(VoiceCommand cmd) {
+		YoutubeWebView v = getWebView();
+		if (v != null) v.prepareVoiceSearch();
+		super.voiceCommand(cmd);
+	}
+
+	boolean playVoiceSelection(String stableId) {
+		if ((stableId == null) || !stableId.startsWith("youtube:")) return false;
+		String videoId = stableId.substring("youtube:".length());
+		if (!videoId.matches("[A-Za-z0-9_-]{6,32}")) return false;
+		YoutubeWebView v = getWebView();
+		if (v == null) return false;
+		v.playVoiceVideo(videoId);
+		return true;
 	}
 
 	@Override

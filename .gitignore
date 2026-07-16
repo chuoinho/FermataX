@@ -10,6 +10,7 @@ artifacts/
 .cxx/
 *.apk
 *.aab
+*.zip
 aa-menu*.xml
 aa-settings.xml
 window_views_dump/
@@ -17,6 +18,10 @@ window_views_raw/
 .agents/
 .codex/
 .codex-adb/
+docs/
+MASTER_CONTEXT.md
+BUILDING_README_SECTION.md
+codex-*.gradle
 *.iml
 local.properties
 google-services.json

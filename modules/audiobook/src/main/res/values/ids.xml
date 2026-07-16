@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="audiobook_download" type="id" />
+    <item name="audiobook_delete_download" type="id" />
+    <item name="audiobook_add_local" type="id" />
+    <item name="audiobook_add_audiobookshelf" type="id" />
+    <item name="audiobook_add_opds" type="id" />
+</resources>

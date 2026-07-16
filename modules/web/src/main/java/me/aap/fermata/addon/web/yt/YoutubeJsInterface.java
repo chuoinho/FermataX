@@ -42,6 +42,10 @@ public class YoutubeJsInterface extends FermataJsInterface {
 		return engine.acceptsBrowserFullScreen(request);
 	}
 
+	void onBrowserFullScreenChanged(boolean fullScreen) {
+		engine.onBrowserFullScreenChanged(fullScreen);
+	}
+
 	long grantManualFullScreenEntry() {
 		return engine.grantManualFullScreenEntry();
 	}
@@ -52,6 +56,10 @@ public class YoutubeJsInterface extends FermataJsInterface {
 
 	void onPlaybackGesture(long eventTime) {
 		engine.onPlaybackGesture(eventTime);
+	}
+
+	void armExplicitPlayback() {
+		engine.armExplicitPlayback();
 	}
 
 	protected void handleEvent(int event, String data) {

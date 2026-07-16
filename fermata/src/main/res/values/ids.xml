@@ -21,6 +21,7 @@
     <item name="tool_sort_none" type="id" />
     <item name="tool_pg_up" type="id" />
     <item name="tool_pg_down" type="id" />
+    <item name="tool_voice" type="id" />
 
     <item name="menu" type="id" />
 
@@ -33,11 +34,13 @@
     <item name="recent_fragment" type="id" />
     <item name="playlists_fragment" type="id" />
     <item name="settings_fragment" type="id" />
+    <item name="initial_setup_fragment" type="id" />
     <item name="audio_effects_fragment" type="id" />
     <item name="subtitles_fragment" type="id" />
     <item name="tv_fragment" type="id" />
     <item name="radio_fragment" type="id" />
     <item name="podcast_fragment" type="id" />
+    <item name="audiobook_fragment" type="id" />
     <item name="youtube_fragment" type="id" />
     <item name="web_browser_fragment" type="id" />
     <item name="felex_fragment" type="id" />

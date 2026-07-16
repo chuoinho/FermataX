@@ -1,0 +1,31 @@
+android {
+    namespace = "me.aap.fermata.addon.audiobook"
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+ext {
+    addons = [
+            [
+                    name : 'audiobook',
+                    id   : 'audiobook_fragment',
+                    icon : 'audiobook',
+                    class: 'me.aap.fermata.addon.audiobook.AudiobookAddon',
+                    fragment: true,
+                    capabilities: 'dashboard,navigation,audiobook,voice_search',
+                    voiceTarget: 'audiobook',
+                    order: 6
+            ]
+    ]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation libs.androidxMedia
+    implementation libs.androidxAppcompat
+    implementation libs.androidMaterial
+    testImplementation libs.robolectric
+}

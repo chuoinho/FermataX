@@ -25,7 +25,10 @@ public final class ItemRoutePolicy {
 		if (root instanceof MediaLib.Playlists) return R.id.playlists_fragment;
 		if (root instanceof ExtRoot extRoot) {
 			AddonCapability capability = extRoot.getRouteCapability();
-			if (capability != null) return AddonManager.get().getFragmentId(capability);
+			if (capability != null) {
+				int fragmentId = AddonManager.get().getFragmentId(capability);
+				if (fragmentId != 0) return fragmentId;
+			}
 		}
 
 		return AddonManager.get().getFragmentId(root);

@@ -201,4 +201,16 @@ public class YoutubeFullscreenGateTest {
 				"https://m.youtube.com/results?search_query=test",
 				"blob:https://m.youtube.com/search-preview"));
 	}
+
+	@Test
+	public void cancelledEntryRejectsLateUntaggedBrowserCallback() {
+		YoutubeFullscreenGate gate = new YoutubeFullscreenGate();
+		gate.requestAutoEntry(
+				"https://m.youtube.com/watch?v=video-1",
+				"https://media.example/stream-1");
+
+		gate.cancelCurrentPlayback();
+
+		assertFalse(gate.acceptsBrowserEntry(NO_REQUEST));
+	}
 }

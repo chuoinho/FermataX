@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="audiobook_add_source">Th&#234;m ngu&#7891;n s&#225;ch n&#243;i</string>
+    <string name="audiobook_add_audiobookshelf">Th&#234;m Audiobookshelf</string>
+    <string name="audiobook_add_opds">Th&#234;m danh m&#7909;c OPDS</string>
+    <string name="audiobook_server_url">URL m&#225;y ch&#7911;</string>
+    <string name="audiobook_bearer_token">Bearer token (t&#249;y ch&#7885;n)</string>
+    <string name="audiobook_continue">Nghe tiếp</string>
+    <string name="audiobook_library">Thư viện</string>
+    <string name="audiobook_downloads">Đã tải xuống</string>
+    <string name="audiobook_discover">Khám phá sách miễn phí</string>
+    <string name="audiobook_sources">Nguồn</string>
+    <string name="audiobook_source_local">Thư mục cục bộ</string>
+    <string name="audiobook_source_librivox">LibriVox</string>
+    <string name="audiobook_source_audiobookshelf">Audiobookshelf</string>
+    <string name="audiobook_source_opds">Danh mục OPDS</string>
+    <string name="audiobook_add_folder">Thêm thư mục sách nói</string>
+    <string name="audiobook_add_failed">Không thể thêm nguồn sách nói</string>
+    <string name="audiobook_delete_source_title">Xóa nguồn sách nói?</string>
+    <string name="audiobook_delete_source_message">Xóa %1$s và lịch sử nghe của nguồn này?</string>
+    <string name="audiobook_search_librivox">Tìm trên LibriVox</string>
+    <string name="audiobook_popular">Sách miễn phí phổ biến</string>
+    <string name="audiobook_latest">Mới được thêm</string>
+    <string name="audiobook_add_to_library">Thêm vào thư viện</string>
+    <string name="audiobook_import_failed">Không thể thêm sách nói này</string>
+    <string name="audiobook_download_book">Tải sách</string>
+    <string name="audiobook_delete_download">Xóa bản tải xuống</string>
+    <string name="audiobook_download_failed">Tải sách nói thất bại</string>
+</resources>

@@ -36,6 +36,7 @@ import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.policy.ChromePolicy;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListView;
+import me.aap.fermata.ui.voice.VoiceUiPolicy;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
@@ -68,6 +69,10 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			addButton(tb, ((MediaLibFragment) f).getAddSourceIcon(),
 					ToolBarMediator::onAddSourceButtonClick, R.id.tool_add_source);
 		}
+
+		ImageButton voice = addButton(tb, R.drawable.voice_microphone,
+				ToolBarMediator::onVoiceButtonClick, R.id.tool_voice);
+		voice.setContentDescription(tb.getContext().getString(R.string.action_activate_voice_ctrl));
 
 		if (!BuildConfig.AUTO && (f instanceof MediaLibFragment) && a.getPrefs().getShowPgUpDownPref(a)) {
 			addButton(tb, R.drawable.pg_down, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_down, LEFT);
@@ -112,6 +117,10 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		if ((f != null) && f.isAddSourceSupported()) f.addSource();
 	}
 
+	private static void onVoiceButtonClick(View v) {
+		MainActivityDelegate.get(v.getContext()).startVoiceAssistant();
+	}
+
 	@Nullable
 	@Override
 	public View focusSearch(ToolBarView tb, View focused, int direction) {
@@ -137,6 +146,9 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	}
 
 	private void setButtonsVisibility(ToolBarView tb, ActivityFragment f) {
+		MainActivityDelegate activity = MainActivityDelegate.get(tb.getContext());
+		setButtonVisibility(tb, R.id.tool_voice,
+				VoiceUiPolicy.showToolbarButton(activity) ? VISIBLE : GONE);
 		if (!(f instanceof MediaLibFragment)) return;
 		MediaLibFragment.ListAdapter a = ((MediaLibFragment) f).getAdapter();
 		if (a == null) return;

@@ -98,6 +98,11 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	@Override
+	public boolean isDestroyed() {
+		return destroyed;
+	}
+
+	@Override
 	protected void attachBaseContext(Context base) {
 		super.attachBaseContext(MainActivityDelegate.attachBaseContext(base));
 	}

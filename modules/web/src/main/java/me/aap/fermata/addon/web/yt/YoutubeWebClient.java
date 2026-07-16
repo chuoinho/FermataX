@@ -2,6 +2,7 @@ package me.aap.fermata.addon.web.yt;
 
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
+import android.graphics.Bitmap;
 
 import androidx.annotation.NonNull;
 
@@ -14,6 +15,11 @@ import me.aap.utils.log.Log;
  * @author Andrey Pavlenko
  */
 public class YoutubeWebClient extends FermataWebClient {
+	@Override
+	public void onPageStarted(WebView view, String url, Bitmap favicon) {
+		MainActivityDelegate.get(view.getContext()).clearVoiceSelection();
+		super.onPageStarted(view, url, favicon);
+	}
 
 	@Override
 	public boolean shouldOverrideUrlLoading(@NonNull WebView view, @NonNull WebResourceRequest request) {
@@ -32,5 +38,11 @@ public class YoutubeWebClient extends FermataWebClient {
 		}
 
 		return false;
+	}
+
+	@Override
+	public void onPageFinished(WebView view, String url) {
+		super.onPageFinished(view, url);
+		if (view instanceof YoutubeWebView youtube) youtube.collectVoiceSearchResults(url);
 	}
 }

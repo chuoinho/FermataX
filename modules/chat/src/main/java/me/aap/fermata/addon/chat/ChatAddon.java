@@ -14,6 +14,7 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataFragmentAddon;
+import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.utils.app.App;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
@@ -28,7 +29,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
  */
 @Keep
 @SuppressWarnings("unused")
-public class ChatAddon implements FermataFragmentAddon {
+public class ChatAddon implements FermataFragmentAddon, VoiceSearchAddon {
 	private static final AddonInfo info = FermataAddon.findAddonInfo(ChatAddon.class.getName());
 	private static final Pref<Supplier<String>> OPENAI_KEY = Pref.s("OPENAI_KEY", "");
 	private static final int DEFAULT_MODEL = 0;
@@ -44,6 +45,12 @@ public class ChatAddon implements FermataFragmentAddon {
 	@Override
 	public int getAddonId() {
 		return me.aap.fermata.R.id.chat_addon;
+	}
+
+	@NonNull
+	@Override
+	public String getVoiceTarget() {
+		return "chatgpt";
 	}
 
 	@NonNull

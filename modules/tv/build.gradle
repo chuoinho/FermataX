@@ -14,7 +14,8 @@ ext {
                     icon : 'tv',
                     class: 'me.aap.fermata.addon.tv.TvAddon',
                     fragment: true,
-					capabilities: 'dashboard,navigation,tv',
+					capabilities: 'dashboard,navigation,tv,voice_search',
+					voiceTarget: 'tv',
                     order: 1
             ]
     ]

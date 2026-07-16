@@ -13,6 +13,10 @@ public interface MediaSessionCallbackAssistant {
 
 	default void startVoiceAssistant(){}
 
+	default boolean handleVoiceSearch(String query) {
+		return false;
+	}
+
 	@NonNull
 	default FutureSupplier<MediaLib.PlayableItem> getPrevPlayable(Item i) {
 		return i.getPrevPlayable();

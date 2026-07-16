@@ -62,4 +62,14 @@ public class YoutubePlaybackIntentGateTest {
 
 		assertFalse(gate.accepts(VIDEO_1, 300L, false));
 	}
+
+	@Test
+	public void voiceResultCollectorAcceptsOnlyYoutubeResultsPages() {
+		assertTrue(YoutubeWebView.isVoiceSearchResultsUrl(
+				"https://www.youtube.com/results?search_query=numb"));
+		assertTrue(YoutubeWebView.isVoiceSearchResultsUrl(
+				"https://m.youtube.com/results?search_query=numb"));
+		assertFalse(YoutubeWebView.isVoiceSearchResultsUrl("https://www.youtube.com/watch?v=abc"));
+		assertFalse(YoutubeWebView.isVoiceSearchResultsUrl("https://example.com/results?q=numb"));
+	}
 }

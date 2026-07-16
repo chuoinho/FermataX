@@ -23,6 +23,8 @@ import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 
+import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -105,6 +107,13 @@ public class FermataChromeClient extends WebChromeClient {
 
 	@Override
 	public void onShowCustomView(View view, CustomViewCallback callback) {
+		MainActivityDelegate a = getLiveActivity(view.getContext());
+		if (a == null) {
+			cancelPendingFullScreenEntry();
+			callback.onCustomViewHidden();
+			return;
+		}
+
 		if (view instanceof ViewGroup g) {
 			View focus = g.getFocusedChild();
 
@@ -120,7 +129,6 @@ public class FermataChromeClient extends WebChromeClient {
 		customView = view;
 		customViewCallback = callback;
 		addCustomView(view);
-		MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
 		setFullScreen(a, true);
 
 		if (fullScreenReq != null) {
@@ -136,10 +144,11 @@ public class FermataChromeClient extends WebChromeClient {
 	public void onHideCustomView() {
 		if (customViewCallback == null) return;
 		touchStamp = 0;
-		MainActivityDelegate a = MainActivityDelegate.get(customView.getContext());
+		MainActivityDelegate a = getLiveActivity(customView.getContext());
+		if (a == null) a = getLiveActivity(web.getContext());
 		removeCustomView(customView);
 		getWebView().setVisibility(VISIBLE);
-		setFullScreen(a, false);
+		if (a != null) setFullScreen(a, false);
 		customViewCallback.onCustomViewHidden();
 		customView = null;
 		customViewCallback = null;
@@ -150,7 +159,18 @@ public class FermataChromeClient extends WebChromeClient {
 			req.complete(null);
 		}
 
-		a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+		if (a != null) a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+	}
+
+	@Nullable
+	protected static MainActivityDelegate getLiveActivity(Context context) {
+		try {
+			MainActivityDelegate activity = MainActivityDelegate.get(context);
+			return (activity.getAppActivity().isFinishing() ||
+					activity.getAppActivity().isDestroyed()) ? null : activity;
+		} catch (RuntimeException ignored) {
+			return null;
+		}
 	}
 
 	public boolean isFullScreen() {

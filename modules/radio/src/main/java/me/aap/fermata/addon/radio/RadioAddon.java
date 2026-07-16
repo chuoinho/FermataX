@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
+import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
@@ -15,7 +16,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 
 @Keep
 @SuppressWarnings("unused")
-public class RadioAddon implements MediaLibAddon {
+public class RadioAddon implements MediaLibAddon, VoiceSearchAddon {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(RadioAddon.class.getName());
 	private static RadioRootItem root;
@@ -25,6 +26,12 @@ public class RadioAddon implements MediaLibAddon {
 	@Override
 	public int getAddonId() {
 		return me.aap.fermata.R.id.radio_fragment;
+	}
+
+	@NonNull
+	@Override
+	public String getVoiceTarget() {
+		return "radio";
 	}
 
 	@NonNull

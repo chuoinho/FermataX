@@ -58,6 +58,10 @@ public interface AppActivity {
 		return false;
 	}
 
+	default boolean isDestroyed() {
+		return false;
+	}
+
 	default void startActivity(Intent intent) {
 		startActivity(intent, null);
 	}

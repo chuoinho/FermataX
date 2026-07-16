@@ -2,6 +2,8 @@ package me.aap.fermata.ui.activity;
 
 import static me.aap.fermata.BuildConfig.AUTO;
 
+import android.content.pm.PackageInfo;
+
 import androidx.annotation.Nullable;
 
 import java.util.HashMap;
@@ -63,8 +65,13 @@ public interface MainActivityPrefs
 	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
 	Pref<Supplier<String>> VOICE_CONTROL_LANG =
 			Pref.s("VOICE_CONTROL_LANG", () -> Locale.getDefault().toLanguageTag());
+	Pref<BooleanSupplier> VOICE_CONTROL_AUTO_LANG = Pref.b("VOICE_CONTROL_AUTO_LANG", false);
 	Pref<IntSupplier> CLOCK_POS = Pref.i("CLOCK_POS", CLOCK_POS_NONE);
 	Pref<IntSupplier> LOCALE = Pref.i("LOCALE", Lang.EN.ordinal());
+	int INITIAL_SETUP_CURRENT_VERSION = 1;
+	Pref<BooleanSupplier> INITIAL_SETUP_COMPLETED =
+			Pref.b("INITIAL_SETUP_COMPLETED", false);
+	Pref<IntSupplier> INITIAL_SETUP_VERSION = Pref.i("INITIAL_SETUP_VERSION", 0);
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
@@ -248,12 +255,65 @@ public interface MainActivityPrefs
 		return a.getPrefs().getStringPref(VOICE_CONTROL_LANG);
 	}
 
+	default boolean getVoiceControlAutoLangPref() {
+		return getBooleanPref(VOICE_CONTROL_AUTO_LANG);
+	}
+
 	default int getClockPosPref() {
 		return getIntPref(CLOCK_POS);
 	}
 
 	default Locale getLocalePref() {
 		return Lang.get(getIntPref(LOCALE)).locale;
+	}
+
+	/**
+	 * Keeps first-run setup out of update and restore paths. The explicit marker wins;
+	 * package install timestamps are only used when the marker is absent.
+	 */
+	static boolean shouldShowInitialSetup(long firstInstallTime, long lastUpdateTime,
+													 boolean hasExistingPrefs, boolean setupCompleted) {
+		if (setupCompleted || hasExistingPrefs) return false;
+		return firstInstallTime == lastUpdateTime;
+	}
+
+	default boolean shouldShowInitialSetup(MainActivityDelegate activity) {
+		if (getBooleanPref(INITIAL_SETUP_COMPLETED)) return false;
+
+		try {
+			PackageInfo info = activity.getContext().getPackageManager().getPackageInfo(
+					activity.getContext().getPackageName(), 0);
+			boolean hasExistingPrefs = false;
+			for (String key : getSharedPreferences().getAll().keySet()) {
+				// AddonManager may run from the media service before the first Activity.
+				if ("ADDONS_ENABLED_BY_DEFAULT".equals(key) ||
+						"ADDONS_ENABLED_BY_DEFAULT_V2".equals(key) ||
+						"DASHBOARD_ITEMS".equals(key) ||
+						"DASHBOARD_LAYOUT_VERSION".equals(key) ||
+						"METADATA_VERSION".equals(key) ||
+						"CHECK_UPDATES_STAMP".equals(key) ||
+						(key.endsWith("_enabled") && key.indexOf('.') >= 0)) continue;
+				hasExistingPrefs = true;
+				break;
+			}
+			boolean show = shouldShowInitialSetup(info.firstInstallTime, info.lastUpdateTime,
+					hasExistingPrefs, false);
+			if (!show) {
+				// A legacy installation must never be interrupted by the new setup screen.
+				applyInitialSetupCompleted();
+			}
+			return show;
+		} catch (Exception err) {
+			// Startup must remain fail-open if package metadata is unavailable.
+			return false;
+		}
+	}
+
+	default void applyInitialSetupCompleted() {
+		try (PreferenceStore.Edit e = editPreferenceStore()) {
+			e.setBooleanPref(INITIAL_SETUP_COMPLETED, true);
+			e.setIntPref(INITIAL_SETUP_VERSION, INITIAL_SETUP_CURRENT_VERSION);
+		}
 	}
 
 	enum Lang {

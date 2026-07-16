@@ -3,12 +3,12 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/dashboard_smart_height"
+    android:layout_height="@dimen/dashboard_smart_mobile_height"
     android:layout_margin="@dimen/dashboard_card_margin"
     android:background="@drawable/dashboard_smart_top_bg"
     android:clickable="true"
     android:focusable="true"
-    android:minHeight="@dimen/dashboard_smart_height"
+    android:minHeight="@dimen/dashboard_smart_mobile_height"
     android:padding="@dimen/dashboard_smart_padding">
 
     <androidx.constraintlayout.widget.Guideline
@@ -16,20 +16,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.60" />
-
-    <View
-        android:id="@+id/dashboard_smart_divider"
-        android:layout_width="1dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="5dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:alpha="0.2"
-        android:background="?attr/colorOnSecondary"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/dashboard_smart_split"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintGuide_percent="0.62" />
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/dashboard_item_icon"
@@ -39,10 +26,10 @@
         android:contentDescription="@null"
         android:padding="@dimen/dashboard_smart_icon_padding"
         android:scaleType="fitCenter"
-        app:layout_constraintBottom_toBottomOf="@id/dashboard_item_actions"
+        app:layout_constraintBottom_toTopOf="@id/dashboard_item_actions"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/dashboard_item_eyebrow"
-        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.5"
         app:tint="?attr/colorOnSecondary" />
 
     <com.google.android.material.textview.MaterialTextView
@@ -58,7 +45,7 @@
         android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@id/dashboard_smart_split"
         app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@id/dashboard_item_icon" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/dashboard_item_title"
@@ -91,15 +78,13 @@
 
     <LinearLayout
         android:id="@+id/dashboard_item_actions"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="@dimen/dashboard_smart_action_height"
-        android:layout_marginTop="@dimen/dashboard_smart_action_top_gap"
-        android:gravity="start|center_vertical"
+        android:gravity="center"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_split"
-        app:layout_constraintStart_toStartOf="@id/dashboard_item_title"
-        app:layout_constraintTop_toBottomOf="@id/dashboard_item_subtitle">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_prev"
@@ -161,6 +146,18 @@
             app:tint="?attr/colorOnSecondary" />
     </LinearLayout>
 
+    <View
+        android:id="@+id/dashboard_smart_divider"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/dashboard_smart_mobile_divider_gap"
+        android:layout_marginBottom="@dimen/dashboard_smart_mobile_divider_gap"
+        android:alpha="0.2"
+        android:background="?attr/colorOnSecondary"
+        app:layout_constraintBottom_toTopOf="@id/dashboard_item_actions"
+        app:layout_constraintStart_toEndOf="@id/dashboard_smart_split"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/dashboard_recent_panel"
         android:layout_width="0dp"
@@ -169,11 +166,11 @@
         android:clickable="true"
         android:focusable="true"
         android:orientation="vertical"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:paddingStart="8dp"
+        android:paddingTop="@dimen/dashboard_smart_mobile_recent_top_padding"
+        android:paddingEnd="4dp"
+        android:paddingBottom="0dp"
+        app:layout_constraintBottom_toTopOf="@id/dashboard_item_actions"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/dashboard_smart_divider"
         app:layout_constraintTop_toTopOf="parent">
@@ -192,50 +189,47 @@
         <TextView
             android:id="@+id/dashboard_recent_item_1"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="4dp"
-            android:layout_weight="1"
+            android:layout_height="28dp"
+            android:layout_marginTop="2dp"
             android:background="@drawable/focusable_shape_transparent"
             android:clickable="true"
             android:ellipsize="end"
             android:focusable="true"
             android:gravity="center_vertical"
             android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceSmall"
             android:paddingStart="6dp"
             android:paddingEnd="6dp"
+            android:textAppearance="?android:attr/textAppearanceSmall"
             android:textSize="13sp" />
 
         <TextView
             android:id="@+id/dashboard_recent_item_2"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="28dp"
             android:background="@drawable/focusable_shape_transparent"
             android:clickable="true"
             android:ellipsize="end"
             android:focusable="true"
             android:gravity="center_vertical"
             android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceSmall"
             android:paddingStart="6dp"
             android:paddingEnd="6dp"
+            android:textAppearance="?android:attr/textAppearanceSmall"
             android:textSize="13sp" />
 
         <TextView
             android:id="@+id/dashboard_recent_item_3"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="28dp"
             android:background="@drawable/focusable_shape_transparent"
             android:clickable="true"
             android:ellipsize="end"
             android:focusable="true"
             android:gravity="center_vertical"
             android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceSmall"
             android:paddingStart="6dp"
             android:paddingEnd="6dp"
+            android:textAppearance="?android:attr/textAppearanceSmall"
             android:textSize="13sp" />
     </LinearLayout>
 

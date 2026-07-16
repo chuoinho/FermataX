@@ -369,6 +369,7 @@ public final class DashboardItems {
 			case TV -> R.string.dashboard_tv_sub;
 			case RADIO -> R.string.dashboard_radio_sub;
 			case PODCAST -> R.string.dashboard_podcast_sub;
+			case AUDIOBOOK -> R.string.dashboard_audiobook_sub;
 			case YOUTUBE -> R.string.dashboard_youtube_sub;
 			case WEB -> R.string.dashboard_web_sub;
 			case FELEX -> R.string.dashboard_felex_sub;

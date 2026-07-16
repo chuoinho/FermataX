@@ -72,7 +72,7 @@ final class YoutubeFullscreenGate {
 
 	boolean acceptsBrowserEntry(long requestGeneration) {
 		if (requestGeneration != NO_REQUEST) return accepts(requestGeneration);
-		if (state != EntryState.USER_EXIT) return true;
+		if (state == EntryState.AVAILABLE) return true;
 		if (manualEntryPermit == NO_REQUEST) return false;
 		manualEntryPermit = NO_REQUEST;
 		state = EntryState.CONSUMED;

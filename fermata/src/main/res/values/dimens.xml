@@ -12,6 +12,7 @@
     <dimen name="dashboard_tile_subtitle_size">11sp</dimen>
 
 	<dimen name="dashboard_smart_height">140dp</dimen>
+	<dimen name="dashboard_smart_mobile_height">168dp</dimen>
     <dimen name="dashboard_smart_padding">10dp</dimen>
 	<dimen name="dashboard_smart_icon_size">78dp</dimen>
 	<dimen name="dashboard_smart_icon_padding">6dp</dimen>
@@ -24,4 +25,6 @@
     <dimen name="dashboard_smart_action_gap">6dp</dimen>
     <dimen name="dashboard_smart_action_padding">7dp</dimen>
     <dimen name="dashboard_smart_action_top_gap">6dp</dimen>
+    <dimen name="dashboard_smart_mobile_divider_gap">6dp</dimen>
+    <dimen name="dashboard_smart_mobile_recent_top_padding">4dp</dimen>
 </resources>

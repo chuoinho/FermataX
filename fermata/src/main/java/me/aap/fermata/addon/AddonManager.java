@@ -71,6 +71,18 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	@Nullable
+	public synchronized AddonInfo getVoiceAddonInfo(String target) {
+		if ((target == null) || target.isBlank()) return null;
+		for (AddonInfo info : registry.getAvailable()) {
+			if (!info.hasCapability(AddonCapability.VOICE_SEARCH) ||
+					!target.equals(info.voiceTarget) ||
+					!store.getBooleanPref(info.enabledPref)) continue;
+			return info;
+		}
+		return null;
+	}
+
+	@Nullable
 	public synchronized AddonInfo getAddonInfo(Object moduleClassOrId) {
 		if (moduleClassOrId == null) return null;
 		AddonInfo info = registry.getAvailable(moduleClassOrId);

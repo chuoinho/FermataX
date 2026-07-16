@@ -14,7 +14,8 @@ ext {
                     icon : 'podcast',
                     class: 'me.aap.fermata.addon.podcast.PodcastAddon',
                     fragment: true,
-                    capabilities: 'dashboard,navigation,podcast',
+					capabilities: 'dashboard,navigation,podcast,voice_search',
+					voiceTarget: 'podcast',
                     order: 5
             ]
     ]

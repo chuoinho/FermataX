@@ -9,9 +9,12 @@ public enum AddonCapability {
 	TV,
 	RADIO,
 	PODCAST,
+	AUDIOBOOK,
 	YOUTUBE,
 	WEB,
-	FELEX;
+	FELEX,
+	CHATGPT,
+	VOICE_SEARCH;
 
 	static EnumSet<AddonCapability> parse(String value) {
 		EnumSet<AddonCapability> result = EnumSet.noneOf(AddonCapability.class);

@@ -16,6 +16,7 @@ import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.WebBrowserAddon;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
@@ -43,7 +44,20 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_OPEN_ON_START = Pref.b("YT_OPEN_ON_START", false);
 	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
 			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
+
+	@NonNull
+	@Override
+	public String getVoiceTarget() {
+		return "youtube";
+	}
+
+	@Override
+	public boolean resolveVoiceSelection(MainActivityDelegate activity, String stableId) {
+		if (!(activity.getActiveFragment() instanceof YoutubeFragment fragment)) return false;
+		return fragment.playVoiceSelection(stableId);
+	}
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
+	private final YoutubePlaybackMetadata playbackMetadata = new YoutubePlaybackMetadata();
 	private boolean ignorePrefChange;
 
 	@IdRes
@@ -176,6 +190,10 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 
 	boolean autoHighestQuality() {
 		return getPreferenceStore().getBooleanPref(YT_AUTO_HIGHEST_QUALITY);
+	}
+
+	YoutubePlaybackMetadata getPlaybackMetadata() {
+		return playbackMetadata;
 	}
 
 	boolean autoHighestQualityChanged(List<Pref<?>> prefs) {

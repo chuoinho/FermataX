@@ -295,7 +295,6 @@ public class SettingsFragment extends MainActivityFragment
 			o.stringValues = CollectionUtils.mapToArray(MainActivityPrefs.Lang.getValues(),
 					v -> v.locale.getDisplayName(), String[]::new);
 		});
-
 		KeyBindingPrefsBuilder.add(set);
 		PlaybackPrefsBuilder.add(a, set, mediaPrefs);
 		VoicePrefsBuilder.add(a, set);
@@ -309,6 +308,11 @@ public class SettingsFragment extends MainActivityFragment
 
 		sub1 = set.subSet(o -> o.title = R.string.other);
 		if (!a.isCarActivityNotMirror()) {
+			sub1.addButton(o -> {
+				o.title = R.string.initial_setup_reopen;
+				o.subtitle = R.string.initial_setup_reopen_sub;
+				o.onClick = () -> a.showFragment(R.id.initial_setup_fragment);
+			});
 			sub1.addButton(o -> {
 				o.title = R.string.export_prefs;
 				o.subtitle = R.string.export_prefs_sub;

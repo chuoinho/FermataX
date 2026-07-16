@@ -159,7 +159,7 @@ gradle.projectsEvaluated {
                 "R.string.addon_name_${name}, R.drawable.${it['icon']}, " +
                 "${it['order']}, ${it['hasSettings']}, ${it.get('fragment', false)}, ${it['enabled']}, " +
                 "${it.get('auto', false)}, \"${it.get('depends', "")}\", " +
-				"\"${capabilities}\"),\n")
+				"\"${capabilities}\", \"${it.get('voiceTarget', '')}\"),\n")
     }
 
     def infoStr = addonInfo.append('})').toString()

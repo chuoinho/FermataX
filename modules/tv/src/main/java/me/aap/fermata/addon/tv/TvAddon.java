@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
+import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
@@ -18,7 +19,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
  */
 @Keep
 @SuppressWarnings("unused")
-public class TvAddon implements MediaLibAddon {
+public class TvAddon implements MediaLibAddon, VoiceSearchAddon {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(TvAddon.class.getName());
 	private static TvRootItem root;
@@ -29,6 +30,12 @@ public class TvAddon implements MediaLibAddon {
 	@Override
 	public int getAddonId() {
 		return me.aap.fermata.R.id.tv_fragment;
+	}
+
+	@NonNull
+	@Override
+	public String getVoiceTarget() {
+		return "tv";
 	}
 
 	@NonNull

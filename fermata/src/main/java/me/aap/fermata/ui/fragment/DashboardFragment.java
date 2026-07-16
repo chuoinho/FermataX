@@ -2,6 +2,7 @@ package me.aap.fermata.ui.fragment;
 
 import static android.view.View.FOCUS_DOWN;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -35,6 +36,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.voice.VoiceUiPolicy;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -190,6 +192,11 @@ public class DashboardFragment extends MainActivityFragment
 
 	@Override
 	public void onPlaybackStateChanged(PlaybackStateCompat state) {
+		refreshSmartTopCard();
+	}
+
+	@Override
+	public void onPlaybackMetadataChanged(PlaybackSnapshot snapshot) {
 		refreshSmartTopCard();
 	}
 
@@ -792,14 +799,24 @@ public class DashboardFragment extends MainActivityFragment
 		public void enable(ToolBarView tb, ActivityFragment f) {
 			ToolBarView.Mediator.BackTitle.super.enable(tb, f);
 			DashboardFragment dashboard = (DashboardFragment) f;
+			ImageButton voice = addButton(tb, R.drawable.voice_microphone,
+					DashboardToolBarMediator::onVoiceClick, R.id.tool_voice);
+			voice.setContentDescription(tb.getContext().getString(R.string.action_activate_voice_ctrl));
 			ImageButton edit = addButton(tb, dashboard.editMode ? R.drawable.done : R.drawable.edit,
 					DashboardToolBarMediator::onEditClick, R.id.dashboard_edit);
 			edit.setContentDescription(tb.getContext().getString(dashboard.editMode ?
 					R.string.done : R.string.edit_dashboard));
+			updateVoiceVisibility(tb);
 			ImageButton settings = addButton(tb, R.drawable.settings_gear, DashboardToolBarMediator::onSettingsClick,
 					R.id.dashboard_settings);
 			settings.setBackgroundResource(R.drawable.aa_toolbar_primary_button_bg);
 			settings.setContentDescription(tb.getContext().getString(R.string.settings));
+		}
+
+		@Override
+		public void onActivityEvent(ToolBarView tb, ActivityDelegate activity, long event) {
+			ToolBarView.Mediator.BackTitle.super.onActivityEvent(tb, activity, event);
+			if (event == FRAGMENT_CONTENT_CHANGED) updateVoiceVisibility(tb);
 		}
 
 		private static void onEditClick(View v) {
@@ -812,6 +829,16 @@ public class DashboardFragment extends MainActivityFragment
 			ActivityFragment fragment = activity.getActiveFragment();
 			if (fragment instanceof DashboardFragment dashboard) dashboard.setEditMode(false);
 			activity.showFragment(R.id.settings_fragment);
+		}
+
+		private static void onVoiceClick(View v) {
+			MainActivityDelegate.get(v.getContext()).startVoiceAssistant();
+		}
+
+		private static void updateVoiceVisibility(ToolBarView tb) {
+			View voice = tb.findViewById(R.id.tool_voice);
+			if (voice != null) voice.setVisibility(VoiceUiPolicy.showToolbarButton(
+					MainActivityDelegate.get(tb.getContext())) ? View.VISIBLE : View.GONE);
 		}
 
 		@Override

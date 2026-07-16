@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.fragment;
 
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_LANG;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_AUTO_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
@@ -37,6 +38,13 @@ final class VoicePrefsBuilder {
 			o.pref = VOICE_CONTROL_SUBST;
 			o.store = activity.getPrefs();
 			o.maxLines = 10;
+			o.visibility = PrefCondition.create(activity.getPrefs(), VOICE_CONTROl_ENABLED);
+		});
+		voice.addBooleanPref(o -> {
+			o.title = R.string.voice_control_auto_language;
+			o.subtitle = R.string.voice_control_auto_language_sub;
+			o.pref = VOICE_CONTROL_AUTO_LANG;
+			o.store = activity.getPrefs();
 			o.visibility = PrefCondition.create(activity.getPrefs(), VOICE_CONTROl_ENABLED);
 		});
 		voice.addTtsLocalePref(o -> {

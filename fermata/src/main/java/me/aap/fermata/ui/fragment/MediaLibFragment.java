@@ -522,11 +522,19 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			if (f == null) return;
 			List<PlayableItem> items = f.getItemsFound();
 			if (items.isEmpty()) return;
+			if (items.size() == 1) {
+				PlayableItem first = items.get(0);
+				if (play) b.playItem(first);
+				a.goToItem(first);
+				return;
+			}
+
+			// Ambiguous voice searches open the result list and wait for an explicit
+			// number selection instead of silently playing the first match.
+			a.beginVoiceSelection(items);
+			getAdapter().setParent(f);
 			PlayableItem first = items.get(0);
-			if (play) b.playItem(first);
-			if (items.size() == 1) a.goToItem(first);
-			else getAdapter().setParent(f);
-			if (!play) a.post(() -> getListView().focusTo(first));
+			a.post(() -> getListView().focusTo(first));
 		});
 	}
 

@@ -608,6 +608,11 @@ public class ControlPanelView extends ConstraintLayout
 	}
 
 	@Override
+	public void onPlaybackMetadataChanged(PlaybackSnapshot snapshot) {
+		updateAutoVideoTitle(getActivity());
+	}
+
+	@Override
 	public void onPlaybackStopped() {
 		favoriteController.refresh();
 	}

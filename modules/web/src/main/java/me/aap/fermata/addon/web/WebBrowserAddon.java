@@ -18,6 +18,7 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataFragmentAddon;
+import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
@@ -35,7 +36,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
  */
 @Keep
 @SuppressWarnings("unused")
-public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceStore {
+public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceStore, VoiceSearchAddon {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(WebBrowserAddon.class.getName());
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
@@ -65,6 +66,12 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	@Override
 	public int getAddonId() {
 		return me.aap.fermata.R.id.web_browser_fragment;
+	}
+
+	@NonNull
+	@Override
+	public String getVoiceTarget() {
+		return "web";
 	}
 
 	@NonNull
