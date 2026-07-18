@@ -36,6 +36,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CacheMap;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.BiFunction;
+import me.aap.utils.function.Cancellable;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.function.Function;
 import me.aap.utils.log.Log;
@@ -87,18 +88,29 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 		}
 	}
 
-	public static void connect(Consumer<Opts> builder, BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer) {
+	public static Cancellable connect(Consumer<Opts> builder,
+			BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer) {
 		try {
 			Opts o = new Opts();
 			builder.accept(o);
-			connect(o, consumer);
+			return connect(o, consumer);
 		} catch (Throwable ex) {
 			consumer.apply(null, ex);
+			return Cancellable.CANCELED;
 		}
 	}
 
-	public static void connect(Opts o, BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer) {
-		if (!checkRedirect(o, consumer)) return;
+	public static Cancellable connect(Opts o,
+			BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer) {
+		Req request = (consumer instanceof Req) ? (Req) consumer : new Req(o, consumer);
+		connect(request);
+		return request;
+	}
+
+	private static void connect(Req request) {
+		if (request.isCancelled()) return;
+		Opts o = request.o;
+		if (!checkRedirect(o, request)) return;
 		ConnectionId id = new ConnectionId(o.url);
 		FutureSupplier<HttpConnection> f;
 		o.port = id.port;
@@ -119,7 +131,15 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 		}
 
 		assert f != null;
-		f.onCompletion((c, err) -> sendRequest(c, o, err, consumer));
+		request.setPendingConnection(f);
+		f.onCompletion((c, err) -> {
+			request.clearPendingConnection(f);
+			if (request.isCancelled()) {
+				if (!o.keepAlive && (c != null)) c.close();
+				return;
+			}
+			sendRequest(c, o, err, request);
+		});
 	}
 
 	private static FutureSupplier<HttpConnection> connect(Opts o) {
@@ -149,15 +169,13 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 																	BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer) {
 		if (err != null) {
 			consumer.apply(null, err);
-		} else if (consumer instanceof Req) {
-			Req req = (Req) consumer;
-			c.sendRequest(req, req);
 		} else {
-			Req req = new Req(o, consumer);
-			if (o.responseTimeout != 0) {
-				req.timer = c.getChannel().getHandler().getScheduler()
-						.schedule(req, o.responseTimeout, TimeUnit.SECONDS);
+			Req req = (Req) consumer;
+			if (!req.setConnection(c)) {
+				if (!o.keepAlive) c.close();
+				return;
 			}
+			req.startTimer(c);
 			c.sendRequest(req, req);
 		}
 	}
@@ -297,14 +315,44 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 	}
 
 	private static final class Req implements Function<HttpRequestBuilder, ByteBuffer[]>,
-			BiFunction<HttpResponse, Throwable, FutureSupplier<?>>, Runnable {
+			BiFunction<HttpResponse, Throwable, FutureSupplier<?>>, Runnable, Cancellable {
 		private final Opts o;
 		private final BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer;
+		private FutureSupplier<HttpConnection> pendingConnection;
+		private HttpConnection connection;
 		private ScheduledFuture<?> timer;
+		private boolean cancelled;
+		private boolean terminal;
 
 		public Req(Opts o, BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer) {
 			this.o = o;
 			this.consumer = consumer;
+		}
+
+		synchronized boolean isCancelled() {
+			return cancelled;
+		}
+
+		synchronized void setPendingConnection(FutureSupplier<HttpConnection> pending) {
+			if (cancelled && !o.keepAlive) pending.cancel();
+			else pendingConnection = pending;
+		}
+
+		synchronized void clearPendingConnection(FutureSupplier<HttpConnection> pending) {
+			if (pendingConnection == pending) pendingConnection = null;
+		}
+
+		synchronized boolean setConnection(HttpConnection connection) {
+			if (cancelled || terminal) return false;
+			this.connection = connection;
+			return true;
+		}
+
+		synchronized void startTimer(HttpConnection connection) {
+			if ((o.responseTimeout != 0) && (timer == null) && !cancelled && !terminal) {
+				timer = connection.getChannel().getHandler().getScheduler()
+						.schedule(this, o.responseTimeout, TimeUnit.SECONDS);
+			}
 		}
 
 		@Override
@@ -352,16 +400,18 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 
 		@Override
 		public FutureSupplier<?> apply(HttpResponse resp, Throwable err) {
+			synchronized (this) {
+				if (cancelled || terminal) return completedVoid();
+			}
 			if (err != null) {
 				if ((o.maxReconnects > 0) && (err instanceof IOException)) {
 					Log.d("Trying to reconnect(", o.maxReconnects, "): ", o.url);
 					o.maxReconnects--;
-					connect(o, this);
+					connect(this);
 					return completedVoid();
 				}
 
-				cancelTimer();
-				return consumer.apply(null, err);
+				return deliver(null, err);
 			}
 
 			int status = resp.getStatusCode();
@@ -393,8 +443,7 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 					}
 			}
 
-			cancelTimer();
-			return consumer.apply(resp, null);
+			return deliver(resp, null);
 		}
 
 		private void redirect(String location, int status, int n) {
@@ -415,31 +464,64 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 				URL cached = null;
 				if (permanent) cached = CollectionUtils.putIfAbsent(permRedirects, o.url, u);
 				o.url = (cached == null) ? u : cached;
-				connect(o, this);
+				connect(this);
 			} catch (MalformedURLException ex) {
-				cancelTimer();
-				consumer.apply(null, ex);
+				deliver(null, ex);
 			}
 		}
 
 
 		@Override
 		public void run() {
-			ScheduledFuture<?> t = timer;
-
-			if (t != null) {
+			HttpConnection connection;
+			synchronized (this) {
+				if ((timer == null) || cancelled || terminal) return;
 				timer = null;
-				apply(null, new TimeoutException("Request timeout: " + o.url));
+				terminal = true;
+				connection = this.connection;
 			}
+			if (connection != null) connection.close();
+			consumer.apply(null, new TimeoutException("Request timeout: " + o.url));
 		}
 
-		private void cancelTimer() {
+		private synchronized void cancelTimer() {
 			ScheduledFuture<?> t = timer;
 
 			if (t != null) {
 				timer = null;
 				t.cancel(false);
 			}
+		}
+
+		private FutureSupplier<?> deliver(@Nullable HttpResponse response,
+				@Nullable Throwable error) {
+			synchronized (this) {
+				if (cancelled || terminal) return completedVoid();
+				terminal = true;
+			}
+			cancelTimer();
+			return consumer.apply(response, error);
+		}
+
+		@Override
+		public boolean cancel() {
+			FutureSupplier<HttpConnection> pending;
+			HttpConnection connection;
+			synchronized (this) {
+				if (cancelled || terminal) return false;
+				cancelled = true;
+				terminal = true;
+				pending = pendingConnection;
+				pendingConnection = null;
+				connection = this.connection;
+				this.connection = null;
+			}
+			cancelTimer();
+			if (!o.keepAlive) {
+				if (pending != null) pending.cancel();
+				if (connection != null) connection.close();
+			}
+			return true;
 		}
 	}
 }

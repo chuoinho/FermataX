@@ -547,6 +547,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		public boolean isRecentEligible() {
 			return false;
 		}
+
+		@Override
+		public boolean isPlaybackTransportCommand() {
+			return true;
+		}
 	}
 
 	private final class Current extends YoutubeItem {

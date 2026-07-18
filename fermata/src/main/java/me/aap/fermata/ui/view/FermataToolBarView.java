@@ -28,6 +28,21 @@ public class FermataToolBarView extends ToolBarView {
 	}
 
 	@Override
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+		super.onLayout(changed, left, top, right, bottom);
+		if (!(getParent() instanceof ViewGroup parent)) return;
+		View[] buttons = new View[getChildCount()];
+		int count = 0;
+		for (int i = 0; i < getChildCount(); i++) {
+			View child = getChildAt(i);
+			if (child instanceof ImageButton) buttons[count++] = child;
+		}
+		if (count != 0)
+			MinimumTouchTargetDelegate.install(parent,
+					java.util.Arrays.copyOf(buttons, count));
+	}
+
+	@Override
 	public void setSize(float scale) {
 		super.setSize(scale);
 		if (!isCarInterface()) return;

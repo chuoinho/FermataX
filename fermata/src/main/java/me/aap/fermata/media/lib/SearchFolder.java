@@ -19,7 +19,10 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.R;
@@ -46,10 +49,13 @@ public class SearchFolder extends BrowsableItemBase {
 			METADATA_KEY_ALBUM,
 			METADATA_KEY_DISPLAY_SUBTITLE
 	};
+	private static final Map<Object, Map<String, Long>> SEARCH_REVISIONS = new WeakHashMap<>();
 	private final List<PlayableItem> itemsFound;
+	private final String searchRootId;
 
 	private SearchFolder(String id, @NonNull BrowsableItem parent, List<Item> items) {
 		super(id, parent, null);
+		searchRootId = parent.getRoot().getId();
 		itemsFound = new ArrayList<>(items.size());
 		for (Item i : items) {
 			if (i instanceof PlayableItem) itemsFound.add((PlayableItem) i);
@@ -83,8 +89,9 @@ public class SearchFolder extends BrowsableItemBase {
 			@NonNull String q, @NonNull Function<List<PlayableItem>, BrowsableItem> parentSupplier) {
 		BrowsableItem parent = parentSupplier.apply(emptyList());
 		if (parent == null) return completedNull();
-		String id = SCHEME + q + '@' + parent.getId();
 		MediaLib lib = parent.getLib();
+		BrowsableItem root = parent.getRoot();
+		String id = cacheId(q, parent.getId(), searchRevision(lib, root.getId()));
 		Item cached = lib.getCachedItem(id);
 		if (cached != null) return completed((SearchFolder) cached);
 
@@ -102,6 +109,39 @@ public class SearchFolder extends BrowsableItemBase {
 		} else {
 			return App.get().execute(() -> recursiveSearch(id, q, parent, parentSupplier))
 					.map(FutureSupplier::peek);
+		}
+	}
+
+	/** Invalidates voice-search results for one media root without flushing unrelated addons. */
+	public static void invalidate(@NonNull BrowsableItem item) {
+		BrowsableItem root = item.getRoot();
+		MediaLib lib = root.getLib();
+		String rootId = root.getId();
+		invalidateSearchRevision(lib, rootId);
+		if (lib instanceof DefaultMediaLib defaultLib) {
+			defaultLib.removeCachedItems(cached -> (cached instanceof SearchFolder search) &&
+					rootId.equals(search.searchRootId));
+		}
+	}
+
+	static String cacheId(String query, String parentId, long revision) {
+		return SCHEME + query + '@' + parentId + "#r" + revision;
+	}
+
+	static long searchRevision(Object library, String rootId) {
+		synchronized (SEARCH_REVISIONS) {
+			Map<String, Long> roots = SEARCH_REVISIONS.get(library);
+			return (roots == null) ? 0L : roots.getOrDefault(rootId, 0L);
+		}
+	}
+
+	static long invalidateSearchRevision(Object library, String rootId) {
+		synchronized (SEARCH_REVISIONS) {
+			Map<String, Long> roots = SEARCH_REVISIONS.computeIfAbsent(library,
+					ignored -> new HashMap<>());
+			long revision = roots.getOrDefault(rootId, 0L) + 1L;
+			roots.put(rootId, revision);
+			return revision;
 		}
 	}
 

@@ -231,6 +231,11 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 		});
 	}
 
+	/** Drops a resolved child snapshot without starting I/O or recursively refreshing descendants. */
+	public final void invalidateChildrenCache() {
+		CHILDREN.set(this, null);
+	}
+
 	@NonNull
 	@Override
 	public FutureSupplier<Void> rescan() {

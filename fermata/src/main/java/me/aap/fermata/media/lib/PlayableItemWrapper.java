@@ -138,6 +138,11 @@ public class PlayableItemWrapper implements PlayableItem {
 	}
 
 	@Override
+	public boolean isPlaybackTransportCommand() {
+		return getItem().isPlaybackTransportCommand();
+	}
+
+	@Override
 	public boolean isLocationSensitive() {
 		return getItem().isLocationSensitive();
 	}

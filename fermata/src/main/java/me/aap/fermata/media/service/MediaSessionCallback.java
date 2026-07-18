@@ -116,6 +116,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.lib.PlaybackProgressItem;
+import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
@@ -191,6 +192,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private MediaMetadataCompat metadata;
 	private PlaybackSnapshot playbackSnapshot;
 	private long playbackSnapshotRevision;
+	private long playbackRequestRevision;
+	private final PlaybackTransition playbackTransition = new PlaybackTransition();
 	private String retryStreamId;
 	private int streamRetryAttempt;
 	private long streamStartedAt;
@@ -311,8 +314,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Nullable
 	public PlayableItem getCurrentItem() {
-		MediaEngine eng = getEngine();
-		return (eng == null) ? null : eng.getSource();
+		return playbackTransition.getCurrentItem(getEngine());
 	}
 
 	@NonNull
@@ -541,9 +543,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
 		return lib.getItem(mediaId).then(i -> {
 			if (i instanceof PlayableItem) {
-				return completed((PlayableItem) i);
+				return completed(PlayableItemResolver.unwrap((PlayableItem) i));
 			} else if (i instanceof BrowsableItem) {
-				return ((BrowsableItem) i).getFirstPlayable();
+				return ((BrowsableItem) i).getFirstPlayable().map(pi ->
+						(pi == null) ? null : PlayableItemResolver.unwrap(pi));
 			} else {
 				return completedNull();
 			}
@@ -588,6 +591,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		PlayableItem i;
 		MediaEngine eng = getEngine();
 		if ((eng == null) || ((i = eng.getSource()) == null)) return;
+		playbackRequestRevision++;
+		playerTask.cancel();
+		PlaybackSnapshot rollback = playbackTransition.cancel();
 
 		if (!eng.canPause()) {
 			onStop();
@@ -600,12 +606,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			long qid = getPlaybackState().getActiveQueueItemId();
 			setLastPlayed(i, h.value1);
 			PlaybackStateCompat state = createPlayingState(i, true, qid, h.value1, h.value2);
-			setPlaybackState(state);
+			MediaMetadataCompat currentMetadata = (rollback == null) ?
+					((playbackSnapshot == null) ? null : playbackSnapshot.getMetadata()) :
+					rollback.getMetadata();
+			metadata = currentMetadata;
+			session.setMetadata(currentMetadata);
+			setPlaybackState(state, i, currentMetadata);
 		});
 	}
 
 	@Override
 	public void onStop() {
+		playbackRequestRevision++;
 		playerTask.cancel();
 		resetStreamRetry();
 		onStop(true);
@@ -613,6 +625,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private FutureSupplier<?> onStop(boolean setPosition) {
 		MediaEngine eng = getEngine();
+		if (playbackTransition.hasPending()) setPosition = false;
 
 		if (setPosition && (eng != null)) {
 			PlayableItem i = eng.getSource();
@@ -629,7 +642,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		if (eng != null) {
 			if (pos != -1) {
 				PlayableItem i = eng.getSource();
-				if (i != null) setLastPlayed(i, pos);
+				if (i != null) {
+					i = PlayableItemResolver.unwrap(i);
+					PlaybackSnapshot rollback = playbackTransition.cancel();
+					publishOutgoingPosition(i, pos, rollback);
+					setLastPlayed(i, pos);
+				}
 			}
 
 			eng.stop();
@@ -638,7 +656,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			if (current) engine = null;
 		}
 
-		if (current || (eng == null)) stopped();
+		if (current || (eng == null)) {
+			playbackTransition.clear();
+			stopped();
+		}
 		return completedVoid();
 	}
 
@@ -714,13 +735,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void skipTo(boolean next, PlayableItem i) {
-		PlaybackStateCompat state = getPlaybackState();
 		long pos = i.getPrefs().getPositionPref();
-		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
-		b.setState(next ? STATE_SKIPPING_TO_NEXT : STATE_SKIPPING_TO_PREVIOUS, pos,
-				state.getPlaybackSpeed());
-		setPlaybackState(b.build());
-		playPreparedItem(i, pos);
+		playPreparedItem(i, pos, next ? STATE_SKIPPING_TO_NEXT : STATE_SKIPPING_TO_PREVIOUS);
 	}
 
 	@Override
@@ -873,13 +889,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			else return completedNull();
 		}).then(this::prepareItem).then(i -> {
 			if (i == null) return completedVoid();
-
-			PlaybackStateCompat state = getPlaybackState();
-			PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
-			b.setState(PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM, state.getPosition(),
-					state.getPlaybackSpeed());
-			setPlaybackState(b.build());
-			playPreparedItem(i, 0);
+			playPreparedItem(i, 0, PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM);
 			return completedVoid();
 		});
 	}
@@ -937,7 +947,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private void onEnginePrepared(MediaEngine engine, PlayableItem i) {
 		if (engine != getEngine()) return;
-		long pos = lib.getLastPlayedPosition(i);
+		long pos = playbackTransition.getTargetPosition(i, lib.getLastPlayedPosition(i));
 
 		if (pos > 0) {
 			FutureSupplier<Long> dur = i.getDuration();
@@ -960,8 +970,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (playOnPrepared) {
 			setLastPlayed(i, pos);
+			playbackTransition.complete(engine, i);
 			start(engine, speed);
 		} else {
+			playbackTransition.complete(engine, i);
 			setPlayingState(engine, false, pos, speed);
 		}
 	}
@@ -1122,8 +1134,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				if (next != null) {
 					skipTo(true, next);
 				} else {
-					onStop(false);
 					setLastPlayed(i, 0);
+					onStop(false);
 				}
 
 				return completedVoid();
@@ -1271,17 +1283,68 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	public void playItem(PlayableItem i, long pos) {
+		i = PlayableItemResolver.unwrap(i);
 		playerTask.cancel();
 		resetStreamRetry();
 		playerTask = createPlayItemTask(i, pos);
 	}
 
 	private FutureSupplier<?> createPlayItemTask(PlayableItem i, long pos) {
-		setLastPlayed(i, pos);
-		PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
-				.setState(STATE_CONNECTING, 0, 1.0f).build();
-		setPlaybackState(state);
-		return prepareItem(i).onSuccess(pi -> playPreparedItem(i, pos));
+		long requestRevision = ++playbackRequestRevision;
+		i = PlayableItemResolver.unwrap(i);
+		PlayableItem target = i;
+		MediaEngine eng = getEngine();
+		FutureSupplier<PlayableItem> prepare = captureOutgoingPosition(eng, requestRevision).then(ignored -> {
+			if (requestRevision != playbackRequestRevision) return completedNull();
+			PlayableItem current = (eng == null) ? null : eng.getSource();
+			if (current != null) current = PlayableItemResolver.unwrap(current);
+			publishPlaybackTransition(target, current, STATE_CONNECTING, pos);
+			return prepareItem(target);
+		});
+		prepare.onSuccess(pi -> {
+			if ((pi != null) && (requestRevision == playbackRequestRevision))
+				playPreparedItem(pi, pos, STATE_CONNECTING, requestRevision);
+		}).onFailure(error -> {
+			if (requestRevision != playbackRequestRevision) return;
+			PlaybackSnapshot previous = playbackTransition.getPreviousSnapshot(target);
+			if (!playbackTransition.cancelIfPending(target)) return;
+			if (previous != null) {
+				metadata = previous.getMetadata();
+				session.setMetadata(metadata);
+				setPlaybackState(previous.getState(), previous.getItem(), metadata);
+				return;
+			}
+			String msg = (error.getLocalizedMessage() == null) ? error.toString() :
+					error.getLocalizedMessage();
+			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
+					.setState(STATE_ERROR, 0, 1.0f)
+					.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();
+			setPlaybackState(state, target, null);
+		});
+		return prepare;
+	}
+
+	private FutureSupplier<Void> captureOutgoingPosition(@Nullable MediaEngine eng,
+			long requestRevision) {
+		if ((eng == null) || playbackTransition.hasPending()) return completedVoid();
+		PlayableItem source = eng.getSource();
+		if (source == null) return completedVoid();
+		source = PlayableItemResolver.unwrap(source);
+		PlayableItem outgoing = source;
+
+		return eng.getPosition().main().map(position -> {
+			if (requestRevision != playbackRequestRevision) return (Void) null;
+			MediaEngine current = getEngine();
+			PlayableItem currentSource = (current == null) ? null : current.getSource();
+			if ((current == eng) && (currentSource != null) &&
+					(PlayableItemResolver.unwrap(currentSource) == outgoing)) {
+				publishOutgoingPosition(outgoing, position, null);
+			}
+			return (Void) null;
+		}).ifFail(error -> {
+			Log.w(error, "Failed to capture outgoing playback position");
+			return (Void) null;
+		});
 	}
 
 	private void resetStreamRetry() {
@@ -1291,6 +1354,17 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void playPreparedItem(PlayableItem i, long pos) {
+		playPreparedItem(i, pos, STATE_CONNECTING, ++playbackRequestRevision);
+	}
+
+	private void playPreparedItem(PlayableItem i, long pos, int transitionState) {
+		playPreparedItem(i, pos, transitionState, ++playbackRequestRevision);
+	}
+
+	private void playPreparedItem(PlayableItem i, long pos, int transitionState,
+			long requestRevision) {
+		if (requestRevision != playbackRequestRevision) return;
+		PlayableItem target = PlayableItemResolver.unwrap(i);
 		MediaEngine eng = getEngine();
 
 		if (eng != null) {
@@ -1298,30 +1372,47 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 			if ((current != null) && !current.isExternal()) {
 				if (current instanceof StreamItem) {
-					playPreparedItem(eng, i, pos, current, 0);
+					playPreparedItem(eng, target, pos, current, 0, transitionState,
+							requestRevision);
 				} else {
 					eng.getPosition().main()
-							.onSuccess(currentPos -> playPreparedItem(eng, i, pos, current, currentPos));
+							.onSuccess(currentPos -> {
+								if ((requestRevision == playbackRequestRevision) && (eng == getEngine())) {
+									playPreparedItem(eng, target, pos, current, currentPos,
+											transitionState, requestRevision);
+								}
+							});
 				}
 				return;
 			}
 		}
 
-		playPreparedItem(eng, i, pos, null, -1);
+		playPreparedItem(eng, target, pos, null, -1, transitionState, requestRevision);
 	}
 
 	private void playPreparedItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current,
-																long currentPos) {
+			long currentPos, int transitionState, long requestRevision) {
+		if (requestRevision != playbackRequestRevision) return;
+		i = PlayableItemResolver.unwrap(i);
+		if (current != null) current = PlayableItemResolver.unwrap(current);
+		if ((current != null) && !playbackTransition.isPending(i)) {
+			publishOutgoingPosition(current, currentPos, null);
+		}
+		persistCommittedOutgoing(i, current, currentPos);
 		engine = eng = getEngineManager().createEngine(eng, i, this);
+		if (requestRevision != playbackRequestRevision) {
+			if (eng != null) eng.close();
+			return;
+		}
 
 		if (eng == null) {
-			if (current != null) setLastPlayed(current, currentPos);
 			String msg =
 					lib.getContext().getResources().getString(R.string.err_unsupported_source_type, i);
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 					.setState(STATE_ERROR, 0, 1.0f)
 					.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();
-			setPlaybackState(state);
+			playbackTransition.cancelIfPending(i);
+			setPlaybackState(state, i, null);
 			return;
 		}
 
@@ -1329,16 +1420,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		boolean updateQueue = false;
 
 		if (current != null) {
-			setLastPlayed(current, currentPos);
 			if (current.equals(i)) {
 				if (pos != -1) eng.setPosition(pos);
 			} else {
-				setLastPlayed(i, pos);
 				if (!p.equals(current.getParent())) updateQueue = true;
 			}
 		} else {
 			updateQueue = true;
-			setLastPlayed(i, pos);
 		}
 
 		if (i.isVideo() && (videoView != null)) engine.setVideoView(getVideoView());
@@ -1348,16 +1436,100 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
 			Log.i("Audio focus request failed");
+			eng.close();
+			if (engine == eng) engine = null;
+			playbackTransition.cancelIfPending(i);
+			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
+					.setState(STATE_ERROR, 0, 1.0f)
+					.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR,
+							"Audio focus request failed").build();
+			setPlaybackState(state, i, null);
 			return;
 		}
 
+		publishPlaybackTransition(i, current, transitionState, pos);
 		eng.prepare(i);
 
 		if (updateQueue) {
+			PlayableItem queueItem = i;
 			p.getQueue().main().onSuccess(q -> {
-				if ((engine != null) && (engine.getSource() == i)) session.setQueue(q);
+				MediaEngine currentEngine = engine;
+				PlayableItem source = (currentEngine == null) ? null : currentEngine.getSource();
+				if ((requestRevision == playbackRequestRevision) && (source != null) &&
+						(PlayableItemResolver.unwrap(source) == queueItem)) session.setQueue(q);
 			});
 		}
+	}
+
+	private void persistCommittedOutgoing(@NonNull PlayableItem target,
+			@Nullable PlayableItem current, long currentPosition) {
+		if ((current != null) && (!playbackTransition.hasPending() ||
+				current.equals(target) || playbackTransition.isPreviousItem(current))) {
+			setLastPlayed(current, currentPosition, !current.equals(target));
+			return;
+		}
+
+		PlaybackSnapshot previous = playbackTransition.getPreviousSnapshot(target);
+		if ((previous == null) ||
+				!PlaybackSnapshot.canPersistProgress(previous.getState().getState())) return;
+		PlayableItem committed = previous.getItem();
+		if (committed != null) {
+			setLastPlayed(PlayableItemResolver.unwrap(committed), previous.getState().getPosition(), true);
+		}
+	}
+
+	private void publishPlaybackTransition(PlayableItem target, @Nullable PlayableItem current,
+			int transitionState, long targetPosition) {
+		target = PlayableItemResolver.unwrap(target);
+		if (current != null) current = PlayableItemResolver.unwrap(current);
+		PlaybackStateCompat previousState = getPlaybackState();
+		boolean transportCommand = target.isPlaybackTransportCommand();
+		PlayableItem publishedItem = transportCommand ? current : target;
+		long publishedPosition = transportCommand ? previousState.getPosition() :
+				Math.max(targetPosition, 0);
+		MediaMetadataCompat publishedMetadata = (playbackSnapshot == null) ? null :
+				playbackSnapshot.getMetadata();
+
+		if (!transportCommand && (target != current)) {
+			playbackTransition.begin(target, playbackSnapshot, targetPosition);
+			metadata = null;
+			session.setMetadata(null);
+			publishedMetadata = null;
+		}
+
+		PlaybackStateCompat state = createPlaybackTransitionState(previousState, transitionState,
+				publishedPosition);
+		setPlaybackState(state, publishedItem, publishedMetadata);
+	}
+
+	private void publishOutgoingPosition(@NonNull PlayableItem item, long position,
+			@Nullable PlaybackSnapshot rollback) {
+		PlaybackSnapshot snapshot = (rollback != null) ? rollback : playbackSnapshot;
+		MediaMetadataCompat currentMetadata = null;
+		if (snapshot != null) {
+			PlayableItem snapshotItem = snapshot.getItem();
+			if ((snapshotItem != null) &&
+					(PlayableItemResolver.unwrap(snapshotItem) == item)) {
+				currentMetadata = snapshot.getMetadata();
+			}
+		}
+
+		PlaybackStateCompat previous = (rollback == null) ? getPlaybackState() : rollback.getState();
+		PlaybackStateCompat state = new PlaybackStateCompat.Builder(previous)
+				.setState(previous.getState(), Math.max(position, 0), previous.getPlaybackSpeed())
+				.build();
+		metadata = currentMetadata;
+		session.setMetadata(currentMetadata);
+		setPlaybackState(state, item, currentMetadata);
+	}
+
+	static PlaybackStateCompat createPlaybackTransitionState(PlaybackStateCompat previousState,
+			int transitionState, long position) {
+		PlaybackStateCompat.Builder builder = (transitionState == STATE_CONNECTING) ?
+				new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS) :
+				new PlaybackStateCompat.Builder(previousState);
+		float speed = (transitionState == STATE_CONNECTING) ? 1.0f : previousState.getPlaybackSpeed();
+		return builder.setState(transitionState, Math.max(position, 0), speed).build();
 	}
 
 	private PlaybackStateCompat createPlayingState(PlayableItem i, boolean pause, long qid,
@@ -1380,14 +1552,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void setPlaybackState(PlaybackStateCompat state) {
+		MediaMetadataCompat metadata = (playbackSnapshot == null) ?
+				null : playbackSnapshot.getMetadata();
+		setPlaybackState(state, getCurrentItem(), metadata);
+	}
+
+	private void setPlaybackState(PlaybackStateCompat state, @Nullable PlayableItem item,
+			@Nullable MediaMetadataCompat metadata) {
 		int st = state.getState();
 		if ((st != STATE_NONE) && (st != STATE_STOPPED)) session.setActive(true);
 		session.setPlaybackState(state);
-		MediaMetadataCompat metadata = (playbackSnapshot == null)
-				? null : playbackSnapshot.getMetadata();
 		PlaybackSnapshot previous = playbackSnapshot;
-		PlaybackSnapshot current = updatePlaybackSnapshot(state, metadata, false);
-		service.updateNotification(state.getState(), getCurrentItem());
+		PlaybackSnapshot current = updatePlaybackSnapshot(state, metadata, item, false);
+		service.updateNotification(state.getState(), item);
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
 		fireBroadcastEvent(l -> l.onPlaybackSnapshotChanged(this, previous, current));
 
@@ -1410,9 +1587,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private PlaybackSnapshot updatePlaybackSnapshot(PlaybackStateCompat state,
 			@Nullable MediaMetadataCompat metadata, boolean notify) {
+		return updatePlaybackSnapshot(state, metadata, getCurrentItem(), notify);
+	}
+
+	private PlaybackSnapshot updatePlaybackSnapshot(PlaybackStateCompat state,
+			@Nullable MediaMetadataCompat metadata, @Nullable PlayableItem item, boolean notify) {
 		PlaybackSnapshot previous = playbackSnapshot;
 		PlaybackSnapshot current = new PlaybackSnapshot(++playbackSnapshotRevision,
-				getCurrentItem(), state, metadata);
+				item, state, metadata);
 		playbackSnapshot = current;
 		if (notify) {
 			fireBroadcastEvent(l -> l.onPlaybackSnapshotChanged(this, previous, current));
@@ -1548,26 +1730,34 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private FutureSupplier<PlayableItem> prepareItem(PlayableItem i) {
 		if (i == null) return completedNull();
+		i = PlayableItemResolver.unwrap(i);
+		PlayableItem target = i;
 
 		// Make sure metadata is loaded
 		FutureSupplier<Long> getDur = i.getDuration();
 
 		// Make sure HTTP server is started
-		if (i.isNetResource()) {
+		if (target.isNetResource()) {
 			FutureSupplier<NetServer> start = lib.getVfsManager().getNetServer();
 			if (!start.isDone()) return start.and(getDur, (s, d) -> {
-			}).map(v -> i).main();
+			}).map(v -> target).main();
 		}
 
-		if (!getDur.isDone()) return getDur.map(d -> i).timeout(5000, () -> i).main();
-		return completed(i).main();
+		if (!getDur.isDone()) return getDur.map(d -> target).timeout(5000, () -> target).main();
+		return completed(target).main();
 	}
 
 	private void setLastPlayed(PlayableItem i, long position) {
+		setLastPlayed(i, position, false);
+	}
+
+	private void setLastPlayed(PlayableItem i, long position, boolean committedOutgoing) {
+		long requestRevision = playbackRequestRevision;
 		lib.getRecent().addItem(i);
 		if (i.isExternal()) return;
 
 		if (position < 0) {
+			if (!ownsLastPlayed(i, requestRevision)) return;
 			var id = i.getId();
 			lib.getPrefs().setLastPlayedPosPref(0);
 			lib.getPrefs().setLastPlayedItemPref(id);
@@ -1577,16 +1767,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 
 		i.getDuration().main().onSuccess(dur -> {
+			boolean ownsCurrent = ownsLastPlayed(i, requestRevision);
+			persistResolvedPlaybackProgress(i, position, dur, ownsCurrent, committedOutgoing)
+					.onFailure(error -> Log.e(error,
+							"Failed to save playback progress for ", i.getId()));
+			if (!ownsCurrent) return;
 			String id;
 			MediaLibPrefs libPrefs = lib.getPrefs();
 			BrowsableItemPrefs p;
 			boolean completed = (dur > 0) && ((dur - position) <= 1000);
-
-			if (i instanceof PlaybackProgressItem progress) {
-				long savedPosition = completed ? 0 : Math.max(position, 0);
-				progress.savePlaybackProgress(savedPosition, completed).onFailure(error ->
-						Log.e(error, "Failed to save playback progress for ", i.getId()));
-			}
 
 			if (i.isStream() || (dur <= 0)) {
 				id = i.getId();
@@ -1600,6 +1789,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 			if (completed) {
 				i.getNextPlayable().onCompletion((next, fail) -> {
+					if (!ownsLastPlayed(i, requestRevision)) return;
 					if (next == null) next = i;
 
 					String nextId = next.getId();
@@ -1640,6 +1830,30 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			p.setLastPlayedItemPref(id);
 			p.setLastPlayedPosPref(position);
 		});
+	}
+
+	static FutureSupplier<Void> persistPlaybackProgress(PlayableItem item, long position,
+			long duration) {
+		item = PlayableItemResolver.unwrap(item);
+		if (!(item instanceof PlaybackProgressItem progress)) return completedVoid();
+		boolean completed = (duration > 0) && ((duration - position) <= 1000);
+		return progress.savePlaybackProgress(completed ? 0 : Math.max(position, 0), completed);
+	}
+
+	static FutureSupplier<Void> persistResolvedPlaybackProgress(PlayableItem item, long position,
+			long duration, boolean ownsLastPlayed, boolean committedOutgoing) {
+		return (ownsLastPlayed || committedOutgoing) ?
+				persistPlaybackProgress(item, position, duration) : completedVoid();
+	}
+
+	private boolean ownsLastPlayed(PlayableItem item, long requestRevision) {
+		if (requestRevision != playbackRequestRevision) return false;
+		item = PlayableItemResolver.unwrap(item);
+		if (playbackTransition.isPending(item)) return true;
+		if (playbackTransition.isPreviousItem(item)) return true;
+		MediaEngine current = getEngine();
+		PlayableItem source = (current == null) ? null : current.getSource();
+		return (source != null) && (PlayableItemResolver.unwrap(source) == item);
 	}
 
 	private Runnable timer;
@@ -1753,5 +1967,89 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		public void run() {
 			if (playbackTimer == this) onStop();
 		}
+	}
+}
+
+final class PlaybackTransition {
+	@Nullable
+	private PlayableItem pendingItem;
+	@Nullable
+	private PlaybackSnapshot previousSnapshot;
+	private long targetPosition = -1;
+
+	void begin(@NonNull PlayableItem item, @Nullable PlaybackSnapshot previousSnapshot) {
+		begin(item, previousSnapshot, -1);
+	}
+
+	void begin(@NonNull PlayableItem item, @Nullable PlaybackSnapshot previousSnapshot,
+			long targetPosition) {
+		item = PlayableItemResolver.unwrap(item);
+		if (pendingItem == null) this.previousSnapshot = previousSnapshot;
+		pendingItem = item;
+		this.targetPosition = targetPosition;
+	}
+
+	void complete(@Nullable MediaEngine engine, @NonNull PlayableItem item) {
+		item = PlayableItemResolver.unwrap(item);
+		PlayableItem source = (engine == null) ? null : engine.getSource();
+		if ((pendingItem == item) && (source != null) &&
+				(PlayableItemResolver.unwrap(source) == item)) {
+			clear();
+		}
+	}
+
+	boolean cancelIfPending(@NonNull PlayableItem item) {
+		item = PlayableItemResolver.unwrap(item);
+		if (pendingItem != item) return false;
+		clear();
+		return true;
+	}
+
+	boolean isPending(@NonNull PlayableItem item) {
+		return pendingItem == PlayableItemResolver.unwrap(item);
+	}
+
+	boolean hasPending() {
+		return pendingItem != null;
+	}
+
+	boolean isPreviousItem(@NonNull PlayableItem item) {
+		PlaybackSnapshot previous = previousSnapshot;
+		if (previous == null) return false;
+		PlayableItem previousItem = previous.getItem();
+		return (previousItem != null) &&
+				(PlayableItemResolver.unwrap(previousItem) == PlayableItemResolver.unwrap(item));
+	}
+
+	long getTargetPosition(@NonNull PlayableItem item, long fallback) {
+		return isPending(item) && (targetPosition >= 0) ? targetPosition : fallback;
+	}
+
+	@Nullable
+	PlaybackSnapshot getPreviousSnapshot(@NonNull PlayableItem item) {
+		item = PlayableItemResolver.unwrap(item);
+		return (pendingItem == item) ? previousSnapshot : null;
+	}
+
+	@Nullable
+	PlaybackSnapshot cancel() {
+		if (pendingItem == null) return null;
+		PlaybackSnapshot previous = previousSnapshot;
+		clear();
+		return previous;
+	}
+
+	void clear() {
+		pendingItem = null;
+		previousSnapshot = null;
+		targetPosition = -1;
+	}
+
+	@Nullable
+	PlayableItem getCurrentItem(@Nullable MediaEngine engine) {
+		PlayableItem pending = pendingItem;
+		if (pending != null) return pending;
+		PlayableItem source = (engine == null) ? null : engine.getSource();
+		return (source == null) ? null : PlayableItemResolver.unwrap(source);
 	}
 }

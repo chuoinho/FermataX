@@ -79,6 +79,11 @@ cd FermataX
 
 ### Build AAB
 
+Release builds require all four signing values in `local.properties`
+(`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) or through the matching
+`FERMATAX_*` environment variables. The build fails instead of generating an unsigned
+or unapproved release artifact when signing is missing or invalid.
+
 ```bash
 ./gradlew :fermata:bundleAutoRelease
 ```

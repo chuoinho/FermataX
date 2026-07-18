@@ -177,7 +177,7 @@ public class AtvInterface implements Item.ChangeListener {
 					.setDescription(ifNull(d.getSubtitle(), "").toString())
 					.setIntentUri(toIntentUri(INTENT_ACTION_PLAY, id));
 			if (p.item.isStream()) b.setLive(true);
-			if (art != null) b.setPosterArtUri(FermataContentProvider.toImgUri(art));
+			if (art != null) b.setPosterArtUri(art);
 
 			Bundle ext = d.getExtras();
 			long start = 0;
@@ -213,12 +213,21 @@ public class AtvInterface implements Item.ChangeListener {
 
 	private FutureSupplier<MediaDescriptionCompat> getDescription(PlayableItem pi) {
 		return pi.getMediaDescription().then(d -> {
-			if (d.getIconUri() != null) return completed(d);
-			return createIcon(pi).map(uri -> {
+			FutureSupplier<Uri> icon = (d.getIconUri() != null) ?
+					FermataContentProvider.shareImage(d.getIconUri()) :
+					createIcon(pi).then(FermataContentProvider::shareImage);
+			return icon.map(uri -> {
 				MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
 				b.setTitle(d.getTitle());
 				b.setSubtitle(d.getSubtitle());
 				b.setIconUri(uri);
+				b.setExtras(d.getExtras());
+				return b.build();
+			}).ifFail(error -> {
+				Log.d(error, "Failed to share preview artwork");
+				MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
+				b.setTitle(d.getTitle());
+				b.setSubtitle(d.getSubtitle());
 				b.setExtras(d.getExtras());
 				return b.build();
 			});

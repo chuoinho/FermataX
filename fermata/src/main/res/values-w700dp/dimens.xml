@@ -19,9 +19,10 @@
     <dimen name="dashboard_smart_eyebrow_size">13sp</dimen>
     <dimen name="dashboard_smart_title_size">22sp</dimen>
     <dimen name="dashboard_smart_subtitle_size">14sp</dimen>
-    <dimen name="dashboard_smart_action_width">46dp</dimen>
-    <dimen name="dashboard_smart_action_height">42dp</dimen>
+    <dimen name="dashboard_smart_action_width">48dp</dimen>
+    <dimen name="dashboard_smart_action_height">48dp</dimen>
     <dimen name="dashboard_smart_action_gap">10dp</dimen>
-    <dimen name="dashboard_smart_action_padding">8dp</dimen>
+    <dimen name="dashboard_smart_action_padding">9dp</dimen>
     <dimen name="dashboard_smart_action_top_gap">8dp</dimen>
+    <dimen name="dashboard_smart_actions_start_margin">102dp</dimen>
 </resources>

@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">人気の局と国</string>
     <string name="dashboard_youtube_sub">動画検索と再生</string>
     <string name="dashboard_web_sub">Webメディアを開く</string>
-    <string name="dashboard_felex_sub">学習とチューターのツール</string>
     <string name="dashboard_addon_sub">アドオンショートカット</string>
     <string name="dashboard_addon_disabled_sub">設定で無効</string>
     <string name="addon_name_radio">ラジオ</string>

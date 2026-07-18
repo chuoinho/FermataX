@@ -104,7 +104,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 			return newEng;
 		}
 
-		if (engineProvider != null) return engineProvider.createEngine(listener);
+		if (engineProvider != null) return createSafely(engineProvider, listener, false);
 		if (!isAdditionalPlayerSupported()) {
 			if (current != null) {
 				if (current.getId() == MEDIA_ENG_MP) return create(mediaPlayer, current, i, listener);
@@ -131,7 +131,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	}
 
 	public MediaEngine createAnotherEngine(@NonNull MediaEngine current, Listener listener) {
-		if (engineProvider != null) return engineProvider.createEngine(listener);
+		if (engineProvider != null) return createSafely(engineProvider, listener, false);
 		int id = current.getId();
 		PlayableItem i = current.getSource();
 		current.close();
@@ -168,17 +168,27 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 			if (isStream(i)) {
 				if (c instanceof StreamEngine) return c;
 				c.close();
-				return new StreamEngine((p != null) ? p : getProvider(c.getId()), l);
+				return createSafely((p != null) ? p : getProvider(c.getId()), l, true);
 			} else if (c instanceof StreamEngine) {
 				c.close();
-				return ((p != null) ? p : getProvider(c.getId())).createEngine(l);
+				return createSafely((p != null) ? p : getProvider(c.getId()), l, false);
 			} else {
 				return c;
 			}
 		} else if (isStream(i)) {
-			return new StreamEngine(p, l);
+			return createSafely(p, l, true);
 		} else {
-			return p.createEngine(l);
+			return createSafely(p, l, false);
+		}
+	}
+
+	@Nullable
+	static MediaEngine createSafely(MediaEngineProvider provider, Listener listener, boolean stream) {
+		try {
+			return stream ? new StreamEngine(provider, listener) : provider.createEngine(listener);
+		} catch (RuntimeException | LinkageError error) {
+			Log.e(error, "Failed to create media engine with provider ", provider);
+			return null;
 		}
 	}
 
@@ -289,6 +299,10 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	private void toast(@StringRes int msg, @StringRes int arg) {
 		Context ctx = lib.getContext();
 		Toast.makeText(ctx, ctx.getString(msg, ctx.getString(arg)), Toast.LENGTH_LONG).show();
+	}
+
+	public void close() {
+		lib.getPrefs().removeBroadcastListener(this);
 	}
 
 	private void installExoFailed(Throwable ex) {

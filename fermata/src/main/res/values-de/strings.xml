@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">Beliebte Sender und Länder</string>
     <string name="dashboard_youtube_sub">Videosuche und Wiedergabe</string>
     <string name="dashboard_web_sub">Webmedien öffnen</string>
-    <string name="dashboard_felex_sub">Lern- und Tutor-Werkzeuge</string>
     <string name="dashboard_addon_sub">Addon-Verknüpfung</string>
     <string name="dashboard_addon_disabled_sub">In den Einstellungen deaktiviert</string>
     <string name="addon_name_radio">Radio</string>

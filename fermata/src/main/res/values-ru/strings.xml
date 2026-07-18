@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">Популярные станции и страны</string>
     <string name="dashboard_youtube_sub">Поиск и воспроизведение видео</string>
     <string name="dashboard_web_sub">Открыть веб-медиа</string>
-    <string name="dashboard_felex_sub">Инструменты обучения и тьютора</string>
     <string name="dashboard_addon_sub">Ярлык дополнения</string>
     <string name="dashboard_addon_disabled_sub">Отключено в настройках</string>
     <string name="addon_name_radio">Радио</string>

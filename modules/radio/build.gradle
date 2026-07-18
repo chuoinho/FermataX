@@ -27,4 +27,5 @@ dependencies {
     implementation libs.androidxMedia
     implementation libs.androidxAppcompat
     implementation libs.androidMaterial
+	testImplementation libs.robolectric
 }

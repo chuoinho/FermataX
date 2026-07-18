@@ -85,8 +85,11 @@ public class RadioFragment extends MediaLibFragment {
 					.onFailure(this::failedToSaveSource).onSuccess(this::saveSource);
 		} else if (item.getItemId() == me.aap.fermata.R.id.delete) {
 			RadioSourceItem source = item.getData();
-			getRootItem().removeSource(source.getSource());
-			showRecreatedRoot();
+			getRootItem().removeSource(source.getSource()).main()
+					.onCompletion((ignored, error) -> {
+						if (error != null) failedToSaveSource(error);
+						else showRecreatedRoot();
+					});
 		}
 		return true;
 	}
@@ -185,6 +188,7 @@ public class RadioFragment extends MediaLibFragment {
 
 	private void renderRefreshResult(BrowsableItem item, Result<String> result, boolean showError) {
 		Status status = result.status();
+		if (result.isSuccess()) getRootItem().invalidateSearch();
 		if ((status != Status.SKIPPED_COOLDOWN) && (status != Status.INACTIVE) &&
 				(getView() != null)) reload();
 		if (!result.isFailure()) return;

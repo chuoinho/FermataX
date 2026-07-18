@@ -48,7 +48,6 @@
     <string name="dashboard_youtube_sub">Video search and playback</string>
     <string name="dashboard_web_sub">Open web media</string>
     <string name="dashboard_back_to_list">Back to list</string>
-    <string name="dashboard_felex_sub">Learning and tutor tools</string>
     <string name="dashboard_addon_sub">Addon shortcut</string>
     <string name="dashboard_addon_disabled_sub">Disabled in settings</string>
     <string name="addon_name_tv">TV</string>
@@ -57,7 +56,6 @@
     <string name="addon_name_audiobook">Audiobooks</string>
     <string name="addon_name_web_browser">Web browser</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
-    <string name="addon_name_felex" translatable="false">Felex</string>
     <string name="addon_name_cast" translatable="false">Google Cast</string>
     <string name="addon_name_chat" translatable="false">ChatGPT</string>
     <string name="addon_name_translate" translatable="false">Language translator</string>
@@ -69,7 +67,6 @@
     <string name="addon_name_opusmt_translate" translatable="false">OPUS-MT Translate</string>
     <string name="addon_name_nllb" translatable="false">NLLB-200</string>
     <string name="addon_name_nllb_translate" translatable="false">NLLB-200 Translate</string>
-    <string name="addon_name_poi" translatable="false">POI</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>

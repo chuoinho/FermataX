@@ -12,15 +12,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import me.aap.fermata.media.engine.MetadataBuilder;
-import me.aap.fermata.media.lib.ExtPlayable;
-import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.generic.GenericFileSystem;
 
-class RadioStationItem extends ExtPlayable implements RadioItem {
+class RadioStationItem extends RadioPlayableItem {
 	private static final String ID_PREFIX = RadioRootItem.SCHEME + ":station:";
 	private final RadioBrowserStation station;
 	private final RadioBrowserApi api;

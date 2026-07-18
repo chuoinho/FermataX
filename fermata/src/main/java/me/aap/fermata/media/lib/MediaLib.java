@@ -122,6 +122,9 @@ public interface MediaLib {
 
 	long getLastPlayedPosition(PlayableItem i);
 
+	/** Removes persisted Recent/Favorite entries and cached nodes matching an invalid ID. */
+	void removePersistedItems(Predicate<String> remove);
+
 	void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result);
 
 	default void getChildren(String parentMediaId,
@@ -197,8 +200,10 @@ public interface MediaLib {
 				b.setSubtitle(md.getSubtitle());
 
 				if ((uri != null) && FermataContentProvider.isSupportedFileScheme(uri.getScheme())) {
-					b.setIconUri(FermataContentProvider.toImgUri(uri));
-					return completed(b.build());
+					return FermataContentProvider.shareImage(uri).map(shared -> {
+						b.setIconUri(shared);
+						return b.build();
+					}).ifFail(error -> b.build());
 				}
 
 				MediaLib lib = getLib();
@@ -321,6 +326,11 @@ public interface MediaLib {
 		 */
 		default boolean isRecentEligible() {
 			return true;
+		}
+
+		/** Whether this synthetic item only asks the active engine to change transport state. */
+		default boolean isPlaybackTransportCommand() {
+			return false;
 		}
 
 		/** Whether the playback location contains credentials or another private token. */
@@ -762,6 +772,8 @@ public interface MediaLib {
 		FutureSupplier<Void> addItem(PlayableItem i);
 
 		FutureSupplier<Void> removeItem(int idx);
+
+		FutureSupplier<Void> removeItem(PlayableItem i);
 
 		@SuppressWarnings("UnusedReturnValue")
 		FutureSupplier<Void> moveItem(int fromPosition, int toPosition);

@@ -155,6 +155,11 @@ public class ExportedItem extends PlayableItemBase {
 	}
 
 	@Override
+	public boolean isPlaybackTransportCommand() {
+		return orig.isPlaybackTransportCommand();
+	}
+
+	@Override
 	public boolean isLocationSensitive() {
 		return orig.isLocationSensitive();
 	}

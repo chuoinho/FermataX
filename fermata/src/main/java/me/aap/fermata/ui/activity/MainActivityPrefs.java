@@ -60,7 +60,7 @@ public interface MainActivityPrefs
 	Pref<BooleanSupplier> LANDSCAPE_VIDEO = Pref.b("LANDSCAPE_VIDEO", false);
 	Pref<BooleanSupplier> CHANGE_BRIGHTNESS = Pref.b("CHANGE_BRIGHTNESS", false);
 	Pref<IntSupplier> BRIGHTNESS = Pref.i("BRIGHTNESS", 255);
-	Pref<BooleanSupplier> VOICE_CONTROl_ENABLED = Pref.b("VOICE_CONTROl_ENABLED", false);
+	Pref<BooleanSupplier> VOICE_CONTROl_ENABLED = Pref.b("VOICE_CONTROl_ENABLED", true);
 	Pref<BooleanSupplier> VOICE_CONTROl_FB = Pref.b("VOICE_CONTROl_FB", false);
 	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
 	Pref<Supplier<String>> VOICE_CONTROL_LANG =
@@ -272,7 +272,7 @@ public interface MainActivityPrefs
 	 * package install timestamps are only used when the marker is absent.
 	 */
 	static boolean shouldShowInitialSetup(long firstInstallTime, long lastUpdateTime,
-													 boolean hasExistingPrefs, boolean setupCompleted) {
+												 boolean hasExistingPrefs, boolean setupCompleted) {
 		if (setupCompleted || hasExistingPrefs) return false;
 		return firstInstallTime == lastUpdateTime;
 	}

@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">熱門電台與國家</string>
     <string name="dashboard_youtube_sub">影片搜尋與播放</string>
     <string name="dashboard_web_sub">開啟網頁媒體</string>
-    <string name="dashboard_felex_sub">學習與家教工具</string>
     <string name="dashboard_addon_sub">Addon 捷徑</string>
     <string name="dashboard_addon_disabled_sub">已在設定中停用</string>
     <string name="addon_name_radio">網路廣播</string>

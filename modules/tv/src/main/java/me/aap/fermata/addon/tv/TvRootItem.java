@@ -29,6 +29,7 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ItemContainer;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
@@ -160,6 +161,12 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 	}
 
 	@Override
+	protected void itemAdded(TvSourceItem item) {
+		super.itemAdded(item);
+		invalidateSearch();
+	}
+
+	@Override
 	protected void itemRemoved(TvSourceItem i) {
 		super.itemRemoved(i);
 		if (i instanceof TvM3uItem) {
@@ -167,6 +174,7 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 		} else if (i instanceof XtreamSourceItem) {
 			xtreamSources.sourceRemoved((XtreamSourceItem) i);
 		}
+		invalidateSearch();
 	}
 
 	public void addSource(XtreamAccount account) {
@@ -175,6 +183,10 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 
 	public void updateSource(XtreamAccount account) {
 		xtreamSources.updateSource(account);
+	}
+
+	void invalidateSearch() {
+		SearchFolder.invalidate(this);
 	}
 
 	FutureSupplier<? extends TvSourceItem> createSource(int srcId) {

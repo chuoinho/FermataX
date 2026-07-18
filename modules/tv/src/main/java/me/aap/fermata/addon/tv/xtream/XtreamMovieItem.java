@@ -19,20 +19,24 @@ import me.aap.fermata.media.lib.PlayableItemBase;
 import me.aap.fermata.media.pref.StreamItemPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.generic.GenericFileSystem;
 
 /**
  * @author Andrey Pavlenko
  */
-public class XtreamMovieItem extends PlayableItemBase implements StreamItem, StreamItemPrefs, TvItem {
+public class XtreamMovieItem extends PlayableItemBase implements StreamItem, StreamItemPrefs, TvItem,
+		XtreamCatalogItem {
 	public static final String SCHEME = "tvxm";
 	private final XtreamMovie movie;
+	private final long catalogRevision;
 
 	private XtreamMovieItem(String id, XtreamVodCategoryItem parent, XtreamMovie movie) {
 		super(id, parent,
 				GenericFileSystem.getInstance().create(parent.getParent().getParent().getAccount()
 						.buildMovieStreamUrl(movie.getStreamId(), movie.getContainerExtension())));
 		this.movie = movie;
+		catalogRevision = XtreamCatalogItem.revision(parent);
 	}
 
 	public static XtreamMovieItem create(XtreamVodCategoryItem parent, XtreamMovie movie) {
@@ -41,8 +45,18 @@ public class XtreamMovieItem extends PlayableItemBase implements StreamItem, Str
 
 		synchronized (lib.cacheLock()) {
 			MediaLib.Item i = lib.getFromCache(id);
-			return (i != null) ? (XtreamMovieItem) i : new XtreamMovieItem(id, parent, movie);
+			if (i != null) {
+				XtreamMovieItem item = (XtreamMovieItem) i;
+				if (item.isCatalogCurrent()) return item;
+				lib.removeFromCache(item);
+			}
+			return new XtreamMovieItem(id, parent, movie);
 		}
+	}
+
+	@Override
+	public long getCatalogRevision() {
+		return catalogRevision;
 	}
 
 	public static FutureSupplier<XtreamMovieItem> create(TvRootItem root, String id) {
@@ -65,6 +79,23 @@ public class XtreamMovieItem extends PlayableItemBase implements StreamItem, Str
 
 	public int getStreamId() {
 		return movie.getStreamId();
+	}
+
+	@Override
+	public boolean isLocationSensitive() {
+		return true;
+	}
+
+	@NonNull
+	@Override
+	public VirtualResource getResource() {
+		return GenericFileSystem.getInstance().create(requireCurrentAccount()
+				.buildMovieStreamUrl(getStreamId(), movie.getContainerExtension()));
+	}
+
+	@Override
+	public boolean isRecentEligible() {
+		return isCatalogCurrent();
 	}
 
 	@NonNull
@@ -122,7 +153,7 @@ public class XtreamMovieItem extends PlayableItemBase implements StreamItem, Str
 	@Nullable
 	@Override
 	public String getUserAgent() {
-		return getParent().getParent().getParent().getAccount().getUserAgent();
+		return requireCurrentAccount().getUserAgent();
 	}
 
 	static ParsedId parseId(String id) {

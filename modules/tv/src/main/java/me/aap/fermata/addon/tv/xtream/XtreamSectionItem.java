@@ -22,16 +22,18 @@ import me.aap.utils.text.SharedTextBuilder;
 /**
  * @author Andrey Pavlenko
  */
-public class XtreamSectionItem extends BrowsableItemBase implements TvItem {
+public class XtreamSectionItem extends BrowsableItemBase implements TvItem, XtreamCatalogItem {
 	public static final String SCHEME = "tvxs";
 	public static final String TYPE_LIVE = "live";
 	public static final String TYPE_VOD = "vod";
 	public static final String TYPE_SERIES = "series";
 	private final String type;
+	private final long catalogRevision;
 
 	private XtreamSectionItem(String id, XtreamSourceItem parent, String type) {
 		super(id, parent, null);
 		this.type = type;
+		catalogRevision = parent.getCatalogRevision();
 	}
 
 	public static XtreamSectionItem create(XtreamSourceItem parent, String type) {
@@ -40,8 +42,18 @@ public class XtreamSectionItem extends BrowsableItemBase implements TvItem {
 
 		synchronized (lib.cacheLock()) {
 			MediaLib.Item i = lib.getFromCache(id);
-			return (i != null) ? (XtreamSectionItem) i : new XtreamSectionItem(id, parent, type);
+			if (i != null) {
+				XtreamSectionItem item = (XtreamSectionItem) i;
+				if (item.isCatalogCurrent()) return item;
+				lib.removeFromCache(item);
+			}
+			return new XtreamSectionItem(id, parent, type);
 		}
+	}
+
+	@Override
+	public long getCatalogRevision() {
+		return catalogRevision;
 	}
 
 	public static FutureSupplier<XtreamSectionItem> create(TvRootItem root, String id) {

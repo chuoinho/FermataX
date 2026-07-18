@@ -31,8 +31,11 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
+import java.util.concurrent.CancellationException;
+
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 
@@ -45,7 +48,15 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 	private static final PendingActivityBroker<AppActivity> pendingActivities =
 			new PendingActivityBroker<>();
 	private Promise<int[]> checkPermissions;
+	@Nullable
 	private ActivityResultLauncher<StartActivityPromise> activityLauncher;
+	@Nullable
+	private StartActivityContract activityContract;
+	private final ActivityLifecycleGuard lifecycleGuard = new ActivityLifecycleGuard();
+	private long lifecycleGeneration;
+	private long pendingActivityGeneration;
+	@Nullable
+	private ActivityDelegate initializedDelegate;
 	@NonNull
 	private FutureSupplier<? extends ActivityDelegate> delegate = NO_DELEGATE;
 
@@ -89,23 +100,41 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		assert delegate == NO_DELEGATE;
-		delegate = createDelegate(this);
+		lifecycleGeneration = lifecycleGuard.begin();
+		// Activity lifecycle and delegate initialization must be serialized on the UI thread.
+		delegate = createDelegate(this).main();
 		StartActivityContract ac = new StartActivityContract();
+		activityContract = ac;
 		activityLauncher = registerForActivityResult(ac, ac);
 		if (delegate == NO_DELEGATE) return;
+		pendingActivityGeneration = pendingActivities.beginActivity();
 		delegate.onCompletion((d, err) -> {
-			if (err != null) {
-				Log.e(err, "Failed to create activity delegate");
-				delegate = failed(err);
-			} else {
-				delegate = completed(d);
-				d.onActivityCreate(savedInstanceState);
-				synchronized (ActivityBase.class) {
-					instance = this;
+			lifecycleGuard.runIfCurrent(lifecycleGeneration, () -> {
+				Throwable failure = err;
+				if (failure == null) {
+					try {
+						d.onActivityCreate(savedInstanceState);
+						initializedDelegate = d;
+						delegate = completed(d);
+						synchronized (ActivityBase.class) {
+							instance = this;
+						}
+					} catch (Throwable ex) {
+						failure = ex;
+						try {
+							d.onActivityDestroy();
+						} catch (Throwable cleanupError) {
+							ex.addSuppressed(cleanupError);
+						}
+					}
 				}
-			}
 
-			pendingActivities.complete(this, err);
+				if (failure != null) {
+					Log.e(failure, "Failed to create activity delegate");
+					delegate = failed(failure);
+				}
+				pendingActivities.complete(pendingActivityGeneration, this, failure);
+			});
 		});
 	}
 
@@ -113,27 +142,27 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 	@Override
 	protected void onStart() {
 		super.onStart();
-		delegate.onSuccess(ActivityDelegate::onActivityStart);
+		withLiveDelegate(ActivityDelegate::onActivityStart);
 	}
 
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
-		delegate.onSuccess(d -> d.onActivityNewIntent(intent));
+		withLiveDelegate(d -> d.onActivityNewIntent(intent));
 	}
 
 	@CallSuper
 	@Override
 	protected void onResume() {
 		super.onResume();
-		delegate.onSuccess(ActivityDelegate::onActivityResume);
+		withLiveDelegate(ActivityDelegate::onActivityResume);
 	}
 
 
 	@CallSuper
 	@Override
 	protected void onPause() {
-		delegate.onSuccess(ActivityDelegate::onActivityPause);
+		withLiveDelegate(ActivityDelegate::onActivityPause);
 		super.onPause();
 	}
 
@@ -141,42 +170,89 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 	@Override
 	protected void onSaveInstanceState(@NonNull Bundle outState) {
 		super.onSaveInstanceState(outState);
-		delegate.onSuccess(d -> d.onActivitySaveInstanceState(outState));
+		withLiveDelegate(d -> d.onActivitySaveInstanceState(outState));
 	}
 
 	@CallSuper
 	@Override
 	protected void onStop() {
-		delegate.onSuccess(ActivityDelegate::onActivityStop);
+		withLiveDelegate(ActivityDelegate::onActivityStop);
 		super.onStop();
 	}
 
 	@CallSuper
 	@Override
 	protected void onDestroy() {
-		delegate.onSuccess(ActivityDelegate::onActivityDestroy);
-		super.onDestroy();
-		delegate = NO_DELEGATE;
-		synchronized (ActivityBase.class) {
-			if (instance == this) instance = null;
+		lifecycleGuard.cancel();
+		FutureSupplier<? extends ActivityDelegate> currentDelegate = delegate;
+		ActivityDelegate d = initializedDelegate;
+		try {
+			if (d != null) d.onActivityDestroy();
+			else if (currentDelegate != NO_DELEGATE) currentDelegate.cancel();
+		} finally {
+			cancelPendingActivityResults();
+			long generation = pendingActivityGeneration;
+			pendingActivityGeneration = 0;
+			if (generation != 0) {
+				pendingActivities.cancel(generation,
+						new CancellationException("Activity destroyed before initialization completed"));
+			}
+			try {
+				super.onDestroy();
+			} finally {
+				initializedDelegate = null;
+				delegate = NO_DELEGATE;
+				synchronized (ActivityBase.class) {
+					if (instance == this) instance = null;
+				}
+			}
 		}
 	}
 
 	@CallSuper
 	@Override
 	public void finish() {
-		delegate.onSuccess(ActivityDelegate::onActivityFinish);
+		withLiveDelegate(ActivityDelegate::onActivityFinish);
 		super.finish();
+	}
+
+	private void withLiveDelegate(Consumer<ActivityDelegate> action) {
+		long generation = lifecycleGeneration;
+		delegate.onSuccess(d -> lifecycleGuard.runIfCurrent(generation, () -> {
+			if (initializedDelegate == d) action.accept(d);
+		}));
 	}
 
 	public FutureSupplier<Intent> startActivityForResult(Supplier<Intent> intent) {
 		StartActivityPromise p = new StartActivityPromise(intent);
 		try {
-			activityLauncher.launch(p);
+			ActivityResultLauncher<StartActivityPromise> launcher = activityLauncher;
+			if (launcher == null) throw new ActivityDestroyedException();
+			launcher.launch(p);
 		} catch (Exception ex) {
 			p.completeExceptionally(ex);
 		}
 		return p;
+	}
+
+	private void cancelPendingActivityResults() {
+		Promise<int[]> permissions = checkPermissions;
+		checkPermissions = null;
+		if (permissions != null) permissions.cancel();
+
+		StartActivityContract contract = activityContract;
+		activityContract = null;
+		if (contract != null) contract.cancelPending();
+
+		ActivityResultLauncher<StartActivityPromise> launcher = activityLauncher;
+		activityLauncher = null;
+		if (launcher != null) {
+			try {
+				launcher.unregister();
+			} catch (RuntimeException ex) {
+				Log.d(ex, "Failed to unregister activity result launcher");
+			}
+		}
 	}
 
 	public FutureSupplier<int[]> checkPermissions(String... perms) {
@@ -281,5 +357,52 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 			promise = null;
 			if (p != null) p.complete(result);
 		}
+
+		void cancelPending() {
+			StartActivityPromise p = promise;
+			promise = null;
+			if (p != null) p.cancel();
+		}
+	}
+}
+
+final class ActivityLifecycleGuard {
+	private long generation;
+	private boolean active;
+	private int runningCallbacks;
+
+	synchronized long begin() {
+		active = true;
+		return ++generation;
+	}
+
+	boolean runIfCurrent(long expectedGeneration, Runnable action) {
+		synchronized (this) {
+			if (!active || (generation != expectedGeneration)) return false;
+			runningCallbacks++;
+		}
+		try {
+			action.run();
+			return true;
+		} finally {
+			synchronized (this) {
+				runningCallbacks--;
+				if (runningCallbacks == 0) notifyAll();
+			}
+		}
+	}
+
+	synchronized void cancel() {
+		active = false;
+		generation++;
+		boolean interrupted = false;
+		while (runningCallbacks != 0) {
+			try {
+				wait();
+			} catch (InterruptedException ex) {
+				interrupted = true;
+			}
+		}
+		if (interrupted) Thread.currentThread().interrupt();
 	}
 }

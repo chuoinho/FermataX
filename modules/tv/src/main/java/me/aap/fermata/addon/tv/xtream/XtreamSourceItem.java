@@ -27,6 +27,7 @@ public class XtreamSourceItem extends ItemContainer<XtreamSectionItem> implement
 	public static final String SCHEME = "tvx";
 	private XtreamAccount account;
 	private volatile XtreamApi api;
+	private long catalogRevision;
 
 	private XtreamSourceItem(TvRootItem root, XtreamAccount account) {
 		super(toId(account.getSourceId()), root, null);
@@ -77,9 +78,44 @@ public class XtreamSourceItem extends ItemContainer<XtreamSectionItem> implement
 
 	public void setAccount(XtreamAccount account) {
 		if (sameAccount(this.account, account)) return;
+		boolean catalogChanged = !sameCatalog(this.account, account);
+		if (catalogChanged) {
+			removePersistedCatalogItems((TvRootItem) getParent(), this.account.getSourceId());
+		}
 		this.account = account;
+		if (catalogChanged) {
+			catalogRevision++;
+			ItemContainer.invalidateResolvedChildren();
+		}
 		clearApiCache();
 		updateTitles();
+	}
+
+	public static void prepareAccountUpdate(TvRootItem root, XtreamAccount previous,
+			XtreamAccount replacement) {
+		if (!sameCatalog(previous, replacement)) {
+			removePersistedCatalogItems(root, replacement.getSourceId());
+		}
+	}
+
+	private static void removePersistedCatalogItems(TvRootItem root, int sourceId) {
+		root.getLib().removePersistedItems(id -> XtreamItemId.belongsToCatalog(id, sourceId));
+	}
+
+	long getCatalogRevision() {
+		return catalogRevision;
+	}
+
+	XtreamAccount requireAccountRevision(long revision) {
+		return requireAccountRevision(account, catalogRevision, revision);
+	}
+
+	static XtreamAccount requireAccountRevision(XtreamAccount account, long currentRevision,
+			long requestedRevision) {
+		if (requestedRevision != currentRevision) {
+			throw new IllegalStateException("Xtream account catalog has changed");
+		}
+		return account;
 	}
 
 	public void warmUp() {
@@ -145,6 +181,16 @@ public class XtreamSourceItem extends ItemContainer<XtreamSectionItem> implement
 				&& (a.getOutputIndex() == b.getOutputIndex())
 				&& Objects.equals(a.getUserAgent(), b.getUserAgent())
 				&& (a.getResponseTimeout() == b.getResponseTimeout());
+	}
+
+	static boolean sameCatalog(XtreamAccount a, XtreamAccount b) {
+		if (a == b) return true;
+		if ((a == null) || (b == null)) return false;
+		return (a.getSourceId() == b.getSourceId())
+				&& (a.getSchemeIndex() == b.getSchemeIndex())
+				&& Objects.equals(a.getHost(), b.getHost())
+				&& (a.getPort() == b.getPort())
+				&& Objects.equals(a.getUsername(), b.getUsername());
 	}
 
 	@Override

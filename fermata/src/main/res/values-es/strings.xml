@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">Emisoras y países populares</string>
     <string name="dashboard_youtube_sub">Búsqueda y reproducción de vídeo</string>
     <string name="dashboard_web_sub">Abrir medios web</string>
-    <string name="dashboard_felex_sub">Herramientas de aprendizaje y tutor</string>
     <string name="dashboard_addon_sub">Acceso directo de addon</string>
     <string name="dashboard_addon_disabled_sub">Desactivado en ajustes</string>
     <string name="addon_name_radio">Radio</string>

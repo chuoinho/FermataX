@@ -122,8 +122,12 @@ public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAdd
 	@Override
 	public void onPlaybackSnapshotChanged(MediaSessionCallback callback,
 			@Nullable PlaybackSnapshot previous, @NonNull PlaybackSnapshot current) {
-		if ((previous != null) && !current.hasSameItem(previous)) writeProgress(previous, true);
+		if ((previous != null) && !current.hasSameItem(previous) &&
+				previous.canPersistProgress()) {
+			writeProgress(previous, true);
+		}
 		int state = current.getState().getState();
+		if (!current.canPersistProgress()) return;
 		boolean force = (state != PlaybackStateCompat.STATE_PLAYING) &&
 				(state != PlaybackStateCompat.STATE_BUFFERING);
 		writeProgress(current, force);
@@ -135,8 +139,7 @@ public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAdd
 		if (item == null) return;
 		item = PlayableItemResolver.unwrap(item);
 		if (!(item instanceof PodcastEpisodeItem podcast)) return;
-		PodcastRepository target = repository;
-		if (target == null) return;
+		if (repository == null) return;
 
 		long now = System.currentTimeMillis();
 		String id = podcast.getId();
@@ -150,7 +153,12 @@ public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAdd
 		long duration = episode.getDurationMs();
 		boolean played = (duration > 0) &&
 				(position >= Math.max(duration - 30_000, (long) (duration * 0.95)));
-		target.updateProgress(episode.getFeedKey(), episode.getEpisodeKey(), position, played, now);
+		persistEpisodeProgress(podcast, position, played);
+	}
+
+	static FutureSupplier<Void> persistEpisodeProgress(PodcastEpisodeItem episode,
+			long position, boolean played) {
+		return episode.savePlaybackProgress(position, played);
 	}
 
 	@Nullable

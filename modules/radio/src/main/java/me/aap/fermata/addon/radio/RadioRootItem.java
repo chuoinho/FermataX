@@ -12,6 +12,7 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.utils.async.FutureSupplier;
 
 public class RadioRootItem extends ExtRoot implements RadioItem {
@@ -82,10 +83,36 @@ public class RadioRootItem extends ExtRoot implements RadioItem {
 
 	void saveSource(RadioSource source) {
 		sourceStore.save(source);
+		invalidateSearch();
 	}
 
-	void removeSource(RadioSource source) {
-		sourceStore.remove(source);
+	@Nullable
+	RadioSource findSource(String id) {
+		return sourceStore.find(id);
+	}
+
+	FutureSupplier<Void> removeSource(RadioSource source) {
+		RadioSourceItem item = new RadioSourceItem(this, source);
+		MediaLib lib = getLib();
+		return lib.getRecent().removeItem(item)
+				.then(ignored -> lib.getFavorites().removeItem(item))
+				.thenRun(() -> {
+					clearLastPlayed(item.getId(), lib.getPrefs());
+					clearLastPlayed(item.getId(), getPrefs());
+					sourceStore.remove(source);
+					invalidateSearch();
+				});
+	}
+
+	void invalidateSearch() {
+		SearchFolder.invalidate(this);
+	}
+
+	private static void clearLastPlayed(String itemId,
+			me.aap.fermata.media.pref.BrowsableItemPrefs prefs) {
+		if (!itemId.equals(prefs.getLastPlayedItemPref())) return;
+		prefs.setLastPlayedItemPref(null);
+		prefs.setLastPlayedPosPref(0);
 	}
 
 	boolean isChildItemId(String id) {

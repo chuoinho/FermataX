@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">محطات ودول شائعة</string>
     <string name="dashboard_youtube_sub">بحث وتشغيل الفيديو</string>
     <string name="dashboard_web_sub">فتح وسائط الويب</string>
-    <string name="dashboard_felex_sub">أدوات التعلم والتدريب</string>
     <string name="dashboard_addon_sub">اختصار إضافة</string>
     <string name="dashboard_addon_disabled_sub">معطل في الإعدادات</string>
     <string name="addon_name_radio">راديو</string>

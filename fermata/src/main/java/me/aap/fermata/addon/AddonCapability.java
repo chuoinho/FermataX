@@ -12,7 +12,6 @@ public enum AddonCapability {
 	AUDIOBOOK,
 	YOUTUBE,
 	WEB,
-	FELEX,
 	CHATGPT,
 	VOICE_SEARCH;
 

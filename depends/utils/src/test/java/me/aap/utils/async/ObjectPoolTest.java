@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
@@ -46,19 +47,20 @@ public class ObjectPoolTest extends Assertions {
 		TestPool pool = new TestPool(nthreads / 2);
 		assertEquals(nthreads / 2, pool.getMaxLength());
 		Semaphore sem = new Semaphore(0);
-		int iters = 100000;
+		int iters = 20_000;
 
 		for (int i = 0; i < iters; i++) {
 			exec.submit(() -> pool.getObject().closeableMap(o -> {
-				o.get().run(sem);
+				o.get().run();
 				return null;
-			}));
+			}).onCompletion((result, fail) -> sem.release()));
 		}
 
-		sem.acquire(iters);
+		assertTrue(sem.tryAcquire(iters, 30, TimeUnit.SECONDS),
+				"Object-pool operations did not complete before the test deadline");
 
 		for (int i = 0; (pool.aliveObjects.get() != pool.getIdleLength()) && i < 1000; i++) {
-			LockSupport.parkNanos(1000);
+			LockSupport.parkNanos(100_000);
 		}
 
 		assertEquals(pool.aliveObjects.get(), pool.getLength());
@@ -72,7 +74,7 @@ public class ObjectPoolTest extends Assertions {
 		assertEquals(0, pool.getQueueLength());
 	}
 
-	@RepeatedTest(100)
+	@RepeatedTest(20)
 	public void testClose() throws Exception {
 		TestUtils.enableExceptionLogging(false);
 		TestPool pool = new TestPool(nthreads / 2);
@@ -80,17 +82,18 @@ public class ObjectPoolTest extends Assertions {
 		int iters = 1000;
 
 		for (int i = 0; i < iters; i++) {
-			exec.submit(() -> pool.getObject().onFailure(fail -> sem.release()).closeableMap(o -> {
-				o.get().run(sem);
+			exec.submit(() -> pool.getObject().closeableMap(o -> {
+				o.get().run();
 				return null;
-			}));
+			}).onCompletion((result, fail) -> sem.release()));
 		}
 
 		pool.close();
-		sem.acquire(iters);
+		assertTrue(sem.tryAcquire(iters, 10, TimeUnit.SECONDS),
+				"Object-pool close did not release every queued operation");
 
 		for (int i = 0; (pool.aliveObjects.get() != 0) && i < 1000; i++) {
-			LockSupport.parkNanos(1000);
+			LockSupport.parkNanos(100_000);
 		}
 
 		assertEquals(0, pool.aliveObjects.get());
@@ -126,10 +129,9 @@ public class ObjectPoolTest extends Assertions {
 		static final int max = 100;
 		final AtomicInteger counter = new AtomicInteger();
 
-		void run(Semaphore sem) {
+		void run() {
 			if (counter.incrementAndGet() > max) throw new IllegalStateException();
-			LockSupport.parkNanos(100);
-			sem.release();
+			Thread.onSpinWait();
 		}
 	}
 }

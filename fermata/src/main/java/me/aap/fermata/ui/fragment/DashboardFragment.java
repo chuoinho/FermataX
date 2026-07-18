@@ -36,7 +36,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.voice.VoiceUiPolicy;
+import me.aap.fermata.ui.view.MinimumTouchTargetDelegate;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -411,6 +411,7 @@ public class DashboardFragment extends MainActivityFragment
 		public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
 			DashboardCard card = cards.get(position);
 			boolean smartTop = card.fixed && card.wide;
+			if (smartTop) applySmartTopFontScale(holder.itemView);
 			boolean editable = editMode && !card.fixed;
 			holder.icon.setImageResource(card.icon);
 			if (holder.eyebrow != null) {
@@ -485,6 +486,23 @@ public class DashboardFragment extends MainActivityFragment
 				if (editMode || !acceptClick() || (card.playable == null)) return;
 				DashboardPlayableNavigator.goToPlayable(activity, card.playable);
 			});
+		}
+
+		private static void applySmartTopFontScale(View card) {
+			android.content.res.Resources resources = card.getResources();
+			boolean compactWide = resources.getConfiguration().screenWidthDp >= 460;
+			int base = resources.getDimensionPixelSize(compactWide ?
+					R.dimen.dashboard_smart_height : R.dimen.dashboard_smart_mobile_height);
+			float density = resources.getDisplayMetrics().density;
+			int extraDp = DashboardFragment.smartTopFontScaleExtraDp(
+					resources.getConfiguration().fontScale);
+			int height = base + Math.round(extraDp * density);
+			ViewGroup.LayoutParams params = card.getLayoutParams();
+			if ((params != null) && (params.height != height)) {
+				params.height = height;
+				card.setLayoutParams(params);
+			}
+			card.setMinimumHeight(height);
 		}
 
 		private void bindEditActions(ItemHolder holder, DashboardCard card, boolean editable) {
@@ -751,6 +769,11 @@ public class DashboardFragment extends MainActivityFragment
 		}
 	}
 
+	static int smartTopFontScaleExtraDp(float fontScale) {
+		float scale = Math.max(1F, Math.min(fontScale, 2F));
+		return Math.round(40F * (scale - 1F));
+	}
+
 	private static final class ItemHolder extends RecyclerView.ViewHolder {
 		final ImageView icon;
 		final TextView eyebrow;
@@ -786,6 +809,9 @@ public class DashboardFragment extends MainActivityFragment
 					itemView.findViewById(R.id.dashboard_recent_item_2),
 					itemView.findViewById(R.id.dashboard_recent_item_3)
 			};
+			View recentItemsView = itemView.findViewById(R.id.dashboard_recent_items);
+			if (recentItemsView instanceof ViewGroup recentItemsContainer)
+				MinimumTouchTargetDelegate.install(recentItemsContainer, recentItems);
 			editActions = itemView.findViewById(R.id.dashboard_item_edit_actions);
 			moveEarlier = itemView.findViewById(R.id.dashboard_action_move_earlier);
 			moveLater = itemView.findViewById(R.id.dashboard_action_move_later);
@@ -837,8 +863,8 @@ public class DashboardFragment extends MainActivityFragment
 
 		private static void updateVoiceVisibility(ToolBarView tb) {
 			View voice = tb.findViewById(R.id.tool_voice);
-			if (voice != null) voice.setVisibility(VoiceUiPolicy.showToolbarButton(
-					MainActivityDelegate.get(tb.getContext())) ? View.VISIBLE : View.GONE);
+			if (voice != null) voice.setVisibility(MainActivityDelegate.get(tb.getContext())
+					.getPrefs().getVoiceControlEnabledPref() ? View.VISIBLE : View.GONE);
 		}
 
 		@Override

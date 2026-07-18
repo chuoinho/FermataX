@@ -21,6 +21,7 @@ import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
+import me.aap.utils.vfs.VirtualResource;
 
 /**
  * @author Andrey Pavlenko
@@ -118,6 +119,12 @@ public class XtreamEpgItem extends ItemBase implements TvItem, EpgItem {
 	@Override
 	public XtreamTrackItem getParent() {
 		return (XtreamTrackItem) super.getParent();
+	}
+
+	@NonNull
+	@Override
+	public VirtualResource getResource() {
+		return getParent().getResource();
 	}
 
 	@Override

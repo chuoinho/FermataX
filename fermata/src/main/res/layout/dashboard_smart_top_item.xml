@@ -51,6 +51,7 @@
         android:id="@+id/dashboard_item_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/dashboard_smart_text_gap"
         android:ellipsize="end"
         android:gravity="start"
         android:maxLines="1"
@@ -58,7 +59,7 @@
         android:textSize="@dimen/dashboard_smart_title_size"
         android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@id/dashboard_smart_split"
-        app:layout_constraintStart_toStartOf="@id/dashboard_item_eyebrow"
+        app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
         app:layout_constraintTop_toBottomOf="@id/dashboard_item_eyebrow" />
 
     <com.google.android.material.textview.MaterialTextView
@@ -186,51 +187,58 @@
             android:textSize="14sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/dashboard_recent_item_1"
+        <LinearLayout
+            android:id="@+id/dashboard_recent_items"
             android:layout_width="match_parent"
-            android:layout_height="28dp"
-            android:layout_marginTop="2dp"
-            android:background="@drawable/focusable_shape_transparent"
-            android:clickable="true"
-            android:ellipsize="end"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:maxLines="1"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textSize="13sp" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/dashboard_recent_item_2"
-            android:layout_width="match_parent"
-            android:layout_height="28dp"
-            android:background="@drawable/focusable_shape_transparent"
-            android:clickable="true"
-            android:ellipsize="end"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:maxLines="1"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textSize="13sp" />
+            <TextView
+                android:id="@+id/dashboard_recent_item_1"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:layout_marginTop="2dp"
+                android:background="@drawable/focusable_shape_transparent"
+                android:clickable="true"
+                android:ellipsize="end"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textSize="13sp" />
 
-        <TextView
-            android:id="@+id/dashboard_recent_item_3"
-            android:layout_width="match_parent"
-            android:layout_height="28dp"
-            android:background="@drawable/focusable_shape_transparent"
-            android:clickable="true"
-            android:ellipsize="end"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:maxLines="1"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textSize="13sp" />
+            <TextView
+                android:id="@+id/dashboard_recent_item_2"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:background="@drawable/focusable_shape_transparent"
+                android:clickable="true"
+                android:ellipsize="end"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/dashboard_recent_item_3"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:background="@drawable/focusable_shape_transparent"
+                android:clickable="true"
+                android:ellipsize="end"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textSize="13sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -236,6 +236,7 @@ public class TvFragment extends MediaLibFragment {
 	}
 
 	private void refreshEditedSource(TvSourceItem source) {
+		getRootItem().invalidateSearch();
 		getRefreshCoordinator().edited(source).main().onSuccess(result -> {
 			renderRefreshResult(source, result, false, false);
 			if (getView() != null) refresh();
@@ -245,6 +246,7 @@ public class TvFragment extends MediaLibFragment {
 	private void renderRefreshResult(TvSourceItem source, Result<String> result,
 														 boolean showError, boolean reloadList) {
 		if (reloadList && (getView() != null)) reload();
+		if (result.isSuccess()) getRootItem().invalidateSearch();
 		if (!result.isFailure()) return;
 
 		Throwable err = result.error();

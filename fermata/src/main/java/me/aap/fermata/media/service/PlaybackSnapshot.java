@@ -86,4 +86,15 @@ public final class PlaybackSnapshot {
 	public boolean hasSameItem(@Nullable PlaybackSnapshot other) {
 		return Objects.equals(item, (other == null) ? null : other.item);
 	}
+
+	/** Transient hand-off states do not own durable Podcast/Audiobook progress. */
+	public boolean canPersistProgress() {
+		return canPersistProgress(state.getState());
+	}
+
+	public static boolean canPersistProgress(int state) {
+		return (state == PlaybackStateCompat.STATE_PLAYING) ||
+				(state == PlaybackStateCompat.STATE_PAUSED) ||
+				(state == PlaybackStateCompat.STATE_STOPPED);
+	}
 }

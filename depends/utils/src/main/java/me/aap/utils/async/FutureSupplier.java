@@ -14,6 +14,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import me.aap.utils.BuildConfig;
@@ -208,21 +210,34 @@ public interface FutureSupplier<T> extends Future<T>, CheckedSupplier<T, Throwab
 	default FutureSupplier<T> timeout(long millis, CheckedSupplier<T, Throwable> onTimeout) {
 		if (isDone()) return this;
 		var trace = BuildConfig.FUTURE_TRACE ? new TimeoutException() : null;
-		var p = new Promise<T>();
+		var terminal = new AtomicBoolean();
+		var p = new Promise<T>() {
+			@Override
+			public boolean cancel(boolean mayInterruptIfRunning) {
+				if (!terminal.compareAndSet(false, true)) return false;
+				return cancelWithUpstream(super.cancel(mayInterruptIfRunning),
+						FutureSupplier.this, mayInterruptIfRunning);
+			}
+		};
 		var t = App.get().getScheduler().schedule(() -> {
-			if (p.isDone()) return;
+			if (!terminal.compareAndSet(false, true)) return;
 			if (BuildConfig.FUTURE_TRACE) Log.d(trace, "FutureSupplier timed out");
 
+			T value = null;
+			Throwable failure = null;
 			try {
-				p.complete(onTimeout.get());
+				value = onTimeout.get();
 			} catch (Throwable ex) {
-				p.completeExceptionally(ex);
+				failure = ex;
 			}
+			FutureSupplier.this.cancel();
+			if (failure == null) p.complete(value);
+			else p.completeExceptionally(failure);
 		}, millis, MILLISECONDS);
 
 		onCompletion((r, err) -> {
 			t.cancel(false);
-			p.complete(r, err);
+			if (terminal.compareAndSet(false, true)) p.complete(r, err);
 		});
 
 		return p;
@@ -409,18 +424,21 @@ public interface FutureSupplier<T> extends Future<T>, CheckedSupplier<T, Throwab
 			}
 		}
 
+		var active = new AtomicReference<FutureSupplier<?>>(this);
 		var p = new Promise<R>() {
 			@Override
 			public boolean cancel(boolean mayInterruptIfRunning) {
-				return super.cancel(mayInterruptIfRunning) ||
-						FutureSupplier.this.cancel(mayInterruptIfRunning);
+				return cancelWithUpstream(super.cancel(mayInterruptIfRunning), active.get(),
+						mayInterruptIfRunning);
 			}
 		};
 
 		onCompletion((result, fail) -> {
+			if (p.isCancelled()) return;
+
 			if (fail == null) {
 				try {
-					then.apply(result).onCompletion(p::complete);
+					attachNext(then.apply(result), active, p);
 				} catch (Throwable ex) {
 					p.completeExceptionally(ex);
 				}
@@ -446,20 +464,23 @@ public interface FutureSupplier<T> extends Future<T>, CheckedSupplier<T, Throwab
 			}
 		}
 
+		var active = new AtomicReference<FutureSupplier<?>>(this);
 		var p = new Promise<R>() {
 			@Override
 			public boolean cancel(boolean mayInterruptIfRunning) {
-				return super.cancel(mayInterruptIfRunning) ||
-						FutureSupplier.this.cancel(mayInterruptIfRunning);
+				return cancelWithUpstream(super.cancel(mayInterruptIfRunning), active.get(),
+						mayInterruptIfRunning);
 			}
 		};
 
 		onCompletion((result, fail) -> {
+			if (p.isCancelled()) return;
+
 			try {
 				if (fail == null) {
-					onSuccess.apply(result).onCompletion(p::complete);
+					attachNext(onSuccess.apply(result), active, p);
 				} else {
-					onFailure.apply(getFailure()).onCompletion(p::complete);
+					attachNext(onFailure.apply(getFailure()), active, p);
 				}
 			} catch (Throwable ex) {
 				p.completeExceptionally(ex);
@@ -480,18 +501,21 @@ public interface FutureSupplier<T> extends Future<T>, CheckedSupplier<T, Throwab
 			}
 		}
 
+		var active = new AtomicReference<FutureSupplier<?>>(this);
 		var p = new Promise<R>() {
 			@Override
 			public boolean cancel(boolean mayInterruptIfRunning) {
-				return super.cancel(mayInterruptIfRunning) ||
-						FutureSupplier.this.cancel(mayInterruptIfRunning);
+				return cancelWithUpstream(super.cancel(mayInterruptIfRunning), active.get(),
+						mayInterruptIfRunning);
 			}
 		};
 
 		onCompletion((ignore, fail) -> {
+			if (p.isCancelled()) return;
+
 			try {
 				if (fail != null) Log.d(fail);
-				then.get().onCompletion(p::complete);
+				attachNext(then.get(), active, p);
 			} catch (Throwable ex) {
 				p.completeExceptionally(ex);
 			}
@@ -538,17 +562,18 @@ public interface FutureSupplier<T> extends Future<T>, CheckedSupplier<T, Throwab
 			}
 		}
 
+		var active = new AtomicReference<FutureSupplier<?>>(this);
 		var p = new Promise<R>() {
 			public boolean cancel(boolean mayInterruptIfRunning) {
-				return super.cancel(mayInterruptIfRunning) ||
-						FutureSupplier.this.cancel(mayInterruptIfRunning);
+				return cancelWithUpstream(super.cancel(mayInterruptIfRunning), active.get(),
+						mayInterruptIfRunning);
 			}
 		};
 
 		onCompletion((result, fail) -> {
 			if (fail == null) {
 				try (@SuppressWarnings("unused") AutoCloseable closeable = (AutoCloseable) result) {
-					then.apply(result).onCompletion(p::complete);
+					if (!p.isCancelled()) attachNext(then.apply(result), active, p);
 				} catch (Throwable ex) {
 					p.completeExceptionally(ex);
 				}
@@ -560,6 +585,19 @@ public interface FutureSupplier<T> extends Future<T>, CheckedSupplier<T, Throwab
 		});
 
 		return p;
+	}
+
+	private static <R> void attachNext(FutureSupplier<R> next,
+			AtomicReference<FutureSupplier<?>> active, Promise<R> target) {
+		active.set(next);
+		if (target.isCancelled()) next.cancel();
+		else next.onCompletion(target::complete);
+	}
+
+	private static boolean cancelWithUpstream(boolean localCancelled,
+			FutureSupplier<?> upstream, boolean mayInterruptIfRunning) {
+		boolean upstreamCancelled = upstream.cancel(mayInterruptIfRunning);
+		return localCancelled || upstreamCancelled;
 	}
 
 	default FutureSupplier<T> thenIterate(

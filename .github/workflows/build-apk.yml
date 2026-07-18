@@ -1,5 +1,8 @@
 name: Build APK
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:
@@ -12,6 +15,7 @@ concurrency:
 env:
   JAVA_VERSION: '17'
   JAVA_DISTRIBUTION: 'temurin'
+  EXPECTED_UPLOAD_CERT_SHA256: 'a86d576ff1ec0e3245f5a6152c5d8d66b5df8bb510820d75dc61110b19c3aeb4'
 
 jobs:
   build:
@@ -90,35 +94,111 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Verify untrusted change without signing secrets
+        if: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/main' }}
+        env:
+          NO_GS: true
+        run: ./gradlew test --no-daemon --build-cache
+
       - name: Create keystore and local.properties
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        env:
+          CI_KEYSTORE: ${{ secrets.CI_KEYSTORE }}
+          CI_ALIAS: ${{ secrets.CI_ALIAS }}
+          CI_KEY_PWD: ${{ secrets.CI_KEY_PWD }}
+          CI_KEYSTORE_PWD: ${{ secrets.CI_KEYSTORE_PWD }}
         run: |
-          [ -z "${{ secrets.CI_KEYSTORE }}" ] && exit 0
-          echo "${{ secrets.CI_KEYSTORE }}" | base64 -d > keystore.jks
+          for name in CI_KEYSTORE CI_ALIAS CI_KEY_PWD CI_KEYSTORE_PWD; do
+            [ -n "${!name}" ] || { echo "Missing release signing secret: $name" >&2; exit 1; }
+          done
+          echo "$CI_KEYSTORE" | base64 -d > keystore.jks
 
           cat > local.properties <<EOF
           storeFile=$(pwd)/keystore.jks
-          keyAlias=${{ secrets.CI_ALIAS }}
-          keyPassword=${{ secrets.CI_KEY_PWD }}
-          storePassword=${{ secrets.CI_KEYSTORE_PWD }}
+          keyAlias=$CI_ALIAS
+          keyPassword=$CI_KEY_PWD
+          storePassword=$CI_KEYSTORE_PWD
           EOF
+          chmod 600 keystore.jks local.properties
 
       - name: Build APKs
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         env:
           NO_GS: true
         run: |
           out=fermata/build/outputs/apk_from_bundle/autoRelease
-          mkdir -p dist/arm64 dist/arm
+          bundle_out=fermata/build/outputs/bundle/autoRelease
+          mkdir -p dist/arm64 dist/arm dist/aab
           echo "App name: $APP_NAME"
           echo "Package suffix: $APP_ID_SFX"
+          expected_package="me.app.fermataX.auto${APP_ID_SFX}"
+          artifact_identity="$expected_package"
+          normalize_cert() { tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]'; }
+          verify_apk() {
+            local apk="$1"
+            local package certificate
+            package="$(apkanalyzer manifest application-id "$apk")"
+            [ "$package" = "$expected_package" ] || {
+              echo "Package mismatch: expected $expected_package, found $package" >&2
+              exit 1
+            }
+            case "$(basename "$apk")" in
+              *"$artifact_identity"*) ;;
+              *) echo "Artifact filename does not identify package: $apk" >&2; exit 1 ;;
+            esac
+            apksigner verify --verbose "$apk"
+            certificate="$(apksigner verify --print-certs "$apk" \
+              | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | normalize_cert)"
+            [ "$certificate" = "$EXPECTED_UPLOAD_CERT_SHA256" ] || {
+              echo "APK upload certificate mismatch: $certificate" >&2
+              exit 1
+            }
+          }
+          verify_aab() {
+            local aab="$1"
+            local certificate
+            case "$(basename "$aab")" in
+              *"$artifact_identity"*) ;;
+              *) echo "AAB filename does not identify package: $aab" >&2; exit 1 ;;
+            esac
+            jarsigner -verify -strict "$aab"
+            certificate="$(keytool -printcert -jarfile "$aab" \
+              | sed -n 's/.*SHA256: //p' | head -n 1 | normalize_cert)"
+            [ "$certificate" = "$EXPECTED_UPLOAD_CERT_SHA256" ] || {
+              echo "AAB upload certificate mismatch: $certificate" >&2
+              exit 1
+            }
+          }
+          select_apk() {
+            mapfile -t apks < <(find "$out" -maxdepth 1 -type f -name '*.apk' -print)
+            [ "${#apks[@]}" -eq 1 ] || {
+              echo "Expected exactly one APK in $out, found ${#apks[@]}" >&2
+              exit 1
+            }
+            printf '%s\n' "${apks[0]}"
+          }
           ARGS=(--build-cache)
-           [ -z "$APP_NAME" ] || ARGS+=("-PAPP_NAME=$APP_NAME")
-           [ -z "$APP_ID_SFX" ] || ARGS+=("-PAPP_ID_SFX=$APP_ID_SFX")
-           ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a "${ARGS[@]}"
-          mv $out/*.apk dist/arm64/
+          [ -z "$APP_NAME" ] || ARGS+=("-PAPP_NAME=$APP_NAME")
+          [ -z "$APP_ID_SFX" ] || ARGS+=("-PAPP_ID_SFX=$APP_ID_SFX")
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a "${ARGS[@]}"
+          apk="$(select_apk)"
+          verify_apk "$apk"
+          mv "$apk" dist/arm64/
           ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a "${ARGS[@]}"
-          mv $out/*.apk dist/arm/
+          apk="$(select_apk)"
+          verify_apk "$apk"
+          mv "$apk" dist/arm/
+          ./gradlew fermata:bundleAutoRelease "${ARGS[@]}"
+          mapfile -t aabs < <(find "$bundle_out" -maxdepth 1 -type f -name '*.aab' -print)
+          [ "${#aabs[@]}" -eq 1 ] || {
+            echo "Expected exactly one AAB in $bundle_out, found ${#aabs[@]}" >&2
+            exit 1
+          }
+          verify_aab "${aabs[0]}"
+          mv "${aabs[0]}" dist/aab/
 
       - name: Upload arm64 APK
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         uses: actions/upload-artifact@v4
         with:
           name: fermata-auto-${{ env.APP_VERSION }}${{ env.ARTIFACT_SFX }}-arm64
@@ -127,9 +207,19 @@ jobs:
           if-no-files-found: error
 
       - name: Upload arm APK
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         uses: actions/upload-artifact@v4
         with:
           name: fermata-auto-${{ env.APP_VERSION }}${{ env.ARTIFACT_SFX }}-arm
           path: dist/arm/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload Android App Bundle
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fermata-auto-${{ env.APP_VERSION }}${{ env.ARTIFACT_SFX }}-aab
+          path: dist/aab/*.aab
           retention-days: 30
           if-no-files-found: error

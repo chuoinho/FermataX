@@ -1,12 +1,19 @@
 if (gradle.ext.enableGoogleServices) apply plugin: 'com.google.gms.google-services'
 
+def defaultApplicationId = 'me.app.fermataX'
+def configuredApplicationId = project.getProperties().getOrDefault('APP_ID', defaultApplicationId)
+def configuredAutoIdSuffix = project.getProperties().getOrDefault('APP_ID_SFX', '')
+def expectedAutoReleaseApplicationId = configuredApplicationId + '.auto' + configuredAutoIdSuffix
+def artifactIdentity = expectedAutoReleaseApplicationId
+        .replaceAll('[^A-Za-z0-9._-]', '_')
+
 android {
     defaultConfig {
         namespace = 'me.aap.fermata'
-        applicationId project.getProperties().getOrDefault('APP_ID', 'me.app.fermataX')
+        applicationId configuredApplicationId
         versionCode VERSION_CODE
         versionName VERSION_NAME
-        base.archivesName = "fermata-$versionName"
+        base.archivesName = "fermata-$versionName-$artifactIdentity"
 
         ndk {
             //noinspection ChromeOsAbiSupport
@@ -14,7 +21,7 @@ android {
         }
     }
 
-    if (localProps['storeFile'] != null) {
+    if (gradle.ext.releaseSigningConfigured) {
         signingConfigs {
             release {
                 storeFile file(localProps["storeFile"])
@@ -37,7 +44,7 @@ android {
             resValue "string", "mirror_fs_service_name", "@string/mirror_fs_service_name_release"
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     '../proguard-rules.pro', '../depends/utils/proguard-rules.pro'
-            signingConfig = signingConfigs.release
+            if (gradle.ext.releaseSigningConfigured) signingConfig = signingConfigs.release
             buildConfigField "boolean", 'D', 'false'
         }
 
@@ -50,7 +57,6 @@ android {
             resValue "string", "media_service_name_mobile", "@string/media_service_name_mobile_debug"
             resValue "string", "mirror_service_name", "@string/mirror_service_name_debug"
             resValue "string", "mirror_fs_service_name", "@string/mirror_fs_service_name_debug"
-            signingConfig = signingConfigs.release
             buildConfigField "boolean", 'D', 'true'
         }
     }
@@ -93,6 +99,59 @@ android {
     dynamicFeatures.addAll(gradle.ext.modules)
 
     namespace = 'me.aap.fermata'
+}
+
+def verifyAutoReleaseIdentity = tasks.register('verifyAutoReleaseIdentity') {
+    group = 'verification'
+    description = 'Verifies the merged Auto release package and provider authority.'
+
+    doLast {
+        def manifestDir = file("$buildDir/intermediates/merged_manifest/autoRelease")
+        def manifests = fileTree(manifestDir).matching { include '**/AndroidManifest.xml' }.files
+        if (manifests.isEmpty()) {
+            throw new GradleException("Auto release merged manifest not found in ${manifestDir}")
+        }
+
+        def manifestFile = manifests.max { it.lastModified() }
+        def factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        factory.setNamespaceAware(true)
+        def manifest = factory.newDocumentBuilder().parse(manifestFile)
+        def actualApplicationId = manifest.documentElement.getAttribute('package')
+        if (actualApplicationId != expectedAutoReleaseApplicationId) {
+            throw new GradleException("Auto release package mismatch: expected " +
+                    "${expectedAutoReleaseApplicationId}, found ${actualApplicationId}")
+        }
+
+        def androidNamespace = 'http://schemas.android.com/apk/res/android'
+        def providers = manifest.getElementsByTagName('provider')
+        def provider = null
+        for (int i = 0; i < providers.length; i++) {
+            def candidate = providers.item(i)
+            if (candidate.getAttributeNS(androidNamespace, 'name') ==
+                    'me.aap.fermata.provider.FermataContentProvider') {
+                provider = candidate
+                break
+            }
+        }
+        if (provider == null) throw new GradleException('FermataContentProvider is missing')
+        if (provider.getAttributeNS(androidNamespace, 'authorities') !=
+                expectedAutoReleaseApplicationId) {
+            throw new GradleException('FermataContentProvider authority does not match the package')
+        }
+        def expectedWritePermission =
+                expectedAutoReleaseApplicationId + '.permission.WRITE_FERMATA_CONTENT'
+        if (provider.getAttributeNS(androidNamespace, 'writePermission') !=
+                expectedWritePermission) {
+            throw new GradleException('FermataContentProvider write permission does not match the package')
+        }
+    }
+}
+
+tasks.configureEach { task ->
+    if (task.name in ['assembleAutoRelease', 'bundleAutoRelease',
+            'packageAutoReleaseUniversalApk']) {
+        task.finalizedBy(verifyAutoReleaseIdentity)
+    }
 }
 
 dependencies {

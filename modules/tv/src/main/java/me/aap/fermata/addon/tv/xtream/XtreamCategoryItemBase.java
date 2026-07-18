@@ -17,12 +17,14 @@ import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 
-abstract class XtreamCategoryItemBase extends BrowsableItemBase implements TvItem {
+abstract class XtreamCategoryItemBase extends BrowsableItemBase implements TvItem, XtreamCatalogItem {
 	private final XtreamCategory category;
+	private final long catalogRevision;
 
 	XtreamCategoryItemBase(String id, XtreamSectionItem parent, XtreamCategory category) {
 		super(id, parent, null);
 		this.category = category;
+		catalogRevision = XtreamCatalogItem.revision(parent);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -32,8 +34,18 @@ abstract class XtreamCategoryItemBase extends BrowsableItemBase implements TvIte
 
 		synchronized (lib.cacheLock()) {
 			MediaLib.Item i = lib.getFromCache(id);
-			return (i != null) ? (T) i : factory.get();
+			if (i != null) {
+				T item = (T) i;
+				if (item.isCatalogCurrent()) return item;
+				lib.removeFromCache(item);
+			}
+			return factory.get();
 		}
+	}
+
+	@Override
+	public long getCatalogRevision() {
+		return catalogRevision;
 	}
 
 	static ParsedId parseCategoryId(String id) {

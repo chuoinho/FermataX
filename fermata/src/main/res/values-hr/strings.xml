@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">Popularne stanice i države</string>
     <string name="dashboard_youtube_sub">Pretraživanje i reprodukcija videa</string>
     <string name="dashboard_web_sub">Otvori web medije</string>
-    <string name="dashboard_felex_sub">Alati za učenje i tutor</string>
     <string name="dashboard_addon_sub">Prečac dodatka</string>
     <string name="dashboard_addon_disabled_sub">Onemogućeno u postavkama</string>
     <string name="addon_name_radio">Radio</string>

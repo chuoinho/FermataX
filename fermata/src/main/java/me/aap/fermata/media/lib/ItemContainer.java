@@ -7,11 +7,13 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -28,9 +30,24 @@ import me.aap.utils.vfs.VirtualResource;
  * @author Andrey Pavlenko
  */
 public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
+	private static final List<WeakReference<ItemContainer<?>>> containers = new ArrayList<>();
 
 	protected ItemContainer(String id, @Nullable BrowsableItem parent, @Nullable VirtualResource file) {
 		super(id, parent, file);
+		synchronized (containers) {
+			containers.add(new WeakReference<>(this));
+		}
+	}
+
+	/** Invalidates persisted collections that may have resolved while an addon was unavailable. */
+	public static void invalidateResolvedChildren() {
+		synchronized (containers) {
+			for (Iterator<WeakReference<ItemContainer<?>>> it = containers.iterator(); it.hasNext(); ) {
+				ItemContainer<?> container = it.next().get();
+				if (container == null) it.remove();
+				else container.invalidateChildrenCache();
+			}
+		}
 	}
 
 	protected abstract String getScheme();
@@ -56,34 +73,52 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 		String[] ids = prefs.getStringArrayPref(idsPref);
 		if ((ids == null) || (ids.length == 0)) return completedEmptyList();
 		MediaLib lib = getLib();
-		List<Item> children = new ArrayList<>(ids.length);
-		AtomicBoolean update = new AtomicBoolean();
-		AtomicInteger counter = new AtomicInteger();
-		return forEach(id -> lib.getItem(id)
+		Item[] resolved = new Item[ids.length];
+		AtomicBoolean resolutionFailed = new AtomicBoolean();
+		List<Integer> indexes = new ArrayList<>(ids.length);
+		for (int i = 0; i < ids.length; i++) indexes.add(i);
+
+		return forEach(index -> lib.getItem(ids[index])
 				.ifFail(err -> {
-					Log.e(err, "Failed to get item: ", id);
-					counter.incrementAndGet();
+					resolutionFailed.set(true);
+					Log.e(err, "Failed to get item: ", ids[index]);
 					return null;
 				}).map(c -> {
-					if (c == null) {
-						Log.w("Item not found: ", ids[counter.get()]);
-					} else {
-						children.add(toChildItem(c));
-						String newId = c.getId();
-						String oldId = ids[counter.get()];
-						if (!newId.equals(oldId)) {
-							Log.i("Item id has been changed. Updating ", oldId, " -> ", newId);
-							ids[counter.get()] = newId;
-							update.set(true);
-						}
-					}
-
-					counter.incrementAndGet();
+					resolved[index] = c;
 					return null;
-				}), ids).main().map(v -> {
-			if (update.get()) prefs.applyStringArrayPref(idsPref, ids);
+				}), indexes).main().map(v -> {
+			List<Item> children = new ArrayList<>(ids.length);
+			List<String> resolvedIds = new ArrayList<>(ids.length);
+			boolean update = false;
+			boolean pruneMissing = shouldPruneMissing(
+					AddonManager.get().hasUnresolvedEnabledAddons(), resolutionFailed.get());
+
+			for (int i = 0; i < ids.length; i++) {
+				Item child = resolved[i];
+				if (child == null) {
+					Log.w("Item not found: ", ids[i]);
+					if (pruneMissing) update = true;
+					else resolvedIds.add(ids[i]);
+					continue;
+				}
+
+				children.add(toChildItem(child));
+				String newId = child.getId();
+				resolvedIds.add(newId);
+				if (!newId.equals(ids[i])) {
+					Log.i("Item id has been changed. Updating ", ids[i], " -> ", newId);
+					update = true;
+				}
+			}
+
+			if (update) prefs.applyStringArrayPref(idsPref,
+					resolvedIds.toArray(new String[0]));
 			return children;
 		});
+	}
+
+	static boolean shouldPruneMissing(boolean unresolvedAddons, boolean resolutionFailed) {
+		return !unresolvedAddons && !resolutionFailed;
 	}
 
 	public FutureSupplier<Void> addItem(C item) {

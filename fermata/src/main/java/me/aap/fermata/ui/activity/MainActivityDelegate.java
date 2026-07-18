@@ -1298,6 +1298,7 @@ public class MainActivityDelegate extends ActivityDelegate
 				return;
 			}
 			fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+			if (isCarActivityNotMirror()) return;
 			getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
 				if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
 				if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");

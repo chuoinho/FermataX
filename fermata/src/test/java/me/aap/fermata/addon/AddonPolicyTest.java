@@ -62,6 +62,15 @@ public class AddonPolicyTest {
 	}
 
 	@Test
+	public void capabilityRoutingRequiresLoadedAddon() {
+		assertTrue(AddonManager.isRoutableState(AddonState.LOADED));
+		assertFalse(AddonManager.isRoutableState(AddonState.DISABLED));
+		assertFalse(AddonManager.isRoutableState(AddonState.ENABLED_PENDING));
+		assertFalse(AddonManager.isRoutableState(AddonState.LOADING));
+		assertFalse(AddonManager.isRoutableState(AddonState.FAILED));
+	}
+
+	@Test
 	public void registryOnlyIndexesUnambiguousModuleAliases() {
 		AddonInfo one = info("shared", "test.One", 1, "depA, depB");
 		AddonInfo two = info("shared", "test.Two", 2, "");
@@ -85,7 +94,6 @@ public class AddonPolicyTest {
 				AddonCapability.AUDIOBOOK);
 		assertCapabilities("me.aap.fermata.addon.web.yt.YoutubeAddon", AddonCapability.YOUTUBE);
 		assertCapabilities("me.aap.fermata.addon.web.WebBrowserAddon", AddonCapability.WEB);
-		assertCapabilities("me.aap.fermata.addon.felex.FelexAddon", AddonCapability.FELEX);
 		assertCapabilities("me.aap.fermata.addon.chat.ChatAddon", AddonCapability.CHATGPT,
 				AddonCapability.VOICE_SEARCH);
 		assertEquals("tv", AddonRegistry.get().require(

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="dashboard_smart_height">140dp</dimen>
+    <dimen name="dashboard_smart_action_gap">6dp</dimen>
+    <dimen name="dashboard_smart_actions_start_margin">88dp</dimen>
+</resources>

@@ -7,8 +7,6 @@ import static java.util.Collections.emptyMap;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
-import static me.aap.utils.async.Completed.completedEmptyList;
-import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.security.SecurityUtils.SHA1_DIGEST_LEN;
 
 import android.content.ContentResolver;
@@ -96,9 +94,11 @@ public class MetadataRetriever implements Closeable {
 
 	private final MediaEngineManager mgr;
 	private final BitmapCache bitmapCache;
-	@Nullable
-	private final SQLiteDatabase db;
+	private final File dbFile;
 	private final PromiseQueue queue = new PromiseQueue(App.get().getExecutor());
+	@Nullable
+	private volatile SQLiteDatabase db;
+	private volatile boolean closed;
 
 	public MetadataRetriever(MediaEngineManager mgr) {
 		this.mgr = mgr;
@@ -106,23 +106,7 @@ public class MetadataRetriever implements Closeable {
 		Context ctx = mgr.lib.getContext();
 		File cache = ctx.getExternalCacheDir();
 		if (cache == null) cache = ctx.getCacheDir();
-		File dbFile = new File(cache, "metadata.db");
-		SQLiteDatabase db = null;
-
-		try {
-			db = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
-		} catch (Exception ex) {
-			Log.w("Failed to create database: ", dbFile, ": ", ex, ". Retrying ...");
-
-			try {
-				db = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
-			} catch (Exception ex1) {
-				Log.e(ex1, "Failed to create database: ", dbFile);
-			}
-		}
-
-		this.db = db;
-		createTable();
+		dbFile = new File(cache, "metadata.db");
 	}
 
 	public BitmapCache getBitmapCache() {
@@ -131,7 +115,13 @@ public class MetadataRetriever implements Closeable {
 
 	@Override
 	public void close() {
-		if (db != null) db.close();
+		closed = true;
+		queue.enqueue(() -> {
+			SQLiteDatabase database = db;
+			db = null;
+			if (database != null) database.close();
+			return null;
+		});
 	}
 
 	public FutureSupplier<MetadataBuilder> getMediaMetadata(PlayableItem item) {
@@ -349,20 +339,23 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	public FutureSupplier<Map<String, MetadataBuilder>> queryMetadata(String idPattern,
-																																		BrowsableItem br) {
-		if (db == null) return queue.enqueue(() -> queryMediaStore(br));
+																								BrowsableItem br) {
 		return queue.enqueue(() -> {
+			if (getDatabase() == null) return queryMediaStore(br);
 			Map<String, MetadataBuilder> m = query(idPattern);
 			return m.isEmpty() ? queryMediaStore(br) : m;
 		});
 	}
 
 	public FutureSupplier<String> queryId(String pattern) {
-		return queryIds(pattern, 1).map(ids -> ids.isEmpty() ? null : ids.get(0));
+		return queryIds(pattern, 1).then(ids ->
+				me.aap.utils.async.Completed.completed(ids.isEmpty() ? null : ids.get(0)));
 	}
 
 	public FutureSupplier<List<String>> queryIds(String pattern, int max) {
-		return (db != null) ? queue.enqueue(() -> {
+		return queue.enqueue(() -> {
+			SQLiteDatabase db = getDatabase();
+			if (db == null) return emptyList();
 			List<String> ids = new ArrayList<>(max);
 			try (Cursor c = db.query(TABLE, new String[]{COL_ID},
 					COL_TITLE + " = ? OR " + COL_ARTIST + " = ? OR " + COL_ALBUM + " = ? LIMIT " + max,
@@ -387,17 +380,17 @@ public class MetadataRetriever implements Closeable {
 				while (c.moveToNext()) ids.add(c.getString(0));
 			}
 			return ids.isEmpty() ? emptyList() : ids;
-		}) : completedEmptyList();
+		});
 	}
 
 	public FutureSupplier<Void> clearMetadata(String idPattern) {
-		return (db != null) ? queue.enqueue(() -> clear(idPattern)) : completedVoid();
+		return queue.enqueue(() -> (getDatabase() == null) ? null : clear(idPattern));
 	}
 
 	public void updateDuration(PlayableItem item, long duration) {
-		if (db == null) return;
-
 		queue.enqueue(() -> {
+			SQLiteDatabase db = getDatabase();
+			if (db == null) return null;
 			ContentValues values = new ContentValues(1);
 			values.put(COL_DURATION, duration);
 			db.update(TABLE, values, COL_ID + " = ?", new String[]{item.getId()});
@@ -442,6 +435,7 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	private MetadataBuilder queryMetadata(PlayableItem item) {
+		SQLiteDatabase db = getDatabase();
 		if (db == null) return null;
 
 		try (Cursor c = db.query(TABLE, QUERY_COLUMNS, COL_ID + " = ?", new String[]{item.getOrigId()},
@@ -487,6 +481,7 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	private void insertMetadata(MetaBuilder meta, String id) {
+		SQLiteDatabase db = getDatabase();
 		if ((db == null) || !meta.durationSet) return;
 		Bitmap bm = meta.image;
 
@@ -516,9 +511,7 @@ public class MetadataRetriever implements Closeable {
 		meta.insert(db);
 	}
 
-	private void createTable() {
-		if (db == null) return;
-
+	private void createTable(SQLiteDatabase db) {
 		PreferenceStore ps = FermataApplication.get().getPreferenceStore();
 		Pref<IntSupplier> version = Pref.i("METADATA_VERSION", 0);
 
@@ -533,6 +526,36 @@ public class MetadataRetriever implements Closeable {
 						COL_ALBUM_ARTIST + " VARCHAR, " + COL_COMPOSER + " VARCHAR, " + COL_WRITER +
 						" VARCHAR, " + COL_GENRE + " VARCHAR, " + COL_DURATION + " INTEGER, " + COL_ART +
 						" BLOB " + ");");
+	}
+
+	@Nullable
+	private synchronized SQLiteDatabase getDatabase() {
+		if (closed) return null;
+		SQLiteDatabase database = db;
+		if (database != null) return database;
+
+		try {
+			database = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
+		} catch (Exception ex) {
+			Log.w("Failed to create database: ", dbFile, ": ", ex, ". Retrying ...");
+
+			try {
+				database = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
+			} catch (Exception ex1) {
+				Log.e(ex1, "Failed to create database: ", dbFile);
+				return null;
+			}
+		}
+
+		try {
+			createTable(database);
+		} catch (Throwable ex) {
+			Log.e(ex, "Failed to initialize metadata database: ", dbFile);
+			database.close();
+			return null;
+		}
+		db = database;
+		return database;
 	}
 
 	private static final class MetaBuilder extends MetadataBuilder {

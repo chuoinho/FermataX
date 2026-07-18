@@ -372,7 +372,6 @@ public final class DashboardItems {
 			case AUDIOBOOK -> R.string.dashboard_audiobook_sub;
 			case YOUTUBE -> R.string.dashboard_youtube_sub;
 			case WEB -> R.string.dashboard_web_sub;
-			case FELEX -> R.string.dashboard_felex_sub;
 			case GENERIC -> R.string.dashboard_addon_sub;
 		});
 	}

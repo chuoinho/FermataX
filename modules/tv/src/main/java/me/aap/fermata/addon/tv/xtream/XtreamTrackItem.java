@@ -42,12 +42,14 @@ import me.aap.utils.event.ListenerLeakDetector;
 import me.aap.utils.function.Function;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
+import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.generic.GenericFileSystem;
 
 /**
  * @author Andrey Pavlenko
  */
-public class XtreamTrackItem extends PlayableItemBase implements StreamItem, StreamItemPrefs, TvItem {
+public class XtreamTrackItem extends PlayableItemBase implements StreamItem, StreamItemPrefs, TvItem,
+		XtreamCatalogItem {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static final AtomicReferenceFieldUpdater<XtreamTrackItem, FutureSupplier<List<XtreamEpgItem>>> EPG =
 			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(XtreamTrackItem.class, FutureSupplier.class, "epg");
@@ -55,6 +57,7 @@ public class XtreamTrackItem extends PlayableItemBase implements StreamItem, Str
 	private static final int MAX_TIMELINE_PROGRAMS = 12;
 	public static final String SCHEME = "tvxt";
 	private final XtreamChannel channel;
+	private final long catalogRevision;
 	private long epgStart;
 	private long epgStop;
 	private String epgTitle;
@@ -69,6 +72,7 @@ public class XtreamTrackItem extends PlayableItemBase implements StreamItem, Str
 				GenericFileSystem.getInstance().create(parent.getParent().getParent().getAccount()
 						.buildLiveStreamUrl(channel.getStreamId())));
 		this.channel = channel;
+		catalogRevision = XtreamCatalogItem.revision(parent);
 	}
 
 	public static XtreamTrackItem create(XtreamCategoryItem parent, XtreamChannel channel) {
@@ -77,8 +81,18 @@ public class XtreamTrackItem extends PlayableItemBase implements StreamItem, Str
 
 		synchronized (lib.cacheLock()) {
 			MediaLib.Item i = lib.getFromCache(id);
-			return (i != null) ? (XtreamTrackItem) i : new XtreamTrackItem(id, parent, channel);
+			if (i != null) {
+				XtreamTrackItem item = (XtreamTrackItem) i;
+				if (item.isCatalogCurrent()) return item;
+				lib.removeFromCache(item);
+			}
+			return new XtreamTrackItem(id, parent, channel);
 		}
+	}
+
+	@Override
+	public long getCatalogRevision() {
+		return catalogRevision;
 	}
 
 	public static FutureSupplier<XtreamTrackItem> create(TvRootItem root, String id) {
@@ -101,6 +115,23 @@ public class XtreamTrackItem extends PlayableItemBase implements StreamItem, Str
 
 	public int getStreamId() {
 		return channel.getStreamId();
+	}
+
+	@Override
+	public boolean isLocationSensitive() {
+		return true;
+	}
+
+	@NonNull
+	@Override
+	public VirtualResource getResource() {
+		return GenericFileSystem.getInstance().create(requireCurrentAccount()
+				.buildLiveStreamUrl(getStreamId()));
+	}
+
+	@Override
+	public boolean isRecentEligible() {
+		return isCatalogCurrent();
 	}
 
 	@NonNull
@@ -301,7 +332,7 @@ public class XtreamTrackItem extends PlayableItemBase implements StreamItem, Str
 		if (!isSeekable(time)) return null;
 		long now = System.currentTimeMillis();
 		if (time >= now) return getLocation();
-		return Uri.parse(getParent().getParent().getParent().getAccount()
+		return Uri.parse(requireCurrentAccount()
 				.buildTimeshiftStreamUrl(getStreamId(), time, duration));
 	}
 
@@ -318,7 +349,7 @@ public class XtreamTrackItem extends PlayableItemBase implements StreamItem, Str
 	@Nullable
 	@Override
 	public String getUserAgent() {
-		return getParent().getParent().getParent().getAccount().getUserAgent();
+		return requireCurrentAccount().getUserAgent();
 	}
 
 	int getCatchUpDays() {

@@ -145,8 +145,12 @@ public final class AudiobookAddon implements MediaLibAddon, FermataMediaServiceA
 	@Override
 	public void onPlaybackSnapshotChanged(MediaSessionCallback callback,
 			@Nullable PlaybackSnapshot previous, @NonNull PlaybackSnapshot current) {
-		if ((previous != null) && !current.hasSameItem(previous)) writeProgress(previous, true);
+		if ((previous != null) && !current.hasSameItem(previous) &&
+				previous.canPersistProgress()) {
+			writeProgress(previous, true);
+		}
 		int state = current.getState().getState();
+		if (!current.canPersistProgress()) return;
 		boolean force = (state != PlaybackStateCompat.STATE_PLAYING) &&
 				(state != PlaybackStateCompat.STATE_BUFFERING);
 		writeProgress(current, force);

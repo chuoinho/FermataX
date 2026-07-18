@@ -5,24 +5,98 @@ gradle.ext.abiFilters = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-
 gradle.ext.localProps = new Properties()
 gradle.ext.enableGoogleServices = (System.getenv('NO_GS') == null)
         && file('fermata/google-services.json').isFile()
+gradle.ext.legacyUploadCertificateSha256 =
+        '6bd055aeedbc13a67b05310f1e3fe0f1aa1dd690e1b7c2637aa5d31ea1ba910e'
+gradle.ext.approvedUploadCertificatesSha256 = [
+        'a86d576ff1ec0e3245f5a6152c5d8d66b5df8bb510820d75dc61110b19c3aeb4'
+] as Set
 def localPropsFile = file('local.properties')
 if (localPropsFile.isFile()) {
     gradle.ext.localProps.load(localPropsFile.newDataInputStream())
 }
 
-if ((gradle.ext.localProps['storeFile'] == null ||
-        !file(gradle.ext.localProps['storeFile']).isFile())) {
-    def localProps = gradle.ext.localProps
-    localProps.putIfAbsent('storeFile', "${rootDir}/res/fermata.jks".toString())
-    localProps.putIfAbsent('keyAlias', 'fermata')
-    localProps.putIfAbsent('keyPassword', 'fermata')
-    localProps.putIfAbsent('storePassword', localProps['keyPassword'])
-    apply from: "${rootDir}/res/build_jks.gradle"
-    localPropsFile.withOutputStream { out ->
-        localProps.store(out, null)
+[
+        storeFile    : 'FERMATAX_STORE_FILE',
+        storePassword: 'FERMATAX_STORE_PASSWORD',
+        keyAlias     : 'FERMATAX_KEY_ALIAS',
+        keyPassword  : 'FERMATAX_KEY_PASSWORD'
+].each { property, environment ->
+    def value = System.getenv(environment)
+    if (value != null && !value.isBlank()) gradle.ext.localProps[property] = value
+}
+
+def signingProperties = ['storeFile', 'storePassword', 'keyAlias', 'keyPassword']
+def configuredSigningProperties = signingProperties.findAll {
+    def value = gradle.ext.localProps[it]
+    value != null && !value.toString().isBlank()
+}
+if (!configuredSigningProperties.isEmpty() && configuredSigningProperties.size() != signingProperties.size()) {
+    throw new GradleException('Release signing is only partially configured. Set all FERMATAX signing values.')
+}
+
+gradle.ext.releaseSigningConfigured = configuredSigningProperties.size() == signingProperties.size()
+if (gradle.ext.releaseSigningConfigured) {
+    def store = file(gradle.ext.localProps['storeFile']).canonicalFile
+    def legacyStore = file('res/fermata.jks').canonicalFile
+    if (store == legacyStore) {
+        throw new GradleException('The insecure legacy res/fermata.jks upload key is not allowed.')
+    }
+    if (!store.isFile()) throw new GradleException("Release signing keystore does not exist: ${store}")
+    gradle.ext.localProps['storeFile'] = store.absolutePath
+
+    def certificate = null
+    def loadErrors = []
+    for (def type : ['PKCS12', 'JKS']) {
+        try {
+            def keyStore = java.security.KeyStore.getInstance(type)
+            store.withInputStream {
+                keyStore.load(it, gradle.ext.localProps['storePassword'].toString().toCharArray())
+            }
+            certificate = keyStore.getCertificate(gradle.ext.localProps['keyAlias'].toString())
+            if (certificate != null) break
+        } catch (Exception error) {
+            loadErrors.add(error)
+        }
+    }
+    if (certificate == null) {
+        throw new GradleException('Unable to load the configured release signing certificate',
+                loadErrors.isEmpty() ? null : loadErrors.last())
+    }
+
+    def digest = java.security.MessageDigest.getInstance('SHA-256').digest(certificate.encoded)
+    def fingerprint = digest.collect { String.format('%02x', it & 0xff) }.join()
+    gradle.ext.releaseSigningFingerprintSha256 = fingerprint
+    if (fingerprint == gradle.ext.legacyUploadCertificateSha256) {
+        throw new GradleException('The insecure deterministic legacy upload certificate is not allowed.')
+    }
+    if (!gradle.ext.approvedUploadCertificatesSha256.contains(fingerprint)) {
+        throw new GradleException("Release signing certificate is not approved: ${fingerprint}")
     }
 }
 
+def releaseArtifactRequested = gradle.startParameter.taskNames.any {
+    def task = it.toLowerCase(java.util.Locale.ROOT)
+    def leafTask = task.tokenize(':').last()
+    (task.contains('release') && (task.contains('assemble') || task.contains('bundle') ||
+            task.contains('package') || task.contains('publish'))) ||
+            (leafTask in ['build', 'assemble', 'bundle', 'publish'])
+}
+if (releaseArtifactRequested && !gradle.ext.releaseSigningConfigured) {
+    throw new GradleException('Release artifact tasks require explicit FERMATAX signing credentials.')
+}
+
+// Task names in startParameter may be abbreviated. The resolved graph is the authoritative gate.
+gradle.taskGraph.whenReady { graph ->
+    def releaseArtifactInGraph = graph.allTasks.any { task ->
+        def name = task.name.toLowerCase(java.util.Locale.ROOT)
+        name.contains('release') && ['assemble', 'bundle', 'package', 'publish'].any {
+            name.startsWith(it)
+        }
+    }
+    if (releaseArtifactInGraph && !gradle.ext.releaseSigningConfigured) {
+        throw new GradleException('Resolved release artifact tasks require explicit FERMATAX signing credentials.')
+    }
+}
 
 rootProject.name = 'Fermata Music Player'
 include ':fermata'

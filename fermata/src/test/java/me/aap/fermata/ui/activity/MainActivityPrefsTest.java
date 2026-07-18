@@ -7,6 +7,11 @@ import org.junit.Test;
 
 public class MainActivityPrefsTest {
 	@Test
+	public void voiceControlIsEnabledByDefault() {
+		assertTrue(MainActivityPrefs.VOICE_CONTROl_ENABLED.getDefaultValue().getAsBoolean());
+	}
+
+	@Test
 	public void setupIsShownOnlyForAnEmptyFreshInstall() {
 		assertTrue(MainActivityPrefs.shouldShowInitialSetup(10, 10, false, false));
 		assertFalse(MainActivityPrefs.shouldShowInitialSetup(10, 10, true, false));

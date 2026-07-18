@@ -20,8 +20,9 @@
     <dimen name="dashboard_smart_title_size">24sp</dimen>
     <dimen name="dashboard_smart_subtitle_size">15sp</dimen>
     <dimen name="dashboard_smart_action_width">48dp</dimen>
-    <dimen name="dashboard_smart_action_height">46dp</dimen>
+    <dimen name="dashboard_smart_action_height">48dp</dimen>
     <dimen name="dashboard_smart_action_gap">11dp</dimen>
     <dimen name="dashboard_smart_action_padding">9dp</dimen>
     <dimen name="dashboard_smart_action_top_gap">8dp</dimen>
+    <dimen name="dashboard_smart_actions_start_margin">110dp</dimen>
 </resources>

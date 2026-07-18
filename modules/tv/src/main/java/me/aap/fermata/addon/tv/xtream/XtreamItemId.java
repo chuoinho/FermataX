@@ -92,6 +92,22 @@ final class XtreamItemId {
 		return (idx < 0) ? id : id.substring(idx);
 	}
 
+	static boolean belongsToCatalog(String id, int sourceId) {
+		int first = id.indexOf(':');
+		if (first <= 0) return false;
+		String scheme = id.substring(0, first);
+		if (!scheme.startsWith(XtreamSourceItem.SCHEME) || XtreamSourceItem.SCHEME.equals(scheme)) {
+			return false;
+		}
+		int second = id.indexOf(':', first + 1);
+		if (second < 0) return false;
+		try {
+			return Integer.parseInt(id.substring(first + 1, second)) == sourceId;
+		} catch (NumberFormatException error) {
+			return false;
+		}
+	}
+
 	private static SharedTextBuilder categoryBuilder(String scheme, int sourceId,
 																									 String categoryId, String categoryName) {
 		return SharedTextBuilder.get().append(scheme).append(':').append(sourceId).append(':')

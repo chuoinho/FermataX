@@ -22,7 +22,6 @@ final class AddonUiMetadata {
 		if (info.hasCapability(AddonCapability.PODCAST)) return Role.PODCAST;
 		if (info.hasCapability(AddonCapability.AUDIOBOOK)) return Role.AUDIOBOOK;
 		if (info.hasCapability(AddonCapability.WEB)) return Role.WEB;
-		if (info.hasCapability(AddonCapability.FELEX)) return Role.FELEX;
 		return Role.GENERIC;
 	}
 
@@ -34,7 +33,7 @@ final class AddonUiMetadata {
 			case PODCAST -> 3;
 			case AUDIOBOOK -> 4;
 			case WEB -> 5;
-			case FELEX, GENERIC -> 8;
+			case GENERIC -> 8;
 		};
 	}
 
@@ -45,7 +44,6 @@ final class AddonUiMetadata {
 		PODCAST,
 		AUDIOBOOK,
 		WEB,
-		FELEX,
 		GENERIC
 	}
 }

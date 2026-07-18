@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">Popüler istasyonlar ve ülkeler</string>
     <string name="dashboard_youtube_sub">Video arama ve oynatma</string>
     <string name="dashboard_web_sub">Web medyasını aç</string>
-    <string name="dashboard_felex_sub">Öğrenme ve eğitmen araçları</string>
     <string name="dashboard_addon_sub">Addon kısayolu</string>
     <string name="dashboard_addon_disabled_sub">Ayarlarda devre dışı</string>
     <string name="addon_name_radio">Radyo</string>

@@ -42,6 +42,11 @@ class XtreamArchiveItem extends XtreamEpgItem implements ArchiveItem, PlayableIt
 		return true;
 	}
 
+	@Override
+	public boolean isLocationSensitive() {
+		return true;
+	}
+
 	@NonNull
 	@Override
 	public FutureSupplier<MediaMetadataCompat> getMediaData() {

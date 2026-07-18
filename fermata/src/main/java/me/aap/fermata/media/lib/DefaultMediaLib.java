@@ -9,6 +9,7 @@ import static me.aap.utils.misc.MiscUtils.ifNull;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
@@ -36,6 +39,7 @@ import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.media.pref.StreamItemPrefs;
 import me.aap.fermata.vfs.FermataVfsManager;
+import me.aap.utils.app.App;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
@@ -53,6 +57,7 @@ import me.aap.utils.vfs.VirtualResource;
 public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Listener>
 		implements MediaLib, MediaLibPrefs, SharedPreferenceStore, PreferenceStore.Listener {
 	private static final String ID = "Root";
+	private static final long MEDIA_SEARCH_TIMEOUT_MS = 15_000;
 	private final Context ctx;
 	private final SharedPreferences sharedPreferences;
 	private final DefaultFolders folders;
@@ -61,6 +66,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	private final DefaultPlaylists playlists;
 	private final MediaEngineManager mediaEngineManager;
 	private final MetadataRetriever metadataRetriever;
+	private final SearchRequestRegistry searchRequests = new SearchRequestRegistry();
 	private final Map<String, WeakRef<Item>> itemCache = new HashMap<>();
 	private final ReferenceQueue<Item> itemRefQueue = new ReferenceQueue<>();
 	@Nullable
@@ -175,9 +181,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 					.then(v -> getRecent().asMediaItem()).onSuccess(items::add)
 					.then(v -> getPlaylists().asMediaItem()).onSuccess(items::add)
 
-					.then(v -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add),
+					.then(v -> App.get().execute(() ->
 							CollectionUtils.map(AddonManager.get().getAddons(MediaLibAddon.class),
-									a -> a.getRootItem(this)))).onCompletion((r, err) -> {
+									a -> a.getRootItem(this))))
+					.then(roots -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add), roots))
+					.onCompletion((r, err) -> {
 						if (err != null) Log.e(err);
 						result.sendResult(items, null);
 					});
@@ -205,17 +213,90 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@Override
 	public void search(String query, MediaLibResult<List<MediaItem>> result) {
-		getMetadataRetriever().queryId(query).onCompletion((id, err) -> {
-			if (id != null) {
-				getItem(id).onCompletion((i, err1) -> {
-					if (i == null) result.sendResult(Collections.emptyList(), null);
-					else i.asMediaItem().onCompletion((mi, err2) -> result.sendResult(
-							(mi == null) ? Collections.emptyList() : Collections.singletonList(mi), null));
-				});
+		DetachedSearchResult<MediaItem> delivery = new DetachedSearchResult<>(result);
+		if (searchRequests.isClosed()) {
+			delivery.complete(null, new CancellationException("Media library closed"));
+			return;
+		}
+
+		try {
+			FutureSupplier<MediaItem> search = getMetadataRetriever().queryId(query)
+					.then(id -> (id == null) ? completedNull() : getItem(id))
+					.then(item -> (item == null) ? completedNull() : item.asMediaItem());
+			FutureSupplier<MediaItem> timedSearch = search.timeout(MEDIA_SEARCH_TIMEOUT_MS);
+			searchRequests.add(timedSearch);
+			timedSearch.onCompletion((item, error) -> {
+				searchRequests.finish(timedSearch);
+				delivery.complete(item, error);
+			});
+		} catch (Throwable error) {
+			delivery.complete(null, error);
+		}
+	}
+
+	public void close() {
+		if (!searchRequests.close()) return;
+		removeBroadcastListener(this);
+		mediaEngineManager.close();
+		metadataRetriever.close();
+	}
+
+	/** Completes a detached MediaBrowser request through exactly one terminal callback. */
+	static final class DetachedSearchResult<T> {
+		private final MediaLibResult<List<T>> result;
+		private final AtomicBoolean completed = new AtomicBoolean();
+
+		DetachedSearchResult(MediaLibResult<List<T>> result) {
+			this.result = result;
+			result.detach();
+		}
+
+		void complete(@Nullable T item, @Nullable Throwable error) {
+			if (!completed.compareAndSet(false, true)) return;
+
+			if (error != null) {
+				Log.e(error, "Media search failed");
+				result.sendResult(null, new Bundle());
 			} else {
-				result.sendResult(Collections.emptyList(), null);
+				result.sendResult((item == null) ? Collections.emptyList() :
+						Collections.singletonList(item), null);
 			}
-		});
+		}
+	}
+
+	static final class SearchRequestRegistry {
+		private final Set<FutureSupplier<?>> active = new HashSet<>();
+		private boolean closed;
+
+		synchronized boolean isClosed() {
+			return closed;
+		}
+
+		void add(FutureSupplier<?> request) {
+			boolean cancel;
+			synchronized (this) {
+				cancel = closed;
+				if (!cancel && !request.isDone()) active.add(request);
+			}
+			if (cancel) request.cancel();
+		}
+
+		synchronized void finish(FutureSupplier<?> request) {
+			active.remove(request);
+		}
+
+		boolean close() {
+			List<FutureSupplier<?>> requests;
+			synchronized (this) {
+				if (closed) return false;
+				closed = true;
+				requests = new ArrayList<>(active);
+				active.clear();
+			}
+
+			for (FutureSupplier<?> request : requests) request.cancel();
+			return true;
+		}
 	}
 
 	@NonNull
@@ -253,6 +334,29 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	@Override
 	public DefaultFavorites getFavorites() {
 		return favorites;
+	}
+
+	@Override
+	public void removePersistedItems(me.aap.utils.function.Predicate<String> remove) {
+		String[] recentIds = recent.getRecentPref();
+		String[] favoriteIds = favorites.getFavoritesPref();
+		String[] filteredRecent = filterIds(recentIds, remove);
+		String[] filteredFavorites = filterIds(favoriteIds, remove);
+		if (filteredRecent != recentIds) recent.setRecentPref(filteredRecent);
+		if (filteredFavorites != favoriteIds) favorites.setFavoritesPref(filteredFavorites);
+		removeCachedItems(item -> {
+			String id = (item instanceof PlayableItem playable) ? playable.getOrigId() : item.getId();
+			return remove.test(id);
+		});
+		ItemContainer.invalidateResolvedChildren();
+	}
+
+	private static String[] filterIds(@Nullable String[] ids,
+			me.aap.utils.function.Predicate<String> remove) {
+		if ((ids == null) || (ids.length == 0)) return ids;
+		List<String> kept = new ArrayList<>(ids.length);
+		for (String id : ids) if (!remove.test(id)) kept.add(id);
+		return (kept.size() == ids.length) ? ids : kept.toArray(new String[0]);
 	}
 
 	@NonNull
@@ -329,6 +433,17 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			if (r == null) return;
 			Item cached = r.get();
 			if ((cached == null) || (cached == i)) itemCache.remove(id);
+		}
+	}
+
+	public void removeCachedItems(me.aap.utils.function.Predicate<Item> remove) {
+		synchronized (itemCache) {
+			clearRefs(itemCache, itemRefQueue);
+			for (Iterator<Map.Entry<String, WeakRef<Item>>> iterator =
+					itemCache.entrySet().iterator(); iterator.hasNext(); ) {
+				Item item = iterator.next().getValue().get();
+				if ((item == null) || remove.test(item)) iterator.remove();
+			}
 		}
 	}
 

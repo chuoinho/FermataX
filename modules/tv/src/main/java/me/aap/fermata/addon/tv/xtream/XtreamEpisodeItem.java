@@ -19,14 +19,17 @@ import me.aap.fermata.media.lib.PlayableItemBase;
 import me.aap.fermata.media.pref.StreamItemPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.generic.GenericFileSystem;
 
 /**
  * @author Andrey Pavlenko
  */
-public class XtreamEpisodeItem extends PlayableItemBase implements StreamItem, StreamItemPrefs, TvItem {
+public class XtreamEpisodeItem extends PlayableItemBase implements StreamItem, StreamItemPrefs, TvItem,
+		XtreamCatalogItem {
 	public static final String SCHEME = "tvxe";
 	private XtreamEpisode episode;
+	private final long catalogRevision;
 
 	private XtreamEpisodeItem(String id, XtreamSeasonItem parent, XtreamEpisode episode) {
 		super(id, parent,
@@ -34,6 +37,7 @@ public class XtreamEpisodeItem extends PlayableItemBase implements StreamItem, S
 						.getParent().getAccount().buildSeriesStreamUrl(episode.getEpisodeId(),
 								episode.getContainerExtension())));
 		this.episode = episode;
+		catalogRevision = XtreamCatalogItem.revision(parent);
 	}
 
 	public static XtreamEpisodeItem create(XtreamSeasonItem parent, XtreamEpisode episode) {
@@ -44,11 +48,20 @@ public class XtreamEpisodeItem extends PlayableItemBase implements StreamItem, S
 			MediaLib.Item i = lib.getFromCache(id);
 			if (i != null) {
 				XtreamEpisodeItem item = (XtreamEpisodeItem) i;
+				if (!item.isCatalogCurrent()) {
+					lib.removeFromCache(item);
+					return new XtreamEpisodeItem(id, parent, episode);
+				}
 				item.episode = episode;
 				return item;
 			}
 			return new XtreamEpisodeItem(id, parent, episode);
 		}
+	}
+
+	@Override
+	public long getCatalogRevision() {
+		return catalogRevision;
 	}
 
 	public static FutureSupplier<XtreamEpisodeItem> create(TvRootItem root, String id) {
@@ -75,6 +88,24 @@ public class XtreamEpisodeItem extends PlayableItemBase implements StreamItem, S
 
 	public int getEpisodeId() {
 		return episode.getEpisodeId();
+	}
+
+	@Override
+	public boolean isLocationSensitive() {
+		return true;
+	}
+
+	@NonNull
+	@Override
+	public VirtualResource getResource() {
+		return GenericFileSystem.getInstance().create(requireCurrentAccount()
+				.buildSeriesStreamUrl(getEpisodeId(),
+						episode.getContainerExtension()));
+	}
+
+	@Override
+	public boolean isRecentEligible() {
+		return isCatalogCurrent();
 	}
 
 	@NonNull
@@ -132,8 +163,7 @@ public class XtreamEpisodeItem extends PlayableItemBase implements StreamItem, S
 	@Nullable
 	@Override
 	public String getUserAgent() {
-		return getParent().getParent().getParent().getParent().getParent().getAccount()
-				.getUserAgent();
+		return requireCurrentAccount().getUserAgent();
 	}
 
 	static ParsedId parseId(String id) {

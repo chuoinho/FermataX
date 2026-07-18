@@ -36,7 +36,9 @@ import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseNetwork;
  * @author Andrey Pavlenko
  */
 public class VlcEngineProvider implements MediaEngineProvider {
-	private LibVLC vlc;
+	private volatile LibVLC vlc;
+	private Context context;
+	private List<String> options;
 	private int audioSessionId;
 	private String artUri;
 
@@ -76,7 +78,8 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		opts.add("--no-lua");
 		opts.add("--no-stats");
 
-		vlc = new LibVLC(ctx, opts);
+		context = ctx.getApplicationContext();
+		options = List.copyOf(opts);
 	}
 
 	@Override
@@ -161,7 +164,19 @@ public class VlcEngineProvider implements MediaEngineProvider {
 	}
 
 	public LibVLC getVlc() {
-		return vlc;
+		LibVLC current = vlc;
+		if (current != null) return current;
+		synchronized (this) {
+			current = vlc;
+			if (current != null) return current;
+			Context ctx = context;
+			if (ctx == null) throw new IllegalStateException("VLC provider is not initialized");
+			return vlc = new LibVLC(ctx, mutableOptions(options));
+		}
+	}
+
+	static List<String> mutableOptions(List<String> options) {
+		return new ArrayList<>(options);
 	}
 
 	public int getAudioSessionId() {
@@ -169,17 +184,20 @@ public class VlcEngineProvider implements MediaEngineProvider {
 	}
 
 	@Override
-	protected void finalize() {
-		if (vlc != null) {
-			vlc.release();
+	protected synchronized void finalize() {
+		LibVLC current = vlc;
+		if (current != null) {
+			current.release();
 			vlc = null;
-			artUri = null;
 		}
+		artUri = null;
+		context = null;
+		options = null;
 	}
 
 	private String getArtUri() {
 		if (artUri == null) {
-			File dir = vlc.getAppContext().getDir("vlc", Context.MODE_PRIVATE);
+			File dir = getVlc().getAppContext().getDir("vlc", Context.MODE_PRIVATE);
 			artUri = "file://" + dir.getAbsolutePath() + "/.cache/art/";
 		}
 		return artUri;

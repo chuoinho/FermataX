@@ -166,8 +166,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 
 	private ArrayAdapter<String> createAdapter(List<String> values) {
 		ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
-				android.R.layout.simple_spinner_item, values);
-		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+				R.layout.initial_setup_spinner_item, values);
+		adapter.setDropDownViewResource(R.layout.initial_setup_spinner_dropdown_item);
 		return adapter;
 	}
 

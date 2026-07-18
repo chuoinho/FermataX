@@ -31,10 +31,17 @@ final class XtreamSourceHandler {
 	void updateSource(XtreamAccount account) {
 		XtreamAccount.requireCredentialStorage();
 		int sourceId = account.getSourceId();
+		XtreamAccount previous = XtreamAccount.load(root, sourceId);
+		// Prune old catalog IDs before committing the new endpoint so a process death cannot mix them.
+		XtreamSourceItem.prepareAccountUpdate(root, previous, account);
 
 		try (PreferenceStore.Edit e = root.editPreferenceStore()) {
 			sources.updateXtreamSource(e, sourceId, account);
 		}
+
+		var cached = root.getLib().getCachedItem(XtreamSourceItem.toId(sourceId));
+		if (cached instanceof XtreamSourceItem source) source.setAccount(account);
+		root.invalidateSearch();
 	}
 
 	void sourceRemoved(XtreamSourceItem item) {

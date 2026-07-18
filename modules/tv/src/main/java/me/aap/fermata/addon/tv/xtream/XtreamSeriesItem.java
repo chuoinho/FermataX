@@ -22,13 +22,15 @@ import me.aap.utils.async.FutureSupplier;
 /**
  * @author Andrey Pavlenko
  */
-public class XtreamSeriesItem extends BrowsableItemBase implements TvItem {
+public class XtreamSeriesItem extends BrowsableItemBase implements TvItem, XtreamCatalogItem {
 	public static final String SCHEME = "tvxsr";
 	private XtreamSeries series;
+	private final long catalogRevision;
 
 	private XtreamSeriesItem(String id, XtreamSeriesCategoryItem parent, XtreamSeries series) {
 		super(id, parent, null);
 		this.series = series;
+		catalogRevision = XtreamCatalogItem.revision(parent);
 	}
 
 	public static XtreamSeriesItem create(XtreamSeriesCategoryItem parent, XtreamSeries series) {
@@ -39,11 +41,20 @@ public class XtreamSeriesItem extends BrowsableItemBase implements TvItem {
 			MediaLib.Item i = lib.getFromCache(id);
 			if (i != null) {
 				XtreamSeriesItem item = (XtreamSeriesItem) i;
+				if (!item.isCatalogCurrent()) {
+					lib.removeFromCache(item);
+					return new XtreamSeriesItem(id, parent, series);
+				}
 				item.series = series;
 				return item;
 			}
 			return new XtreamSeriesItem(id, parent, series);
 		}
+	}
+
+	@Override
+	public long getCatalogRevision() {
+		return catalogRevision;
 	}
 
 	public static FutureSupplier<XtreamSeriesItem> create(TvRootItem root, String id) {

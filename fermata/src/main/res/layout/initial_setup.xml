@@ -42,14 +42,16 @@
                 android:id="@+id/initial_setup_nav_left"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/initial_setup_left" />
+                android:text="@string/initial_setup_left"
+                android:textColor="?android:attr/textColorPrimary" />
 
             <RadioButton
                 android:id="@+id/initial_setup_nav_right"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
-                android:text="@string/initial_setup_right" />
+                android:text="@string/initial_setup_right"
+                android:textColor="?android:attr/textColorPrimary" />
         </RadioGroup>
 
         <TextView
@@ -69,7 +71,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/initial_setup_voice_enabled" />
+            android:text="@string/initial_setup_voice_enabled"
+            android:textColor="?android:attr/textColorPrimary" />
 
         <TextView
             android:id="@+id/initial_setup_voice_language_label"

@@ -18,7 +18,6 @@
     <string name="dashboard_radio_sub">인기 방송국과 국가</string>
     <string name="dashboard_youtube_sub">동영상 검색 및 재생</string>
     <string name="dashboard_web_sub">웹 미디어 열기</string>
-    <string name="dashboard_felex_sub">학습 및 튜터 도구</string>
     <string name="dashboard_addon_sub">애드온 바로가기</string>
     <string name="dashboard_addon_disabled_sub">설정에서 비활성화됨</string>
     <string name="addon_name_radio">라디오</string>

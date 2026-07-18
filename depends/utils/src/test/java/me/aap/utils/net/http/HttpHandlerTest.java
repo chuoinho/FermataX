@@ -18,14 +18,20 @@ import java.nio.channels.FileChannel;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.concurrent.NetThreadPool;
+import me.aap.utils.function.Cancellable;
 import me.aap.utils.io.MemOutputStream;
 import me.aap.utils.io.RandomAccessChannel;
 import me.aap.utils.log.Log;
@@ -447,7 +453,67 @@ public class HttpHandlerTest extends Assertions {
 		server.close();
 	}
 
-	//	@Disabled
+	@Test
+	public void cancellableRequestClosesDedicatedConnectionBeforeHeaders() throws Exception {
+		CountDownLatch received = new CountDownLatch(1);
+		AtomicReference<NetChannel> clientChannel = new AtomicReference<>();
+		AtomicInteger deliveries = new AtomicInteger();
+		HttpConnectionHandler http = new HttpConnectionHandler();
+		http.addHandler("/stall", (path, method, version) -> request -> {
+			received.countDown();
+			return completedVoid();
+		});
+		NetServer server = handler.bind(o -> o.handler = http).get();
+		NetHandler trackingHandler = new TrackingNetHandler(handler, clientChannel);
+
+		try {
+			HttpConnection.Opts opts = new HttpConnection.Opts();
+			opts.handler = trackingHandler;
+			opts.address = server.getBindAddress();
+			opts.url("http://localhost/stall");
+			opts.keepAlive = false;
+			opts.maxReconnects = 0;
+			Cancellable request = HttpConnection.connect(opts, (response, error) -> {
+				deliveries.incrementAndGet();
+				return completedVoid();
+			});
+
+			assertTrue(received.await(5, TimeUnit.SECONDS));
+			assertTrue(request.cancel());
+			NetChannel channel = requireNonNull(clientChannel.get());
+			long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+			while (channel.isOpen() && (System.nanoTime() < deadline)) Thread.sleep(10);
+
+			assertFalse(channel.isOpen());
+			assertEquals(0, deliveries.get());
+		} finally {
+			server.close();
+		}
+	}
+
+	private static final class TrackingNetHandler implements NetHandler {
+		private final NetHandler delegate;
+		private final AtomicReference<NetChannel> connected;
+
+		TrackingNetHandler(NetHandler delegate, AtomicReference<NetChannel> connected) {
+			this.delegate = delegate;
+			this.connected = connected;
+		}
+
+		@Override public Executor getExecutor() { return delegate.getExecutor(); }
+		@Override public ScheduledExecutorService getScheduler() { return delegate.getScheduler(); }
+		@Override public int getInactivityTimeout() { return delegate.getInactivityTimeout(); }
+		@Override public boolean isOpen() { return delegate.isOpen(); }
+		@Override public void close() { }
+		@Override public FutureSupplier<NetServer> bind(NetHandler.BindOpts opts) {
+			return delegate.bind(opts);
+		}
+		@Override public FutureSupplier<NetChannel> connect(NetHandler.ConnectOpts opts) {
+			return delegate.connect(opts).onSuccess(connected::set);
+		}
+	}
+
+	@Disabled("Requires external HTTP/HTTPS fixtures on localhost ports 80 and 443")
 	@ParameterizedTest
 	@ValueSource(strings = {
 			"no-ssl,getPayload", "ssl,getPayload",
