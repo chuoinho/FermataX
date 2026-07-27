@@ -35,6 +35,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
+import me.aap.fermata.media.lib.ContentSubtitleSelectionItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -87,6 +88,7 @@ public class ControlPanelView extends ConstraintLayout
 	private byte mask;
 	private View gestureSource;
 	private long scrollStamp;
+	private boolean preparationControlsVisible;
 
 	public ControlPanelView(Context context, AttributeSet attrs) {
 		super(context, attrs, R.attr.appControlPanelStyle);
@@ -368,6 +370,7 @@ public class ControlPanelView extends ConstraintLayout
 	public void disableVideoMode() {
 		MainActivityDelegate a = getActivity();
 		hideTimer = null;
+		preparationControlsVisible = false;
 		mask &= ~MASK_VIDEO_MODE;
 		a.getFloatingButton().setVisibility(isAutoUi(a) ? GONE : VISIBLE);
 
@@ -610,6 +613,31 @@ public class ControlPanelView extends ConstraintLayout
 	@Override
 	public void onPlaybackMetadataChanged(PlaybackSnapshot snapshot) {
 		updateAutoVideoTitle(getActivity());
+		updatePreparationControls(snapshot);
+	}
+
+	private void updatePreparationControls(PlaybackSnapshot snapshot) {
+		if ((mask & MASK_VIDEO_MODE) == 0) return;
+		boolean preparing = snapshot.getPreparationStatus().length() != 0;
+		if (preparing == preparationControlsVisible) return;
+		preparationControlsVisible = preparing;
+		MainActivityDelegate activity = getActivity();
+		if (isAutoUi(activity)) {
+			if (preparing) presentationCoordinator.showControlsPersistent();
+			else presentationCoordinator.showControls(getTouchDelay());
+			return;
+		}
+		if (preparing) {
+			hideTimer = null;
+			activity.setBarsHidden(false);
+			activity.getFloatingButton().setVisibility(VISIBLE);
+			super.setVisibility(VISIBLE);
+		} else {
+			int delay = getTouchDelay();
+			View floating = activity.getFloatingButton();
+			hideTimer = new HideTimer(activity, delay, false, floating);
+			activity.postDelayed(hideTimer, delay);
+		}
 	}
 
 	@Override
@@ -797,7 +825,8 @@ public class ControlPanelView extends ConstraintLayout
 		PlayableItem item = snapshot.getItem();
 		int ownerId = (item == null) ? 0 : ItemRoutePolicy.getPlaybackOwnerFragmentId(item);
 		title.setText(ToolBarTitlePolicy.resolve(fragment.getFragmentId(), ownerId,
-				fragment.getTitle(), snapshot.getDisplayTitle()));
+				fragment.getTitle(), snapshot.getDisplayTitle(),
+				snapshot.getPreparationStatus()));
 	}
 
 	private MainActivityDelegate getActivity() {
@@ -874,7 +903,8 @@ public class ControlPanelView extends ConstraintLayout
 
 		@Override
 		protected boolean addSubtitlesMenu() {
-			return engine.isSubtitlesSupported();
+			return engine.isSubtitlesSupported() &&
+					!(engine.getSource() instanceof ContentSubtitleSelectionItem);
 		}
 
 		@Override
@@ -886,13 +916,23 @@ public class ControlPanelView extends ConstraintLayout
 
 		private FutureSupplier<Void> buildSubtitleStreamMenu(OverlayMenu.Builder b) {
 			b.setSelectionHandler(this::subtitleStreamSelected);
+			OverlayMenuItem loading = b.addItem(View.generateViewId(), R.string.loading);
+			if (loading instanceof View view) {
+				view.setEnabled(false);
+				view.setFocusable(false);
+			}
 			return engine.getSubtitleStreamInfo().main().map(streams -> {
+				loading.setVisible(false);
 				SubtitleStreamInfo si = engine.getCurrentSubtitleStreamInfo();
 				for (int i = 0; i < streams.size(); i++) {
 					SubtitleStreamInfo s = streams.get(i);
 					b.addItem(UiUtils.getArrayItemId(i), s.toString()).setData(s).setChecked(s.equals(si));
 				}
-				return null;
+				return (Void) null;
+			}).ifFail(error -> {
+				String subtitles = getContext().getString(R.string.subtitles);
+				loading.setTitle(getContext().getString(R.string.err_failed_to_download, subtitles));
+				return (Void) null;
 			});
 		}
 
@@ -906,8 +946,8 @@ public class ControlPanelView extends ConstraintLayout
 				pi.getPrefs().setSubIdPref(null);
 				engine.setCurrentSubtitleStream(null);
 			} else {
-				engine.setCurrentSubtitleStream(si);
 				pi.getPrefs().setSubIdPref(si.getId());
+				engine.setCurrentSubtitleStream(si);
 			}
 
 			return true;

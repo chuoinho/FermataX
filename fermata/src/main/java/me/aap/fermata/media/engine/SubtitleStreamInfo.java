@@ -58,9 +58,4 @@ public class SubtitleStreamInfo extends MediaStreamInfo {
 		};
 	}
 
-	public static class Generated extends SubtitleStreamInfo {
-		public Generated(String language) {
-			super(Long.MIN_VALUE, language, "Auto generated", Collections.emptyList());
-		}
-	}
 }

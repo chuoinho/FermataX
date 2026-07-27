@@ -1,0 +1,18 @@
+{
+  "streams": [
+    {
+      "name": "Ambiguous",
+      "title": "Must not be guessed",
+      "url": "https://media.example.invalid/video.mp4",
+      "ytId": "UnsafeGuess"
+    },
+    {
+      "name": "Missing",
+      "title": "No target"
+    },
+    {
+      "name": "Malformed torrent",
+      "infoHash": "not-a-hash"
+    }
+  ]
+}

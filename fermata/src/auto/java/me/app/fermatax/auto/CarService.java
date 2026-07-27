@@ -4,7 +4,6 @@ import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarActivityService;
 
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
-import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.utils.log.Log;
 
 /**
@@ -29,8 +28,6 @@ public class CarService extends CarActivityService {
 		try {
 			FermataMediaServiceConnection s = MainCarActivity.takeServiceForShutdown();
 			if (s == null) return;
-			MediaSessionCallback cb = s.getMediaSessionCallback();
-			if ((cb != null) && cb.isPlaying()) cb.onPause();
 			s.disconnect();
 		} finally {
 			super.onDestroy();

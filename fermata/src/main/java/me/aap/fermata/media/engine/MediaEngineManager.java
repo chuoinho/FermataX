@@ -21,10 +21,11 @@ import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
-import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.net.PlaybackRequestProfile.EngineCapability;
+import me.aap.fermata.media.net.RemotePlaybackItem;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivity;
@@ -104,8 +105,14 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 			return newEng;
 		}
 
-		if (engineProvider != null) return createSafely(engineProvider, listener, false);
+		if ((engineProvider != null) && engineProvider.supportsPlayback(i)) {
+			return createSafely(engineProvider, listener, false);
+		}
 		if (!isAdditionalPlayerSupported()) {
+			if (!mediaPlayer.supportsPlayback(i)) {
+				if (current != null) current.close();
+				return null;
+			}
 			if (current != null) {
 				if (current.getId() == MEDIA_ENG_MP) return create(mediaPlayer, current, i, listener);
 				current.close();
@@ -116,36 +123,60 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 
 		PlayableItemPrefs pref = i.getPrefs();
 		int id;
-		if (pref.getBooleanPref(SubGenAddon.ENABLED) && isExoPlayerSupported()) {
-			id = MEDIA_ENG_EXO;
+		if (requiresP2p(i) && (vlcPlayer != null) && vlcPlayer.supportsPlayback(i)) {
+			// Fermata Xtream's proven torrent path uses VLC. It is more tolerant of
+			// partially available AVI/MKV files than ExoPlayer's progressive extractors.
+			id = MEDIA_ENG_VLC;
 		} else {
 			id = i.isVideo() ? pref.getVideoEnginePref() : pref.getAudioEnginePref();
 		}
 
+		MediaEngineProvider provider = getSupportingProvider(getProvider(id), i);
+		if (provider == null) {
+			if (current != null) current.close();
+			return null;
+		}
+
 		if (current != null) {
-			if (current.getId() == id) return create(null, current, i, listener);
+			if (!requiresFreshP2pEngine(current, i) && (current.getId() == id) &&
+					getProvider(id).supportsPlayback(i)) {
+				return create(null, current, i, listener);
+			}
 			current.close();
 		}
 
-		return create(getProvider(id), null, i, listener);
+		return create(provider, null, i, listener);
+	}
+
+	static boolean requiresP2p(PlayableItem item) {
+		return (item instanceof RemotePlaybackItem remote) &&
+				remote.getPlaybackRequestProfile().getRequiredEngineCapabilities()
+						.contains(EngineCapability.P2P_STREAMING);
+	}
+
+	/** A torrent switch must not inherit the decoder, callbacks or video surface of its predecessor. */
+	static boolean requiresFreshP2pEngine(MediaEngine current, PlayableItem target) {
+		if (!requiresP2p(target)) return false;
+		PlayableItem source = current.getSource();
+		return (source == null) || !source.equals(target);
 	}
 
 	public MediaEngine createAnotherEngine(@NonNull MediaEngine current, Listener listener) {
-		if (engineProvider != null) return createSafely(engineProvider, listener, false);
 		int id = current.getId();
 		PlayableItem i = current.getSource();
 		current.close();
-
-		if (i.getPrefs().getBooleanPref(SubGenAddon.ENABLED) && isExoPlayerSupported()) {
-			return create(exoPlayer, null, i, listener);
+		if (i == null) return null;
+		if ((engineProvider != null) && engineProvider.supportsPlayback(i)) {
+			return createSafely(engineProvider, listener, false);
 		}
-		if ((vlcPlayer != null) && (id != MEDIA_ENG_VLC)) {
+
+		if ((vlcPlayer != null) && (id != MEDIA_ENG_VLC) && vlcPlayer.supportsPlayback(i)) {
 			return create(vlcPlayer, null, i, listener);
 		}
-		if ((exoPlayer != null) && (id != MEDIA_ENG_EXO)) {
+		if ((exoPlayer != null) && (id != MEDIA_ENG_EXO) && exoPlayer.supportsPlayback(i)) {
 			return create(exoPlayer, null, i, listener);
 		}
-		if (id != MEDIA_ENG_MP) {
+		if ((id != MEDIA_ENG_MP) && mediaPlayer.supportsPlayback(i)) {
 			return create(mediaPlayer, null, i, listener);
 		}
 
@@ -164,6 +195,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	}
 
 	public MediaEngine create(MediaEngineProvider p, MediaEngine c, PlayableItem i, Listener l) {
+		if ((p != null) && !p.supportsPlayback(i)) return null;
 		if (c != null) {
 			if (isStream(i)) {
 				if (c instanceof StreamEngine) return c;
@@ -180,6 +212,30 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		} else {
 			return createSafely(p, l, false);
 		}
+	}
+
+	@Nullable
+	private MediaEngineProvider getSupportingProvider(
+			MediaEngineProvider preferred, PlayableItem item) {
+		return firstSupporting(item, preferred, exoPlayer, vlcPlayer, mediaPlayer);
+	}
+
+	@Nullable
+	static MediaEngineProvider firstSupporting(
+			PlayableItem item, MediaEngineProvider... providers) {
+		for (int i = 0; i < providers.length; i++) {
+			MediaEngineProvider provider = providers[i];
+			if (provider == null) continue;
+			boolean duplicate = false;
+			for (int j = 0; j < i; j++) {
+				if (providers[j] == provider) {
+					duplicate = true;
+					break;
+				}
+			}
+			if (!duplicate && provider.supportsPlayback(item)) return provider;
+		}
+		return null;
 	}
 
 	@Nullable

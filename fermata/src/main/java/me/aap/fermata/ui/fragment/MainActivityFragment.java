@@ -62,6 +62,11 @@ public abstract class MainActivityFragment extends ActivityFragment {
 		return false;
 	}
 
+	/** Whether leaving fullscreen may keep this fragment beside the video surface. */
+	public boolean isSplitViewSupported() {
+		return true;
+	}
+
 	public boolean isVoiceCommandsSupported() {
 		return false;
 	}

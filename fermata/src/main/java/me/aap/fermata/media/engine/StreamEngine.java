@@ -347,6 +347,11 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	}
 
 	@Override
+	public float getVideoPixelWidthHeightRatio() {
+		return eng.getVideoPixelWidthHeightRatio();
+	}
+
+	@Override
 	@Nullable
 	public AudioEffects getAudioEffects() {
 		return eng.getAudioEffects();

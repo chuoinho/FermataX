@@ -9,6 +9,11 @@ public interface VoiceSearchAddon extends FermataAddon {
 	@NonNull
 	String getVoiceTarget();
 
+	/** Returns true when the addon accepted and asynchronously owns this search command. */
+	default boolean handleVoiceSearch(MainActivityDelegate activity, String query, boolean play) {
+		return false;
+	}
+
 	default boolean resolveVoiceSelection(MainActivityDelegate activity, String stableId) {
 		return false;
 	}

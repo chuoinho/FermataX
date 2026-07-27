@@ -43,4 +43,15 @@ public class CarTextInputSessionTest {
 		assertEquals(1, cancellations.get());
 		assertTrue(session.isDone());
 	}
+
+	@Test
+	public void emptyTextIsAValidSubmission() {
+		CarTextInputSession session = new CarTextInputSession();
+		AtomicReference<String> value = new AtomicReference<>("not-empty");
+		session.getResult().onSuccess(value::set);
+
+		assertTrue(session.submit(""));
+		assertEquals("", value.get());
+		assertTrue(session.isDone());
+	}
 }

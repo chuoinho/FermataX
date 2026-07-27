@@ -36,7 +36,12 @@ if (!configuredSigningProperties.isEmpty() && configuredSigningProperties.size()
 
 gradle.ext.releaseSigningConfigured = configuredSigningProperties.size() == signingProperties.size()
 if (gradle.ext.releaseSigningConfigured) {
-    def store = file(gradle.ext.localProps['storeFile']).canonicalFile
+	def legacyTestSigning =
+			((gradle.startParameter.projectProperties.get('ALLOW_LEGACY_TEST_SIGNING') == 'true') ||
+					System.getenv('ALLOW_LEGACY_TEST_SIGNING') == 'true') &&
+			((gradle.startParameter.projectProperties.get('APP_ID_SFX') == '.test') ||
+					System.getenv('APP_ID_SFX') == '.test')
+	def store = file(gradle.ext.localProps['storeFile']).canonicalFile
     def legacyStore = file('res/fermata.jks').canonicalFile
     if (store == legacyStore) {
         throw new GradleException('The insecure legacy res/fermata.jks upload key is not allowed.')
@@ -66,12 +71,12 @@ if (gradle.ext.releaseSigningConfigured) {
     def digest = java.security.MessageDigest.getInstance('SHA-256').digest(certificate.encoded)
     def fingerprint = digest.collect { String.format('%02x', it & 0xff) }.join()
     gradle.ext.releaseSigningFingerprintSha256 = fingerprint
-    if (fingerprint == gradle.ext.legacyUploadCertificateSha256) {
-        throw new GradleException('The insecure deterministic legacy upload certificate is not allowed.')
-    }
-    if (!gradle.ext.approvedUploadCertificatesSha256.contains(fingerprint)) {
-        throw new GradleException("Release signing certificate is not approved: ${fingerprint}")
-    }
+	if ((fingerprint == gradle.ext.legacyUploadCertificateSha256) && !legacyTestSigning) {
+		throw new GradleException('The insecure deterministic legacy upload certificate is not allowed.')
+	}
+	if (!gradle.ext.approvedUploadCertificatesSha256.contains(fingerprint) && !legacyTestSigning) {
+		throw new GradleException("Release signing certificate is not approved: ${fingerprint}")
+	}
 }
 
 def releaseArtifactRequested = gradle.startParameter.taskNames.any {

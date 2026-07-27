@@ -148,6 +148,11 @@ public class PlayableItemWrapper implements PlayableItem {
 	}
 
 	@Override
+	public boolean supportsCombinedSubtitles() {
+		return getItem().supportsCombinedSubtitles();
+	}
+
+	@Override
 	public boolean isSeekable() {
 		return getItem().isSeekable();
 	}

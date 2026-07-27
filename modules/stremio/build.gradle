@@ -1,0 +1,37 @@
+android {
+	namespace = "me.aap.fermata.addon.stremio"
+	defaultConfig {
+		versionCode 1
+		versionName "1.0"
+	}
+}
+
+ext {
+	addons = [
+			[
+					name : 'stremio',
+					id   : 'stremio_fragment',
+					icon : 'stremio',
+					class: 'me.aap.fermata.addon.stremio.StremioAddon',
+					fragment: true,
+					capabilities: 'dashboard,navigation,stremio,voice_search',
+					voiceTarget: 'stremio',
+					resolverSchemes: 'stremio',
+					order: 7
+			]
+	]
+}
+
+dependencies {
+	implementation project(':utils')
+	implementation project(':fermata')
+	implementation libs.androidxMedia
+	implementation libs.androidxAppcompat
+	compileOnly libs.androidxWebkit
+	implementation libs.androidMaterial
+	implementation libs.jlibtorrent
+	implementation libs.jlibtorrentAndroidArm
+	implementation libs.jlibtorrentAndroidArm64
+	implementation libs.jlibtorrentAndroidX8664
+	testImplementation libs.robolectric
+}

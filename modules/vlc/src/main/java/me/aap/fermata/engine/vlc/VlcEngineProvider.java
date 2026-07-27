@@ -14,13 +14,19 @@ import org.videolan.libvlc.interfaces.IMedia;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineProvider;
 import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.net.PlaybackRequestProfile;
+import me.aap.fermata.media.net.PlaybackRequestProfile.EngineCapability;
+import me.aap.fermata.media.net.RemotePlaybackItem;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.security.SecurityUtils;
@@ -36,6 +42,15 @@ import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseNetwork;
  * @author Andrey Pavlenko
  */
 public class VlcEngineProvider implements MediaEngineProvider {
+	private static final Set<EngineCapability> PLAYBACK_CAPABILITIES = Collections.emptySet();
+	private static final Set<EngineCapability> LOOPBACK_P2P_CAPABILITIES =
+			Collections.unmodifiableSet(EnumSet.of(
+					EngineCapability.REDIRECT_ORIGIN_POLICY,
+					EngineCapability.P2P_STREAMING));
+
+	static Set<EngineCapability> playbackCapabilities() {
+		return PLAYBACK_CAPABILITIES;
+	}
 	private volatile LibVLC vlc;
 	private Context context;
 	private List<String> options;
@@ -85,6 +100,44 @@ public class VlcEngineProvider implements MediaEngineProvider {
 	@Override
 	public MediaEngine createEngine(MediaEngine.Listener listener) {
 		return new VlcEngine(this, listener);
+	}
+
+	@Override
+	public Set<EngineCapability> getPlaybackCapabilities() {
+		// LibVLC follows redirects internally, so this adapter cannot enforce per-origin policy.
+		return PLAYBACK_CAPABILITIES;
+	}
+
+	@Override
+	public boolean supportsPlayback(PlayableItem item) {
+		if (!(item instanceof RemotePlaybackItem remote)) return true;
+		return capabilitiesFor(remote.getPlaybackRequestProfile()) != null;
+	}
+
+	Set<EngineCapability> capabilitiesFor(PlaybackRequestProfile profile) {
+		Set<EngineCapability> required = profile.getRequiredEngineCapabilities();
+		if (PLAYBACK_CAPABILITIES.containsAll(required)) return PLAYBACK_CAPABILITIES;
+		return isInternalP2p(profile) ? LOOPBACK_P2P_CAPABILITIES : null;
+	}
+
+	private static boolean isInternalP2p(PlaybackRequestProfile profile) {
+		Set<EngineCapability> required = profile.getRequiredEngineCapabilities();
+		if (!required.contains(EngineCapability.P2P_STREAMING) ||
+				!LOOPBACK_P2P_CAPABILITIES.containsAll(required) ||
+				profile.getRedirectPolicy() != PlaybackRequestProfile.RedirectPolicy.DENY ||
+				profile.getHeaderReference() != null || profile.getAllowedOrigins().size() != 1) {
+			return false;
+		}
+
+		URI target = profile.getTargetUri();
+		if (!"http".equalsIgnoreCase(target.getScheme()) ||
+				!"127.0.0.1".equals(target.getHost()) || target.getRawUserInfo() != null ||
+				target.getRawQuery() != null || target.getRawFragment() != null) {
+			return false;
+		}
+		String path = target.getPath();
+		return (path != null) && (path.startsWith("/torrent/") ||
+				path.startsWith("/stremio-pending/"));
 	}
 
 	@Override

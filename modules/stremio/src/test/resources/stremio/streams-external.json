@@ -1,0 +1,9 @@
+{
+  "streams": [
+    {
+      "name": "Fixture External Target",
+      "title": "Example External Player Page",
+      "externalUrl": "https://player.example.invalid/watch/example-movie"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="stremio_presentation_watch">Xem</string>
+	<string name="stremio_presentation_search">Tìm kiếm</string>
+	<string name="stremio_presentation_resume">Xem tiếp</string>
+	<string name="stremio_presentation_add_favorite">Thêm vào yêu thích</string>
+	<string name="stremio_presentation_remove_favorite">Xóa khỏi yêu thích</string>
+	<string name="stremio_presentation_subtitles">Phụ đề</string>
+	<string name="stremio_presentation_recommended">Đề xuất</string>
+	<string name="stremio_presentation_provider_ready">Sẵn sàng</string>
+	<string name="stremio_presentation_provider_loading">Đang tải</string>
+	<string name="stremio_presentation_provider_failed">Lỗi</string>
+	<string name="stremio_presentation_provider_timed_out">Hết thời gian chờ</string>
+</resources>

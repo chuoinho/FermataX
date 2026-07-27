@@ -1,0 +1,21 @@
+{
+  "id": "org.fermatax.fixture.minimal",
+  "version": "1.0.0",
+  "name": "FermataX Minimal Fixture",
+  "description": "Fictional protocol fixture for deterministic tests.",
+  "resources": [
+    "catalog",
+    "meta",
+    "stream"
+  ],
+  "types": [
+    "movie"
+  ],
+  "catalogs": [
+    {
+      "type": "movie",
+      "id": "public-domain-movies",
+      "name": "Public Domain Movies"
+    }
+  ]
+}

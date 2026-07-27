@@ -147,6 +147,26 @@ Multi line
 		assertSchedulerRun(sched, exec, clock, received, expect, 10, 0.5f);
 	}
 
+	@Test
+	public void schedulerStartsFromCurrentPlayerPosition() throws Exception {
+		String source = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nCurrent cue\n\n" +
+				"00:00:04.000 --> 00:00:05.000\nNext cue\n";
+		SubGrid grid = FileSubtitles.load(new ByteArrayInputStream(source.getBytes()));
+		TestClock clock = new TestClock();
+		clock.time = 2_000L;
+		TestExecutor executor = new TestExecutor(clock);
+		List<String> received = new ArrayList<>();
+		SubScheduler scheduler = new SubScheduler(executor, grid,
+				(position, text) -> {
+					if (text != null) received.add(text.getText());
+				}, clock);
+
+		scheduler.start(2_000L, 0, 1f);
+		executor.runUntilIdle(10);
+
+		assertArrayEquals(new String[]{"Current cue", "Next cue"}, received.toArray());
+	}
+
 	private static void assertSchedulerRun(SubScheduler scheduler, TestExecutor executor,
 														 TestClock clock, List<String> received, List<String> expected,
 														 int delay, float speed) {

@@ -36,6 +36,7 @@ public class AddonInfo implements Comparable<AddonInfo> {
 	/** Stable voice routing key declared by the addon, or an empty string. */
 	public final String voiceTarget;
 	private final EnumSet<AddonCapability> capabilities;
+	private final Set<String> resolverSchemes;
 
 	public AddonInfo(String moduleName, String className, int addonId, int addonName, int icon,
 									 Integer order, Boolean hasSettings, Boolean hasFragment, Boolean enabled,
@@ -53,8 +54,16 @@ public class AddonInfo implements Comparable<AddonInfo> {
 	}
 
 	public AddonInfo(String moduleName, String className, int addonId, int addonName, int icon,
-									 Integer order, Boolean hasSettings, Boolean hasFragment, Boolean enabled,
-									 boolean isAuto, String depends, String capabilities, String voiceTarget) {
+												 Integer order, Boolean hasSettings, Boolean hasFragment, Boolean enabled,
+												 boolean isAuto, String depends, String capabilities, String voiceTarget) {
+		this(moduleName, className, addonId, addonName, icon, order, hasSettings, hasFragment,
+				enabled, isAuto, depends, capabilities, voiceTarget, "");
+	}
+
+	public AddonInfo(String moduleName, String className, int addonId, int addonName, int icon,
+												 Integer order, Boolean hasSettings, Boolean hasFragment, Boolean enabled,
+												 boolean isAuto, String depends, String capabilities, String voiceTarget,
+												 String resolverSchemes) {
 		this.moduleName = moduleName;
 		this.className = className;
 		this.addonId = addonId;
@@ -69,8 +78,11 @@ public class AddonInfo implements Comparable<AddonInfo> {
 				.toArray(new String[0]);
 		this.voiceTarget = (voiceTarget == null) ? "" : voiceTarget.trim();
 		this.capabilities = AddonCapability.parse(capabilities);
+		this.resolverSchemes = parseResolverSchemes(resolverSchemes);
+		// Fresh-install migration writes defaults explicitly. A module introduced by an update must
+		// stay disabled until the user enables it, rather than inheriting Class.forName() availability.
 		enabledPref = PreferenceStore.Pref.b(className + "_enabled",
-				(enabled == null) ? this::isInstalled : () -> enabled);
+				(enabled == null) ? () -> false : () -> enabled);
 	}
 
 	public boolean hasCapability(AddonCapability capability) {
@@ -79,6 +91,19 @@ public class AddonInfo implements Comparable<AddonInfo> {
 
 	public Set<AddonCapability> getCapabilities() {
 		return Collections.unmodifiableSet(capabilities);
+	}
+
+	public boolean hasResolverScheme(String scheme) {
+		return (scheme != null) && resolverSchemes.contains(scheme.trim().toLowerCase(java.util.Locale.ROOT));
+	}
+
+	private static Set<String> parseResolverSchemes(String value) {
+		if ((value == null) || value.isBlank()) return Collections.emptySet();
+		Set<String> result = new java.util.HashSet<>();
+		for (String scheme : value.split("[, \\s]+")) {
+			if (!scheme.isBlank()) result.add(scheme.toLowerCase(java.util.Locale.ROOT));
+		}
+		return Collections.unmodifiableSet(result);
 	}
 
 	public boolean isInstalled() {

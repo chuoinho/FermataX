@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.addon.external.ExternalPlaybackRequest;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
@@ -63,6 +64,9 @@ public class FermataWebView extends WebView
 	private FermataChromeClient chrome;
 	private String lastUrl;
 	private long cookieFlushStamp;
+	private ExternalPlaybackRequest externalPlayback;
+	private boolean clearingExternalPlayback;
+	private boolean clearExternalHistoryOnLoad;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -109,14 +113,58 @@ public class FermataWebView extends WebView
 
 	@Override
 	public void loadUrl(@NonNull String url) {
-		if (!isScriptUrl(url)) lastUrl = url;
+		if (!isScriptUrl(url) && (externalPlayback == null) && !clearingExternalPlayback)
+			lastUrl = url;
 		super.loadUrl(url);
+	}
+
+	boolean openExternalPlayback(ExternalPlaybackRequest request) {
+		if (request == null) return false;
+		var policy = request.getNavigationPolicy();
+		if (policy == null) return false;
+		try {
+			policy.validate(java.net.URI.create(request.getTarget()));
+		} catch (Exception rejected) {
+			return false;
+		}
+
+		ExternalPlaybackRequest previous = externalPlayback;
+		if ((previous != null) && (previous != request)) {
+			getWebViewClient().clearExternalNavigationPolicy(previous.getNavigationPolicy());
+			previous.close();
+		}
+		externalPlayback = request;
+		clearingExternalPlayback = false;
+		clearExternalHistoryOnLoad = true;
+		getWebViewClient().setExternalNavigationPolicy(policy);
+		super.loadUrl(request.getTarget());
+		return true;
+	}
+
+	void closeExternalPlayback(ExternalPlaybackRequest request) {
+		if ((request == null) || (externalPlayback != request)) return;
+		getWebViewClient().clearExternalNavigationPolicy(request.getNavigationPolicy());
+		externalPlayback = null;
+		clearExternalHistoryOnLoad = false;
+		clearingExternalPlayback = true;
+		stopLoading();
+		clearHistory();
+		super.loadUrl("about:blank");
+	}
+
+	void externalNavigationRejected() {
+		stopLoading();
 	}
 
 	@Override
 	protected void onWindowVisibilityChanged(int visibility) {
-		if (!BuildConfig.AUTO) super.onWindowVisibilityChanged(visibility);
+		if (!BuildConfig.AUTO || !keepWindowVisibleOnAuto())
+			super.onWindowVisibilityChanged(visibility);
 		else if (visibility != View.GONE) super.onWindowVisibilityChanged(View.VISIBLE);
+	}
+
+	protected boolean keepWindowVisibleOnAuto() {
+		return true;
 	}
 
 	@Override
@@ -243,8 +291,31 @@ public class FermataWebView extends WebView
 
 	protected void pageLoaded(String uri) {
 		addFocusHighlight();
+		if (externalPlayback != null) {
+			if (clearExternalHistoryOnLoad) {
+				clearExternalHistoryOnLoad = false;
+				clearHistory();
+			}
+			updateWebToolbar(uri);
+			return;
+		}
+		if (!shouldPersistPage(false, clearingExternalPlayback, uri)) {
+			clearingExternalPlayback = false;
+			return;
+		}
 		lastUrl = uri;
 		getAddon().setLastUrl(uri);
+		updateWebToolbar(uri);
+		flushCookiesSoon();
+	}
+
+	static boolean shouldPersistPage(boolean externalPlayback, boolean clearingExternalPlayback,
+			String uri) {
+		return !externalPlayback &&
+				!(clearingExternalPlayback && "about:blank".equals(uri));
+	}
+
+	private void updateWebToolbar(String uri) {
 		getActivity().onSuccess(a -> {
 			ActivityFragment f = a.getActiveFragment();
 			if (f == null) return;
@@ -257,7 +328,6 @@ public class FermataWebView extends WebView
 				wm.setButtonsVisibility(tb, canGoBack(), canGoForward());
 			}
 
-			flushCookiesSoon();
 		});
 	}
 
@@ -312,6 +382,11 @@ public class FermataWebView extends WebView
 			}
 
 			web.init(addon, client, chromeClient);
+			if (externalPlayback != null) {
+				web.externalPlayback = externalPlayback;
+				web.clearExternalHistoryOnLoad = true;
+				client.setExternalNavigationPolicy(externalPlayback.getNavigationPolicy());
+			}
 			parent.removeView(this);
 			destroy();
 			parent.addView(web, index, lp);

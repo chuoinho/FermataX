@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "id": "example.movie.1",
+    "type": "movie",
+    "name": "Example Public Domain Movie",
+    "description": "A fictional public-domain-style film used for deterministic tests.",
+    "poster": "https://images.example.invalid/posters/example-movie.jpg",
+    "background": "https://images.example.invalid/backgrounds/example-movie.jpg",
+    "logo": "https://images.example.invalid/logos/example-movie.png",
+    "releaseInfo": "1920",
+	"imdbRating": "8.7",
+    "runtime": "72 min",
+    "genres": [
+      "Adventure"
+    ],
+    "language": "en"
+  }
+}

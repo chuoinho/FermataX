@@ -2,16 +2,22 @@ package me.aap.fermata.media.lib;
 
 import static me.aap.utils.async.Async.forEach;
 import static me.aap.utils.async.Completed.completedEmptyList;
+import static me.aap.utils.async.Completed.completedVoid;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
+import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
+import java.util.Set;
 
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -31,6 +37,7 @@ import me.aap.utils.vfs.VirtualResource;
  */
 public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 	private static final List<WeakReference<ItemContainer<?>>> containers = new ArrayList<>();
+	private volatile ChildOrderSnapshot childOrder = ChildOrderSnapshot.EMPTY;
 
 	protected ItemContainer(String id, @Nullable BrowsableItem parent, @Nullable VirtualResource file) {
 		super(id, parent, file);
@@ -54,6 +61,25 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 
 	protected abstract void saveChildren(List<C> children);
 
+	/** IDs kept in persistence while their dynamic addon is unavailable. */
+	protected final List<String> getUnresolvedChildIds() {
+		return childOrder;
+	}
+
+	protected final boolean removeUnresolvedChildIds(java.util.Collection<String> ids) {
+		ChildOrderSnapshot current = childOrder;
+		if (current.isEmpty() || ids.isEmpty()) return false;
+		Set<String> remove = new HashSet<>(ids);
+		remove.retainAll(current.unresolvedIds);
+		if (remove.isEmpty()) return false;
+		List<String> unresolved = new ArrayList<>(current.unresolvedIds);
+		List<String> ordered = new ArrayList<>(current.orderedIds);
+		unresolved.removeAll(remove);
+		ordered.removeAll(remove);
+		childOrder = ChildOrderSnapshot.create(ordered, unresolved);
+		return true;
+	}
+
 	@NonNull
 	@Override
 	public DefaultMediaLib getLib() {
@@ -71,39 +97,50 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 
 	FutureSupplier<List<Item>> listChildren(PreferenceStore prefs, Pref<Supplier<String[]>> idsPref) {
 		String[] ids = prefs.getStringArrayPref(idsPref);
-		if ((ids == null) || (ids.length == 0)) return completedEmptyList();
-		MediaLib lib = getLib();
+		if ((ids == null) || (ids.length == 0)) {
+			childOrder = ChildOrderSnapshot.EMPTY;
+			return completedEmptyList();
+		}
+		DefaultMediaLib lib = getLib();
 		Item[] resolved = new Item[ids.length];
-		AtomicBoolean resolutionFailed = new AtomicBoolean();
+		boolean[] resolutionFailed = new boolean[ids.length];
+		boolean[] retainMissing = new boolean[ids.length];
 		List<Integer> indexes = new ArrayList<>(ids.length);
 		for (int i = 0; i < ids.length; i++) indexes.add(i);
 
 		return forEach(index -> lib.getItem(ids[index])
 				.ifFail(err -> {
-					resolutionFailed.set(true);
+					resolutionFailed[index] = true;
 					Log.e(err, "Failed to get item: ", ids[index]);
 					return null;
-				}).map(c -> {
+				}).then(c -> {
 					resolved[index] = c;
-					return null;
+					if (c != null) return completedVoid();
+					return AddonManager.get().shouldRetainMissingItem(lib, ids[index]).map(retain -> {
+						retainMissing[index] = Boolean.TRUE.equals(retain);
+						return null;
+					});
 				}), indexes).main().map(v -> {
 			List<Item> children = new ArrayList<>(ids.length);
 			List<String> resolvedIds = new ArrayList<>(ids.length);
+			List<String> unresolved = new ArrayList<>();
 			boolean update = false;
-			boolean pruneMissing = shouldPruneMissing(
-					AddonManager.get().hasUnresolvedEnabledAddons(), resolutionFailed.get());
 
 			for (int i = 0; i < ids.length; i++) {
 				Item child = resolved[i];
 				if (child == null) {
 					Log.w("Item not found: ", ids[i]);
-					if (pruneMissing) update = true;
-					else resolvedIds.add(ids[i]);
+					if (shouldPruneMissing(AddonManager.get().isDeferredItemId(ids[i]) ||
+							retainMissing[i], resolutionFailed[i])) update = true;
+					else {
+						resolvedIds.add(ids[i]);
+						unresolved.add(ids[i]);
+					}
 					continue;
 				}
 
 				children.add(toChildItem(child));
-				String newId = child.getId();
+				String newId = PersistentMediaItem.idOf(child);
 				resolvedIds.add(newId);
 				if (!newId.equals(ids[i])) {
 					Log.i("Item id has been changed. Updating ", ids[i], " -> ", newId);
@@ -111,6 +148,7 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 				}
 			}
 
+			childOrder = ChildOrderSnapshot.create(resolvedIds, unresolved);
 			if (update) prefs.applyStringArrayPref(idsPref,
 					resolvedIds.toArray(new String[0]));
 			return children;
@@ -119,6 +157,106 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 
 	static boolean shouldPruneMissing(boolean unresolvedAddons, boolean resolutionFailed) {
 		return !unresolvedAddons && !resolutionFailed;
+	}
+
+	static String[] mergeChildIds(String[] resolved, List<String> unresolved, int maxItems) {
+		if (unresolved instanceof ChildOrderSnapshot snapshot) {
+			String[] merged = mergeChildIds(resolved, snapshot.unresolvedIds,
+					snapshot.orderedIds, maxItems);
+			if (snapshot != ChildOrderSnapshot.EMPTY) snapshot.update(merged, resolved);
+			return merged;
+		}
+		return mergeChildIds(resolved, unresolved, unresolved, maxItems);
+	}
+
+	static String[] mergeChildIds(String[] resolved, List<String> unresolved,
+			List<String> storedOrder, int maxItems) {
+		if (maxItems < 0) throw new IllegalArgumentException("maxItems");
+		if (maxItems == 0) return new String[0];
+
+		LinkedHashSet<String> resolvedIds = new LinkedHashSet<>();
+		for (String id : resolved) resolvedIds.add(id);
+		LinkedHashSet<String> unresolvedIds = new LinkedHashSet<>(unresolved);
+		unresolvedIds.removeAll(resolvedIds);
+
+		Map<String, List<String>> before = new LinkedHashMap<>();
+		List<String> trailing = new ArrayList<>();
+		Set<String> assigned = new HashSet<>();
+		for (int i = 0; i < storedOrder.size(); i++) {
+			String id = storedOrder.get(i);
+			if (!unresolvedIds.contains(id) || !assigned.add(id)) continue;
+
+			String anchor = null;
+			for (int j = i + 1; j < storedOrder.size(); j++) {
+				String candidate = storedOrder.get(j);
+				if (unresolvedIds.contains(candidate)) continue;
+				if (resolvedIds.contains(candidate)) {
+					anchor = candidate;
+					break;
+				}
+			}
+
+			if (anchor == null) trailing.add(id);
+			else before.computeIfAbsent(anchor, key -> new ArrayList<>()).add(id);
+		}
+		for (String id : unresolvedIds) if (assigned.add(id)) trailing.add(id);
+
+		LinkedHashSet<String> result = new LinkedHashSet<>(Math.min(maxItems,
+				resolvedIds.size() + unresolvedIds.size()));
+		for (String id : resolvedIds) {
+			List<String> placeholders = before.get(id);
+			if (placeholders != null) {
+				for (String placeholder : placeholders) {
+					if (result.size() == maxItems) return result.toArray(new String[0]);
+					result.add(placeholder);
+				}
+			}
+			if (result.size() == maxItems) return result.toArray(new String[0]);
+			result.add(id);
+		}
+		for (String id : trailing) {
+			if (result.size() == maxItems) break;
+			result.add(id);
+		}
+		return result.toArray(new String[0]);
+	}
+
+	private static final class ChildOrderSnapshot extends AbstractList<String> {
+		static final ChildOrderSnapshot EMPTY = new ChildOrderSnapshot(List.of(), List.of());
+		volatile List<String> orderedIds;
+		volatile List<String> unresolvedIds;
+
+		private ChildOrderSnapshot(List<String> orderedIds, List<String> unresolvedIds) {
+			this.orderedIds = orderedIds;
+			this.unresolvedIds = unresolvedIds;
+		}
+
+		static ChildOrderSnapshot create(List<String> orderedIds, List<String> unresolvedIds) {
+			if (orderedIds.isEmpty() && unresolvedIds.isEmpty()) return EMPTY;
+			return new ChildOrderSnapshot(List.copyOf(orderedIds), List.copyOf(unresolvedIds));
+		}
+
+		void update(String[] merged, String[] resolved) {
+			Set<String> resolvedIds = new HashSet<>(List.of(resolved));
+			Set<String> previousUnresolved = new HashSet<>(unresolvedIds);
+			List<String> nextUnresolved = new ArrayList<>();
+			for (String id : merged) {
+				if (previousUnresolved.contains(id) && !resolvedIds.contains(id))
+					nextUnresolved.add(id);
+			}
+			orderedIds = List.of(merged.clone());
+			unresolvedIds = List.copyOf(nextUnresolved);
+		}
+
+		@Override
+		public String get(int index) {
+			return unresolvedIds.get(index);
+		}
+
+		@Override
+		public int size() {
+			return unresolvedIds.size();
+		}
 	}
 
 	public FutureSupplier<Void> addItem(C item) {

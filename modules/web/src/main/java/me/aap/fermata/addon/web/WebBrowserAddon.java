@@ -19,8 +19,18 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataFragmentAddon;
 import me.aap.fermata.addon.VoiceSearchAddon;
+import me.aap.fermata.addon.external.ExternalPlaybackHandler;
+import me.aap.fermata.addon.external.ExternalPlaybackRequest;
+import me.aap.fermata.addon.external.ExternalPlaybackTargetKind;
+import me.aap.fermata.media.lib.DefaultMediaLib;
+import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.engine.MediaEngine;
+import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
+import me.aap.utils.async.Completed;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
@@ -30,13 +40,16 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
+import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.log.Log;
 
 /**
  * @author Andrey Pavlenko
  */
 @Keep
 @SuppressWarnings("unused")
-public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceStore, VoiceSearchAddon {
+public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceStore, VoiceSearchAddon,
+		ExternalPlaybackHandler, WebExternalMediaEngine.Host {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(WebBrowserAddon.class.getName());
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
@@ -57,6 +70,10 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	private static final Pref<Supplier<String[]>> BOOKMARKS = Pref.sa("BOOKMARKS");
 	private final SharedPreferences prefs;
 	private boolean ignorePrefChange;
+	private WebExternalMediaEngine externalEngine;
+	private WebBrowserFragment externalFragment;
+	private static final int EXTERNAL_ATTACH_MAX_ATTEMPTS = 50;
+	private static final long EXTERNAL_ATTACH_RETRY_MS = 100L;
 
 	public WebBrowserAddon() {
 		prefs = App.get().getSharedPreferences("web", Context.MODE_PRIVATE);
@@ -72,6 +89,105 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	@Override
 	public String getVoiceTarget() {
 		return "web";
+	}
+
+	@NonNull
+	@Override
+	public ExternalPlaybackTargetKind getExternalPlaybackTargetKind() {
+		return ExternalPlaybackTargetKind.EXTERNAL_HTTP;
+	}
+
+	@Override
+	public int getExternalPlaybackPriority() {
+		return 100;
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<PlayableItem> createExternalPlaybackItem(DefaultMediaLib lib,
+			ExternalPlaybackRequest request) {
+		if (request.getTargetKind() != ExternalPlaybackTargetKind.EXTERNAL_HTTP)
+			return ExternalPlaybackHandler.unavailable();
+		return Completed.completed(new WebExternalPlaybackItem(lib, request,
+				this::createExternalPlaybackEngine));
+	}
+
+	private MediaEngine createExternalPlaybackEngine(MediaEngine current,
+			MediaEngine.Listener listener, ExternalPlaybackRequest request) {
+		if ((current instanceof WebExternalMediaEngine engine) && engine.belongsTo(this))
+			return current;
+		return new WebExternalMediaEngine(this, request, listener);
+	}
+
+	@Override
+	public void attachExternalPlayback(WebExternalMediaEngine engine) {
+		externalEngine = engine;
+		attachExternalPlayback(engine, 0);
+	}
+
+	boolean attachExternalFragment(WebBrowserFragment fragment) {
+		WebExternalMediaEngine engine = externalEngine;
+		if (engine == null) return false;
+		externalFragment = fragment;
+		return engine.attach(fragment);
+	}
+
+	void detachExternalFragment(WebBrowserFragment fragment) {
+		if (externalFragment == fragment) externalFragment = null;
+	}
+
+	@Override
+	public void detachExternalPlayback(WebExternalMediaEngine engine) {
+		if (externalEngine != engine) return;
+		externalEngine = null;
+		WebBrowserFragment fragment = externalFragment;
+		externalFragment = null;
+		if (fragment != null) fragment.closeExternalPlayback(engine);
+	}
+
+	@Override
+	public void stop() {
+		WebExternalMediaEngine engine = externalEngine;
+		if (engine != null) engine.close();
+	}
+
+	private void attachExternalPlayback(WebExternalMediaEngine engine, int attempt) {
+		if ((externalEngine != engine) || (attempt >= EXTERNAL_ATTACH_MAX_ATTEMPTS)) {
+			if ((externalEngine == engine) && (attempt >= EXTERNAL_ATTACH_MAX_ATTEMPTS)) {
+				Log.w("Timed out waiting for Web external playback surface");
+				engine.close();
+			}
+			return;
+		}
+		MainActivityDelegate activity = currentActivity();
+		if (activity == null) {
+			FermataApplication.get().getHandler().postDelayed(
+					() -> attachExternalPlayback(engine, attempt + 1), EXTERNAL_ATTACH_RETRY_MS);
+			return;
+		}
+		activity.post(() -> {
+			if (externalEngine != engine) return;
+			ActivityFragment fragment = activity.showFragment(getAddonId());
+			if ((fragment instanceof WebBrowserFragment web) && engine.attach(web)) return;
+			activity.postDelayed(() -> attachExternalPlayback(engine, attempt + 1),
+					EXTERNAL_ATTACH_RETRY_MS);
+		});
+	}
+
+	private MainActivityDelegate currentActivity() {
+		MainActivity mobile = MainActivity.getActiveInstance();
+		if (mobile != null) {
+			MainActivityDelegate activity = mobile.getActivityDelegate().peek();
+			if (activity != null) return activity;
+		}
+		try {
+			var resolver = ActivityDelegate.getContextToDelegate();
+			if (resolver == null) return null;
+			ActivityDelegate activity = resolver.apply(FermataApplication.get());
+			return (activity instanceof MainActivityDelegate main) ? main : null;
+		} catch (RuntimeException ignored) {
+			return null;
+		}
 	}
 
 	@NonNull
@@ -103,12 +219,6 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 		});
 
 		if (getClass() == WebBrowserAddon.class) {
-			set.addBooleanPref(o -> {
-				o.store = getPreferenceStore();
-				o.pref = WEB_OPEN_ON_START;
-				o.title = R.string.open_on_start;
-				o.visibility = visibility;
-			});
 			set.addStringPref(o -> {
 				o.store = getPreferenceStore();
 				o.pref = getUserAgentPref();

@@ -1,20 +1,13 @@
 package me.aap.fermata.addon.web.yt;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import android.content.Context;
-import android.content.res.Resources;
-
 import androidx.annotation.StringRes;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
+import java.util.EnumSet;
+import java.util.Set;
 
 import me.aap.fermata.addon.web.R;
 import me.aap.utils.function.BooleanSupplier;
-import me.aap.utils.log.Log;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
@@ -36,8 +29,6 @@ final class YoutubeSponsorBlock {
 			new Category("filler", Pref.b("YT_SB_FILLER", false), R.string.sponsorblock_cat_filler,
 					R.string.sponsorblock_cat_filler_sub)
 	};
-	private static String script;
-
 	private YoutubeSponsorBlock() {
 	}
 
@@ -75,38 +66,20 @@ final class YoutubeSponsorBlock {
 		return false;
 	}
 
-	static String getConfigJson(PreferenceStore ps) {
-		return "{\"enabled\":" + ps.getBooleanPref(ENABLED) + ",\"categories\":" +
-				getCategoriesJson(ps) + ",\"actionTypes\":[\"skip\"]}";
-	}
-
-	static String getScript(Context ctx, PreferenceStore ps) {
-		if (!ps.getBooleanPref(ENABLED)) return "";
-
-		String s = script;
-		if (s != null) return s;
-
-		try (InputStream in = ctx.getResources().openRawResource(R.raw.youtube_sponsorblock);
-				 ByteArrayOutputStream out = new ByteArrayOutputStream(16 * 1024)) {
-			byte[] buf = new byte[4096];
-			for (int n = in.read(buf); n != -1; n = in.read(buf)) {
-				out.write(buf, 0, n);
+	static Set<SponsorBlockClient.Category> getCategories(PreferenceStore ps) {
+		EnumSet<SponsorBlockClient.Category> result = EnumSet.noneOf(SponsorBlockClient.Category.class);
+		if (!ps.getBooleanPref(ENABLED)) return result;
+		for (Category category : CATEGORIES) {
+			if (!ps.getBooleanPref(category.pref)) continue;
+			for (SponsorBlockClient.Category apiCategory : SponsorBlockClient.Category.values()) {
+				if (apiCategory.apiName().equals(category.name)) result.add(apiCategory);
 			}
-			return script = new String(out.toByteArray(), UTF_8);
-		} catch (Resources.NotFoundException | IOException ex) {
-			Log.e(ex, "Failed to load SponsorBlock script");
-			return script = "";
 		}
+		return result;
 	}
 
-	private static String getCategoriesJson(PreferenceStore ps) {
-		StringBuilder sb = new StringBuilder("[");
-		for (Category c : CATEGORIES) {
-			if (!ps.getBooleanPref(c.pref)) continue;
-			if (sb.length() > 1) sb.append(',');
-			sb.append('\"').append(c.name).append('\"');
-		}
-		return sb.append(']').toString();
+	static boolean isEnabled(PreferenceStore ps) {
+		return ps.getBooleanPref(ENABLED);
 	}
 
 	private static ChangeableCondition sponsorBlockVisibility(ChangeableCondition visibility, PreferenceStore ps) {

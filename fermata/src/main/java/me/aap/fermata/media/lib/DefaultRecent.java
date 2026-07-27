@@ -11,7 +11,9 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -99,8 +101,8 @@ class DefaultRecent extends ItemContainer<PlayableItem> implements Recent, Recen
 			}
 
 			if (eligible.size() != children.size()) {
-				setRecentPref(mapToArray(eligible, item -> ((PlayableItem) item).getOrigId(),
-						String[]::new));
+				setRecentPref(mergeUnresolved(mapToArray(eligible,
+						item -> ((PlayableItem) item).getOrigId(), String[]::new)));
 			}
 			return eligible;
 		});
@@ -118,7 +120,12 @@ class DefaultRecent extends ItemContainer<PlayableItem> implements Recent, Recen
 
 	@Override
 	protected void saveChildren(List<PlayableItem> children) {
-		setRecentPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
+		setRecentPref(mergeUnresolved(mapToArray(children, PlayableItem::getOrigId,
+				String[]::new)));
+	}
+
+	private String[] mergeUnresolved(String[] resolved) {
+		return mergeChildIds(resolved, getUnresolvedChildIds(), MAX_RECENT_ITEMS);
 	}
 
 	@Override
@@ -143,6 +150,46 @@ class DefaultRecent extends ItemContainer<PlayableItem> implements Recent, Recen
 
 			setNewChildren(newChildren);
 			saveChildren(newChildren);
+			CollectionUtils.forEach(removed, this::itemRemoved);
+			return null;
+		});
+	}
+
+	@Override
+	public FutureSupplier<Void> removeItems(List<PlayableItem> items) {
+		if (items.isEmpty()) return completedVoid();
+		Set<String> ids = new HashSet<>(items.size());
+		for (PlayableItem item : items) ids.add(item.getOrigId());
+		return list().map(children -> {
+			List<PlayableItem> kept = new ArrayList<>(children.size());
+			List<PlayableItem> removed = new ArrayList<>(items.size());
+			for (PlayableItem child : children) {
+				if (ids.contains(child.getOrigId())) removed.add(child);
+				else kept.add(child);
+			}
+			if (removed.isEmpty()) return null;
+			setNewChildren(kept);
+			saveChildren(kept);
+			CollectionUtils.forEach(removed, this::itemRemoved);
+			return null;
+		});
+	}
+
+	@Override
+	public FutureSupplier<Void> removeItemsById(Collection<String> ids) {
+		if (ids.isEmpty()) return completedVoid();
+		Set<String> removeIds = new HashSet<>(ids);
+		return list().map(children -> {
+			boolean removedUnresolved = removeUnresolvedChildIds(removeIds);
+			List<PlayableItem> kept = new ArrayList<>(children.size());
+			List<PlayableItem> removed = new ArrayList<>();
+			for (PlayableItem child : children) {
+				if (removeIds.contains(child.getOrigId())) removed.add(child);
+				else kept.add(child);
+			}
+			if (removed.isEmpty() && !removedUnresolved) return null;
+			setNewChildren(kept);
+			saveChildren(kept);
 			CollectionUtils.forEach(removed, this::itemRemoved);
 			return null;
 		});

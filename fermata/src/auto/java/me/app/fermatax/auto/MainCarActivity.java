@@ -48,9 +48,7 @@ import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
 import me.aap.fermata.R;
-import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
-import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemListView;
@@ -90,6 +88,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private boolean delegateResumed;
 	private boolean destroyed;
 	private boolean finishRequested;
+	private final ProjectedBackEventFilter projectedBackEventFilter =
+			new ProjectedBackEventFilter();
 
 	@NonNull
 	@Override
@@ -196,9 +196,6 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		if ((d == null) || !delegateResumed) return;
 		delegateResumed = false;
 		d.onActivityPause();
-		MediaSessionCallback callback = d.getMediaSessionCallback();
-		PlayableItem item = callback.getCurrentItem();
-		if ((item != null) && item.isVideo() && callback.isPlaying()) callback.onPause();
 	}
 
 	@Override
@@ -441,6 +438,20 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		return true;
 	}
 
+	/**
+	 * Completes the projected keyboard session without routing through the car
+	 * restricted edit text's IME callback chain. That chain is not reliable for
+	 * every input variation, notably password fields.
+	 */
+	boolean submitTextInput(EditText input) {
+		if ((input == null) || (input != activeInput)) return false;
+		CarTextInputSession session = textInputSession;
+		if (session == null) return false;
+		boolean submitted = session.submit(input.getText());
+		stopInput();
+		return submitted;
+	}
+
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent keyEvent) {
 		Log.i(keyEvent);
@@ -484,6 +495,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent keyEvent) {
 		Log.i(keyEvent);
+		if (projectedBackEventFilter.shouldSuppress(keyCode == KEYCODE_BACK,
+				keyEvent.getEventTime(), keyEvent.getDeviceId(), SystemClock.uptimeMillis())) return true;
 		if ((keyboardOverlay != null) && keyboardOverlay.onKeyDown(keyCode, keyEvent)) return true;
 		MainActivityDelegate d = delegate.peek();
 		if (d == null) return super.onKeyDown(keyCode, keyEvent);
@@ -579,7 +592,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 				super.onKeyLongPress(keyCode, keyEvent);
 	}
 
-	private static final class Cursor extends AppCompatImageView
+	private final class Cursor extends AppCompatImageView
 			implements View.OnClickListener, View.OnLongClickListener {
 		private final MainActivityDelegate activity;
 		private Cancellable move = Cancellable.CANCELED;
@@ -618,6 +631,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			delayedHide();
 			float x = getX();
 			float y = getY();
+			if ((keyboardOverlay != null) && keyboardOverlay.dispatchTap(x, y)) return true;
 			OverlayMenu m = activity.getActiveMenu();
 			if ((m instanceof ViewGroup v) && click(v, x - v.getX(), y - v.getY())) return true;
 			click(screen(), x, y);

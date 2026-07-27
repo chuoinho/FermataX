@@ -47,6 +47,17 @@ public class PlaybackPresentationReducerTest {
 	}
 
 	@Test
+	public void preparationControlsRemainVisibleUntilTimedRelease() {
+		State hidden = PlaybackPresentationReducer.enterVideo(false);
+		State persistent = PlaybackPresentationReducer.showControlsPersistent(hidden);
+		assertEquals(new State(true, false, true, false, false, false), persistent);
+
+		State released = PlaybackPresentationReducer.showControls(persistent, 5000);
+		assertEquals(new State(true, false, true, false, true, false), released);
+		assertEquals(hidden, PlaybackPresentationReducer.timeout(released));
+	}
+
+	@Test
 	public void leavingVideoRestoresOnlySupportedAudioPlayerBar() {
 		assertEquals(new State(false, false, true, false, false, false),
 				PlaybackPresentationReducer.leaveVideo(true));

@@ -1,0 +1,86 @@
+{
+  "id": "org.fermatax.fixture.object-resources",
+  "version": "1.0.0",
+  "name": "FermataX Object Resource Fixture",
+  "description": "Object resources, prefixes and optional catalog extras.",
+  "resources": [
+    {
+      "name": "catalog",
+      "types": [
+        "movie",
+        "series"
+      ]
+    },
+    {
+      "name": "meta",
+      "types": [
+        "movie",
+        "series"
+      ],
+      "idPrefixes": [
+        "example."
+      ]
+    },
+    {
+      "name": "stream",
+      "types": [
+        "movie",
+        "series"
+      ],
+      "idPrefixes": [
+        "example."
+      ]
+    },
+    {
+      "name": "subtitles",
+      "types": [
+        "movie",
+        "series"
+      ],
+      "idPrefixes": [
+        "example."
+      ]
+    }
+  ],
+  "types": [
+    "movie",
+    "series"
+  ],
+  "idPrefixes": [
+    "example."
+  ],
+  "catalogs": [
+    {
+      "type": "movie",
+      "id": "fixture-movies",
+      "name": "Fixture Movies",
+      "extra": [
+        {
+          "name": "search",
+          "isRequired": false
+        },
+        {
+          "name": "genre",
+          "isRequired": false,
+          "options": [
+            "Adventure",
+            "Comedy"
+          ]
+        },
+        {
+          "name": "skip",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "type": "series",
+      "id": "fixture-series",
+      "name": "Fixture Series"
+    }
+  ],
+  "behaviorHints": {
+    "configurable": true,
+    "configurationRequired": false
+  }
+}

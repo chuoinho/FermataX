@@ -35,6 +35,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	private boolean isSelectionActive;
 	private boolean grid;
 	private int focusReq;
+	private Runnable presentationLayoutOverride;
 
 	public MediaItemListView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs);
@@ -61,6 +62,8 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 			} else {
 				setLayoutManager(new LinearLayoutManager(ctx));
 			}
+			Runnable override = presentationLayoutOverride;
+			if (override != null) override.run();
 		});
 	}
 
@@ -328,6 +331,18 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 		List<MediaItemWrapper> list = getAdapter().getList();
 		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
+	}
+
+	/** Allows an addon-owned renderer to keep the shared focus policy in sync with its layout. */
+	public void setPresentationLayout(@NonNull LayoutManager manager, boolean grid) {
+		this.grid = grid;
+		setLayoutManager(manager);
+	}
+
+	/** Reapplies an addon-owned layout after global preference/configuration updates. */
+	public void setPresentationLayoutOverride(@Nullable Runnable override) {
+		presentationLayoutOverride = override;
+		if (override != null) override.run();
 	}
 
 	@Nullable

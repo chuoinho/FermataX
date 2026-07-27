@@ -32,6 +32,7 @@ final class YoutubeFullscreenCoordinator {
 	}
 
 	boolean acceptBrowserEntry(long request) {
+		if (appPresentationActive || (state == State.APP_FULLSCREEN)) return false;
 		if ((request != NO_REQUEST) &&
 				((state != State.ENTRY_REQUESTED) || (request != activeRequest))) return false;
 		if (!host.canEnterFullscreen() || !gate.acceptsBrowserEntry(request)) return false;
@@ -96,11 +97,11 @@ final class YoutubeFullscreenCoordinator {
 		activeRequest = NO_REQUEST;
 		generation++;
 		host.cancelPendingBrowserFullscreen();
+		// Auto-next can replace the playback identity while the Activity remains in video mode.
+		// Re-adopt that presentation so Back can always release the real UI state.
+		if (appVideoMode) appPresentationActive = true;
 		if (browserFullScreen) host.exitBrowserFullscreen();
-		else {
-			if (appVideoMode) appPresentationActive = true;
-			leaveOwnedPresentation();
-		}
+		else leaveOwnedPresentation();
 		return true;
 	}
 
@@ -112,6 +113,19 @@ final class YoutubeFullscreenCoordinator {
 		host.cancelPendingBrowserFullscreen();
 		if (host.isBrowserFullscreen()) host.exitBrowserFullscreen();
 		else leaveOwnedPresentation();
+	}
+
+	boolean enterManualAppFullscreen() {
+		if (!host.canEnterFullscreen()) return false;
+		gate.consumeManualAppEntry();
+		state = State.APP_FULLSCREEN;
+		activeRequest = NO_REQUEST;
+		generation++;
+		host.cancelPendingBrowserFullscreen();
+		if (host.isBrowserFullscreen()) host.exitBrowserFullscreen();
+		appPresentationActive = true;
+		host.enterFallbackVideoMode();
+		return true;
 	}
 
 	long grantManualBrowserEntry() {

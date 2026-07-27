@@ -54,11 +54,13 @@ final class InterfacePrefsBuilder {
 			o.pref = fullScreen;
 			o.title = R.string.fullscreen_mode;
 		});
-		set.addBooleanPref(o -> {
-			o.store = store;
-			o.pref = pgUpDown;
-			o.title = R.string.show_pg_up_down;
-		});
+		if ((pgUpDown != null) && !BuildConfig.AUTO) {
+			set.addBooleanPref(o -> {
+				o.store = store;
+				o.pref = pgUpDown;
+				o.title = R.string.show_pg_up_down;
+			});
+		}
 		if (dpadCursor != null) {
 			set.addBooleanPref(o -> {
 				o.store = store;

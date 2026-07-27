@@ -21,6 +21,7 @@ final class AddonUiMetadata {
 		if (info.hasCapability(AddonCapability.RADIO)) return Role.RADIO;
 		if (info.hasCapability(AddonCapability.PODCAST)) return Role.PODCAST;
 		if (info.hasCapability(AddonCapability.AUDIOBOOK)) return Role.AUDIOBOOK;
+		if (info.hasCapability(AddonCapability.STREMIO)) return Role.STREMIO;
 		if (info.hasCapability(AddonCapability.WEB)) return Role.WEB;
 		return Role.GENERIC;
 	}
@@ -33,6 +34,7 @@ final class AddonUiMetadata {
 			case PODCAST -> 3;
 			case AUDIOBOOK -> 4;
 			case WEB -> 5;
+			case STREMIO -> 6;
 			case GENERIC -> 8;
 		};
 	}
@@ -43,6 +45,7 @@ final class AddonUiMetadata {
 		RADIO,
 		PODCAST,
 		AUDIOBOOK,
+		STREMIO,
 		WEB,
 		GENERIC
 	}

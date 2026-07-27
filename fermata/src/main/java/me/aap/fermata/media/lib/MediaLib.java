@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 import androidx.media.MediaBrowserServiceCompat;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -336,6 +337,11 @@ public interface MediaLib {
 		/** Whether the playback location contains credentials or another private token. */
 		default boolean isLocationSensitive() {
 			return false;
+		}
+
+		/** Whether the subtitle menu may expose two sidecar tracks as one bilingual track. */
+		default boolean supportsCombinedSubtitles() {
+			return true;
 		}
 
 		default boolean isSeekable() {
@@ -774,6 +780,16 @@ public interface MediaLib {
 		FutureSupplier<Void> removeItem(int idx);
 
 		FutureSupplier<Void> removeItem(PlayableItem i);
+
+		/** Removes persisted items by stable origin ID without constructing resolver items. */
+		default FutureSupplier<Void> removeItemsById(Collection<String> ids) {
+			return completedVoid();
+		}
+
+		@SuppressWarnings("UnusedReturnValue")
+		default FutureSupplier<Void> removeItems(List<PlayableItem> items) {
+			return completedVoid();
+		}
 
 		@SuppressWarnings("UnusedReturnValue")
 		FutureSupplier<Void> moveItem(int fromPosition, int toPosition);

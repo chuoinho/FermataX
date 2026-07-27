@@ -19,3 +19,5 @@
 -keep class com.google.mlkit.** { *; }
 -keep class com.google.android.gms.internal.mlkit_common.** { *; }
 -keep class com.google.android.gms.internal.mlkit_translate.** { *; }
+# jlibtorrent JNI entry points are resolved by native code.
+-keep class com.frostwire.jlibtorrent.swig.libtorrent_jni { *; }

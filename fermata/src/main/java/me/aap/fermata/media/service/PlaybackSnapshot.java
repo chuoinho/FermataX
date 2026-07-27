@@ -14,6 +14,8 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
  * Immutable view of the media service playback state at one revision.
  */
 public final class PlaybackSnapshot {
+	public static final String METADATA_KEY_PREPARATION_STATUS =
+			"me.app.fermatax.PREPARATION_STATUS";
 	private final long revision;
 	@Nullable
 	private final PlayableItem item;
@@ -52,6 +54,13 @@ public final class PlaybackSnapshot {
 	@NonNull
 	public CharSequence getDisplayTitle() {
 		return resolveDisplayTitle(item, metadata);
+	}
+
+	@NonNull
+	public CharSequence getPreparationStatus() {
+		if (metadata == null) return "";
+		String status = metadata.getString(METADATA_KEY_PREPARATION_STATUS);
+		return (status == null) ? "" : status.trim();
 	}
 
 	@NonNull

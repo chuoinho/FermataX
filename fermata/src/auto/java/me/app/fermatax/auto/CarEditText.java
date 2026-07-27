@@ -59,6 +59,5 @@ public class CarEditText extends CarRestrictedEditText implements CarEditable {
 			}
 		}
 
-		super.onEditorAction(actionCode);
 	}
 }

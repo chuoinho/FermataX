@@ -17,19 +17,22 @@ public class AddonUiMetadataTest {
 		AddonInfo radio = info("example.UnrelatedThree", "dashboard,navigation,radio");
 		AddonInfo podcast = info("example.UnrelatedFour", "dashboard,navigation,podcast");
 		AddonInfo audiobook = info("example.UnrelatedFive", "dashboard,navigation,audiobook");
-		AddonInfo web = info("example.UnrelatedSix", "dashboard,navigation,web");
+		AddonInfo stremio = info("example.UnrelatedSix", "dashboard,navigation,stremio");
+		AddonInfo web = info("example.UnrelatedSeven", "dashboard,navigation,web");
 
 		assertEquals(AddonUiMetadata.Role.TV, AddonUiMetadata.role(tv));
 		assertEquals(AddonUiMetadata.Role.YOUTUBE, AddonUiMetadata.role(youtube));
 		assertEquals(AddonUiMetadata.Role.RADIO, AddonUiMetadata.role(radio));
 		assertEquals(AddonUiMetadata.Role.PODCAST, AddonUiMetadata.role(podcast));
 		assertEquals(AddonUiMetadata.Role.AUDIOBOOK, AddonUiMetadata.role(audiobook));
+		assertEquals(AddonUiMetadata.Role.STREMIO, AddonUiMetadata.role(stremio));
 		assertEquals(AddonUiMetadata.Role.WEB, AddonUiMetadata.role(web));
 		assertEquals(0, AddonUiMetadata.priority(tv));
 		assertEquals(1, AddonUiMetadata.priority(youtube));
 		assertEquals(2, AddonUiMetadata.priority(radio));
 		assertEquals(3, AddonUiMetadata.priority(podcast));
 		assertEquals(4, AddonUiMetadata.priority(audiobook));
+		assertEquals(6, AddonUiMetadata.priority(stremio));
 		assertEquals(5, AddonUiMetadata.priority(web));
 	}
 

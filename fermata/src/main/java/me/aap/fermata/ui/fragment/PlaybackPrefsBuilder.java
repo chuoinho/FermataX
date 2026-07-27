@@ -15,8 +15,7 @@ final class PlaybackPrefsBuilder {
 	}
 
 	static void add(MainActivityDelegate activity, PreferenceSet parent, MediaLibPrefs mediaPrefs) {
-		PreferenceSet playback = parent.subSet(o -> o.title = R.string.playback_settings);
-		playback.addBooleanPref(o -> {
+		parent.addBooleanPref(o -> {
 			o.store = mediaPrefs;
 			o.pref = BrowsableItemPrefs.PLAY_NEXT;
 			o.title = R.string.play_next_on_completion;

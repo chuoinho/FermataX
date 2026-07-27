@@ -23,7 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import me.aap.fermata.media.lib.ContentSubtitleSelectionItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.net.RemotePlaybackProgress;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
@@ -81,6 +83,11 @@ public interface MediaEngine extends Closeable {
 
 	float getVideoHeight();
 
+	/** Pixel aspect ratio used to preserve non-square video pixels. */
+	default float getVideoPixelWidthHeightRatio() {
+		return 1f;
+	}
+
 	@Override
 	void close();
 
@@ -133,6 +140,17 @@ public interface MediaEngine extends Closeable {
 		if (prefs.getSubEnabledPref()) {
 			int delay = prefs.getSubDelayPref();
 			if (delay != 0) setSubtitleDelay(delay);
+			if (src instanceof ContentSubtitleSelectionItem selection) {
+				if (selection.areSubtitlesDisabled()) {
+					setCurrentSubtitleStream(null);
+					return completedVoid();
+				}
+				return selectMediaStream(selection::getPreferredSubtitleTrackId,
+						selection::getPreferredSubtitleLanguagePattern, prefs::getSubKeyPref,
+						this::getSubtitleStreamInfo, si -> {
+							if (getSource() == src) setCurrentSubtitleStream(si);
+						});
+			}
 			return selectMediaStream(prefs::getSubIdPref, prefs::getSubLangPref, prefs::getSubKeyPref,
 					this::getSubtitleStreamInfo, si -> {
 						if (getSource() == src) setCurrentSubtitleStream(si);
@@ -289,10 +307,17 @@ public interface MediaEngine extends Closeable {
 
 		default void onEngineBufferingCompleted(MediaEngine engine) {}
 
+		default void onEnginePreparing(MediaEngine engine, RemotePlaybackProgress progress) {}
+
 		default void onEngineError(MediaEngine engine, Throwable ex) {}
 
 		default void onVideoSizeChanged(MediaEngine engine, int width, int height) {}
 
+		/** Fired once the current video prepare generation renders observable video output. */
+		default void onVideoFirstFrame(MediaEngine engine) {}
+
 		default void onSubtitleStreamChanged(MediaEngine engine, @Nullable SubtitleStreamInfo info) {}
+
+		default void onSubtitleLoadFailed(MediaEngine engine, Throwable error) {}
 	}
 }

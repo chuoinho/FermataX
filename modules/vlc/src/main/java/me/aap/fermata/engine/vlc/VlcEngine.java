@@ -39,6 +39,8 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Base64;
+import java.util.Map;
+import java.util.Set;
 import java.nio.charset.StandardCharsets;
 
 import me.aap.fermata.BuildConfig;
@@ -49,6 +51,11 @@ import me.aap.fermata.media.engine.MediaEngineBase;
 import me.aap.fermata.media.engine.MediaEngineException;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.net.RemotePlaybackItem;
+import me.aap.fermata.media.net.RemotePlaybackRequest;
+import me.aap.fermata.media.net.ResolvedRemotePlaybackRequest;
+import me.aap.fermata.media.net.PlaybackRequestProfile.EngineCapability;
+import me.aap.fermata.media.net.UnsupportedPlaybackRequestException;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -71,6 +78,11 @@ public class VlcEngine extends MediaEngineBase
 	@NonNull
 	private Source source = Source.NULL;
 	private long pendingPosition = -1;
+	private FutureSupplier<RemotePlaybackRequest> remotePrepare;
+	private RemotePlaybackRequest remoteRequest;
+	private long prepareGeneration;
+	private boolean nativeSubtitleSurface = true;
+	private boolean firstVideoOutputReported;
 
 	public VlcEngine(VlcEngineProvider provider, Listener listener) {
 		super(listener);
@@ -90,14 +102,67 @@ public class VlcEngine extends MediaEngineBase
 
 	@Override
 	public void prepare(PlayableItem source) {
+		firstVideoOutputReported = false;
 		stopped(false);
 		this.source.close();
 		this.source = Source.NULL;
+		releaseRemoteRequest();
+		FutureSupplier<RemotePlaybackRequest> previous = remotePrepare;
+		remotePrepare = null;
+		if (previous != null) previous.cancel();
+		long generation = ++prepareGeneration;
+
+		if (source instanceof RemotePlaybackItem remote) {
+			this.source = new Source(source, null);
+			if (!provider.supportsPlayback(source)) {
+				listener.onEngineError(this, new UnsupportedPlaybackRequestException(
+						"VLC cannot enforce this remote playback request profile"));
+				return;
+			}
+			try {
+				remotePrepare = remote.prepareRemotePlayback(
+						progress -> listener.onEnginePreparing(this, progress))
+						.main().onCompletion((request, error) -> {
+					if ((generation != prepareGeneration) || (this.source.getItem() != source)) {
+						if (request != null) request.close();
+						return;
+					}
+					remotePrepare = null;
+					if (error != null) listener.onEngineError(this, error);
+					else {
+						try {
+							remoteRequest = request;
+							Set<EngineCapability> capabilities =
+									provider.capabilitiesFor(request.getProfile());
+							if (capabilities == null) throw new UnsupportedPlaybackRequestException(
+									"VLC cannot enforce this remote playback request profile");
+							ResolvedRemotePlaybackRequest resolved = request.resolve(
+									System.currentTimeMillis(), capabilities);
+							Map<String, String> headers = resolved.headersFor(resolved.getLocation());
+							prepareResolved(source, Uri.parse(resolved.getLocation().toString()),
+									headers.get("User-Agent"), headers);
+						} catch (Throwable ex) {
+							releaseRemoteRequest();
+							listener.onEngineError(this, ex);
+						}
+					}
+				});
+			} catch (Throwable ex) {
+				listener.onEngineError(this, ex);
+			}
+			return;
+		}
+
+		prepareResolved(source, source.getLocation(), source.getUserAgent(),
+				source.getRequestHeaders());
+	}
+
+	private void prepareResolved(PlayableItem source, Uri uri, String userAgent,
+			Map<String, String> requestHeaders) {
 		Media media = null;
 		ParcelFileDescriptor fd = null;
 
 		try {
-			Uri uri = source.getLocation();
 			String scheme = uri.getScheme();
 
 			if ("content".equals(scheme)) {
@@ -108,9 +173,9 @@ public class VlcEngine extends MediaEngineBase
 				media = new Media(vlc, uri);
 
 				if ((scheme != null) && scheme.startsWith("http")) {
-					String agent = source.getUserAgent();
+					String agent = userAgent;
 					if (agent != null) media.addOption(":http-user-agent='" + agent + "'");
-					String authorization = source.getRequestHeaders().get("Authorization");
+					String authorization = requestHeaders.get("Authorization");
 					if ((authorization != null) && authorization.regionMatches(true, 0,
 							"Basic ", 0, 6)) {
 						try {
@@ -185,12 +250,23 @@ public class VlcEngine extends MediaEngineBase
 
 	@Override
 	public void stop() {
+		prepareGeneration++;
+		releaseRemoteRequest();
+		FutureSupplier<RemotePlaybackRequest> pending = remotePrepare;
+		remotePrepare = null;
+		if (pending != null) pending.cancel();
 		stopped(false);
 		pendingPosition = -1;
 		player.stop();
 		player.detachViews();
 		source.close();
 		source = Source.NULL;
+	}
+
+	private void releaseRemoteRequest() {
+		RemotePlaybackRequest request = remoteRequest;
+		remoteRequest = null;
+		if (request != null) request.close();
 	}
 
 	@Override
@@ -267,17 +343,30 @@ public class VlcEngine extends MediaEngineBase
 	}
 
 	@Override
-	public void setVideoView(VideoView view) {
+	public void setVideoView(@Nullable VideoView view) {
 		super.setVideoView(view);
+		attachVideoViews(view, nativeSubtitleSurface);
+	}
+
+	private void attachVideoViews(@Nullable VideoView view, boolean nativeSubtitles) {
 		IVLCVout out = player.getVLCVout();
 		out.detachViews();
 
 		if (view != null) {
 			out.setVideoView(view.getVideoSurface());
-			out.setSubtitlesView(view.getSubtitleSurface());
+			SurfaceView subtitleSurface = view.getSubtitleSurface();
+			if (nativeSubtitles && (subtitleSurface != null)) {
+				out.setSubtitlesView(subtitleSurface);
+			}
 			out.attachViews(this);
 			setSurfaceSize(view);
 		}
+		nativeSubtitleSurface = nativeSubtitles;
+	}
+
+	private void useNativeSubtitleSurface(boolean nativeSubtitles) {
+		if (nativeSubtitleSurface == nativeSubtitles) return;
+		attachVideoViews(videoView, nativeSubtitles);
 	}
 
 	@Override
@@ -413,11 +502,14 @@ public class VlcEngine extends MediaEngineBase
 		if (i == null) {
 			player.setSpuTrack(-1);
 			super.setCurrentSubtitleStream(null);
+			useNativeSubtitleSurface(true);
 		} else if (i.getFiles().isEmpty()) {
-			player.setSpuTrack((int) i.getId());
 			super.setCurrentSubtitleStream(null);
+			useNativeSubtitleSurface(true);
+			player.setSpuTrack((int) i.getId());
 		} else {
 			player.setSpuTrack(-1);
+			useNativeSubtitleSurface(false);
 			super.setCurrentSubtitleStream(i);
 		}
 	}
@@ -506,6 +598,10 @@ public class VlcEngine extends MediaEngineBase
 	public void onNewVideoLayout(IVLCVout vlcVout, int width, int height, int visibleWidth,
 															 int visibleHeight, int sarNum, int sarDen) {
 		if ((videoView == null) || !(source instanceof VideoSource src)) return;
+		if (!firstVideoOutputReported && (visibleWidth > 0) && (visibleHeight > 0)) {
+			firstVideoOutputReported = true;
+			listener.onVideoFirstFrame(this);
+		}
 		src.videoWidth = width;
 		src.videoHeight = height;
 		src.visibleVideoWidth = visibleWidth;

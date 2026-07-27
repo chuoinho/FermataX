@@ -33,9 +33,10 @@ public class ChatAddon implements FermataFragmentAddon, VoiceSearchAddon {
 	private static final AddonInfo info = FermataAddon.findAddonInfo(ChatAddon.class.getName());
 	private static final Pref<Supplier<String>> OPENAI_KEY = Pref.s("OPENAI_KEY", "");
 	private static final int DEFAULT_MODEL = 0;
-	private static final int CURRENT_MODEL_LIST_VERSION = 1;
 	private static final String[] MODELS =
 			new String[]{"gpt-5.4-mini", "gpt-5.5", "gpt-5.4", "gpt-5.4-nano", "gpt-5.3-chat-latest"};
+	private static final int CUSTOM_MODEL = MODELS.length;
+	private static final int CURRENT_MODEL_LIST_VERSION = 2;
 	private static final Pref<IntSupplier> MODEL = Pref.i("MODEL", DEFAULT_MODEL);
 	private static final Pref<IntSupplier> MODEL_LIST_VERSION = Pref.i("MODEL_LIST_VERSION", 0);
 	private static final Pref<Supplier<String>> MODEL_OTHER = Pref.s("MODEL_OTHER", "");
@@ -72,11 +73,7 @@ public class ChatAddon implements FermataFragmentAddon, VoiceSearchAddon {
 	public String getModel() {
 		var ps = FermataApplication.get().getPreferenceStore();
 		migrateModelPreference(ps);
-		var other = ps.getStringPref(MODEL_OTHER).trim();
-		if (!other.isEmpty()) return other;
-		int i = ps.getIntPref(MODEL);
-		return (i >= 0) && (i < MODELS.length) ? MODELS[i] :
-				MODELS[DEFAULT_MODEL];
+		return resolveModel(ps.getIntPref(MODEL), ps.getStringPref(MODEL_OTHER));
 	}
 
 	public String getGetChatLang() {
@@ -100,7 +97,7 @@ public class ChatAddon implements FermataFragmentAddon, VoiceSearchAddon {
 			o.store = store;
 			o.pref = MODEL;
 			o.title = R.string.openai_model;
-			o.stringValues = MODELS;
+			o.stringValues = createModelOptions(ctx);
 			o.subtitle = me.aap.fermata.R.string.string_format;
 			o.formatSubtitle = true;
 		});
@@ -120,8 +117,29 @@ public class ChatAddon implements FermataFragmentAddon, VoiceSearchAddon {
 	}
 
 	private void migrateModelPreference(PreferenceStore store) {
-		if (store.getIntPref(MODEL_LIST_VERSION) >= CURRENT_MODEL_LIST_VERSION) return;
-		if (store.hasPref(MODEL, false)) store.applyIntPref(MODEL, DEFAULT_MODEL);
+		int version = store.getIntPref(MODEL_LIST_VERSION);
+		if (version >= CURRENT_MODEL_LIST_VERSION) return;
+		if ((version < 1) && store.hasPref(MODEL, false)) {
+			store.applyIntPref(MODEL, DEFAULT_MODEL);
+		}
+		if ((version < 2) && !store.getStringPref(MODEL_OTHER).trim().isEmpty()) {
+			store.applyIntPref(MODEL, CUSTOM_MODEL);
+		}
 		store.applyIntPref(false, MODEL_LIST_VERSION, CURRENT_MODEL_LIST_VERSION);
+	}
+
+	static String resolveModel(int model, String customModel) {
+		String custom = (customModel == null) ? "" : customModel.trim();
+		if ((model == CUSTOM_MODEL) && !custom.isEmpty()) return custom;
+		return (model >= 0) && (model < MODELS.length) ? MODELS[model] :
+				MODELS[DEFAULT_MODEL];
+	}
+
+	private static String[] createModelOptions(Context ctx) {
+		String[] options = MODELS.clone();
+		String[] result = new String[options.length + 1];
+		System.arraycopy(options, 0, result, 0, options.length);
+		result[CUSTOM_MODEL] = ctx.getString(R.string.openai_model_custom);
+		return result;
 	}
 }

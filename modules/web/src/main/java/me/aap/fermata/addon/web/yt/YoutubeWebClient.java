@@ -23,6 +23,14 @@ public class YoutubeWebClient extends FermataWebClient {
 
 	@Override
 	public boolean shouldOverrideUrlLoading(@NonNull WebView view, @NonNull WebResourceRequest request) {
+		if (!request.isForMainFrame()) return false;
+		if (request.hasGesture() && (view instanceof YoutubeWebView youtube)) {
+			try {
+				YoutubeItem.fromPageUrl(request.getUrl().toString(), "", 0L);
+				youtube.armExplicitPlayback();
+			} catch (IllegalArgumentException ignored) {
+			}
+		}
 		if (!isYoutubeUri(request.getUrl())) {
 			MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
 

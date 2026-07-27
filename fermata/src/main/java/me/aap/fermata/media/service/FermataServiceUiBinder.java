@@ -99,18 +99,25 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		return getMediaSessionCallback().getEngine();
 	}
 
-	public void playItem(PlayableItem i) {
-		playItem(i, -1);
+	public boolean playItem(PlayableItem i) {
+		return playItem(i, -1);
 	}
 
-	public void playItem(PlayableItem i, long pos) {
-		if (i.equals(getCurrentItem()) && (pos <= 0)) {
+	public boolean playItem(PlayableItem i, long pos) {
+		boolean sameItem = i.equals(getCurrentItem());
+		if (!shouldCreatePlaybackRequest(sameItem, pos)) {
 			if (sessionCallback.getPlaybackState().getState() == PlaybackStateCompat.STATE_PAUSED) {
 				sessionCallback.onPlay();
 			}
+			return false;
 		} else {
 			sessionCallback.playItem(i, pos);
+			return true;
 		}
+	}
+
+	static boolean shouldCreatePlaybackRequest(boolean sameItem, long position) {
+		return !sameItem || (position > 0);
 	}
 
 	public void stop() {

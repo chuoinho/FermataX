@@ -20,7 +20,11 @@ import androidx.webkit.WebResourceErrorCompat;
 import androidx.webkit.WebViewClientCompat;
 import androidx.webkit.WebViewFeature;
 
+import java.util.Locale;
+import java.net.URI;
+
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
+import me.aap.fermata.addon.external.ExternalNavigationPolicy;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
@@ -38,10 +42,13 @@ public class FermataWebClient extends WebViewClientCompat {
 	private String retryUrl;
 	private int retryCount;
 	private long retryGeneration;
+	private ExternalNavigationPolicy externalNavigationPolicy;
 
 	FermataWebClient createReplacement() {
 		try {
-			return getClass().getConstructor().newInstance();
+			FermataWebClient replacement = getClass().getConstructor().newInstance();
+			replacement.externalNavigationPolicy = externalNavigationPolicy;
+			return replacement;
 		} catch (Throwable ex) {
 			Log.e(ex, "Failed to create replacement WebViewClient");
 			return new FermataWebClient();
@@ -50,6 +57,11 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
+		if (!isExternalNavigationAllowed(url)) {
+			view.stopLoading();
+			if (view instanceof FermataWebView web) web.externalNavigationRejected();
+			return;
+		}
 		retryGeneration++;
 		failedMainFrameUrl = null;
 		lastErrorKey = null;
@@ -90,7 +102,15 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	@Override
 	public boolean shouldOverrideUrlLoading(@NonNull WebView view,
-																					@NonNull WebResourceRequest request) {
+																			@NonNull WebResourceRequest request) {
+		if (!request.isForMainFrame()) return false;
+		if (!isExternalNavigationAllowed(request.getUrl().toString())) {
+			if (view instanceof FermataWebView web) web.externalNavigationRejected();
+			return true;
+		}
+		// A policy-bound route remains on the Web surface. Routing it to another addon would
+		// discard the Stremio owner and bypass the source policy.
+		if (externalNavigationPolicy != null) return false;
 		if (isYoutubeUri(request.getUrl())) {
 			try {
 				MainActivityDelegate a =
@@ -108,10 +128,39 @@ public class FermataWebClient extends WebViewClientCompat {
 		return false;
 	}
 
+	void setExternalNavigationPolicy(ExternalNavigationPolicy policy) {
+		externalNavigationPolicy = policy;
+	}
+
+	void clearExternalNavigationPolicy(ExternalNavigationPolicy policy) {
+		if (externalNavigationPolicy == policy) externalNavigationPolicy = null;
+	}
+
+	boolean isExternalNavigationAllowed(String value) {
+		ExternalNavigationPolicy policy = externalNavigationPolicy;
+		if (policy == null) return true;
+		try {
+			policy.validate(URI.create(value));
+			return true;
+		} catch (Exception rejected) {
+			Log.w("Blocked policy-bound external Web navigation");
+			return false;
+		}
+	}
+
 	public static boolean isYoutubeUri(Uri uri) {
-		String host = uri.getHost();
-		return ((host != null) && ((host.endsWith("youtube.com") && !host.endsWith("tv.youtube.com")) ||
-				host.equals("youtu.be")));
+		if (uri == null) return false;
+		String scheme = uri.getScheme();
+		return ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) &&
+				isYoutubeHost(uri.getHost());
+	}
+
+	public static boolean isYoutubeHost(String host) {
+		if (host == null) return false;
+		host = host.toLowerCase(Locale.ROOT);
+		boolean youtube = host.equals("youtube.com") || host.endsWith(".youtube.com");
+		boolean television = host.equals("tv.youtube.com") || host.endsWith(".tv.youtube.com");
+		return (youtube && !television) || host.equals("youtu.be");
 	}
 
 	@Override

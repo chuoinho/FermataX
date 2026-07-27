@@ -7,7 +7,6 @@ import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_CENTER;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_LEFT;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_RIGHT;
 import static me.aap.utils.async.Completed.cancelled;
-import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.collection.CollectionUtils.comparing;
@@ -22,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.BuildConfig;
-import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.media.sub.FileSubtitles;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.SubScheduler;
@@ -93,12 +91,18 @@ public abstract class MediaEngineBase implements MediaEngine {
 		}).map(children -> {
 			if (children.isEmpty()) return Collections.emptyList();
 
-			int id = 0xFFFF;
+			long id = 0xFFFFL;
 			var list = new ArrayList<SubtitleStreamInfo>();
 			Collections.sort(children, comparing(VirtualResource::getName));
 
 			for (var f : children) {
 				if (!f.isFile()) continue;
+				if (f instanceof SubtitleTrackFile track) {
+					list.add(new SubtitleStreamInfo(track.getSubtitleTrackId(),
+							track.getSubtitleLanguage(), track.getSubtitleDescription(),
+							(VirtualFile) f));
+					continue;
+				}
 				var name = f.getName();
 				var langStart = baseName.length() + 1;
 				var langEnd = name.length() - 4;
@@ -106,9 +110,11 @@ public abstract class MediaEngineBase implements MediaEngine {
 				list.add(new SubtitleStreamInfo(id++, lang, null, (VirtualFile) f));
 			}
 
-			for (int i = 0, n = list.size(); i < n; i++) {
-				for (int j = 0; j < n; j++) {
-					if (i != j) list.add(list.get(i).join(id++, list.get(j)));
+			if (src.supportsCombinedSubtitles()) {
+				for (int i = 0, n = list.size(); i < n; i++) {
+					for (int j = 0; j < n; j++) {
+						if (i != j) list.add(list.get(i).join(id++, list.get(j)));
+					}
 				}
 			}
 
@@ -159,10 +165,6 @@ public abstract class MediaEngineBase implements MediaEngine {
 		if (subMgr != null) subMgr.removeSubtitleConsumer(consumer);
 	}
 
-	protected SubGrid createSubStreamGrid() {
-		return new SubGrid(new Subtitles.Stream()) ;
-	}
-
 	@CallSuper
 	@Override
 	public void close() {
@@ -182,9 +184,6 @@ public abstract class MediaEngineBase implements MediaEngine {
 		if (videoView != null) {
 			if (subMgr != null) subMgr.addSubtitleConsumer(videoView);
 			else selectSubtitleStream();
-		} else {
-			var src = getSource();
-			if (src != null && src.getPrefs().getBooleanPref(SubGenAddon.ENABLED)) selectSubtitleStream();
 		}
 	}
 
@@ -278,9 +277,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 
 			FutureSupplier<SubGrid> load;
 
-			if (inf instanceof SubtitleStreamInfo.Generated) {
-				load = completed(createSubStreamGrid());
-			} else if (!inf.getFiles().isEmpty()) {
+			if (!inf.getFiles().isEmpty()) {
 				load = App.get().execute(() -> {
 					var src = getSource();
 					if (src == null) return null;
@@ -316,13 +313,22 @@ public abstract class MediaEngineBase implements MediaEngine {
 				return loading;
 			}
 
-			return loading = load.main().map(sg -> {
+			FutureSupplier<SubScheduler> request = load.main().map(sg -> {
 				if ((sg == null) || (sub != null) || (inf != streamInfo)) return null;
 				sub = new SubScheduler(App.get().getHandler(), sg, this,
 						MediaEngineBase.this::subSchedulerClock);
 				if ((state == STATE_PLAYING) && !consumers.isEmpty()) start();
 				return sub;
 			});
+			loading = request;
+			request.onFailure(error -> {
+				if (loading == request) loading = cancelled();
+				if (inf == streamInfo) {
+					Log.w("Subtitle load failed: ", error.getClass().getSimpleName());
+					listener.onSubtitleLoadFailed(MediaEngineBase.this, error);
+				}
+			});
+			return request;
 		}
 
 		@Override
@@ -386,8 +392,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 		}
 
 		private void prepareDrawer(VideoView videoView) {
-			boolean dbl = (streamInfo != null) && (streamInfo.getFiles().size() == 2) ||
-					(streamInfo instanceof SubtitleStreamInfo.Generated);
+			boolean dbl = (streamInfo != null) && (streamInfo.getFiles().size() == 2);
 			videoView.prepareSubDrawer(dbl);
 		}
 	}

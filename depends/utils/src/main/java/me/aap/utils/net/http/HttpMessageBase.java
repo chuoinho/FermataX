@@ -120,7 +120,7 @@ abstract class HttpMessageBase implements HttpMessage {
 			payload.position(headerEnd).limit(payloadEnd);
 			CharSequence enc = decode ? getContentEncoding() : null;
 			releaseBuf();
-			return (enc != null) ? decode(consumer, payload, enc, MAX_PAYLOAD_LEN)
+			return (enc != null) ? decode(consumer, payload, enc, maxLen)
 					: consumer.apply(payload, null);
 		}
 

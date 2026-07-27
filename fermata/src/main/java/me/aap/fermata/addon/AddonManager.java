@@ -1,11 +1,16 @@
 package me.aap.fermata.addon;
 
 import static java.util.Collections.singletonList;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.failed;
 import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,9 +19,13 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.addon.external.ExternalPlaybackHandler;
+import me.aap.fermata.addon.external.ExternalPlaybackRequest;
+import me.aap.fermata.addon.external.ExternalPlaybackRouter;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ItemContainer;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
@@ -43,11 +52,13 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	private final AddonModuleController modules = new AddonModuleController(state, this::requestAddonLoad,
 			this::isRetained, this::isModuleRetained);
 	private final AddonLauncher launcher = new AddonLauncher(this);
+	private final DeferredMediaItemResolver deferredItemResolver = new DeferredMediaItemResolver();
 	private final PreferenceStore store;
+	private final boolean freshInstall;
 
 	public AddonManager(PreferenceStore store) {
 		this.store = store;
-		enableAddonsByDefault(store);
+		freshInstall = enableAddonsByDefault(store);
 
 		for (AddonInfo i : registry.getAvailable()) {
 			if (!store.getBooleanPref(i.enabledPref)) continue;
@@ -57,12 +68,16 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		store.addBroadcastListener(this);
 	}
 
-	static void enableAddonsByDefault(PreferenceStore store) {
-		AddonPreferenceMigrator.enableDefaults(store, registry.getAvailable());
+	static boolean enableAddonsByDefault(PreferenceStore store) {
+		return AddonPreferenceMigrator.enableDefaults(store, registry.getAvailable());
 	}
 
 	public static AddonManager get() {
 		return FermataApplication.get().getAddonManager();
+	}
+
+	public boolean isFreshInstall() {
+		return freshInstall;
 	}
 
 	@Nullable
@@ -145,6 +160,78 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		return false;
 	}
 
+	/**
+	 * Returns true when an item belongs to an addon resolver that may be unavailable temporarily.
+	 * This lets persisted Recent entries survive a disabled or not-yet-delivered dynamic addon.
+	 */
+	public synchronized boolean isDeferredItemId(String id) {
+		if ((id == null) || id.isBlank()) return false;
+		int separator = id.indexOf(':');
+		if (separator <= 0) return false;
+		String scheme = id.substring(0, separator);
+		for (AddonInfo info : registry.getAvailable()) {
+			if (info.hasResolverScheme(scheme) && (getAddonState(info) != AddonState.LOADED))
+				return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Resolves the availability boundary for a persisted dynamic-addon item. Loaded addons remain on
+	 * the existing synchronous resolver path; enabled unloaded addons join one delivery operation.
+	 */
+	public DeferredMediaItemResult resolveDeferredItem(DefaultMediaLib lib,
+			@Nullable String scheme, String id) {
+		if ((scheme == null) || scheme.isBlank()) return DeferredMediaItemResult.notHandled();
+
+		AddonInfo resolverInfo = null;
+		AddonState resolverState = null;
+		synchronized (this) {
+			for (AddonInfo info : registry.getAvailable()) {
+				if (!info.hasResolverScheme(scheme)) continue;
+				resolverInfo = info;
+				resolverState = getAddonState(info);
+				break;
+			}
+		}
+		if (resolverInfo == null) return DeferredMediaItemResult.notHandled();
+
+		AddonInfo info = resolverInfo;
+		return deferredItemResolver.resolve(info.className, resolverState,
+				() -> requestResolverDelivery(info),
+				() -> resolveDeliveredItem(info, lib, scheme, id));
+	}
+
+	/** Queries a loaded resolver before a persisted item is pruned as permanently missing. */
+	public FutureSupplier<Boolean> shouldRetainMissingItem(DefaultMediaLib lib, String id) {
+		if ((id == null) || id.isBlank()) return me.aap.utils.async.Completed.completed(false);
+		int separator = id.indexOf(':');
+		if (separator <= 0) return me.aap.utils.async.Completed.completed(false);
+		String scheme = id.substring(0, separator);
+		MediaItemResolverAddon resolver = null;
+		synchronized (this) {
+			for (AddonInfo info : registry.getAvailable()) {
+				if (!info.hasResolverScheme(scheme) ||
+						(getAddonState(info) != AddonState.LOADED)) continue;
+				FermataAddon addon = state.get(info.className);
+				if (addon instanceof MediaItemResolverAddon itemResolver) resolver = itemResolver;
+				break;
+			}
+		}
+		if (resolver == null) return me.aap.utils.async.Completed.completed(false);
+		try {
+			FutureSupplier<Boolean> result = resolver.shouldRetainMissingItem(lib, scheme, id);
+			if (result == null) return me.aap.utils.async.Completed.completed(false);
+			return result.ifFail(failure -> {
+				Log.e(failure, "Failed to query missing item retention: ", id);
+				return true;
+			});
+		} catch (Throwable failure) {
+			Log.e(failure, "Failed to query missing item retention: ", id);
+			return me.aap.utils.async.Completed.completed(true);
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	@Nullable
 	public synchronized <A extends FermataAddon> A getAddon(Class<A> c) {
@@ -153,6 +240,48 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	public synchronized Collection<FermataAddon> getAddons() {
 		return state.getAll();
+	}
+
+	public FutureSupplier<PlayableItem> resolveExternalPlayback(DefaultMediaLib lib,
+			ExternalPlaybackRequest request) {
+		return ExternalPlaybackRouter.route(snapshotExternalPlaybackHandlers(request),
+				handler -> isExternalPlaybackHandlerAvailable(handler, request), lib, request);
+	}
+
+	private synchronized boolean isExternalPlaybackHandlerAvailable(
+			ExternalPlaybackHandler handler, ExternalPlaybackRequest request) {
+		AddonInfo info = handler.getInfo();
+		return state.isLoaded(info, handler) && store.getBooleanPref(info.enabledPref) &&
+				info.hasCapability(request.getTargetKind().getCapability()) &&
+				(handler.getExternalPlaybackTargetKind() == request.getTargetKind());
+	}
+
+	private synchronized List<ExternalPlaybackHandler> snapshotExternalPlaybackHandlers(
+			ExternalPlaybackRequest request) {
+		return selectExternalPlaybackHandlers(state.getAll(), addon -> {
+			AddonInfo info = addon.getInfo();
+			return state.isLoaded(info, addon) && store.getBooleanPref(info.enabledPref);
+		}, request);
+	}
+
+	static List<ExternalPlaybackHandler> selectExternalPlaybackHandlers(
+			Collection<FermataAddon> addons, Predicate<FermataAddon> enabled,
+			ExternalPlaybackRequest request) {
+		List<ExternalPlaybackHandler> handlers = new ArrayList<>();
+		for (FermataAddon addon : addons) {
+			if (!(addon instanceof ExternalPlaybackHandler handler) || !enabled.test(addon)) continue;
+			AddonInfo info = addon.getInfo();
+			if (!info.hasCapability(request.getTargetKind().getCapability()) ||
+					(handler.getExternalPlaybackTargetKind() != request.getTargetKind())) continue;
+			handlers.add(handler);
+		}
+		handlers.sort(Comparator.comparingInt(ExternalPlaybackHandler::getExternalPlaybackPriority)
+				.thenComparing(handler -> handler.getInfo().className));
+		return List.copyOf(handlers);
+	}
+
+	public void onFavoriteChanged(PlayableItem item, boolean favorite) {
+		notifyFavoriteChanged(snapshotResolverAddons(), item, favorite);
 	}
 
 	/**
@@ -198,16 +327,77 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	@Nullable
-	public synchronized FutureSupplier<? extends Item>
+	public FutureSupplier<? extends Item>
 	getItem(DefaultMediaLib lib, @Nullable String scheme, String id) {
-		for (FermataAddon a : state.getAll()) {
-			if (a instanceof MediaLibAddon) {
-				FutureSupplier<? extends Item> i = ((MediaLibAddon) a).getItem(lib, scheme, id);
-				if (i != null) return i;
+		return resolveItem(snapshotResolverAddons(), lib, scheme, id);
+	}
+
+	private synchronized List<FermataAddon> snapshotResolverAddons() {
+		List<FermataAddon> snapshot = new ArrayList<>();
+		for (FermataAddon addon : state.getAll()) {
+			if ((addon instanceof MediaLibAddon) || (addon instanceof MediaItemResolverAddon))
+				snapshot.add(addon);
+		}
+		return snapshot;
+	}
+
+	static void notifyFavoriteChanged(List<FermataAddon> addons, PlayableItem item,
+			boolean favorite) {
+		for (FermataAddon addon : addons) {
+			if (!(addon instanceof MediaItemResolverAddon resolver)) continue;
+			try {
+				resolver.onFavoriteChanged(item, favorite);
+			} catch (Throwable failure) {
+				Log.e(failure, "Addon favorite callback failed: ", addon.getClass().getName());
 			}
 		}
+	}
 
+	@Nullable
+	static FutureSupplier<? extends Item> resolveItem(List<FermataAddon> addons,
+			DefaultMediaLib lib, @Nullable String scheme, String id) {
+		for (FermataAddon addon : addons) {
+			try {
+				if (addon instanceof MediaLibAddon mediaLibAddon) {
+					FutureSupplier<? extends Item> item = mediaLibAddon.getItem(lib, scheme, id);
+					if (item != null) return item;
+				}
+				if (addon instanceof MediaItemResolverAddon resolver) {
+					FutureSupplier<? extends Item> item = resolver.getItem(lib, scheme, id);
+					if (item != null) return item;
+				}
+			} catch (Throwable failure) {
+				Log.e(failure, "Addon item resolver failed: ", addon.getClass().getName());
+			}
+		}
 		return null;
+	}
+
+	private FutureSupplier<?> requestResolverDelivery(AddonInfo info) {
+		synchronized (this) {
+			// Resolver lookup is not an enable action. A user-disabled addon stays disabled.
+			if (!store.getBooleanPref(info.enabledPref)) return completedVoid();
+			if (isLoaded(info)) return completedVoid();
+			if (state.isFailed(info))
+				return failed(new IllegalStateException("Addon failed: " + info.className));
+
+			install(info);
+			FutureSupplier<?> installing = getInstallingTask(info);
+			if (installing != null) return installing;
+			if (isLoaded(info)) return completedVoid();
+			if (state.isFailed(info))
+				return failed(new IllegalStateException("Addon failed: " + info.className));
+			return failed(new IllegalStateException("Addon delivery did not start: " + info.className));
+		}
+	}
+
+	private FutureSupplier<? extends Item> resolveDeliveredItem(AddonInfo info, DefaultMediaLib lib,
+			String scheme, String id) {
+		synchronized (this) {
+			if (!store.getBooleanPref(info.enabledPref) || !isLoaded(info)) return completedNull();
+		}
+		FutureSupplier<? extends Item> item = getItem(lib, scheme, id);
+		return (item != null) ? item : completedNull();
 	}
 
 	@Nullable

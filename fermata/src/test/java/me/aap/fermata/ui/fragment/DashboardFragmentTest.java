@@ -68,6 +68,17 @@ public class DashboardFragmentTest {
 	}
 
 	@Test
+	public void dashboardHomeScrollRequestSurvivesViewCreation() {
+		DashboardFragment.DashboardViewportState state =
+				new DashboardFragment.DashboardViewportState();
+		state.requestScrollTop();
+
+		assertFalse(state.consumeScrollTopRequest(false));
+		assertTrue(state.consumeScrollTopRequest(true));
+		assertFalse(state.consumeScrollTopRequest(true));
+	}
+
+	@Test
 	public void ownedTransitionDoesNotDependOnFragmentCommitTiming() {
 		assertTrue(DashboardFragment.isStableDashboardViewport(true, true, false, false));
 		assertFalse(DashboardFragment.isStableDashboardViewport(true, true, true, false));

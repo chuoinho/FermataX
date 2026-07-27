@@ -1,6 +1,5 @@
 package me.aap.fermata.ui.view;
 
-import static android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE;
 import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
 import static android.view.KeyEvent.KEYCODE_DPAD_DOWN;
 import static android.view.KeyEvent.KEYCODE_DPAD_LEFT;
@@ -31,11 +30,9 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
-import android.text.SpannableString;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -71,6 +68,7 @@ import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.policy.VideoSurfaceLayoutPolicy;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.function.BiConsumer;
@@ -86,7 +84,7 @@ public class VideoView extends FrameLayout
 		MainActivityListener, BiConsumer<SubGrid.Position, Subtitles.Text> {
 	private final Set<PreferenceStore.Pref<?>> prefChange = new HashSet<>(
 			Arrays.asList(MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.AUDIO_DELAY_AA,
-					MediaPrefs.SUB_DELAY));
+					MediaPrefs.SUB_DELAY, SUB_SIZE));
 	private SubDrawer subDrawer;
 	private FutureSupplier<?> createSurface = new Promise<>();
 
@@ -256,6 +254,13 @@ public class VideoView extends FrameLayout
 		});
 	}
 
+	/** Clears decoder and sidecar output before a different video owns these surfaces. */
+	public void clearPlaybackSurfaces() {
+		clearVideoSurface();
+		clearSubtitleSurface();
+		releaseSubDrawer();
+	}
+
 	public void clearSubtitleSurface() {
 		createSurface.onSuccess(v -> {
 			SurfaceView sv = getSubtitleSurface();
@@ -302,47 +307,11 @@ public class VideoView extends FrameLayout
 
 		float videoWidth = eng.getVideoWidth();
 		float videoHeight = eng.getVideoHeight();
-		float videoRatio = videoWidth / videoHeight;
-
-		float screenWidth = getWidth();
-		float screenHeight = getHeight();
-
-		int width;
-		int height;
-		int scale = item.getPrefs().getVideoScalePref();
-
-		switch (scale) {
-			case SCALE_4_3:
-			case SCALE_16_9:
-				videoRatio = (scale == SCALE_16_9) ? 16f / 9f : 4f / 3f;
-			default:
-			case SCALE_BEST:
-				float screenRatio = screenWidth / screenHeight;
-
-				if (videoRatio > screenRatio) {
-					width = (int) screenWidth;
-					height = (int) (screenWidth / videoRatio);
-				} else {
-					width = (int) (screenHeight * videoRatio);
-					height = (int) screenHeight;
-				}
-
-				break;
-			case SCALE_FILL:
-				if (videoWidth > videoHeight) {
-					width = (int) screenWidth;
-					height = (int) (screenWidth / videoRatio);
-				} else {
-					width = (int) (screenHeight * videoRatio);
-					height = (int) screenHeight;
-				}
-
-				break;
-			case SCALE_ORIGINAL:
-				width = (int) videoWidth;
-				height = (int) videoHeight;
-				break;
-		}
+		VideoSurfaceLayoutPolicy.Size size = VideoSurfaceLayoutPolicy.resolve(
+				getWidth(), getHeight(), videoWidth, videoHeight, item.getPrefs().getVideoScalePref(),
+				eng.getVideoPixelWidthHeightRatio());
+		int width = size.width();
+		int height = size.height();
 
 		if ((lp.width != width) || (lp.height != height)) {
 			lp.width = width;
@@ -485,6 +454,9 @@ public class VideoView extends FrameLayout
 						i.getPrefs().getAudioDelayPref(prefs.contains(MediaPrefs.AUDIO_DELAY_AA)));
 			} else if (prefs.contains(MediaPrefs.SUB_DELAY)) {
 				eng.setSubtitleDelay(i.getPrefs().getSubDelayPref());
+			} else if (prefs.contains(SUB_SIZE) && (subDrawer != null)) {
+				subDrawer.textScale = i.getPrefs().getFloatPref(SUB_SIZE);
+				drawSubtitles();
 			}
 		}
 	}
@@ -517,13 +489,13 @@ public class VideoView extends FrameLayout
 	}
 
 	private static abstract class SubDrawer {
-		final float textScale;
+		float textScale;
 		final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 		SubDrawer(float textScale) {
 			this.textScale = textScale;
 			bgPaint.setColor(Color.BLACK);
-			bgPaint.setAlpha(180);
+			bgPaint.setAlpha(135);
 		}
 
 		abstract boolean setText(SubGrid.Position position, @Nullable Subtitles.Text text);
@@ -560,7 +532,7 @@ public class VideoView extends FrameLayout
 		}
 
 		void draw(Canvas canvas, StaticLayout sl) {
-			float pad = 20f;
+			float pad = 9f;
 			float w = 0f;
 			for (int i = 0, n = sl.getLineCount(); i < n; i++) {
 				w = Math.max(w, sl.getLineWidth(i));
@@ -684,31 +656,18 @@ public class VideoView extends FrameLayout
 		@Override
 		void draw(Canvas canvas) {
 			CharSequence sub;
-			int start;
-			int end;
 
 			if (text != null) {
 				if (translation != null) {
 					var t = text(text).toString();
 					sub = t + '\n' + text(translation);
-					start = t.length() + 1;
-					end = sub.length();
 				} else {
 					sub = text(text).toString();
-					start = end = 0;
 				}
 			} else if (translation != null) {
 				sub = text(translation).toString();
-				start = 0;
-				end = sub.length();
 			} else {
 				return;
-			}
-
-			if (start != end) {
-				var st = new SpannableString(sub);
-				st.setSpan(new ForegroundColorSpan(Color.RED), start, end, SPAN_EXCLUSIVE_EXCLUSIVE);
-				sub = st;
 			}
 
 			var ch = canvas.getHeight();

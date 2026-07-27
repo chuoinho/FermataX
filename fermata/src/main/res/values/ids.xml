@@ -41,6 +41,7 @@
     <item name="radio_fragment" type="id" />
     <item name="podcast_fragment" type="id" />
     <item name="audiobook_fragment" type="id" />
+	<item name="stremio_fragment" type="id" />
     <item name="youtube_fragment" type="id" />
     <item name="web_browser_fragment" type="id" />
     <item name="cast_addon" type="id" />

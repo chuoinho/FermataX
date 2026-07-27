@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.DeferredMediaItemResult;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MetadataRetriever;
@@ -112,6 +113,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	@Override
 	public FutureSupplier<? extends Item> getItem(CharSequence itemId) {
 		String id = itemId.toString();
+		int separator = id.indexOf(':');
+		String resolverScheme = (separator > 0) ? id.substring(0, separator) : null;
+		AddonManager addons = AddonManager.get();
+		DeferredMediaItemResult deferred = addons.resolveDeferredItem(this, resolverScheme, id);
+		if (deferred.isHandled()) return deferred.getItem();
 		Item i = getFromCache(id);
 		if (i != null) return completed(i);
 

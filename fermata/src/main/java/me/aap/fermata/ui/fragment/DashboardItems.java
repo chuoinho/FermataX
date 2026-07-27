@@ -370,6 +370,7 @@ public final class DashboardItems {
 			case RADIO -> R.string.dashboard_radio_sub;
 			case PODCAST -> R.string.dashboard_podcast_sub;
 			case AUDIOBOOK -> R.string.dashboard_audiobook_sub;
+			case STREMIO -> R.string.dashboard_stremio_sub;
 			case YOUTUBE -> R.string.dashboard_youtube_sub;
 			case WEB -> R.string.dashboard_web_sub;
 			case GENERIC -> R.string.dashboard_addon_sub;

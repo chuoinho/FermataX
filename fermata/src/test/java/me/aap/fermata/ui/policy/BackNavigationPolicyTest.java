@@ -1,5 +1,7 @@
 package me.aap.fermata.ui.policy;
 
+import static me.aap.fermata.ui.view.BodyLayout.Mode.BOTH;
+import static me.aap.fermata.ui.view.BodyLayout.Mode.FRAME;
 import static me.aap.fermata.ui.policy.BackNavigationPolicy.ActivityBackAction.FINISH;
 import static me.aap.fermata.ui.policy.BackNavigationPolicy.ActivityBackAction.SHOW_NAV_FRAGMENT;
 import static me.aap.fermata.ui.policy.BackNavigationPolicy.PlayerBackAction.LEAVE_VIDEO_MODE;
@@ -28,6 +30,12 @@ public class BackNavigationPolicyTest {
 				BackNavigationPolicy.resolvePlayerBack(false, false, false, true));
 		assertEquals(TRY_AUDIO_SOURCE,
 				BackNavigationPolicy.resolvePlayerBack(false, false, false, false));
+	}
+
+	@Test
+	public void fullscreenExitHonorsFragmentSplitCapability() {
+		assertEquals(BOTH, BackNavigationPolicy.resolveVideoExitMode(true));
+		assertEquals(FRAME, BackNavigationPolicy.resolveVideoExitMode(false));
 	}
 
 	@Test

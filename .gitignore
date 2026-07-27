@@ -18,7 +18,9 @@ window_views_raw/
 .agents/
 .codex/
 .codex-adb/
-docs/
+docs/*
+!docs/stremio/
+!docs/stremio/**
 MASTER_CONTEXT.md
 BUILDING_README_SECTION.md
 codex-*.gradle

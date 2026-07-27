@@ -24,6 +24,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,7 +299,7 @@ public class FermataChromeClient extends WebChromeClient {
 						perms.put(Manifest.permission.RECORD_AUDIO, p);
 				case PermissionRequest.RESOURCE_VIDEO_CAPTURE -> perms.put(Manifest.permission.CAMERA, p);
 				case PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID -> {
-					request.grant(resources);
+					request.grant(new String[]{PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID});
 					return;
 				}
 			}
@@ -313,9 +314,15 @@ public class FermataChromeClient extends WebChromeClient {
 		MainActivityDelegate a = MainActivityDelegate.get(getWebView().getContext());
 
 		if (BuildConfig.AUTO && a.isCarActivityNotMirror()) {
-			// Activity.checkPermissions() is not supported by AA
-			Log.d("Granted permissions: ", perms.values());
-			request.grant(perms.values().toArray(new String[0]));
+			// AA cannot display the runtime permission flow, but it can honor permissions already granted.
+			List<String> granted = new ArrayList<>(perms.size());
+			Context context = getWebView().getContext();
+			for (Map.Entry<String, String> entry : perms.entrySet()) {
+				if (ContextCompat.checkSelfPermission(context, entry.getKey()) == PERMISSION_GRANTED)
+					granted.add(entry.getValue());
+			}
+			if (granted.isEmpty()) request.deny();
+			else request.grant(granted.toArray(new String[0]));
 			return;
 		}
 

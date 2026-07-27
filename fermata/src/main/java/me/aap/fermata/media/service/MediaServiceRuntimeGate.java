@@ -6,6 +6,7 @@ package me.aap.fermata.media.service;
 public final class MediaServiceRuntimeGate {
 	private boolean addonsAttached;
 	private boolean lastItemPrepared;
+	private boolean playbackLifetimeStarted;
 
 	public static boolean allowsAutomaticPrepare(boolean autoBuild) {
 		return !autoBuild;
@@ -29,6 +30,22 @@ public final class MediaServiceRuntimeGate {
 		if (!addonsAttached) return false;
 		addonsAttached = false;
 		return true;
+	}
+
+	public boolean takePlaybackLifetimeStart() {
+		if (playbackLifetimeStarted) return false;
+		playbackLifetimeStarted = true;
+		return true;
+	}
+
+	public boolean takePlaybackLifetimeStop() {
+		if (!playbackLifetimeStarted) return false;
+		playbackLifetimeStarted = false;
+		return true;
+	}
+
+	public void playbackLifetimeStartFailed() {
+		playbackLifetimeStarted = false;
 	}
 
 	private boolean takeAddonAttach() {

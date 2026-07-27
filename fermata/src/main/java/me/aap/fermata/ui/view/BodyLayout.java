@@ -42,8 +42,10 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 public class BodyLayout extends SplitLayout
 		implements SwipeRefreshLayout.OnRefreshListener, SwipeRefreshLayout.OnChildScrollUpCallback,
 		MainActivityListener, FermataServiceUiBinder.Listener, MediaSessionCallback.Listener {
+	private static final long PLAYBACK_LOADING_TIMEOUT_MS = 30_000L;
 	private Mode mode;
 	private FutureSupplier<?> startingPlayback = completedVoid();
+	private FutureSupplier<?> playbackLoading = completedVoid();
 
 	public BodyLayout(@NonNull Context ctx, @Nullable AttributeSet attrs) {
 		super(ctx, attrs);
@@ -192,7 +194,7 @@ public class BodyLayout extends SplitLayout
 	}
 
 	public void playItem(MediaLib.PlayableItem i) {
-		startingPlayback.cancel();
+		finishPlaybackLoading();
 		MainActivityDelegate a = getActivity();
 
 		if (i.isVideo() && !getVideoView().isSurfaceCreated() &&
@@ -205,8 +207,13 @@ public class BodyLayout extends SplitLayout
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		MediaLib.PlayableItem cur = b.getCurrentItem();
 		startingPlayback = new Promise<Void>().thenRun(() -> startingPlayback = completedVoid());
-		a.setContentLoading(startingPlayback);
-		b.playItem(i);
+		boolean requestStarted = b.playItem(i);
+		if (requestStarted) {
+			playbackLoading = a.setContentLoading(
+					startingPlayback.timeout(PLAYBACK_LOADING_TIMEOUT_MS, () -> null));
+		} else {
+			finishPlaybackLoading();
+		}
 		MediaEngine eng = b.getCurrentEngine();
 		if (i.equals(cur) && (eng != null) && eng.isVideoModeRequired())
 			setMode(BodyLayout.Mode.VIDEO);
@@ -214,7 +221,7 @@ public class BodyLayout extends SplitLayout
 
 	@Override
 	public void onPlayableChanged(MediaLib.PlayableItem oldItem, MediaLib.PlayableItem newItem) {
-		startingPlayback.cancel();
+		finishPlaybackLoading();
 		MainActivityDelegate a = getActivity();
 		if (!(a.getActiveFragment() instanceof MainActivityFragment f)) return;
 		MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
@@ -270,9 +277,22 @@ public class BodyLayout extends SplitLayout
 
 	@Override
 	public void onPlaybackStopped() {
-		startingPlayback.cancel();
+		finishPlaybackLoading();
 		var a = getActivity();
 		if (a.getActiveFragment() instanceof SubtitlesFragment) a.goToCurrent();
+	}
+
+	@Override
+	public void onSubtitleLoadFailed(MediaSessionCallback cb, String message) {
+		Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+	}
+
+	private void finishPlaybackLoading() {
+		startingPlayback.cancel();
+		FutureSupplier<?> loading = playbackLoading;
+		playbackLoading = completedVoid();
+		getActivity().clearContentLoading(loading);
+		loading.cancel();
 	}
 
 	@Override

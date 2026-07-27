@@ -25,7 +25,6 @@ import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonRegistry;
-import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
@@ -216,7 +215,6 @@ public class SettingsFragment extends MainActivityFragment
 		});
 
 		var enabled = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
-		addAutoSubPrefs(ctx, set, store, enabled.copy(), true);
 		addDelayPrefs(set, store, MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay, enabled.copy());
 		addSubSizePrefs(set, store, enabled.copy());
 
@@ -236,25 +234,6 @@ public class SettingsFragment extends MainActivityFragment
 				o.visibility = enabled.copy();
 			});
 		}
-	}
-
-	public static void addAutoSubPrefs(Context ctx, PreferenceSet set, PreferenceStore ps,
-																		 ChangeableCondition cond, boolean isGlobalSettings) {
-		var subGen = FermataApplication.get().getAddonManager().getAddon(SubGenAddon.class);
-		if (subGen == null) return;
-
-		var subGenSet = set.subSet(o -> {
-			o.title = R.string.subtitles_auto;
-			o.visibility = cond;
-			if (!isGlobalSettings) o.icon = R.drawable.subgen;
-		});
-		subGenSet.addBooleanPref(o -> {
-			o.store = ps;
-			o.title = R.string.enable;
-			o.pref = SubGenAddon.ENABLED;
-		});
-		subGen.contributeSettings(ctx, ps, subGenSet, PrefCondition.create(ps, SubGenAddon.ENABLED),
-				false);
 	}
 
 	private PreferenceViewAdapter createAdapter(MainActivityDelegate a) {
@@ -295,24 +274,29 @@ public class SettingsFragment extends MainActivityFragment
 			o.stringValues = CollectionUtils.mapToArray(MainActivityPrefs.Lang.getValues(),
 					v -> v.locale.getDisplayName(), String[]::new);
 		});
-		KeyBindingPrefsBuilder.add(set);
-		PlaybackPrefsBuilder.add(a, set, mediaPrefs);
-		VoicePrefsBuilder.add(a, set);
-		MediaEnginePrefsBuilder.add(a, set, mediaPrefs, isCar);
-
-		sub1 = set.subSet(o -> o.title = R.string.subtitles);
-		addSubtitlePrefs(a.getContext(), sub1, mediaPrefs, isCar);
-
-		DashboardPrefsBuilder.add(a, set, this::refreshPrefs);
-		addAddons(set);
-
-		sub1 = set.subSet(o -> o.title = R.string.other);
 		if (!a.isCarActivityNotMirror()) {
 			sub1.addButton(o -> {
 				o.title = R.string.initial_setup_reopen;
 				o.subtitle = R.string.initial_setup_reopen_sub;
 				o.onClick = () -> a.showFragment(R.id.initial_setup_fragment);
 			});
+		}
+		KeyBindingPrefsBuilder.add(sub1);
+
+		PreferenceSet playback = set.subSet(o -> o.title = R.string.playback_settings);
+		PlaybackPrefsBuilder.add(a, playback, mediaPrefs);
+		MediaEnginePrefsBuilder.add(a, playback, mediaPrefs, isCar);
+
+		sub1 = playback.subSet(o -> o.title = R.string.subtitles);
+		addSubtitlePrefs(a.getContext(), sub1, mediaPrefs, isCar);
+
+		VoicePrefsBuilder.add(a, set);
+
+		DashboardPrefsBuilder.add(a, set, this::refreshPrefs);
+		addAddons(set);
+
+		if (!a.isCarActivityNotMirror()) {
+			sub1 = set.subSet(o -> o.title = R.string.other);
 			sub1.addButton(o -> {
 				o.title = R.string.export_prefs;
 				o.subtitle = R.string.export_prefs_sub;
@@ -323,14 +307,7 @@ public class SettingsFragment extends MainActivityFragment
 				o.subtitle = R.string.import_prefs_sub;
 				o.onClick = () -> SettingsBackupManager.importPrefs(a);
 			});
-		}
-		if (BuildConfig.AUTO) {
-			sub1.addBooleanPref(o -> {
-				o.store = a.getPrefs();
-				o.pref = MainActivityPrefs.CHECK_UPDATES;
-				o.title = R.string.check_updates;
-			});
-			if (!a.isCarActivityNotMirror()) {
+			if (BuildConfig.AUTO) {
 				sub1.addButton(o -> {
 					o.title = R.string.open_log;
 					o.onClick = () -> SettingsBackupManager.openLog(a);

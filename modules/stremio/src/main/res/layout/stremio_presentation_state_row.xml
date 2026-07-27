@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:clickable="true"
+	android:focusable="true"
+	android:gravity="center_vertical"
+	android:minHeight="64dp"
+	android:orientation="horizontal"
+	android:paddingStart="12dp"
+	android:paddingEnd="12dp">
+
+	<ImageView
+		android:id="@+id/stremio_presentation_state_icon"
+		android:layout_width="48dp"
+		android:layout_height="48dp"
+		android:contentDescription="@null"
+		android:padding="12dp"
+		android:tint="?android:attr/textColorSecondary" />
+
+	<ProgressBar
+		android:id="@+id/stremio_presentation_state_progress"
+		android:layout_width="48dp"
+		android:layout_height="48dp"
+		android:padding="10dp"
+		android:visibility="gone" />
+
+	<TextView
+		android:id="@+id/stremio_presentation_state_message"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="8dp"
+		android:layout_weight="1"
+		android:ellipsize="end"
+		android:maxLines="2"
+		android:textAppearance="?android:attr/textAppearanceMedium" />
+</LinearLayout>

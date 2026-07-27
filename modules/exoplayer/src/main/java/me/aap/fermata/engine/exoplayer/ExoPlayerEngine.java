@@ -1,11 +1,6 @@
 package me.aap.fermata.engine.exoplayer;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.misc.Assert.assertMainThread;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -21,7 +16,6 @@ import androidx.media3.common.PlaybackParameters;
 import androidx.media3.common.Player;
 import androidx.media3.common.Timeline;
 import androidx.media3.common.VideoSize;
-import androidx.media3.common.util.HandlerWrapper;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.common.util.Util;
 import androidx.media3.datasource.DataSource;
@@ -37,39 +31,33 @@ import androidx.media3.exoplayer.audio.DefaultAudioSink;
 import androidx.media3.exoplayer.audio.DefaultAudioTrackBufferSizeProvider;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy;
 
 import org.chromium.net.CronetEngine;
 
-import java.lang.reflect.Field;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
-import me.aap.fermata.addon.SubGenAddon;
-import me.aap.fermata.addon.TranslateAddon;
-import me.aap.fermata.addon.TranslateAddon.Translator;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineBase;
-import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.net.PlaybackRequestProfile;
+import me.aap.fermata.media.net.ResolvedRemotePlaybackRequest;
+import me.aap.fermata.media.net.RemotePlaybackItem;
+import me.aap.fermata.media.net.RemotePlaybackRequest;
 import me.aap.fermata.media.pref.MediaPrefs;
-import me.aap.fermata.media.service.MediaSessionCallback;
-import me.aap.fermata.media.sub.SubGrid;
-import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
-import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
-import me.aap.utils.text.SharedTextBuilder;
 
 /**
  * @author Andrey Pavlenko
@@ -99,17 +87,17 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		return new DefaultHttpDataSource.Factory();
 	}
 
-	private final Accessor accessor = new Accessor(this);
 	private final Context context;
 	private final Timeline.Period period = new Timeline.Period();
-	private final PendingLoadAudioProcessor audioProc = new PendingLoadAudioProcessor(accessor);
 	private final ExoPlayer player;
 	private final AudioEffects audioEffects;
 	private volatile PlayableItem source;
+	private FutureSupplier<RemotePlaybackRequest> remotePrepare;
+	private RemotePlaybackRequest remoteRequest;
+	private long prepareGeneration;
 	private boolean preparing;
 	private boolean buffering;
 	private boolean isHls;
-	private Runnable drainBuffer;
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
 		super(listener);
@@ -125,37 +113,18 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 			@Override
 			protected AudioSink buildAudioSink(@NonNull Context context,
-																				 boolean enableFloatOutput,
-																				 boolean enableAudioTrackPlaybackParams) {
+					boolean enableFloatOutput, boolean enableAudioTrackPlaybackParams) {
 				return new DefaultAudioSink.Builder(ctx)
-						.setAudioTrackBufferSizeProvider(new DefaultAudioTrackBufferSizeProvider.Builder()
-								.setMaxPcmBufferDurationUs(5000_000)
-								.setPcmBufferMultiplicationFactor(16)
-								.setOffloadBufferDurationUs(120_000_000).build())
-						.setAudioProcessorChain(
-								new DefaultAudioSink.DefaultAudioProcessorChain(audioProc)).build();
+						.setAudioTrackBufferSizeProvider(
+								new DefaultAudioTrackBufferSizeProvider.Builder()
+										.setMaxPcmBufferDurationUs(5_000_000)
+										.setPcmBufferMultiplicationFactor(16)
+										.setOffloadBufferDurationUs(120_000_000).build())
+						.build();
 			}
 		}).setMediaSourceFactory(msFactory).build();
 		player.addListener(this);
 		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
-
-		try {
-			Field f = player.getClass().getDeclaredField("internalPlayer");
-			f.setAccessible(true);
-			Object internal = requireNonNull(f.get(player));
-			f = internal.getClass().getDeclaredField("handler");
-			f.setAccessible(true);
-			var handler = (HandlerWrapper) requireNonNull(f.get(internal));
-			drainBuffer = () -> {
-				try {
-					handler.sendEmptyMessage(2 /*MSG_DO_SOME_WORK*/);
-				} catch (Exception err) {
-					Log.w(err);
-				}
-			};
-		} catch (Exception err) {
-			Log.w(err);
-		}
 	}
 
 	@Override
@@ -169,13 +138,66 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		if (this.source == null) stopped(false);
 		else stop();
 		this.source = source;
-		accessor.sourceChanged(source);
 		preparing = true;
 		buffering = false;
+		long generation = ++prepareGeneration;
 
-		Uri uri = source.getLocation();
+		if (source instanceof RemotePlaybackItem remote) {
+			if (!ExoPlayerEngineProvider.playbackCapabilities().containsAll(
+					remote.getPlaybackRequestProfile().getRequiredEngineCapabilities())) {
+				playbackRequestFailed(source, generation,
+						new IllegalArgumentException("Unsupported playback request profile"));
+				return;
+			}
+			try {
+				remotePrepare = remote.prepareRemotePlayback(
+						progress -> listener.onEnginePreparing(this, progress))
+						.main().onCompletion((request, error) -> {
+					if ((generation != prepareGeneration) || (this.source != source)) {
+						if (request != null) request.close();
+						return;
+					}
+					remotePrepare = null;
+					if (error != null) playbackRequestFailed(source, generation, error);
+					else prepareSource(source, request);
+				});
+			} catch (Throwable ex) {
+				playbackRequestFailed(source, generation, ex);
+			}
+			return;
+		}
+
+		prepareSource(source, null);
+	}
+
+	private void prepareSource(PlayableItem source, @Nullable RemotePlaybackRequest request) {
+		remoteRequest = request;
+		Uri uri = (request == null) ? source.getLocation()
+				: Uri.parse(request.getLocation().toString());
 		MediaItem m = MediaItem.fromUri(uri);
 		isHls = Util.inferContentType(uri) == C.CONTENT_TYPE_HLS;
+		if (request != null) {
+			ResolvedRemotePlaybackRequest resolved;
+			try {
+				resolved = request.resolve(System.currentTimeMillis(),
+						ExoPlayerEngineProvider.playbackCapabilities());
+			} catch (Throwable ex) {
+				playbackRequestFailed(source, prepareGeneration, ex);
+				return;
+			}
+			DataSource.Factory profileHttp = () -> new ProfileHttpDataSource(resolved);
+			DefaultDataSource.Factory dataSource = new DefaultDataSource.Factory(context, profileHttp);
+			DefaultMediaSourceFactory mediaSources = new DefaultMediaSourceFactory(context)
+					.setDataSourceFactory(dataSource);
+			if (resolved.getProfile().getRequiredEngineCapabilities().contains(
+					PlaybackRequestProfile.EngineCapability.SINGLE_ATTEMPT_LOADING)) {
+				mediaSources.setLoadErrorHandlingPolicy(new DefaultLoadErrorHandlingPolicy(0));
+			}
+			MediaSource mediaSource = mediaSources.createMediaSource(m);
+			player.setMediaSource(mediaSource);
+			player.prepare();
+			return;
+		}
 		Map<String, String> headers = source.getRequestHeaders();
 		if (headers.isEmpty()) {
 			player.setMediaItem(m);
@@ -190,6 +212,13 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		player.prepare();
 	}
 
+	private void playbackRequestFailed(PlayableItem source, long generation, Throwable error) {
+		if ((generation != prepareGeneration) || (this.source != source)) return;
+		releaseRemoteRequest();
+		preparing = false;
+		listener.onEngineError(this, error);
+	}
+
 	@Override
 	public void start() {
 		player.setPlayWhenReady(true);
@@ -199,10 +228,20 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	@Override
 	public void stop() {
+		prepareGeneration++;
+		releaseRemoteRequest();
+		FutureSupplier<RemotePlaybackRequest> pending = remotePrepare;
+		remotePrepare = null;
+		if (pending != null) pending.cancel();
 		stopped(false);
 		player.stop();
 		source = null;
-		accessor.sourceChanged(null);
+	}
+
+	private void releaseRemoteRequest() {
+		RemotePlaybackRequest request = remoteRequest;
+		remoteRequest = null;
+		if (request != null) request.close();
 	}
 
 	@Override
@@ -257,7 +296,6 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		if (source == null) return;
 		var pos = source.getOffset() + position;
 		player.seekTo(pos);
-		accessor.setSubGenTimeOffset(this);
 		syncSub(true);
 	}
 
@@ -295,49 +333,14 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	@Override
+	public float getVideoPixelWidthHeightRatio() {
+		VideoSize size = player.getVideoSize();
+		return (size == null) ? 1f : size.pixelWidthHeightRatio;
+	}
+
+	@Override
 	public AudioEffects getAudioEffects() {
 		return audioEffects;
-	}
-
-	@Override
-	public FutureSupplier<Void> selectSubtitleStream() {
-		var src = getSource();
-		if (src == null) return completedVoid();
-		var ps = src.getPrefs();
-		if (!ps.getBooleanPref(SubGenAddon.ENABLED)) return super.selectSubtitleStream();
-		setCurrentSubtitleStream(new SubtitleStreamInfo.Generated(ps.getStringPref(SubGenAddon.LANG)));
-		if (BuildConfig.AUTO && !src.isVideo() && (listener instanceof MediaSessionCallback cb)) {
-			addSubtitleConsumer(cb);
-		}
-		return completedVoid();
-	}
-
-	@Override
-	public FutureSupplier<SubGrid> getCurrentSubtitles() {
-		var cur = super.getCurrentSubtitles();
-		if (cur != NO_SUBTITLES) return cur;
-		var src = getSource();
-		if (src == null) return cur;
-		var ps = src.getPrefs();
-		if (!ps.getBooleanPref(SubGenAddon.ENABLED)) return cur;
-		setCurrentSubtitleStream(new SubtitleStreamInfo.Generated(ps.getStringPref(SubGenAddon.LANG)));
-		return super.getCurrentSubtitles();
-	}
-
-	@Override
-	public FutureSupplier<List<SubtitleStreamInfo>> getSubtitleStreamInfo() {
-		return super.getSubtitleStreamInfo().main().map(subFiles -> {
-			var src = getSource();
-			if (src == null) return emptyList();
-			var ps = src.getPrefs();
-			if (ps.getBooleanPref(SubGenAddon.ENABLED)) {
-				var streams = new ArrayList<SubtitleStreamInfo>(subFiles.size() + 1);
-				streams.add(new SubtitleStreamInfo.Generated(ps.getStringPref(SubGenAddon.LANG)));
-				streams.addAll(subFiles);
-				return streams;
-			}
-			return subFiles;
-		});
 	}
 
 	@Override
@@ -394,8 +397,6 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	public void close() {
 		stop();
 		super.close();
-		drainBuffer = null;
-		accessor.player = null;
 		player.removeListener(this);
 		player.release();
 		source = null;
@@ -426,7 +427,6 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 				preparing = false;
 				long off = source.getOffset();
 				if (off > 0) player.seekTo(off);
-				accessor.setSubGenTimeOffset(this);
 				listener.onEnginePrepared(this);
 				var prefs = source.getPrefs();
 				MediaEngine.selectMediaStream(prefs::getAudioIdPref, prefs::getAudioLangPref,
@@ -445,169 +445,13 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	@Override
+	public void onRenderedFirstFrame() {
+		listener.onVideoFirstFrame(this);
+	}
+
+	@Override
 	public void onPlayerError(@NonNull PlaybackException error) {
 		listener.onEngineError(this, error);
 	}
 
-	@Override
-	protected SubGrid createSubStreamGrid() {
-		return accessor.createSubStreamGrid();
-	}
-
-	static class Accessor {
-		private volatile ExoPlayerEngine player;
-		private volatile long subGenTimeOffset;
-		private Subtitles.Stream subStream;
-		private Subtitles.Stream subTransStream;
-		private String transLang;
-		private FutureSupplier<Translator> translator = completedNull();
-		private boolean useBatchTranslate = true;
-
-		private Accessor(ExoPlayerEngine player) {
-			this.player = player;
-		}
-
-		void drainBuffer() {
-			assertMainThread();
-			if (player == null) return;
-			if (player.drainBuffer != null) player.drainBuffer.run();
-			player.syncSub(false);
-		}
-
-		@Nullable
-		public PlayableItem getSource() {
-			var p = player;
-			return p == null ? null : p.source;
-		}
-
-		public long getSubGenTimeOffset() {
-			return subGenTimeOffset;
-		}
-
-		private void sourceChanged(PlayableItem src) {
-			if (subStream != null) subStream.clear();
-			if (subTransStream != null) subTransStream.clear();
-
-			if (src == null) {
-				transLang = null;
-				translator = completedNull();
-				return;
-			}
-
-			var ps = src.getPrefs();
-			var lang = ps.getBooleanPref(SubGenAddon.TRANSLATE) ?
-					ps.getStringPref(SubGenAddon.TRANSLATE_LANG) : null;
-			if (lang == null || !lang.equals(transLang)) {
-				transLang = lang;
-				translator = completedNull();
-			}
-		}
-
-		void addSubtitles(String lang, List<Subtitles.Text> subs) {
-			if (subs.isEmpty()) return;
-			App.get().run(() -> {
-				if (subStream == null) subStream = new Subtitles.Stream();
-				var added = subStream.add(subs);
-				if (transLang == null) return;
-				var src = getSource();
-				if (src == null) return;
-
-				var targetLang = transLang;
-				if (translator.isDone() && translator.peek() == null) {
-					translator = TranslateAddon.get().then(a -> {
-						if (a == null || !targetLang.equals(transLang)) return completedNull();
-						return a.getTranslator(src.getPrefs(), lang, transLang);
-					});
-				}
-				translator.main().onSuccess(tr -> {
-					if (tr == null || !targetLang.equals(transLang)) return;
-					if (useBatchTranslate && tr.supportsBatch()) batchTranslate(tr, targetLang, added);
-					else perItemTranslate(tr, targetLang, added);
-				});
-			});
-		}
-
-		private void batchTranslate(Translator tr, String targetLang, List<Subtitles.Text> subs) {
-			assertMainThread();
-			boolean prependPrev = false;
-			if (!subStream.isEmpty()) {
-				var last = subStream.get(subStream.size() - 1).getText().trim();
-				var lastChar = last.isEmpty() ? '\0' : last.charAt(last.length() - 1);
-				prependPrev = lastChar != '.' && lastChar != ',' && lastChar != '!' && lastChar != '?';
-			}
-
-			String concat;
-			try (var tb = SharedTextBuilder.get()) {
-				if (prependPrev) tb.append(subStream.get(subStream.size() - 1).getText()).append("|");
-				for (var t : subs) tb.append(t.getText()).append("|");
-				tb.setLength(tb.length() - 1);
-				concat = tb.toString();
-			}
-
-			boolean skipFirst = prependPrev;
-			Log.d("Translating: ", concat);
-			tr.translate(concat).onCompletion((r, err) -> {
-				if (err != null) {
-					Log.e(err);
-					return;
-				}
-
-				Log.d("Translation: ", r);
-				String[] parts = r.split("\\|", -1);
-				int off = skipFirst ? 1 : 0;
-
-				if (subs.size() != parts.length - off) {
-					Log.d("Fall back to per item translation");
-					useBatchTranslate = false;
-					perItemTranslate(tr, targetLang, subs);
-					return;
-				}
-
-				var translated = new ArrayList<Subtitles.Text>(subs.size());
-				for (int i = 0, n = subs.size(); i < n; i++) {
-					var t = subs.get(i);
-					t.setTranslation(parts[off + i].trim());
-					translated.add(new Subtitles.Text(t.getTranslation(), t.getTime(), t.getDuration()));
-				}
-				App.get().run(() -> {
-					if (!targetLang.equals(transLang)) return;
-					if (subTransStream == null) subTransStream = new Subtitles.Stream();
-					subTransStream.add(translated);
-				});
-			});
-		}
-
-		private void perItemTranslate(Translator tr, String targetLang, List<Subtitles.Text> subs) {
-			for (var t : subs) {
-				tr.translate(t.getText()).onCompletion((r, err) -> {
-					if (err != null) {
-						Log.e(err);
-						return;
-					}
-					t.setTranslation(r.trim());
-					var translated = new Subtitles.Text(t.getTranslation(), t.getTime(), t.getDuration());
-					App.get().run(() -> {
-						if (!targetLang.equals(transLang)) return;
-						if (subTransStream == null) subTransStream = new Subtitles.Stream();
-						subTransStream.add(translated);
-					});
-				});
-			}
-		}
-
-		private void setSubGenTimeOffset(ExoPlayerEngine eng) {
-			this.subGenTimeOffset = eng.subSchedulerClock();
-		}
-
-		private SubGrid createSubStreamGrid() {
-			assertMainThread();
-			if (subStream == null) subStream = new Subtitles.Stream();
-			if (transLang == null) return new SubGrid(subStream);
-			if (subTransStream == null) subTransStream = new Subtitles.Stream();
-			var m = new EnumMap<SubGrid.Position, Subtitles>(SubGrid.Position.class);
-			m.put(SubGrid.Position.BOTTOM_LEFT, subStream);
-			m.put(SubGrid.Position.BOTTOM_RIGHT, subTransStream);
-			return new SubGrid(m);
-		}
-	}
 }

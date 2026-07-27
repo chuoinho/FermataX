@@ -1,0 +1,14 @@
+{
+  "streams": [
+    {
+      "name": "Fixture Optional P2P Target",
+      "title": "Example Movie - Optional Torrent Module",
+      "infoHash": "0123456789abcdef0123456789abcdef01234567",
+      "fileIdx": 0,
+      "sources": [
+        "tracker:https://tracker.example.invalid/announce",
+        "dht:0123456789abcdef0123456789abcdef01234567"
+      ]
+    }
+  ]
+}

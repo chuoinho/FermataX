@@ -72,6 +72,8 @@ public class YoutubeChromeClient extends FermataChromeClient {
 		if (!browserEntryGate.accepts(request)) {
 			cancelPendingFullScreenEntry();
 			callback.onCustomViewHidden();
+			FermataWebView web = getWebView();
+			if (web instanceof YoutubeWebView youtube) youtube.onBrowserFullScreenRejected();
 			return;
 		}
 		view.setOnTouchListener(this::onTouchEvent);

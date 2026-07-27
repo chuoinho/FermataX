@@ -120,7 +120,7 @@ public class DashboardFragment extends MainActivityFragment
 		binder.addBroadcastListener(this);
 		list.post(dashboardAdapter::reload);
 		list.postDelayed(dashboardAdapter::reload, 1200);
-		requestStableViewport(false);
+		requestStableViewport(viewportState.consumeScrollTopRequest(true));
 	}
 
 	@Override
@@ -128,6 +128,13 @@ public class DashboardFragment extends MainActivityFragment
 		super.onResume();
 		DashboardAdapter adapter = this.adapter;
 		if (adapter != null) adapter.refreshSmartTopCard();
+		requestDashboardTopAfterRefresh();
+	}
+
+	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		if (!hidden) requestDashboardTopAfterRefresh();
 	}
 
 	@Override
@@ -217,7 +224,28 @@ public class DashboardFragment extends MainActivityFragment
 
 	public void showHome() {
 		refreshSmartTopCard();
-		requestStableViewport(true);
+		viewportState.requestScrollTop();
+		if (list != null) requestStableViewport(viewportState.consumeScrollTopRequest(true));
+		requestDashboardTopAfterRefresh();
+	}
+
+	private void requestDashboardTopAfterRefresh() {
+		RecyclerView dashboard = list;
+		if (dashboard == null) return;
+		Runnable reset = () -> {
+			if ((list == dashboard) && isStableDashboardViewport(true)) {
+				requestStableViewport(true);
+			}
+		};
+		// The smart card is loaded asynchronously after the initial adapter layout. Apply
+		// the invariant again after that refresh so RecyclerView cannot restore an old offset.
+		dashboard.post(reset);
+		dashboard.postDelayed(reset, 350L);
+		dashboard.postDelayed(reset, 1500L);
+	}
+
+	void enterEditMode() {
+		setEditMode(true);
 	}
 
 	private void toggleEditMode() {
@@ -289,6 +317,7 @@ public class DashboardFragment extends MainActivityFragment
 	static final class DashboardViewportState {
 		private int generation;
 		private boolean transitionPending;
+		private boolean scrollTopPending;
 
 		int beginTransition() {
 			transitionPending = true;
@@ -303,6 +332,16 @@ public class DashboardFragment extends MainActivityFragment
 			if ((token != generation) || !transitionPending) return false;
 			transitionPending = false;
 			return ready;
+		}
+
+		void requestScrollTop() {
+			scrollTopPending = true;
+		}
+
+		boolean consumeScrollTopRequest(boolean ready) {
+			if (!ready || !scrollTopPending) return false;
+			scrollTopPending = false;
+			return true;
 		}
 
 		void invalidate() {

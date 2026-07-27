@@ -50,9 +50,19 @@ final class DashboardPlayableNavigator {
 
 	private static void route(MainActivityDelegate activity, PlayableItem item,
 			@Nullable Consumer<PlayableItem> onOpened, boolean play) {
-		if (play) playIfNeeded(activity, item);
 		if (!activity.goToItem(item)) return;
-		if (onOpened != null) activity.post(() -> onOpened.accept(item));
+		if (!play) {
+			if (onOpened != null) activity.post(() -> onOpened.accept(item));
+			return;
+		}
+
+		// Let the destination fragment attach its playback surface before selecting the engine.
+		// This is especially important for immutable WebView items opened from Recent/Favorites:
+		// selecting an engine first can hand the request to the WebView for the previous item.
+		activity.post(() -> {
+			playIfNeeded(activity, item);
+			if (onOpened != null) activity.post(() -> onOpened.accept(item));
+		});
 	}
 
 	private static void playIfNeeded(MainActivityDelegate activity, PlayableItem item) {

@@ -14,9 +14,50 @@ import java.util.List;
 
 import org.junit.Test;
 
+import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
 
 public class AddonPolicyTest {
+	@Test
+	public void blankStoreIsCapturedAsFreshBeforeDefaultMigration() {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+
+		assertTrue(AddonManager.enableAddonsByDefault(store));
+		assertFalse(AddonManager.enableAddonsByDefault(store));
+	}
+
+	@Test
+	public void existingDefaultOrUpdateMarkerIsNotFresh() {
+		for (String marker : List.of("ADDONS_ENABLED_BY_DEFAULT",
+				"ADDONS_ENABLED_BY_DEFAULT_V2")) {
+			BasicPreferenceStore store = new BasicPreferenceStore();
+			Pref<BooleanSupplier> pref = Pref.b(marker, false);
+			store.applyBooleanPref(false, pref, false);
+
+			assertFalse(marker, AddonManager.enableAddonsByDefault(store));
+		}
+
+		BasicPreferenceStore legacyUpdate = new BasicPreferenceStore();
+		legacyUpdate.applyLongPref(false, Pref.l("CHECK_UPDATES_STAMP", 0), 1);
+		assertFalse(AddonManager.enableAddonsByDefault(legacyUpdate));
+
+		BasicPreferenceStore updated = new BasicPreferenceStore();
+		updated.applyBooleanPref(false, firstDefaultAddon().enabledPref, false);
+		assertFalse(AddonManager.enableAddonsByDefault(updated));
+	}
+
+	@Test
+	public void managerKeepsFreshInstallSnapshotAfterConstructorMigration() {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+		AddonManager manager = new AddonManager(store);
+
+		assertTrue(manager.isFreshInstall());
+		AddonManager.enableAddonsByDefault(store);
+		store.applyBooleanPref(false, firstDefaultAddon().enabledPref, false);
+		assertTrue(manager.isFreshInstall());
+	}
+
 	@Test
 	public void freshInstallEnablesDefaultsWithoutOverwritingExplicitChoice() {
 		BasicPreferenceStore store = new BasicPreferenceStore();
@@ -43,6 +84,18 @@ public class AddonPolicyTest {
 		AddonManager.enableAddonsByDefault(store);
 
 		assertFalse(store.getBooleanPref(info.enabledPref));
+	}
+
+	@Test
+	public void newlyIntroducedAddonStaysDisabledOnExistingInstall() {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+		store.applyBooleanPref(false, Pref.b("ADDONS_ENABLED_BY_DEFAULT_V2", false), true);
+		AddonInfo introduced = new AddonInfo("new-addon", AddonInfo.class.getName(),
+				1, 1, 1, 1, false, true, null, true, "",
+				"dashboard,navigation", "");
+
+		assertFalse(AddonManager.enableAddonsByDefault(store));
+		assertFalse(store.getBooleanPref(introduced.enabledPref));
 	}
 
 	@Test
@@ -83,6 +136,13 @@ public class AddonPolicyTest {
 		assertSame(unique, registry.get("unique"));
 		assertThrows(RuntimeException.class, () -> registry.require("shared"));
 		assertArrayEquals(new String[]{"depA", "depB"}, one.depends);
+	}
+
+	@Test
+	public void subtitleGeneratorIsNotExposedAsAnAddonSetting() {
+		AddonInfo info = AddonRegistry.get().require(SubGenAddon.class.getName());
+
+		assertFalse(info.hasSettings);
 	}
 
 	@Test

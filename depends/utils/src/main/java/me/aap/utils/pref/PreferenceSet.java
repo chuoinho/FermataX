@@ -199,7 +199,7 @@ public class PreferenceSet implements Supplier<PreferenceView.Opts> {
 			String[] values = mapToArray(Arrays.asList(locales), Locale::getDisplayName, String[]::new);
 			PreferenceStore.Pref<IntSupplier> pref = PreferenceStore.Pref.i("L", currentIdx);
 			BasicPreferenceStore ps = new BasicPreferenceStore();
-			ps.addBroadcastListener((s, changed) -> lo.store.applyStringPref(lo.pref,
+			ps.addBroadcastListener((s, changed) -> lo.store.applyStringPref(lo.removeDefault, lo.pref,
 					locales[ps.getIntPref(pref)].toLanguageTag()));
 			PreferenceView.ListOpts o = new PreferenceView.ListOpts();
 			o.store = ps;

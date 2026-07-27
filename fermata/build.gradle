@@ -158,6 +158,7 @@ dependencies {
     implementation project(':utils')
     implementation libs.androidxMedia
     implementation libs.androidxAppcompat
+    implementation libs.androidxWebkit
     implementation libs.androidMaterial
 	implementation libs.androidxSecurityCrypto
     implementation libs.androidxConstraintlayout

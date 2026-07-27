@@ -32,6 +32,10 @@ final class PlaybackPresentationCoordinator {
 		transition(PlaybackPresentationReducer.showSeekControls(state, delay), delay);
 	}
 
+	void showControls(int delay) {
+		transition(PlaybackPresentationReducer.showControls(state, delay), delay);
+	}
+
 	void showControlsPersistent() {
 		transition(PlaybackPresentationReducer.showControlsPersistent(state), 0);
 	}

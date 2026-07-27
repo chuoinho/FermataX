@@ -16,6 +16,7 @@ ext {
                     fragment: true,
 					capabilities: 'dashboard,navigation,youtube,voice_search',
 					voiceTarget: 'youtube',
+					resolverSchemes: 'youtube',
                     order: 2
             ],
             [

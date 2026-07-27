@@ -90,6 +90,17 @@ public class FermataContentProviderSecurityTest {
 		assertEquals(8080, custom.getPort());
 	}
 
+	@Test
+	public void remoteConnectionPrefersPublicIpv4WhenIpv6IsReturnedFirst() throws Exception {
+		InetAddress ipv6 = InetAddress.getByName("2606:4700:4700::1111");
+		InetAddress ipv4 = InetAddress.getByName("8.8.8.8");
+		InetSocketAddress selected = FermataContentProvider.selectRemoteAddress(
+				new URL("https://example.com/art.png"), new InetAddress[]{ipv6, ipv4});
+
+		assertEquals(ipv4, selected.getAddress());
+		assertEquals(443, selected.getPort());
+	}
+
 	@Test(expected = java.io.IOException.class)
 	public void anyPrivateDnsAnswerRejectsTheWholeRemoteTarget() throws Exception {
 		FermataContentProvider.selectRemoteAddress(new URL("https://example.com/art.png"),

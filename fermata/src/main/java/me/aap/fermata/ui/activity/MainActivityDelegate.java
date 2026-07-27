@@ -122,6 +122,7 @@ import me.aap.fermata.ui.fragment.FoldersFragment;
 import me.aap.fermata.ui.fragment.InitialSetupFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
+import me.aap.fermata.ui.fragment.MediaItemNavigationTarget;
 import me.aap.fermata.ui.fragment.NavBarMediator;
 import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.RecentFragment;
@@ -372,7 +373,6 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	private void defaultIntent(boolean initialSetup) {
 		if (getActiveFragment() != null) {
-			checkUpdates();
 			return;
 		}
 
@@ -382,7 +382,6 @@ public class MainActivityDelegate extends ActivityDelegate
 		} else {
 			showDashboard();
 		}
-		checkUpdates();
 	}
 
 	public void showDashboard() {
@@ -393,16 +392,8 @@ public class MainActivityDelegate extends ActivityDelegate
 		View dashboard = getNavBar().findViewById(R.id.dashboard_fragment);
 		if ((active != null) && (active != dashboard)) active.setSelected(false);
 		if (dashboard != null) dashboard.setSelected(true);
-		ActivityFragment f = showFragment(R.id.dashboard_fragment);
+		showFragment(R.id.dashboard_fragment);
 		setActiveNavItemId(R.id.dashboard_fragment);
-		if (f instanceof DashboardFragment d) d.showHome();
-	}
-
-	private void checkUpdates() {
-		if (!AUTO) return;
-		if (getAppActivity() instanceof MainActivity a) a.uninstallControl().thenRun(() -> {
-			if (getPrefs().getCheckUpdatesPref()) a.checkUpdates();
-		});
 	}
 
 	@Override
@@ -743,14 +734,14 @@ public class MainActivityDelegate extends ActivityDelegate
 		return videoMode;
 	}
 
-	public void setContentLoading(FutureSupplier<?> contentLoading) {
+	public FutureSupplier<?> setContentLoading(FutureSupplier<?> contentLoading) {
 		if (this.contentLoading != null) {
 			this.contentLoading.cancel();
 			this.contentLoading = null;
 		}
 
 		progressBar.hide();
-		if (contentLoading.isDone()) return;
+		if (contentLoading.isDone()) return contentLoading;
 		progressBar.show();
 
 		var cl = this.contentLoading = contentLoading.main();
@@ -761,6 +752,14 @@ public class MainActivityDelegate extends ActivityDelegate
 				progressBar.hide();
 			}
 		});
+		return cl;
+	}
+
+	public void clearContentLoading(FutureSupplier<?> owner) {
+		if (contentLoading != owner) return;
+		contentLoading = null;
+		owner.cancel();
+		progressBar.hide();
 	}
 
 	public void backToNavFragment() {
@@ -779,7 +778,11 @@ public class MainActivityDelegate extends ActivityDelegate
 		voiceSession.clear();
 		BodyLayout b = getBody();
 		if (b.isVideoMode()) b.setMode(PlaybackLayoutPolicy.getModeAfterLeavingVideo(isCarActivity()));
-		return super.showFragment(id, input);
+		ActivityFragment fragment = super.showFragment(id, input);
+		if ((id == R.id.dashboard_fragment) && (fragment instanceof DashboardFragment dashboard)) {
+			dashboard.showHome();
+		}
+		return fragment;
 	}
 
 	public boolean showFragmentWhenReady(int id) {
@@ -893,9 +896,7 @@ public class MainActivityDelegate extends ActivityDelegate
 
 		FermataApplication.get().getHandler().post(() -> {
 			ActivityFragment f = getActiveFragment();
-			if (!(f instanceof MediaLibFragment)) return;
-			if (i instanceof PlayableItem) ((MediaLibFragment) f).revealItem(i);
-			else if (i instanceof BrowsableItem) ((MediaLibFragment) f).openItem((BrowsableItem) i);
+			if (f instanceof MediaItemNavigationTarget target) target.showMediaItem(i);
 		});
 
 		return true;
@@ -951,6 +952,11 @@ public class MainActivityDelegate extends ActivityDelegate
 		return true;
 	}
 
+	/** Starts a selected item through the active body without exposing its concrete view type. */
+	public void playItem(PlayableItem item) {
+		getBody().playItem(item);
+	}
+
 	private boolean canRouteVoiceIntent(VoiceIntent intent) {
 		if (intent.getKind() == VoiceIntent.Kind.PLAYBACK) return true;
 		if (intent.getKind() == VoiceIntent.Kind.SELECTION)
@@ -996,7 +1002,8 @@ public class MainActivityDelegate extends ActivityDelegate
 		if (option == null) return true;
 		String target = option.getVoiceTarget();
 		if (target != null) {
-			if (!resolveVoiceSelection(target, option.getStableId(), 0))
+			if (!resolveVoiceSelection(target, option.getStableId(),
+					VoiceReadinessPolicy.deadline(android.os.SystemClock.uptimeMillis())))
 				Log.e("Failed to route voice selection to addon ", target);
 			return true;
 		}
@@ -1013,7 +1020,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		return true;
 	}
 
-	private boolean resolveVoiceSelection(String target, String stableId, int attempt) {
+	private boolean resolveVoiceSelection(String target, String stableId, long deadline) {
 		AddonManager manager = AddonManager.get();
 		AddonInfo info = manager.getVoiceAddonInfo(target);
 		if (info == null) return false;
@@ -1023,12 +1030,15 @@ public class MainActivityDelegate extends ActivityDelegate
 		boolean activeTarget = (active != null) && (active.getFragmentId() == info.addonId);
 		if (activeTarget && (addon instanceof VoiceSearchAddon voice) &&
 				voice.resolveVoiceSelection(this, stableId)) return true;
-		if (attempt >= 100) return false;
+		boolean alive = !getAppActivity().isDestroyed() && !getAppActivity().isFinishing();
+		if (!VoiceReadinessPolicy.shouldRetry(android.os.SystemClock.uptimeMillis(),
+				deadline, alive)) return false;
 		if (!activeTarget && !showFragmentWhenReady(info.addonId)) return false;
-		post(() -> {
-			if (!resolveVoiceSelection(target, stableId, attempt + 1) && (attempt == 99))
+		postDelayed(() -> {
+			if (!resolveVoiceSelection(target, stableId, deadline) &&
+					(android.os.SystemClock.uptimeMillis() >= deadline))
 				Log.e("Failed to resolve voice selection for addon ", target);
-		});
+		}, VoiceReadinessPolicy.RETRY_DELAY_MS);
 		return true;
 	}
 
@@ -1509,7 +1519,8 @@ public class MainActivityDelegate extends ActivityDelegate
 				layout.addView(text);
 
 				if (textInput) {
-					int kbSize = size / 5;
+					int minKeyboardSize = toIntPx(getContext(), 48);
+					int kbSize = Math.max(minKeyboardSize, size / 4);
 					int margin = toIntPx(getContext(), 1);
 					LinearLayoutCompat.LayoutParams lp = new LinearLayoutCompat.LayoutParams(kbSize, kbSize);
 					AppCompatImageView kb = new AppCompatImageView(ctx);

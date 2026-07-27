@@ -10,6 +10,7 @@ public enum AddonCapability {
 	RADIO,
 	PODCAST,
 	AUDIOBOOK,
+	STREMIO,
 	YOUTUBE,
 	WEB,
 	CHATGPT,

@@ -1,0 +1,28 @@
+{
+  "metas": [
+    {
+      "id": "example.movie.1",
+      "type": "movie",
+      "name": "Example Public Domain Movie",
+      "poster": "https://images.example.invalid/posters/example-movie.jpg",
+      "posterShape": "poster",
+      "description": "Fictional metadata used only for protocol tests.",
+      "genres": [
+        "Adventure"
+      ],
+      "releaseInfo": "1920"
+    },
+    {
+      "id": "example.series.1",
+      "type": "series",
+      "name": "Example Public Domain Serial",
+      "poster": "https://images.example.invalid/posters/example-series.jpg",
+      "posterShape": "poster",
+      "description": "Fictional episodic metadata used only for protocol tests.",
+      "genres": [
+        "Comedy"
+      ],
+      "releaseInfo": "1920-1921"
+    }
+  ]
+}

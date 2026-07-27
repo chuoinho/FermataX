@@ -4,6 +4,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
 
+import me.aap.fermata.addon.web.FermataWebClient;
+
 /** Keeps automatic fullscreen entry scoped to one YouTube playback identity. */
 final class YoutubeFullscreenGate {
 	static final long NO_REQUEST = -1L;
@@ -58,8 +60,14 @@ final class YoutubeFullscreenGate {
 	}
 
 	long grantManualBrowserEntry() {
-		if (state != EntryState.USER_EXIT) return NO_REQUEST;
+		if (state == EntryState.AVAILABLE) return NO_REQUEST;
 		return manualEntryPermit = ++generation;
+	}
+
+	void consumeManualAppEntry() {
+		state = EntryState.CONSUMED;
+		manualEntryPermit = NO_REQUEST;
+		generation++;
 	}
 
 	void expireManualBrowserEntry(long permit) {
@@ -106,6 +114,9 @@ final class YoutubeFullscreenGate {
 
 		try {
 			URI uri = new URI(pageUrl);
+			String scheme = uri.getScheme();
+			if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) return null;
+			if (!FermataWebClient.isYoutubeHost(uri.getHost())) return null;
 			String path = uri.getPath();
 			if (path == null) return null;
 

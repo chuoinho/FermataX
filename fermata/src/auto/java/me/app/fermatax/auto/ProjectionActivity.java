@@ -13,12 +13,14 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
+import android.media.projection.MediaProjectionConfig;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.provider.Settings;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
 import me.aap.fermata.FermataApplication;
@@ -158,7 +160,22 @@ public class ProjectionActivity extends ActivityBase {
 		AccessibilityEventDispatcherService.autoClickOnButton(
 				getString(R.string.media_projection_action_text));
 		var mm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-		return startActivityForResult(mm::createScreenCaptureIntent);
+		return startActivityForResult(() -> createScreenCaptureIntent(mm));
+	}
+
+	private static Intent createScreenCaptureIntent(MediaProjectionManager manager) {
+		if (VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+			return Api34.createScreenCaptureIntent(manager);
+		}
+		return manager.createScreenCaptureIntent();
+	}
+
+	@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+	private static final class Api34 {
+		private static Intent createScreenCaptureIntent(MediaProjectionManager manager) {
+			return manager.createScreenCaptureIntent(
+					MediaProjectionConfig.createConfigForDefaultDisplay());
+		}
 	}
 
 	private static void showPermissionNotification(Context ctx) {

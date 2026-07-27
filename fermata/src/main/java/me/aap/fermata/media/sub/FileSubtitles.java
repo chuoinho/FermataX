@@ -15,7 +15,13 @@ import me.aap.utils.vfs.VirtualFile;
 /**
  * @author Andrey Pavlenko
  */
-public class FileSubtitles {
+	public class FileSubtitles {
+		private static final Pattern FULL_TIME_PATTERN = Pattern.compile(
+				"(\\d{2}):(\\d{2}):(\\d{2})[.,](\\d{3})\\s*-->\\s*"
+						+ "(\\d{2}):(\\d{2}):(\\d{2})[.,](\\d{3}).*");
+		private static final Pattern SHORT_TIME_PATTERN = Pattern.compile(
+				"(\\d{1,3}):(\\d{2})[.,](\\d{3})\\s*-->\\s*"
+						+ "(\\d{1,3}):(\\d{2})[.,](\\d{3}).*");
 
 	public enum Type {
 		SRT, VTT;
@@ -55,9 +61,6 @@ public class FileSubtitles {
 	}
 
 	public static SubGrid load(InputStream in) throws IOException {
-		var timePattern = Pattern.compile(
-				"(\\d{2}):(\\d{2}):(\\d{2})[.,](\\d{3})\\s-->\\s(\\d{2}):(\\d{2}):(\\d{2})[.,](\\d{3}).*");
-
 		try (var r = new Utf8LineReader(in)) {
 			var sb = new StringBuilder();
 			var sgb = new SubGrid.Builder();
@@ -88,10 +91,10 @@ public class FileSubtitles {
 					if (n == -1) return sgb.build();
 					sb.setLength(0);
 				} else if (time == -1) {
-					var m = timePattern.matcher(sb);
-					if (m.matches()) {
-						time = toMillis(m.group(1), m.group(2), m.group(3), m.group(4));
-						dur = (int) (toMillis(m.group(5), m.group(6), m.group(7), m.group(8)) - time);
+					long[] cue = parseCue(sb);
+					if (cue != null) {
+						time = cue[0];
+						dur = (int) (cue[1] - time);
 					}
 					sb.setLength(0);
 				} else {
@@ -99,6 +102,22 @@ public class FileSubtitles {
 				}
 			}
 		}
+	}
+
+	private static long[] parseCue(CharSequence line) {
+		var full = FULL_TIME_PATTERN.matcher(line);
+		if (full.matches()) {
+			return new long[] {
+					toMillis(full.group(1), full.group(2), full.group(3), full.group(4)),
+					toMillis(full.group(5), full.group(6), full.group(7), full.group(8))
+			};
+		}
+		var shortTime = SHORT_TIME_PATTERN.matcher(line);
+		if (!shortTime.matches()) return null;
+		return new long[] {
+				toMillis("00", shortTime.group(1), shortTime.group(2), shortTime.group(3)),
+				toMillis("00", shortTime.group(4), shortTime.group(5), shortTime.group(6))
+		};
 	}
 
 	private static long toMillis(String h, String m, String s, String f) {

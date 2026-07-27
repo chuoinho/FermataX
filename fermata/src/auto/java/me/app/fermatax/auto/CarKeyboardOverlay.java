@@ -16,6 +16,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.text.InputType;
 import android.text.TextUtils.TruncateAt;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -134,6 +135,22 @@ final class CarKeyboardOverlay {
 
 	boolean isShowing() {
 		return view.getParent() != null;
+	}
+
+	boolean dispatchTap(float x, float y) {
+		if (!isShowing()) return false;
+		long time = android.os.SystemClock.uptimeMillis();
+		MotionEvent down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, x, y, 0);
+		view.dispatchTouchEvent(down);
+		down.recycle();
+		activity.getWindow().getDecorView().postDelayed(() -> {
+			if (!isShowing()) return;
+			MotionEvent up = MotionEvent.obtain(time, time + 100,
+					MotionEvent.ACTION_UP, x, y, 0);
+			view.dispatchTouchEvent(up);
+			up.recycle();
+		}, 100);
+		return true;
 	}
 
 	boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -317,6 +334,7 @@ final class CarKeyboardOverlay {
 	private void done() {
 		if (target == null) return;
 		EditText t = target;
+		if (submitOnEnter && activity.submitTextInput(t)) return;
 		if (submitOnEnter) t.onEditorAction(EditorInfo.IME_ACTION_DONE);
 		if (target == t) activity.stopInput();
 	}

@@ -43,15 +43,17 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
-import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
+import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.function.Cancellable;
 import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpConnection;
@@ -72,6 +74,12 @@ public class FermataContentProvider extends ContentProvider {
 	private static final char[] HEX = "0123456789abcdef".toCharArray();
 	private static final SecureRandom RANDOM = new SecureRandom();
 	private static final ArtworkStore ARTWORK = new ArtworkStore();
+	private static final ExecutorService ARTWORK_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+		Thread thread = new Thread(r, "ArtworkLoader");
+		thread.setDaemon(true);
+		return thread;
+	});
+	private static final PromiseQueue ARTWORK_QUEUE = new PromiseQueue(ARTWORK_EXECUTOR);
 
 	public static boolean isSupportedFileScheme(@Nullable String scheme) {
 		if (scheme == null) return false;
@@ -84,19 +92,53 @@ public class FermataContentProvider extends ContentProvider {
 	/** Materializes an untrusted source as a bounded PNG before making it cross-UID readable. */
 	@NonNull
 	public static FutureSupplier<Uri> shareImage(@NonNull Uri source) {
+		return materializeImage(source).map(LoadedArtwork::uri);
+	}
+
+	/** Loads the same normalized artwork without forcing callers through a second decode queue. */
+	@NonNull
+	public static FutureSupplier<Bitmap> loadImage(@NonNull Uri source) {
+		return materializeImage(source).map(LoadedArtwork::bitmap);
+	}
+
+	private static FutureSupplier<LoadedArtwork> materializeImage(Uri source) {
 		UriRequest current = UriRequest.parse(source);
 		if (current != null) {
 			File file = ARTWORK.resolve(FermataApplication.get(), current.token);
-			return (file == null) ? failed(new FileNotFoundException(source.toString())) :
-					completed(source);
+			if (file == null) return failed(new FileNotFoundException(source.toString()));
+			return ARTWORK_QUEUE.enqueue(() -> new LoadedArtwork(source, decodeFile(file)));
 		}
 
-		return App.get().execute(() -> {
+		return ARTWORK_QUEUE.enqueue(() -> {
 			Context context = FermataApplication.get();
+			String sourceKey = source.toString();
+			Uri cached = ARTWORK.find(context, sourceKey);
+			if (cached != null) {
+				UriRequest request = UriRequest.parse(cached);
+				File file = (request == null) ? null : ARTWORK.resolve(context, request.token);
+				if (file != null) {
+					try {
+						return new LoadedArtwork(cached, decodeFile(file));
+					} catch (IOException error) {
+						// A truncated or stale cache entry must not poison every future bind.
+						ARTWORK.invalidate(context, sourceKey, request.token);
+						Log.d(error, "Discarding invalid artwork cache entry");
+					}
+				}
+			}
+
 			Bitmap bitmap = loadNormalizedBitmap(context, source);
 			if (bitmap == null) throw new IOException("Unsupported artwork: " + source);
-			return ARTWORK.publish(context, source.toString(), bitmap);
+			return new LoadedArtwork(ARTWORK.publish(context, sourceKey, bitmap), bitmap);
 		});
+	}
+
+	private static Bitmap decodeFile(File file) throws IOException {
+		try (InputStream input = new FileInputStream(file)) {
+			Bitmap bitmap = decodeBounded(input);
+			if (bitmap == null) throw new IOException("Cached artwork is not decodable");
+			return bitmap;
+		}
 	}
 
 	/** Provider URIs no longer disclose or recover their untrusted source URI. */
@@ -392,7 +434,14 @@ public class FermataContentProvider extends ContentProvider {
 		}
 		int port = url.getPort();
 		if (port == -1) port = "https".equals(url.getProtocol()) ? 443 : 80;
-		return new InetSocketAddress(addresses[0], port);
+		InetAddress selected = addresses[0];
+		for (InetAddress address : addresses) {
+			if (address instanceof Inet4Address) {
+				selected = address;
+				break;
+			}
+		}
+		return new InetSocketAddress(selected, port);
 	}
 
 	private static final class RemoteResponse {
@@ -403,6 +452,9 @@ public class FermataContentProvider extends ContentProvider {
 			this.redirect = redirect;
 			this.body = body;
 		}
+	}
+
+	private record LoadedArtwork(Uri uri, Bitmap bitmap) {
 	}
 
 	private static Bitmap decodeBounded(byte[] data) {
@@ -484,6 +536,13 @@ public class FermataContentProvider extends ContentProvider {
 			return new File(context.getCacheDir(), "shared-artwork");
 		}
 
+		@Nullable
+		synchronized Uri find(Context context, String source) {
+			String token = sources.get(source);
+			return ((token == null) || (resolve(context, token) == null)) ? null :
+					Uri.parse(IMAGE_PREFIX + token);
+		}
+
 		synchronized Uri publish(Context context, String source, Bitmap bitmap) throws IOException {
 			if (!ensureDirectory(context)) throw new IOException("Unable to create artwork cache");
 			String existing = sources.get(source);
@@ -512,7 +571,7 @@ public class FermataContentProvider extends ContentProvider {
 		}
 
 		@Nullable
-		synchronized File resolve(Context context, String token) {
+		 synchronized File resolve(Context context, String token) {
 			if (!isValidToken(token)) return null;
 			try {
 				File directory = directory(context).getCanonicalFile();
@@ -520,6 +579,15 @@ public class FermataContentProvider extends ContentProvider {
 				return isWithin(file, directory) && file.isFile() ? file : null;
 			} catch (IOException error) {
 				return null;
+			}
+		}
+
+		 synchronized void invalidate(Context context, String source, String token) {
+			if (!token.equals(sources.get(source))) return;
+			sources.remove(source);
+			File file = resolve(context, token);
+			if ((file != null) && !file.delete()) {
+				Log.d("Failed to delete invalid artwork cache entry");
 			}
 		}
 

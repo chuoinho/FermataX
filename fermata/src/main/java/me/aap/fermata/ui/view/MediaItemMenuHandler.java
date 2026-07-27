@@ -14,7 +14,6 @@ import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_SCALE;
 import static me.aap.fermata.media.pref.PlayableItemPrefs.BOOKMARKS;
 import static me.aap.fermata.media.pref.PlayableItemPrefs.bookmarkTime;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addAudioPrefs;
-import static me.aap.fermata.ui.fragment.SettingsFragment.addAutoSubPrefs;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addDelayPrefs;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addSubSizePrefs;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addSubtitlePrefs;
@@ -240,7 +239,6 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 	protected void buildSubtitlesMenu(OverlayMenu.Builder b) {
 		PreferenceSet prefSet = new PreferenceSet();
-		addAutoSubPrefs(getContext(), prefSet, item.getPrefs(), null, false);
 		addDelayPrefs(prefSet, item.getPrefs(), MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay,
 				null);
 		addSubSizePrefs(prefSet, item.getPrefs(), null);

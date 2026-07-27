@@ -192,6 +192,15 @@ public class YoutubeFullscreenGateTest {
 	}
 
 	@Test
+	public void lookalikeYoutubeHostsCannotCreateVideoPlaybackKeys() {
+		YoutubeFullscreenGate gate = new YoutubeFullscreenGate();
+		assertEquals(NO_REQUEST, gate.requestAutoEntry(
+				"https://evilyoutube.com/watch?v=abc", "https://media.example/one"));
+		assertEquals(NO_REQUEST, gate.requestAutoEntry(
+				"https://youtube.com.evil.example/watch?v=abc", "https://media.example/two"));
+	}
+
+	@Test
 	public void feedPreviewCanNeverRequestAutomaticFullscreen() {
 		YoutubeFullscreenGate gate = new YoutubeFullscreenGate();
 

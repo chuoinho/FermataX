@@ -91,6 +91,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 			"android.media.browse.SEARCH_SUPPORTED";
 	private static final int NOTIF_ID = 1;
 	private static final String NOTIF_CHANNEL_ID = "Fermata";
+	private static final String ACTION_PLAYBACK_KEEP_ALIVE =
+			"me.aap.fermata.action.PLAYBACK_KEEP_ALIVE";
 	private DefaultMediaLib lib;
 	private MediaSessionCompat session;
 	MediaSessionCallback callback;
@@ -160,8 +162,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		MediaButtonReceiver.handleIntent(session, intent);
-		return super.onStartCommand(intent, flags, startId);
+		if (intent != null) MediaButtonReceiver.handleIntent(session, intent);
+		return START_NOT_STICKY;
 	}
 
 	@Override
@@ -222,6 +224,17 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@SuppressLint("SwitchIntDef")
 	void updateNotification(int st, PlayableItem currentItem) {
+		if ((st == STATE_NONE) || (st == STATE_STOPPED) || (st == STATE_ERROR)) {
+			if (runtimeGate.takePlaybackLifetimeStop()) stopSelf();
+		} else if (runtimeGate.takePlaybackLifetimeStart()) {
+			try {
+				startService(new Intent(this, getClass()).setAction(ACTION_PLAYBACK_KEEP_ALIVE));
+			} catch (RuntimeException ex) {
+				runtimeGate.playbackLifetimeStartFailed();
+				Log.e(ex, "Failed to retain media service for active playback");
+			}
+		}
+
 		switch (st) {
 			case STATE_NONE, STATE_STOPPED, STATE_ERROR -> stopForeground(true);
 			case STATE_PAUSED -> {

@@ -8,6 +8,7 @@ import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_AR
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE;
+import static me.aap.fermata.media.service.PlaybackSnapshot.METADATA_KEY_PREPARATION_STATUS;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
@@ -79,6 +80,7 @@ import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.format.Formatter;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -108,6 +110,7 @@ import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MediaEngineProvider;
+import me.aap.fermata.media.engine.PlaybackFailureException;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -116,12 +119,16 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.lib.PlaybackProgressItem;
+import me.aap.fermata.media.lib.PersistentMediaItem;
 import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
+import me.aap.fermata.media.net.RemotePlaybackProgress;
+import me.aap.fermata.media.net.RemotePlaybackItem;
+import me.aap.fermata.media.net.RemotePlaybackLifecycleItem;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
@@ -193,7 +200,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private PlaybackSnapshot playbackSnapshot;
 	private long playbackSnapshotRevision;
 	private long playbackRequestRevision;
+	private RemotePlaybackLifecycleItem playbackLifecycle;
+	private PlayableItem playbackLifecycleItem;
+	private long playbackLifecycleRevision = -1L;
 	private final PlaybackTransition playbackTransition = new PlaybackTransition();
+	private final PlaybackPreparationStatus preparationStatus = new PlaybackPreparationStatus();
+	private final DeferredInitialSeek deferredInitialSeek = new DeferredInitialSeek();
+	private final PlaybackProgressPolicy progressPolicy = new PlaybackProgressPolicy();
+	private Runnable progressCheckpoint;
 	private String retryStreamId;
 	private int streamRetryAttempt;
 	private long streamStartedAt;
@@ -288,7 +302,46 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		switchEngine(engine);
 	}
 
+	/**
+	 * Replaces a provisional engine without running the normal stop/close transition.
+	 *
+	 * <p>This is intentionally narrower than {@link #setEngine(MediaEngine)}. A deferred engine
+	 * may already own a pending prepare/play transition while it waits for an Activity-backed
+	 * engine. Stopping it here would clear that transition and make the eventual WebView engine
+	 * appear prepared but never start.</p>
+	 */
+	public boolean replaceEngine(@NonNull MediaEngine expected, @NonNull MediaEngine replacement) {
+		if ((expected == replacement) || (engine != expected)) return false;
+		engine = replacement;
+		session.setActive(true);
+		return true;
+	}
+
+	/**
+	 * Completes an Activity-backed engine handoff only while the requested item is still pending.
+	 * This prevents a late WebView callback from replacing a newer playback request.
+	 */
+	public long capturePendingEngineHandoff(@NonNull MediaEngine expected,
+			@NonNull PlayableItem target) {
+		return (engine == expected) && playbackTransition.isPending(target) ?
+				playbackRequestRevision : -1L;
+	}
+
+	public boolean handoffPendingEngine(@NonNull MediaEngine expected,
+			@NonNull MediaEngine replacement, long requestRevision) {
+		if ((requestRevision < 0L) || (requestRevision != playbackRequestRevision)) return false;
+		if (engine == expected) engine = replacement;
+		else if (engine != replacement) return false;
+		session.setActive(true);
+		return true;
+	}
+
 	public boolean startExternalPlayback(@NonNull MediaEngine engine) {
+		if (playbackTransition.hasPending()) {
+			PlayableItem source = engine.getSource();
+			if ((source == null) ||
+					!playbackTransition.isPending(PlayableItemResolver.unwrap(source))) return false;
+		}
 		switchEngine(engine);
 
 		if (!engine.requestAudioFocus(audioManager, audioFocusReq)) {
@@ -450,6 +503,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	public void close() {
 		onStop();
+		progressCheckpoint = null;
+		progressPolicy.clear();
 		session.setActive(false);
 		lib.getContext().unregisterReceiver(onNoisy);
 		removeBroadcastListeners();
@@ -520,6 +575,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				}
 				long pos = state.getPosition();
 				float speed = getSpeed(engine.getSource());
+				playOnPrepared = true;
 				state =
 						new PlaybackStateCompat.Builder(state).setState(PlaybackStateCompat.STATE_PLAYING, pos,
 								speed).build();
@@ -591,7 +647,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		PlayableItem i;
 		MediaEngine eng = getEngine();
 		if ((eng == null) || ((i = eng.getSource()) == null)) return;
+		playOnPrepared = false;
 		playbackRequestRevision++;
+		notifyPlaybackLifecycle(l -> l.onPlaybackAttemptPaused(playbackLifecycleRevision));
 		playerTask.cancel();
 		PlaybackSnapshot rollback = playbackTransition.cancel();
 
@@ -638,6 +696,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private FutureSupplier<?> onStop(MediaEngine eng, long pos) {
 		boolean current = eng == engine;
+		if (current || (eng == null)) cancelPlaybackLifecycle();
+		if (current || (eng == null)) deferredInitialSeek.clear();
 
 		if (eng != null) {
 			if (pos != -1) {
@@ -646,7 +706,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 					i = PlayableItemResolver.unwrap(i);
 					PlaybackSnapshot rollback = playbackTransition.cancel();
 					publishOutgoingPosition(i, pos, rollback);
-					setLastPlayed(i, pos);
+					setLastPlayed(i, pos, PlaybackProgressPolicy.isManaged(i));
 				}
 			}
 
@@ -657,6 +717,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 
 		if (current || (eng == null)) {
+			preparationStatus.clear();
+			clearPreparationMetadata();
 			playbackTransition.clear();
 			stopped();
 		}
@@ -930,7 +992,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onEngineBuffering(MediaEngine engine, int percent) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
 		if (isPlaying()) return;
 		PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(STATE_BUFFERING, 0, 1.0f).build();
@@ -939,25 +1001,30 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onEnginePrepared(MediaEngine engine) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
+		notifyPlaybackLifecycle(l -> l.onPlaybackAttemptPlayerReady(playbackLifecycleRevision));
 		playerTask.cancel();
 		PlayableItem i = engine.getSource();
 		if (i != null) onEnginePrepared(engine, i);
 	}
 
 	private void onEnginePrepared(MediaEngine engine, PlayableItem i) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
 		long pos = playbackTransition.getTargetPosition(i, lib.getLastPlayedPosition(i));
+		boolean deferInitialSeek = (i instanceof RemotePlaybackItem remote) &&
+				remote.deferInitialSeekUntilFirstFrame();
+		long enginePosition = deferredInitialSeek.prepare(engine, i,
+				playbackRequestRevision, pos, deferInitialSeek);
 
-		if (pos > 0) {
+		if (enginePosition > 0) {
 			FutureSupplier<Long> dur = i.getDuration();
 
 			if (dur.isDone()) {
-				if (pos <= dur.get(() -> 0L)) engine.setPosition(pos);
+				if (enginePosition <= dur.get(() -> 0L)) engine.setPosition(enginePosition);
 			} else {
 				dur.main().onSuccess(d -> {
 					if ((this.engine != engine) || (engine.getSource() != i)) return;
-					engine.setPosition((pos > d) ? 0 : pos);
+					engine.setPosition((enginePosition > d) ? 0 : enginePosition);
 				});
 			}
 		}
@@ -980,18 +1047,80 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onEngineStarted(MediaEngine engine) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
+		notifyPlaybackLifecycle(l -> l.onPlaybackAttemptStarted(playbackLifecycleRevision));
+		long requestRevision = playbackRequestRevision;
 		PlayableItem source = engine.getSource();
 		if (source instanceof StreamItem) streamStartedAt = System.currentTimeMillis();
 		else resetStreamRetry();
 		engine.getPosition().and(engine.getSpeed()).main()
 				.onSuccess(h -> {
-					if (engine == getEngine()) setPlayingState(engine, true, h.value1, h.value2);
+					if (ownsEngineSource(engine, source, requestRevision))
+						setPlayingState(engine, true, h.value1, h.value2);
 				});
 	}
 
+	@Override
+	public void onEnginePreparing(MediaEngine engine, RemotePlaybackProgress progress) {
+		PlayableItem item = engine.getSource();
+		long requestRevision = playbackRequestRevision;
+		handler.post(() -> updatePreparationProgress(engine, item, requestRevision, progress));
+	}
+
+	private void updatePreparationProgress(MediaEngine engine, @Nullable PlayableItem item,
+			long requestRevision, RemotePlaybackProgress progress) {
+		if ((item == null) || !ownsEngineSource(engine, item, requestRevision)) return;
+		int playbackState = getPlaybackState().getState();
+		if ((playbackState != STATE_CONNECTING) && (playbackState != STATE_BUFFERING) &&
+				(playbackState != STATE_PLAYING)) return;
+		String detail = switch (progress.phase()) {
+			case RESOLVING -> lib.getContext().getString(R.string.p2p_resolving);
+			case FINDING_PEERS -> lib.getContext().getString(R.string.p2p_finding_peers);
+			case BUFFERING -> lib.getContext().getString(R.string.p2p_buffering_status,
+					progress.peers(), Formatter.formatShortFileSize(lib.getContext(),
+							progress.downloadRateBytes()), progress.percent());
+			case READY -> lib.getContext().getString(R.string.p2p_starting_player_status,
+					progress.peers(), Formatter.formatShortFileSize(lib.getContext(),
+							progress.downloadRateBytes()));
+			case STREAMING -> lib.getContext().getString(R.string.p2p_streaming_status,
+					progress.peers(), Formatter.formatShortFileSize(lib.getContext(),
+							progress.downloadRateBytes()));
+			case REBUFFERING -> lib.getContext().getString(R.string.p2p_rebuffering_status,
+					progress.peers(), Formatter.formatShortFileSize(lib.getContext(),
+							progress.downloadRateBytes()));
+			case FAILED -> {
+				PlaybackFailureException.Reason reason = switch (progress.failure()) {
+					case METADATA_UNAVAILABLE -> PlaybackFailureException.Reason.P2P_METADATA_UNAVAILABLE;
+					case NO_PEERS -> PlaybackFailureException.Reason.P2P_NO_PEERS;
+					case DATA_TIMEOUT -> PlaybackFailureException.Reason.P2P_DATA_TIMEOUT;
+					case ENGINE_UNAVAILABLE -> PlaybackFailureException.Reason.P2P_ENGINE_UNAVAILABLE;
+					case FILE_UNAVAILABLE -> PlaybackFailureException.Reason.P2P_FILE_UNAVAILABLE;
+					case LOW_STORAGE -> PlaybackFailureException.Reason.P2P_LOW_STORAGE;
+				};
+				onEngineError(engine, new PlaybackFailureException(reason));
+				yield "";
+			}
+		};
+		if (progress.phase() == RemotePlaybackProgress.Phase.FAILED) return;
+		PlayableItem owner = PlayableItemResolver.unwrap(item);
+		preparationStatus.update(engine, owner, requestRevision, detail);
+		MediaMetadataCompat.Builder builder = (metadata == null) ?
+				new MediaMetadataCompat.Builder() : new MediaMetadataCompat.Builder(metadata);
+		builder.putString(METADATA_KEY_DISPLAY_TITLE, item.getName());
+		builder.putString(METADATA_KEY_PREPARATION_STATUS, detail);
+		MediaMetadataCompat progressMetadata = builder.build();
+		setMetadata(progressMetadata);
+		if ((progress.phase() == RemotePlaybackProgress.Phase.BUFFERING) &&
+				(playbackState != STATE_BUFFERING)) {
+			PlaybackStateCompat state = new PlaybackStateCompat.Builder(getPlaybackState())
+					.setState(STATE_BUFFERING, 0, 1.0f).build();
+			setPlaybackState(state);
+		}
+	}
+
 	private void setPlayingState(MediaEngine engine, boolean playing, long pos, float speed) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
+		long requestRevision = playbackRequestRevision;
 		PlayableItem i = engine.getSource();
 		if (i == null) return;
 		BrowsableItemPrefs prefs = i.getParent().getPrefs();
@@ -1017,17 +1146,20 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			update.get().accept(md1);
 
 			return getQid.then(qid -> i.getMediaDescription().main().then(dsc -> {
-				if (getCurrentItem() != i) return completedVoid();
+				if (!ownsEngineSource(engine, i, requestRevision)) return completedVoid();
 				MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder(md1);
 				FutureSupplier<MediaMetadataCompat> md2 = buildMetadata(b, md1, dsc);
 
 				if (md2.isDone()) {
-					update.get().accept(md2.get(b::build));
+					update.get().accept(mergePreparationStatus(engine, i, requestRevision,
+							md2.get(b::build)));
 					return completedVoid();
 				} else {
-					update.get().accept(b.build());
+					update.get().accept(mergePreparationStatus(engine, i, requestRevision,
+							b.build()));
 					return md2.main().then(md3 -> {
-						update.get().accept(md3);
+						update.get().accept(
+								mergePreparationStatus(engine, i, requestRevision, md3));
 						return completedVoid();
 					});
 				}
@@ -1042,9 +1174,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		} else {
 			MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
 			b.putString(METADATA_KEY_DISPLAY_TITLE, i.getName());
-			md = b.build();
+			md = mergePreparationStatus(engine, i, requestRevision, b.build());
 			update.set(m -> engine.getPosition().main().onSuccess(position -> {
-				if (getCurrentItem() != i) return;
+				if (!ownsEngineSource(engine, i, requestRevision)) return;
 				PlaybackStateCompat s =
 						createPlayingState(i, !isPlaying(), getQid.peek(0L), position, speed);
 				setSessionMetadata(m, false);
@@ -1052,9 +1184,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			}));
 		}
 
+		if (!ownsEngineSource(engine, i, requestRevision)) return;
 		PlaybackStateCompat s = createPlayingState(i, !playing, getQid.peek(0L), pos, speed);
 		setSessionMetadata(md, false);
 		setPlaybackState(s);
+	}
+
+	private MediaMetadataCompat mergePreparationStatus(MediaEngine engine, PlayableItem item,
+			long requestRevision, MediaMetadataCompat metadata) {
+		PlayableItem owner = PlayableItemResolver.unwrap(item);
+		return preparationStatus.merge(engine, owner, requestRevision, metadata);
 	}
 
 	private FutureSupplier<MediaMetadataCompat> buildMetadata(MediaMetadataCompat.Builder b,
@@ -1089,7 +1228,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onEngineEnded(MediaEngine engine) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
+		notifyPlaybackLifecycle(l -> l.onPlaybackAttemptEnded(playbackLifecycleRevision));
 		playerTask.cancel();
 		playerTask = engineEnded(engine);
 	}
@@ -1148,39 +1288,96 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onVideoSizeChanged(MediaEngine engine, int width, int height) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
 		VideoView v = getVideoView();
 		if (v != null) v.setSurfaceSize(engine);
 	}
 
 	@Override
+	public void onVideoFirstFrame(MediaEngine engine) {
+		if (!acceptsEngineCallback(engine)) return;
+		PlayableItem item = engine.getSource();
+		if (item != null) {
+			PlayableItem owner = PlayableItemResolver.unwrap(item);
+			if (preparationStatus.complete(engine, owner, playbackRequestRevision) &&
+					(metadata != null)) {
+				clearPreparationMetadata();
+			}
+		}
+		notifyPlaybackLifecycle(l -> l.onPlaybackAttemptFirstFrame(playbackLifecycleRevision));
+		long deferredPosition = deferredInitialSeek.consume(engine, item,
+				playbackRequestRevision);
+		if (deferredPosition > 0L) engine.setPosition(deferredPosition);
+	}
+
+	private void clearPreparationMetadata() {
+		if ((metadata == null) ||
+				TextUtils.isEmpty(metadata.getString(METADATA_KEY_PREPARATION_STATUS))) return;
+		setMetadata(PlaybackPreparationStatus.clearMetadata(metadata));
+	}
+
+	@Override
 	public void onSubtitleStreamChanged(MediaEngine engine, @Nullable SubtitleStreamInfo info) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
 		fireBroadcastEvent(l -> l.onSubtitleStreamChanged(this, info));
 	}
 
 	@Override
+	public void onSubtitleLoadFailed(MediaEngine engine, Throwable error) {
+		handler.post(() -> {
+			if (!acceptsEngineCallback(engine)) return;
+			String name = lib.getContext().getString(R.string.subtitles);
+			String message = lib.getContext().getString(R.string.err_failed_to_download, name);
+			fireBroadcastEvent(l -> l.onSubtitleLoadFailed(this, message));
+		});
+	}
+
+	@Override
 	public void onEngineError(MediaEngine engine, Throwable ex) {
-		if (engine != getEngine()) return;
+		if (!acceptsEngineCallback(engine)) return;
 		String msg;
 		PlayableItem i = engine.getSource();
 		boolean sensitive = (i != null) && i.isLocationSensitive();
+		PlaybackFailureException safeFailure = PlaybackFailureException.find(ex);
+		String safeCause = (safeFailure == null) ? null : switch (safeFailure.getReason()) {
+			case P2P_METADATA_UNAVAILABLE ->
+					lib.getContext().getString(R.string.err_p2p_metadata_unavailable);
+			case P2P_NO_PEERS -> lib.getContext().getString(R.string.err_p2p_no_peers);
+			case P2P_DATA_TIMEOUT -> lib.getContext().getString(R.string.err_p2p_data_timeout);
+			case P2P_ENGINE_UNAVAILABLE ->
+					lib.getContext().getString(R.string.err_p2p_engine_unavailable);
+			case P2P_FILE_UNAVAILABLE ->
+					lib.getContext().getString(R.string.err_p2p_file_unavailable);
+			case P2P_LOW_STORAGE ->
+					lib.getContext().getString(R.string.err_p2p_low_storage);
+		};
 
-		if (sensitive || TextUtils.isEmpty(ex.getLocalizedMessage())) {
+		if (safeCause != null) {
+			msg = lib.getContext().getResources()
+					.getString(R.string.err_failed_to_play_cause, i, safeCause);
+		} else if (sensitive || TextUtils.isEmpty(ex.getLocalizedMessage())) {
 			msg = lib.getContext().getResources().getString(R.string.err_failed_to_play, i);
 		} else {
 			msg = lib.getContext().getResources()
 					.getString(R.string.err_failed_to_play_cause, i, ex.getLocalizedMessage());
 		}
 
-		if (sensitive) {
+		if (sensitive && (safeFailure != null)) {
+			Log.w("Failed to play sensitive item ", i.getId(), " (",
+					safeFailure.getReason(), ')');
+		} else if (sensitive) {
 			Log.w("Failed to play sensitive item ", i.getId(), " (",
 					ex.getClass().getSimpleName(), ')');
 		} else {
 			Log.w(ex, msg);
 		}
 
-		if (tryAnotherEngine && (engine.getSource() != null)) {
+		boolean transportFailure = (safeFailure != null) && safeFailure.preventsEngineFallback();
+		boolean fallbackCandidate = tryAnotherEngine && !transportFailure &&
+				(engine.getSource() != null);
+		boolean lifecycleAllowsFallback = !fallbackCandidate || (playbackLifecycle == null) ||
+				playbackLifecycle.onPlaybackAttemptFallback(playbackLifecycleRevision);
+		if (fallbackCandidate && lifecycleAllowsFallback) {
 			this.engine = getEngineManager().createAnotherEngine(engine, this);
 
 			if (this.engine != null) {
@@ -1191,6 +1388,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				return;
 			}
 		}
+		notifyPlaybackLifecycle(l ->
+				l.onPlaybackAttemptFailed(playbackLifecycleRevision, ex));
 
 		PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(STATE_ERROR, 0, 1.0f)
@@ -1289,6 +1488,33 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask = createPlayItemTask(i, pos);
 	}
 
+	/** Persists the current managed item without changing playback or media-session state. */
+	public FutureSupplier<Void> saveCurrentPlaybackProgress() {
+		MediaEngine current = getEngine();
+		if (current == null) return completedVoid();
+		PlayableItem source = current.getSource();
+		if (source == null) return completedVoid();
+		source = PlayableItemResolver.unwrap(source);
+		if (!PlaybackProgressPolicy.isManaged(source)) return completedVoid();
+
+		PlayableItem item = source;
+		long generation = playbackRequestRevision;
+		return current.getPosition().and(item.getDuration()).main().then(values -> {
+			if ((generation != playbackRequestRevision) || (current != getEngine())) {
+				return completedVoid();
+			}
+			PlayableItem active = current.getSource();
+			if ((active == null) || (PlayableItemResolver.unwrap(active) != item)) {
+				return completedVoid();
+			}
+			return progressPolicy.lifecycle(item, generation, values.value1, values.value2,
+					true, false);
+		}).ifFail(error -> {
+			Log.w(error, "Failed to save current playback progress");
+			return null;
+		});
+	}
+
 	private FutureSupplier<?> createPlayItemTask(PlayableItem i, long pos) {
 		long requestRevision = ++playbackRequestRevision;
 		i = PlayableItemResolver.unwrap(i);
@@ -1322,6 +1548,44 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			setPlaybackState(state, target, null);
 		});
 		return prepare;
+	}
+
+	/** Refreshes metadata for the current engine without changing its play/pause state. */
+	public void onEngineMetadataChanged(MediaEngine engine) {
+		if (!acceptsEngineCallback(engine) || engine.getSource() == null) return;
+		long requestRevision = playbackRequestRevision;
+		PlayableItem expectedSource = PlayableItemResolver.unwrap(engine.getSource());
+		engine.getPosition().and(engine.getSpeed()).main().onSuccess(values -> {
+			if (ownsEngineSource(engine, expectedSource, requestRevision))
+				setPlayingState(engine, isPlaying(), values.value1, values.value2);
+		});
+	}
+
+	private boolean acceptsEngineCallback(@NonNull MediaEngine callbackEngine) {
+		PlayableItem source = callbackEngine.getSource();
+		boolean ownsPending = (source != null) &&
+				playbackTransition.isPending(PlayableItemResolver.unwrap(source));
+		return acceptsCallbackOwnership(callbackEngine == getEngine(),
+				playbackTransition.hasPending(), ownsPending);
+	}
+
+	private boolean ownsEngineSource(@NonNull MediaEngine callbackEngine,
+			@Nullable PlayableItem expectedSource, long requestRevision) {
+		if ((requestRevision != playbackRequestRevision) || !acceptsEngineCallback(callbackEngine))
+			return false;
+		PlayableItem current = callbackEngine.getSource();
+		return (current != null) && (expectedSource != null) &&
+				(PlayableItemResolver.unwrap(current) == PlayableItemResolver.unwrap(expectedSource));
+	}
+
+	static boolean acceptsCallbackOwnership(boolean currentEngine, boolean pendingTransition,
+			boolean callbackOwnsPending) {
+		return currentEngine && (!pendingTransition || callbackOwnsPending);
+	}
+
+	static boolean shouldClearPlaybackSurfaces(boolean targetIsVideo, @Nullable Object current,
+			@NonNull Object target) {
+		return targetIsVideo && ((current == null) || !current.equals(target));
 	}
 
 	private FutureSupplier<Void> captureOutgoingPosition(@Nullable MediaEngine eng,
@@ -1365,6 +1629,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			long requestRevision) {
 		if (requestRevision != playbackRequestRevision) return;
 		PlayableItem target = PlayableItemResolver.unwrap(i);
+		activatePlaybackLifecycle(target, requestRevision);
 		MediaEngine eng = getEngine();
 
 		if (eng != null) {
@@ -1390,11 +1655,43 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playPreparedItem(eng, target, pos, null, -1, transitionState, requestRevision);
 	}
 
+	private void activatePlaybackLifecycle(@NonNull PlayableItem item, long requestRevision) {
+		if ((playbackLifecycleItem == item) && (playbackLifecycleRevision == requestRevision)) return;
+		cancelPlaybackLifecycle();
+		if (!(item instanceof RemotePlaybackLifecycleItem lifecycle)) return;
+		playbackLifecycle = lifecycle;
+		playbackLifecycleItem = item;
+		playbackLifecycleRevision = requestRevision;
+		lifecycle.onPlaybackAttemptActivated(requestRevision, error -> handler.post(() -> {
+			if ((playbackLifecycle != lifecycle) ||
+					(playbackLifecycleRevision != requestRevision)) return;
+			MediaEngine current = getEngine();
+			if ((current == null) || !acceptsEngineCallback(current)) return;
+			onEngineError(current, error);
+		}));
+	}
+
+	private void cancelPlaybackLifecycle() {
+		RemotePlaybackLifecycleItem lifecycle = playbackLifecycle;
+		long revision = playbackLifecycleRevision;
+		playbackLifecycle = null;
+		playbackLifecycleItem = null;
+		playbackLifecycleRevision = -1L;
+		if (lifecycle != null) lifecycle.onPlaybackAttemptCancelled(revision);
+	}
+
+	private void notifyPlaybackLifecycle(
+			java.util.function.Consumer<RemotePlaybackLifecycleItem> notification) {
+		RemotePlaybackLifecycleItem lifecycle = playbackLifecycle;
+		if (lifecycle != null) notification.accept(lifecycle);
+	}
+
 	private void playPreparedItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current,
 			long currentPos, int transitionState, long requestRevision) {
 		if (requestRevision != playbackRequestRevision) return;
 		i = PlayableItemResolver.unwrap(i);
 		if (current != null) current = PlayableItemResolver.unwrap(current);
+		boolean clearPlaybackSurfaces = shouldClearPlaybackSurfaces(i.isVideo(), current, i);
 		if ((current != null) && !playbackTransition.isPending(i)) {
 			publishOutgoingPosition(current, currentPos, null);
 		}
@@ -1429,7 +1726,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			updateQueue = true;
 		}
 
-		if (i.isVideo() && (videoView != null)) engine.setVideoView(getVideoView());
+		if (i.isVideo() && (videoView != null)) {
+			VideoView view = getVideoView();
+			if (clearPlaybackSurfaces) view.clearPlaybackSurfaces();
+			engine.setVideoView(view);
+		}
 
 		playOnPrepared = true;
 		tryAnotherEngine = true;
@@ -1491,6 +1792,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				playbackSnapshot.getMetadata();
 
 		if (!transportCommand && (target != current)) {
+			preparationStatus.clear();
 			playbackTransition.begin(target, playbackSnapshot, targetPosition);
 			metadata = null;
 			session.setMetadata(null);
@@ -1500,6 +1802,28 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		PlaybackStateCompat state = createPlaybackTransitionState(previousState, transitionState,
 				publishedPosition);
 		setPlaybackState(state, publishedItem, publishedMetadata);
+		if (!transportCommand) publishPreparationMetadata(target, playbackRequestRevision);
+	}
+
+	private void publishPreparationMetadata(PlayableItem target, long requestRevision) {
+		target.getMediaData().main().onSuccess(loaded -> handler.post(() -> {
+			if ((requestRevision != playbackRequestRevision) ||
+					!playbackTransition.isPending(target)) return;
+			MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder(loaded)
+					.putString(METADATA_KEY_DISPLAY_TITLE, target.getName());
+			if (metadata != null) {
+				String progress = metadata.getString(METADATA_KEY_DISPLAY_SUBTITLE);
+				if (!TextUtils.isEmpty(progress)) {
+					builder.putString(METADATA_KEY_DISPLAY_SUBTITLE, progress);
+				}
+			}
+			MediaEngine currentEngine = getEngine();
+			MediaMetadataCompat prepared = builder.build();
+			if (currentEngine != null) {
+				prepared = mergePreparationStatus(currentEngine, target, requestRevision, prepared);
+			}
+			setMetadata(prepared);
+		}));
 	}
 
 	private void publishOutgoingPosition(@NonNull PlayableItem item, long position,
@@ -1567,6 +1891,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		service.updateNotification(state.getState(), item);
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
 		fireBroadcastEvent(l -> l.onPlaybackSnapshotChanged(this, previous, current));
+		updateProgressPolicy(state, item);
 
 		if (st == STATE_PLAYING) {
 			MediaEngine engine = getEngine();
@@ -1758,7 +2083,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (position < 0) {
 			if (!ownsLastPlayed(i, requestRevision)) return;
-			var id = i.getId();
+			var id = PersistentMediaItem.idOf(i);
 			lib.getPrefs().setLastPlayedPosPref(0);
 			lib.getPrefs().setLastPlayedItemPref(id);
 			i.getParent().getPrefs().setLastPlayedPosPref(0);
@@ -1768,17 +2093,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		i.getDuration().main().onSuccess(dur -> {
 			boolean ownsCurrent = ownsLastPlayed(i, requestRevision);
-			persistResolvedPlaybackProgress(i, position, dur, ownsCurrent, committedOutgoing)
+			persistResolvedPlaybackProgress(i, position, dur, ownsCurrent, committedOutgoing,
+					requestRevision)
 					.onFailure(error -> Log.e(error,
 							"Failed to save playback progress for ", i.getId()));
 			if (!ownsCurrent) return;
 			String id;
 			MediaLibPrefs libPrefs = lib.getPrefs();
 			BrowsableItemPrefs p;
-			boolean completed = (dur > 0) && ((dur - position) <= 1000);
+			boolean completed = PlaybackProgressPolicy.isCompleted(i, position, dur);
 
 			if (i.isStream() || (dur <= 0)) {
-				id = i.getId();
+				id = PersistentMediaItem.idOf(i);
 				p = i.getParent().getPrefs();
 				libPrefs.setLastPlayedItemPref(id);
 				libPrefs.setLastPlayedPosPref(0);
@@ -1792,7 +2118,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 					if (!ownsLastPlayed(i, requestRevision)) return;
 					if (next == null) next = i;
 
-					String nextId = next.getId();
+					String nextId = PersistentMediaItem.idOf(next);
 					BrowsableItemPrefs nextPrefs = next.getParent().getPrefs();
 					libPrefs.setLastPlayedItemPref(nextId);
 					libPrefs.setLastPlayedPosPref(0);
@@ -1803,7 +2129,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 				return;
 			} else {
-				id = i.getId();
+				id = PersistentMediaItem.idOf(i);
 				p = i.getParent().getPrefs();
 			}
 
@@ -1836,14 +2162,74 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			long duration) {
 		item = PlayableItemResolver.unwrap(item);
 		if (!(item instanceof PlaybackProgressItem progress)) return completedVoid();
-		boolean completed = (duration > 0) && ((duration - position) <= 1000);
-		return progress.savePlaybackProgress(completed ? 0 : Math.max(position, 0), completed);
+		PlaybackProgressPolicy.ProgressValue value =
+				PlaybackProgressPolicy.normalize(progress, position, duration);
+		return progress.savePlaybackProgress(value.position(), value.completed());
 	}
 
 	static FutureSupplier<Void> persistResolvedPlaybackProgress(PlayableItem item, long position,
 			long duration, boolean ownsLastPlayed, boolean committedOutgoing) {
 		return (ownsLastPlayed || committedOutgoing) ?
 				persistPlaybackProgress(item, position, duration) : completedVoid();
+	}
+
+	private FutureSupplier<Void> persistResolvedPlaybackProgress(PlayableItem item, long position,
+			long duration, boolean ownsLastPlayed, boolean committedOutgoing, long generation) {
+		if (!PlaybackProgressPolicy.isManaged(item)) {
+			return persistResolvedPlaybackProgress(item, position, duration, ownsLastPlayed,
+					committedOutgoing);
+		}
+		return progressPolicy.lifecycle(item, generation, position, duration, ownsLastPlayed,
+				committedOutgoing);
+	}
+
+	private void updateProgressPolicy(PlaybackStateCompat state, @Nullable PlayableItem item) {
+		boolean playing = state.getState() == STATE_PLAYING;
+		long generation = playbackRequestRevision;
+		progressCheckpoint = null;
+		if (!progressPolicy.bind(item, generation, playing) || !playing) return;
+		scheduleProgressCheckpoint(PlayableItemResolver.unwrap(item), generation, 0L);
+	}
+
+	private void scheduleProgressCheckpoint(PlayableItem item, long generation, long minDelay) {
+		long delay = progressPolicy.getCheckpointDelay(item, generation);
+		if (delay < 0L) return;
+		delay = Math.max(delay, minDelay);
+		Runnable checkpoint = new Runnable() {
+			@Override
+			public void run() {
+				if ((progressCheckpoint != this) ||
+						!progressPolicy.owns(item, generation, true)) return;
+				MediaEngine current = getEngine();
+				PlayableItem source = (current == null) ? null : current.getSource();
+				if ((source == null) ||
+						(PlayableItemResolver.unwrap(source) != item)) return;
+
+				current.getPosition().and(item.getDuration()).main().onCompletion((position, failure) -> {
+					if (progressCheckpoint != this) return;
+					progressCheckpoint = null;
+					if ((failure != null) || !progressPolicy.owns(item, generation, true)) {
+						if (progressPolicy.owns(item, generation, true)) {
+							scheduleProgressCheckpoint(item, generation, 1_000L);
+						}
+						return;
+					}
+
+					progressPolicy.checkpoint(item, generation, position.value1, position.value2)
+							.onCompletion((ignored, writeFailure) -> {
+						if (writeFailure != null) {
+							Log.e(writeFailure, "Failed to checkpoint playback progress for ",
+									item.getId());
+						}
+						if (progressPolicy.owns(item, generation, true)) {
+							scheduleProgressCheckpoint(item, generation, 0L);
+						}
+					});
+				});
+			}
+		};
+		progressCheckpoint = checkpoint;
+		handler.postDelayed(checkpoint, delay);
 	}
 
 	private boolean ownsLastPlayed(PlayableItem item, long requestRevision) {
@@ -1909,7 +2295,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				@Nullable PlaybackSnapshot previous, @NonNull PlaybackSnapshot current) {}
 
 		default void onSubtitleStreamChanged(MediaSessionCallback cb,
-																				 @Nullable SubtitleStreamInfo info) {}
+																 @Nullable SubtitleStreamInfo info) {}
+
+		default void onSubtitleLoadFailed(MediaSessionCallback cb, String message) {}
 	}
 
 	private static final class Prioritized<T> implements Comparable<Prioritized<T>> {

@@ -24,6 +24,7 @@
     <string name="module_name_radio" translatable="false">Internet Radio</string>
     <string name="module_name_podcast" translatable="false">Podcast</string>
     <string name="module_name_audiobook" translatable="false">Audiobook</string>
+	<string name="module_name_stremio" translatable="false">Stremio</string>
 
     <string name="addons">Addons</string>
     <string name="home">Home</string>
@@ -45,6 +46,7 @@
     <string name="dashboard_radio_sub">Popular stations and countries</string>
     <string name="dashboard_podcast_sub">Shows, episodes and offline listening</string>
     <string name="dashboard_audiobook_sub">Books, chapters and offline listening</string>
+	<string name="dashboard_stremio_sub">Movies, series and installed providers</string>
     <string name="dashboard_youtube_sub">Video search and playback</string>
     <string name="dashboard_web_sub">Open web media</string>
     <string name="dashboard_back_to_list">Back to list</string>
@@ -54,6 +56,7 @@
     <string name="addon_name_radio">Radio</string>
     <string name="addon_name_podcast">Podcasts</string>
     <string name="addon_name_audiobook">Audiobooks</string>
+	<string name="addon_name_stremio" translatable="false">Stremio</string>
     <string name="addon_name_web_browser">Web browser</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
     <string name="addon_name_cast" translatable="false">Google Cast</string>
@@ -312,6 +315,12 @@
     <string name="delete_file_question">Are you sure you want to delete file?</string>
     <string name="delete_file_failed">Failed to delete file %1$s</string>
     <string name="loading">Loading…</string>
+    <string name="p2p_resolving">Resolving torrent…</string>
+    <string name="p2p_finding_peers">Finding peers…</string>
+    <string name="p2p_buffering_status">%1$d peers | %2$s/s | %3$d%%</string>
+    <string name="p2p_starting_player_status">%1$d peers | %2$s/s | Starting player</string>
+    <string name="p2p_streaming_status">%1$d peers | %2$s/s | Playing</string>
+    <string name="p2p_rebuffering_status">Rebuffering | %1$d peers | %2$s/s</string>
     <string name="press_back_again">Press back button again to exit.</string>
     <string name="please_restart_app">Please restart the application.</string>
     <string name="use_phone_to_grant_perm">Please use you phone to grant required permissions.</string>
@@ -422,6 +431,12 @@
     <string name="err_failed_to_download">Failed to download %1$s</string>
     <string name="err_no_audio_record_perm">Audio recording permission is not granted</string>
     <string name="err_failed_start_service">Failed to start service: %s</string>
+	<string name="err_p2p_metadata_unavailable">Torrent metadata is unavailable. Try another stream.</string>
+	<string name="err_p2p_no_peers">No active P2P peers. Try another stream.</string>
+	<string name="err_p2p_data_timeout">P2P peers did not deliver data in time. Try another stream.</string>
+	<string name="err_p2p_engine_unavailable">The P2P playback engine is unavailable. Reopen Stremio and try again.</string>
+	<string name="err_p2p_file_unavailable">The selected torrent file is unavailable. Try another stream.</string>
+	<string name="err_p2p_low_storage">Not enough free storage for P2P playback. Free some space and try again.</string>
 
     <string name="initial_setup">Initial setup</string>
     <string name="initial_setup_subtitle">Choose the controls and language for this device.</string>

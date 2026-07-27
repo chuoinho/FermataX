@@ -17,14 +17,14 @@ public class XtreamAccountTest extends Assert {
 	@Test
 	public void parsesM3uPortalUrlFromHostField() {
 		XtreamAccount account = new XtreamAccount(0, null, 0,
-				"http://idlib.link:2082/get.php?username=03484525&password=03484525&type=m3u&output=m3u8",
+				"http://portal.example.invalid:2082/get.php?username=test-user&password=test-pass&type=m3u&output=m3u8",
 				0, null, null, 0, null, 0);
 
 		assertEquals("http", account.getScheme());
-		assertEquals("idlib.link", account.getHost());
+		assertEquals("portal.example.invalid", account.getHost());
 		assertEquals(2082, account.getPort());
-		assertEquals("03484525", account.getUsername());
-		assertEquals("03484525", account.getPassword());
+		assertEquals("test-user", account.getUsername());
+		assertEquals("test-pass", account.getPassword());
 		assertEquals("m3u8", account.getOutput());
 	}
 

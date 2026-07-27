@@ -25,11 +25,12 @@ ext {
                     hasSettings: false
             ],
             [
-                    name   : 'subgen',
-                    id     : 'subgen_addon',
-                    icon   : 'subgen',
-                    class  : 'me.aap.fermata.addon.SubGenAddon',
-                    depends: 'exoplayer,translate'
+                    name       : 'subgen',
+                    id         : 'subgen_addon',
+                    icon       : 'subgen',
+                    class      : 'me.aap.fermata.addon.SubGenAddon',
+                    depends    : 'exoplayer,translate',
+                    hasSettings: false
             ],
     ]
 }
@@ -49,11 +50,15 @@ buildscript {
 }
 
 allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
+	repositories {
+		google()
+		mavenCentral()
+		gradlePluginPortal()
+		maven {
+			url "https://dl.frostwire.com/maven"
+			content { includeGroup "com.frostwire" }
+		}
+	}
 }
 
 subprojects {
@@ -153,13 +158,14 @@ gradle.projectsEvaluated {
         def id = it.containsKey('id') ? "R.id.${it['id']}" : "0"
 		def capabilities = it.get('capabilities',
 				it.get('fragment', false) ? 'dashboard,navigation' : '')
-        addonInfo.append("  new me.aap.fermata.addon.AddonInfo(" +
+		addonInfo.append("  new me.aap.fermata.addon.AddonInfo(" +
                 "\"${it.get('module', name)}\", \"${it['class']}\", " +
                 "${id}, " +
                 "R.string.addon_name_${name}, R.drawable.${it['icon']}, " +
                 "${it['order']}, ${it['hasSettings']}, ${it.get('fragment', false)}, ${it['enabled']}, " +
                 "${it.get('auto', false)}, \"${it.get('depends', "")}\", " +
-				"\"${capabilities}\", \"${it.get('voiceTarget', '')}\"),\n")
+				"\"${capabilities}\", \"${it.get('voiceTarget', '')}\", " +
+				"\"${it.get('resolverSchemes', '')}\"),\n")
     }
 
     def infoStr = addonInfo.append('})').toString()

@@ -6,6 +6,7 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.DashboardFragment;
+import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.MediaItemListView;
@@ -52,7 +53,10 @@ public final class BackNavigationPolicy {
 		BodyLayout b = a.getBody();
 		if (!b.isVideoMode()) return false;
 
-		b.setMode(BodyLayout.Mode.BOTH);
+		ActivityFragment fragment = a.getActiveFragment();
+		boolean splitViewSupported = !(fragment instanceof MainActivityFragment main) ||
+				main.isSplitViewSupported();
+		b.setMode(resolveVideoExitMode(splitViewSupported));
 		if (AUTO) a.setBarsHidden(false);
 		if (a.isCarActivity()) {
 			a.post(() -> {
@@ -63,6 +67,10 @@ public final class BackNavigationPolicy {
 			ChromePolicy.refreshAutoTopBackButton(a);
 		}
 		return true;
+	}
+
+	static BodyLayout.Mode resolveVideoExitMode(boolean splitViewSupported) {
+		return splitViewSupported ? BodyLayout.Mode.BOTH : BodyLayout.Mode.FRAME;
 	}
 
 	public static void handleAutoActivityBack(MainActivityDelegate a) {

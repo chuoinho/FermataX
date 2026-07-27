@@ -1,0 +1,9 @@
+{
+  "streams": [
+    {
+      "name": "Fixture YouTube Target",
+      "title": "Example Public Domain Clip",
+      "ytId": "Example0001"
+    }
+  ]
+}

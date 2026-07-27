@@ -49,4 +49,34 @@ public class FermataWebClientTest {
 		assertFalse(FermataWebClient.shouldRunRetry(4, 4,
 				"https://failed.example", "https://new.example", "https://other.example"));
 	}
+
+	@Test
+	public void youtubeHostCheckRejectsLookalikesAndTvSurface() {
+		assertTrue(FermataWebClient.isYoutubeHost("youtube.com"));
+		assertTrue(FermataWebClient.isYoutubeHost("m.youtube.com"));
+		assertTrue(FermataWebClient.isYoutubeHost("YOUTU.BE"));
+		assertFalse(FermataWebClient.isYoutubeHost("evilyoutube.com"));
+		assertFalse(FermataWebClient.isYoutubeHost("youtube.com.evil.example"));
+		assertFalse(FermataWebClient.isYoutubeHost("tv.youtube.com"));
+	}
+
+	@Test
+	public void policyBoundMainFrameNavigationRejectsDisallowedRedirects() {
+		FermataWebClient client = new FermataWebClient();
+		client.setExternalNavigationPolicy(uri -> {
+			if (!"allowed.example".equals(uri.getHost()))
+				throw new me.aap.fermata.addon.external.ExternalNavigationPolicyException("blocked");
+		});
+		assertTrue(client.isExternalNavigationAllowed("https://allowed.example/start"));
+		assertFalse(client.isExternalNavigationAllowed("https://private.example/redirect"));
+	}
+
+	@Test
+	public void transientExternalPagesAreNeverPersistedAsBrowserLastUrl() {
+		assertFalse(FermataWebView.shouldPersistPage(true, false,
+				"https://provider.example/private"));
+		assertFalse(FermataWebView.shouldPersistPage(false, true, "about:blank"));
+		assertTrue(FermataWebView.shouldPersistPage(false, false,
+				"https://browser.example/normal"));
+	}
 }

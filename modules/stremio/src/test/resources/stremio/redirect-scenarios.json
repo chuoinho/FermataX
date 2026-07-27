@@ -1,0 +1,68 @@
+{
+  "_fixture": {
+    "kind": "http-redirect-scenarios",
+    "networkAccess": false
+  },
+  "scenarios": [
+    {
+      "id": "same-origin-manifest",
+      "initialUrl": "https://addon.example.invalid/manifest.json",
+      "hops": [
+        {
+          "status": 302,
+          "location": "https://addon.example.invalid/v1/manifest.json"
+        }
+      ],
+      "expectedResult": "allow"
+    },
+    {
+      "id": "cross-origin-strip-sensitive-headers",
+      "initialUrl": "https://addon.example.invalid/stream/movie/example.movie.1.json",
+      "hops": [
+        {
+          "status": 307,
+          "location": "https://cdn.example.invalid/example-movie/master.m3u8"
+        }
+      ],
+      "requestHeaderNames": [
+        "Authorization",
+        "Cookie",
+        "User-Agent"
+      ],
+      "expectedForwardedHeaderNames": [
+        "User-Agent"
+      ],
+      "expectedResult": "allow_without_sensitive_headers"
+    },
+    {
+      "id": "resolved-loopback-blocked",
+      "initialUrl": "https://addon.example.invalid/manifest.json",
+      "hops": [
+        {
+          "status": 302,
+          "location": "https://private-target.example.invalid/manifest.json",
+          "fixtureResolvedAddresses": [
+            "127.0.0.1",
+            "::1"
+          ]
+        }
+      ],
+      "expectedResult": "block_private_address"
+    },
+    {
+      "id": "redirect-loop",
+      "initialUrl": "https://addon.example.invalid/manifest.json",
+      "hops": [
+        {
+          "status": 302,
+          "location": "https://addon.example.invalid/redirect-a"
+        },
+        {
+          "status": 302,
+          "location": "https://addon.example.invalid/manifest.json"
+        }
+      ],
+      "expectedResult": "redirect_loop"
+    }
+  ]
+}

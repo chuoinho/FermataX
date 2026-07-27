@@ -8,6 +8,7 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.SystemClock;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.StringRes;
@@ -237,7 +238,8 @@ class VoiceCommandHandler {
 
 			if (fid == ID_NULL) return false;
 			activity.showFragment(fid);
-			searchInFragment(fid, vcmd, 0);
+			searchInFragment(fid, vcmd,
+					VoiceReadinessPolicy.deadline(SystemClock.uptimeMillis()));
 			return true;
 		}
 
@@ -285,18 +287,22 @@ class VoiceCommandHandler {
 		// loaded on demand. The runtime contract still validates the loaded addon.
 		var info = addons.getVoiceAddonInfo(target);
 		if ((info == null) || !activity.showFragmentWhenReady(info.addonId)) return false;
-		searchInFragment(info.addonId, command, 0);
+		searchInFragment(info.addonId, command,
+				VoiceReadinessPolicy.deadline(SystemClock.uptimeMillis()));
 		return true;
 	}
 
-	private void searchInFragment(@IdRes int id, VoiceCommand cmd, int attempt) {
-		if (attempt == 100) {
+	private void searchInFragment(@IdRes int id, VoiceCommand cmd, long deadline) {
+		boolean alive = !activity.getAppActivity().isDestroyed() &&
+				!activity.getAppActivity().isFinishing();
+		if (!VoiceReadinessPolicy.shouldRetry(SystemClock.uptimeMillis(), deadline, alive)) {
 			Log.e("Failed to perform search in fragment ", id);
 			return;
 		}
 		MainActivityFragment f = activity.getActiveMainActivityFragment();
 		if ((f == null) || (f.getFragmentId() != id)) {
-			activity.post(() -> searchInFragment(id, cmd, attempt + 1));
+			activity.postDelayed(() -> searchInFragment(id, cmd, deadline),
+					VoiceReadinessPolicy.RETRY_DELAY_MS);
 		} else if ((f.getFragmentId() == R.id.folders_fragment) ||
 				(f.getFragmentId() == R.id.playlists_fragment)) {
 			MediaLibFragment mf = (MediaLibFragment) f;
@@ -309,6 +315,10 @@ class VoiceCommandHandler {
 				}
 			});
 		} else {
+			var info = AddonManager.get().getAddonInfo(id);
+			var addon = (info == null) ? null : AddonManager.get().getAddon(info.className);
+			if ((addon instanceof me.aap.fermata.addon.VoiceSearchAddon voice) &&
+					voice.handleVoiceSearch(activity, cmd.getQuery(), cmd.isPlay())) return;
 			f.voiceCommand(cmd);
 		}
 	}

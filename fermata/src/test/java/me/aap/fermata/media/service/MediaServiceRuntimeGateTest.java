@@ -28,4 +28,17 @@ public class MediaServiceRuntimeGateTest {
 		assertFalse(gate.takeAddonAttachOnInternalBind());
 		assertTrue(gate.takeAddonDetachOnDestroy());
 	}
+
+	@Test
+	public void playbackLifetimeStartsAndStopsExactlyOnce() {
+		MediaServiceRuntimeGate gate = new MediaServiceRuntimeGate();
+
+		assertTrue(gate.takePlaybackLifetimeStart());
+		assertFalse(gate.takePlaybackLifetimeStart());
+		assertTrue(gate.takePlaybackLifetimeStop());
+		assertFalse(gate.takePlaybackLifetimeStop());
+		assertTrue(gate.takePlaybackLifetimeStart());
+		gate.playbackLifetimeStartFailed();
+		assertTrue(gate.takePlaybackLifetimeStart());
+	}
 }

@@ -49,6 +49,7 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 	private float touchDownY;
 	private View touchTargetChild;
 	private boolean suppressClickUntilUp;
+	private boolean scrollAffordanceTouch;
 	private boolean nudgeScheduled;
 	private Runnable nudgeTask;
 	private ObjectAnimator nudgeAnimator;
@@ -87,10 +88,20 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 			case MotionEvent.ACTION_DOWN -> {
 				touchDownX = e.getX();
 				touchDownY = e.getY();
-				touchTargetChild = findTouchedChild(e);
+				scrollAffordanceTouch = NavRailScrollPolicy.isAffordanceTouch(e.getY(),
+						getHeight(), getScrollY(), getMaxScrollY(), getIndicatorExtent());
+				touchTargetChild = scrollAffordanceTouch ? null : findTouchedChild(e);
 				suppressClickUntilUp = false;
+				if (scrollAffordanceTouch) {
+					gestureDetector.onTouchEvent(e);
+					return true;
+				}
 			}
 			case MotionEvent.ACTION_MOVE -> {
+				if (scrollAffordanceTouch) {
+					gestureDetector.onTouchEvent(e);
+					return true;
+				}
 				if (shouldSuppressClickForGesture(e)) {
 					if (!suppressClickUntilUp) {
 						suppressClickUntilUp = true;
@@ -101,6 +112,12 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 				}
 			}
 			case MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+				if (scrollAffordanceTouch) {
+					gestureDetector.onTouchEvent(e);
+					scrollAffordanceTouch = false;
+					touchTargetChild = null;
+					return true;
+				}
 				if (suppressClickUntilUp) {
 					gestureDetector.onTouchEvent(e);
 					suppressClickUntilUp = false;
@@ -185,7 +202,13 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
+		int scroll = getScrollY();
+		int max = getMaxScrollY();
+		ChildClip clip = childClip(scroll, getHeight(), max, getIndicatorExtent());
+		int save = canvas.save();
+		canvas.clipRect(0, clip.top(), getWidth(), clip.bottom());
 		super.dispatchDraw(canvas);
+		canvas.restoreToCount(save);
 		drawScrollAffordance(canvas);
 	}
 
@@ -221,7 +244,7 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 	private boolean scrollNavBar(float distanceY) {
 		int max = getMaxScrollY();
 		if (max == 0) return false;
-		int next = clamp(getScrollY() + (int) distanceY, 0, max);
+		int next = NavRailScrollPolicy.nextScroll(getScrollY(), distanceY, max);
 		if (next == getScrollY()) return true;
 		scrollTo(0, next);
 		return true;
@@ -235,7 +258,8 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 	}
 
 	private int getMaxScrollY() {
-		return Math.max(0, getContentHeight() - getHeight());
+		return NavRailScrollPolicy.maxScroll(
+				getContentHeight(), getHeight(), getIndicatorExtent());
 	}
 
 	private void refreshScrollState() {
@@ -253,16 +277,20 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 		int top = active.getTop();
 		int bottom = active.getBottom();
 		int scroll = getScrollY();
+		int max = getMaxScrollY();
 		int next = scroll;
+		int indicatorExtent = getIndicatorExtent();
+		int visibleTop = NavRailScrollPolicy.visibleTop(scroll, indicatorExtent);
+		int visibleBottom = NavRailScrollPolicy.visibleBottom(
+				scroll, getHeight(), max, indicatorExtent);
 
-		if (top < scroll) {
-			next = top;
+		if (top < visibleTop) {
+			next = top - indicatorExtent;
 		} else {
-			int visibleBottom = scroll + getHeight();
-			if (bottom > visibleBottom) next = bottom - getHeight();
+			if (bottom > visibleBottom) next = bottom - getHeight() + indicatorExtent;
 		}
 
-		next = clamp(next, 0, getMaxScrollY());
+		next = clamp(next, 0, max);
 		if (next != scroll) scrollTo(0, next);
 	}
 
@@ -320,7 +348,7 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 	}
 
 	private void drawIndicator(Canvas canvas, boolean top, int width, int height) {
-		int extent = Math.min(fadeExtent, height / 3);
+		int extent = getIndicatorExtent();
 		if (extent <= 0) return;
 
 		int color = getIndicatorBaseColor();
@@ -352,8 +380,12 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 
 	private int getIndicatorBaseColor() {
 		int color = getBgColor();
-		if (Color.alpha(color) == 0) return Color.argb(210, 8, 18, 32);
-		return Color.argb(210, Color.red(color), Color.green(color), Color.blue(color));
+		if (Color.alpha(color) == 0) return Color.rgb(8, 18, 32);
+		return Color.rgb(Color.red(color), Color.green(color), Color.blue(color));
+	}
+
+	private int getIndicatorExtent() {
+		return Math.min(fadeExtent, getHeight() / 3);
 	}
 
 	private int getChevronColor() {
@@ -364,6 +396,16 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 
 	private static int clamp(int value, int min, int max) {
 		return Math.max(min, Math.min(max, value));
+	}
+
+	static ChildClip childClip(int scrollY, int height, int maxScroll, int indicatorExtent) {
+		return new ChildClip(
+				NavRailScrollPolicy.visibleTop(scrollY, indicatorExtent),
+				NavRailScrollPolicy.visibleBottom(
+						scrollY, height, maxScroll, indicatorExtent));
+	}
+
+	record ChildClip(int top, int bottom) {
 	}
 
 	private int getVerticalButtonExtent() {

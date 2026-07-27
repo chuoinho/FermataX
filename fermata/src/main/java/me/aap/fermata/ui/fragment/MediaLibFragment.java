@@ -71,7 +71,8 @@ import me.aap.utils.ui.view.ToolBarView;
  * @author Andrey Pavlenko
  */
 public abstract class MediaLibFragment extends MainActivityFragment implements MainActivityListener,
-		PreferenceStore.Listener, FermataServiceUiBinder.Listener, ToolBarView.Listener {
+		PreferenceStore.Listener, FermataServiceUiBinder.Listener, ToolBarView.Listener,
+		MediaItemNavigationTarget {
 	private ListAdapter adapter;
 	private boolean noScroll;
 	private int scrollPosition;
@@ -329,6 +330,12 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	protected boolean isRescanSupported() {
 		return false;
+	}
+
+	@Override
+	public void showMediaItem(Item item) {
+		if (item instanceof PlayableItem) revealItem(item);
+		else if (item instanceof BrowsableItem folder) openItem(folder);
 	}
 
 	public boolean isAddSourceSupported() {

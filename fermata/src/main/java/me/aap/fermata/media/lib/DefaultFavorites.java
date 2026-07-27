@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.List;
 
 import me.aap.fermata.R;
+import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -113,17 +114,20 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 
 	@Override
 	protected void saveChildren(List<PlayableItem> children) {
-		setFavoritesPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
+		String[] resolved = mapToArray(children, PlayableItem::getOrigId, String[]::new);
+		setFavoritesPref(mergeChildIds(resolved, getUnresolvedChildIds(), Integer.MAX_VALUE));
 	}
 
 	@Override
 	protected void itemAdded(PlayableItem i) {
 		getLib().getAtvInterface(a -> a.addProgram(i));
+		AddonManager.get().onFavoriteChanged(i, true);
 	}
 
 	@Override
 	protected void itemRemoved(PlayableItem i) {
 		super.itemRemoved(i);
 		getLib().getAtvInterface(a -> a.removeProgram(i));
+		AddonManager.get().onFavoriteChanged(i, false);
 	}
 }

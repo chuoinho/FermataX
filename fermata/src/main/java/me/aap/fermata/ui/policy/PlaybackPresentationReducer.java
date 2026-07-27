@@ -27,6 +27,10 @@ public final class PlaybackPresentationReducer {
 		return showControls(current, delay, true);
 	}
 
+	public static State showControls(State current, int delay) {
+		return showControls(current, delay, false);
+	}
+
 	public static State showControlsPersistent(State current) {
 		if (!current.videoMode) return current;
 		return current.splitMode ? enterVideo(true)

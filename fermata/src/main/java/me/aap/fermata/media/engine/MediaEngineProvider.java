@@ -3,8 +3,13 @@ package me.aap.fermata.media.engine;
 import android.content.Context;
 import android.graphics.Bitmap;
 
+import java.util.Collections;
+import java.util.Set;
+
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.net.PlaybackRequestProfile.EngineCapability;
+import me.aap.fermata.media.net.RemotePlaybackItem;
 
 /**
  * @author Andrey Pavlenko
@@ -14,6 +19,15 @@ public interface MediaEngineProvider {
 	void init(Context ctx);
 
 	MediaEngine createEngine(Listener listener);
+
+	default Set<EngineCapability> getPlaybackCapabilities() {
+		return Collections.emptySet();
+	}
+
+	default boolean supportsPlayback(PlayableItem item) {
+		return !(item instanceof RemotePlaybackItem remote) || getPlaybackCapabilities()
+				.containsAll(remote.getPlaybackRequestProfile().getRequiredEngineCapabilities());
+	}
 
 	default boolean getMediaMetadata(MetadataBuilder meta, PlayableItem item) {
 		return false;
