@@ -27,9 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
+import me.aap.fermata.diagnostics.DiagnosticOperation;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.DeferredMediaItemResult;
 import me.aap.fermata.addon.MediaLibAddon;
@@ -219,8 +222,12 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@Override
 	public void search(String query, MediaLibResult<List<MediaItem>> result) {
+		DiagnosticOperation diagnostics = FermataApplication.get().getDiagnostics().begin(
+				"search", "media_browser_search",
+				Map.of("request_type", "media_browser"));
 		DetachedSearchResult<MediaItem> delivery = new DetachedSearchResult<>(result);
 		if (searchRequests.isClosed()) {
+			if (diagnostics != null) diagnostics.cancel(Map.of("reason", "library_closed"));
 			delivery.complete(null, new CancellationException("Media library closed"));
 			return;
 		}
@@ -233,11 +240,35 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			searchRequests.add(timedSearch);
 			timedSearch.onCompletion((item, error) -> {
 				searchRequests.finish(timedSearch);
+				completeSearchDiagnostics(diagnostics, item, error);
 				delivery.complete(item, error);
 			});
 		} catch (Throwable error) {
+			completeSearchDiagnostics(diagnostics, null, error);
 			delivery.complete(null, error);
 		}
+	}
+
+	private static void completeSearchDiagnostics(DiagnosticOperation diagnostics,
+			@Nullable MediaItem item, @Nullable Throwable error) {
+		if (diagnostics == null) return;
+		if (error == null) {
+			diagnostics.complete(Map.of("result_count", (item == null) ? 0 : 1));
+		} else if (hasCause(error, CancellationException.class)) {
+			diagnostics.cancel(Map.of("reason", "cancelled"));
+		} else if (hasCause(error, TimeoutException.class)) {
+			diagnostics.timeout(Map.of("reason", "timeout"));
+		} else {
+			diagnostics.fail(error, Collections.emptyMap());
+		}
+	}
+
+	private static boolean hasCause(Throwable error, Class<? extends Throwable> type) {
+		for (Throwable current = error; current != null; current = current.getCause()) {
+			if (type.isInstance(current)) return true;
+			if (current.getCause() == current) break;
+		}
+		return false;
 	}
 
 	public void close() {

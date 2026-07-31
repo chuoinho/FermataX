@@ -145,7 +145,6 @@ public class SoapHandler implements HttpRequestHandler {
 			try {
 				ByteBuffer[] resp = b.build(os -> writeXml(respDoc, os));
 				maxLen = Math.max(maxLen, resp[resp.length - 1].remaining());
-//				Log.d("Sending response:\n", new String(resp.array(), resp.arrayOffset(), resp.remaining(), UTF_8));
 				channel.write(resp);
 			} catch (Exception ex) {
 				Log.e(ex, "Failed to write XML response");

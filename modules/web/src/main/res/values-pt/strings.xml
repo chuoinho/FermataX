@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="force_dark">Forçar modo escuro, se compatível</string>
+	<string name="force_dark_sub">%1$s. Escolha \&quot;\\&quot;Auto\&quot;\\&quot; para seguir o tema do dispositivo.</string>
+	<string name="force_dark_auto">Auto</string>
+	<string name="force_dark_enabled">Habilitado</string>
+	<string name="force_dark_disabled">Desabilitado</string>
+	<string name="user_agent">Agente do usuário</string>
+	<string name="user_agent_desktop">Agente do usuário - versão desktop</string>
+	<string name="desktop_version">Versão para desktop</string>
+	<string name="full_screen">Tela cheia</string>
+	<string name="full_screen_exit">Sair da tela inteira</string>
+	<string name="retry">Tentar novamente</string>
+	<string name="web_page_load_failed">Falha ao carregar a página</string>
+	<string name="web_page_load_failed_msg">Não foi possível carregar:\n%1$s\n\nMotivo: %2$s\n\nWebView: %3$s</string>
+	<string name="video_scaling_fill_proportional">Preencher proporcionalmente</string>
+	<string name="video_quality">Qualidade de vídeo</string>
+	<string name="open_on_start">Abrir no início</string>
+	<string name="auto_highest_video_quality">Selecione automaticamente a mais alta qualidade de vídeo</string>
+	<string name="try_to_skip_ad">Tente pular a publicidade</string>
+	<string name="sponsorblock_sub">Pule segmentos de crowdsourcing enquanto assiste ao YouTube.</string>
+	<string name="sponsorblock_enable">Habilitar SponsorBlock</string>
+	<string name="sponsorblock_enable_sub">Busca dados de segmento de patrocinador.ajay.app para o vídeo atual.</string>
+	<string name="sponsorblock_cat_sponsor">Segmentos patrocinadores</string>
+	<string name="sponsorblock_cat_selfpromo">Autopromoção</string>
+	<string name="sponsorblock_cat_interaction">Lembretes de interação</string>
+	<string name="sponsorblock_cat_intro">Introduções e intervalos</string>
+	<string name="sponsorblock_cat_outro">Cartões finais e créditos</string>
+	<string name="sponsorblock_cat_preview">Pré-visualização e recapitulação</string>
+	<string name="sponsorblock_cat_hook">Ganchos</string>
+	<string name="sponsorblock_cat_music_offtopic">Seções não musicais</string>
+	<string name="sponsorblock_cat_filler">Preenchimento</string>
+	<string name="sponsorblock_cat_filler_sub">Categoria agressiva; desativado por padrão.</string>
+</resources>

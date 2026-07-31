@@ -5,4 +5,6 @@
     <string name="openai_model">Model</string>
     <string name="openai_model_custom">Custom model</string>
     <string name="openai_model_other">Other model</string>
+	<string name="chat_request_failed">Request failed: %1$s</string>
+	<string name="chat_tts_failed">Text-to-speech failed: %1$s</string>
 </resources>

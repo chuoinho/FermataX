@@ -54,6 +54,9 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.diagnostics.DiagnosticEvent;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -120,6 +123,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@Override
 	public void onCreate() {
+		recordServiceDiagnostic("service_create_started", DiagnosticPriority.STATE, false, false,
+				false);
 		super.onCreate();
 		Context ctx = this;
 		lib = new DefaultMediaLib(FermataApplication.get());
@@ -141,10 +146,13 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		if (runtimeGate.takeAddonAttachOnCreate(BuildConfig.AUTO)) {
 			AddonManager.get().onServiceCreate(callback);
 		}
+		recordServiceDiagnostic("service_created", DiagnosticPriority.STATE, true, true, false);
 	}
 
 	@Override
 	public void onDestroy() {
+		recordServiceDiagnostic("service_destroy_started", DiagnosticPriority.STATE, true,
+				callback != null, false);
 		if (runtimeGate.takeAddonDetachOnDestroy()) {
 			AddonManager.get().onServiceDestroy(callback);
 		}
@@ -157,6 +165,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		cleanupTask = null;
 		lib.close();
 		Log.d("FermataMediaService destroyed");
+		recordServiceDiagnostic("service_destroyed", DiagnosticPriority.STATE, false, false, false);
 		super.onDestroy();
 	}
 
@@ -168,15 +177,37 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@Override
 	public IBinder onBind(Intent intent) {
+		boolean mediaAction = (intent != null) && ACTION_MEDIA_SERVICE.equals(intent.getAction());
+		recordServiceDiagnostic("service_bind_requested", DiagnosticPriority.STATE, mediaAction,
+				callback != null, false);
 		if (ACTION_MEDIA_SERVICE.equals(intent.getAction()) &&
 				runtimeGate.takeAddonAttachOnInternalBind()) {
 			AddonManager.get().onServiceCreate(callback);
 		}
 		if (ACTION_MEDIA_SERVICE.equals(intent.getAction())) {
 			notifColor = intent.getIntExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
+			recordServiceDiagnostic("service_bound", DiagnosticPriority.STATE, true,
+				callback != null, true);
 			return new ServiceBinder();
 		}
+		recordServiceDiagnostic("service_bind_delegated", DiagnosticPriority.STATE, false,
+				callback != null, false);
 		return super.onBind(intent);
+	}
+
+	private void recordServiceDiagnostic(String name, DiagnosticPriority priority, boolean mediaAction,
+			boolean hasCallback, boolean hasBinder) {
+		try {
+			FermataApplication.get().getDiagnostics().record(DiagnosticEvent.builder("service", name)
+					.scope(DiagnosticScope.ESSENTIAL).priority(priority)
+					.put("auto", BuildConfig.AUTO)
+					.put("media_action", mediaAction)
+					.put("has_callback", hasCallback)
+					.put("has_binder", hasBinder)
+					.build());
+		} catch (Throwable ignored) {
+			// Diagnostics must not affect service startup or teardown.
+		}
 	}
 
 	@Override

@@ -41,6 +41,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.external.ExternalPlaybackRequest;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
@@ -59,6 +60,7 @@ public class FermataWebView extends WebView
 		implements TextChangedListener, TextView.OnEditorActionListener, PreferenceStore.Listener,
 		MainActivityListener {
 	private final boolean isCar;
+	private final RuntimeHostMode hostMode;
 	private WebBrowserAddon addon;
 	private FermataWebClient webClient;
 	private FermataChromeClient chrome;
@@ -74,12 +76,19 @@ public class FermataWebView extends WebView
 
 	public FermataWebView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		isCar = BuildConfig.AUTO && MainActivityDelegate.get(context).isCarActivityNotMirror();
+		hostMode = resolveHostMode(context);
+		isCar = hostMode.isProjection();
 	}
 
 	public FermataWebView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
-		isCar = BuildConfig.AUTO && MainActivityDelegate.get(context).isCarActivityNotMirror();
+		hostMode = resolveHostMode(context);
+		isCar = hostMode.isProjection();
+	}
+
+	private static RuntimeHostMode resolveHostMode(Context context) {
+		if (!BuildConfig.AUTO) return RuntimeHostMode.PHONE;
+		return MainActivityDelegate.get(context).getRuntimeHostMode();
 	}
 
 	@SuppressLint("SetJavaScriptEnabled")
@@ -254,7 +263,15 @@ public class FermataWebView extends WebView
 	}
 
 	protected boolean isCar() {
-		return BuildConfig.AUTO && isCar;
+		return isCar;
+	}
+
+	protected final RuntimeHostMode getRuntimeHostMode() {
+		return hostMode;
+	}
+
+	final boolean usesAutomotivePresentation() {
+		return hostMode.usesAutomotivePresentation();
 	}
 
 	public WebBrowserAddon getAddon() {
@@ -367,7 +384,12 @@ public class FermataWebView extends WebView
 			FermataChromeClient oldChrome = getWebChromeClient();
 			if ((oldChrome != null) && oldChrome.isFullScreen()) oldChrome.exitFullScreen();
 
-			FermataWebView web = getClass().getConstructor(Context.class).newInstance(getContext());
+			FermataWebView web = createReplacementView(getContext());
+			if (web == null) {
+				Log.e("WebView replacement factory returned null");
+				destroyAfterRendererLoss(parent);
+				return true;
+			}
 			web.setId(id);
 			web.setVisibility(visibility);
 			web.setLayoutParams(lp);
@@ -376,8 +398,7 @@ public class FermataWebView extends WebView
 			FermataChromeClient chromeClient = (oldChrome == null) ? null : oldChrome.createReplacement(web);
 
 			if ((addon == null) || (chromeClient == null)) {
-				parent.removeView(this);
-				destroy();
+				destroyAfterRendererLoss(parent);
 				return true;
 			}
 
@@ -387,17 +408,28 @@ public class FermataWebView extends WebView
 				web.clearExternalHistoryOnLoad = true;
 				client.setExternalNavigationPolicy(externalPlayback.getNavigationPolicy());
 			}
-			parent.removeView(this);
-			destroy();
+			destroyAfterRendererLoss(parent);
 			parent.addView(web, index, lp);
 			if ((url != null) && !url.isEmpty()) web.loadUrl(url);
 		} catch (Throwable ex) {
 			Log.e(ex, "Failed to recreate WebView after renderer process loss");
-			parent.removeView(this);
-			destroy();
+			destroyAfterRendererLoss(parent);
 		}
 
 		return true;
+	}
+
+	protected FermataWebView createReplacementView(Context context) {
+		return new FermataWebView(context);
+	}
+
+	private void destroyAfterRendererLoss(ViewGroup parent) {
+		WebBrowserAddon currentAddon = addon;
+		if (currentAddon != null)
+			currentAddon.getPreferenceStore().removeBroadcastListener(this);
+		getActivity().onSuccess(a -> a.removeBroadcastListener(this));
+		if (getParent() == parent) parent.removeView(this);
+		destroy();
 	}
 
 	protected String getRecoveryUrl() {

@@ -13,4 +13,22 @@
     <string name="video_quality">Качество видео</string>
     <string name="open_on_start">Открывать при старте</string>
     <string name="try_to_skip_ad">Пытаться пропускать рекламу</string>
+	<string name="user_agent">Пользовательский агент</string>
+	<string name="retry">Повторить попытку</string>
+	<string name="web_page_load_failed">Не удалось загрузить страницу</string>
+	<string name="web_page_load_failed_msg">Не удалось загрузить:\n%1$s\n\nПричина: %2$s\n\nWebView: %3$s</string>
+	<string name="auto_highest_video_quality">Автоматический выбор самого высокого качества видео</string>
+	<string name="sponsorblock_sub">Пропускайте краудсорсинговые сегменты при просмотре YouTube.</string>
+	<string name="sponsorblock_enable">Включить спонсорский блок</string>
+	<string name="sponsorblock_enable_sub">Получает данные сегмента из спонсора.ajay.app для текущего видео.</string>
+	<string name="sponsorblock_cat_sponsor">Спонсорские сегменты</string>
+	<string name="sponsorblock_cat_selfpromo">Самореклама</string>
+	<string name="sponsorblock_cat_interaction">Напоминания о взаимодействии</string>
+	<string name="sponsorblock_cat_intro">Интро и антракты</string>
+	<string name="sponsorblock_cat_outro">Конечные карты и кредиты</string>
+	<string name="sponsorblock_cat_preview">Предварительный просмотр и резюме</string>
+	<string name="sponsorblock_cat_hook">Крючки</string>
+	<string name="sponsorblock_cat_music_offtopic">Немузыкальные разделы</string>
+	<string name="sponsorblock_cat_filler">Наполнитель</string>
+	<string name="sponsorblock_cat_filler_sub">Агрессивная категория; отключено по умолчанию.</string>
 </resources>

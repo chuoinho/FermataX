@@ -1,6 +1,5 @@
 package me.aap.fermata.ui.policy;
 
-import static me.aap.fermata.BuildConfig.AUTO;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 
 import me.aap.fermata.R;
@@ -33,7 +32,11 @@ public final class BackNavigationPolicy {
 			case SHOW_DASHBOARD -> a.showDashboard();
 			case LEAVE_VIDEO_MODE -> leaveVideoMode(a);
 			case TRY_AUDIO_SOURCE -> {
-				if (!PlaybackUiPolicy.goToCurrentAudioSource(a)) a.onBackPressed();
+				if (PlaybackUiPolicy.isActiveListOnCurrentAudioPath(a)) {
+					if ((f == null) || !f.onBackPressed()) a.showDashboard();
+				} else if (!PlaybackUiPolicy.goToCurrentAudioSource(a)) {
+					a.showDashboard();
+				}
 			}
 			case HANDLED -> {
 			}
@@ -57,7 +60,7 @@ public final class BackNavigationPolicy {
 		boolean splitViewSupported = !(fragment instanceof MainActivityFragment main) ||
 				main.isSplitViewSupported();
 		b.setMode(resolveVideoExitMode(splitViewSupported));
-		if (AUTO) a.setBarsHidden(false);
+		if (a.getRuntimeHostMode().usesAutomotivePresentation()) a.setBarsHidden(false);
 		if (a.isCarActivity()) {
 			a.post(() -> {
 				MediaItemListView.focusActive(a.getContext(), null);

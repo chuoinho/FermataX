@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="openai_key">OpenAI ključ</string>
+	<string name="openai_key_sub">Nabavite svoj osobni ključ: &lt;a href=\&quot;%1$s\&quot;&gt;%1$s&lt;a&gt;</string>
+	<string name="openai_model">Model</string>
+	<string name="openai_model_custom">Model po mjeri</string>
+	<string name="openai_model_other">Drugi model</string>
+	<string name="chat_request_failed">Zahtjev nije uspio: %1$s</string>
+	<string name="chat_tts_failed">Pretvorba teksta u govor nije uspjela: %1$s</string>
+</resources>

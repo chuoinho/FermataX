@@ -21,6 +21,10 @@ import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
+import me.aap.fermata.FermataApplication;
+import me.aap.fermata.diagnostics.DiagnosticEvent;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -99,13 +103,19 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	}
 
 	public MediaEngine createEngine(MediaEngine current, PlayableItem i, Listener listener) {
+		recordEngineDiagnostic("engine_select_started", DiagnosticPriority.STATE, i, current, null,
+				null, null);
 		var newEng = i.getMediaEngine(current, listener);
 		if (newEng != null) {
 			if ((current != null) && (current != newEng)) current.close();
+			recordEngineDiagnostic("engine_selected", DiagnosticPriority.STATE, i, current, newEng,
+					null, null);
 			return newEng;
 		}
 
 		if ((engineProvider != null) && engineProvider.supportsPlayback(i)) {
+			recordEngineDiagnostic("engine_provider_selected", DiagnosticPriority.STATE, i, current,
+				null, engineProvider, null);
 			return createSafely(engineProvider, listener, false);
 		}
 		if (!isAdditionalPlayerSupported()) {
@@ -164,6 +174,8 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	public MediaEngine createAnotherEngine(@NonNull MediaEngine current, Listener listener) {
 		int id = current.getId();
 		PlayableItem i = current.getSource();
+		recordEngineDiagnostic("engine_handoff_started", DiagnosticPriority.STATE, i, current, null,
+				null, null);
 		current.close();
 		if (i == null) return null;
 		if ((engineProvider != null) && engineProvider.supportsPlayback(i)) {
@@ -195,7 +207,13 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	}
 
 	public MediaEngine create(MediaEngineProvider p, MediaEngine c, PlayableItem i, Listener l) {
-		if ((p != null) && !p.supportsPlayback(i)) return null;
+		recordEngineDiagnostic("engine_create_requested", DiagnosticPriority.STATE, i, c, null, p,
+				null);
+		if ((p != null) && !p.supportsPlayback(i)) {
+			recordEngineDiagnostic("engine_create_rejected", DiagnosticPriority.WARN, i, c, null, p,
+					"unsupported_item");
+			return null;
+		}
 		if (c != null) {
 			if (isStream(i)) {
 				if (c instanceof StreamEngine) return c;
@@ -241,10 +259,47 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	@Nullable
 	static MediaEngine createSafely(MediaEngineProvider provider, Listener listener, boolean stream) {
 		try {
-			return stream ? new StreamEngine(provider, listener) : provider.createEngine(listener);
+			MediaEngine engine = stream ? new StreamEngine(provider, listener) :
+					provider.createEngine(listener);
+			recordEngineDiagnostic("engine_created", DiagnosticPriority.STATE, null, null, engine,
+					provider, stream ? "stream" : "media");
+			return engine;
 		} catch (RuntimeException | LinkageError error) {
+			recordEngineDiagnostic("engine_create_failed", DiagnosticPriority.ERROR, null, null, null,
+					provider, error.getClass().getSimpleName());
 			Log.e(error, "Failed to create media engine with provider ", provider);
 			return null;
+		}
+	}
+
+	private static void recordEngineDiagnostic(String name, DiagnosticPriority priority,
+			@Nullable PlayableItem item, @Nullable MediaEngine current, @Nullable MediaEngine selected,
+			@Nullable MediaEngineProvider provider, @Nullable String reason) {
+		try {
+			DiagnosticEvent.Builder event = DiagnosticEvent.builder("engine", name)
+					.scope((priority == DiagnosticPriority.DETAIL) ? DiagnosticScope.DETAILED :
+							DiagnosticScope.ESSENTIAL)
+					.priority(priority)
+					.put("item_class", (item == null) ? "none" : item.getClass().getSimpleName())
+					.put("item_fingerprint", (item == null) ? 0 : System.identityHashCode(item))
+					.put("current_engine_id", (current == null) ? -1 : current.getId())
+					.put("current_engine_class", (current == null) ? "none" :
+							current.getClass().getSimpleName())
+					.put("selected_engine_id", (selected == null) ? -1 : selected.getId())
+					.put("selected_engine_class", (selected == null) ? "none" :
+							selected.getClass().getSimpleName())
+					.put("provider_class", (provider == null) ? "none" :
+							provider.getClass().getSimpleName())
+					.put("p2p", (item != null) && requiresP2p(item))
+					.put("video", (item != null) && item.isVideo());
+			if (reason != null) {
+				if (reason.endsWith("Exception") || reason.endsWith("Error"))
+					event.put("error_class", reason);
+				else event.put("reason", reason);
+			}
+			FermataApplication.get().getDiagnostics().record(event.build());
+		} catch (Throwable ignored) {
+			// Diagnostics must never affect engine selection or creation.
 		}
 	}
 

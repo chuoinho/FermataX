@@ -13,4 +13,21 @@
     <string name="video_quality">جودة الفيديو</string>
     <string name="open_on_start">بدأ اليوتيوب كإفتراضي عند فتح البرنامج</string>
     <string name="try_to_skip_ad">تخطي الاعلانات</string>
+	<string name="retry">أعد المحاولة</string>
+	<string name="web_page_load_failed">فشل تحميل الصفحة</string>
+	<string name="web_page_load_failed_msg">تعذر التحميل:\n%1$s\n\nالسبب: %2$s\n\nعرض الويب: %3$s</string>
+	<string name="auto_highest_video_quality">التحديد التلقائي لأعلى جودة للفيديو</string>
+	<string name="sponsorblock_sub">تخطي المقاطع ذات المصادر الجماعية أثناء مشاهدة YouTube.</string>
+	<string name="sponsorblock_enable">تمكين SponsorBlock</string>
+	<string name="sponsorblock_enable_sub">جلب بيانات المقطع من Sponsored.ajay.app للفيديو الحالي.</string>
+	<string name="sponsorblock_cat_sponsor">قطاعات الرعاة</string>
+	<string name="sponsorblock_cat_selfpromo">الترويج الذاتي</string>
+	<string name="sponsorblock_cat_interaction">تذكيرات التفاعل</string>
+	<string name="sponsorblock_cat_intro">المقدمات والاستراحات</string>
+	<string name="sponsorblock_cat_outro">بطاقات النهاية والاعتمادات</string>
+	<string name="sponsorblock_cat_preview">معاينة وخلاصة</string>
+	<string name="sponsorblock_cat_hook">خطافات</string>
+	<string name="sponsorblock_cat_music_offtopic">أقسام غير الموسيقى</string>
+	<string name="sponsorblock_cat_filler">حشو</string>
+	<string name="sponsorblock_cat_filler_sub">فئة عدوانية معطل بشكل افتراضي.</string>
 </resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="openai_key">OpenAI Anahtarı</string>
+	<string name="openai_key_sub">Kişisel anahtarınızı alın: &lt;a href=\&quot;%1$s\&quot;&gt;%1$s&lt;a&gt;</string>
+	<string name="openai_model">Modeli</string>
+	<string name="openai_model_custom">Özel model</string>
+	<string name="openai_model_other">Diğer model</string>
+	<string name="chat_request_failed">İstek başarısız oldu: %1$s</string>
+	<string name="chat_tts_failed">Metinden konuşmaya başarısız oldu: %1$s</string>
+</resources>

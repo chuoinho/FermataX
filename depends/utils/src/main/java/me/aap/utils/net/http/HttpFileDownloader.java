@@ -51,6 +51,7 @@ import me.aap.utils.vfs.VirtualFile;
 public class HttpFileDownloader {
 	private static final DestinationCoordinator downloads = new DestinationCoordinator();
 	private static final AtomicLong stagingIds = new AtomicLong();
+	private static final AtomicLong diagnosticIds = new AtomicLong();
 	public static final Pref<Supplier<String>> AGENT = Pref.s("AGENT", USER_AGENT::getDefaultValue);
 	public static final Pref<Supplier<String>> ETAG = Pref.s("ETAG");
 	public static final Pref<Supplier<String>> CHARSET = Pref.s("CHARSET", "UTF-8");
@@ -131,10 +132,13 @@ public class HttpFileDownloader {
 		private final String destinationKey;
 		private final String revisionKey;
 		private final DownloadPromise promise;
+		private final String diagnosticOperationId;
 		private int subscribers;
 		private final AtomicBoolean finished = new AtomicBoolean();
+		private final AtomicBoolean diagnosticTerminal = new AtomicBoolean();
 		private Stage stage = Stage.QUEUED;
 		private Cancellable operation = Cancellable.CANCELED;
+		private long diagnosticStartedAt;
 
 		DownloadRequest(URL source, File destination, PreferenceStore prefs,
 				StatusListener listener) {
@@ -147,6 +151,8 @@ public class HttpFileDownloader {
 					prefs.getStringPref(ETAG) + '\n' + prefs.getBooleanPref(DECODE) + '\n' +
 					prefs.getIntPref(RESP_TIMEOUT) + '\n' + prefs.getIntPref(DOWNLOAD_TIMEOUT);
 			promise = new DownloadPromise(this::cancelOperation);
+			diagnosticOperationId = Long.toString(diagnosticIds.updateAndGet(previous ->
+					(previous == Long.MAX_VALUE) ? 1L : previous + 1L));
 		}
 
 		@Override
@@ -192,6 +198,8 @@ public class HttpFileDownloader {
 				finish();
 				return;
 			}
+			diagnosticStartedAt = monotonicClock.getAsLong();
+			diagnostic("download_started", Map.of("phase", "request"), null);
 
 			Log.d("Downloading ", source, " to ", destination);
 			boolean exists = destination.isFile();
@@ -276,6 +284,9 @@ public class HttpFileDownloader {
 
 			DownloadStatus status = new DownloadStatus(opts.url, destination,
 					response.getContentLength());
+			diagnostic("download_headers_received", Map.of(
+					"error_code", response.getStatusCode(),
+					"byte_count", Math.max(0L, response.getContentLength())), null);
 			status.setEtag(response.getEtag());
 			status.setCharset(response.getCharset());
 			status.setEncoding(encoding);
@@ -385,10 +396,17 @@ public class HttpFileDownloader {
 
 		private void succeed(DownloadStatus status) {
 			Log.d("Downloaded ", source, " to ", destination);
+			diagnosticTerminal("download_completed", Map.of(
+					"byte_count", Math.max(0L, status.bytesDownloaded()),
+					"duration_ms", diagnosticDuration()), null);
 			promise.completeSuccess(status, listener);
 		}
 
 		private void fail(Throwable error, DownloadStatus status) {
+			diagnosticTerminal("download_failed", Map.of(
+					"byte_count", Math.max(0L, status.bytesDownloaded()),
+					"duration_ms", diagnosticDuration(),
+					"phase", stage.name()), error);
 			if (returnExistingOnFail && destination.isFile()) {
 				Log.e(error, "Failed to download: ", status.getUrl(), ". Returning existing file: ",
 						destination);
@@ -434,7 +452,30 @@ public class HttpFileDownloader {
 		}
 
 		private void finish() {
-			if (finished.compareAndSet(false, true)) downloads.finished(this);
+			if (!finished.compareAndSet(false, true)) return;
+			if (promise.isCancellationRequested()) {
+				diagnosticTerminal("download_cancelled", Map.of(
+						"duration_ms", diagnosticDuration(), "phase", stage.name()), null);
+			}
+			downloads.finished(this);
+		}
+
+		private long diagnosticDuration() {
+			long started = diagnosticStartedAt;
+			return (started <= 0L) ? 0L : Math.max(0L, monotonicClock.getAsLong() - started);
+		}
+
+		private void diagnosticTerminal(String event, Map<String, ?> attributes, Throwable error) {
+			if (diagnosticTerminal.compareAndSet(false, true)) diagnostic(event, attributes, error);
+		}
+
+		private void diagnostic(String event, Map<String, ?> attributes, Throwable error) {
+			try {
+				App.get().onDiagnosticEvent("network", event, diagnosticOperationId,
+						attributes, error);
+			} catch (RuntimeException ignored) {
+				// Diagnostics remain observational for the reusable downloader.
+			}
 		}
 	}
 

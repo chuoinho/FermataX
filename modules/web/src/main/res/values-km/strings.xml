@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="force_dark">បង្ខំរបៀបងងឹត ប្រសិនបើគាំទ្រ</string>
+	<string name="force_dark_sub">%1$s ជ្រើសរើស \&quot;\\&quot;ស្វ័យប្រវត្តិ\&quot;\\&quot; ដើម្បីធ្វើតាមរូបរាងឧបករណ៍។</string>
+	<string name="force_dark_auto">ស្វ័យប្រវត្តិ</string>
+	<string name="force_dark_enabled">បានបើក</string>
+	<string name="force_dark_disabled">ពិការ</string>
+	<string name="user_agent">ភ្នាក់ងារអ្នកប្រើប្រាស់</string>
+	<string name="user_agent_desktop">ភ្នាក់ងារអ្នកប្រើប្រាស់ - កំណែផ្ទៃតុ</string>
+	<string name="desktop_version">កំណែផ្ទៃតុ</string>
+	<string name="full_screen">ពេញអេក្រង់</string>
+	<string name="full_screen_exit">ចេញពីអេក្រង់ពេញ</string>
+	<string name="retry">ព្យាយាមម្តងទៀត</string>
+	<string name="web_page_load_failed">មិនអាចផ្ទុកទំព័របានទេ។</string>
+	<string name="web_page_load_failed_msg">មិន​អាច​ផ្ទុក៖ \n%1$s\n\n ហេតុផល៖ %2$s\n\n WebView៖ %3$s</string>
+	<string name="video_scaling_fill_proportional">បំពេញសមាមាត្រ</string>
+	<string name="video_quality">គុណភាពវីដេអូ</string>
+	<string name="open_on_start">បើកនៅពេលចាប់ផ្តើម</string>
+	<string name="auto_highest_video_quality">ជ្រើសរើសគុណភាពវីដេអូខ្ពស់បំផុតដោយស្វ័យប្រវត្តិ</string>
+	<string name="try_to_skip_ad">ព្យាយាមរំលងការផ្សាយពាណិជ្ជកម្ម</string>
+	<string name="sponsorblock_sub">រំលងផ្នែកដែលមានប្រភពពីហ្វូងមនុស្ស ពេលកំពុងមើល YouTube ។</string>
+	<string name="sponsorblock_enable">បើក SponsorBlock</string>
+	<string name="sponsorblock_enable_sub">ទាញយកទិន្នន័យផ្នែកពី sponsor.ajay.app សម្រាប់វីដេអូបច្ចុប្បន្ន។</string>
+	<string name="sponsorblock_cat_sponsor">ផ្នែកឧបត្ថម្ភ</string>
+	<string name="sponsorblock_cat_selfpromo">ការលើកកម្ពស់ខ្លួនឯង</string>
+	<string name="sponsorblock_cat_interaction">ការរំលឹកអន្តរកម្ម</string>
+	<string name="sponsorblock_cat_intro">ការណែនាំ និងការផ្អាក</string>
+	<string name="sponsorblock_cat_outro">កាតបញ្ចប់ និងឥណទាន</string>
+	<string name="sponsorblock_cat_preview">មើលជាមុន និងសង្ខេប</string>
+	<string name="sponsorblock_cat_hook">ទំពក់</string>
+	<string name="sponsorblock_cat_music_offtopic">ផ្នែកដែលមិនមែនជាតន្ត្រី</string>
+	<string name="sponsorblock_cat_filler">ឧបករណ៍បំពេញ</string>
+	<string name="sponsorblock_cat_filler_sub">ប្រភេទឈ្លានពាន; បានបិទតាមលំនាំដើម។</string>
+</resources>

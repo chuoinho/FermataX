@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="move_left">向左移動</string>
+	<string name="move_right">向右移動</string>
+	<string name="move_up">向上移動</string>
+	<string name="move_down">下移</string>
+	<string name="download_failed">下載失敗%1$s</string>
+</resources>

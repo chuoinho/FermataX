@@ -28,6 +28,7 @@ public class GenericDialogFragment extends GenericFragment {
 	private BooleanConsumer consumer;
 	private BooleanSupplier validator;
 	private BooleanSupplier backHandler;
+	private boolean closeButtonVisible = true;
 
 	public GenericDialogFragment() {
 		this(ToolBarMediator.instance);
@@ -53,6 +54,10 @@ public class GenericDialogFragment extends GenericFragment {
 
 	public void setBackHandler(BooleanSupplier backHandler) {
 		this.backHandler = backHandler;
+	}
+
+	public void setCloseButtonVisible(boolean visible) {
+		closeButtonVisible = visible;
 	}
 
 	@Override
@@ -93,6 +98,11 @@ public class GenericDialogFragment extends GenericFragment {
 	@Override
 	public void switchingFrom(@Nullable ActivityFragment currentFragment) {
 		super.switchingFrom(currentFragment);
+		closeButtonVisible = true;
+	}
+
+	protected int getCloseButtonVisibility() {
+		return closeButtonVisible ? VISIBLE : GONE;
 	}
 
 	interface ToolBarMediator extends ToolBarView.Mediator.BackTitle {
@@ -110,6 +120,7 @@ public class GenericDialogFragment extends GenericFragment {
 
 			b = createCloseButton(tb, p);
 			addView(tb, b, getCloseButtonId());
+			b.setVisibility(p.getCloseButtonVisibility());
 		}
 
 		@Override
@@ -124,6 +135,9 @@ public class GenericDialogFragment extends GenericFragment {
 
 				b = tb.findViewById(getOkButtonId());
 				setOkButtonVisibility(b, getOkButtonVisibility(p));
+
+				b = tb.findViewById(getCloseButtonId());
+				if (b != null) b.setVisibility(p.getCloseButtonVisibility());
 
 				TextView t = tb.findViewById(getTitleId());
 				t.setText(f.getTitle());

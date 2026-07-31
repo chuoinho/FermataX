@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">مواصلة الاستماع</string>
+	<string name="audiobook_library">مكتبة</string>
+	<string name="audiobook_downloads">التنزيلات</string>
+	<string name="audiobook_discover">اكتشف الكتب المجانية</string>
+	<string name="audiobook_sources">مصادر</string>
+	<string name="audiobook_source_local">المجلد المحلي</string>
+	<string name="audiobook_source_librivox">LibriVox</string>
+	<string name="audiobook_source_audiobookshelf">رف الكتب الصوتية</string>
+	<string name="audiobook_source_opds">كتالوج OPDS</string>
+	<string name="audiobook_add_folder">إضافة مجلد الكتب الصوتية</string>
+	<string name="audiobook_add_source">أضف مصدر الكتاب الصوتي</string>
+	<string name="audiobook_add_audiobookshelf">إضافة رف الكتب الصوتية</string>
+	<string name="audiobook_add_opds">إضافة كتالوج OPDS</string>
+	<string name="audiobook_server_url">عنوان URL للخادم</string>
+	<string name="audiobook_bearer_token">رمز حامل (اختياري)</string>
+	<string name="audiobook_add_failed">تعذرت إضافة مصدر الكتاب الصوتي</string>
+	<string name="audiobook_delete_source_title">هل تريد إزالة مصدر الكتاب المسموع؟</string>
+	<string name="audiobook_delete_source_message">هل تريد إزالة %1$s وسجل الاستماع الخاص به؟</string>
+	<string name="audiobook_search_librivox">ابحث في ليبريفوكس</string>
+	<string name="audiobook_popular">كتب مجانية شعبية</string>
+	<string name="audiobook_latest">تمت إضافتها مؤخرًا</string>
+	<string name="audiobook_add_to_library">أضف إلى المكتبة</string>
+	<string name="audiobook_import_failed">تعذرت إضافة هذا الكتاب الصوتي</string>
+	<string name="audiobook_download_book">تحميل الكتاب</string>
+	<string name="audiobook_delete_download">إزالة التنزيل</string>
+	<string name="audiobook_download_failed">فشل تنزيل الكتاب الصوتي</string>
+</resources>

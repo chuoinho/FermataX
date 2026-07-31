@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="force_dark">Prisilni tamni način rada, ako je podržan</string>
+	<string name="force_dark_sub">%1$s. Odaberite \&quot;\\&quot;Automatski\&quot;\\&quot; da biste pratili temu uređaja.</string>
+	<string name="force_dark_auto">Auto</string>
+	<string name="force_dark_enabled">Omogućeno</string>
+	<string name="force_dark_disabled">Onesposobljeno</string>
+	<string name="user_agent">Korisnički agent</string>
+	<string name="user_agent_desktop">User-Agent - Desktop verzija</string>
+	<string name="desktop_version">Desktop verzija</string>
+	<string name="full_screen">Cijeli zaslon</string>
+	<string name="full_screen_exit">Izađi iz cijelog zaslona</string>
+	<string name="retry">Pokušaj ponovo</string>
+	<string name="web_page_load_failed">Učitavanje stranice nije uspjelo</string>
+	<string name="web_page_load_failed_msg">Nije moguće učitati:\n%1$s\n\nRazlog: %2$s\n\nWebView: %3$s</string>
+	<string name="video_scaling_fill_proportional">Ispunite proporcionalno</string>
+	<string name="video_quality">Kvaliteta videa</string>
+	<string name="open_on_start">Otvoreno na početku</string>
+	<string name="auto_highest_video_quality">Automatski odaberite najvišu kvalitetu videa</string>
+	<string name="try_to_skip_ad">Pokušajte preskočiti oglašavanje</string>
+	<string name="sponsorblock_sub">Preskočite segmente s mnoštvom dok gledate YouTube.</string>
+	<string name="sponsorblock_enable">Omogući SponsorBlock</string>
+	<string name="sponsorblock_enable_sub">Dohvaća podatke segmenta iz sponsor.ajay.app za trenutni videozapis.</string>
+	<string name="sponsorblock_cat_sponsor">Segmenti sponzora</string>
+	<string name="sponsorblock_cat_selfpromo">Samopromocija</string>
+	<string name="sponsorblock_cat_interaction">Podsjetnici za interakciju</string>
+	<string name="sponsorblock_cat_intro">Uvodi i pauze</string>
+	<string name="sponsorblock_cat_outro">Završne kartice i krediti</string>
+	<string name="sponsorblock_cat_preview">Pregled i rezime</string>
+	<string name="sponsorblock_cat_hook">Kuke</string>
+	<string name="sponsorblock_cat_music_offtopic">Neglazbeni dijelovi</string>
+	<string name="sponsorblock_cat_filler">Punilo</string>
+	<string name="sponsorblock_cat_filler_sub">Agresivna kategorija; onemogućeno prema zadanim postavkama.</string>
+</resources>

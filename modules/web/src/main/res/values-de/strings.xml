@@ -15,4 +15,21 @@
     <string name="video_quality">Video Qualität</string>
     <string name="open_on_start">Beim Start öffnen</string>
     <string name="try_to_skip_ad">Versuchen, Werbung zu überspringen</string>
+	<string name="retry">Wiederholen</string>
+	<string name="web_page_load_failed">Die Seite konnte nicht geladen werden</string>
+	<string name="web_page_load_failed_msg">Konnte nicht geladen werden:\n%1$s\n\nGrund: %2$s\n\nWebView: %3$s</string>
+	<string name="auto_highest_video_quality">Wählen Sie automatisch die höchste Videoqualität aus</string>
+	<string name="sponsorblock_sub">Überspringen Sie beim Ansehen von YouTube Crowdsourcing-Segmente.</string>
+	<string name="sponsorblock_enable">Aktivieren Sie SponsorBlock</string>
+	<string name="sponsorblock_enable_sub">Ruft Segmentdaten von sponsor.ajay.app für das aktuelle Video ab.</string>
+	<string name="sponsorblock_cat_sponsor">Sponsorsegmente</string>
+	<string name="sponsorblock_cat_selfpromo">Eigenwerbung</string>
+	<string name="sponsorblock_cat_interaction">Interaktionserinnerungen</string>
+	<string name="sponsorblock_cat_intro">Intros und Pausen</string>
+	<string name="sponsorblock_cat_outro">Endkarten und Credits</string>
+	<string name="sponsorblock_cat_preview">Vorschau und Zusammenfassung</string>
+	<string name="sponsorblock_cat_hook">Haken</string>
+	<string name="sponsorblock_cat_music_offtopic">Nichtmusikbezogene Abschnitte</string>
+	<string name="sponsorblock_cat_filler">Füllstoff</string>
+	<string name="sponsorblock_cat_filler_sub">Aggressive Kategorie; standardmäßig deaktiviert.</string>
 </resources>

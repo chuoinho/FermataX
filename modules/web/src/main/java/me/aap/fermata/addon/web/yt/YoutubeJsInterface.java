@@ -19,6 +19,7 @@ public class YoutubeJsInterface extends FermataJsInterface {
 	public static final int JS_VIDEO_TOUCHED = JS_LAST + 7;
 	public static final int JS_AD_SIGNAL = JS_LAST + 8;
 	public static final int JS_VIDEO_FULLSCREEN_TAP = JS_LAST + 9;
+	public static final int JS_PLAYBACK_INTENT = JS_LAST + 10;
 	private final YoutubeMediaEngine engine;
 	private Promise<String> result;
 
@@ -34,6 +35,25 @@ public class YoutubeJsInterface extends FermataJsInterface {
 
 	void onUserExitFullScreen() {
 		engine.onUserExitFullScreen();
+	}
+
+	YoutubeFullscreenCoordinator.Suspension suspendFullscreenForHostInterruption() {
+		return engine.suspendFullscreenForHostInterruption();
+	}
+
+	boolean resumeFullscreenAfterHostInterruption(
+			YoutubeFullscreenCoordinator.Suspension suspension) {
+		return engine.resumeFullscreenAfterHostInterruption(suspension);
+	}
+
+	void discardFullscreenHostInterruption(
+			YoutubeFullscreenCoordinator.Suspension suspension) {
+		engine.discardFullscreenHostInterruption(suspension);
+	}
+
+	boolean isFullscreenHostInterruptionCurrent(
+			YoutubeFullscreenCoordinator.Suspension suspension) {
+		return engine.isFullscreenHostInterruptionCurrent(suspension);
 	}
 
 	boolean onPlayerBack(boolean appVideoMode, boolean browserFullScreen) {
@@ -90,6 +110,9 @@ public class YoutubeJsInterface extends FermataJsInterface {
 				break;
 			case JS_VIDEO_FULLSCREEN_TAP:
 				engine.fullscreenTapped(data);
+				break;
+			case JS_PLAYBACK_INTENT:
+				engine.armExplicitPlayback();
 				break;
 			case JS_VIDEO_PAUSED:
 				Log.d("Video paused");

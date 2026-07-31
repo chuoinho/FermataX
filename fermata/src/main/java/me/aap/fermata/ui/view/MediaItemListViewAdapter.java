@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,13 +23,14 @@ import me.aap.fermata.media.lib.ItemBase;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.AsyncOperationController.OperationType;
 import me.aap.utils.app.App;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
-import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
 /**
@@ -42,6 +44,9 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	private Pattern filter;
 	private MediaItemListView listView;
 	private List<MediaItemWrapper> list = Collections.emptyList();
+	private LoadState loadState = LoadState.IDLE;
+	@Nullable
+	private LoadStateListener loadStateListener;
 
 	public MediaItemListViewAdapter(MainActivityDelegate activity) {
 		this.activity = activity;
@@ -54,6 +59,15 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 
 	public void setListView(@NonNull MediaItemListView listView) {
 		this.listView = listView;
+	}
+
+	public LoadState getLoadState() {
+		return loadState;
+	}
+
+	public void setLoadStateListener(@Nullable LoadStateListener listener) {
+		loadStateListener = listener;
+		if (listener != null) listener.onLoadStateChanged(loadState);
 	}
 
 	public BrowsableItem getParent() {
@@ -76,24 +90,35 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		this.parent = parent;
 		list = Collections.emptyList();
 		notifyChanged();
-		if (parent == null) return completedVoid();
+		if (parent == null) {
+			setLoadState(LoadState.IDLE);
+			return completedVoid();
+		}
 		parent.addChangeListener(this);
+		setLoadState(LoadState.LOADING);
 
 		FutureSupplier<?> f = parent.getChildren().main()
 				.addConsumer((result, fail, progress, total) -> {
 					if (this.parent != parent) return;
 
 					if (fail != null) {
-						if (isCancellation(fail)) return;
-						Log.e(fail, "Failed to load children");
-						UiUtils.showAlert(activity.getContext(), fail.getLocalizedMessage());
+						if (isCancellation(fail)) {
+							setLoadState(LoadState.ERROR);
+							return;
+						}
+						Log.e("Failed to load children (", fail.getClass().getSimpleName(), ')');
+						setLoadState(LoadState.ERROR);
 					} else {
-						setChildren(result);
+						setChildren((result == null) ? Collections.emptyList() : result);
 					}
 				});
 
-		if (userAction) activity.setContentLoading(f);
+		if (userAction) activity.setContentLoading(this, getOperationType(parent), f);
 		return f;
+	}
+
+	protected OperationType getOperationType(BrowsableItem parent) {
+		return (parent instanceof SearchFolder) ? OperationType.SEARCH : OperationType.BROWSE;
 	}
 
 	@CallSuper
@@ -125,6 +150,14 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 					}), children);
 		}
 		notifyChanged();
+		setLoadState(children.isEmpty() ? LoadState.EMPTY : LoadState.CONTENT);
+	}
+
+	private void setLoadState(LoadState state) {
+		if (loadState == state) return;
+		loadState = state;
+		LoadStateListener listener = loadStateListener;
+		if (listener != null) listener.onLoadStateChanged(state);
 	}
 
 	public void setFilter(String filter) {
@@ -212,6 +245,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 			MediaItemViewHolder h = w.getViewHolder();
 			if (h != null) h.recycled();
 		}
+		setLoadStateListener(null);
 		setParent(null, false);
 	}
 
@@ -282,5 +316,14 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		if ((listView != null) && listView.isComputingLayout())
 			App.get().getHandler().post(this::notifyDataSetChanged);
 		else notifyDataSetChanged();
+	}
+
+	public enum LoadState {
+		IDLE, LOADING, EMPTY, ERROR, CONTENT
+	}
+
+	@FunctionalInterface
+	public interface LoadStateListener {
+		void onLoadStateChanged(LoadState state);
 	}
 }

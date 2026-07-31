@@ -1,7 +1,5 @@
 package me.aap.fermata.addon.stremio.torrent;
 
-import android.util.Log;
-
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,10 +10,10 @@ import java.util.function.BooleanSupplier;
 import java.util.function.LongSupplier;
 
 import me.aap.fermata.media.engine.PlaybackFailureException;
+import me.aap.utils.log.Log;
 
 /** Coordinates cleaner policy with cache entries currently owned by preparation/playback. */
 final class TorrentCacheMaintenance {
-	private static final String TAG = "StremioTorrent";
 	private final File root;
 	private final Executor executor;
 	private final TorrentCachePolicy policy;
@@ -95,7 +93,7 @@ final class TorrentCacheMaintenance {
 	void run() {
 		TorrentCacheCleaner.CleanupResult result = cleaner.cleanup(protectedCacheFiles(null));
 		if ((result.removedEntries() > 0) || (result.temporaryFiles() > 0)) {
-			Log.i(TAG, "P2P cache cleanup: entries=" + result.removedEntries() +
+			Log.i("P2P cache cleanup: entries=" + result.removedEntries() +
 					" bytes=" + result.removedBytes() + " temporary=" +
 					result.temporaryFiles() + " retained=" + result.retainedBytes());
 		}

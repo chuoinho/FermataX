@@ -15,7 +15,6 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
-import static me.aap.utils.io.IoUtils.copyOfRange;
 import static me.aap.utils.io.IoUtils.emptyByteBuffer;
 
 /**

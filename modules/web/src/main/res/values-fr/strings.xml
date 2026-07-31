@@ -12,5 +12,23 @@
     <string name="video_quality">Qualité vidéo</string>
     <string name="open_on_start">Ouvrir au démarrage</string>
     <string name="try_to_skip_ad">Essayer de passer la publicité</string>
+	<string name="user_agent">Agent utilisateur</string>
+	<string name="user_agent_desktop">Agent utilisateur - Version de bureau</string>
+	<string name="retry">Réessayer</string>
+	<string name="web_page_load_failed">La page n\&apos;a pas pu être chargée</string>
+	<string name="web_page_load_failed_msg">Impossible de charger :\n%1$s\n\nRaison : %2$s\n\nWebView : %3$s</string>
+	<string name="auto_highest_video_quality">Sélection automatique de la qualité vidéo la plus élevée</string>
+	<string name="sponsorblock_sub">Évitez les segments participatifs lorsque vous regardez YouTube.</string>
+	<string name="sponsorblock_enable">Activer le blocage des sponsors</string>
+	<string name="sponsorblock_enable_sub">Récupère les données de segment de sponsor.ajay.app pour la vidéo actuelle.</string>
+	<string name="sponsorblock_cat_sponsor">Segments de sponsors</string>
+	<string name="sponsorblock_cat_selfpromo">Auto-promotion</string>
+	<string name="sponsorblock_cat_interaction">Rappels d\&apos;interaction</string>
+	<string name="sponsorblock_cat_intro">Introductions et entractes</string>
+	<string name="sponsorblock_cat_outro">Cartes de fin et crédits</string>
+	<string name="sponsorblock_cat_preview">Aperçu et récapitulation</string>
+	<string name="sponsorblock_cat_hook">Crochets</string>
+	<string name="sponsorblock_cat_music_offtopic">Sections non musicales</string>
+	<string name="sponsorblock_cat_filler">Remplisseur</string>
+	<string name="sponsorblock_cat_filler_sub">Catégorie agressive ; désactivé par défaut.</string>
 </resources>
-

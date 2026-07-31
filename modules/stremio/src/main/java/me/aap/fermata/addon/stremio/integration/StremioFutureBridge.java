@@ -1,6 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,6 +35,15 @@ public final class StremioFutureBridge {
 		stage.whenComplete((value, error) -> {
 			if (error == null) result.complete(value);
 			else result.completeExceptionally(unwrap(error));
+		});
+		return result;
+	}
+
+	static <T> CompletableFuture<T> toCompletable(FutureSupplier<T> supplier) {
+		CompletableFuture<T> result = new CompletableFuture<>();
+		supplier.onCompletion((value, error) -> {
+			if (error == null) result.complete(value);
+			else result.completeExceptionally(error);
 		});
 		return result;
 	}

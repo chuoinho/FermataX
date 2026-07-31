@@ -4,7 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.Test;
+
+import me.aap.fermata.addon.web.yt.YoutubeWebClient;
 
 public class FermataWebClientTest {
 	@Test
@@ -51,6 +55,30 @@ public class FermataWebClientTest {
 	}
 
 	@Test
+	public void subresourceErrorsDoNotLogOrConsumeDiagnosticsQuota() {
+		AtomicInteger legacyLogs = new AtomicInteger();
+		AtomicInteger diagnostics = new AtomicInteger();
+
+		FermataWebClient.dispatchResourceFailure(false,
+				legacyLogs::incrementAndGet, diagnostics::incrementAndGet);
+
+		assertEquals(0, legacyLogs.get());
+		assertEquals(0, diagnostics.get());
+	}
+
+	@Test
+	public void mainFrameErrorsStillLogAndRecordDiagnostics() {
+		AtomicInteger legacyLogs = new AtomicInteger();
+		AtomicInteger diagnostics = new AtomicInteger();
+
+		FermataWebClient.dispatchResourceFailure(true,
+				legacyLogs::incrementAndGet, diagnostics::incrementAndGet);
+
+		assertEquals(1, legacyLogs.get());
+		assertEquals(1, diagnostics.get());
+	}
+
+	@Test
 	public void youtubeHostCheckRejectsLookalikesAndTvSurface() {
 		assertTrue(FermataWebClient.isYoutubeHost("youtube.com"));
 		assertTrue(FermataWebClient.isYoutubeHost("m.youtube.com"));
@@ -78,5 +106,29 @@ public class FermataWebClientTest {
 		assertFalse(FermataWebView.shouldPersistPage(false, true, "about:blank"));
 		assertTrue(FermataWebView.shouldPersistPage(false, false,
 				"https://browser.example/normal"));
+	}
+
+	@Test
+	public void rendererRecoveryKeepsTheSpecializedWebClientWithoutReflection() {
+		FermataWebClient base = new FermataWebClient();
+		FermataWebClient youtube = new YoutubeWebClient();
+		FermataWebClient unsupported = new FermataWebClient() {};
+
+		assertEquals(FermataWebClient.class, base.createReplacement().getClass());
+		assertEquals(YoutubeWebClient.class, youtube.createReplacement().getClass());
+		assertEquals(FermataWebClient.class, unsupported.createReplacement().getClass());
+	}
+
+	@Test
+	public void rendererRecoveryKeepsExternalNavigationPolicy() {
+		FermataWebClient client = new YoutubeWebClient();
+		client.setExternalNavigationPolicy(uri -> {
+			if (!"allowed.example".equals(uri.getHost()))
+				throw new me.aap.fermata.addon.external.ExternalNavigationPolicyException("blocked");
+		});
+
+		FermataWebClient replacement = client.createReplacement();
+		assertTrue(replacement.isExternalNavigationAllowed("https://allowed.example/video"));
+		assertFalse(replacement.isExternalNavigationAllowed("https://blocked.example/video"));
 	}
 }

@@ -175,6 +175,11 @@ public class ExportedItem extends PlayableItemBase {
 	}
 
 	@Override
+	public boolean isLiveStream() {
+		return orig.isLiveStream();
+	}
+
+	@Override
 	@NonNull
 	public PlayableItem export(String exportId, BrowsableItem parent) {
 		return orig.export(exportId, parent);

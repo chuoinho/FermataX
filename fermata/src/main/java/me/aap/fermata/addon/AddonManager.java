@@ -4,6 +4,7 @@ import static java.util.Collections.singletonList;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 
@@ -16,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 import me.aap.fermata.FermataApplication;
@@ -28,6 +30,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.AsyncOperationController.DiagnosticsObserver;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.event.BasicEventBroadcaster;
@@ -53,6 +56,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 			this::isRetained, this::isModuleRetained);
 	private final AddonLauncher launcher = new AddonLauncher(this);
 	private final DeferredMediaItemResolver deferredItemResolver = new DeferredMediaItemResolver();
+	private final Map<String, Long> diagnosticLoadOperations = new HashMap<>();
 	private final PreferenceStore store;
 	private final boolean freshInstall;
 
@@ -447,6 +451,9 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	private synchronized void install(AddonInfo i) {
 		if (!isRetained(i)) return;
 		if (state.isFailed(i) || isLoaded(i) || state.isInstalling(i)) return;
+		long operationId = DiagnosticsObserver.nextId();
+		DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.INSTALL_STARTED, i.addonId,
+				0L, operationId, null);
 
 		List<AddonInfo> order;
 		try {
@@ -454,11 +461,28 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 			order = dependencyResolver.resolveInstallOrder(i, loader.isClassAvailable(i));
 		} catch (RuntimeException ex) {
 			state.markFailed(i);
+			DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.INSTALL_FAILED, i.addonId,
+					0L, operationId, ex);
 			Log.e(ex, "Failed to resolve addon dependencies: ", i.className);
 			return;
 		}
 
 		modules.install(order, i);
+		FutureSupplier<?> installation = modules.getInstalling(i);
+		if (installation == null) {
+			DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.INSTALL_COMPLETED, i.addonId,
+					0L, operationId, null);
+		} else {
+			installation.onCompletion((ignored, error) -> DiagnosticsObserver.addon(
+					installTerminalEvent(error),
+					i.addonId, 0L, operationId, error));
+		}
+	}
+
+	static DiagnosticsObserver.AddonEvent installTerminalEvent(Throwable error) {
+		if (error == null) return DiagnosticsObserver.AddonEvent.INSTALL_COMPLETED;
+		return isCancellation(error) ? DiagnosticsObserver.AddonEvent.INSTALL_CANCELLED :
+				DiagnosticsObserver.AddonEvent.INSTALL_FAILED;
 	}
 
 	synchronized void installAddon(AddonInfo i) {
@@ -471,6 +495,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	private FutureSupplier<Boolean> requestAddonLoad(AddonInfo info) {
 		Promise<Boolean> activation;
+		long operationId;
 		synchronized (this) {
 			if (isLoaded(info)) return me.aap.utils.async.Completed.completed(true);
 			activation = activations.get(info.className);
@@ -478,16 +503,26 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 			if (!isRetained(info)) return me.aap.utils.async.Completed.completed(false);
 			activation = new Promise<>();
 			activations.put(info.className, activation);
+			operationId = DiagnosticsObserver.nextId();
+			diagnosticLoadOperations.put(info.className, operationId);
 		}
+		DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.LOAD_STARTED, info.addonId,
+				0L, operationId, null);
 
 		Promise<Boolean> pending = activation;
+		AtomicBoolean loadFailed = new AtomicBoolean();
 		FermataAddon addon = loader.load(info,
 				(loaded, commit) -> commitAddonLoad(info, pending, commit),
-				() -> markAddonLoadFailed(info, pending),
+				() -> markAddonLoadFailed(info, pending, loadFailed),
 				loaded -> addonReplayCompleted(info, loaded, pending));
 		if (addon == null) {
 			synchronized (this) {
 				activations.remove(info.className, pending);
+				diagnosticLoadOperations.remove(info.className);
+			}
+			if (!loadFailed.get()) {
+				DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.LOAD_CANCELLED, info.addonId,
+						0L, operationId, null);
 			}
 			pending.complete(false);
 		}
@@ -495,33 +530,50 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	private synchronized boolean commitAddonLoad(AddonInfo info, Promise<Boolean> activation,
-												 Runnable commit) {
+														 Runnable commit) {
 		if ((activations.get(info.className) != activation) || !isRetained(info)) return false;
 		commit.run();
+		DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.LOAD_COMMITTED, info.addonId,
+					0L, diagnosticLoadOperations.getOrDefault(info.className, 0L), null);
 		return true;
 	}
 
 	private synchronized void markAddonLoadFailed(AddonInfo info,
-												 Promise<Boolean> activation) {
-		if (activations.get(info.className) == activation) state.markFailed(info);
+											 Promise<Boolean> activation,
+											 AtomicBoolean failureReported) {
+		if (activations.get(info.className) == activation) {
+			state.markFailed(info);
+			if (failureReported.compareAndSet(false, true)) {
+				DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.LOAD_FAILED, info.addonId,
+						0L, diagnosticLoadOperations.getOrDefault(info.className, 0L), null);
+			}
+		}
 	}
 
 	private synchronized void addonReplayCompleted(AddonInfo info, FermataAddon addon,
-															 Promise<Boolean> activation) {
+														 Promise<Boolean> activation) {
 		if (activations.get(info.className) != activation) return;
+		long operationId = diagnosticLoadOperations.getOrDefault(info.className, 0L);
+		AddonLifecycleCoordinator.LifecycleToken token = lifecycle.getToken(addon);
 		if (!isRetained(info) || !state.isRegistered(info, addon)) {
 			activations.remove(info.className, activation);
+			diagnosticLoadOperations.remove(info.className);
+			DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.LOAD_FAILED, info.addonId,
+					(token == null) ? 0L : token.generation(), operationId, null);
 			activation.complete(false);
 			if (state.isRegistered(info, addon)) uninstallUnretained(info);
 			return;
 		}
 		state.activate(info, addon);
+		DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.REPLAY_COMPLETED, info.addonId,
+				(token == null) ? 0L : token.generation(), operationId, null);
 		ItemContainer.invalidateResolvedChildren();
 		PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
 		fireBroadcastEvent(c -> c.onAddonChanged(this, info, true));
 		prefs.fireBroadcastEvent(
 				listener -> listener.onPreferenceChanged(prefs, singletonList(info.enabledPref)));
 		activations.remove(info.className, activation);
+		diagnosticLoadOperations.remove(info.className);
 		activation.complete(true);
 	}
 
@@ -537,19 +589,32 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	private void uninstallUnretained(AddonInfo i) {
+		long operationId = DiagnosticsObserver.nextId();
+		DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.UNLOAD_STARTED, i.addonId,
+				0L, operationId, null);
 		state.clearFailed(i);
 		boolean installing = modules.cancelInstall(i);
 		Promise<Boolean> activation;
+		Long loadOperationId;
 		synchronized (this) {
 			activation = activations.remove(i.className);
+			loadOperationId = diagnosticLoadOperations.remove(i.className);
 		}
-		if (activation != null) activation.complete(false);
-		var removed = loader.unload(i, () -> addonUninstallCompleted(i, installing));
+		if (activation != null) {
+			DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.LOAD_CANCELLED, i.addonId,
+					0L, (loadOperationId == null) ? 0L : loadOperationId, null);
+			activation.complete(false);
+		}
+		var removed = loader.unload(i,
+				() -> addonUninstallCompleted(i, installing, operationId));
 		if (removed != null) return;
 		if (installing && shouldUninstallModule(i, allInfos, this::isRetained)) modules.uninstall(i);
+		DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.UNLOAD_COMPLETED, i.addonId,
+				0L, operationId, null);
 	}
 
-	private synchronized void addonUninstallCompleted(AddonInfo info, boolean wasInstalling) {
+	private synchronized void addonUninstallCompleted(AddonInfo info, boolean wasInstalling,
+			long operationId) {
 		ItemContainer.invalidateResolvedChildren();
 		if (!isLoaded(info)) {
 			PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
@@ -559,6 +624,8 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		}
 		if ((!isLoaded(info) || wasInstalling) &&
 				shouldUninstallModule(info, allInfos, this::isRetained)) modules.uninstall(info);
+		DiagnosticsObserver.addon(DiagnosticsObserver.AddonEvent.UNLOAD_COMPLETED, info.addonId,
+				0L, operationId, null);
 	}
 
 	static boolean shouldUninstallModule(AddonInfo removed, Iterable<AddonInfo> infos,

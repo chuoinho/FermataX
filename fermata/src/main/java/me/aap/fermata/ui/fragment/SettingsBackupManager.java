@@ -3,15 +3,12 @@ package me.aap.fermata.ui.fragment;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.os.Build.VERSION_CODES.N;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 
-import androidx.core.content.FileProvider;
 import androidx.documentfile.provider.DocumentFile;
 
 import java.io.File;
@@ -29,7 +26,6 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.util.Utils;
@@ -69,7 +65,7 @@ final class SettingsBackupManager {
 
 							File prefsDir = PrefUtils.getSharedPrefsFile(context, "fermata").getParentFile();
 							File[] files = (prefsDir == null) ? null :
-									prefsDir.listFiles(file -> !file.getName().equals("image-cache.xml"));
+									prefsDir.listFiles(file -> isUserPreferenceFile(file.getName()));
 
 							if ((files == null) || (files.length == 0)) {
 								UiUtils.showAlert(context, R.string.prefs_not_found);
@@ -128,7 +124,7 @@ final class SettingsBackupManager {
 		Context context = activity.getContext();
 		File prefsDir = PrefUtils.getSharedPrefsFile(context, "fermata").getParentFile();
 		File[] files = (prefsDir == null) ? null :
-				prefsDir.listFiles(file -> !file.getName().equals("image-cache" + ".xml"));
+				prefsDir.listFiles(file -> isUserPreferenceFile(file.getName()));
 
 		if ((files == null) || (files.length == 0)) {
 			UiUtils.showAlert(context, R.string.prefs_not_found);
@@ -146,6 +142,10 @@ final class SettingsBackupManager {
 			PrefUtils.exportSharedPrefs(context, names, zip);
 			UiUtils.showInfo(context, context.getString(R.string.export_prefs_ok, fileName));
 		}
+	}
+
+	private static boolean isUserPreferenceFile(String name) {
+		return !"image-cache.xml".equals(name) && !"diagnostics.xml".equals(name);
 	}
 
 	static void importPrefs(MainActivityDelegate activity) {
@@ -216,20 +216,4 @@ final class SettingsBackupManager {
 		});
 	}
 
-	static void openLog(MainActivityDelegate activity) {
-		try {
-			Intent intent = new Intent(Intent.ACTION_SEND);
-			FermataApplication app = FermataApplication.get();
-			File file = app.getLogFile();
-			Uri uri = (SDK_INT >= Build.VERSION_CODES.N) ?
-					FileProvider.getUriForFile(app, app.getPackageName() + ".FileProvider", file) :
-					Uri.fromFile(file);
-			intent.setType("text/plain");
-			intent.putExtra(Intent.EXTRA_STREAM, uri);
-			activity.startActivity(Intent.createChooser(intent, app.getString(R.string.open_log)));
-		} catch (Exception error) {
-			Log.e(error);
-			showAlert(activity.getContext(), error.getLocalizedMessage());
-		}
-	}
 }

@@ -69,11 +69,11 @@ public final class PlaybackLayoutPolicy {
 		return carActivity ? BodyLayout.Mode.FRAME : BodyLayout.Mode.BOTH;
 	}
 
-	public static boolean shouldKeepExternalVideoMode(boolean auto, boolean carActivity,
-																			 boolean hasEngine, boolean videoModeRequired,
-																			 boolean splitModeSupported, boolean mainFragment,
-																			 int fragmentId) {
-		if (!auto && !carActivity) return false;
+	public static boolean shouldKeepExternalVideoMode(RuntimeHostMode hostMode,
+														 boolean hasEngine, boolean videoModeRequired,
+														 boolean splitModeSupported, boolean mainFragment,
+														 int fragmentId) {
+		if ((hostMode == null) || !hostMode.usesAutomotivePresentation()) return false;
 		if (!hasEngine || !videoModeRequired || splitModeSupported || !mainFragment) return false;
 		return (fragmentId == R.id.youtube_fragment) || (fragmentId == R.id.web_browser_fragment);
 	}

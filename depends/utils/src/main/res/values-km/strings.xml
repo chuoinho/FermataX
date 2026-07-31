@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="move_left">ផ្លាស់ទីទៅឆ្វេង</string>
+	<string name="move_right">ផ្លាស់ទីទៅស្តាំ</string>
+	<string name="move_up">ផ្លាស់ទីឡើងលើ</string>
+	<string name="move_down">ផ្លាស់ទីចុះក្រោម</string>
+	<string name="download_failed">បរាជ័យក្នុងការទាញយក %1$s</string>
+</resources>

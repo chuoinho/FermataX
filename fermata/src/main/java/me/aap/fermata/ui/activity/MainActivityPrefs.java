@@ -85,7 +85,7 @@ public interface MainActivityPrefs
 	Pref<BooleanSupplier> GRID_VIEW_AA = AUTO ? Pref.b("GRID_VIEW_AA", false) : null;
 
 	static MainActivityPrefs get() {
-		return MainActivityDelegate.Prefs.instance;
+		return MainActivityPreferenceStore.INSTANCE;
 	}
 
 	static boolean hasThemePref(MainActivityDelegate a, List<Pref<?>> prefs) {

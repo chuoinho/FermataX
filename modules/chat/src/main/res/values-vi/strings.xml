@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="openai_key">Khóa OpenAI</string>
+	<string name="openai_key_sub">Nhận khóa cá nhân của bạn: &lt;a href=\&quot;%1$s\&quot;&gt;%1$s&lt;a&gt;</string>
+	<string name="openai_model">Người mẫu</string>
+	<string name="openai_model_custom">mô hình tùy chỉnh</string>
+	<string name="openai_model_other">mô hình khác</string>
+	<string name="chat_request_failed">Yêu cầu không thành công: %1$s</string>
+	<string name="chat_tts_failed">Chuyển văn bản thành giọng nói không thành công: %1$s</string>
+</resources>

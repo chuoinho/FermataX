@@ -41,6 +41,13 @@ public class YoutubeMediaEngineOwnershipTest {
 	}
 
 	@Test
+	public void newlyClaimedPlaybackRestoresAudioOnlyOnce() {
+		assertTrue(YoutubeMediaEngine.shouldRestoreAudibleAfterClaim(false, true));
+		assertFalse(YoutubeMediaEngine.shouldRestoreAudibleAfterClaim(true, true));
+		assertFalse(YoutubeMediaEngine.shouldRestoreAudibleAfterClaim(false, false));
+	}
+
+	@Test
 	public void externalOwnerRejectsYouTubeAutoNextIdentityChange() {
 		assertTrue(YoutubeMediaEngine.acceptsExternalPlaybackVideo("video-a", "video-a"));
 		assertFalse(YoutubeMediaEngine.acceptsExternalPlaybackVideo("video-a", "video-c"));

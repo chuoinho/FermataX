@@ -1,6 +1,7 @@
 package me.aap.fermata.addon.stremio.ui.source;
 
 import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
 
 import android.content.Context;
@@ -105,6 +106,12 @@ public final class StremioSourceUiView extends FrameLayout implements SourceUiCo
 		this.activity = Objects.requireNonNull(activity, "activity");
 		this.editorCompletion = Objects.requireNonNull(editorCompletion, "editorCompletion");
 		restartController();
+	}
+
+	/** Uses the host toolbar as the sole title/navigation row on automotive displays. */
+	public void setAutomotiveChrome(boolean automotive) {
+		View title = findViewById(R.id.stremio_sources_title);
+		if (title != null) title.setVisibility(automotive ? INVISIBLE : VISIBLE);
 	}
 
 	public void unbind() {

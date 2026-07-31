@@ -18,7 +18,6 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.FloatingButton.Mediator.BackMenu;
 import me.aap.utils.ui.view.NavBarView;
-import me.aap.utils.ui.view.ToolBarView;
 
 /**
  * @author Andrey Pavlenko

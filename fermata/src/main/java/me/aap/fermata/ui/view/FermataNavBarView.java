@@ -1,7 +1,6 @@
 package me.aap.fermata.ui.view;
 
 import static me.aap.fermata.BuildConfig.AUTO;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 

@@ -1,7 +1,5 @@
 package me.aap.fermata.addon.stremio.torrent;
 
-import android.util.Log;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,10 +30,10 @@ import com.frostwire.jlibtorrent.TorrentHandle;
 import com.frostwire.jlibtorrent.TorrentInfo;
 
 import me.aap.fermata.media.net.RemotePlaybackProgress;
+import me.aap.utils.log.Log;
 
 /** Loopback-only HTTP Range bridge for one bounded set of torrent files. */
 final class TorrentHttpServer implements AutoCloseable {
-	private static final String TAG = "StremioTorrentHttp";
 	private static final InetAddress IPV4_LOOPBACK = ipv4Loopback();
 	private static final int MAX_ENTRIES = 8;
 	private static final int MAX_HEADER_CHARS = 16 * 1024;
@@ -123,7 +121,7 @@ final class TorrentHttpServer implements AutoCloseable {
 				socket.setSoTimeout(15_000);
 				clients.execute(() -> handle(socket));
 			} catch (IOException error) {
-				if (running.get()) Log.w(TAG, "Accept failed", error);
+				if (running.get()) Log.w(error, "P2P accept failed");
 			}
 		}
 	}
@@ -189,19 +187,19 @@ final class TorrentHttpServer implements AutoCloseable {
 								(status == 503) ? "P2P Peers Unavailable" : "P2P Data Unavailable");
 						return;
 					} catch (IOException unavailable) {
-						Log.w(TAG, "P2P bridge unavailable: trackers=" + entry.trackerCount());
+						Log.w("P2P bridge unavailable: trackers=" + entry.trackerCount());
 						writeError(socket, 502, "P2P Engine Unavailable");
 						return;
 					}
 					writeHeaders(socket.getOutputStream(), entry, bytes);
 					stream(session, entry, socket.getOutputStream(), bytes);
 				} catch (SocketTimeoutException unavailable) {
-					Log.w(TAG, "P2P stream stalled after response started");
+					Log.w("P2P stream stalled after response started");
 				} catch (SocketException abandoned) {
 					// Players routinely close successful probe/range requests once they have
 					// enough container data. This is not a transport failure.
 				} catch (IOException unavailable) {
-					Log.w(TAG, "P2P stream ended after response started: " +
+					Log.w("P2P stream ended after response started: " +
 							failureCode(unavailable));
 				}
 				return;
@@ -212,7 +210,7 @@ final class TorrentHttpServer implements AutoCloseable {
 		} catch (SocketException ignored) {
 			// Players routinely close probe/range connections before the response is complete.
 		} catch (Exception error) {
-			if (running.get()) Log.w(TAG, "Client failed", error);
+			if (running.get()) Log.w(error, "P2P client failed");
 		}
 	}
 

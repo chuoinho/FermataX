@@ -3,8 +3,10 @@ package me.aap.fermata.ui.policy;
 import androidx.annotation.Nullable;
 
 import me.aap.fermata.media.engine.MediaEngine;
+import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
 public final class PlaybackUiPolicy {
@@ -36,6 +38,28 @@ public final class PlaybackUiPolicy {
 
 		PlayableItem current = activity.getMediaServiceBinder().getCurrentItem();
 		return (current != null) && !current.isVideo() && activity.goToItem(current);
+	}
+
+	public static boolean isActiveListOnCurrentAudioPath(MainActivityDelegate activity) {
+		PlayableItem source = getAudioSource(activity.getMediaServiceBinder().getCurrentEngine());
+		ActivityFragment fragment = activity.getActiveFragment();
+		if ((source == null) || !(fragment instanceof MediaLibFragment media)) return false;
+		MediaLibFragment.ListAdapter adapter = media.getAdapter();
+		BrowsableItem current = (adapter == null) ? null : adapter.getParent();
+		return isSameOrAncestor(current, source.getParent());
+	}
+
+	static boolean isSameOrAncestor(@Nullable BrowsableItem current,
+			@Nullable BrowsableItem descendant) {
+		if ((current == null) || (descendant == null)) return false;
+		BrowsableItem item = descendant;
+		for (int depth = 0; depth < 64; depth++) {
+			if (current.equals(item)) return true;
+			BrowsableItem parent = item.getParent();
+			if ((parent == null) || (parent == item)) return false;
+			item = parent;
+		}
+		return false;
 	}
 
 	@Nullable

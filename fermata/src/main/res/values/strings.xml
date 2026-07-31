@@ -19,11 +19,11 @@
     <string name="module_name_gdrive" translatable="false">Google Drive</string>
     <string name="module_name_sftp" translatable="false">SFTP</string>
     <string name="module_name_smb" translatable="false">SMB</string>
-    <string name="module_name_web" translatable="false">Web</string>
-    <string name="module_name_tv" translatable="false">TV</string>
-    <string name="module_name_radio" translatable="false">Internet Radio</string>
-    <string name="module_name_podcast" translatable="false">Podcast</string>
-    <string name="module_name_audiobook" translatable="false">Audiobook</string>
+	<string name="module_name_web">Web</string>
+	<string name="module_name_tv">TV</string>
+	<string name="module_name_radio">Internet Radio</string>
+	<string name="module_name_podcast">Podcast</string>
+	<string name="module_name_audiobook">Audiobook</string>
 	<string name="module_name_stremio" translatable="false">Stremio</string>
 
     <string name="addons">Addons</string>
@@ -61,8 +61,8 @@
     <string name="addon_name_youtube" translatable="false">Youtube</string>
     <string name="addon_name_cast" translatable="false">Google Cast</string>
     <string name="addon_name_chat" translatable="false">ChatGPT</string>
-    <string name="addon_name_translate" translatable="false">Language translator</string>
-    <string name="addon_name_subgen" translatable="false">Subtitles generator</string>
+	<string name="addon_name_translate">Language translator</string>
+	<string name="addon_name_subgen">Subtitles generator</string>
     <string name="addon_name_whisper" translatable="false">Whisper</string>
     <string name="addon_name_mlkit" translatable="false">ML Kit</string>
     <string name="addon_name_mlkit_translate" translatable="false">ML Kit Translate</string>
@@ -76,6 +76,14 @@
     <string name="playback_settings">Playback settings</string>
     <string name="playback_control">Playback control</string>
     <string name="engine_prefs">Media engine</string>
+	<string name="car_keyboard_cancel">Cancel</string>
+	<string name="car_keyboard_input">Input</string>
+	<string name="car_keyboard_shift">Shift</string>
+	<string name="car_keyboard_space">Space</string>
+	<string name="car_keyboard_paste">Paste</string>
+	<string name="car_keyboard_delete">Delete</string>
+	<string name="car_keyboard_clear">Clear</string>
+	<string name="car_keyboard_ok">OK</string>
 
     <string name="theme">Application theme</string>
     <string name="theme_sub">Current theme: %1$s</string>
@@ -314,7 +322,8 @@
     <string name="delete_file_title">Delete file</string>
     <string name="delete_file_question">Are you sure you want to delete file?</string>
     <string name="delete_file_failed">Failed to delete file %1$s</string>
-    <string name="loading">Loading…</string>
+	<string name="loading">Loading…</string>
+	<string name="playback_live" translatable="false">LIVE</string>
     <string name="p2p_resolving">Resolving torrent…</string>
     <string name="p2p_finding_peers">Finding peers…</string>
     <string name="p2p_buffering_status">%1$d peers | %2$s/s | %3$d%%</string>
@@ -335,7 +344,7 @@
     <string name="m3u_playlist_location">Location</string>
     <string name="m3u_playlist_location_hint">File or http(s) URL</string>
     <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
-    <string name="m3u_playlist_timeout" translatable="false">Response timeout</string>
+	<string name="m3u_playlist_timeout">Response timeout</string>
     <string name="m3u_playlist_video">Video playlist</string>
 
     <string name="eq_manual">Manual</string>
@@ -360,7 +369,7 @@
     <string name="private_key">Private key</string>
     <string name="private_key_pass">Private key password</string>
 
-    <string name="donate">Support on Ko-fi</string>
+	<string name="donate">Support developer</string>
     <string name="donate_text">Support FermataX on Ko-fi.</string>
     <string name="use_phone_for_donation">Open Ko-fi on your phone to support FermataX.</string>
 
@@ -403,6 +412,20 @@
     <string name="import_prefs_failed">Failed to import preferences: %1$s</string>
     <string name="prefs_not_found">No preferences found</string>
     <string name="open_log">Open log file</string>
+    <string name="diagnostics">Diagnostics</string>
+    <string name="diagnostics_sub">Local reports for crashes, hangs, and unexpected app states</string>
+    <string name="detailed_diagnostics">Detailed diagnostics</string>
+    <string name="detailed_diagnostics_sub">Record detailed events for up to 48 hours. You can turn this off at any time.</string>
+    <string name="export_diagnostic_report">Export diagnostic report</string>
+    <string name="export_diagnostic_report_sub">Create a private ZIP report to save or share with support</string>
+    <string name="clear_diagnostic_data">Clear diagnostic data</string>
+    <string name="clear_diagnostic_data_sub">Delete locally stored logs and reports</string>
+    <string name="share_diagnostic_report">Share report</string>
+    <string name="save_diagnostic_report">Save to Downloads</string>
+    <string name="diagnostic_report_saved">Diagnostic report saved to Downloads as %1$s.</string>
+    <string name="diagnostic_report_failed">Unable to create diagnostic report: %1$s</string>
+    <string name="diagnostic_data_cleared">Diagnostic data cleared.</string>
+    <string name="diagnostics_phone_only">Export diagnostic reports from FermataX Settings on your phone.</string>
     <string name="unlock_phone_and_grant">Unlock the phone and grant the requested permissions.</string>
     <string name="screen_capture_rejected">Screen capture request rejected.</string>
     <string name="accessibility_dsc">The accessibility service is used by Fermata Mirror to simulate touch screen events.</string>
@@ -461,4 +484,7 @@
     <string name="initial_setup_reopen_sub">Change device, app language, or voice preferences.</string>
     <string name="voice_control_auto_language">Auto-detect voice language</string>
     <string name="voice_control_auto_language_sub">Use Android 14 language detection with the selected language as fallback.</string>
+	<string name="retry">Retry</string>
+	<string name="media_list_empty">No items yet</string>
+	<string name="media_list_load_failed">Unable to load items.</string>
 </resources>

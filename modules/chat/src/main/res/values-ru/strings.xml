@@ -3,4 +3,7 @@
     <string name="openai_key_sub"><![CDATA[Ваш персональный ключ: <a href=\"%1$s\">%1$s<a>]]></string>
     <string name="openai_model">Модель</string>
     <string name="openai_model_other">Другая модель</string>
+	<string name="openai_model_custom">Пользовательская модель</string>
+	<string name="chat_request_failed">Запрос не выполнен: %1$s</string>
+	<string name="chat_tts_failed">Не удалось преобразовать текст в речь: %1$s</string>
 </resources>

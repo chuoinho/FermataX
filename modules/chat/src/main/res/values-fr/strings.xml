@@ -3,4 +3,7 @@
     <string name="openai_key_sub">Votre clé personnelle: &lt;a href="%1$s"&gt;%1$s&lt;a&gt;</string>
     <string name="openai_model">Modèle</string>
     <string name="openai_model_other">Autre modèle</string>
+	<string name="openai_model_custom">Modèle personnalisé</string>
+	<string name="chat_request_failed">La requête a échoué : %1$s</string>
+	<string name="chat_tts_failed">Échec de la synthèse vocale : %1$s</string>
 </resources>

@@ -131,6 +131,16 @@ public class XtreamEpisodeItem extends PlayableItemBase implements StreamItem, S
 		return true;
 	}
 
+	@Override
+	public boolean isLiveStream() {
+		return false;
+	}
+
+	@Override
+	public boolean isSeekable() {
+		return true;
+	}
+
 	@NonNull
 	@Override
 	protected FutureSupplier<MediaMetadataCompat> loadMeta() {

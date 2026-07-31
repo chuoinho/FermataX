@@ -13,4 +13,22 @@
     <string name="video_quality">Calitate video</string>
     <string name="open_on_start">Deschide la pornire</string>
     <string name="try_to_skip_ad">Încearcă să omiți publicitatea</string>
+	<string name="user_agent">User-Agent</string>
+	<string name="retry">Reîncercați</string>
+	<string name="web_page_load_failed">Pagina nu s-a încărcat</string>
+	<string name="web_page_load_failed_msg">Nu s-a putut încărca:\n%1$s\n\nMotiv: %2$s\n\nWebView: %3$s</string>
+	<string name="auto_highest_video_quality">Selectați automat cea mai înaltă calitate video</string>
+	<string name="sponsorblock_sub">Omiteți segmentele de la mulțime în timp ce vizionați YouTube.</string>
+	<string name="sponsorblock_enable">Activați SponsorBlock</string>
+	<string name="sponsorblock_enable_sub">Preia datele de segment de la sponsor.ajay.app pentru videoclipul curent.</string>
+	<string name="sponsorblock_cat_sponsor">Segmente de sponsorizare</string>
+	<string name="sponsorblock_cat_selfpromo">Autopromovare</string>
+	<string name="sponsorblock_cat_interaction">Memento-uri de interacțiune</string>
+	<string name="sponsorblock_cat_intro">Introduceri și pauze</string>
+	<string name="sponsorblock_cat_outro">Carduri finale și credite</string>
+	<string name="sponsorblock_cat_preview">Previzualizare și recapitulare</string>
+	<string name="sponsorblock_cat_hook">Cârlige</string>
+	<string name="sponsorblock_cat_music_offtopic">Secțiuni non-muzică</string>
+	<string name="sponsorblock_cat_filler">Umplere</string>
+	<string name="sponsorblock_cat_filler_sub">Categoria agresivă; dezactivat implicit.</string>
 </resources>

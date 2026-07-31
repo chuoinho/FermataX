@@ -18,15 +18,13 @@ final class InterfacePrefsBuilder {
 
 	static void addAndroidAuto(MainActivityDelegate activity, PreferenceSet set) {
 		if (!BuildConfig.AUTO) return;
-		add(activity, set, MainActivityPrefs.THEME_AA, MainActivityPrefs.HIDE_BARS_AA,
-				MainActivityPrefs.FULLSCREEN_AA, MainActivityPrefs.SHOW_PG_UP_DOWN_AA,
+		add(activity, set, MainActivityPrefs.THEME_AA, MainActivityPrefs.SHOW_PG_UP_DOWN_AA,
 				MainActivityPrefs.USE_DPAD_CURSOR, MainActivityPrefs.NAV_BAR_POS_AA,
 				MainActivityPrefs.NAV_BAR_SIZE_AA, MainActivityPrefs.TOOL_BAR_SIZE_AA,
 				MainActivityPrefs.CONTROL_PANEL_SIZE_AA, MainActivityPrefs.TEXT_ICON_SIZE_AA);
 	}
 
 	static void add(MainActivityDelegate activity, PreferenceSet set, Pref<IntSupplier> theme,
-						Pref<BooleanSupplier> hideBars, Pref<BooleanSupplier> fullScreen,
 						Pref<BooleanSupplier> pgUpDown, Pref<BooleanSupplier> dpadCursor,
 						Pref<IntSupplier> navBarPosition, Pref<DoubleSupplier> navBarSize,
 						Pref<DoubleSupplier> toolBarSize, Pref<DoubleSupplier> controlPanelSize,
@@ -42,17 +40,6 @@ final class InterfacePrefsBuilder {
 			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_system,
 					R.string.theme_black, R.string.theme_star_wars, R.string.theme_purple,
 					R.string.theme_classic};
-		});
-		set.addBooleanPref(o -> {
-			o.store = store;
-			o.pref = hideBars;
-			o.title = R.string.hide_bars;
-			o.subtitle = R.string.hide_bars_sub;
-		});
-		set.addBooleanPref(o -> {
-			o.store = store;
-			o.pref = fullScreen;
-			o.title = R.string.fullscreen_mode;
 		});
 		if ((pgUpDown != null) && !BuildConfig.AUTO) {
 			set.addBooleanPref(o -> {

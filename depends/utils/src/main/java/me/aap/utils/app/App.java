@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import androidx.annotation.Nullable;
 
 import java.io.File;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -22,6 +23,7 @@ import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.concurrent.ThreadPool;
 import me.aap.utils.function.CheckedRunnable;
 import me.aap.utils.function.CheckedSupplier;
+import me.aap.utils.log.Log;
 
 /**
  * @author Andrey Pavlenko
@@ -76,6 +78,21 @@ public class App extends android.app.Application {
 
 	public int getLogRotateThreshold() {
 		return 64 * 1024;
+	}
+
+	/** Receives only severity and throwable; raw formatted log messages are intentionally omitted. */
+	public void onLogFailure(Log.Level level, @Nullable Throwable error) {
+	}
+
+	/** Structured observer hook for reusable utility boundaries; values must exclude user data. */
+	public void onDiagnosticEvent(String category, String event, Map<String, ?> attributes,
+			@Nullable Throwable error) {
+	}
+
+	/** Correlated form used when one boundary emits start and terminal events. */
+	public void onDiagnosticEvent(String category, String event, @Nullable String operationId,
+			Map<String, ?> attributes, @Nullable Throwable error) {
+		onDiagnosticEvent(category, event, attributes, error);
 	}
 
 	public HandlerExecutor getHandler() {

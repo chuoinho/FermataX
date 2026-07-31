@@ -1,7 +1,5 @@
 package me.aap.fermata.addon.stremio.torrent;
 
-import android.util.Log;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -36,10 +34,10 @@ import me.aap.fermata.addon.stremio.protocol.response.InfoHashStreamTarget;
 import me.aap.fermata.media.engine.PlaybackFailureException;
 import me.aap.fermata.media.engine.PlaybackFailureException.Reason;
 import me.aap.fermata.media.net.RemotePlaybackProgress;
+import me.aap.utils.log.Log;
 
 /** Runtime-owned torrent resolver backed by FrostWire jlibtorrent (MIT). */
 public final class StremioTorrentEngine implements AutoCloseable {
-	private static final String TAG = "StremioTorrent";
 	/* Keep P2P preparation bounded for Android Auto. A black player is not a useful
 	 * loading state, especially while the car is moving. */
 	private static final int METADATA_TIMEOUT_SECONDS = 20;
@@ -126,7 +124,8 @@ public final class StremioTorrentEngine implements AutoCloseable {
 		Objects.requireNonNull(sourceLease, "sourceLease");
 		String key = target.infoHash().toLowerCase(Locale.ROOT) + ':' + target.fileIndex();
 		return preparations.prepare(key, progress,
-				cancellation -> prepareBlocking(target, sourceLease, progress, cancellation));
+				(cancellation, observedProgress) -> prepareBlocking(target, sourceLease,
+						observedProgress, cancellation));
 	}
 
 	private PreparedTorrent prepareBlocking(InfoHashStreamTarget target,
@@ -137,7 +136,7 @@ public final class StremioTorrentEngine implements AutoCloseable {
 		SessionManager manager = sessionOwner.session();
 		List<String> trackers = allowedTrackers(target, sourceLease.consent());
 		String magnet = magnet(target.infoHash(), trackers);
-		Log.i(TAG, "P2P phase=RESOLVING_METADATA trackers=" + trackers.size() +
+		Log.i("P2P phase=RESOLVING_METADATA trackers=" + trackers.size() +
 				" timeout=" + METADATA_TIMEOUT_SECONDS + "s");
 		byte[] metadata = manager.fetchMagnet(magnet, METADATA_TIMEOUT_SECONDS, cacheDirectory);
 		requireActive(sourceLease, cancellation);
@@ -200,7 +199,7 @@ public final class StremioTorrentEngine implements AutoCloseable {
 				throw new PlaybackFailureException(Reason.P2P_ENGINE_UNAVAILABLE, unavailable);
 			}
 			TorrentStatus status = handle.status();
-			Log.i(TAG, "P2P bridge ready: trackers=" + trackers.size() + " peers=" +
+			Log.i("P2P bridge ready: trackers=" + trackers.size() + " peers=" +
 					status.numPeers() + " seeds=" + status.numSeeds() + " rate=" +
 					status.downloadRate() + "B/s dhtNodes=" + manager.dhtNodes());
 			TorrentProgressMapper.publish(progress, TorrentProgressMapper.initial(status));
@@ -247,7 +246,7 @@ public final class StremioTorrentEngine implements AutoCloseable {
 		int peers = (status == null) ? 0 : status.numPeers();
 		int seeds = (status == null) ? 0 : status.numSeeds();
 		int rate = (status == null) ? 0 : status.downloadRate();
-		Log.w(TAG, "P2P startup unavailable: phase=" + phase + " trackers=" + trackerCount +
+		Log.w("P2P startup unavailable: phase=" + phase + " trackers=" + trackerCount +
 				" peers=" + peers + " seeds=" + seeds + " rate=" + rate +
 				"B/s dht=" + manager.isDhtRunning() + " dhtNodes=" + manager.dhtNodes());
 	}

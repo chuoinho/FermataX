@@ -33,7 +33,11 @@ import java.util.List;
 import java.util.Map;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.addon.web.FermataWebClient.CustomViewEvent;
+import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsObserver;
+import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
@@ -51,10 +55,18 @@ public class FermataChromeClient extends WebChromeClient {
 	private CustomViewCallback customViewCallback;
 	private Promise<Void> fullScreenReq;
 	private long touchStamp;
+	protected final DiagnosticsObserver diagnosticsObserver;
 
 	public FermataChromeClient(FermataWebView web, ViewGroup fullScreenView) {
+		this(web, fullScreenView, FermataWebClient.diagnosticsObserver());
+	}
+
+	protected FermataChromeClient(FermataWebView web, ViewGroup fullScreenView,
+			DiagnosticsObserver diagnosticsObserver) {
 		this.web = web;
 		this.fullScreenView = fullScreenView;
+		this.diagnosticsObserver = (diagnosticsObserver == null) ?
+				FermataWebClient.diagnosticsObserver() : diagnosticsObserver;
 	}
 
 	public FermataWebView getWebView() {
@@ -110,6 +122,8 @@ public class FermataChromeClient extends WebChromeClient {
 	public void onShowCustomView(View view, CustomViewCallback callback) {
 		MainActivityDelegate a = getLiveActivity(view.getContext());
 		if (a == null) {
+			diagnosticsObserver.onCustomView(CustomViewEvent.ATTACH_REJECTED,
+					customViewSnapshot(view, null));
 			cancelPendingFullScreenEntry();
 			callback.onCustomViewHidden();
 			return;
@@ -131,6 +145,13 @@ public class FermataChromeClient extends WebChromeClient {
 		customViewCallback = callback;
 		addCustomView(view);
 		setFullScreen(a, true);
+		diagnosticsObserver.onCustomView(CustomViewEvent.ATTACHED,
+				customViewSnapshot(view, a));
+		view.postDelayed(() -> {
+			if ((customView != view) || isCustomViewConfirmed(view)) return;
+			diagnosticsObserver.onCustomView(CustomViewEvent.ATTACH_UNCONFIRMED,
+					customViewSnapshot(view, getLiveActivity(view.getContext())));
+		}, 1200L);
 
 		if (fullScreenReq != null) {
 			Promise<Void> req = fullScreenReq;
@@ -147,12 +168,16 @@ public class FermataChromeClient extends WebChromeClient {
 		touchStamp = 0;
 		MainActivityDelegate a = getLiveActivity(customView.getContext());
 		if (a == null) a = getLiveActivity(web.getContext());
+		diagnosticsObserver.onCustomView(CustomViewEvent.DETACH_REQUESTED,
+				customViewSnapshot(customView, a));
 		removeCustomView(customView);
 		getWebView().setVisibility(VISIBLE);
 		if (a != null) setFullScreen(a, false);
 		customViewCallback.onCustomViewHidden();
 		customView = null;
 		customViewCallback = null;
+		diagnosticsObserver.onCustomView(CustomViewEvent.DETACHED,
+				customViewSnapshot(null, a));
 
 		if (fullScreenReq != null) {
 			Promise<Void> req = fullScreenReq;
@@ -352,7 +377,45 @@ public class FermataChromeClient extends WebChromeClient {
 
 	@Override
 	public boolean onConsoleMessage(ConsoleMessage m) {
-		Log.d("[JS:", m.lineNumber(), "] ", m.message());
+		// Do not persist JavaScript payloads; they may contain page data or credentials.
+		Log.d("Web console message received");
 		return true;
+	}
+
+	private DiagnosticsSnapshot customViewSnapshot(View view, MainActivityDelegate activity) {
+		try {
+			boolean webVisible = (web != null) && (web.getVisibility() == VISIBLE);
+			boolean webAttached = (web != null) && web.isAttachedToWindow();
+			int webWidth = (web == null) ? 0 : web.getWidth();
+			int webHeight = (web == null) ? 0 : web.getHeight();
+			boolean surfaceKnown = fullScreenView instanceof VideoView;
+			boolean surfaceValid = false;
+			if (surfaceKnown) {
+				VideoView video = (VideoView) fullScreenView;
+				surfaceValid = video.getVideoSurface().getHolder().getSurface().isValid();
+			}
+			return DiagnosticsSnapshot.builder()
+					.view((view != null) && (view.getVisibility() == VISIBLE),
+							(view != null) && view.isAttachedToWindow(),
+							(view == null) ? 0 : view.getWidth(),
+							(view == null) ? 0 : view.getHeight())
+					.web(webVisible, webAttached, webWidth, webHeight)
+					.surface(surfaceKnown, surfaceValid)
+					.fullscreen(false, (activity != null) && activity.isVideoMode())
+					.build();
+		} catch (RuntimeException ignored) {
+			return DiagnosticsSnapshot.builder().build();
+		}
+	}
+
+	private boolean isCustomViewConfirmed(View view) {
+		try {
+			if ((view == null) || !view.isShown() || !view.isAttachedToWindow() ||
+					(view.getWidth() <= 0) || (view.getHeight() <= 0)) return false;
+			if (!(fullScreenView instanceof VideoView video)) return true;
+			return video.getVideoSurface().getHolder().getSurface().isValid();
+		} catch (RuntimeException ignored) {
+			return false;
+		}
 	}
 }

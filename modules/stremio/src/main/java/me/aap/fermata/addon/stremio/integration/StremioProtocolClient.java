@@ -33,6 +33,8 @@ import me.aap.fermata.addon.stremio.protocol.model.StremioManifest;
 import me.aap.fermata.addon.stremio.protocol.model.StremioRequest;
 import me.aap.fermata.addon.stremio.runtime.StremioRuntime;
 import me.aap.fermata.addon.stremio.security.StremioSourceSecret;
+import me.aap.fermata.diagnostics.DiagnosticOperation;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.utils.log.Log;
 
 /** Secret-owning bridge from enabled source records to bounded cached protocol requests. */
@@ -69,7 +71,7 @@ public final class StremioProtocolClient implements AutoCloseable {
 		Objects.requireNonNull(sourceUuid, "sourceUuid");
 		Objects.requireNonNull(expectedAddonId, "expectedAddonId");
 		Objects.requireNonNull(request, "request");
-		ProtocolCallImpl call = new ProtocolCallImpl(generation);
+		ProtocolCallImpl call = new ProtocolCallImpl(generation, request);
 		if (closed.get()) {
 			call.fail(failure(CANCELLED));
 			return call;
@@ -316,11 +318,17 @@ public final class StremioProtocolClient implements AutoCloseable {
 		private final AtomicReference<CachedCall> transport = new AtomicReference<>();
 		private final AtomicBoolean terminal = new AtomicBoolean();
 		private final RequestGeneration.Token generation;
+		private final DiagnosticOperation diagnostics;
 		private volatile SourceBinding binding;
 		private AutoCloseable generationObservation = () -> {};
 
-		private ProtocolCallImpl(RequestGeneration.Token generation) {
+		private ProtocolCallImpl(RequestGeneration.Token generation, StremioRequest request) {
 			this.generation = generation;
+			Map<String, Object> attributes = new java.util.LinkedHashMap<>();
+			attributes.put("generation", (generation == null) ? -1L : generation.value());
+			attributes.put("request_type", request.type());
+			diagnostics = AndroidDiagnosticsRuntime.get().begin("stremio_protocol",
+				"protocol_request", attributes);
 			if (generation != null) {
 				AutoCloseable observation = generation.onInvalidated(this::cancel);
 				generationObservation = observation;
@@ -340,6 +348,10 @@ public final class StremioProtocolClient implements AutoCloseable {
 
 		private void complete(ProtocolPayload payload) {
 			if (!finish()) return;
+			if (diagnostics != null) diagnostics.complete(Map.of(
+					"status", "completed",
+					"byte_count", payload.body().length,
+					"stale", payload.stale()));
 			result.complete(payload);
 		}
 
@@ -347,6 +359,14 @@ public final class StremioProtocolClient implements AutoCloseable {
 			if (!finish()) return;
 			CachedCall call = transport.getAndSet(null);
 			if (call != null) call.cancel();
+			Map<String, Object> attributes = new java.util.LinkedHashMap<>();
+			attributes.put("status", isCancelled(error) ? "cancelled" : "failed");
+			attributes.put("byte_count", 0);
+			attributes.put("failure_code", failureCode(error));
+			if (diagnostics != null) {
+				if (isCancelled(error)) diagnostics.cancel(attributes);
+				else diagnostics.fail(error, attributes);
+			}
 			result.completeExceptionally(error);
 		}
 
@@ -375,7 +395,27 @@ public final class StremioProtocolClient implements AutoCloseable {
 			if (!finish()) return;
 			CachedCall call = transport.get();
 			if (call != null) call.cancel();
+			if (diagnostics != null) diagnostics.cancel(Map.of(
+					"status", "cancelled", "byte_count", 0));
 			result.completeExceptionally(failure(CANCELLED));
 		}
+	}
+
+	private static boolean isCancelled(Throwable error) {
+		while ((error instanceof java.util.concurrent.CompletionException) &&
+				(error.getCause() != null)) error = error.getCause();
+		return (error instanceof java.util.concurrent.CancellationException) ||
+				((error instanceof StremioIntegrationException integration) &&
+						(integration.code() == CANCELLED));
+	}
+
+	private static String failureCode(Throwable error) {
+		while ((error instanceof java.util.concurrent.CompletionException) &&
+				(error.getCause() != null)) error = error.getCause();
+		if (error instanceof StremioIntegrationException integration) {
+			return integration.code().name();
+		}
+		if (error instanceof java.util.concurrent.CancellationException) return CANCELLED.name();
+		return (error == null) ? "UNKNOWN" : error.getClass().getSimpleName();
 	}
 }

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="move_left">왼쪽으로 이동</string>
+	<string name="move_right">오른쪽으로 이동</string>
+	<string name="move_up">위로 이동</string>
+	<string name="move_down">아래로 이동</string>
+	<string name="download_failed">%1$s 다운로드 실패</string>
+</resources>

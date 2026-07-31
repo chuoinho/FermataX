@@ -1,6 +1,9 @@
 package me.aap.fermata.addon;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,6 +123,83 @@ public class AddonLifecycleCoordinatorTest {
 		scheduled.remove().run();
 		assertEquals(List.of("activity-create", "commit", "activity-destroy", "uninstall"),
 				addon.events);
+	}
+
+	@Test
+	public void duplicateLifecycleSignalsAreIdempotent() {
+		AddonLifecycleCoordinator coordinator = new AddonLifecycleCoordinator();
+		RecordingAddon addon = new RecordingAddon();
+		coordinator.onAddonLoaded(addon);
+
+		coordinator.onActivityCreate(null);
+		coordinator.onActivityCreate(null);
+		coordinator.onActivityResume(null);
+		coordinator.onActivityResume(null);
+		coordinator.onActivityPause(null);
+		coordinator.onActivityPause(null);
+		coordinator.onActivityDestroy(null);
+		coordinator.onActivityDestroy(null);
+		coordinator.onServiceCreate(null);
+		coordinator.onServiceCreate(null);
+		coordinator.onServiceDestroy(null);
+		coordinator.onServiceDestroy(null);
+
+		assertEquals(List.of("activity-create", "activity-resume", "activity-pause",
+				"activity-destroy", "service-create", "service-destroy"), addon.events);
+	}
+
+	@Test
+	public void unloadedGenerationCannotReplayOrCommitAfterReload() {
+		Queue<Runnable> scheduled = new ArrayDeque<>();
+		AddonLifecycleCoordinator coordinator = new AddonLifecycleCoordinator(scheduled::add);
+		RecordingAddon addon = new RecordingAddon();
+		coordinator.onActivityCreate(null);
+
+		AddonLifecycleCoordinator.LifecycleToken old = coordinator.onAddonLoaded(addon,
+				() -> addon.events.add("old-commit"));
+		coordinator.onAddonUnloading(addon, () -> addon.events.add("old-uninstall"));
+		AddonLifecycleCoordinator.LifecycleToken current = coordinator.onAddonLoaded(addon,
+				() -> addon.events.add("new-commit"));
+
+		assertFalse(coordinator.isActive(old));
+		assertTrue(coordinator.isActive(current));
+		assertNotEquals(old.generation(), current.generation());
+		scheduled.remove().run();
+
+		assertEquals(List.of("old-uninstall", "activity-create", "new-commit"), addon.events);
+		assertTrue(coordinator.isActive(current));
+	}
+
+	@Test
+	public void unloadingOneAddonDoesNotInvalidateAnotherAddonToken() {
+		AddonLifecycleCoordinator coordinator = new AddonLifecycleCoordinator();
+		RecordingAddon first = new RecordingAddon();
+		RecordingAddon second = new RecordingAddon();
+		AddonLifecycleCoordinator.LifecycleToken firstToken = coordinator.onAddonLoaded(first);
+		AddonLifecycleCoordinator.LifecycleToken secondToken = coordinator.onAddonLoaded(second);
+
+		coordinator.onAddonUnloading(first);
+
+		assertFalse(coordinator.isActive(firstToken));
+		assertTrue(coordinator.isActive(secondToken));
+		assertEquals(secondToken, coordinator.getToken(second));
+	}
+
+	@Test
+	public void unloadDuringReplayReleasesOnlyHooksAlreadyDelivered() {
+		AddonLifecycleCoordinator coordinator = new AddonLifecycleCoordinator();
+		RecordingAddon addon = new RecordingAddon() {
+			@Override
+			public void onServiceCreate(MediaSessionCallback callback) {
+				super.onServiceCreate(callback);
+				coordinator.onAddonUnloading(this, () -> events.add("uninstall"));
+			}
+		};
+		coordinator.onServiceCreate(null);
+
+		coordinator.onAddonLoaded(addon, () -> addon.events.add("commit"));
+
+		assertEquals(List.of("service-create", "service-destroy", "uninstall"), addon.events);
 	}
 
 	private static class RecordingAddon implements FermataActivityAddon, FermataMediaServiceAddon {

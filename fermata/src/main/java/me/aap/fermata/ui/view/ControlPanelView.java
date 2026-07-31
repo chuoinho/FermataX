@@ -40,7 +40,6 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
-import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
@@ -49,15 +48,13 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.policy.ItemRoutePolicy;
+import me.aap.fermata.ui.policy.ChromePolicy;
+import me.aap.fermata.ui.policy.PlaybackPresentationOwner.Identity;
+import me.aap.fermata.ui.policy.PlaybackPresentationOwner.Token;
 import me.aap.fermata.ui.policy.PlaybackPresentationReducer.State;
 import me.aap.fermata.ui.policy.PlaybackUiPolicy;
 import me.aap.fermata.ui.policy.ToolBarTitlePolicy;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.function.BooleanSupplier;
-import me.aap.utils.function.DoubleSupplier;
-import me.aap.utils.function.IntSupplier;
-import me.aap.utils.pref.BasicPreferenceStore;
-import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.UiUtils;
@@ -172,7 +169,7 @@ public class ControlPanelView extends ConstraintLayout
 		b.bindProgressBar(findViewById(R.id.seek_bar));
 		b.bindProgressTime(findViewById(R.id.seek_time));
 		b.bindProgressTotal(findViewById(R.id.seek_total));
-		b.bound();
+		b.bound(getActivity().getRuntimeHostMode());
 		favoriteController.refresh();
 	}
 
@@ -332,7 +329,7 @@ public class ControlPanelView extends ConstraintLayout
 		if (isAutoUi(a)) {
 			if (info != null) info.setVisibility(GONE);
 			boolean split = a.getBody().isBothMode() && isSplitModeSupported(a);
-			presentationCoordinator.enterVideo(split);
+			presentationCoordinator.enterVideo(currentPresentationIdentity(a), split);
 			return;
 		}
 
@@ -610,6 +607,30 @@ public class ControlPanelView extends ConstraintLayout
 		updateAutoVideoTitle(getActivity());
 	}
 
+	private static Identity currentPresentationIdentity(MainActivityDelegate activity) {
+		MediaEngine engine = activity.getMediaServiceBinder().getCurrentEngine();
+		PlaybackSnapshot snapshot = activity.getMediaSessionCallback().getPlaybackSnapshot();
+		PlayableItem item = snapshot.getItem();
+		if ((item == null) && (engine != null)) item = engine.getSource();
+		int addonId = (item == null) ? 0 : ItemRoutePolicy.getPlaybackOwnerFragmentId(item);
+		int engineId = (engine == null) ? 0 : engine.getId();
+		String itemId = (item == null) ? "" : item.getOrigId();
+		return new Identity(addonId, engineId, itemId);
+	}
+
+	public Token getPresentationOwner() {
+		return presentationCoordinator.getOwner();
+	}
+
+	public boolean isPresentationOwner(Token token) {
+		return presentationCoordinator.isCurrent(token);
+	}
+
+	public boolean releasePresentation(Token token) {
+		boolean showAudio = ((mask & MASK_VISIBLE) != 0) && isAudioPanelSupported(getActivity());
+		return presentationCoordinator.leaveVideo(token, showAudio);
+	}
+
 	@Override
 	public void onPlaybackMetadataChanged(PlaybackSnapshot snapshot) {
 		updateAutoVideoTitle(getActivity());
@@ -784,6 +805,7 @@ public class ControlPanelView extends ConstraintLayout
 		a.setBarsHidden(state.barsHidden());
 		if (!state.barsHidden()) {
 			updateAutoVideoTitle(a);
+			ChromePolicy.refreshAutoTopBackButton(a);
 			a.post(() -> updateAutoVideoTitle(a));
 		}
 		setShowHideBarsIcon(a);
@@ -812,7 +834,7 @@ public class ControlPanelView extends ConstraintLayout
 	}
 
 	private static boolean isAutoUi(MainActivityDelegate a) {
-		return BuildConfig.AUTO || a.isCarActivity();
+		return a.getRuntimeHostMode().usesAutomotivePresentation();
 	}
 
 	private void updateAutoVideoTitle(MainActivityDelegate a) {
@@ -839,7 +861,9 @@ public class ControlPanelView extends ConstraintLayout
 	}
 
 	private void showTimerMenu(MainActivityDelegate activity) {
-		getMenu(activity).show(builder -> new TimerMenuHandler(activity).build(builder));
+		OverlayMenu menu = getMenu(activity);
+		menu.show(builder -> new PlaybackTimerMenu(menu, activity,
+				() -> playbackTimerController.refresh(activity)).build(builder));
 	}
 
 	private final class MenuHandler extends MediaItemMenuHandler {
@@ -990,11 +1014,12 @@ public class ControlPanelView extends ConstraintLayout
 
 			if (!stream) {
 				b.addItem(R.id.speed, R.drawable.speed, R.string.speed)
-						.setSubmenu(s -> new SpeedMenuHandler().build(s, getItem()));
+						.setSubmenu(s -> new PlaybackSpeedMenu(a).build(s, getItem()));
 			}
 
 			b.addItem(R.id.timer, R.drawable.timer, R.string.timer)
-					.setSubmenu(s -> new TimerMenuHandler(a).build(s));
+					.setSubmenu(s -> new PlaybackTimerMenu(ControlPanelView.this.getMenu(a), a,
+							() -> playbackTimerController.refresh(a)).build(s));
 		}
 
 		private void buildRepeatMenu(OverlayMenu.Builder b) {
@@ -1027,190 +1052,6 @@ public class ControlPanelView extends ConstraintLayout
 			}
 
 			return super.menuItemSelected(i);
-		}
-	}
-
-	private final class SpeedMenuHandler implements OverlayMenu.CloseHandler {
-		private PrefStore store;
-
-		void build(OverlayMenu.Builder b, Item item) {
-			store = new PrefStore(item);
-			PreferenceSet set = new PreferenceSet();
-
-			set.addFloatPref(o -> {
-				o.title = R.string.speed;
-				o.store = store;
-				o.pref = MediaPrefs.SPEED;
-				o.scale = 0.1f;
-				o.seekMin = 1;
-				o.seekMax = 20;
-			});
-			set.addBooleanPref(o -> {
-				o.title = R.string.current_track;
-				o.store = store;
-				o.pref = store.TRACK;
-			});
-			set.addBooleanPref(o -> {
-				o.title = R.string.current_folder;
-				o.store = store;
-				o.pref = store.FOLDER;
-			});
-
-			set.addToMenu(b, true);
-			b.setCloseHandlerHandler(this);
-		}
-
-		@Override
-		public void menuClosed(OverlayMenu menu) {
-			store.apply();
-		}
-
-		private class PrefStore extends BasicPreferenceStore {
-			final Pref<BooleanSupplier> TRACK = Pref.b("TRACK", false);
-			final Pref<BooleanSupplier> FOLDER = Pref.b("FOLDER", false);
-			private final MediaSessionCallback cb =
-					getActivity().getMediaServiceBinder().getMediaSessionCallback();
-			private final Item item;
-
-			PrefStore(Item item) {
-				this.item = item;
-				MediaPrefs prefs = item.getPrefs();
-				BrowsableItem p = item.getParent();
-				boolean set = false;
-
-				try (PreferenceStore.Edit edit = editPreferenceStore()) {
-					if (prefs.hasPref(MediaPrefs.SPEED)) {
-						edit.setBooleanPref(TRACK, true);
-						edit.setFloatPref(MediaPrefs.SPEED, prefs.getFloatPref(MediaPrefs.SPEED));
-						set = true;
-					} else {
-						edit.setBooleanPref(TRACK, false);
-					}
-
-					if (p != null) {
-						prefs = p.getPrefs();
-
-						if (prefs.hasPref(MediaPrefs.SPEED)) {
-							edit.setBooleanPref(FOLDER, true);
-
-							if (!set) {
-								edit.setFloatPref(MediaPrefs.SPEED, prefs.getFloatPref(MediaPrefs.SPEED));
-								set = true;
-							}
-						} else {
-							edit.setBooleanPref(FOLDER, false);
-						}
-					} else {
-						edit.setBooleanPref(FOLDER, false);
-					}
-
-					if (!set) edit.setFloatPref(MediaPrefs.SPEED,
-							cb.getPlaybackControlPrefs().getFloatPref(MediaPrefs.SPEED));
-				}
-			}
-
-			void apply() {
-				BrowsableItem p = item.getParent();
-				boolean set = false;
-
-				if (getBooleanPref(TRACK)) {
-					item.getPrefs().applyFloatPref(MediaPrefs.SPEED, getFloatPref(MediaPrefs.SPEED));
-					set = true;
-				} else {
-					item.getPrefs().removePref(MediaPrefs.SPEED);
-				}
-
-				if (p != null) {
-					if (getBooleanPref(FOLDER)) {
-						p.getPrefs().applyFloatPref(MediaPrefs.SPEED, getFloatPref(MediaPrefs.SPEED));
-						set = true;
-					} else {
-						p.getPrefs().removePref(MediaPrefs.SPEED);
-					}
-				}
-
-				if (!set) {
-					cb.getPlaybackControlPrefs()
-							.applyFloatPref(MediaPrefs.SPEED, getFloatPref(MediaPrefs.SPEED));
-				}
-			}
-
-			@Override
-			public void applyFloatPref(boolean removeDefault, Pref<? extends DoubleSupplier> pref,
-																 float value) {
-				if (value == 0.0f) value = 0.1f;
-				super.applyFloatPref(removeDefault, pref, value);
-				if (cb.isPlaying()) cb.onSetPlaybackSpeed(value);
-			}
-		}
-	}
-
-	private final class TimerMenuHandler extends BasicPreferenceStore
-			implements OverlayMenu.CloseHandler {
-		private final Pref<IntSupplier> H = Pref.i("H", 0);
-		private final Pref<IntSupplier> M = Pref.i("M", 0);
-		private final MainActivityDelegate activity;
-		private boolean changed;
-		private boolean closed;
-
-		TimerMenuHandler(MainActivityDelegate activity) {
-			this.activity = activity;
-		}
-
-		void build(OverlayMenu.Builder b) {
-			PreferenceSet set = new PreferenceSet();
-			int time = activity.getMediaSessionCallback().getPlaybackTimer();
-
-			if (time > 0) {
-				int h = time / 3600;
-				int m = (time - h * 3600) / 60;
-				applyIntPref(H, h);
-				applyIntPref(M, m);
-			}
-
-			set.addIntPref(o -> {
-				o.title = R.string.hours;
-				o.store = this;
-				o.pref = H;
-				o.seekMin = 0;
-				o.seekMax = 12;
-			});
-			set.addIntPref(o -> {
-				o.title = R.string.minutes;
-				o.store = this;
-				o.pref = M;
-				o.seekMin = 0;
-				o.seekMax = 60;
-				o.seekScale = 5;
-			});
-
-			set.addToMenu(b, true);
-			b.setCloseHandlerHandler(this);
-			changed = false;
-			startTimer();
-		}
-
-		@Override
-		public void applyIntPref(boolean removeDefault, Pref<? extends IntSupplier> pref, int value) {
-			super.applyIntPref(removeDefault, pref, value);
-			changed = true;
-			startTimer();
-		}
-
-		@Override
-		public void menuClosed(OverlayMenu menu) {
-			closed = true;
-			if (!changed) return;
-			int h = getIntPref(H);
-			int m = getIntPref(M);
-			activity.getMediaSessionCallback().setPlaybackTimer(h * 3600 + m * 60);
-			playbackTimerController.refresh(activity);
-		}
-
-		private void startTimer() {
-			activity.postDelayed(() -> {
-				if (!closed) getMenu(getActivity()).hide();
-			}, 60000);
 		}
 	}
 

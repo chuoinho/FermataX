@@ -185,7 +185,7 @@ public class ChatFragment extends MainActivityFragment
 		gpt.addMessage(text, ChatGpt.Role.USER);
 		chat.sendRequest(gpt.getLastMessages(6)).onCompletion((resp, err) -> {
 			if (err != null) {
-				UiUtils.showAlert(requireContext(), "Request failed: " + err);
+				UiUtils.showAlert(requireContext(), getString(R.string.chat_request_failed, err));
 			} else {
 				ChatGpt.getInstance().addMessage(resp, ChatGpt.Role.ASSISTANT);
 				if (!voice) return;
@@ -198,7 +198,7 @@ public class ChatFragment extends MainActivityFragment
 					Locale locale = Locale.forLanguageTag(lang);
 					TextToSpeech.create(requireContext(), locale).onCompletion((tts, terr) -> {
 						if (terr != null) {
-							UiUtils.showAlert(requireContext(), "TTS failed: " + terr);
+							UiUtils.showAlert(requireContext(), getString(R.string.chat_tts_failed, terr));
 						} else {
 							this.tts = tts;
 							speak(resp);
@@ -218,7 +218,7 @@ public class ChatFragment extends MainActivityFragment
 		tts.speak(text).onCompletion((r, err) -> {
 			releaseAudioFocus();
 			if ((err != null) && !(err instanceof CancellationException))
-				UiUtils.showAlert(requireContext(), "TTS failed: " + err);
+				UiUtils.showAlert(requireContext(), getString(R.string.chat_tts_failed, err));
 			interrupt.cancel();
 		});
 	}

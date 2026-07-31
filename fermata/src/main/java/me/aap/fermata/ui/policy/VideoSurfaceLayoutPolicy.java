@@ -9,27 +9,28 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 /** Pure sizing policy for the video surface. It never stretches a valid video frame. */
 public final class VideoSurfaceLayoutPolicy {
 	public static final int MATCH_PARENT = -1;
+	private static final float UNKNOWN_VIDEO_RATIO = 16f / 9f;
 
 	private VideoSurfaceLayoutPolicy() {
 	}
 
 	public static Size resolve(int screenWidth, int screenHeight, float videoWidth,
 			float videoHeight, int scale, float pixelWidthHeightRatio) {
-		if ((screenWidth <= 0) || (screenHeight <= 0) || !finite(videoWidth) ||
-				!finite(videoHeight) || (videoWidth <= 0f) || (videoHeight <= 0f)) {
+		if ((screenWidth <= 0) || (screenHeight <= 0)) {
 			return new Size(MATCH_PARENT, MATCH_PARENT);
 		}
 
+		scale = normalizeScale(scale);
+		boolean validVideoSize = hasValidVideoSize(videoWidth, videoHeight);
 		float pixelRatio = finite(pixelWidthHeightRatio) && (pixelWidthHeightRatio > 0f) ?
 				pixelWidthHeightRatio : 1f;
-		float videoRatio = videoWidth * pixelRatio / videoHeight;
-		if (!finite(videoRatio) || (videoRatio <= 0f)) {
-			return new Size(MATCH_PARENT, MATCH_PARENT);
-		}
+		float videoRatio = validVideoSize ? videoWidth * pixelRatio / videoHeight :
+				UNKNOWN_VIDEO_RATIO;
+		if (!finite(videoRatio) || (videoRatio <= 0f)) videoRatio = UNKNOWN_VIDEO_RATIO;
 
 		if (scale == SCALE_4_3) videoRatio = 4f / 3f;
 		else if (scale == SCALE_16_9) videoRatio = 16f / 9f;
-		else if (scale == SCALE_ORIGINAL) {
+		else if ((scale == SCALE_ORIGINAL) && validVideoSize) {
 			return new Size(positiveRound(videoWidth * pixelRatio), positiveRound(videoHeight));
 		}
 
@@ -54,6 +55,17 @@ public final class VideoSurfaceLayoutPolicy {
 			}
 		}
 		return new Size(positiveRound(width), positiveRound(height));
+	}
+
+	public static boolean hasValidVideoSize(float width, float height) {
+		return finite(width) && finite(height) && (width > 0f) && (height > 0f);
+	}
+
+	static int normalizeScale(int scale) {
+		return switch (scale) {
+			case SCALE_BEST, SCALE_FILL, SCALE_ORIGINAL, SCALE_4_3, SCALE_16_9 -> scale;
+			default -> SCALE_BEST;
+		};
 	}
 
 	private static boolean finite(float value) {

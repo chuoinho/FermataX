@@ -17,4 +17,37 @@
     <string name="connection_settings">Impostazioni connessione</string>
 
     <string name="err_failed_to_add_tv_source">Impossibile aggiungere sorgente: %1$s</string>
+	<string name="sub_movies">Film: %1$d.</string>
+	<string name="sub_series">Serie: %1$d.</string>
+	<string name="sub_seasons">Stagioni: %1$d.</string>
+	<string name="sub_episodes">Episodi: %1$d.</string>
+	<string name="add_xtream_source">Aggiungi la fonte dei codici Xtream</string>
+	<string name="tv_source_name">Nome della fonte</string>
+	<string name="xtream_live_tv">TV in diretta</string>
+	<string name="xtream_movies">Film</string>
+	<string name="xtream_series">Serie</string>
+	<string name="xtream_source_subtitle">TV in diretta/film/serie</string>
+	<string name="xtream_watch_from_beginning">Guarda dall\&apos;inizio</string>
+	<string name="xtream_catchup_last_24h">Ultime 24 ore</string>
+	<string name="xtream_catchup_yesterday">Ieri</string>
+	<string name="xtream_next">Prossimo</string>
+	<string name="xtream_catchup_programs">Programmi: %1$d.</string>
+	<string name="xtream_scheme">Protocollo</string>
+	<string name="xtream_scheme_cur">Protocollo attuale: %1$s</string>
+	<string name="xtream_output">Formato di uscita</string>
+	<string name="xtream_output_cur">Formato di output attuale: %1$s</string>
+	<string name="catchup">Aumento</string>
+	<string name="catchup_type_append">Aggiungere</string>
+	<string name="catchup_type_default">Predefinito</string>
+	<string name="catchup_type_shift">Spostare</string>
+	<string name="xtream_error_incomplete_account">Inserisci host, nome utente e password.</string>
+	<string name="xtream_error_host_not_found">Impossibile trovare il server Xtream %1$s. Controlla l\&apos;host e la porta.</string>
+	<string name="xtream_error_connect">Impossibile connettersi al server Xtream %1$s. Controlla l\&apos;host, la porta e la rete.</string>
+	<string name="xtream_error_timeout">Il server Xtream non ha risposto in tempo: %1$s. Riprova o aumenta il timeout.</string>
+	<string name="xtream_error_html_response">Il server Xtream ha restituito una pagina di errore HTML anziché JSON. Controlla l\&apos;URL e l\&apos;account del portale.</string>
+	<string name="xtream_error_invalid_response">Il server Xtream ha restituito una risposta non valida. Controlla l\&apos;URL e l\&apos;account del portale.</string>
+	<string name="xtream_error_account_rejected">Il server Xtream ha rifiutato la richiesta (HTTP %1$d). Controlla nome utente, password, scadenza o slot di connessione.</string>
+	<string name="xtream_error_api_not_found">L\&apos;API Xtream non è stata trovata su questo server (HTTP 404). Controlla l\&apos;URL del portale, l\&apos;host e la porta.</string>
+	<string name="xtream_error_server">Errore del server Xtream (HTTP %1$d%2$s). Riprova più tardi.</string>
+	<string name="xtream_error_http">Richiesta Xtream non riuscita (HTTP %1$d%2$s).</string>
 </resources>

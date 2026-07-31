@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import me.aap.fermata.R;
+import me.aap.fermata.ui.activity.AsyncOperationController.OperationType;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
@@ -49,7 +50,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 
 		VirtualFileSystem f = fs.get(0);
 		FutureSupplier<List<VirtualFolder>> getRoots = f.getRoots();
-		a.setContentLoading(getRoots);
+		a.setContentLoading(f, OperationType.BROWSE, getRoots);
 		return getRoots.main().then(roots -> {
 			if (roots.isEmpty() && addRemoveSupported()) {
 				return addFolder(a, f).then(r -> {

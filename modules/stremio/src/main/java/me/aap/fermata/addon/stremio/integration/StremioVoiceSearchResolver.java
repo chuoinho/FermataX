@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import static me.aap.fermata.addon.stremio.integration.StremioFutureBridge.toCompletable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +18,6 @@ import me.aap.fermata.addon.stremio.browse.BrowseProvider;
 import me.aap.fermata.addon.stremio.item.StremioItemGateway;
 import me.aap.fermata.addon.stremio.session.StremioSessionItem;
 import me.aap.fermata.addon.stremio.session.StremioVoiceCandidate;
-import me.aap.utils.async.FutureSupplier;
 
 /** Resolves voice candidates and persists their durable navigation projections. */
 final class StremioVoiceSearchResolver {
@@ -64,16 +65,6 @@ final class StremioVoiceSearchResolver {
 					}).toList());
 		});
 	}
-
-	private static <T> CompletableFuture<T> toCompletable(FutureSupplier<T> supplier) {
-		CompletableFuture<T> result = new CompletableFuture<>();
-		supplier.onCompletion((value, error) -> {
-			if (error == null) result.complete(value);
-			else result.completeExceptionally(error);
-		});
-		return result;
-	}
-
 	private record SearchProjection(List<StremioPersistedItem> items,
 			Map<String, Integer> ranks) {
 	}

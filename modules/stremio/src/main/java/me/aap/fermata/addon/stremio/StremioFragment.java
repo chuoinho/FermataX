@@ -32,7 +32,6 @@ import me.aap.fermata.addon.stremio.presentation.StremioRoute;
 import me.aap.fermata.addon.stremio.presentation.StremioScreenState;
 import me.aap.fermata.addon.stremio.presentation.StremioSelection;
 import me.aap.fermata.addon.stremio.presentation.StremioUiModel;
-import me.aap.fermata.addon.stremio.presentation.StremioViewportState;
 import me.aap.fermata.addon.stremio.runtime.StremioRuntimeGraph;
 import me.aap.fermata.addon.stremio.ui.StremioFavoriteController;
 import me.aap.fermata.addon.stremio.ui.StremioNavigationController;

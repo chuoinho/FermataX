@@ -19,6 +19,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -48,10 +50,12 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.activity.AsyncOperationController.OperationType;
 import me.aap.fermata.ui.activity.VoiceCommand;
 import me.aap.fermata.ui.policy.BackNavigationPolicy;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
+import me.aap.fermata.ui.view.MediaItemListViewAdapter.LoadState;
 import me.aap.fermata.ui.view.MediaItemMenuHandler;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
@@ -114,6 +118,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			ItemTouchHelper h = new ItemTouchHelper(adapter.getItemTouchCallback());
 			adapter.setListView(v);
 			v.setAdapter(adapter);
+			adapter.setLoadStateListener(this::renderListState);
+			view.findViewById(R.id.media_items_state_action).setOnClickListener(
+					ignored -> performListStateAction());
 			h.attachToRecyclerView(v);
 			ap.addBroadcastListener(v);
 			ap.addBroadcastListener(this);
@@ -141,7 +148,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	private void cleanUp(MainActivityDelegate a) {
 		Log.d("Cleaning up fragment: ", this);
-		MediaItemListView v = (MediaItemListView) getView();
+		View root = getView();
+		MediaItemListView v = (root == null) ? null :
+				root.findViewById(R.id.media_items_list_view);
 		PreferenceStore ap = a.getPrefs();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		ap.removeBroadcastListener(this);
@@ -209,12 +218,19 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onRefresh(BooleanConsumer refreshing) {
-		reload().onCompletion((r, f) -> refreshing.accept(false));
+		reload(OperationType.REFRESH).onCompletion((r, f) -> refreshing.accept(false));
 	}
 
 	public FutureSupplier<?> reload() {
 		discardSelection();
 		return getAdapter().reload();
+	}
+
+	private FutureSupplier<?> reload(OperationType type) {
+		discardSelection();
+		BrowsableItem parent = getAdapter().getParent();
+		FutureSupplier<?> loading = getAdapter().setParent(parent, false);
+		return getMainActivity().setContentLoading(getAdapter(), type, loading);
 	}
 
 	public FutureSupplier<?> refresh() {
@@ -288,8 +304,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			b.addItem(R.id.nav_select_all, me.aap.utils.R.drawable.check_box, R.string.select_all);
 			b.addItem(R.id.nav_unselect_all, me.aap.utils.R.drawable.check_box_blank,
 					R.string.unselect_all);
-		} else {
-			b.addItem(R.id.nav_select, me.aap.utils.R.drawable.check_box, R.string.select);
 		}
 	}
 
@@ -370,7 +384,52 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@NonNull
 	public MediaItemListView getListView() {
-		return (MediaItemListView) requireView();
+		return requireView().findViewById(R.id.media_items_list_view);
+	}
+
+	private void renderListState(LoadState state) {
+		View root = getView();
+		if (root == null) return;
+		View panel = root.findViewById(R.id.media_items_state_panel);
+		View progress = root.findViewById(R.id.media_items_state_progress);
+		TextView message = root.findViewById(R.id.media_items_state_message);
+		Button action = root.findViewById(R.id.media_items_state_action);
+		boolean content = (state == LoadState.IDLE) || (state == LoadState.CONTENT);
+		getListView().setVisibility(content ? View.VISIBLE : View.GONE);
+		panel.setVisibility(content ? View.GONE : View.VISIBLE);
+		progress.setVisibility(state == LoadState.LOADING ? View.VISIBLE : View.GONE);
+		switch (state) {
+			case LOADING -> {
+				message.setText(R.string.loading);
+				action.setVisibility(View.GONE);
+			}
+			case EMPTY -> {
+				message.setText(R.string.media_list_empty);
+				if ((this instanceof FoldersFragment) && isRootPage()) {
+					action.setText(R.string.add_folder);
+					action.setVisibility(View.VISIBLE);
+				} else {
+					action.setVisibility(View.GONE);
+				}
+			}
+			case ERROR -> {
+				message.setText(R.string.media_list_load_failed);
+				action.setText(R.string.retry);
+				action.setVisibility(View.VISIBLE);
+			}
+			case IDLE, CONTENT -> action.setVisibility(View.GONE);
+		}
+	}
+
+	private void performListStateAction() {
+		ListAdapter current = getAdapter();
+		if (current == null) return;
+		if (current.getLoadState() == LoadState.ERROR) {
+			current.reload();
+		} else if ((current.getLoadState() == LoadState.EMPTY) &&
+				(this instanceof FoldersFragment folders) && isRootPage()) {
+			folders.addFolder();
+		}
 	}
 
 	public void discardSelection() {
@@ -428,7 +487,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		boolean viewChanged = hasGridViewPref(a, prefs);
 
 		if (viewChanged || hasTextIconSizePref(getMainActivity(), prefs)) {
-			MediaItemListView list = (MediaItemListView) getView();
+			View root = getView();
+			MediaItemListView list = (root == null) ? null :
+					root.findViewById(R.id.media_items_list_view);
 
 			if (list != null) {
 				Context ctx = getContext();

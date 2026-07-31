@@ -36,6 +36,9 @@ android {
         release {
             debuggable false
             minifyEnabled true
+            ndk {
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
             resValue "string", "app_name_auto", "@string/app_name_auto_release"
             resValue "string", "app_name_mobile", "@string/app_name_mobile_release"
             resValue "string", "media_service_name_auto", "@string/media_service_name_auto_release"
@@ -164,7 +167,6 @@ dependencies {
     implementation libs.androidxConstraintlayout
     implementation libs.androidxSwiperefreshlayout
     implementation libs.googlePlayFeatureDelivery
-    implementation libs.googlePlayAssetDelivery
     implementation libs.googlePlayAppUpdate
     implementation libs.androidxTvprovider
     implementation libs.androidxAnnotation

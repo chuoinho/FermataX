@@ -18,10 +18,13 @@ import androidx.media.AudioFocusRequestCompat;
 
 import com.google.android.play.core.splitcompat.SplitCompat;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonCapability;
 import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.FermataChromeClient;
+import me.aap.fermata.addon.web.FermataWebClient;
+import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsObserver;
+import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsSnapshot;
+import me.aap.fermata.addon.web.FermataWebClient.PlaybackEvent;
 import me.aap.fermata.addon.web.yt.YoutubeAddon.VideoScale;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.addon.external.ExternalPlaybackDelegateItem;
@@ -65,6 +68,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private final YoutubeAdController adController = new YoutubeAdController();
 	private final YoutubePlaybackSession playbackSession = new YoutubePlaybackSession();
 	private final YoutubePlaybackMetadata playbackMetadata;
+	private final DiagnosticsObserver diagnosticsObserver;
 	private YoutubePlayableItem current;
 	private PlayableItem externalPlaybackOwner;
 	private String externalPlaybackVideoId = "";
@@ -86,12 +90,17 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private long fullscreenTapPauseGuardUntil;
 	private long fullscreenTapPauseGeneration;
 	private String fullscreenTapPauseVideoId = "";
+	private boolean muteDiagnosticKnown;
+	private boolean lastMuteDiagnosticState;
+	private long lastMuteDiagnosticGeneration;
 
 	public YoutubeMediaEngine(YoutubeWebView web, MainActivityDelegate a) {
 		this.web = web;
 		playbackMetadata = web.getAddon().getPlaybackMetadata();
+		diagnosticsObserver = FermataWebClient.diagnosticsObserver();
 		cb = a.getMediaSessionCallback();
-		fullScreenCoordinator = new YoutubeFullscreenCoordinator(new FullScreenHost());
+		fullScreenCoordinator = new YoutubeFullscreenCoordinator(
+				new YoutubeFullscreenHostAdapter(this, web));
 		mediaRoot = new ExtRoot("youtube", a.getLib(), AddonCapability.YOUTUBE);
 		next = new TransportItem(NEXT_ID, mediaRoot, GenericFileSystem.getInstance().create("http://youtube.com/next"));
 		prev = new TransportItem(PREV_ID, mediaRoot, GenericFileSystem.getInstance().create("http://youtube.com/prev"));
@@ -106,7 +115,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	void ready(String url) {
 		if (!YoutubePlaybackMetadata.isStructuredSignal(url)) return;
+		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(url, web.getUrl());
+		recordPlaybackSignal(PlaybackEvent.READY_SIGNAL, signal, false);
 		if (!acceptsPlaybackGeneration(url)) {
+			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
 			if (rejectsExternalAutoNext(url)) web.silenceRejectedPlayback(url);
 			return;
 		}
@@ -116,11 +128,12 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			resumeAudibleStartIfPending();
 			return;
 		}
-		if (!BuildConfig.AUTO) return;
+		if (!web.usesAutoPlaybackBehavior()) return;
 		boolean activeHost = isActivePlaybackHost();
 		boolean intentAccepted = activeHost && acceptsPlaybackSignal();
 		if (!canClaimExternalPlayback(false, activeHost, true, intentAccepted)) {
-			Log.d("Ignoring YouTube ready signal without playback intent: ", web.getUrl());
+			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
+			Log.d("Ignoring YouTube ready signal without playback intent");
 			web.silenceRejectedPlayback(url);
 			return;
 		}
@@ -128,23 +141,28 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		url = setCurrent(url);
 		if (cb.startExternalPlayback(this)) {
 			requestAutoVideoMode(url);
-			web.play();
+			web.playAudible();
 		}
 	}
 
 	void playing(String url) {
 		if (!YoutubePlaybackMetadata.isStructuredSignal(url)) return;
+		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(url, web.getUrl());
+		recordPlaybackSignal(PlaybackEvent.PLAYING_SIGNAL, signal, true);
 		if (!acceptsPlaybackGeneration(url)) {
+			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
 			if (rejectsExternalAutoNext(url)) web.silenceRejectedPlayback(url);
 			return;
 		}
 		boolean currentEngine = isCurrentEngine();
 		boolean activeHost = currentEngine || isActivePlaybackHost();
-		boolean intentAccepted = !BuildConfig.AUTO || currentEngine ||
+		boolean autoPlayback = web.usesAutoPlaybackBehavior();
+		boolean intentAccepted = !autoPlayback || currentEngine ||
 				(activeHost && acceptsPlaybackSignal());
-		if (!canClaimExternalPlayback(currentEngine, activeHost, BuildConfig.AUTO,
+		if (!canClaimExternalPlayback(currentEngine, activeHost, autoPlayback,
 				intentAccepted)) {
-			Log.d("Ignoring YouTube preview playback: ", web.getUrl());
+			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
+			Log.d("Ignoring YouTube preview playback");
 			web.silenceRejectedPlayback(url);
 			return;
 		}
@@ -157,7 +175,12 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			qualityUrl = url;
 			web.setHighestVideoQuality();
 		}
-		if (cb.startExternalPlayback(this)) requestAutoVideoMode(url);
+		boolean claimed = cb.startExternalPlayback(this);
+		if (claimed) {
+			requestAutoVideoMode(url);
+		}
+		recordPlaybackSignal(PlaybackEvent.OWNERSHIP_ADOPTED, signal, true);
+		if (shouldRestoreAudibleAfterClaim(currentEngine, claimed)) web.playAudible();
 		web.onYoutubePlaybackResumed();
 	}
 
@@ -267,6 +290,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	void ended(String signal) {
 		if (!matchesCurrentSignal(signal)) return;
+		recordPlaybackSignal(PlaybackEvent.ENDED_SIGNAL,
+				YoutubePlaybackMetadata.parse(signal, web.getUrl()), false);
 		web.prepareAutoNextAudioRestore(YoutubePlaybackMetadata.parse(signal, web.getUrl()));
 		endAdPlayback();
 		if (playbackSessionSnapshot != null) {
@@ -282,6 +307,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	void paused(String signal) {
 		if (!isCurrentEngine() || !matchesCurrentSignal(signal)) return;
+		recordPlaybackSignal(PlaybackEvent.PAUSED_SIGNAL,
+				YoutubePlaybackMetadata.parse(signal, web.getUrl()), false);
 		if (consumeFullscreenTapPauseGuard(signal)) {
 			web.play();
 			return;
@@ -293,8 +320,9 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	void touched() {
-		if (BuildConfig.AUTO) playbackIntentGate.armUserGesture(SystemClock.uptimeMillis());
-		if (!BuildConfig.AUTO || !isCurrentEngine()) return;
+		if (web.usesAutoPlaybackBehavior())
+			playbackIntentGate.armUserGesture(SystemClock.uptimeMillis());
+		if (!web.usesAutoPlaybackBehavior() || !isCurrentEngine()) return;
 		long now = System.currentTimeMillis();
 		if ((now - touchStamp) < 350L) return;
 		touchStamp = now;
@@ -305,7 +333,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	void fullscreenTapped(String signal) {
-		if (!BuildConfig.AUTO || !matchesCurrentSignal(signal) ||
+		if (!web.usesAutoPlaybackBehavior() || !matchesCurrentSignal(signal) ||
 				!isFullscreenTapEligible()) return;
 		YoutubePlaybackMetadata.Signal parsed = YoutubePlaybackMetadata.parse(signal, web.getUrl());
 		fullscreenTapPauseGeneration = parsed.generation();
@@ -319,11 +347,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	void onPlaybackGesture(long eventTime) {
-		if (BuildConfig.AUTO) playbackIntentGate.armUserGesture(eventTime);
+		if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armUserGesture(eventTime);
 	}
 
 	void armExplicitPlayback() {
-		if (BuildConfig.AUTO) playbackIntentGate.armExplicitPlayback();
+		if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armExplicitPlayback();
 	}
 
 	void onPageLoaded(String pageUrl) {
@@ -345,6 +373,25 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	void onUserExitFullScreen() {
 		fullScreenCoordinator.onUserExit();
+	}
+
+	YoutubeFullscreenCoordinator.Suspension suspendFullscreenForHostInterruption() {
+		return fullScreenCoordinator.suspendForHostInterruption();
+	}
+
+	boolean resumeFullscreenAfterHostInterruption(
+			YoutubeFullscreenCoordinator.Suspension suspension) {
+		return fullScreenCoordinator.resumeAfterHostInterruption(suspension);
+	}
+
+	void discardFullscreenHostInterruption(
+			YoutubeFullscreenCoordinator.Suspension suspension) {
+		fullScreenCoordinator.discardHostInterruption(suspension);
+	}
+
+	boolean isFullscreenHostInterruptionCurrent(
+			YoutubeFullscreenCoordinator.Suspension suspension) {
+		return fullScreenCoordinator.isCurrent(suspension);
 	}
 
 	boolean onPlayerBack(boolean appVideoMode, boolean browserFullScreen) {
@@ -381,13 +428,13 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	public void prepare(PlayableItem source) {
 		source = PlayableItemResolver.unwrap(source);
 		if (source == next) {
-			if (BuildConfig.AUTO) playbackIntentGate.armExplicitPlayback();
+			if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armExplicitPlayback();
 			web.next();
 		} else if (source == prev) {
-			if (BuildConfig.AUTO) playbackIntentGate.armExplicitPlayback();
+			if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armExplicitPlayback();
 			web.prev();
 		} else {
-			if (BuildConfig.AUTO) playbackIntentGate.armExplicitPlayback();
+			if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armExplicitPlayback();
 			YoutubeDescriptorItem descriptorItem = descriptorItem(source);
 			if (descriptorItem != null) {
 				YoutubeItem descriptor = descriptorItem.getYoutubeDescriptor();
@@ -404,6 +451,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 						!playbackSessionSnapshot.item().videoId().equals(descriptor.videoId())) {
 					playbackSessionSnapshot = playbackSession.begin(descriptor,
 							System.currentTimeMillis());
+					recordPlayback(PlaybackEvent.SESSION_STARTED, playbackSessionSnapshot,
+							false, false, false, false, false, 0L);
 				}
 				cancelAdRetry();
 				adPlaybackGeneration = adController.beginPlayback(current.getId()).generation();
@@ -422,6 +471,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	@Override
 	public void start() {
 		audibleStartPending = true;
+		recordPlayback(PlaybackEvent.AUDIBLE_START_REQUESTED, playbackSessionSnapshot,
+				true, false, false, false, false, 0L);
 		if (transferSource != null) {
 			transferPlayRequested = true;
 			transferSource.start();
@@ -437,6 +488,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public void stop() {
+		recordPlayback(PlaybackEvent.OWNERSHIP_LOST, playbackSessionSnapshot,
+				false, false, false, false, false, 0L);
 		audibleStartPending = false;
 		clearFullscreenTapPauseGuard();
 		web.setFullscreenTapEnabled(false);
@@ -452,7 +505,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			if (!webDestroyed) web.stop();
 		}
 		playbackSession.invalidate();
+		recordPlayback(PlaybackEvent.SESSION_INVALIDATED, playbackSessionSnapshot,
+				false, false, false, false, false, 0L);
 		playbackSessionSnapshot = null;
+		muteDiagnosticKnown = false;
 		if (!webDestroyed) web.clearPlaybackGeneration();
 		web.onYoutubePlaybackOwnershipLost();
 		fullScreenCoordinator.cancelPlayback();
@@ -540,6 +596,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public void close() {
+		recordPlayback(PlaybackEvent.OWNERSHIP_LOST, playbackSessionSnapshot,
+				false, false, false, false, false, 0L);
 		clearFullscreenTapPauseGuard();
 		web.setFullscreenTapEnabled(false);
 		playbackIntentGate.reset();
@@ -551,7 +609,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			if (!webDestroyed) web.stop();
 		}
 		playbackSession.invalidate();
+		recordPlayback(PlaybackEvent.SESSION_INVALIDATED, playbackSessionSnapshot,
+				false, false, false, false, false, 0L);
 		playbackSessionSnapshot = null;
+		muteDiagnosticKnown = false;
 		if (!webDestroyed) web.clearPlaybackGeneration();
 		web.onYoutubePlaybackOwnershipLost();
 		fullScreenCoordinator.cancelPlayback();
@@ -570,9 +631,45 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	private void requestAutoVideoMode(String mediaUrl) {
-		if (!BuildConfig.AUTO) return;
-		String pageUrl = (current instanceof Current c) ? c.pageUrl : web.getUrl();
-		fullScreenCoordinator.requestAutoEntry(pageUrl, mediaUrl);
+		if (!web.usesAutoPlaybackBehavior()) return;
+		fullScreenCoordinator.requestAutoEntry((current instanceof Current c) ? c.pageUrl : web.getUrl(), mediaUrl);
+	}
+
+	private void recordPlaybackSignal(PlaybackEvent event,
+			YoutubePlaybackMetadata.Signal signal, boolean playing) {
+		YoutubePlaybackSession.Snapshot snapshot = playbackSessionSnapshot;
+		boolean muteKnown = (signal != null) && (signal.volume() >= 0d);
+		boolean muted = (signal != null) && signal.muted();
+		recordPlayback(event, snapshot, playing, muteKnown, muted, false, false,
+				(signal == null) ? 0L : signal.generation());
+		if (muteKnown) recordMuteTransition(signal);
+	}
+
+	private void recordMuteTransition(YoutubePlaybackMetadata.Signal signal) {
+		long generation = Math.max(0L, signal.generation());
+		if (muteDiagnosticKnown && (lastMuteDiagnosticState == signal.muted()) &&
+				(lastMuteDiagnosticGeneration == generation)) return;
+		muteDiagnosticKnown = true;
+		lastMuteDiagnosticState = signal.muted();
+		lastMuteDiagnosticGeneration = generation;
+		recordPlayback(PlaybackEvent.MUTE_CHANGED, playbackSessionSnapshot,
+				!signal.muted(), true, signal.muted(), false, false, generation);
+	}
+
+	private void recordPlayback(PlaybackEvent event,
+			YoutubePlaybackSession.Snapshot snapshot, boolean playing, boolean muteKnown,
+			boolean muted, boolean resultKnown, boolean accepted, long signalGeneration) {
+		try {
+			long sessionGeneration = (snapshot == null) ? 0L : snapshot.generation();
+			diagnosticsObserver.onPlayback(event, DiagnosticsSnapshot.builder()
+					.state(event).result(resultKnown, accepted)
+					.web(web.isShown(), web.isAttachedToWindow(), web.getWidth(), web.getHeight())
+					.ownsPlayback(isCurrentEngine()).playing(playing)
+					.mute(muteKnown, muted).generation(Math.max(sessionGeneration, signalGeneration))
+					.revision(sessionGeneration).build());
+		} catch (RuntimeException ignored) {
+			// Diagnostics must never affect YouTube playback behavior.
+		}
 	}
 
 	private boolean acceptsPlaybackSignal() {
@@ -594,6 +691,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		if (currentEngine) return true;
 		if (!activePlaybackHost) return false;
 		return !autoBuild || playbackIntentAccepted;
+	}
+
+	static boolean shouldRestoreAudibleAfterClaim(boolean wasCurrentEngine, boolean claimed) {
+		return claimed && !wasCurrentEngine;
 	}
 
 	private boolean acceptsPlaybackGeneration(String data) {
@@ -632,7 +733,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		}
 	}
 
-	private boolean isCurrentEngine() {
+	boolean isCurrentEngine() {
 		return cb.getEngine() == this;
 	}
 
@@ -763,6 +864,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	void onWebViewDestroyed() {
 		if (webDestroyed) return;
+		recordPlayback(PlaybackEvent.OWNERSHIP_LOST, playbackSessionSnapshot,
+				false, false, false, false, false, 0L);
 		clearFullscreenTapPauseGuard();
 		webDestroyed = true;
 		if (isCurrentEngine()) cb.onStop();
@@ -776,6 +879,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		qualityUrl = null;
 		playbackIntentGate.reset();
 		playbackSession.invalidate();
+		recordPlayback(PlaybackEvent.SESSION_INVALIDATED, playbackSessionSnapshot,
+				false, false, false, false, false, 0L);
 		playbackSessionSnapshot = null;
 		if (!webDestroyed) web.clearPlaybackGeneration();
 		web.onYoutubePlaybackOwnershipLost();
@@ -792,7 +897,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		transferTargetReady = false;
 	}
 
-	private boolean isYoutubeActive(MainActivityDelegate a) {
+	boolean isYoutubeActive(MainActivityDelegate a) {
 		return (a.getActiveFragment() instanceof YoutubeFragment youtube) &&
 				youtube.getWebView() == web;
 	}
@@ -843,6 +948,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			if (descriptor != null) {
 				playbackSessionSnapshot = playbackSession.begin(descriptor,
 						System.currentTimeMillis());
+				recordPlayback(PlaybackEvent.SESSION_STARTED, playbackSessionSnapshot,
+						false, false, false, false, false, 0L);
 				web.getAddon().rememberYoutubeItem(descriptor);
 				web.onYoutubePlaybackItemChanged(descriptor);
 			} else {
@@ -1010,105 +1117,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		String id = i.getId();
 		if (i instanceof PlayableItem playable) id = playable.getOrigId();
 		return id.startsWith("youtube:video:");
-	}
-
-	private final class FullScreenHost implements YoutubeFullscreenCoordinator.Host {
-		@Nullable
-		private MainActivityDelegate getLiveActivity() {
-			if (!web.isAttachedToWindow()) return null;
-			try {
-				MainActivityDelegate activity = MainActivityDelegate.get(web.getContext());
-				if (activity.getAppActivity().isFinishing() ||
-						activity.getAppActivity().isDestroyed()) return null;
-				return activity;
-			} catch (RuntimeException ignored) {
-				// AA removes its context-to-activity resolver before the media service closes engines.
-				return null;
-			}
-		}
-
-		private boolean canEnterFullscreen(MainActivityDelegate activity) {
-			return isCurrentEngine() && isYoutubeActive(activity);
-		}
-
-		@Override
-		public boolean canEnterFullscreen() {
-			MainActivityDelegate activity = getLiveActivity();
-			return (activity != null) && canEnterFullscreen(activity);
-		}
-
-		@Override
-		public boolean requestBrowserFullscreen(long request) {
-			if (getLiveActivity() == null) return false;
-			FermataChromeClient chrome = web.getWebChromeClient();
-			if (!(chrome instanceof YoutubeChromeClient youtubeChrome) ||
-					youtubeChrome.isFullScreen()) return false;
-			youtubeChrome.enterAutomaticFullScreen(request);
-			return true;
-		}
-
-		@Override
-		public void cancelPendingBrowserFullscreen() {
-			FermataChromeClient chrome = web.getWebChromeClient();
-			if (chrome != null) chrome.cancelPendingFullScreenEntry();
-		}
-
-		@Override
-		public boolean isBrowserFullscreen() {
-			if (getLiveActivity() == null) return false;
-			FermataChromeClient chrome = web.getWebChromeClient();
-			return (chrome != null) && chrome.isFullScreen();
-		}
-
-		@Override
-		public void exitBrowserFullscreen() {
-			if (getLiveActivity() == null) return;
-			FermataChromeClient chrome = web.getWebChromeClient();
-			if ((chrome != null) && chrome.isFullScreen()) chrome.exitFullScreen();
-		}
-
-		@Override
-		public boolean ownsPlaybackPresentation() {
-			return (getLiveActivity() != null) && isCurrentEngine();
-		}
-
-		@Override
-		public void enterBrowserVideoMode() {
-			MainActivityDelegate activity = getLiveActivity();
-			if ((activity == null) || !canEnterFullscreen(activity)) return;
-			web.setImmersiveVideoMode(false);
-			FermataChromeClient chrome = web.getWebChromeClient();
-			if (chrome instanceof YoutubeChromeClient youtubeChrome &&
-					youtubeChrome.isFullScreen()) {
-				activity.setVideoMode(true, youtubeChrome.getFullScreenView());
-			}
-		}
-
-		@Override
-		public void enterFallbackVideoMode() {
-			MainActivityDelegate activity = getLiveActivity();
-			if ((activity == null) || !canEnterFullscreen(activity)) return;
-			web.setImmersiveVideoMode(true);
-			activity.setVideoMode(true, null);
-		}
-
-		@Override
-		public void leaveAppVideoMode() {
-			MainActivityDelegate activity = getLiveActivity();
-			if (activity == null) return;
-			web.setImmersiveVideoMode(false);
-			if (isCurrentEngine()) activity.setVideoMode(false, null);
-		}
-
-		@Override
-		public void post(Runnable task) {
-			web.post(task);
-		}
-
-		@Override
-		public void postDelayed(Runnable task, long delayMillis) {
-			web.postDelayed(task, delayMillis);
-		}
 	}
 
 	static class YoutubePlayableItem extends ExtPlayable {

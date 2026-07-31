@@ -12,7 +12,6 @@ import static me.aap.fermata.ui.activity.MainActivityDelegate.INTENT_ACTION_PLAY
 import static me.aap.fermata.ui.activity.MainActivityDelegate.INTENT_ACTION_UPDATE;
 import static me.aap.fermata.ui.activity.MainActivityDelegate.intentUriToId;
 import static me.aap.fermata.ui.activity.MainActivityDelegate.toIntentUri;
-import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.collection.CollectionUtils.forEach;
 import static me.aap.utils.collection.CollectionUtils.putIfAbsent;

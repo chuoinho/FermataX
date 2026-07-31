@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="move_left">Déplacer vers la gauche</string>
+	<string name="move_right">Déplacer à droite</string>
+	<string name="move_up">Monter</string>
+	<string name="move_down">Descendre</string>
+	<string name="download_failed">Échec du téléchargement %1$s</string>
+</resources>

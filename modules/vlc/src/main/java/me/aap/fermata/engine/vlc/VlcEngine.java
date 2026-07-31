@@ -44,6 +44,10 @@ import java.util.Set;
 import java.nio.charset.StandardCharsets;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
+import me.aap.fermata.diagnostics.DiagnosticEvent;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -57,6 +61,7 @@ import me.aap.fermata.media.net.ResolvedRemotePlaybackRequest;
 import me.aap.fermata.media.net.PlaybackRequestProfile.EngineCapability;
 import me.aap.fermata.media.net.UnsupportedPlaybackRequestException;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.fermata.ui.policy.VideoSurfaceLayoutPolicy;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
@@ -83,6 +88,26 @@ public class VlcEngine extends MediaEngineBase
 	private long prepareGeneration;
 	private boolean nativeSubtitleSurface = true;
 	private boolean firstVideoOutputReported;
+
+	private void recordDiagnostic(String name, DiagnosticScope scope, DiagnosticPriority priority,
+			@Nullable PlayableItem item, long generation, @Nullable String reason,
+			@Nullable String errorClass) {
+		try {
+			DiagnosticEvent.Builder event = DiagnosticEvent.builder("engine_vlc", name)
+					.scope(scope).priority(priority)
+					.put("engine_id", MediaPrefs.MEDIA_ENG_VLC)
+					.put("engine_class", getClass().getSimpleName())
+					.put("generation", generation)
+					.put("item_class", (item == null) ? "none" : item.getClass().getSimpleName())
+					.put("item_fingerprint", (item == null) ? 0 : System.identityHashCode(item))
+					.put("remote", item instanceof RemotePlaybackItem);
+			if (reason != null) event.put("reason", reason);
+			if (errorClass != null) event.put("error_class", errorClass);
+			FermataApplication.get().getDiagnostics().record(event.build());
+		} catch (Throwable ignored) {
+			// Diagnostics must never affect VLC callbacks or playback.
+		}
+	}
 
 	public VlcEngine(VlcEngineProvider provider, Listener listener) {
 		super(listener);
@@ -111,10 +136,14 @@ public class VlcEngine extends MediaEngineBase
 		remotePrepare = null;
 		if (previous != null) previous.cancel();
 		long generation = ++prepareGeneration;
+		recordDiagnostic("prepare_started", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE,
+				source, generation, null, null);
 
 		if (source instanceof RemotePlaybackItem remote) {
 			this.source = new Source(source, null);
 			if (!provider.supportsPlayback(source)) {
+				recordDiagnostic("prepare_rejected", DiagnosticScope.ESSENTIAL,
+						DiagnosticPriority.WARN, source, generation, "unsupported_profile", null);
 				listener.onEngineError(this, new UnsupportedPlaybackRequestException(
 						"VLC cannot enforce this remote playback request profile"));
 				return;
@@ -124,11 +153,18 @@ public class VlcEngine extends MediaEngineBase
 						progress -> listener.onEnginePreparing(this, progress))
 						.main().onCompletion((request, error) -> {
 					if ((generation != prepareGeneration) || (this.source.getItem() != source)) {
+						recordDiagnostic("prepare_callback_rejected", DiagnosticScope.DETAILED,
+								DiagnosticPriority.DETAIL, source, generation, "stale_generation", null);
 						if (request != null) request.close();
 						return;
 					}
 					remotePrepare = null;
-					if (error != null) listener.onEngineError(this, error);
+					if (error != null) {
+						recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL,
+								DiagnosticPriority.ERROR, source, generation, null,
+								error.getClass().getSimpleName());
+						listener.onEngineError(this, error);
+					}
 					else {
 						try {
 							remoteRequest = request;
@@ -148,6 +184,8 @@ public class VlcEngine extends MediaEngineBase
 					}
 				});
 			} catch (Throwable ex) {
+				recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL,
+						DiagnosticPriority.ERROR, source, generation, null, ex.getClass().getSimpleName());
 				listener.onEngineError(this, ex);
 			}
 			return;
@@ -223,6 +261,8 @@ public class VlcEngine extends MediaEngineBase
 			if (media != null) media.release();
 			if (this.source == Source.NULL) this.source = new Source(source, null);
 			else this.source.close();
+			recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL, DiagnosticPriority.ERROR,
+					source, prepareGeneration, null, ex.getClass().getSimpleName());
 			listener.onEngineError(this, ex);
 		}
 	}
@@ -240,16 +280,21 @@ public class VlcEngine extends MediaEngineBase
 		player.setMedia(media);
 		source.release();
 		if (off > 0) player.setTime(off);
+		recordDiagnostic("prepared", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE,
+				source.getItem(), prepareGeneration, "ready", null);
 		listener.onEnginePrepared(this);
 	}
 
 	@Override
 	public void start() {
 		player.play();
+		recordDiagnostic("started", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE,
+				getSource(), prepareGeneration, null, null);
 	}
 
 	@Override
 	public void stop() {
+		PlayableItem previous = getSource();
 		prepareGeneration++;
 		releaseRemoteRequest();
 		FutureSupplier<RemotePlaybackRequest> pending = remotePrepare;
@@ -261,6 +306,8 @@ public class VlcEngine extends MediaEngineBase
 		player.detachViews();
 		source.close();
 		source = Source.NULL;
+		recordDiagnostic("stopped", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE, previous,
+				prepareGeneration, null, null);
 	}
 
 	private void releaseRemoteRequest() {
@@ -503,10 +550,12 @@ public class VlcEngine extends MediaEngineBase
 			player.setSpuTrack(-1);
 			super.setCurrentSubtitleStream(null);
 			useNativeSubtitleSurface(true);
+			if (videoView != null) videoView.clearSubtitleSurface();
 		} else if (i.getFiles().isEmpty()) {
 			super.setCurrentSubtitleStream(null);
 			useNativeSubtitleSurface(true);
 			player.setSpuTrack((int) i.getId());
+			if (videoView != null) videoView.revealSubtitleSurface();
 		} else {
 			player.setSpuTrack(-1);
 			useNativeSubtitleSurface(false);
@@ -563,7 +612,19 @@ public class VlcEngine extends MediaEngineBase
 
 				if (!isPaused()) player.setSpuTrack(-1);
 				started();
+				recordDiagnostic("started", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE,
+						getSource(), prepareGeneration, "playing", null);
 				listener.onEngineStarted(this);
+				// VLC may reuse the same vout and omit onNewVideoLayout when two channels
+				// share a resolution. Playing is the per-prepare fallback that releases the
+				// transition mask after ownership has been committed.
+				if (!firstVideoOutputReported && (source instanceof VideoSource)) {
+					firstVideoOutputReported = true;
+					recordDiagnostic("video_layout_ready", DiagnosticScope.ESSENTIAL,
+							DiagnosticPriority.STATE, getSource(), prepareGeneration,
+							"playing_fallback", null);
+					listener.onVideoFirstFrame(this);
+				}
 			}
 			case MediaPlayer.Event.EndReached -> {
 				stopped(false);
@@ -583,14 +644,21 @@ public class VlcEngine extends MediaEngineBase
 					if ((dur > 0) && (pos < dur)) {
 						// Failed to read the stream?
 						Log.d("Position=", pos, " < duration=", dur);
+						recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL,
+								DiagnosticPriority.ERROR, s, prepareGeneration, "stream_read_failed",
+								MediaEngineException.class.getSimpleName());
 						listener.onEngineError(this, new MediaEngineException("Failed to read stream " + s));
 						break;
 					}
 				}
 				listener.onEngineEnded(this);
 			}
-			case MediaPlayer.Event.EncounteredError ->
-					listener.onEngineError(this, new MediaEngineException(""));
+			case MediaPlayer.Event.EncounteredError -> {
+				recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL,
+						DiagnosticPriority.ERROR, getSource(), prepareGeneration, "vlc_event_error",
+						MediaEngineException.class.getSimpleName());
+				listener.onEngineError(this, new MediaEngineException(""));
+			}
 		}
 	}
 
@@ -600,6 +668,8 @@ public class VlcEngine extends MediaEngineBase
 		if ((videoView == null) || !(source instanceof VideoSource src)) return;
 		if (!firstVideoOutputReported && (visibleWidth > 0) && (visibleHeight > 0)) {
 			firstVideoOutputReported = true;
+			recordDiagnostic("video_layout_ready", DiagnosticScope.ESSENTIAL,
+					DiagnosticPriority.STATE, getSource(), prepareGeneration, "layout_callback", null);
 			listener.onVideoFirstFrame(this);
 		}
 		src.videoWidth = width;
@@ -627,7 +697,26 @@ public class VlcEngine extends MediaEngineBase
 
 		if ((src.videoWidth == 0) || (src.videoHeight == 0)) {
 			setPlayerLayout(sw, sh, scaleType);
-			setSurfaceLayout(view, MATCH_PARENT, MATCH_PARENT);
+			float videoWidth = 0f;
+			float videoHeight = 0f;
+			float pixelRatio = 1f;
+			VideoTrack track = player.getCurrentVideoTrack();
+			if (track != null) {
+				videoWidth = track.width;
+				videoHeight = track.height;
+				boolean swap = track.orientation == VideoTrack.Orientation.LeftBottom ||
+						track.orientation == VideoTrack.Orientation.RightTop;
+				if (swap) {
+					float width = videoWidth;
+					videoWidth = videoHeight;
+					videoHeight = width;
+				}
+				if ((track.sarNum > 0) && (track.sarDen > 0))
+					pixelRatio = (float) track.sarNum / track.sarDen;
+			}
+			VideoSurfaceLayoutPolicy.Size fallback = VideoSurfaceLayoutPolicy.resolve(
+					sw, sh, videoWidth, videoHeight, scaleType, pixelRatio);
+			setSurfaceLayout(view, fallback.width(), fallback.height());
 			return;
 		}
 

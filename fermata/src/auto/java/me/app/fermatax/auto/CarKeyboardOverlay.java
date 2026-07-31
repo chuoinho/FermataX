@@ -28,6 +28,8 @@ import android.widget.TextView;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import java.util.Locale;
+
 import me.aap.fermata.R;
 
 final class CarKeyboardOverlay {
@@ -72,7 +74,7 @@ final class CarKeyboardOverlay {
 		title.setEllipsize(TruncateAt.END);
 		top.addView(title, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1));
 
-		Button cancel = action("Cancel");
+		Button cancel = action(activity.getString(R.string.car_keyboard_cancel));
 		cancel.setOnClickListener(v -> activity.stopInput());
 		top.addView(cancel, new LinearLayout.LayoutParams(dp(82), dp(42)));
 
@@ -98,7 +100,8 @@ final class CarKeyboardOverlay {
 		shift = false;
 		symbols = false;
 		CharSequence hint = target.getHint();
-		title.setText((hint == null) || (hint.length() == 0) ? "Input" : hint);
+		title.setText((hint == null) || (hint.length() == 0) ?
+				activity.getString(R.string.car_keyboard_input) : hint);
 		value.setText(displayValue());
 		renderKeys();
 
@@ -190,32 +193,33 @@ final class CarKeyboardOverlay {
 		});
 		tools.addView(mode, new LinearLayout.LayoutParams(0, dp(42), 1.1f));
 
-		Button shiftKey = key(shift ? "SHIFT" : "Shift");
+		String shiftText = activity.getString(R.string.car_keyboard_shift);
+		Button shiftKey = key(shift ? shiftText.toUpperCase(Locale.getDefault()) : shiftText);
 		shiftKey.setOnClickListener(v -> {
 			shift = !shift;
 			renderKeys();
 		});
 		tools.addView(shiftKey, new LinearLayout.LayoutParams(0, dp(42), 1.2f));
 
-		Button space = key("Space");
+		Button space = key(activity.getString(R.string.car_keyboard_space));
 		space.setOnClickListener(v -> append(" "));
 		tools.addView(space, new LinearLayout.LayoutParams(0, dp(42), 2.4f));
 
-		Button paste = key("Paste");
+		Button paste = key(activity.getString(R.string.car_keyboard_paste));
 		paste.setOnClickListener(v -> paste());
 		tools.addView(paste, new LinearLayout.LayoutParams(0, dp(42), 1.2f));
 
-		Button del = key("Del");
+		Button del = key(activity.getString(R.string.car_keyboard_delete));
 		del.setOnClickListener(v -> delete());
 		tools.addView(del, new LinearLayout.LayoutParams(0, dp(42), 1.1f));
 		keys.addView(tools);
 
 		LinearLayout actions = row();
-		Button clear = action("Clear");
+		Button clear = action(activity.getString(R.string.car_keyboard_clear));
 		clear.setOnClickListener(v -> setText(""));
 		actions.addView(clear, new LinearLayout.LayoutParams(0, dp(44), 1));
 
-		Button ok = primary("OK");
+		Button ok = primary(activity.getString(R.string.car_keyboard_ok));
 		ok.setOnClickListener(v -> done());
 		actions.addView(ok, new LinearLayout.LayoutParams(0, dp(44), 2));
 		keys.addView(actions);

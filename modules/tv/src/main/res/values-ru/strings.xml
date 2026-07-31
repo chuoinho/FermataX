@@ -17,4 +17,37 @@
     <string name="connection_settings">Настройки соединения</string>
 
     <string name="err_failed_to_add_tv_source">Не удалось добавить источник: %1$s</string>
+	<string name="sub_movies">Фильмы: %1$d.</string>
+	<string name="sub_series">Серия: %1$d.</string>
+	<string name="sub_seasons">Времена года: %1$d.</string>
+	<string name="sub_episodes">Эпизоды: %1$d.</string>
+	<string name="add_xtream_source">Добавить источник кодов Xtream</string>
+	<string name="tv_source_name">Название источника</string>
+	<string name="xtream_live_tv">Прямой эфир</string>
+	<string name="xtream_movies">Фильмы</string>
+	<string name="xtream_series">Ряд</string>
+	<string name="xtream_source_subtitle">Прямой эфир / Фильмы / Сериалы</string>
+	<string name="xtream_watch_from_beginning">Смотреть с начала</string>
+	<string name="xtream_catchup_last_24h">Последние 24 часа</string>
+	<string name="xtream_catchup_yesterday">Вчера</string>
+	<string name="xtream_next">Следующий</string>
+	<string name="xtream_catchup_programs">Программы: %1$d.</string>
+	<string name="xtream_scheme">Протокол</string>
+	<string name="xtream_scheme_cur">Текущий протокол: %1$s</string>
+	<string name="xtream_output">Выходной формат</string>
+	<string name="xtream_output_cur">Текущий формат вывода: %1$s</string>
+	<string name="catchup">Настигнуть</string>
+	<string name="catchup_type_append">Добавить</string>
+	<string name="catchup_type_default">По умолчанию</string>
+	<string name="catchup_type_shift">Сдвиг</string>
+	<string name="xtream_error_incomplete_account">Введите хост, имя пользователя и пароль.</string>
+	<string name="xtream_error_host_not_found">Невозможно найти сервер Xtream %1$s. Проверьте хост и порт.</string>
+	<string name="xtream_error_connect">Невозможно подключиться к серверу Xtream %1$s. Проверьте хост, порт и сеть.</string>
+	<string name="xtream_error_timeout">Сервер Xtream не ответил вовремя: %1$s. Попробуйте еще раз или увеличьте время ожидания.</string>
+	<string name="xtream_error_html_response">Сервер Xtream вернул страницу ошибки HTML вместо JSON. Проверьте URL-адрес портала и учетную запись.</string>
+	<string name="xtream_error_invalid_response">Сервер Xtream вернул неверный ответ. Проверьте URL-адрес портала и учетную запись.</string>
+	<string name="xtream_error_account_rejected">Сервер Xtream отклонил запрос (HTTP %1$d). Проверьте имя пользователя, пароль, срок действия или слоты подключения.</string>
+	<string name="xtream_error_api_not_found">Xtream API не найден на этом сервере (HTTP 404). Проверьте URL-адрес портала, хост и порт.</string>
+	<string name="xtream_error_server">Ошибка сервера Xtream (HTTP %1$d%2$s). Повторите попытку позже.</string>
+	<string name="xtream_error_http">Запрос Xtream не выполнен (HTTP %1$d%2$s).</string>
 </resources>

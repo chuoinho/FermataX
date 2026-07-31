@@ -51,6 +51,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.AsyncOperationController.DiagnosticsObserver;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
@@ -88,6 +89,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private boolean delegateResumed;
 	private boolean destroyed;
 	private boolean finishRequested;
+	private final long diagnosticsActivityId = DiagnosticsObserver.nextId();
 	private final ProjectedBackEventFilter projectedBackEventFilter =
 			new ProjectedBackEventFilter();
 
@@ -116,6 +118,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		DirectAppStartupCoordinator.Startup<FermataMediaServiceConnection> startup =
 				STARTUP.begin(() -> FermataMediaServiceConnection.connect(notifColor));
 		startupGeneration = startup.getGeneration();
+		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.CREATED, diagnosticsActivityId);
 		Promise<MainActivityDelegate> promise = delegatePromise = new Promise<>();
 		delegate = promise;
 		startup.getConnection().main().onCompletion((connection, failure) ->
@@ -132,6 +135,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private void completeStartup(Bundle state, long generation, Promise<MainActivityDelegate> promise,
 			FermataMediaServiceConnection connection, Throwable failure) {
 		if (failure != null) {
+			DiagnosticsObserver.startupDetail(DiagnosticsObserver.StartupEvent.UI_FAILED,
+					generation, 0L, 0);
 			STARTUP.uiFailed(generation);
 			if (!destroyed && STARTUP.isCurrent(generation)) {
 				showAlert(getContext(), String.valueOf(failure));
@@ -140,6 +145,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			return;
 		}
 		if (destroyed || !STARTUP.beginUi(generation, connection)) {
+			DiagnosticsObserver.startupDetail(DiagnosticsObserver.StartupEvent.UI_FAILED,
+					generation, 0L, 0);
 			promise.cancel();
 			return;
 		}
@@ -160,6 +167,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			STARTUP.uiReady(generation);
 			promise.complete(created);
 		} catch (Throwable error) {
+			DiagnosticsObserver.startupDetail(DiagnosticsObserver.StartupEvent.UI_FAILED,
+					generation, 0L, 0);
 			Log.e(error, "Direct AA startup failed while attaching UI");
 			if (d != null) {
 				try {
@@ -183,14 +192,31 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
+		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.RESUMED, diagnosticsActivityId);
 		resumed = true;
 		MainActivityDelegate d = createdDelegate;
 		if (d != null) resumeDelegate(d);
 	}
 
 	@Override
+	public void onStart() {
+		super.onStart();
+		MainActivityDelegate d = createdDelegate;
+		if (d != null) d.onHostForegrounded();
+	}
+
+	@Override
+	public void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		setIntent(intent);
+		MainActivityDelegate d = createdDelegate;
+		if (d != null) d.onHostNewIntent(intent);
+	}
+
+	@Override
 	public void onPause() {
 		super.onPause();
+		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.PAUSED, diagnosticsActivityId);
 		resumed = false;
 		MainActivityDelegate d = createdDelegate;
 		if ((d == null) || !delegateResumed) return;
@@ -203,6 +229,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	public void onDestroy() {
 		stopInput();
 		destroyed = true;
+		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.DESTROYED, diagnosticsActivityId);
 		super.onDestroy();
 		MainActivityDelegate d = createdDelegate;
 		createdDelegate = null;

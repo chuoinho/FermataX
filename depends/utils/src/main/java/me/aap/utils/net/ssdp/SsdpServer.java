@@ -146,10 +146,6 @@ public class SsdpServer implements Closeable {
 
 	private void sendMsg(byte[] data) {
 		try {
-			if (isDebugEnabled()) {
-				Log.d("Sending SSDP message:\n", new String(data, US_ASCII));
-			}
-
 			final DatagramSocket socket = new DatagramSocket();
 			DatagramPacket pkt = new DatagramPacket(data, data.length,
 					InetAddress.getByName("239.255.255.250"), 1900);
@@ -177,13 +173,6 @@ public class SsdpServer implements Closeable {
 			cnt = ok = new OkContent();
 		}
 
-		if (isDebugEnabled()) {
-			String req = new String(pkt.getData(), pkt.getOffset(), pkt.getLength(), US_ASCII);
-			String resp = new String(cnt.content, US_ASCII);
-			Log.d("SSDP request received:\n", req);
-			Log.d("Sending SSDP response:\n", resp);
-		}
-
 		try {
 			DatagramPacket resp = new DatagramPacket(cnt.content, cnt.content.length, pkt.getAddress(),
 					pkt.getPort());
@@ -191,10 +180,6 @@ public class SsdpServer implements Closeable {
 		} catch (IOException ex) {
 			Log.e(ex, "Failed to send SSDP response");
 		}
-	}
-
-	private boolean isDebugEnabled() {
-		return false;
 	}
 
 	private abstract class Content {

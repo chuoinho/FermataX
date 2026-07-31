@@ -2,7 +2,6 @@ package me.aap.fermata.addon.tv;
 
 import android.view.View;
 
-import androidx.annotation.Nullable;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.FloatingButtonMediator;

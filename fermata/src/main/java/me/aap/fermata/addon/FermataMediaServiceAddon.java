@@ -1,6 +1,5 @@
 package me.aap.fermata.addon;
 
-import me.aap.fermata.media.service.FermataMediaService;
 import me.aap.fermata.media.service.MediaSessionCallback;
 
 /**

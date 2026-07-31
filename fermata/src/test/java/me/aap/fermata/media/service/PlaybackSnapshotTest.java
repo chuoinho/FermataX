@@ -67,6 +67,22 @@ public class PlaybackSnapshotTest {
 		assertEquals("Fallback name", snapshot.getDisplayTitle());
 	}
 
+	@Test
+	public void stableButUncommittedSnapshotCannotPersistProgress() {
+		PlaybackStateCompat state = new PlaybackStateCompat.Builder()
+				.setState(PlaybackStateCompat.STATE_PLAYING, 42_000L, 1F).build();
+		PlaybackSnapshot unspecified = new PlaybackSnapshot(0L, item(), state, null);
+		PlaybackSnapshot pending = new PlaybackSnapshot(1L, item(), state, null, false);
+		PlaybackSnapshot committed = new PlaybackSnapshot(2L, item(), state, null, true);
+
+		assertFalse(unspecified.isCanonical());
+		assertFalse(unspecified.canPersistProgress());
+		assertFalse(pending.isCanonical());
+		assertFalse(pending.canPersistProgress());
+		assertTrue(committed.isCanonical());
+		assertTrue(committed.canPersistProgress());
+	}
+
 	private static PlayableItem item() {
 		return namedItem(null);
 	}

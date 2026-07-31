@@ -67,15 +67,15 @@ public class PlaybackLayoutPolicyTest {
 
 	@Test
 	public void externalWebVideoSurvivesFrameAndConfigurationRestoration() {
-		assertTrue(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(true, true,
+		assertTrue(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(RuntimeHostMode.AA_PROJECTION,
 				true, true, false, true, R.id.youtube_fragment));
-		assertTrue(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(true, true,
+		assertTrue(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(RuntimeHostMode.MIRROR,
 				true, true, false, true, R.id.web_browser_fragment));
-		assertFalse(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(true, true,
+		assertFalse(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(RuntimeHostMode.AA_PROJECTION,
 				true, true, true, true, R.id.youtube_fragment));
-		assertFalse(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(true, true,
+		assertFalse(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(RuntimeHostMode.AA_PROJECTION,
 				true, true, false, true, R.id.tv_fragment));
-		assertFalse(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(false, false,
+		assertFalse(PlaybackLayoutPolicy.shouldKeepExternalVideoMode(RuntimeHostMode.PHONE,
 				true, true, false, true, R.id.youtube_fragment));
 	}
 }

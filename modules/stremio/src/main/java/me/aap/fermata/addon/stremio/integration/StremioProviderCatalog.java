@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import me.aap.fermata.addon.stremio.browse.BrowseProvider;
 import me.aap.fermata.addon.stremio.playback.StreamAggregationRequest;
 import me.aap.fermata.addon.stremio.playback.StreamProvider;
-import me.aap.fermata.addon.stremio.protocol.CapabilityMatcher;
 import me.aap.fermata.addon.stremio.protocol.ManifestValidator;
 import me.aap.fermata.addon.stremio.runtime.StremioRuntime;
 import me.aap.fermata.addon.stremio.source.StremioSourceSnapshot;

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">聞き続けます</string>
+	<string name="audiobook_library">図書館</string>
+	<string name="audiobook_downloads">ダウンロード</string>
+	<string name="audiobook_discover">無料の書籍を発見する</string>
+	<string name="audiobook_sources">情報源</string>
+	<string name="audiobook_source_local">ローカルフォルダー</string>
+	<string name="audiobook_source_librivox">リブリヴォックス</string>
+	<string name="audiobook_source_audiobookshelf">オーディオブック棚</string>
+	<string name="audiobook_source_opds">OPDSカタログ</string>
+	<string name="audiobook_add_folder">オーディオブックフォルダーを追加</string>
+	<string name="audiobook_add_source">オーディオブックソースを追加する</string>
+	<string name="audiobook_add_audiobookshelf">オーディオブックシェルフを追加</string>
+	<string name="audiobook_add_opds">OPDSカタログを追加</string>
+	<string name="audiobook_server_url">サーバーURL</string>
+	<string name="audiobook_bearer_token">無記名トークン (オプション)</string>
+	<string name="audiobook_add_failed">オーディオブック ソースを追加できませんでした</string>
+	<string name="audiobook_delete_source_title">オーディオブックのソースを削除しますか?</string>
+	<string name="audiobook_delete_source_message">%1$s とその視聴履歴を削除しますか?</string>
+	<string name="audiobook_search_librivox">LibriVox を検索</string>
+	<string name="audiobook_popular">人気の無料書籍</string>
+	<string name="audiobook_latest">最近追加された</string>
+	<string name="audiobook_add_to_library">ライブラリに追加</string>
+	<string name="audiobook_import_failed">このオーディオブックを追加できませんでした</string>
+	<string name="audiobook_download_book">ダウンロードブック</string>
+	<string name="audiobook_delete_download">ダウンロードを削除する</string>
+	<string name="audiobook_download_failed">オーディオブックのダウンロードに失敗しました</string>
+</resources>

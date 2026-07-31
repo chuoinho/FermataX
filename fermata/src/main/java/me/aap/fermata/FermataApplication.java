@@ -8,12 +8,19 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.IBinder;
+import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.media.engine.BitmapCache;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
@@ -29,12 +36,17 @@ import me.aap.utils.ui.activity.ActivityDelegate;
  * @author Andrey Pavlenko
  */
 public class FermataApplication extends NetSplitCompatApp {
+	private static final long LEGACY_DIAGNOSTIC_WINDOW_MILLIS = 10_000L;
+	private static final int MAX_LEGACY_DIAGNOSTICS_PER_WINDOW = 5;
 	private FermataVfsManager vfsManager;
 	private BitmapCache bitmapCache;
 	private volatile SharedPreferenceStore preferenceStore;
 	private volatile AddonManager addonManager;
 	private int mirroringMode;
 	private ServiceConnection eventService;
+	private AndroidDiagnosticsRuntime diagnostics;
+	private final AtomicLong legacyDiagnosticWindow = new AtomicLong();
+	private final AtomicInteger legacyDiagnosticCount = new AtomicInteger();
 
 	public static FermataApplication get() {
 		return App.get();
@@ -43,8 +55,21 @@ public class FermataApplication extends NetSplitCompatApp {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		diagnostics = AndroidDiagnosticsRuntime.install(this);
+		diagnostics.recordEssential("application", "application_initializing",
+				DiagnosticPriority.STATE, null, null);
 		vfsManager = new FermataVfsManager();
 		bitmapCache = new BitmapCache();
+		diagnostics.recordEssential("application", "application_initialized",
+				DiagnosticPriority.STATE, null, null);
+	}
+
+	@Override
+	public void onTerminate() {
+		AndroidDiagnosticsRuntime runtime = AndroidDiagnosticsRuntime.get();
+		if (runtime != null) runtime.shutdown();
+		diagnostics = null;
+		super.onTerminate();
 	}
 
 	@Override
@@ -100,23 +125,71 @@ public class FermataApplication extends NetSplitCompatApp {
 		return mgr;
 	}
 
+	public AndroidDiagnosticsRuntime getDiagnostics() {
+		AndroidDiagnosticsRuntime runtime = AndroidDiagnosticsRuntime.get();
+		diagnostics = runtime;
+		return runtime;
+	}
+
+	@Override
+	public void onLogFailure(Log.Level level, @Nullable Throwable error) {
+		if ((level == Log.Level.WARN) && (error == null)) return;
+		long now = SystemClock.elapsedRealtime();
+		long window = legacyDiagnosticWindow.get();
+		if ((now - window) >= LEGACY_DIAGNOSTIC_WINDOW_MILLIS &&
+				legacyDiagnosticWindow.compareAndSet(window, now)) {
+			legacyDiagnosticCount.set(0);
+		}
+		if (legacyDiagnosticCount.incrementAndGet() > MAX_LEGACY_DIAGNOSTICS_PER_WINDOW) return;
+		AndroidDiagnosticsRuntime runtime = getDiagnostics();
+		DiagnosticPriority priority = (level == Log.Level.ERROR) ?
+				DiagnosticPriority.ERROR : DiagnosticPriority.WARN;
+		if (error == null) {
+			runtime.recordEssential("legacy_log", "logged_failure", priority, null, null);
+		} else {
+			runtime.record(me.aap.fermata.diagnostics.DiagnosticEvent
+					.builder("legacy_log", "logged_exception")
+					.priority(priority)
+					.error(error)
+					.build());
+		}
+	}
+
+	@Override
+	public void onDiagnosticEvent(String category, String event, Map<String, ?> attributes,
+			@Nullable Throwable error) {
+		onDiagnosticEvent(category, event, null, attributes, error);
+	}
+
+	@Override
+	public void onDiagnosticEvent(String category, String event, @Nullable String operationId,
+			Map<String, ?> attributes, @Nullable Throwable error) {
+		AndroidDiagnosticsRuntime runtime = getDiagnostics();
+		var builder = me.aap.fermata.diagnostics.DiagnosticEvent.builder(category, event)
+				.operationId(operationId)
+				.attributes((attributes == null) ? Collections.emptyMap() : attributes);
+		if (error != null) builder.error(error);
+		runtime.record(builder.build());
+	}
+
 	@Override
 	protected int getMaxNumberOfThreads() {
 		return 5;
 	}
 
-	@NonNull
+	@Nullable
 	@Override
 	public File getLogFile() {
-		File dir = getExternalFilesDir(null);
-		if (dir == null) dir = getFilesDir();
+		if (!BuildConfig.D) return null;
+		File dir = new File(getNoBackupFilesDir(), "legacy");
+		if (!dir.isDirectory() && !dir.mkdirs() && !dir.isDirectory()) return null;
 		return new File(dir, "Fermata.log");
 	}
 
 	@Nullable
 	@Override
 	public String getCrashReportEmail() {
-		return "andrey.a.pavlenko@gmail.com";
+		return null;
 	}
 
 	public boolean isMirroringMode() {

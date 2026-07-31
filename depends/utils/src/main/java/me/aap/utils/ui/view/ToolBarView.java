@@ -130,6 +130,13 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 		return getActivity().getActiveFragment();
 	}
 
+	/** Restores the visibility requested by the active fragment's mediator. */
+	public void refreshMediatorVisibility() {
+		Mediator m = getMediator();
+		ActivityFragment f = getActiveFragment();
+		setVisibility((m == null) || (f == null) ? GONE : m.getVisibility(this, f));
+	}
+
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent e) {
 		return getActivity().interceptTouchEvent(e, super::onTouchEvent);
@@ -184,7 +191,12 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 
 		@Override
 		default void enable(ToolBarView tb, ActivityFragment f) {
-			tb.setVisibility(VISIBLE);
+			tb.setVisibility(getVisibility(tb, f));
+		}
+
+		/** Fragment-local visibility before a host-level fullscreen override is applied. */
+		default int getVisibility(ToolBarView tb, ActivityFragment f) {
+			return VISIBLE;
 		}
 
 		@Override
@@ -340,6 +352,11 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 		interface Invisible extends Mediator {
 			Invisible instance = new Invisible() {
 			};
+
+			@Override
+			default int getVisibility(ToolBarView tb, ActivityFragment f) {
+				return GONE;
+			}
 
 			@Override
 			default void enable(ToolBarView tb, ActivityFragment f) {

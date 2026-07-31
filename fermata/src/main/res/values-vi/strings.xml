@@ -61,7 +61,7 @@
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Cài đặt phát lại</string>
     <string name="playback_control">Điều khiển phát lại</string>
-    <string name="engine_prefs">Media engine</string>
+	<string name="engine_prefs">Bộ máy phát đa phương tiện</string>
 
     <string name="theme">Chủ đề</string>
     <string name="theme_sub">Chủ đề hiện tại: %1$s</string>
@@ -109,7 +109,7 @@
     <string name="action_vol_mute_unmute">Tắt tiếng/Bật tiếng</string>
     <string name="action_activate_voice_ctrl">Kích hoạt điều khiển bằng giọng nói</string>
     <string name="action_menu">Menu</string>
-    <string name="action_cp_menu">Control panel menu</string>
+	<string name="action_cp_menu">Menu bảng điều khiển</string>
     <string name="action_back_or_exit">Quay lại hoặc thoát</string>
     <string name="action_exit">Thoát</string>
     <string name="action_default">Mặc định</string>
@@ -161,15 +161,15 @@
 
     <string name="speed">Tốc độ</string>
     <string name="audio_effects">Hiệu ứng âm thanh</string>
-    <string name="equalier">Equalizer</string>
-    <string name="preset_name">Preset name</string>
+	<string name="equalier">Bộ cân bằng</string>
+	<string name="preset_name">Tên cấu hình đặt trước</string>
     <string name="virtualizer">Trình ảo hóa</string>
     <string name="auto">Tự động</string>
     <string name="binaural">Binaural</string>
     <string name="transaural">Transaural</string>
     <string name="bass_boost">Tăng cường âm trầm</string>
     <string name="vol_boost">Tăng cường âm lượng</string>
-    <string name="strength">Strength</string>
+	<string name="strength">Cường độ</string>
     <string name="apply_to">Áp dụng cho</string>
 
     <string name="video">Video</string>
@@ -253,9 +253,9 @@
     <string name="pause">Tạm dừng</string>
     <string name="stop">Dừng</string>
     <string name="prev">Prev</string>
-    <string name="next">Next</string>
+	<string name="next">Tiếp theo</string>
     <string name="rewind">Tua lại</string>
-    <string name="fast_forward">Fast forward</string>
+	<string name="fast_forward">Tua nhanh</string>
     <string name="repeat">Lặp lại</string>
     <string name="repeat_disable">Không lặp lại</string>
     <string name="shuffle">Trộn bài</string>
@@ -327,17 +327,17 @@
     <string name="eq_pop">Pop</string>
     <string name="eq_rock">Rock</string>
 
-    <string name="host">Host</string>
+	<string name="host">Máy chủ</string>
     <string name="port">port</string>
-    <string name="path">Path</string>
-    <string name="share_name">Share name</string>
-    <string name="domain">Domain</string>
-    <string name="username">Username</string>
-    <string name="password">Password</string>
-    <string name="private_key">Private key</string>
-    <string name="private_key_pass">Private key password</string>
+	<string name="path">Đường dẫn</string>
+	<string name="share_name">Tên chia sẻ</string>
+	<string name="domain">Miền</string>
+	<string name="username">Tên người dùng</string>
+	<string name="password">Mật khẩu</string>
+	<string name="private_key">Khóa riêng</string>
+	<string name="private_key_pass">Mật khẩu khóa riêng</string>
 
-    <string name="donate">Ủng hộ qua Ko-fi</string>
+    <string name="donate">Ủng hộ nhà phát triển</string>
     <string name="donate_text">Ủng hộ FermataX qua Ko-fi.</string>
     <string name="use_phone_for_donation">Mở Ko-fi trên điện thoại để ủng hộ FermataX.</string>
 
@@ -434,4 +434,55 @@
     <string name="initial_setup_reopen_sub">Đổi thiết bị, ngôn ngữ ứng dụng hoặc tùy chọn giọng nói.</string>
     <string name="voice_control_auto_language">Tự nhận diện ngôn ngữ giọng nói</string>
     <string name="voice_control_auto_language_sub">Dùng tính năng nhận diện ngôn ngữ của Android 14 và ngôn ngữ đã chọn làm dự phòng.</string>
+	<string name="dashboard_stremio_sub">Phim, loạt phim và nhà cung cấp đã cài đặt</string>
+	<string name="dashboard_back_to_list">Quay lại danh sách</string>
+	<string name="action_prev_folder">Phát thư mục trước đó</string>
+	<string name="action_next_folder">Chơi thư mục tiếp theo</string>
+	<string name="recent">Gần đây</string>
+	<string name="p2p_resolving">Đang phân giải torrent…</string>
+	<string name="p2p_finding_peers">Đang tìm peer…</string>
+	<string name="p2p_buffering_status">%1$d đồng nghiệp | %2$s/s | %3$d%%</string>
+	<string name="p2p_starting_player_status">%1$d đồng nghiệp | %2$s/s | Người chơi bắt đầu</string>
+	<string name="p2p_streaming_status">%1$d đồng nghiệp | %2$s/s | Đang chơi</string>
+	<string name="p2p_rebuffering_status">Đang đệm lại | %1$d đồng nghiệp | %2$s/s</string>
+	<string name="err_failed_start_service">Không thể khởi động dịch vụ: %s</string>
+	<string name="err_p2p_metadata_unavailable">Siêu dữ liệu torrent không có sẵn. Hãy thử một luồng khác.</string>
+	<string name="err_p2p_no_peers">Không có đồng nghiệp P2P nào đang hoạt động. Hãy thử một luồng khác.</string>
+	<string name="err_p2p_data_timeout">Các đồng nghiệp P2P không cung cấp dữ liệu kịp thời. Hãy thử một luồng khác.</string>
+	<string name="err_p2p_engine_unavailable">Công cụ phát lại P2P không khả dụng. Mở lại Stremio và thử lại.</string>
+	<string name="err_p2p_file_unavailable">Tệp torrent đã chọn không có sẵn. Hãy thử một luồng khác.</string>
+	<string name="err_p2p_low_storage">Không đủ bộ nhớ trống để phát lại P2P. Hãy giải phóng một số dung lượng và thử lại.</string>
+	<string name="module_name_web">Web</string>
+	<string name="module_name_tv">TV</string>
+	<string name="module_name_radio">Đài phát thanh Internet</string>
+	<string name="module_name_podcast">Podcast</string>
+	<string name="module_name_audiobook">Sách nói</string>
+	<string name="addon_name_translate">Trình dịch ngôn ngữ</string>
+	<string name="addon_name_subgen">Trình tạo phụ đề</string>
+	<string name="car_keyboard_cancel">Hủy bỏ</string>
+	<string name="car_keyboard_input">đầu vào</string>
+	<string name="car_keyboard_shift">Sự thay đổi</string>
+	<string name="car_keyboard_space">Không gian</string>
+	<string name="car_keyboard_paste">Dán</string>
+	<string name="car_keyboard_delete">Xóa bỏ</string>
+	<string name="car_keyboard_clear">Thông thoáng</string>
+	<string name="car_keyboard_ok">ĐƯỢC RỒI</string>
+	<string name="m3u_playlist_timeout">Hết thời gian phản hồi</string>
+	<string name="diagnostics">Chẩn đoán</string>
+	<string name="diagnostics_sub">Báo cáo cục bộ về sự cố, treo ứng dụng và trạng thái bất thường</string>
+	<string name="detailed_diagnostics">Chẩn đoán chi tiết</string>
+	<string name="detailed_diagnostics_sub">Ghi lại sự kiện chi tiết trong tối đa 48 giờ. Bạn có thể tắt bất cứ lúc nào.</string>
+	<string name="export_diagnostic_report">Xuất báo cáo chẩn đoán</string>
+	<string name="export_diagnostic_report_sub">Tạo báo cáo ZIP riêng tư để lưu hoặc chia sẻ với bộ phận hỗ trợ</string>
+	<string name="clear_diagnostic_data">Xóa dữ liệu chẩn đoán</string>
+	<string name="clear_diagnostic_data_sub">Xóa nhật ký và báo cáo được lưu trên thiết bị</string>
+	<string name="share_diagnostic_report">Chia sẻ báo cáo</string>
+	<string name="save_diagnostic_report">Lưu vào Tệp tải xuống</string>
+	<string name="diagnostic_report_saved">Đã lưu báo cáo chẩn đoán vào Tệp tải xuống với tên %1$s.</string>
+	<string name="diagnostic_report_failed">Không thể tạo báo cáo chẩn đoán: %1$s</string>
+	<string name="diagnostic_data_cleared">Đã xóa dữ liệu chẩn đoán.</string>
+	<string name="diagnostics_phone_only">Xuất báo cáo chẩn đoán từ phần Cài đặt FermataX trên điện thoại.</string>
+	<string name="retry">Thử lại</string>
+	<string name="media_list_empty">Chưa có mục nào</string>
+	<string name="media_list_load_failed">Không thể tải các mục.</string>
 </resources>

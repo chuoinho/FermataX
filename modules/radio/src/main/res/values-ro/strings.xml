@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="radio_popular">Popular</string>
+	<string name="radio_top_voted">Top votat</string>
+	<string name="radio_countries">Țări</string>
+	<string name="radio_tags">Etichete</string>
+	<string name="radio_station_count">%1$d stații</string>
+	<string name="radio_add_source">Adăugați sursa radio</string>
+	<string name="radio_edit_source">Editați sursa radio</string>
+	<string name="radio_source_name">Numele stației</string>
+	<string name="radio_source_url">Adresa URL a fluxului</string>
+	<string name="radio_source_add_failed">Nu s-a salvat sursa radio: %1$s</string>
+</resources>

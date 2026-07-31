@@ -7,7 +7,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.aap.fermata.addon.stremio.browse.StremioBrowseRepository;
-import me.aap.fermata.addon.stremio.data.StremioSourceRecord;
 import me.aap.fermata.addon.stremio.integration.StremioBrowseGatewayAdapter;
 import me.aap.fermata.addon.stremio.integration.StremioItemGatewayAdapter;
 import me.aap.fermata.addon.stremio.integration.StremioProtocolClient;

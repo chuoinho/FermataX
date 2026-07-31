@@ -32,7 +32,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 
 import me.aap.utils.R;
 import me.aap.utils.async.Completed;

@@ -198,15 +198,12 @@ public class NavBarMediator extends PrefNavBarMediator
 		menu.show(b -> {
 			b.setSelectionHandler(this);
 
-			if (a.hasCurrent())
-				b.addItem(R.id.nav_got_to_current, R.drawable.go_to_current, R.string.got_to_current);
-
 			ActivityFragment f = a.getActiveFragment();
 			if (f instanceof MainActivityFragment) ((MainActivityFragment) f).contributeToNavBarMenu(b);
 
-			b.addItem(R.id.nav_about, R.drawable.about, R.string.about);
 			b.addItem(R.id.settings_fragment, R.drawable.settings, R.string.settings);
-			if (!a.isCarActivityNotMirror()) b.addItem(R.id.nav_exit, R.drawable.exit, R.string.exit);
+			b.addItem(R.id.nav_about, R.drawable.about, R.string.about);
+			b.addItem(R.id.nav_exit, R.drawable.exit, R.string.exit);
 
 			if (BuildConfig.AUTO) b.addItem(R.id.nav_donate, R.drawable.coffee, R.string.donate);
 		});

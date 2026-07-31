@@ -13,7 +13,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import me.aap.fermata.addon.podcast.download.PodcastDownloadState;
 import me.aap.fermata.addon.podcast.download.PodcastDownloadStore;
 import me.aap.fermata.addon.podcast.download.PodcastDownloadInfo;
 
@@ -33,7 +32,6 @@ import me.aap.fermata.addon.podcast.net.PodcastHttpClient;
 import me.aap.fermata.addon.podcast.security.PodcastCredential;
 import me.aap.fermata.addon.podcast.security.PodcastCredentialStore;
 import me.aap.fermata.addon.podcast.security.PodcastUrlRedactor;
-import me.aap.fermata.addon.podcast.util.PodcastIds;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.app.App;
 import static me.aap.utils.async.Completed.completed;

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">繼續收聽</string>
+	<string name="audiobook_library">圖書館</string>
+	<string name="audiobook_downloads">下載</string>
+	<string name="audiobook_discover">發現免費書籍</string>
+	<string name="audiobook_sources">來源</string>
+	<string name="audiobook_source_local">本地資料夾</string>
+	<string name="audiobook_source_librivox">LibriVox</string>
+	<string name="audiobook_source_audiobookshelf">有聲書架</string>
+	<string name="audiobook_source_opds">OPDS目錄</string>
+	<string name="audiobook_add_folder">新增有聲讀物資料夾</string>
+	<string name="audiobook_add_source">增加有聲書來源</string>
+	<string name="audiobook_add_audiobookshelf">添加有聲書架</string>
+	<string name="audiobook_add_opds">新增 OPDS 目錄</string>
+	<string name="audiobook_server_url">伺服器位址</string>
+	<string name="audiobook_bearer_token">不記名令牌（可選）</string>
+	<string name="audiobook_add_failed">無法添加有聲書來源</string>
+	<string name="audiobook_delete_source_title">刪除有聲書來源？</string>
+	<string name="audiobook_delete_source_message">刪除 %1$s 及其收聽歷史記錄？</string>
+	<string name="audiobook_search_librivox">搜尋 LibriVox</string>
+	<string name="audiobook_popular">熱門免費書籍</string>
+	<string name="audiobook_latest">最近新增</string>
+	<string name="audiobook_add_to_library">添加到庫</string>
+	<string name="audiobook_import_failed">無法添加此有聲讀物</string>
+	<string name="audiobook_download_book">下載書籍</string>
+	<string name="audiobook_delete_download">刪除下載</string>
+	<string name="audiobook_download_failed">有聲書下載失敗</string>
+</resources>

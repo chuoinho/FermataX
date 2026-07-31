@@ -14,6 +14,7 @@ import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.webkit.WebResourceErrorCompat;
@@ -22,7 +23,11 @@ import androidx.webkit.WebViewFeature;
 
 import java.util.Locale;
 import java.net.URI;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.addon.external.ExternalNavigationPolicy;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -36,6 +41,209 @@ import me.aap.utils.log.Log;
  * @author Andrey Pavlenko
  */
 public class FermataWebClient extends WebViewClientCompat {
+	public enum PageEvent {
+		MAIN_FRAME_STARTED,
+		MAIN_FRAME_FINISHED,
+		MAIN_FRAME_ERROR,
+		MAIN_FRAME_HTTP_ERROR,
+		MAIN_FRAME_SSL_ERROR,
+		RENDERER_GONE
+	}
+
+	public enum CustomViewEvent {
+		ATTACH_REJECTED,
+		ATTACHED,
+		ATTACH_UNCONFIRMED,
+		DETACH_REQUESTED,
+		DETACHED
+	}
+
+	public enum FullscreenEvent {
+		REQUEST_CREATED,
+		BROWSER_REQUEST_DISPATCHED,
+		BROWSER_CALLBACK_RECEIVED,
+		REQUEST_ACCEPTED,
+		REQUEST_REJECTED,
+		STATE_CHANGED,
+		BROWSER_VISIBILITY_CHANGED,
+		FALLBACK_ENTERED,
+		CUSTOM_VIEW_REJECTED,
+		PRESENTATION_RELEASED
+	}
+
+	public enum PlaybackEvent {
+		SESSION_STARTED,
+		SESSION_INVALIDATED,
+		OWNERSHIP_ADOPTED,
+		OWNERSHIP_LOST,
+		READY_SIGNAL,
+		PLAYING_SIGNAL,
+		PAUSED_SIGNAL,
+		ENDED_SIGNAL,
+		MUTE_CHANGED,
+		AUDIBLE_START_REQUESTED,
+		SIGNAL_REJECTED
+	}
+
+	/** Typed, privacy-safe observer shared by the Web and YouTube diagnostics boundaries. */
+	public interface DiagnosticsObserver {
+		void onPage(PageEvent event, DiagnosticsSnapshot snapshot);
+
+		void onCustomView(CustomViewEvent event, DiagnosticsSnapshot snapshot);
+
+		void onFullscreen(FullscreenEvent event, DiagnosticsSnapshot snapshot);
+
+		void onPlayback(PlaybackEvent event, DiagnosticsSnapshot snapshot);
+	}
+
+	/** Only enum/bool/dimension/counter data is exposed to the diagnostics backend. */
+	public static final class DiagnosticsSnapshot {
+		private final Enum<?> state;
+		private final boolean mainFrame;
+		private final boolean allowed;
+		private final boolean accepted;
+		private final boolean resultKnown;
+		private final boolean visible;
+		private final boolean attached;
+		private final boolean webVisible;
+		private final boolean webAttached;
+		private final boolean surfaceKnown;
+		private final boolean surfaceValid;
+		private final boolean browserFullscreen;
+		private final boolean appFullscreen;
+		private final boolean ownsPlayback;
+		private final boolean playing;
+		private final boolean muteKnown;
+		private final boolean muted;
+		private final int width;
+		private final int height;
+		private final int webWidth;
+		private final int webHeight;
+		private final int errorCode;
+		private final long request;
+		private final long generation;
+		private final long revision;
+
+		private DiagnosticsSnapshot(Builder b) {
+			state = b.state;
+			mainFrame = b.mainFrame;
+			allowed = b.allowed;
+			accepted = b.accepted;
+			resultKnown = b.resultKnown;
+			visible = b.visible;
+			attached = b.attached;
+			webVisible = b.webVisible;
+			webAttached = b.webAttached;
+			surfaceKnown = b.surfaceKnown;
+			surfaceValid = b.surfaceValid;
+			browserFullscreen = b.browserFullscreen;
+			appFullscreen = b.appFullscreen;
+			ownsPlayback = b.ownsPlayback;
+			playing = b.playing;
+			muteKnown = b.muteKnown;
+			muted = b.muted;
+			width = b.width;
+			height = b.height;
+			webWidth = b.webWidth;
+			webHeight = b.webHeight;
+			errorCode = b.errorCode;
+			request = b.request;
+			generation = b.generation;
+			revision = b.revision;
+		}
+
+		public static Builder builder() {
+			return new Builder();
+		}
+
+		public Builder toBuilder() {
+			return new Builder().state(state).mainFrame(mainFrame).allowed(allowed)
+					.result(resultKnown, accepted).view(visible, attached, width, height)
+					.web(webVisible, webAttached, webWidth, webHeight)
+					.surface(surfaceKnown, surfaceValid)
+					.fullscreen(browserFullscreen, appFullscreen)
+					.ownsPlayback(ownsPlayback).playing(playing)
+					.mute(muteKnown, muted).errorCode(errorCode).request(request)
+					.generation(generation).revision(revision);
+		}
+
+		public static final class Builder {
+			private Enum<?> state;
+			private boolean mainFrame;
+			private boolean allowed;
+			private boolean accepted;
+			private boolean resultKnown;
+			private boolean visible;
+			private boolean attached;
+			private boolean webVisible;
+			private boolean webAttached;
+			private boolean surfaceKnown;
+			private boolean surfaceValid;
+			private boolean browserFullscreen;
+			private boolean appFullscreen;
+			private boolean ownsPlayback;
+			private boolean playing;
+			private boolean muteKnown;
+			private boolean muted;
+			private int width;
+			private int height;
+			private int webWidth;
+			private int webHeight;
+			private int errorCode = Integer.MIN_VALUE;
+			private long request;
+			private long generation;
+			private long revision;
+
+			public Builder state(Enum<?> value) { state = value; return this; }
+			public Builder mainFrame(boolean value) { mainFrame = value; return this; }
+			public Builder allowed(boolean value) { allowed = value; return this; }
+			public Builder result(boolean known, boolean value) {
+				resultKnown = known;
+				accepted = value;
+				return this;
+			}
+			public Builder view(boolean value, boolean isAttached, int w, int h) {
+				visible = value;
+				attached = isAttached;
+				width = Math.max(0, w);
+				height = Math.max(0, h);
+				return this;
+			}
+			public Builder web(boolean value, boolean isAttached, int w, int h) {
+				webVisible = value;
+				webAttached = isAttached;
+				webWidth = Math.max(0, w);
+				webHeight = Math.max(0, h);
+				return this;
+			}
+			public Builder surface(boolean known, boolean valid) {
+				surfaceKnown = known;
+				surfaceValid = valid;
+				return this;
+			}
+			public Builder fullscreen(boolean browser, boolean app) {
+				browserFullscreen = browser;
+				appFullscreen = app;
+				return this;
+			}
+			public Builder ownsPlayback(boolean value) { ownsPlayback = value; return this; }
+			public Builder playing(boolean value) { playing = value; return this; }
+			public Builder mute(boolean known, boolean value) {
+				muteKnown = known;
+				muted = value;
+				return this;
+			}
+			public Builder errorCode(int value) { errorCode = value; return this; }
+			public Builder request(long value) { request = value; return this; }
+			public Builder generation(long value) { generation = value; return this; }
+			public Builder revision(long value) { revision = value; return this; }
+			public DiagnosticsSnapshot build() { return new DiagnosticsSnapshot(this); }
+		}
+	}
+
+	private static final DiagnosticsObserver DEFAULT_DIAGNOSTICS =
+			new RuntimeDiagnosticsObserver();
+	private final DiagnosticsObserver diagnosticsObserver;
 	BooleanConsumer loading;
 	private String failedMainFrameUrl;
 	private String lastErrorKey;
@@ -44,20 +252,117 @@ public class FermataWebClient extends WebViewClientCompat {
 	private long retryGeneration;
 	private ExternalNavigationPolicy externalNavigationPolicy;
 
-	FermataWebClient createReplacement() {
-		try {
-			FermataWebClient replacement = getClass().getConstructor().newInstance();
-			replacement.externalNavigationPolicy = externalNavigationPolicy;
-			return replacement;
-		} catch (Throwable ex) {
-			Log.e(ex, "Failed to create replacement WebViewClient");
-			return new FermataWebClient();
+	public FermataWebClient() {
+		this(diagnosticsObserver());
+	}
+
+	protected FermataWebClient(DiagnosticsObserver observer) {
+		diagnosticsObserver = (observer == null) ? diagnosticsObserver() : observer;
+	}
+
+	public static DiagnosticsObserver diagnosticsObserver() {
+		return DEFAULT_DIAGNOSTICS;
+	}
+
+	protected final DiagnosticsObserver getDiagnosticsObserver() {
+		return diagnosticsObserver;
+	}
+
+	private static final class RuntimeDiagnosticsObserver implements DiagnosticsObserver {
+		@Override
+		public void onPage(PageEvent event, DiagnosticsSnapshot snapshot) {
+			record("page", event, snapshot, isPageError(event) ?
+					DiagnosticPriority.ERROR : DiagnosticPriority.STATE);
 		}
+
+		@Override
+		public void onCustomView(CustomViewEvent event, DiagnosticsSnapshot snapshot) {
+			record("custom_view", event, snapshot, DiagnosticPriority.STATE);
+		}
+
+		@Override
+		public void onFullscreen(FullscreenEvent event, DiagnosticsSnapshot snapshot) {
+			record("fullscreen", event, snapshot,
+					(event == FullscreenEvent.REQUEST_REJECTED ||
+							event == FullscreenEvent.CUSTOM_VIEW_REJECTED) ?
+							DiagnosticPriority.WARN : DiagnosticPriority.STATE);
+		}
+
+		@Override
+		public void onPlayback(PlaybackEvent event, DiagnosticsSnapshot snapshot) {
+			record("playback", event, snapshot,
+					(event == PlaybackEvent.OWNERSHIP_LOST ||
+						event == PlaybackEvent.SIGNAL_REJECTED) ?
+							DiagnosticPriority.WARN : DiagnosticPriority.STATE);
+		}
+
+		private static boolean isPageError(PageEvent event) {
+			return (event == PageEvent.MAIN_FRAME_ERROR) ||
+					(event == PageEvent.MAIN_FRAME_HTTP_ERROR) ||
+					(event == PageEvent.MAIN_FRAME_SSL_ERROR) ||
+					(event == PageEvent.RENDERER_GONE);
+		}
+
+		private static void record(String group, Enum<?> event, DiagnosticsSnapshot snapshot,
+				DiagnosticPriority priority) {
+			try {
+				Map<String, Object> data = new LinkedHashMap<>();
+				if (snapshot != null) {
+					if (snapshot.state != null) data.put("state", snapshot.state);
+					data.put("main_frame", snapshot.mainFrame);
+					data.put("allowed", snapshot.allowed);
+					if (snapshot.resultKnown) data.put("accepted", snapshot.accepted);
+					data.put("visible", snapshot.visible);
+					data.put("attached", snapshot.attached);
+					data.put("web_visible", snapshot.webVisible);
+					data.put("web_attached", snapshot.webAttached);
+					data.put("surface_known", snapshot.surfaceKnown);
+					data.put("surface_valid", snapshot.surfaceValid);
+					data.put("browser_fullscreen", snapshot.browserFullscreen);
+					data.put("app_fullscreen", snapshot.appFullscreen);
+					data.put("owns_playback", snapshot.ownsPlayback);
+					data.put("playing", snapshot.playing);
+					data.put("mute_known", snapshot.muteKnown);
+					if (snapshot.muteKnown) data.put("muted", snapshot.muted);
+					data.put("width", snapshot.width);
+					data.put("height", snapshot.height);
+					data.put("web_width", snapshot.webWidth);
+					data.put("web_height", snapshot.webHeight);
+					if (snapshot.errorCode != Integer.MIN_VALUE)
+						data.put("error_code", snapshot.errorCode);
+					data.put("request", snapshot.request);
+					data.put("generation", snapshot.generation);
+					data.put("revision", snapshot.revision);
+				}
+				AndroidDiagnosticsRuntime.get().recordEssential(
+						"web_" + group, event.name().toLowerCase(Locale.ROOT), priority,
+						null, data);
+			} catch (RuntimeException ignored) {
+				// Diagnostics must never affect WebView or playback behavior.
+			}
+		}
+	}
+
+	FermataWebClient createReplacement() {
+		FermataWebClient replacement = newReplacement();
+		if (replacement == null) {
+			Log.e("WebViewClient replacement factory returned null");
+			replacement = new FermataWebClient(getDiagnosticsObserver());
+		}
+		replacement.externalNavigationPolicy = externalNavigationPolicy;
+		return replacement;
+	}
+
+	protected FermataWebClient newReplacement() {
+		return new FermataWebClient(getDiagnosticsObserver());
 	}
 
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
-		if (!isExternalNavigationAllowed(url)) {
+		boolean allowed = isExternalNavigationAllowed(url);
+		if (!allowed) {
+			diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_STARTED,
+					webSnapshot(view, true, false));
 			view.stopLoading();
 			if (view instanceof FermataWebView web) web.externalNavigationRejected();
 			return;
@@ -75,12 +380,16 @@ public class FermataWebClient extends WebViewClientCompat {
 			MainActivityDelegate.getActivityDelegate(view.getContext())
 					.onSuccess(a -> a.setContentLoading(new Promise<>()));
 		}
+		diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_STARTED,
+				webSnapshot(view, true, true));
 		super.onPageStarted(view, url, favicon);
 	}
 
 	@Override
 	public void onPageFinished(WebView view, String url) {
 		FermataWebView v = (FermataWebView) view;
+		diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_FINISHED,
+				webSnapshot(view, true, true));
 		FutureSupplier<MainActivityDelegate> f =
 				MainActivityDelegate.getActivityDelegate(v.getContext());
 		f.onSuccess(a -> a.setContentLoading(Completed.completedVoid()));
@@ -165,16 +474,25 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	@Override
 	public void onReceivedError(@NonNull WebView view, @NonNull WebResourceRequest request,
-															@NonNull WebResourceErrorCompat error) {
+														@NonNull WebResourceErrorCompat error) {
+		boolean mainFrame = request.isForMainFrame();
+		boolean hasDescription = mainFrame &&
+				WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION);
 		String desc = "unknown error";
-		if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)) {
+		if (hasDescription) {
 			desc = String.valueOf(error.getDescription());
-			Log.e("Web error received: " + desc);
-		} else {
-			Log.e("Web error received");
 		}
+		String failureDescription = desc;
+		dispatchResourceFailure(mainFrame,
+				() -> {
+					if (hasDescription) Log.e("Web error received: " + failureDescription);
+					else Log.e("Web error received");
+				},
+				() -> diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_ERROR,
+						webSnapshot(view, true, true).toBuilder()
+								.errorCode(error.getErrorCode()).build()));
 
-		if (request.isForMainFrame()) {
+		if (mainFrame) {
 			failedMainFrameUrl = request.getUrl().toString();
 			completeLoading(view);
 			if (!scheduleAutoRetry(view, request.getUrl(), desc))
@@ -182,6 +500,13 @@ public class FermataWebClient extends WebViewClientCompat {
 		}
 
 		super.onReceivedError(view, request, error);
+	}
+
+	static void dispatchResourceFailure(boolean mainFrame, Runnable legacyFailureLog,
+			Runnable typedDiagnostics) {
+		if (!mainFrame) return;
+		legacyFailureLog.run();
+		typedDiagnostics.run();
 	}
 
 	@Override
@@ -192,6 +517,9 @@ public class FermataWebClient extends WebViewClientCompat {
 			String phrase = errorResponse.getReasonPhrase();
 			if ((phrase != null) && !phrase.isEmpty()) reason += " " + phrase;
 			Log.e("Web HTTP error received: " + reason);
+			diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_HTTP_ERROR,
+					webSnapshot(view, true, true).toBuilder()
+							.errorCode(errorResponse.getStatusCode()).build());
 			failedMainFrameUrl = request.getUrl().toString();
 			completeLoading(view);
 			if (!scheduleAutoRetry(view, request.getUrl(), reason))
@@ -205,8 +533,11 @@ public class FermataWebClient extends WebViewClientCompat {
 	public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
 		handler.cancel();
 		String url = error.getUrl();
-		String reason = "SSL error: " + error;
+		String reason = "SSL error";
 		Log.e("Web SSL error received: " + reason);
+		diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_SSL_ERROR,
+				webSnapshot(view, true, true).toBuilder()
+						.errorCode(error.getPrimaryError()).build());
 		failedMainFrameUrl = url;
 		completeLoading(view);
 		if (url != null) showLoadError(view, Uri.parse(url), reason);
@@ -216,6 +547,9 @@ public class FermataWebClient extends WebViewClientCompat {
 	@Override
 	public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
 		Log.e("WebView renderer gone, crashed: ", detail.didCrash());
+		diagnosticsObserver.onPage(PageEvent.RENDERER_GONE,
+				webSnapshot(view, true, true).toBuilder()
+						.errorCode(detail.didCrash() ? 1 : 0).build());
 		completeLoading(view);
 		if (view instanceof FermataWebView v) return v.recoverRenderProcess();
 		return super.onRenderProcessGone(view, detail);
@@ -264,7 +598,7 @@ public class FermataWebClient extends WebViewClientCompat {
 		int attempt = ++retryCount;
 		long delay = getAutoRetryDelay(attempt);
 		long generation = retryGeneration;
-		Log.e("Transient WebView error. Auto-retrying in ", delay, " ms: ", reason, " URL: ", url);
+		Log.e("Transient WebView error. Auto-retrying in ", delay, " ms: ", reason);
 		view.postDelayed(() -> {
 			if (view.getParent() == null) return;
 			String current = view.getUrl();
@@ -305,5 +639,16 @@ public class FermataWebClient extends WebViewClientCompat {
 		}
 
 		return "unknown";
+	}
+
+	private DiagnosticsSnapshot webSnapshot(WebView view, boolean mainFrame, boolean allowed) {
+		if (view == null) {
+			return DiagnosticsSnapshot.builder().mainFrame(mainFrame).allowed(allowed)
+					.generation(retryGeneration).build();
+		}
+		return DiagnosticsSnapshot.builder().mainFrame(mainFrame).allowed(allowed)
+				.view(view.getVisibility() == View.VISIBLE, view.isAttachedToWindow(),
+						view.getWidth(), view.getHeight())
+				.generation(retryGeneration).build();
 	}
 }

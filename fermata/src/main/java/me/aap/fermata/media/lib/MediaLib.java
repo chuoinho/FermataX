@@ -378,6 +378,11 @@ public interface MediaLib {
 			return false;
 		}
 
+		/** True only for a live feed, not for VOD transported through a stream item. */
+		default boolean isLiveStream() {
+			return false;
+		}
+
 		@NonNull
 		default FutureSupplier<Long> getDuration() {
 			return getMediaData().map(md -> md.getLong(MediaMetadataCompat.METADATA_KEY_DURATION));
@@ -457,6 +462,11 @@ public interface MediaLib {
 
 		@Override
 		default boolean isStream() {
+			return true;
+		}
+
+		@Override
+		default boolean isLiveStream() {
 			return true;
 		}
 

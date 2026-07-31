@@ -46,6 +46,14 @@ public class YoutubePlaybackIntentGateTest {
 	}
 
 	@Test
+	public void explicitCardSelectionSurvivesSlowPageStartup() {
+		YoutubePlaybackIntentGate gate = new YoutubePlaybackIntentGate();
+		gate.armExplicitPlayback();
+
+		assertTrue(gate.accepts(VIDEO_1, 60_000L, false));
+	}
+
+	@Test
 	public void activeYoutubeSessionCanAdvanceToAnotherVideo() {
 		YoutubePlaybackIntentGate gate = new YoutubePlaybackIntentGate();
 

@@ -15,6 +15,19 @@ import me.aap.utils.log.Log;
  * @author Andrey Pavlenko
  */
 public class YoutubeWebClient extends FermataWebClient {
+	public YoutubeWebClient() {
+		super();
+	}
+
+	private YoutubeWebClient(DiagnosticsObserver observer) {
+		super(observer);
+	}
+
+	@Override
+	protected FermataWebClient newReplacement() {
+		return new YoutubeWebClient(getDiagnosticsObserver());
+	}
+
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 		MainActivityDelegate.get(view.getContext()).clearVoiceSelection();

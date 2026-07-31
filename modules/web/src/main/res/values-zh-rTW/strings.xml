@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="force_dark">強制使用深色模式（如果支援）</string>
+	<string name="force_dark_sub">%1$s。選擇“自動”以遵循裝置主題。</string>
+	<string name="force_dark_auto">汽車</string>
+	<string name="force_dark_enabled">啟用</string>
+	<string name="force_dark_disabled">殘障人士</string>
+	<string name="user_agent">使用者代理</string>
+	<string name="user_agent_desktop">使用者代理 - 桌面版本</string>
+	<string name="desktop_version">桌面版</string>
+	<string name="full_screen">全螢幕</string>
+	<string name="full_screen_exit">退出全螢幕</string>
+	<string name="retry">重試</string>
+	<string name="web_page_load_failed">頁面載入失敗</string>
+	<string name="web_page_load_failed_msg">無法載入：\n%1$s\n\n原因：%2$s\n\nWebView：%3$s</string>
+	<string name="video_scaling_fill_proportional">填充比例</string>
+	<string name="video_quality">視訊品質</string>
+	<string name="open_on_start">啟動時打開</string>
+	<string name="auto_highest_video_quality">自動選擇最高視訊質量</string>
+	<string name="try_to_skip_ad">嘗試跳過廣告</string>
+	<string name="sponsorblock_sub">觀看 YouTube 時跳過眾包片段。</string>
+	<string name="sponsorblock_enable">啟用贊助商區塊</string>
+	<string name="sponsorblock_enable_sub">從sponsor.ajay.app 取得目前影片的片段資料。</string>
+	<string name="sponsorblock_cat_sponsor">贊助商部分</string>
+	<string name="sponsorblock_cat_selfpromo">自我推銷</string>
+	<string name="sponsorblock_cat_interaction">互動提醒</string>
+	<string name="sponsorblock_cat_intro">前奏和中場休息</string>
+	<string name="sponsorblock_cat_outro">尾卡和製作人員名單</string>
+	<string name="sponsorblock_cat_preview">預覽和回顧</string>
+	<string name="sponsorblock_cat_hook">掛鉤</string>
+	<string name="sponsorblock_cat_music_offtopic">非音樂部分</string>
+	<string name="sponsorblock_cat_filler">填料</string>
+	<string name="sponsorblock_cat_filler_sub">攻擊性類別；預設為禁用。</string>
+</resources>

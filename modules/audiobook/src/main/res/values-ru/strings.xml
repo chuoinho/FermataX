@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">Продолжить прослушивание</string>
+	<string name="audiobook_library">Библиотека</string>
+	<string name="audiobook_downloads">Загрузки</string>
+	<string name="audiobook_discover">Откройте для себя бесплатные книги</string>
+	<string name="audiobook_sources">Источники</string>
+	<string name="audiobook_source_local">Локальная папка</string>
+	<string name="audiobook_source_librivox">ЛибриВокс</string>
+	<string name="audiobook_source_audiobookshelf">Полка для аудиокниг</string>
+	<string name="audiobook_source_opds">Каталог ОПДС</string>
+	<string name="audiobook_add_folder">Добавить папку с аудиокнигами</string>
+	<string name="audiobook_add_source">Добавить источник аудиокниги</string>
+	<string name="audiobook_add_audiobookshelf">Добавить полку с аудиокнигами</string>
+	<string name="audiobook_add_opds">Добавить каталог OPDS</string>
+	<string name="audiobook_server_url">URL-адрес сервера</string>
+	<string name="audiobook_bearer_token">Токен на предъявителя (необязательно)</string>
+	<string name="audiobook_add_failed">Не удалось добавить источник аудиокниги.</string>
+	<string name="audiobook_delete_source_title">Удалить источник аудиокниги?</string>
+	<string name="audiobook_delete_source_message">Удалить %1$s и историю его прослушивания?</string>
+	<string name="audiobook_search_librivox">Поиск в LibriVox</string>
+	<string name="audiobook_popular">Популярные бесплатные книги</string>
+	<string name="audiobook_latest">Недавно добавлено</string>
+	<string name="audiobook_add_to_library">Добавить в библиотеку</string>
+	<string name="audiobook_import_failed">Не удалось добавить эту аудиокнигу</string>
+	<string name="audiobook_download_book">Скачать книгу</string>
+	<string name="audiobook_delete_download">Удалить загрузку</string>
+	<string name="audiobook_download_failed">Загрузка аудиокниги не удалась</string>
+</resources>

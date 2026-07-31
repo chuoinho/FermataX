@@ -1,7 +1,6 @@
 package me.aap.fermata.addon.stremio.item;
 
 import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
 
 import android.net.Uri;
 

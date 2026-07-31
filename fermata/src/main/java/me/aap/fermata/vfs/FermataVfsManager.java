@@ -15,6 +15,7 @@ import java.util.List;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivity;
+import me.aap.fermata.ui.activity.AsyncOperationController.OperationType;
 import me.aap.fermata.vfs.m3u.M3uFileSystem;
 import me.aap.fermata.vfs.m3u.M3uFileSystemProvider;
 import me.aap.utils.async.FutureSupplier;
@@ -171,7 +172,8 @@ public class FermataVfsManager extends VfsManager {
 				}
 			}).thenComplete(contentLoading);
 
-			a.getActivityDelegate().onSuccess(d -> d.setContentLoading(contentLoading));
+			a.getActivityDelegate().onSuccess(d ->
+					d.setContentLoading(moduleId, OperationType.INSTALL, contentLoading));
 			return install;
 		});
 	}

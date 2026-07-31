@@ -1,7 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<me.aap.fermata.ui.view.MediaItemListView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/media_items_list_view"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:scrollbars="vertical" />
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:id="@+id/media_items_state_root"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<me.aap.fermata.ui.view.MediaItemListView
+		android:id="@+id/media_items_list_view"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:orientation="vertical"
+		android:scrollbars="vertical" />
+
+	<LinearLayout
+		android:id="@+id/media_items_state_panel"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:gravity="center"
+		android:orientation="vertical"
+		android:padding="24dp"
+		android:visibility="gone">
+
+		<ProgressBar
+			android:id="@+id/media_items_state_progress"
+			android:layout_width="48dp"
+			android:layout_height="48dp"
+			android:contentDescription="@string/loading" />
+
+		<TextView
+			android:id="@+id/media_items_state_message"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="12dp"
+			android:gravity="center"
+			android:maxWidth="420dp"
+			android:textAppearance="?android:attr/textAppearanceMedium" />
+
+		<com.google.android.material.button.MaterialButton
+			android:id="@+id/media_items_state_action"
+			style="?attr/materialButtonOutlinedStyle"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="16dp"
+			android:minHeight="48dp"
+			android:minWidth="120dp"
+			android:textColor="?android:attr/textColorPrimary"
+			app:strokeColor="?android:attr/textColorSecondary"
+			app:strokeWidth="1dp" />
+	</LinearLayout>
+</FrameLayout>

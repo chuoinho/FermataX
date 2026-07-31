@@ -19,6 +19,7 @@ import android.graphics.Bitmap;
 import android.media.MediaMetadata;
 import android.net.Uri;
 import android.os.Build.VERSION_CODES;
+import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.v4.media.MediaMetadataCompat;
 
@@ -34,6 +35,7 @@ import java.util.Map;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.diagnostics.DiagnosticOperation;
 import me.aap.fermata.media.lib.FileItem;
 import me.aap.fermata.media.lib.FolderItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -533,15 +535,21 @@ public class MetadataRetriever implements Closeable {
 		if (closed) return null;
 		SQLiteDatabase database = db;
 		if (database != null) return database;
+		long started = SystemClock.elapsedRealtime();
+		DiagnosticOperation diagnostics = FermataApplication.get().getDiagnostics().begin(
+				"database", "metadata_database_open", emptyMap());
 
 		try {
 			database = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
 		} catch (Exception ex) {
+			if (diagnostics != null) diagnostics.state("database_open_retry", emptyMap());
 			Log.w("Failed to create database: ", dbFile, ": ", ex, ". Retrying ...");
 
 			try {
 				database = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
 			} catch (Exception ex1) {
+				if (diagnostics != null) diagnostics.fail(ex1, Map.of(
+						"duration_ms", SystemClock.elapsedRealtime() - started));
 				Log.e(ex1, "Failed to create database: ", dbFile);
 				return null;
 			}
@@ -550,11 +558,15 @@ public class MetadataRetriever implements Closeable {
 		try {
 			createTable(database);
 		} catch (Throwable ex) {
+			if (diagnostics != null) diagnostics.fail(ex, Map.of(
+					"duration_ms", SystemClock.elapsedRealtime() - started));
 			Log.e(ex, "Failed to initialize metadata database: ", dbFile);
 			database.close();
 			return null;
 		}
 		db = database;
+		if (diagnostics != null) diagnostics.complete(Map.of(
+				"duration_ms", SystemClock.elapsedRealtime() - started));
 		return database;
 	}
 

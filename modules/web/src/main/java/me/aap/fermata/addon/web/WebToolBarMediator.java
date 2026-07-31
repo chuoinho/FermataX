@@ -10,9 +10,7 @@ import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.LEF
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.RIGHT;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.util.Utils.dynCtx;
-import static me.aap.utils.ui.UiUtils.toPx;
 
-import android.content.Context;
 import android.view.KeyEvent;
 import android.widget.EditText;
 

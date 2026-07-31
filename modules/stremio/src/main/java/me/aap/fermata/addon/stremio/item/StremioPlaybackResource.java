@@ -24,7 +24,6 @@ import me.aap.fermata.media.engine.SubtitleTrackFile;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.io.AsyncInputStream;
 import me.aap.utils.resource.Rid;
-import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;

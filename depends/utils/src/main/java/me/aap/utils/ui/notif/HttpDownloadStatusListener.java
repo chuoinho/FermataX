@@ -26,6 +26,7 @@ import static android.content.Context.NOTIFICATION_SERVICE;
 public class HttpDownloadStatusListener implements HttpFileDownloader.StatusListener {
 	private static final AtomicInteger idCounter = new AtomicInteger();
 	private final String channelId;
+	private final Context context;
 	private final NotificationManagerCompat mgr;
 	private final NotificationCompat.Builder builder;
 	private final int id = idCounter.incrementAndGet();
@@ -37,6 +38,7 @@ public class HttpDownloadStatusListener implements HttpFileDownloader.StatusList
 
 	public HttpDownloadStatusListener(Context ctx, String channelId, String channelName) {
 		this.channelId = channelId;
+		context = ctx.getApplicationContext();
 		mgr = NotificationManagerCompat.from(ctx);
 		builder = new NotificationCompat.Builder(ctx, channelId);
 		builder.setChannelId(channelId);
@@ -83,7 +85,8 @@ public class HttpDownloadStatusListener implements HttpFileDownloader.StatusList
 	@Override
 	public void onFailure(Status status) {
 		if (failureTitle != null) builder.setContentTitle(failureTitle.apply(status));
-		else builder.setContentTitle("Failed to download " + status.getUrl());
+		else builder.setContentTitle(context.getString(me.aap.utils.R.string.download_failed,
+				status.getUrl()));
 		mgr.notify(channelId, id, builder.build());
 	}
 

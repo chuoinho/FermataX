@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
+import static me.aap.utils.net.http.HttpContentDecoder.decode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,8 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
 
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
@@ -364,12 +363,6 @@ public final class SponsorBlockClient {
 				return true;
 			}
 		}
-	}
-
-	private static InputStream decode(InputStream input, String encoding) throws IOException {
-		if ("gzip".equalsIgnoreCase(encoding)) return new GZIPInputStream(input);
-		if ("deflate".equalsIgnoreCase(encoding)) return new InflaterInputStream(input);
-		return input;
 	}
 
 	private static String readBody(InputStream input) throws IOException {

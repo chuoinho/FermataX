@@ -17,12 +17,10 @@ import androidx.annotation.StringRes;
 
 import java.util.List;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
-import me.aap.utils.log.Log;
 import me.aap.utils.ui.activity.ActivityDelegate;
 
 /**

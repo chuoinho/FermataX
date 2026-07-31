@@ -51,7 +51,7 @@ public class XtreamFileSystemProvider extends VfsProviderBase {
 		PreferenceStore ps = PrefsHolder.instance;
 		return requestPrefs(a, ps).thenRun(ps::removeBroadcastListeners).then(ok -> {
 			if (!ok) return completedNull();
-			return validate(XtreamAccount.fromPrefs(ps, ps.getStringPref(AGENT),
+			return validate(a.getContext(), XtreamAccount.fromPrefs(ps, ps.getStringPref(AGENT),
 					ps.getIntPref(RESP_TIMEOUT)));
 		});
 	}
@@ -73,16 +73,16 @@ public class XtreamFileSystemProvider extends VfsProviderBase {
 
 		return requestPrefs(a, ps).thenRun(ps::removeBroadcastListeners).then(ok -> {
 			if (!ok) return completedNull();
-			return validate(XtreamAccount.fromPrefs(ps, ps.getStringPref(AGENT),
+			return validate(a.getContext(), XtreamAccount.fromPrefs(ps, ps.getStringPref(AGENT),
 					ps.getIntPref(RESP_TIMEOUT)).withSourceId(account.getSourceId()));
 		});
 	}
 
-	private FutureSupplier<XtreamAccount> validate(XtreamAccount account) {
+	private FutureSupplier<XtreamAccount> validate(Context context, XtreamAccount account) {
 		if (!account.isComplete()) {
-			return failed(new IOException("Enter host, username and password."));
+			return failed(new IOException(context.getString(R.string.xtream_error_incomplete_account)));
 		}
-		return new XtreamApi(account).healthCheck().map(health -> account);
+		return new XtreamApi(account, context).healthCheck().map(health -> account);
 	}
 
 	private FutureSupplier<Boolean> requestPrefs(MainActivityDelegate a, PreferenceStore ps) {

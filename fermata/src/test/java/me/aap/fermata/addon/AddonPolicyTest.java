@@ -11,6 +11,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 
 import org.junit.Test;
 
@@ -19,6 +20,17 @@ import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 
 public class AddonPolicyTest {
+	@Test
+	public void installDiagnosticsDistinguishCancellationFromFailure() {
+		assertEquals(me.aap.fermata.ui.activity.AsyncOperationController.DiagnosticsObserver
+				.AddonEvent.INSTALL_COMPLETED, AddonManager.installTerminalEvent(null));
+		assertEquals(me.aap.fermata.ui.activity.AsyncOperationController.DiagnosticsObserver
+				.AddonEvent.INSTALL_CANCELLED,
+				AddonManager.installTerminalEvent(new CancellationException()));
+		assertEquals(me.aap.fermata.ui.activity.AsyncOperationController.DiagnosticsObserver
+				.AddonEvent.INSTALL_FAILED,
+				AddonManager.installTerminalEvent(new IllegalStateException()));
+	}
 	@Test
 	public void blankStoreIsCapturedAsFreshBeforeDefaultMigration() {
 		BasicPreferenceStore store = new BasicPreferenceStore();

@@ -22,7 +22,6 @@ import me.aap.fermata.addon.audiobook.model.AudiobookChapter;
 import me.aap.fermata.addon.audiobook.model.AudiobookSource;
 import me.aap.fermata.addon.audiobook.model.AudiobookSourceType;
 import me.aap.fermata.addon.audiobook.remote.AudiobookSourceSnapshot;
-import me.aap.fermata.addon.audiobook.remote.AudiobookshelfBookDetails;
 import me.aap.fermata.addon.audiobook.remote.AudiobookshelfClient;
 import me.aap.fermata.addon.audiobook.remote.OpdsCatalogClient;
 import me.aap.fermata.addon.audiobook.remote.OpdsCatalogSnapshot;
@@ -32,7 +31,6 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
-import me.aap.utils.vfs.VirtualResource;
 
 public final class AudiobookRootItem extends ExtRoot implements AudiobookItem {
 	static final String ID = "Audiobook";

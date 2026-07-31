@@ -26,7 +26,6 @@ import org.robolectric.RobolectricTestRunner;
 import me.aap.fermata.addon.stremio.net.NetworkConsent;
 import me.aap.fermata.addon.stremio.net.http.HttpTransport;
 import me.aap.fermata.addon.stremio.net.http.TransportCall;
-import me.aap.fermata.addon.stremio.net.http.TransportRequest;
 import me.aap.fermata.addon.stremio.net.http.TransportResponse;
 import me.aap.fermata.addon.stremio.security.StremioSourceSecret;
 import me.aap.fermata.addon.stremio.source.StremioSourceInput;

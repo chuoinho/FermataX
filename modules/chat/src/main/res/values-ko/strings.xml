@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="openai_key">OpenAI 키</string>
+	<string name="openai_key_sub">개인 키 받기: &lt;a href=\&quot;%1$s\&quot;&gt;%1$s&lt;a&gt;</string>
+	<string name="openai_model">모델</string>
+	<string name="openai_model_custom">맞춤형 모델</string>
+	<string name="openai_model_other">다른 모델</string>
+	<string name="chat_request_failed">요청 실패: %1$s</string>
+	<string name="chat_tts_failed">텍스트 음성 변환 실패: %1$s</string>
+</resources>

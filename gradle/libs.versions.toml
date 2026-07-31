@@ -1,6 +1,6 @@
 [versions]
 # App
-appVersionCode = "300"
+appVersionCode = "301"
 appVersionName = "2.0.1"
 
 # Build tooling
@@ -38,7 +38,6 @@ androidxCar = "1.7.0"
 # Google
 androidMaterial = "1.14.0"
 googlePlayFeatureDelivery = "2.1.0"
-googlePlayAssetDelivery = "2.3.0"
 googlePlayAppUpdate = "2.1.0"
 googlePlayServicesAuth = "21.6.0"
 googlePlayServicesBase = "18.10.0"
@@ -114,7 +113,6 @@ media3Transformer                 = { group = "androidx.media3",                
 # Google
 androidMaterial                   = { group = "com.google.android.material",        name = "material",                      version.ref = "androidMaterial" }
 googlePlayFeatureDelivery         = { group = "com.google.android.play",            name = "feature-delivery",              version.ref = "googlePlayFeatureDelivery" }
-googlePlayAssetDelivery           = { group = "com.google.android.play",            name = "asset-delivery",                version.ref = "googlePlayAssetDelivery" }
 googlePlayAppUpdate               = { group = "com.google.android.play",            name = "app-update",                    version.ref = "googlePlayAppUpdate" }
 googlePlayServicesAuth            = { group = "com.google.android.gms",             name = "play-services-auth",            version.ref = "googlePlayServicesAuth" }
 googlePlayServicesBase            = { group = "com.google.android.gms",             name = "play-services-base",            version.ref = "googlePlayServicesBase" }

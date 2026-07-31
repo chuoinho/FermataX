@@ -73,7 +73,7 @@
 	<string name="stremio_search">Tìm kiếm Stremio</string>
 	<string name="stremio_discover">Khám phá</string>
 	<string name="stremio_library">Thư viện</string>
-	<string name="stremio_addons">Addon</string>
+	<string name="stremio_addons">Tiện ích bổ sung</string>
 	<string name="stremio_continue_watching">Xem tiếp</string>
 	<string name="stremio_popular_movies">Phổ biến - Phim</string>
 	<string name="stremio_popular_series">Phổ biến - Series</string>
@@ -112,4 +112,13 @@
 	<string name="stremio_loading_streams_hint">Đang chờ các provider</string>
 	<string name="stremio_no_streams">Không có luồng phát được</string>
 	<string name="stremio_no_streams_hint">Cài hoặc bật một provider Stremio tương thích</string>
+	<string name="stremio_catalog_requires_input">Danh mục này cần một giá trị bộ lọc trước khi có thể tải.</string>
+	<string name="stremio_torrent_playback_unavailable">Phát lại torrent chưa được cài đặt</string>
+	<string name="stremio_external_web_blocked">Phát lại Web bên ngoài không có sẵn để bảo mật</string>
+	<string name="stremio_stream_network_blocked">Luồng bị chặn bởi chính sách mạng nguồn</string>
+	<string name="stremio_stream_unsupported">Luồng không được hỗ trợ</string>
+	<string name="stremio_playback_addon_unavailable">Tiện ích phát lại không có sẵn</string>
+	<string name="stremio_config_go_back">Quay lại</string>
+	<string name="stremio_config_post_blocked_message">Nhà cung cấp này sử dụng biểu mẫu POST không thể gửi an toàn trong cửa sổ thiết lập này. Quay lại và sử dụng thiết lập dựa trên liên kết của nhà cung cấp nếu có.</string>
+	<string name="stremio_config_post_blocked_title">Không thể gửi biểu mẫu</string>
 </resources>

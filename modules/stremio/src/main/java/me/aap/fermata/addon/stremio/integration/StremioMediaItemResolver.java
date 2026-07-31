@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import static me.aap.fermata.addon.stremio.integration.StremioFutureBridge.toCompletable;
+
 import androidx.annotation.Nullable;
 
 import java.util.List;
@@ -117,14 +119,5 @@ final class StremioMediaItemResolver {
 	private <T> CompletableFuture<T> open(CompletableFuture<T> future) {
 		return closed.getAsBoolean() ? CompletableFuture.failedFuture(
 				new IllegalStateException("Stremio runtime is closed")) : future;
-	}
-
-	private static <T> CompletableFuture<T> toCompletable(FutureSupplier<T> supplier) {
-		CompletableFuture<T> result = new CompletableFuture<>();
-		supplier.onCompletion((value, error) -> {
-			if (error == null) result.complete(value);
-			else result.completeExceptionally(error);
-		});
-		return result;
 	}
 }

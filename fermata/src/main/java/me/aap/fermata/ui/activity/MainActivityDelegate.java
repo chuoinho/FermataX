@@ -8,8 +8,6 @@ import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
 import static android.util.Base64.URL_SAFE;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
@@ -31,7 +29,6 @@ import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
-import static me.aap.utils.ui.UiUtils.toIntPx;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 import android.Manifest;
@@ -40,27 +37,18 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.LocaleList;
-import android.os.OperationCanceledException;
 import android.provider.Settings;
-import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
-import android.speech.SpeechRecognizer;
 import android.support.v4.media.session.PlaybackStateCompat;
-import android.text.TextUtils;
 import android.util.Base64;
-import android.util.DisplayMetrics;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -70,28 +58,19 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
-import androidx.appcompat.widget.AppCompatImageView;
-import androidx.appcompat.widget.LinearLayoutCompat;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 
-import com.google.android.material.textview.MaterialTextView;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
-import me.aap.fermata.action.Action;
 import me.aap.fermata.action.Key;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
@@ -129,10 +108,13 @@ import me.aap.fermata.ui.fragment.RecentFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.SubtitlesFragment;
 import me.aap.fermata.ui.policy.BackNavigationPolicy;
+import me.aap.fermata.ui.policy.HostRelaunchPolicy;
 import me.aap.fermata.ui.policy.ItemRoutePolicy;
 import me.aap.fermata.ui.policy.PlaybackLayoutPolicy;
+import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
+import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.fermata.ui.voice.VoiceIntent;
 import me.aap.fermata.ui.voice.VoiceIntentParser;
@@ -179,12 +161,17 @@ public class MainActivityDelegate extends ActivityDelegate
 	private FloatingButton floatingButton;
 	private ContentLoadingProgressBar progressBar;
 	private FutureSupplier<?> contentLoading;
+	private final AsyncOperationController contentOperations =
+			new AsyncOperationController(this::onContentOperationChanged);
 	private boolean barsHidden;
 	private boolean videoMode;
 	private int brightness = 255;
-	private SpeechListener speechListener;
+	private VoiceRecognitionSession speechListener;
 	private VoiceCommandHandler voiceCommandHandler;
 	private final VoiceSession voiceSession = new VoiceSession();
+	private final long diagnosticsActivityId = AsyncOperationController.DiagnosticsObserver.nextId();
+	private long hostRelaunchGeneration;
+	private boolean hostResumed;
 
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
@@ -203,7 +190,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public static Context attachBaseContext(Context ctx) {
-		MainActivityPrefs prefs = Prefs.instance;
+		MainActivityPrefs prefs = MainActivityPrefs.get();
 		return createLocaleContext(ctx, prefs.getLocalePref());
 	}
 
@@ -253,6 +240,9 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public void onActivityCreate(@Nullable Bundle state) {
 		super.onActivityCreate(state);
+		AsyncOperationController.DiagnosticsObserver.activity(
+				AsyncOperationController.DiagnosticsObserver.ActivityEvent.CREATED,
+				diagnosticsActivityId);
 		Intent intent = getIntent();
 		if ((intent != null) && INTENT_ACTION_FINISH.equals(intent.getAction())) {
 			finish();
@@ -322,8 +312,23 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	protected void onActivityNewIntent(Intent intent) {
+		if (HostRelaunchPolicy.startsNewNavigation(intent.getAction(), intent.getData() != null))
+			hostRelaunchGeneration++;
 		super.onActivityNewIntent(intent);
 		handleIntent(intent);
+	}
+
+	/** Receives relaunch intents from the hosted AA activity implementation. */
+	public void onHostNewIntent(Intent intent) {
+		onActivityNewIntent(intent);
+	}
+
+	public long getHostRelaunchGeneration() {
+		return hostRelaunchGeneration;
+	}
+
+	public boolean isHostResumed() {
+		return hostResumed;
 	}
 
 	private FutureSupplier<Boolean> handleIntent(Intent intent) {
@@ -398,8 +403,7 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	protected void setUncaughtExceptionHandler() {
-		if (!AUTO || getAppActivity().isCarActivity()) return;
-		super.setUncaughtExceptionHandler();
+		// FermataApplication owns the process-wide handler for mobile, AA, and service paths.
 	}
 
 	@Override
@@ -444,20 +448,41 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	public void onActivityResume() {
+		hostResumed = true;
 		super.onActivityResume();
+		AsyncOperationController.DiagnosticsObserver.activity(
+				AsyncOperationController.DiagnosticsObserver.ActivityEvent.RESUMED,
+				diagnosticsActivityId);
 		checkMirroringMode(true);
 		AddonManager.get().onActivityResume(this);
+		onHostForegrounded();
+	}
+
+	/** Called when an existing phone or projected host becomes visible again. */
+	public void onHostForegrounded() {
+		ActivityFragment fragment = getActiveFragment();
+		if (fragment instanceof DashboardFragment dashboard) post(dashboard::showHome);
 	}
 
 	@Override
 	public void onActivityPause() {
+		hostResumed = false;
 		super.onActivityPause();
+		AsyncOperationController.DiagnosticsObserver.activity(
+				AsyncOperationController.DiagnosticsObserver.ActivityEvent.PAUSED,
+				diagnosticsActivityId);
 		AddonManager.get().onActivityPause(this);
 	}
 
 	@Override
 	public void onActivityDestroy() {
 		super.onActivityDestroy();
+		AsyncOperationController.DiagnosticsObserver.activity(
+				AsyncOperationController.DiagnosticsObserver.ActivityEvent.DESTROYED,
+				diagnosticsActivityId);
+		FutureSupplier<?> loading = contentLoading;
+		contentLoading = null;
+		if (loading != null) contentOperations.cancel(loading);
 		handler.close();
 		getMediaServiceBinder().getMediaSessionCallback().removeAssistant(this);
 		getPrefs().removeBroadcastListener(this);
@@ -492,16 +517,23 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public boolean isCarActivity() {
-		return AUTO && getAppActivity().isCarActivity() || FermataApplication.get().isMirroringMode();
+		return getRuntimeHostMode().usesAutomotivePresentation();
 	}
 
 	public boolean isCarActivityNotMirror() {
-		return isCarActivity();
+		// Preserve the legacy automotive-UI meaning for existing callers. New presentation
+		// decisions must use getRuntimeHostMode() when projection and mirror differ.
+		return getRuntimeHostMode().usesAutomotivePresentation();
+	}
+
+	public RuntimeHostMode getRuntimeHostMode() {
+		return RuntimeHostMode.resolve(AUTO, getAppActivity().isCarActivity(),
+				FermataApplication.get().isMirroringMode());
 	}
 
 	@NonNull
 	public MainActivityPrefs getPrefs() {
-		return Prefs.instance;
+		return MainActivityPrefs.get();
 	}
 
 	@NonNull
@@ -510,7 +542,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public static void setTheme(Context ctx, boolean auto) {
-		@StyleRes int theme = switch (Prefs.instance.getThemePref(auto)) {
+		@StyleRes int theme = switch (MainActivityPrefs.get().getThemePref(auto)) {
 			case MainActivityPrefs.THEME_LIGHT -> R.style.AppTheme_Light;
 			case MainActivityPrefs.THEME_SYSTEM -> {
 				if ((ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) ==
@@ -636,7 +668,8 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public void setBarsHiddenNow(boolean barsHidden) {
-		if (!barsHidden && AUTO && videoMode && !isCurrentSplitMode()) {
+		if (!barsHidden && getRuntimeHostMode().usesAutomotivePresentation() && videoMode &&
+				!isCurrentSplitMode()) {
 			ControlPanelView cp = getControlPanel();
 			if ((cp == null) || !cp.isVideoControlsVisible()) return;
 		}
@@ -644,7 +677,8 @@ public class MainActivityDelegate extends ActivityDelegate
 		this.barsHidden = barsHidden;
 		int visibility = barsHidden ? GONE : VISIBLE;
 		ToolBarView tb = getToolBar();
-		if (tb.getMediator() != ToolBarView.Mediator.Invisible.instance) tb.setVisibility(visibility);
+		if (barsHidden) tb.setVisibility(GONE);
+		else tb.refreshMediatorVisibility();
 		getNavBar().setVisibility(visibility);
 	}
 
@@ -661,39 +695,54 @@ public class MainActivityDelegate extends ActivityDelegate
 			return;
 		}
 
-		if (videoMode) {
-			this.videoMode = true;
-			setSystemUiVisibility();
-			keepScreenOn(true);
-			if (cp != null) cp.enableVideoMode(v);
-		} else {
-			this.videoMode = false;
-			setSystemUiVisibility();
-			keepScreenOn(false);
-			if (cp != null) cp.disableVideoMode();
-		}
+		long operationId = AsyncOperationController.DiagnosticsObserver.nextId();
+		try {
+			if (videoMode) {
+				this.videoMode = true;
+				setSystemUiVisibility();
+				keepScreenOn(true);
+				if (cp != null) cp.enableVideoMode(v);
+			} else {
+				this.videoMode = false;
+				setSystemUiVisibility();
+				keepScreenOn(false);
+				if (cp != null) cp.disableVideoMode();
+			}
 
-		if (!checkMirroringMode(false)) {
-			MainActivityPrefs p = getPrefs();
+			if (!checkMirroringMode(false)) {
+				MainActivityPrefs p = getPrefs();
 
-			if (p.getChangeBrightnessPref()) {
-				if (videoMode) {
-					brightness = getBrightness();
-					setBrightness(p.getBrightnessPref());
-				} else {
-					setBrightness(brightness);
+				if (p.getChangeBrightnessPref()) {
+					if (videoMode) {
+						brightness = getBrightness();
+						setBrightness(p.getBrightnessPref());
+					} else {
+						setBrightness(brightness);
+					}
+				}
+				if (p.getLandscapeVideoPref()) {
+					if (videoMode) {
+						getAppActivity().setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+					} else {
+						getAppActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+					}
 				}
 			}
-			if (p.getLandscapeVideoPref()) {
-				if (videoMode) {
-					getAppActivity().setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-				} else {
-					getAppActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-				}
-			}
-		}
 
-		fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+			fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+			try {
+				AsyncOperationController.DiagnosticsObserver.videoMode(
+						AsyncOperationController.DiagnosticsObserver.VideoModeEvent.CHANGED,
+						operationId, videoMode, getRuntimeHostMode().usesAutomotivePresentation(),
+						isCurrentSplitMode());
+			} catch (Throwable ignored) {
+			}
+		} catch (RuntimeException | Error failure) {
+			AsyncOperationController.DiagnosticsObserver.videoMode(
+					AsyncOperationController.DiagnosticsObserver.VideoModeEvent.FAILED,
+					operationId, videoMode, false, false);
+			throw failure;
+		}
 	}
 
 	private boolean checkMirroringMode(boolean clearFlags) {
@@ -735,31 +784,45 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public FutureSupplier<?> setContentLoading(FutureSupplier<?> contentLoading) {
-		if (this.contentLoading != null) {
-			this.contentLoading.cancel();
+		return setContentLoading(this, AsyncOperationController.OperationType.LEGACY,
+				contentLoading);
+	}
+
+	public FutureSupplier<?> setContentLoading(Object owner,
+			AsyncOperationController.OperationType type, FutureSupplier<?> contentLoading) {
+		if (contentLoading.isDone()) {
+			if (this.contentLoading != null) contentOperations.cancel(this.contentLoading);
 			this.contentLoading = null;
+			progressBar.hide();
+			return contentLoading;
 		}
 
-		progressBar.hide();
-		if (contentLoading.isDone()) return contentLoading;
-		progressBar.show();
-
-		var cl = this.contentLoading = contentLoading.main();
-		cl.onCompletion((r, f) -> {
-			if ((f != null) && !isCancellation(f)) Log.d(f);
-			if (this.contentLoading == cl) {
-				this.contentLoading = null;
-				progressBar.hide();
-			}
+		FutureSupplier<?> main = contentLoading.main();
+		AsyncOperationController.Operation<?> operation = contentOperations.start(owner, type, main);
+		FutureSupplier<?> active = operation.future();
+		this.contentLoading = contentOperations.isActive(operation.token()) ? active : null;
+		active.onCompletion((result, failure) -> {
+			if ((failure != null) && !isCancellation(failure)) Log.d(failure);
+			if (this.contentLoading == active) this.contentLoading = null;
 		});
-		return cl;
+		return active;
 	}
 
 	public void clearContentLoading(FutureSupplier<?> owner) {
 		if (contentLoading != owner) return;
 		contentLoading = null;
-		owner.cancel();
-		progressBar.hide();
+		contentOperations.cancel(owner);
+	}
+
+	private void onContentOperationChanged(AsyncOperationController.Snapshot snapshot) {
+		if (progressBar == null) return;
+		boolean listStateVisible = (snapshot.token() != null) &&
+				(snapshot.token().owner() instanceof MediaItemListViewAdapter);
+		if ((snapshot.state() == AsyncOperationController.State.RUNNING) && !listStateVisible) {
+			progressBar.show();
+		}
+		else if (contentOperations.getSnapshot().state() !=
+				AsyncOperationController.State.RUNNING || listStateVisible) progressBar.hide();
 	}
 
 	public void backToNavFragment() {
@@ -775,14 +838,27 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Nullable
 	@Override
 	public ActivityFragment showFragment(int id, Object input) {
-		voiceSession.clear();
-		BodyLayout b = getBody();
-		if (b.isVideoMode()) b.setMode(PlaybackLayoutPolicy.getModeAfterLeavingVideo(isCarActivity()));
-		ActivityFragment fragment = super.showFragment(id, input);
-		if ((id == R.id.dashboard_fragment) && (fragment instanceof DashboardFragment dashboard)) {
-			dashboard.showHome();
+		int fromId = ID_NULL;
+		try {
+			fromId = getActiveFragmentId();
+		} catch (Throwable ignored) {
 		}
-		return fragment;
+		long operationId = AsyncOperationController.DiagnosticsObserver.navigationStarted(
+				diagnosticsActivityId, fromId, id);
+		try {
+			voiceSession.clear();
+			BodyLayout b = getBody();
+			if (b.isVideoMode()) b.setMode(PlaybackLayoutPolicy.getModeAfterLeavingVideo(isCarActivity()));
+			ActivityFragment fragment = super.showFragment(id, input);
+			if ((id == R.id.dashboard_fragment) && (fragment instanceof DashboardFragment dashboard)) {
+				dashboard.showHome();
+			}
+			AsyncOperationController.DiagnosticsObserver.navigationCompleted(operationId, id);
+			return fragment;
+		} catch (RuntimeException | Error failure) {
+			AsyncOperationController.DiagnosticsObserver.navigationFailed(operationId, id, failure);
+			throw failure;
+		}
 	}
 
 	public boolean showFragmentWhenReady(int id) {
@@ -808,7 +884,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		}
 
 		FutureSupplier<FermataAddon> loading = mgr.getOrInstallAddon(info.className).main(getHandler());
-		setContentLoading(loading);
+		setContentLoading(info.className, AsyncOperationController.OperationType.INSTALL, loading);
 		loading.onSuccess(addon -> showFragment(id, input)).onFailure(err -> {
 			if (!isCancellation(err)) {
 				String msg = err.getLocalizedMessage();
@@ -909,7 +985,7 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	public void onBackPressed() {
-		if (!AUTO) {
+		if (!getRuntimeHostMode().usesAutomotivePresentation()) {
 			super.onBackPressed();
 			return;
 		}
@@ -1046,7 +1122,8 @@ public class MainActivityDelegate extends ActivityDelegate
 		boolean textInput = (focus instanceof EditText) || getAppActivity().isInputActive();
 		if (textInput) voiceSession.beginTextInput();
 		else if (voiceSession.getMode() != VoiceSession.Mode.SELECTION) voiceSession.beginCommand();
-		startSpeechRecognizer(null, textInput).onSuccess(q -> {
+		boolean adaptiveAllowed = !textInput && (voiceSession.getMode() == VoiceSession.Mode.COMMAND);
+		startSpeechRecognizer(null, textInput, adaptiveAllowed).onSuccess(q -> {
 			if ((q == null) || q.isEmpty()) return;
 			if (focus instanceof EditText) {
 				((EditText) focus).setText(q.get(0));
@@ -1068,6 +1145,11 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public FutureSupplier<List<String>> startSpeechRecognizer(String locale, boolean textInput) {
+		return startSpeechRecognizer(locale, textInput, false);
+	}
+
+	private FutureSupplier<List<String>> startSpeechRecognizer(String locale, boolean textInput,
+			boolean adaptiveAllowed) {
 		FutureSupplier<int[]> check =
 				isCarActivityNotMirror() ? completed(new int[]{PERMISSION_GRANTED}) :
 						getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
@@ -1091,10 +1173,18 @@ public class MainActivityDelegate extends ActivityDelegate
 				i.putStringArrayListExtra(RecognizerIntent.EXTRA_LANGUAGE_DETECTION_ALLOWED_LANGUAGES,
 						new ArrayList<>(List.of("en-US", "vi-VN")));
 			}
-			speechListener = new SpeechListener(p, textInput);
+			speechListener = new VoiceRecognitionSession(this, p, textInput, adaptiveAllowed);
 			speechListener.start(i);
 			return p;
 		});
+	}
+
+	boolean isCurrentVoiceRecognitionSession(VoiceRecognitionSession session) {
+		return speechListener == session;
+	}
+
+	void clearVoiceRecognitionSession(VoiceRecognitionSession session) {
+		if (speechListener == session) speechListener = null;
 	}
 
 	@NonNull
@@ -1232,7 +1322,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		controlPanel = a.findViewById(R.id.control_panel);
 		floatingButton = a.findViewById(R.id.floating_button);
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
-		if (AUTO) floatingButton.setVisibility(GONE);
+		if (getRuntimeHostMode().usesAutomotivePresentation()) floatingButton.setVisibility(GONE);
 		controlPanel.bind(getMediaServiceBinder());
 
 		if (VERSION.SDK_INT >= VERSION_CODES.VANILLA_ICE_CREAM && !a.isCarActivity()) {
@@ -1373,216 +1463,4 @@ public class MainActivityDelegate extends ActivityDelegate
 		return completedVoid();
 	}
 
-	static final class Prefs implements MainActivityPrefs {
-		static final Prefs instance = new Prefs();
-		private final List<ListenerRef<PreferenceStore.Listener>> listeners = new LinkedList<>();
-		private final SharedPreferences prefs = FermataApplication.get().getDefaultSharedPreferences();
-
-		private Prefs() {
-			App.get().getHandler().post(this::migratePrefs);
-		}
-
-		private void migratePrefs() {
-			// Rename old prefs
-			var oldTheme = Pref.i("THEME", THEME_DARK);
-			var oldScale = Pref.f("MEDIA_ITEM_SCALE", 1f);
-			var fbLongPress = Pref.i("FB_LONG_PRESS", 0);
-			var fbLongPressAA = Pref.i("FB_LONG_PRESS_AA", 0);
-			var showClock = Pref.b("SHOW_CLOCK", false);
-			var voiceCtrlM = Pref.b("VOICE_CONTROl_M", false);
-			var theme = getIntPref(oldTheme);
-			var scale = getFloatPref(oldScale);
-
-			if ((theme != THEME_DARK) || (scale != 1f)) {
-				try (PreferenceStore.Edit e = editPreferenceStore()) {
-					if (theme != THEME_DARK) {
-						e.setIntPref(THEME_MAIN, theme);
-						if (AUTO) e.setIntPref(THEME_AA, theme);
-						e.removePref(oldTheme);
-					}
-					if (scale != 1f) {
-						e.setFloatPref(TEXT_ICON_SIZE, scale);
-						if (AUTO) e.setFloatPref(TEXT_ICON_SIZE_AA, scale);
-						e.removePref(oldScale);
-					}
-				}
-			}
-
-			if ((getIntPref(fbLongPress) == 1) || (getIntPref(fbLongPressAA) == 1)) {
-				try (PreferenceStore.Edit e = editPreferenceStore()) {
-					e.setBooleanPref(VOICE_CONTROl_ENABLED, true);
-					e.setBooleanPref(VOICE_CONTROl_FB, true);
-				}
-			}
-
-			if (getBooleanPref(showClock)) {
-				try (PreferenceStore.Edit e = editPreferenceStore()) {
-					e.removePref(showClock);
-					e.setIntPref(CLOCK_POS, CLOCK_POS_RIGHT);
-				}
-			}
-
-			if (getBooleanPref(voiceCtrlM)) {
-				removePref(voiceCtrlM);
-				var kp = Key.getPrefs();
-				var o = Action.ACTIVATE_VOICE_CTRL.ordinal();
-				kp.applyIntPref(Key.M.getLongActionPref(), o);
-				kp.applyIntPref(Key.MENU.getLongActionPref(), o);
-			}
-		}
-
-		@NonNull
-		@Override
-		public SharedPreferences getSharedPreferences() {
-			return prefs;
-		}
-
-		@Override
-		public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
-			return listeners;
-		}
-	}
-
-	private final class SpeechListener implements RecognitionListener {
-		private final Promise<List<String>> promise;
-		private final boolean textInput;
-		private final SpeechRecognizer recognizer;
-		private final MaterialTextView text;
-		private PlaybackStateCompat playbackState;
-
-		private SpeechListener(Promise<List<String>> promise, boolean textInput) {
-			this.promise = promise;
-			this.textInput = textInput;
-			recognizer = SpeechRecognizer.createSpeechRecognizer(getContext());
-			recognizer.setRecognitionListener(this);
-			text = new MaterialTextView(getContext());
-		}
-
-		void start(Intent i) {
-			var cb = getMediaSessionCallback();
-			if (cb.isPlaying()) {
-				var eng = cb.getEngine();
-				if ((eng != null) && eng.canPause()) {
-					cb.onPause();
-					playbackState = cb.getPlaybackState();
-				} else {
-					playbackState = null;
-				}
-			} else {
-				playbackState = null;
-			}
-			recognizer.startListening(i);
-		}
-
-		void destroy() {
-			MediaSessionCallback cb = getMediaSessionCallback();
-			PlaybackStateCompat state = cb.getPlaybackState();
-			if ((playbackState != null) && (state.getState() == PlaybackStateCompat.STATE_PAUSED)) {
-				if ((state == playbackState) || (state.getPosition() != playbackState.getPosition())) {
-					cb.onPlay();
-				}
-			}
-			playbackState = null;
-			recognizer.destroy();
-			promise.cancel();
-			if (speechListener == this) speechListener = null;
-		}
-
-		@Override
-		public void onReadyForSpeech(Bundle params) {
-			getContextMenu().show(b -> {
-				Context ctx = getContext();
-				DisplayMetrics dm = getResources().getDisplayMetrics();
-				int size = Math.min(dm.heightPixels, dm.widthPixels) / 3;
-				LinearLayoutCompat layout = new LinearLayoutCompat(ctx);
-				layout.setOrientation(LinearLayoutCompat.VERTICAL);
-				AppCompatImageView img = new AppCompatImageView(ctx);
-				TypedArray ta = ctx.getTheme()
-						.obtainStyledAttributes(new int[]{com.google.android.material.R.attr.colorOnSecondary});
-				int imgColor = ta.getColor(0, 0);
-				ta.recycle();
-				img.setMinimumWidth(size);
-				img.setMinimumHeight(size);
-				img.setImageResource(R.drawable.record_voice);
-				img.setImageTintList(ColorStateList.valueOf(imgColor));
-				text.setMaxLines(5);
-				text.setGravity(Gravity.CENTER);
-				text.setEllipsize(TextUtils.TruncateAt.MARQUEE);
-				ta = ctx.getTheme().obtainStyledAttributes(new int[]{android.R.attr.textColorSecondary});
-				text.setTextColor(ColorStateList.valueOf(ta.getColor(0, 0)));
-				ta.recycle();
-				text.setLayoutParams(new LinearLayoutCompat.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
-				layout.setLayoutParams(new ConstraintLayout.LayoutParams(size, WRAP_CONTENT));
-				b.setView(layout);
-				b.setCloseHandlerHandler(m -> destroy());
-				layout.addView(img);
-				layout.addView(text);
-
-				if (textInput) {
-					int minKeyboardSize = toIntPx(getContext(), 48);
-					int kbSize = Math.max(minKeyboardSize, size / 4);
-					int margin = toIntPx(getContext(), 1);
-					LinearLayoutCompat.LayoutParams lp = new LinearLayoutCompat.LayoutParams(kbSize, kbSize);
-					AppCompatImageView kb = new AppCompatImageView(ctx);
-					lp.gravity = Gravity.CENTER;
-					lp.setMargins(0, margin, 0, margin);
-					kb.setLayoutParams(lp);
-					kb.setImageResource(R.drawable.keyboard);
-					kb.setImageTintList(ColorStateList.valueOf(imgColor));
-					layout.setOnClickListener(v -> {
-						promise.completeExceptionally(new OperationCanceledException());
-						hideActiveMenu();
-					});
-					layout.addView(kb);
-				}
-			});
-		}
-
-		@Override
-		public void onResults(Bundle b) {
-			List<String> r = b.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-			if (r == null) r = List.of();
-			if (!r.isEmpty()) text.setText(r.get(0));
-			postDelayed(MainActivityDelegate.this::hideActiveMenu, 1000);
-			promise.complete(r);
-		}
-
-		@Override
-		public void onPartialResults(Bundle b) {
-			List<String> r = b.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-			if ((r != null) && !r.isEmpty()) text.setText(r.get(0));
-		}
-
-		@Override
-		public void onError(int error) {
-			String msg = "Speech recognition failed with error code " + error;
-			Log.e(msg);
-			promise.completeExceptionally(new IOException(msg));
-			hideActiveMenu();
-
-			if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
-				showAlert(getContext(), R.string.err_no_audio_record_perm);
-			}
-		}
-
-		@Override
-		public void onBeginningOfSpeech() {
-		}
-
-		@Override
-		public void onRmsChanged(float rmsdB) {
-		}
-
-		@Override
-		public void onBufferReceived(byte[] buffer) {
-		}
-
-		@Override
-		public void onEndOfSpeech() {
-		}
-
-		@Override
-		public void onEvent(int eventType, Bundle params) {
-		}
-	}
 }

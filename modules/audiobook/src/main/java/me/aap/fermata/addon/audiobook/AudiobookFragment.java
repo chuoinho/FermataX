@@ -17,6 +17,7 @@ import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.ui.activity.AsyncOperationController.OperationType;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.view.MediaItemMenuHandler;
 import me.aap.fermata.ui.view.MediaItemView;
@@ -28,7 +29,6 @@ import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.vfs.VirtualFolder;
-import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.local.LocalFileSystem;
 
 public final class AudiobookFragment extends MediaLibFragment {
@@ -378,6 +378,12 @@ public final class AudiobookFragment extends MediaLibFragment {
 				search.cancel();
 			}
 			return super.setParent(parent, userAction);
+		}
+
+		@Override
+		protected OperationType getOperationType(BrowsableItem parent) {
+			return (parent instanceof AudiobookCatalogFolder) ? OperationType.SEARCH :
+					super.getOperationType(parent);
 		}
 
 		@Override

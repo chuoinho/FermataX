@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="force_dark">지원되는 경우 다크 모드 강제 적용</string>
+	<string name="force_dark_sub">%1$s. 장치 테마를 따르려면 \&quot;\\&quot;자동\&quot;\\&quot;을 선택하세요.</string>
+	<string name="force_dark_auto">자동</string>
+	<string name="force_dark_enabled">활성화됨</string>
+	<string name="force_dark_disabled">장애가 있는</string>
+	<string name="user_agent">사용자 에이전트</string>
+	<string name="user_agent_desktop">사용자 에이전트 - 데스크톱 버전</string>
+	<string name="desktop_version">데스크톱 버전</string>
+	<string name="full_screen">전체 화면</string>
+	<string name="full_screen_exit">전체 화면 종료</string>
+	<string name="retry">다시 해 보다</string>
+	<string name="web_page_load_failed">페이지를 로드하지 못했습니다.</string>
+	<string name="web_page_load_failed_msg">로드할 수 없습니다:\n%1$s\n\n이유: %2$s\n\nWebView: %3$s</string>
+	<string name="video_scaling_fill_proportional">비례 채우기</string>
+	<string name="video_quality">비디오 품질</string>
+	<string name="open_on_start">시작 시 열기</string>
+	<string name="auto_highest_video_quality">최고 비디오 품질 자동 선택</string>
+	<string name="try_to_skip_ad">광고를 스킵해 보세요</string>
+	<string name="sponsorblock_sub">YouTube를 시청하는 동안 크라우드 소싱 세그먼트를 건너뛰세요.</string>
+	<string name="sponsorblock_enable">SponsorBlock 활성화</string>
+	<string name="sponsorblock_enable_sub">현재 동영상에 대한 스폰서.ajay.app에서 세그먼트 데이터를 가져옵니다.</string>
+	<string name="sponsorblock_cat_sponsor">스폰서 세그먼트</string>
+	<string name="sponsorblock_cat_selfpromo">자기 홍보</string>
+	<string name="sponsorblock_cat_interaction">상호작용 알림</string>
+	<string name="sponsorblock_cat_intro">소개 및 휴식 시간</string>
+	<string name="sponsorblock_cat_outro">엔드카드 및 크레딧</string>
+	<string name="sponsorblock_cat_preview">미리보기 및 요약</string>
+	<string name="sponsorblock_cat_hook">후크</string>
+	<string name="sponsorblock_cat_music_offtopic">음악 이외의 섹션</string>
+	<string name="sponsorblock_cat_filler">필러</string>
+	<string name="sponsorblock_cat_filler_sub">공격적인 카테고리; 기본적으로 비활성화되어 있습니다.</string>
+</resources>

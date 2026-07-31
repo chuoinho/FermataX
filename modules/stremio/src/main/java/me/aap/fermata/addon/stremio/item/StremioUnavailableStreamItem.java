@@ -16,7 +16,7 @@ public final class StremioUnavailableStreamItem extends StremioBrowsableItem {
 	StremioUnavailableStreamItem(BrowsableItem parent, BrowsableItem root,
 			StremioItemGateway gateway, PlaybackDescriptor descriptor) {
 		super(StremioItemIds.stream(descriptor) + ":unavailable", parent, root, gateway,
-				descriptor.metadata().title(), subtitle(descriptor), "",
+				descriptor.metadata().title(), subtitle(root, descriptor), "",
 				descriptor.metadata().artwork());
 	}
 
@@ -26,16 +26,25 @@ public final class StremioUnavailableStreamItem extends StremioBrowsableItem {
 		return completedEmptyList();
 	}
 
-	private static String subtitle(PlaybackDescriptor descriptor) {
+	private static String subtitle(BrowsableItem root, PlaybackDescriptor descriptor) {
 		if (descriptor.unsupportedReason() != null) {
 			return switch (descriptor.unsupportedReason()) {
-				case INFO_HASH_HANDLER_UNAVAILABLE -> "Torrent playback is not installed";
+				case INFO_HASH_HANDLER_UNAVAILABLE -> text(root,
+						me.aap.fermata.addon.stremio.R.string.stremio_torrent_playback_unavailable,
+						"Torrent playback is not installed");
 				case EXTERNAL_URL_HANDLER_UNAVAILABLE ->
-						"External Web playback is unavailable for security";
-				case NETWORK_POLICY_REJECTED -> "Stream blocked by source network policy";
-				default -> "Unsupported stream";
+						text(root, me.aap.fermata.addon.stremio.R.string.stremio_external_web_blocked,
+								"External Web playback is unavailable for security");
+				case NETWORK_POLICY_REJECTED -> text(root,
+						me.aap.fermata.addon.stremio.R.string.stremio_stream_network_blocked,
+						"Stream blocked by source network policy");
+				default -> text(root,
+						me.aap.fermata.addon.stremio.R.string.stremio_stream_unsupported,
+						"Unsupported stream");
 			};
 		}
-		return "Playback addon unavailable";
+		return text(root,
+				me.aap.fermata.addon.stremio.R.string.stremio_playback_addon_unavailable,
+				"Playback addon unavailable");
 	}
 }

@@ -32,42 +32,54 @@ public class AndroidLogger extends Logger {
 
 	@Override
 	public void logDebug(StringBuilder msg) {
-		android.util.Log.d(tag, fileLog(msg, null));
+		String text = fileLog(msg, null);
+		if (BuildConfig.D) android.util.Log.d(tag, text);
 	}
 
 	@Override
 	public void logDebug(StringBuilder msg, Throwable ex) {
-		android.util.Log.d(tag, fileLog(msg, ex), ex);
+		String text = fileLog(msg, ex);
+		if (BuildConfig.D) android.util.Log.d(tag, text, ex);
 	}
 
 	@Override
 	public void logInfo(StringBuilder msg) {
-		android.util.Log.i(tag, fileLog(msg, null));
+		String text = fileLog(msg, null);
+		if (BuildConfig.D) android.util.Log.i(tag, text);
 	}
 
 	@Override
 	public void logInfo(StringBuilder msg, Throwable ex) {
-		android.util.Log.i(tag, fileLog(msg, ex), ex);
+		String text = fileLog(msg, ex);
+		if (BuildConfig.D) android.util.Log.i(tag, text, ex);
 	}
 
 	@Override
 	public void logWarn(StringBuilder msg) {
-		android.util.Log.w(tag, fileLog(msg, null));
+		App.get().onLogFailure(Log.Level.WARN, null);
+		String text = fileLog(msg, null);
+		if (BuildConfig.D) android.util.Log.w(tag, text);
 	}
 
 	@Override
 	public void logWarn(StringBuilder msg, Throwable ex) {
-		android.util.Log.w(tag, fileLog(msg, ex), ex);
+		App.get().onLogFailure(Log.Level.WARN, ex);
+		String text = fileLog(msg, ex);
+		if (BuildConfig.D) android.util.Log.w(tag, text, ex);
 	}
 
 	@Override
 	public void logError(StringBuilder msg) {
-		android.util.Log.e(tag, fileLog(msg, null));
+		App.get().onLogFailure(Log.Level.ERROR, null);
+		String text = fileLog(msg, null);
+		if (BuildConfig.D) android.util.Log.e(tag, text);
 	}
 
 	@Override
 	public void logError(StringBuilder msg, Throwable ex) {
-		android.util.Log.e(tag, fileLog(msg, ex), ex);
+		App.get().onLogFailure(Log.Level.ERROR, ex);
+		String text = fileLog(msg, ex);
+		if (BuildConfig.D) android.util.Log.e(tag, text, ex);
 	}
 
 	@Override

@@ -3,13 +3,10 @@ package me.aap.fermata.media.lib;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.List;
 
 import me.aap.fermata.addon.AddonCapability;
-import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.pref.PreferenceStore;
 
-import static me.aap.utils.async.Completed.completedEmptyList;
 
 /**
  * @author Andrey Pavlenko

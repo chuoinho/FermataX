@@ -5,7 +5,6 @@ import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
-import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
 import static me.aap.utils.text.TextUtils.isNullOrBlank;

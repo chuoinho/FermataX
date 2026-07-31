@@ -3,7 +3,6 @@ package me.aap.fermata.opusmt;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.readAllBytes;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.opusmt.SentencePieceTokenizer.fromJson;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;

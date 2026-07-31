@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="radio_popular">Phổ biến</string>
+	<string name="radio_top_voted">Bình chọn hàng đầu</string>
+	<string name="radio_countries">Quốc gia</string>
+	<string name="radio_tags">Thẻ</string>
+	<string name="radio_station_count">%1$d trạm</string>
+	<string name="radio_add_source">Thêm nguồn vô tuyến</string>
+	<string name="radio_edit_source">Chỉnh sửa nguồn radio</string>
+	<string name="radio_source_name">Tên trạm</string>
+	<string name="radio_source_url">URL luồng</string>
+	<string name="radio_source_add_failed">Không lưu được nguồn radio: %1$s</string>
+</resources>

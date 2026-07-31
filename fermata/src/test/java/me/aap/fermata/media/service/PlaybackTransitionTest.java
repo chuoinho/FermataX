@@ -176,6 +176,19 @@ public class PlaybackTransitionTest {
 	}
 
 	@Test
+	public void transportCommandCannotLeavePlaybackInAStaleSkippingState() {
+		PlaybackStateCompat previous = new PlaybackStateCompat.Builder()
+				.setState(STATE_PLAYING, 81_000, 1.25f).build();
+
+		PlaybackStateCompat published = PlaybackTransition.createPublishedTransitionState(previous,
+				STATE_SKIPPING_TO_PREVIOUS, previous.getPosition(), true);
+
+		assertEquals(STATE_PLAYING, published.getState());
+		assertEquals(81_000, published.getPosition());
+		assertEquals(1.25f, published.getPlaybackSpeed(), 0f);
+	}
+
+	@Test
 	public void transientTargetsCannotPersistPodcastOrAudiobookProgress() {
 		assertFalse(PlaybackSnapshot.canPersistProgress(STATE_CONNECTING));
 		assertFalse(PlaybackSnapshot.canPersistProgress(STATE_BUFFERING));

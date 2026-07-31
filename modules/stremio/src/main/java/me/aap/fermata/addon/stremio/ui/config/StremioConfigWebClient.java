@@ -1,5 +1,6 @@
 package me.aap.fermata.addon.stremio.ui.config;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.Build;
@@ -50,7 +51,7 @@ final class StremioConfigWebClient extends WebViewClient {
 	@Override
 	public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 		if (!"GET".equalsIgnoreCase(request.getMethod())) {
-			return request.isForMainFrame() ? postFormErrorResponse() :
+			return request.isForMainFrame() ? postFormErrorResponse(view.getContext()) :
 					blockedResponse(405, "Method blocked");
 		}
 		return load(request.getUrl().toString(), request.getRequestHeaders(), request.isForMainFrame());
@@ -168,19 +169,39 @@ final class StremioConfigWebClient extends WebViewClient {
 	}
 
 	static WebResourceResponse postFormErrorResponse() {
-		byte[] body = postFormErrorHtml().getBytes(StandardCharsets.UTF_8);
+		return postFormErrorResponse(null);
+	}
+
+	private static WebResourceResponse postFormErrorResponse(Context context) {
+		byte[] body = postFormErrorHtml(context).getBytes(StandardCharsets.UTF_8);
 		return new WebResourceResponse("text/html", StandardCharsets.UTF_8.name(), 200, "OK",
 				Map.of("Cache-Control", "no-store"), new ByteArrayInputStream(body));
 	}
 
 	static String postFormErrorHtml() {
+		return postFormErrorHtml(null);
+	}
+
+	private static String postFormErrorHtml(Context context) {
+		String title = text(context, me.aap.fermata.addon.stremio.R.string.stremio_config_post_blocked_title,
+				"Form could not be submitted");
+		String message = text(context,
+				me.aap.fermata.addon.stremio.R.string.stremio_config_post_blocked_message,
+				"This provider uses a POST form that cannot be sent securely in this setup " +
+						"window. Go back and use the provider's link-based setup if available.");
+		String back = text(context, me.aap.fermata.addon.stremio.R.string.stremio_config_go_back,
+				"Go back");
 		return "<!doctype html><html><head><meta name=viewport content=\"width=device-width\">" +
 				"<style>body{font-family:sans-serif;background:#111;color:#fff;padding:24px;" +
 				"line-height:1.45}button{min-height:48px;padding:0 24px;font-size:18px}</style>" +
-				"</head><body><h1>Form could not be submitted</h1>" +
-				"<p>This provider uses a POST form that cannot be sent securely in this setup " +
-				"window. Go back and use the provider's link-based setup if available.</p>" +
-				"<button type=button onclick=\"history.back()\">Go back</button></body></html>";
+				"</head><body><h1>" + title + "</h1><p>" + message + "</p>" +
+				"<button type=button onclick=\"history.back()\">" + back +
+				"</button></body></html>";
+	}
+
+	private static String text(Context context, int resource, String fallback) {
+		return (context == null) ? fallback : android.text.TextUtils.htmlEncode(
+				context.getString(resource));
 	}
 
 	private static WebResourceResponse blockedResponse(int status, String reason) {

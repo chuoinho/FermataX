@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
-import java.util.List;
 
 import me.aap.fermata.addon.audiobook.model.AudiobookBook;
 import me.aap.fermata.addon.audiobook.model.AudiobookSource;

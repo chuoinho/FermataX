@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import static me.aap.fermata.addon.stremio.integration.StremioFutureBridge.toCompletable;
+
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -36,7 +38,6 @@ import me.aap.fermata.addon.stremio.protocol.response.StremioDuration;
 import me.aap.fermata.addon.stremio.session.StremioProgressState;
 import me.aap.fermata.addon.stremio.session.StremioProviderState;
 import me.aap.fermata.addon.stremio.session.StremioSessionItem;
-import me.aap.utils.async.FutureSupplier;
 
 /** Owns durable item projection, provider rebinding, cache replacement and queue materialization. */
 final class StremioProjectionStore {
@@ -368,16 +369,6 @@ final class StremioProjectionStore {
 		return closed.getAsBoolean() ? CompletableFuture.failedFuture(
 				new IllegalStateException("Stremio runtime is closed")) : future;
 	}
-
-	private static <T> CompletableFuture<T> toCompletable(FutureSupplier<T> supplier) {
-		CompletableFuture<T> result = new CompletableFuture<>();
-		supplier.onCompletion((value, error) -> {
-			if (error == null) result.complete(value);
-			else result.completeExceptionally(error);
-		});
-		return result;
-	}
-
 	private record ProviderBinding(String sourceUuid, String providerMetaId) {
 	}
 }

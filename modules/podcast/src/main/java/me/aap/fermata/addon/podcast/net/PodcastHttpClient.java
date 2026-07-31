@@ -1,6 +1,7 @@
 package me.aap.fermata.addon.podcast.net;
 
-import java.io.BufferedInputStream;
+import static me.aap.utils.net.http.HttpContentDecoder.decodeBuffered;
+
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,13 +17,13 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
 
 import javax.net.ssl.SSLException;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.diagnostics.DiagnosticSourceOperation;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.fermata.addon.podcast.util.PodcastUrls;
@@ -36,12 +37,16 @@ public class PodcastHttpClient {
 	private static final int READ_TIMEOUT = 20_000;
 
 	public <T> FutureSupplier<T> getJson(String url, BodyParser<T> parser) {
-		return App.get().execute(() -> requestJson(url, parser));
+		return observe(App.get().execute(() -> requestJson(url, parser)), "json");
 	}
 
 	public <T> FutureSupplier<DocumentResponse<T>> getDocument(DocumentRequest request,
 			DocumentParser<T> parser) {
-		return App.get().execute(() -> requestDocument(request, parser));
+		return observe(App.get().execute(() -> requestDocument(request, parser)), "document");
+	}
+
+	private static <T> FutureSupplier<T> observe(FutureSupplier<T> future, String requestType) {
+		return DiagnosticSourceOperation.observe(future, "podcast_source", requestType);
 	}
 
 	<T> T requestJson(String url, BodyParser<T> parser) throws IOException {
@@ -151,7 +156,7 @@ public class PodcastHttpClient {
 				}
 				try (InputStream raw = new LimitedInputStream(connection.getInputStream(),
 						MAX_DOCUMENT_COMPRESSED_BYTES);
-					 InputStream decoded = decode(connection, raw);
+					 InputStream decoded = decodeBuffered(connection, raw);
 					 InputStream bounded = new LimitedInputStream(decoded, MAX_DOCUMENT_BYTES)) {
 					T body = parser.parse(bounded, contentType, current);
 					return new DocumentResponse<>(status, current, contentType, etag,
@@ -178,7 +183,7 @@ public class PodcastHttpClient {
 		}
 
 		try (InputStream raw = new LimitedInputStream(connection.getInputStream(), MAX_JSON_BYTES);
-				 InputStream decoded = decode(connection, raw);
+			 InputStream decoded = decodeBuffered(connection, raw);
 				 InputStream bounded = new LimitedInputStream(decoded, MAX_JSON_BYTES);
 				 InputStream json = prepareJson(bounded)) {
 			return parser.parse(json);
@@ -212,15 +217,6 @@ public class PodcastHttpClient {
 		}
 		input.unread(first);
 		return input;
-	}
-
-	private static InputStream decode(HttpURLConnection connection, InputStream source)
-			throws IOException {
-		InputStream buffered = new BufferedInputStream(source);
-		String encoding = connection.getContentEncoding();
-		if ("gzip".equalsIgnoreCase(encoding)) return new GZIPInputStream(buffered);
-		if ("deflate".equalsIgnoreCase(encoding)) return new InflaterInputStream(buffered);
-		return buffered;
 	}
 
 	private static PodcastException statusError(HttpURLConnection connection, int status) {

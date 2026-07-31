@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="force_dark">Destekleniyorsa karanlık modu zorla</string>
+	<string name="force_dark_sub">%1$s. Cihaz temasını takip etmek için \&quot;\\&quot;Otomatik\&quot;\\&quot; seçeneğini seçin.</string>
+	<string name="force_dark_auto">Otomatik</string>
+	<string name="force_dark_enabled">Etkinleştirilmiş</string>
+	<string name="force_dark_disabled">Engelli</string>
+	<string name="user_agent">Kullanıcı Aracısı</string>
+	<string name="user_agent_desktop">Kullanıcı Aracısı - Masaüstü sürümü</string>
+	<string name="desktop_version">Masaüstü sürümü</string>
+	<string name="full_screen">Tam ekran</string>
+	<string name="full_screen_exit">Tam ekrandan çık</string>
+	<string name="retry">Yeniden dene</string>
+	<string name="web_page_load_failed">Sayfa yüklenemedi</string>
+	<string name="web_page_load_failed_msg">Yüklenemedi:\n%1$s\n\nNedeni: %2$s\n\nWeb Görünümü: %3$s</string>
+	<string name="video_scaling_fill_proportional">Orantılı doldur</string>
+	<string name="video_quality">Video kalitesi</string>
+	<string name="open_on_start">Başlangıçta aç</string>
+	<string name="auto_highest_video_quality">En yüksek video kalitesini otomatik seç</string>
+	<string name="try_to_skip_ad">Reklamları atlamayı deneyin</string>
+	<string name="sponsorblock_sub">YouTube izlerken kitle kaynaklı bölümleri atlayın.</string>
+	<string name="sponsorblock_enable">SponsorBlock\&apos;u Etkinleştir</string>
+	<string name="sponsorblock_enable_sub">Geçerli video için sponsor.ajay.app\&apos;ten segment verilerini getirir.</string>
+	<string name="sponsorblock_cat_sponsor">Sponsor segmentleri</string>
+	<string name="sponsorblock_cat_selfpromo">Kendini tanıtma</string>
+	<string name="sponsorblock_cat_interaction">Etkileşim hatırlatıcıları</string>
+	<string name="sponsorblock_cat_intro">Girişler ve aralar</string>
+	<string name="sponsorblock_cat_outro">Bitiş kartları ve krediler</string>
+	<string name="sponsorblock_cat_preview">Önizleme ve özetleme</string>
+	<string name="sponsorblock_cat_hook">Kancalar</string>
+	<string name="sponsorblock_cat_music_offtopic">Müzik dışı bölümler</string>
+	<string name="sponsorblock_cat_filler">Dolgu</string>
+	<string name="sponsorblock_cat_filler_sub">Agresif kategori; varsayılan olarak devre dışıdır.</string>
+</resources>

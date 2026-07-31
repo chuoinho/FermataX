@@ -1,9 +1,6 @@
 package me.aap.utils.net.http;
 
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
 
-import me.aap.utils.function.CheckedConsumer;
 
 /**
  * @author Andrey Pavlenko

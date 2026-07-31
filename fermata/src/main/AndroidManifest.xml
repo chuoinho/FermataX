@@ -56,7 +56,7 @@
 
     <application
         android:name="me.aap.fermata.FermataApplication"
-        android:allowBackup="true"
+		android:allowBackup="false"
         android:banner="@drawable/banner"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_descriptor"
@@ -889,6 +889,16 @@
             android:grantUriPermissions="true"
             android:writePermission="${applicationId}.permission.WRITE_FERMATA_CONTENT"
             tools:ignore="ExportedContentProvider" />
+
+        <provider
+            android:name="me.aap.fermata.provider.DiagnosticsFileProvider"
+            android:authorities="${applicationId}.DiagnosticsFileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/diagnostics_file_paths" />
+        </provider>
 
         <!-- Remove ML Kit provider from base APK -->
         <provider

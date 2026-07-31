@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.service.MediaSessionCallback;
@@ -74,6 +76,7 @@ class VoiceCommandHandler {
 	private PatternCompat cChat;
 	private String[] nums;
 	private Map<String, String> subst = Collections.emptyMap();
+	private int candidateResultCount = 1;
 
 	VoiceCommandHandler(MainActivityDelegate activity) {
 		this.activity = activity;
@@ -116,46 +119,64 @@ class VoiceCommandHandler {
 	}
 
 	public boolean handle(List<String> cmd) {
-		return !cmd.isEmpty() && handle(cmd.get(0));
+		if (cmd.isEmpty()) return false;
+		candidateResultCount = Math.max(1, cmd.size());
+		try {
+			return handle(cmd.get(0));
+		} finally {
+			candidateResultCount = 1;
+		}
 	}
 
 	public boolean handle(String cmd) {
 		init();
 		cmd = subst(cmd);
-		if (activity.resolveVoiceSelection(cmd)) return true;
+		if (activity.resolveVoiceSelection(cmd)) {
+			recordCommand("selection");
+			return true;
+		}
 
 		AddonManager amgr = AddonManager.get();
 		VoiceIntent parsed = VoiceIntentParser.parse(cmd, Locale.forLanguageTag(lang));
-		if ((parsed != null) && handleParsed(parsed, amgr)) return true;
+		if ((parsed != null) && handleParsed(parsed, amgr)) {
+			recordCommand(commandType(parsed));
+			return true;
+		}
 
 		if (amgr.hasAddon(R.id.chat_addon)) {
 			Matcher m = cChat.matcher(cmd);
 			if (m.matches() &&
 					(activity.showFragment(R.id.chat_addon) instanceof MainActivityFragment f)) {
 				f.voiceCommand(new VoiceCommand(cChat.group(m, QUERY), ACTION_CHAT));
+				recordCommand("chat");
 				return true;
 			}
 		}
 
 		if (aPlay.matcher(cmd).matches()) {
 			activity.getMediaSessionCallback().play().thenRun(activity::goToCurrent);
+			recordCommand("playback");
 			return true;
 		}
 		if (aPause.matcher(cmd).matches()) {
 			activity.getMediaSessionCallback().onPause();
+			recordCommand("playback");
 			return true;
 		}
 		if (aStop.matcher(cmd).matches()) {
 			activity.getMediaSessionCallback().onStop();
+			recordCommand("playback");
 			return true;
 		}
 		if (aPlayFavorites.matcher(cmd).matches()) {
 			activity.showFragment(R.id.favorites_fragment);
 			playFavorites(0);
+			recordCommand("playback");
 			return true;
 		}
 		if (cCurTrack.matcher(cmd).matches()) {
 			activity.goToCurrent();
+			recordCommand("playback");
 			return true;
 		}
 
@@ -165,14 +186,19 @@ class VoiceCommandHandler {
 
 		if (mgr.isVlcPlayerSupported() && ((eng = cb.getEngine()) != null)) {
 			if (aSubOn.matcher(cmd).matches()) {
-				if (eng.getCurrentSubtitleStreamInfo() != null) return true;
+				if (eng.getCurrentSubtitleStreamInfo() != null) {
+					recordCommand("subtitle");
+					return true;
+				}
 				eng.getSubtitleStreamInfo().main().onSuccess(sub -> {
 					if (!sub.isEmpty()) eng.setCurrentSubtitleStream(sub.get(0));
 				});
+				recordCommand("subtitle");
 				return true;
 			}
 			if (aSubOff.matcher(cmd).matches()) {
 				eng.setCurrentSubtitleStream(null);
+				recordCommand("subtitle");
 				return true;
 			}
 			if (aSubChange.matcher(cmd).matches()) {
@@ -182,10 +208,12 @@ class VoiceCommandHandler {
 					if (cur == null) eng.setCurrentSubtitleStream(sub.get(0));
 					else eng.setCurrentSubtitleStream(next(sub, cur));
 				});
+				recordCommand("subtitle");
 				return true;
 			}
 			if (aAudioChange.matcher(cmd).matches()) {
 				eng.setCurrentAudioStream(next(eng.getAudioStreamInfo(), eng.getCurrentAudioStreamInfo()));
+				recordCommand("audio");
 				return true;
 			}
 		}
@@ -203,8 +231,10 @@ class VoiceCommandHandler {
 			if (time < 0) return false;
 			if (matches(uMinute, u)) time *= 60;
 			else if (matches(uHour, u)) time *= 3600;
-			return activity.getMediaSessionCallback()
+			boolean handled = activity.getMediaSessionCallback()
 					.rewindFastForward(ff == cFF, time, TIME_UNIT_SECOND, 1);
+			if (handled) recordCommand("seek");
+			return handled;
 		}
 
 		if ((m = cFindPlayOpen.matcher(cmd)).matches()) {
@@ -240,9 +270,11 @@ class VoiceCommandHandler {
 			activity.showFragment(fid);
 			searchInFragment(fid, vcmd,
 					VoiceReadinessPolicy.deadline(SystemClock.uptimeMillis()));
+			recordCommand("addon_search");
 			return true;
 		}
 
+		recordCommand("unhandled");
 		return false;
 	}
 
@@ -326,11 +358,29 @@ class VoiceCommandHandler {
 	private void playFavorites(int attempt) {
 		if (attempt == 100) {
 			Log.e("Failed to play favorites");
+			recordCommand("favorites_failed");
 			return;
 		}
 		MainActivityFragment f = activity.getActiveMainActivityFragment();
 		if (f instanceof FavoritesFragment) ((FavoritesFragment) f).play();
 		else activity.post(() -> playFavorites(attempt + 1));
+	}
+
+	private void recordCommand(String type) {
+		Map<String, Object> attributes = new HashMap<>();
+		attributes.put("locale", lang);
+		attributes.put("command_type", type);
+		attributes.put("result_count", candidateResultCount);
+		AndroidDiagnosticsRuntime.get().recordEssential("voice", "command_routed",
+				DiagnosticPriority.STATE, null, attributes);
+	}
+
+	private static String commandType(VoiceIntent intent) {
+		return switch (intent.getKind()) {
+			case PLAYBACK -> "playback";
+			case ADDON_SEARCH -> "addon_search";
+			case SELECTION -> "selection";
+		};
 	}
 
 	public void updateWordSubst() {

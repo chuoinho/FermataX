@@ -1,6 +1,9 @@
 package me.aap.fermata.addon.stremio.ui;
 
+import static android.view.View.GONE;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+
+import android.view.View;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -26,12 +29,15 @@ public final class StremioSourceController {
 		if (!(activity.showFragment(me.aap.utils.R.id.generic_dialog_fragment)
 				instanceof GenericDialogFragment dialog)) return;
 		StremioSourceUiView panel = new StremioSourceUiView(activity.getContext());
+		boolean automotive = activity.getRuntimeHostMode().usesAutomotivePresentation();
 		dialog.setTitle(title);
+		dialog.setCloseButtonVisible(!automotive);
 		dialog.setContentProvider(group -> {
 			panel.setLayoutParams(new RecyclerView.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 			group.addView(panel);
 			panel.bind(graph.sources(), activity, completion);
 		});
+		panel.setAutomotiveChrome(automotive);
 		dialog.setDialogValidator(() -> false);
 		dialog.setBackHandler(() -> false);
 		dialog.setDialogConsumer(ok -> {
@@ -39,6 +45,10 @@ public final class StremioSourceController {
 			activity.showFragment(fragmentId);
 			refresh.run();
 		});
+		if (automotive) {
+			View close = activity.getToolBar().findViewById(me.aap.utils.R.id.file_picker_close);
+			if (close != null) close.setVisibility(GONE);
+		}
 	}
 
 	public void add(StremioRuntimeGraph graph, MainActivityDelegate activity,

@@ -2,11 +2,15 @@ package me.aap.fermata.ui.view;
 
 import me.aap.fermata.ui.policy.PlaybackPresentationReducer;
 import me.aap.fermata.ui.policy.PlaybackPresentationReducer.State;
+import me.aap.fermata.ui.policy.PlaybackPresentationOwner.Identity;
+import me.aap.fermata.ui.policy.PlaybackPresentationOwner.Token;
 
 final class PlaybackPresentationCoordinator {
 	private final Host host;
 	private State state = PlaybackPresentationReducer.leaveVideo(false);
-	private long generation;
+	private Token owner;
+	private long ownerGeneration;
+	private long transitionGeneration;
 
 	PlaybackPresentationCoordinator(Host host) {
 		this.host = host;
@@ -16,12 +20,30 @@ final class PlaybackPresentationCoordinator {
 		return state;
 	}
 
-	void enterVideo(boolean splitMode) {
+	Token enterVideo(Identity identity, boolean splitMode) {
+		Token token = claim(identity);
 		transition(PlaybackPresentationReducer.enterVideo(splitMode), 0);
+		return token;
 	}
 
 	void leaveVideo(boolean showAudioPlayerBar) {
+		clearOwner();
 		transition(PlaybackPresentationReducer.leaveVideo(showAudioPlayerBar), 0);
+	}
+
+	boolean leaveVideo(Token token, boolean showAudioPlayerBar) {
+		if (!isCurrent(token)) return false;
+		clearOwner();
+		transition(PlaybackPresentationReducer.leaveVideo(showAudioPlayerBar), 0);
+		return true;
+	}
+
+	Token getOwner() {
+		return owner;
+	}
+
+	boolean isCurrent(Token token) {
+		return (token != null) && token.equals(owner);
 	}
 
 	void toggleControls(int delay) {
@@ -46,23 +68,37 @@ final class PlaybackPresentationCoordinator {
 	}
 
 	void cancel() {
-		generation++;
+		clearOwner();
+		transitionGeneration++;
 	}
 
 	private void transition(State next, int delay) {
-		generation++;
+		transitionGeneration++;
 		state = next;
 		host.apply(next);
 		if (next.timeoutPending()) scheduleTimeout(delay);
 	}
 
 	private void scheduleTimeout(int delay) {
-		long generation = ++this.generation;
+		long generation = ++this.transitionGeneration;
 		host.postDelayed(() -> {
-			if (generation != this.generation) return;
+			if (generation != this.transitionGeneration) return;
 			state = PlaybackPresentationReducer.timeout(state);
 			host.apply(state);
 		}, Math.max(0, delay));
+	}
+
+	private Token claim(Identity identity) {
+		if ((owner != null) && owner.identity().equals(identity)) return owner;
+		transitionGeneration++;
+		return owner = new Token(identity, ++ownerGeneration);
+	}
+
+	private void clearOwner() {
+		if (owner == null) return;
+		owner = null;
+		ownerGeneration++;
+		transitionGeneration++;
 	}
 
 	interface Host {

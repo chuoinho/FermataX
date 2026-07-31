@@ -23,13 +23,21 @@ public final class PlaybackSnapshot {
 	private final PlaybackStateCompat state;
 	@Nullable
 	private final MediaMetadataCompat metadata;
+	private final boolean canonical;
 
 	PlaybackSnapshot(long revision, @Nullable PlayableItem item,
 			@NonNull PlaybackStateCompat state, @Nullable MediaMetadataCompat metadata) {
+		this(revision, item, state, metadata, false);
+	}
+
+	PlaybackSnapshot(long revision, @Nullable PlayableItem item,
+			@NonNull PlaybackStateCompat state, @Nullable MediaMetadataCompat metadata,
+			boolean canonical) {
 		this.revision = revision;
 		this.item = item;
 		this.state = state;
 		this.metadata = metadata;
+		this.canonical = canonical;
 	}
 
 	public long getRevision() {
@@ -96,9 +104,14 @@ public final class PlaybackSnapshot {
 		return Objects.equals(item, (other == null) ? null : other.item);
 	}
 
+	/** True only after the service ownership token has committed this item and engine. */
+	public boolean isCanonical() {
+		return canonical;
+	}
+
 	/** Transient hand-off states do not own durable Podcast/Audiobook progress. */
 	public boolean canPersistProgress() {
-		return canPersistProgress(state.getState());
+		return canonical && canPersistProgress(state.getState());
 	}
 
 	public static boolean canPersistProgress(int state) {

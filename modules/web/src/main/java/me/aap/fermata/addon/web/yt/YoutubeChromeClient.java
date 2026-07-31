@@ -11,9 +11,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.web.FermataChromeClient;
 import me.aap.fermata.addon.web.FermataWebView;
+import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsSnapshot;
+import me.aap.fermata.addon.web.FermataWebClient.FullscreenEvent;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
@@ -58,7 +59,7 @@ public class YoutubeChromeClient extends FermataChromeClient {
 	}
 
 	protected void setFullScreen(MainActivityDelegate a, boolean fullScreen) {
-		if (BuildConfig.AUTO) {
+		if (((YoutubeWebView) getWebView()).usesAutomotiveHost()) {
 			((YoutubeWebView) getWebView()).onBrowserFullScreenChanged(fullScreen);
 		} else {
 			a.setVideoMode(fullScreen, getFullScreenView());
@@ -70,12 +71,26 @@ public class YoutubeChromeClient extends FermataChromeClient {
 		long request = automaticEntryRequest;
 		automaticEntryRequest = NO_REQUEST;
 		if (!browserEntryGate.accepts(request)) {
+			diagnosticsObserver.onFullscreen(FullscreenEvent.CUSTOM_VIEW_REJECTED,
+					DiagnosticsSnapshot.builder().request(request).result(true, false)
+							.web(getWebView() != null, (getWebView() != null) &&
+									getWebView().isAttachedToWindow(),
+									(getWebView() == null) ? 0 : getWebView().getWidth(),
+									(getWebView() == null) ? 0 : getWebView().getHeight())
+							.build());
 			cancelPendingFullScreenEntry();
 			callback.onCustomViewHidden();
 			FermataWebView web = getWebView();
 			if (web instanceof YoutubeWebView youtube) youtube.onBrowserFullScreenRejected();
 			return;
 		}
+		diagnosticsObserver.onFullscreen(FullscreenEvent.BROWSER_CALLBACK_RECEIVED,
+				DiagnosticsSnapshot.builder().request(request).result(true, true)
+						.web(getWebView() != null, (getWebView() != null) &&
+								getWebView().isAttachedToWindow(),
+								(getWebView() == null) ? 0 : getWebView().getWidth(),
+								(getWebView() == null) ? 0 : getWebView().getHeight())
+							.build());
 		view.setOnTouchListener(this::onTouchEvent);
 		getWebView().setVisibility(GONE);
 		super.onShowCustomView(view, callback);
@@ -83,12 +98,18 @@ public class YoutubeChromeClient extends FermataChromeClient {
 
 	FutureSupplier<Void> enterAutomaticFullScreen(long request) {
 		automaticEntryRequest = request;
+		diagnosticsObserver.onFullscreen(FullscreenEvent.BROWSER_REQUEST_DISPATCHED,
+				DiagnosticsSnapshot.builder().request(request).result(true, true).build());
 		return enterFullScreen();
 	}
 
 	@Override
 	public boolean cancelPendingFullScreenEntry() {
 		automaticEntryRequest = NO_REQUEST;
+		return super.cancelPendingFullScreenEntry();
+	}
+
+	boolean expirePendingFullScreenWait() {
 		return super.cancelPendingFullScreenEntry();
 	}
 

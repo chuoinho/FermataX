@@ -11,11 +11,6 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY;
 import static androidx.core.text.HtmlCompat.fromHtml;
 import static me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 import static me.aap.fermata.media.pref.MediaPrefs.SUB_SIZE;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.ui.UiUtils.isVisible;
@@ -85,8 +80,10 @@ public class VideoView extends FrameLayout
 	private final Set<PreferenceStore.Pref<?>> prefChange = new HashSet<>(
 			Arrays.asList(MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.AUDIO_DELAY_AA,
 					MediaPrefs.SUB_DELAY, SUB_SIZE));
+	private static final long[] SURFACE_SIZE_RETRY_DELAYS = {150L, 500L, 1500L};
 	private SubDrawer subDrawer;
 	private FutureSupplier<?> createSurface = new Promise<>();
+	private long surfaceSizeGeneration;
 
 	public VideoView(Context context) {
 		this(context, null);
@@ -237,25 +234,23 @@ public class VideoView extends FrameLayout
 		createSurface.onSuccess(v -> {
 			SurfaceView sv = getVideoSurface();
 			if (sv == null) return;
-			var h = sv.getHolder();
-			var c = h.lockCanvas();
-			try {
-				c.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-			} catch (Exception err) {
-				Log.e(err);
-			} finally {
-				h.unlockCanvasAndPost(c);
-			}
+			// The decoder owns this Surface. Locking its canvas while VLC/MediaCodec is
+			// attached can force-disconnect the producer and crash vendor codecs.
+			sv.setAlpha(0f);
+		});
+	}
 
-			h.removeCallback(this);
-			h.setFormat(PixelFormat.TRANSPARENT);
-			h.setFormat(PixelFormat.OPAQUE);
-			h.addCallback(this);
+	/** Reveals decoder output after the new item has rendered its first frame. */
+	public void revealVideoSurface() {
+		createSurface.onSuccess(v -> {
+			SurfaceView sv = getVideoSurface();
+			if (sv != null) sv.setAlpha(1f);
 		});
 	}
 
 	/** Clears decoder and sidecar output before a different video owns these surfaces. */
 	public void clearPlaybackSurfaces() {
+		surfaceSizeGeneration++;
 		clearVideoSurface();
 		clearSubtitleSurface();
 		releaseSubDrawer();
@@ -265,15 +260,17 @@ public class VideoView extends FrameLayout
 		createSurface.onSuccess(v -> {
 			SurfaceView sv = getSubtitleSurface();
 			if (sv == null) return;
-			var h = sv.getHolder();
-			var c = h.lockCanvas();
-			try {
-				c.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-			} catch (Exception err) {
-				Log.e(err);
-			} finally {
-				h.unlockCanvasAndPost(c);
-			}
+			// VLC can own the subtitle Surface as a second native output. Hide it without
+			// connecting a competing Canvas producer.
+			sv.setAlpha(0f);
+		});
+	}
+
+	/** Reveals native or app-rendered subtitle output when it becomes current. */
+	public void revealSubtitleSurface() {
+		createSurface.onSuccess(v -> {
+			SurfaceView sv = getSubtitleSurface();
+			if (sv != null) sv.setAlpha(1f);
 		});
 	}
 
@@ -281,32 +278,46 @@ public class VideoView extends FrameLayout
 		createSurface.onSuccess(v -> {
 			SurfaceView sv = getSubtitleSurface();
 			if (sv == null) return;
+			sv.setAlpha(1f);
 			var h = sv.getHolder();
-			var c = h.lockCanvas();
-			var cs = c.save();
-			try {
-				subDrawer.clr(c);
-				subDrawer.draw(c);
-			} catch (Exception err) {
-				Log.e(err);
-			} finally {
-				c.restoreToCount(cs);
-				h.unlockCanvasAndPost(c);
-			}
+			SurfaceCanvas.draw(h, c -> {
+				int saveCount = c.save();
+				try {
+					subDrawer.clr(c);
+					subDrawer.draw(c);
+				} finally {
+					c.restoreToCount(saveCount);
+				}
+			});
 		});
 	}
 
 	public void setSurfaceSize(MediaEngine eng) {
-		if (eng.setSurfaceSize(this)) return;
+		long generation = ++surfaceSizeGeneration;
+		if (!applySurfaceSize(eng, eng.getVideoWidth(), eng.getVideoHeight())) {
+			retrySurfaceSize(eng, generation, 0);
+		}
+	}
+
+	public void setSurfaceSize(MediaEngine eng, float videoWidth, float videoHeight) {
+		long generation = ++surfaceSizeGeneration;
+		if (!applySurfaceSize(eng, videoWidth, videoHeight)) {
+			retrySurfaceSize(eng, generation, 0);
+		}
+	}
+
+	private boolean applySurfaceSize(MediaEngine eng, float videoWidth, float videoHeight) {
+		if (eng.setSurfaceSize(this)) {
+			return VideoSurfaceLayoutPolicy.hasValidVideoSize(
+					eng.getVideoWidth(), eng.getVideoHeight());
+		}
 
 		PlayableItem item = eng.getSource();
-		if (item == null) return;
+		if (item == null) return false;
 
 		SurfaceView surface = getVideoSurface();
 		ViewGroup.LayoutParams lp = surface.getLayoutParams();
 
-		float videoWidth = eng.getVideoWidth();
-		float videoHeight = eng.getVideoHeight();
 		VideoSurfaceLayoutPolicy.Size size = VideoSurfaceLayoutPolicy.resolve(
 				getWidth(), getHeight(), videoWidth, videoHeight, item.getPrefs().getVideoScalePref(),
 				eng.getVideoPixelWidthHeightRatio());
@@ -318,6 +329,22 @@ public class VideoView extends FrameLayout
 			lp.height = height;
 			surface.setLayoutParams(lp);
 		}
+		return VideoSurfaceLayoutPolicy.hasValidVideoSize(videoWidth, videoHeight);
+	}
+
+	private void retrySurfaceSize(MediaEngine eng, long generation, int attempt) {
+		if (attempt >= SURFACE_SIZE_RETRY_DELAYS.length) return;
+		postDelayed(() -> {
+			if (generation != surfaceSizeGeneration) return;
+			MainActivityDelegate activity = getActivity().peek();
+			if ((activity == null) ||
+					(activity.getMediaServiceBinder().getCurrentEngine() != eng)) return;
+			if (applySurfaceSize(eng, eng.getVideoWidth(), eng.getVideoHeight())) {
+				surfaceSizeGeneration++;
+				return;
+			}
+			retrySurfaceSize(eng, generation, attempt + 1);
+		}, SURFACE_SIZE_RETRY_DELAYS[attempt]);
 	}
 
 	@Override

@@ -9,7 +9,6 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.C;
-import androidx.media3.common.Format;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.PlaybackParameters;
@@ -45,6 +44,9 @@ import java.util.concurrent.Executors;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.diagnostics.DiagnosticEvent;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -99,6 +101,26 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	private boolean buffering;
 	private boolean isHls;
 
+	private void recordDiagnostic(String name, DiagnosticScope scope, DiagnosticPriority priority,
+			@Nullable PlayableItem item, long generation, @Nullable String reason,
+			@Nullable String errorClass) {
+		try {
+			DiagnosticEvent.Builder event = DiagnosticEvent.builder("engine_exoplayer", name)
+					.scope(scope).priority(priority)
+					.put("engine_id", MediaPrefs.MEDIA_ENG_EXO)
+					.put("engine_class", getClass().getSimpleName())
+					.put("generation", generation)
+					.put("item_class", (item == null) ? "none" : item.getClass().getSimpleName())
+					.put("item_fingerprint", (item == null) ? 0 : System.identityHashCode(item))
+					.put("remote", item instanceof RemotePlaybackItem);
+			if (reason != null) event.put("reason", reason);
+			if (errorClass != null) event.put("error_class", errorClass);
+			FermataApplication.get().getDiagnostics().record(event.build());
+		} catch (Throwable ignored) {
+			// Diagnostics must never affect ExoPlayer callbacks or playback.
+		}
+	}
+
 	public ExoPlayerEngine(Context ctx, Listener listener) {
 		super(listener);
 		context = ctx;
@@ -141,10 +163,14 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		preparing = true;
 		buffering = false;
 		long generation = ++prepareGeneration;
+		recordDiagnostic("prepare_started", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE,
+				source, generation, null, null);
 
 		if (source instanceof RemotePlaybackItem remote) {
 			if (!ExoPlayerEngineProvider.playbackCapabilities().containsAll(
 					remote.getPlaybackRequestProfile().getRequiredEngineCapabilities())) {
+				recordDiagnostic("prepare_rejected", DiagnosticScope.ESSENTIAL,
+						DiagnosticPriority.WARN, source, generation, "unsupported_profile", null);
 				playbackRequestFailed(source, generation,
 						new IllegalArgumentException("Unsupported playback request profile"));
 				return;
@@ -154,6 +180,8 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 						progress -> listener.onEnginePreparing(this, progress))
 						.main().onCompletion((request, error) -> {
 					if ((generation != prepareGeneration) || (this.source != source)) {
+						recordDiagnostic("prepare_callback_rejected", DiagnosticScope.DETAILED,
+								DiagnosticPriority.DETAIL, source, generation, "stale_generation", null);
 						if (request != null) request.close();
 						return;
 					}
@@ -213,21 +241,30 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	private void playbackRequestFailed(PlayableItem source, long generation, Throwable error) {
-		if ((generation != prepareGeneration) || (this.source != source)) return;
+		if ((generation != prepareGeneration) || (this.source != source)) {
+			recordDiagnostic("prepare_callback_rejected", DiagnosticScope.DETAILED,
+					DiagnosticPriority.DETAIL, source, generation, "stale_generation", null);
+			return;
+		}
 		releaseRemoteRequest();
 		preparing = false;
+		recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL, DiagnosticPriority.ERROR, source,
+				generation, null, (error == null) ? "unknown" : error.getClass().getSimpleName());
 		listener.onEngineError(this, error);
 	}
 
 	@Override
 	public void start() {
 		player.setPlayWhenReady(true);
+		recordDiagnostic("started", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE, source,
+				prepareGeneration, null, null);
 		listener.onEngineStarted(this);
 		started();
 	}
 
 	@Override
 	public void stop() {
+		PlayableItem previous = source;
 		prepareGeneration++;
 		releaseRemoteRequest();
 		FutureSupplier<RemotePlaybackRequest> pending = remotePrepare;
@@ -236,6 +273,8 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		stopped(false);
 		player.stop();
 		source = null;
+		recordDiagnostic("stopped", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE, previous,
+				prepareGeneration, null, null);
 	}
 
 	private void releaseRemoteRequest() {
@@ -322,14 +361,12 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	@Override
 	public float getVideoWidth() {
-		Format f = player.getVideoFormat();
-		return (f == null) ? 0 : f.width;
+		return player.getVideoSize().width;
 	}
 
 	@Override
 	public float getVideoHeight() {
-		Format f = player.getVideoFormat();
-		return (f == null) ? 0 : f.height;
+		return player.getVideoSize().height;
 	}
 
 	@Override
@@ -427,6 +464,8 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 				preparing = false;
 				long off = source.getOffset();
 				if (off > 0) player.seekTo(off);
+				recordDiagnostic("prepared", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE, source,
+						prepareGeneration, "ready", null);
 				listener.onEnginePrepared(this);
 				var prefs = source.getPrefs();
 				MediaEngine.selectMediaStream(prefs::getAudioIdPref, prefs::getAudioLangPref,
@@ -446,11 +485,15 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	@Override
 	public void onRenderedFirstFrame() {
+		recordDiagnostic("first_frame", DiagnosticScope.ESSENTIAL, DiagnosticPriority.STATE, source,
+				prepareGeneration, "rendered", null);
 		listener.onVideoFirstFrame(this);
 	}
 
 	@Override
 	public void onPlayerError(@NonNull PlaybackException error) {
+		recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL, DiagnosticPriority.ERROR, source,
+				prepareGeneration, null, error.getClass().getSimpleName());
 		listener.onEngineError(this, error);
 	}
 

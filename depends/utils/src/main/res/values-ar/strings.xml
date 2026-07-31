@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="move_left">تحرك لليسار</string>
+	<string name="move_right">تحرك لليمين</string>
+	<string name="move_up">تحرك للأعلى</string>
+	<string name="move_down">تحرك للأسفل</string>
+	<string name="download_failed">فشل التنزيل %1$s</string>
+</resources>

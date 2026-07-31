@@ -3,7 +3,6 @@ package me.aap.fermata.addon.radio;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
-import static me.aap.utils.async.Completed.completed;
 
 import android.net.Uri;
 import android.support.v4.media.MediaMetadataCompat;

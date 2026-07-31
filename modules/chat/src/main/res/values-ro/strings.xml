@@ -3,4 +3,7 @@
     <string name="openai_key_sub">Obține cheia personală: &lt;a href="%1$s"&gt;%1$s&lt;a&gt;</string>
     <string name="openai_model">Model</string>
     <string name="openai_model_other">Alt model</string>
+	<string name="openai_model_custom">Model personalizat</string>
+	<string name="chat_request_failed">Solicitarea a eșuat: %1$s</string>
+	<string name="chat_tts_failed">Transpunerea textului în vorbire a eșuat: %1$s</string>
 </resources>

@@ -3,6 +3,7 @@ package me.app.fermatax.auto;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import me.aap.fermata.ui.activity.AsyncOperationController.DiagnosticsObserver;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 
@@ -29,6 +30,7 @@ final class DirectAppStartupCoordinator<C> {
 		C stale = null;
 		Promise<C> result;
 		boolean connect = false;
+		boolean reuseService = false;
 		long generation;
 
 		synchronized (this) {
@@ -40,6 +42,7 @@ final class DirectAppStartupCoordinator<C> {
 
 			if (service != null) {
 				state = State.SERVICE_READY;
+				reuseService = true;
 				result = new Promise<>();
 				result.complete(service);
 			} else {
@@ -52,8 +55,13 @@ final class DirectAppStartupCoordinator<C> {
 			}
 		}
 
+		DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.STARTED, generation, 0L,
+				0, null);
 		if (stale != null) disconnect.accept(stale);
-		if (connect) startAttempt(connector, result, 1);
+		if (reuseService) {
+			DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.SERVICE_READY, generation,
+					0L, 0, null);
+		} else if (connect) startAttempt(connector, result, 1);
 		return new Startup<>(generation, result);
 	}
 
@@ -62,34 +70,52 @@ final class DirectAppStartupCoordinator<C> {
 			if ((generation != activityGeneration) || (connection != service) ||
 					!isConnected.test(connection)) return false;
 			state = State.UI_ATTACHING;
+			DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.UI_ATTACH_STARTED,
+					generation, 0L, 0, null);
 			return true;
 		}
 	}
 
 	void uiReady(long generation) {
+		boolean current;
 		synchronized (this) {
-			if ((generation == activityGeneration) && (state == State.UI_ATTACHING)) {
+			current = (generation == activityGeneration) && (state == State.UI_ATTACHING);
+			if (current) {
 				state = State.UI_READY;
 			}
 		}
+		if (current) DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.UI_READY,
+				generation, 0L, 0, null);
+		else DiagnosticsObserver.startupDetail(DiagnosticsObserver.StartupEvent.UI_READY,
+				generation, 0L, 0);
 	}
 
 	void uiFailed(long generation) {
+		boolean current;
 		synchronized (this) {
-			if (generation == activityGeneration) {
+			current = generation == activityGeneration;
+			if (current) {
 				state = ((service != null) && isConnected.test(service)) ?
 						State.SERVICE_READY : State.IDLE;
 			}
 		}
+		if (current) DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.UI_FAILED,
+				generation, 0L, 0, null);
+		else DiagnosticsObserver.startupDetail(DiagnosticsObserver.StartupEvent.UI_FAILED,
+				generation, 0L, 0);
 	}
 
 	boolean activityDestroyed(long generation) {
+		boolean current;
 		synchronized (this) {
-			if (generation != activityGeneration) return false;
+			current = generation == activityGeneration;
+			if (!current) return false;
 			state = ((service != null) && isConnected.test(service)) ?
 					State.SERVICE_READY : State.IDLE;
-			return true;
 		}
+		DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.ACTIVITY_DESTROYED,
+				generation, 0L, 0, null);
+		return true;
 	}
 
 	boolean isCurrent(long generation) {
@@ -126,10 +152,16 @@ final class DirectAppStartupCoordinator<C> {
 
 	private void startAttempt(Connector<C> connector, Promise<C> result, int attemptNumber) {
 		FutureSupplier<C> attempt;
+		long generation;
+		synchronized (this) {
+			generation = activityGeneration;
+		}
+		DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.SERVICE_ATTEMPT_STARTED,
+				generation, 0L, attemptNumber, null);
 		try {
 			attempt = connector.connect();
 		} catch (Throwable failure) {
-			onAttemptComplete(connector, result, attemptNumber, 0, null, failure);
+			onAttemptComplete(connector, result, generation, attemptNumber, 0, null, failure);
 			return;
 		}
 
@@ -143,18 +175,20 @@ final class DirectAppStartupCoordinator<C> {
 			epoch = ++connectionEpoch;
 		}
 		attempt.onCompletion((connection, failure) ->
-				onAttemptComplete(connector, result, attemptNumber, epoch, connection, failure));
+				onAttemptComplete(connector, result, generation, attemptNumber, epoch, connection, failure));
 	}
 
-	private void onAttemptComplete(Connector<C> connector, Promise<C> result, int attemptNumber,
-			long epoch, C connection, Throwable failure) {
+	private void onAttemptComplete(Connector<C> connector, Promise<C> result, long generation,
+			int attemptNumber, long epoch, C connection, Throwable failure) {
 		boolean retry = false;
 		boolean complete = false;
 		boolean dispose = false;
+		boolean stale = false;
 		Throwable terminalFailure = failure;
 
 		synchronized (this) {
 			if ((connectionResult != result) || ((epoch != 0) && (epoch != connectionEpoch))) {
+				stale = true;
 				dispose = connection != null;
 			} else if ((failure == null) && (connection != null) && isConnected.test(connection)) {
 				service = connection;
@@ -177,11 +211,24 @@ final class DirectAppStartupCoordinator<C> {
 			}
 		}
 
+		if (stale) {
+			DiagnosticsObserver.startupDetail(DiagnosticsObserver.StartupEvent.SERVICE_ATTEMPT_CALLBACK,
+					generation, epoch, attemptNumber);
+		}
 		if (dispose) disconnect.accept(connection);
 		if (retry) {
+			DiagnosticsObserver.startupDetail(DiagnosticsObserver.StartupEvent.SERVICE_ATTEMPT_CALLBACK,
+					generation, epoch, attemptNumber);
 			if (connection != null) disconnect.accept(connection);
 			startAttempt(connector, result, attemptNumber + 1);
 		} else if (complete) {
+			if (terminalFailure == null) {
+				DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.SERVICE_READY,
+						generation, epoch, attemptNumber, null);
+			} else {
+				DiagnosticsObserver.startup(DiagnosticsObserver.StartupEvent.SERVICE_FAILED,
+						generation, epoch, attemptNumber, terminalFailure);
+			}
 			if (terminalFailure == null) result.complete(connection);
 			else result.completeExceptionally(terminalFailure);
 		}

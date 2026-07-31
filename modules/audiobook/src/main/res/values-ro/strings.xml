@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">Ascultă în continuare</string>
+	<string name="audiobook_library">Bibliotecă</string>
+	<string name="audiobook_downloads">Descărcări</string>
+	<string name="audiobook_discover">Descoperă cărți gratuite</string>
+	<string name="audiobook_sources">Surse</string>
+	<string name="audiobook_source_local">Dosar local</string>
+	<string name="audiobook_source_librivox">LibriVox</string>
+	<string name="audiobook_source_audiobookshelf">Raft pentru cărți audio</string>
+	<string name="audiobook_source_opds">Catalog OPDS</string>
+	<string name="audiobook_add_folder">Adăugați dosarul audiobook</string>
+	<string name="audiobook_add_source">Adăugați sursa cărții audio</string>
+	<string name="audiobook_add_audiobookshelf">Adăugați Audiobookshelf</string>
+	<string name="audiobook_add_opds">Adăugați catalogul OPDS</string>
+	<string name="audiobook_server_url">Adresa URL a serverului</string>
+	<string name="audiobook_bearer_token">Jeton de purtător (opțional)</string>
+	<string name="audiobook_add_failed">Nu s-a putut adăuga sursa cărții audio</string>
+	<string name="audiobook_delete_source_title">Eliminați sursa cărții audio?</string>
+	<string name="audiobook_delete_source_message">Eliminați %1$s și istoricul de ascultare?</string>
+	<string name="audiobook_search_librivox">Căutați LibriVox</string>
+	<string name="audiobook_popular">Cărți populare gratuite</string>
+	<string name="audiobook_latest">Adăugat recent</string>
+	<string name="audiobook_add_to_library">Adăugați în bibliotecă</string>
+	<string name="audiobook_import_failed">Nu s-a putut adăuga această carte audio</string>
+	<string name="audiobook_download_book">Descărcați cartea</string>
+	<string name="audiobook_delete_download">Eliminați descărcarea</string>
+	<string name="audiobook_download_failed">Descărcarea cărții audio nu a reușit</string>
+</resources>

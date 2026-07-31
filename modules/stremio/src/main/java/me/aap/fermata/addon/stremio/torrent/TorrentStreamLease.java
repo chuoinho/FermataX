@@ -1,7 +1,5 @@
 package me.aap.fermata.addon.stremio.torrent;
 
-import android.util.Log;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.SocketException;
@@ -23,10 +21,10 @@ import com.frostwire.jlibtorrent.TorrentInfo;
 import com.frostwire.jlibtorrent.TorrentStatus;
 
 import me.aap.fermata.media.net.RemotePlaybackProgress;
+import me.aap.utils.log.Log;
 
 /** Owns one registered torrent stream and all HTTP read leases for that stream. */
 final class TorrentStreamLease {
-	private static final String TAG = "StremioTorrentHttp";
 	private static final long NO_PEERS_TIMEOUT_MILLIS = 30_000L;
 	private static final long NO_PROGRESS_TIMEOUT_MILLIS = 20_000L;
 	private static final long HARD_READ_TIMEOUT_MILLIS = 90_000L;
@@ -154,7 +152,7 @@ final class TorrentStreamLease {
 			long stallTimeout = Math.max(NO_PROGRESS_TIMEOUT_MILLIS,
 					TorrentStreamPolicy.stallTimeoutMillis(pieceLength, status.downloadRate()));
 			if ((now - lastAdvance >= stallTimeout) || (now >= hardDeadline)) {
-				Log.w(TAG, "P2P requested range stalled: offset=" + offset + " target=" +
+				Log.w("P2P requested range stalled: offset=" + offset + " target=" +
 					length + " completed=" + completed + " available=" + available +
 					" pieceLength=" + pieceLength +
 					" firstPiece=" + first + " lastPiece=" + last + " requestedDelta=" +
@@ -232,7 +230,7 @@ final class TorrentStreamLease {
 		TorrentStatus status = handle.status();
 		int peers = status.numPeers();
 		int seeds = status.numSeeds();
-		Log.w(TAG, "P2P data timeout: trackers=" + trackerCount() + " peers=" + peers +
+		Log.w("P2P data timeout: trackers=" + trackerCount() + " peers=" + peers +
 				" seeds=" + seeds + " rate=" + status.downloadRate() + "B/s");
 		return (peers == 0 && seeds == 0) ? 503 : 504;
 	}

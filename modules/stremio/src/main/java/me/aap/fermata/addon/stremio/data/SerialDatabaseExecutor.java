@@ -9,6 +9,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 
+import me.aap.fermata.diagnostics.DiagnosticIds;
+import me.aap.fermata.diagnostics.DiagnosticOperation;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
+
 final class SerialDatabaseExecutor {
 	private final Object lock = new Object();
 	private final ExecutorService executor;
@@ -30,10 +35,13 @@ final class SerialDatabaseExecutor {
 			return thread;
 		});
 		executor.execute(() -> {
+			DiagnosticOperation diagnostics = beginOpenDiagnostics(targetVersion);
 			try {
 				database = StremioDatabase.open(file, targetVersion, migrations);
+				completeDiagnostics(diagnostics);
 				ready.complete(null);
 			} catch (Throwable error) {
+				failDiagnostics(diagnostics, error);
 				openFailure = error;
 				ready.completeExceptionally(error);
 				synchronized (lock) {
@@ -91,7 +99,42 @@ final class SerialDatabaseExecutor {
 		try {
 			result.complete(operation.run(database));
 		} catch (Throwable error) {
+			recordOperationFailure(error);
 			result.completeExceptionally(error);
+		}
+	}
+
+	private static DiagnosticOperation beginOpenDiagnostics(int targetVersion) {
+		try {
+			return AndroidDiagnosticsRuntime.get().begin("database", "stremio_database_open",
+					java.util.Map.of("revision", targetVersion));
+		} catch (Throwable ignored) {
+			return null;
+		}
+	}
+
+	private static void completeDiagnostics(DiagnosticOperation diagnostics) {
+		if (diagnostics == null) return;
+		try {
+			diagnostics.complete(java.util.Map.of("status", "completed"));
+		} catch (Throwable ignored) {
+		}
+	}
+
+	private static void failDiagnostics(DiagnosticOperation diagnostics, Throwable error) {
+		if (diagnostics == null) return;
+		try {
+			diagnostics.fail(error, java.util.Map.of("status", "failed"));
+		} catch (Throwable ignored) {
+		}
+	}
+
+	private static void recordOperationFailure(Throwable error) {
+		try {
+			AndroidDiagnosticsRuntime.get().recordEssential("database", "database_operation_failed",
+					DiagnosticPriority.ERROR, DiagnosticIds.next(),
+					java.util.Map.of("provider_class", "stremio", "error", error));
+		} catch (Throwable ignored) {
 		}
 	}
 

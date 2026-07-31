@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="force_dark">Forzar el modo oscuro, si es compatible</string>
+	<string name="force_dark_sub">%1$s. Elija \&quot;\\&quot;Auto\&quot;\\&quot; para seguir el tema del dispositivo.</string>
+	<string name="force_dark_auto">Auto</string>
+	<string name="force_dark_enabled">Activado</string>
+	<string name="force_dark_disabled">Desactivado</string>
+	<string name="user_agent">Agente de usuario</string>
+	<string name="user_agent_desktop">Agente de usuario - Versión de escritorio</string>
+	<string name="desktop_version">Versión de escritorio</string>
+	<string name="full_screen">Pantalla completa</string>
+	<string name="full_screen_exit">Salir de pantalla completa</string>
+	<string name="retry">Rever</string>
+	<string name="web_page_load_failed">La página no pudo cargarse</string>
+	<string name="web_page_load_failed_msg">No se pudo cargar:\n%1$s\n\nRazón: %2$s\n\nWebView: %3$s</string>
+	<string name="video_scaling_fill_proportional">Llenar proporcional</string>
+	<string name="video_quality">Calidad de vídeo</string>
+	<string name="open_on_start">Abierto al inicio</string>
+	<string name="auto_highest_video_quality">Seleccionar automáticamente la calidad de vídeo más alta</string>
+	<string name="try_to_skip_ad">Intenta saltarte la publicidad</string>
+	<string name="sponsorblock_sub">Omita los segmentos de colaboración colectiva mientras mira YouTube.</string>
+	<string name="sponsorblock_enable">Habilitar bloque de patrocinador</string>
+	<string name="sponsorblock_enable_sub">Obtiene datos de segmento de patrocinador.ajay.app para el vídeo actual.</string>
+	<string name="sponsorblock_cat_sponsor">Segmentos de patrocinadores</string>
+	<string name="sponsorblock_cat_selfpromo">Autopromoción</string>
+	<string name="sponsorblock_cat_interaction">Recordatorios de interacción</string>
+	<string name="sponsorblock_cat_intro">Introducciones e intermedios</string>
+	<string name="sponsorblock_cat_outro">Tarjetas finales y créditos</string>
+	<string name="sponsorblock_cat_preview">Vista previa y resumen</string>
+	<string name="sponsorblock_cat_hook">Manos</string>
+	<string name="sponsorblock_cat_music_offtopic">Secciones no musicales</string>
+	<string name="sponsorblock_cat_filler">Relleno</string>
+	<string name="sponsorblock_cat_filler_sub">Categoría agresiva; deshabilitado de forma predeterminada.</string>
+</resources>

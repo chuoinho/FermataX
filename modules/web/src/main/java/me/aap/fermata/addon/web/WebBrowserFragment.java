@@ -23,7 +23,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -111,9 +110,8 @@ public class WebBrowserFragment extends MainActivityFragment
 	@Override
 	public void onPause() {
 		super.onPause();
-		if (!BuildConfig.AUTO) return;
 		FermataWebView v = getWebView();
-		if (v == null) return;
+		if ((v == null) || !v.usesAutomotivePresentation()) return;
 		FermataChromeClient chrome = v.getWebChromeClient();
 		if (chrome != null) {
 			if (chrome.isFullScreen()) {
@@ -128,9 +126,8 @@ public class WebBrowserFragment extends MainActivityFragment
 	@Override
 	public void onResume() {
 		super.onResume();
-		if (!BuildConfig.AUTO || !fullScreenOnResume) return;
 		FermataWebView v = getWebView();
-		if (v == null) return;
+		if ((v == null) || !v.usesAutomotivePresentation() || !fullScreenOnResume) return;
 		// Calling here onResume makes the video to not get freezed
 		// when you switch to another app and go back to Fermata
 		v.onResume();

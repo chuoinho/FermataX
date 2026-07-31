@@ -64,7 +64,7 @@
     <string name="engine_prefs">مشغل الوسائط</string>
 
     <string name="theme">لون التطبيق</string>
-    <string name="theme_sub">لون واجهة التطبيق</string>
+	<string name="theme_sub">السمة الحالية: %1$s</string>
     <string name="theme_light">نهاري</string>
     <string name="theme_dark">ليلي</string>
     <string name="theme_system">نظام</string>
@@ -74,7 +74,7 @@
     <string name="theme_classic">كلاسيكي</string>
 
     <string name="nav_bar_pos">موضع شريط التنقل</string>
-    <string name="nav_bar_pos_sub">عرض ايقونات التنقل على الجهة:</string>
+	<string name="nav_bar_pos_sub">الموضع الحالي: %1$s</string>
     <string name="nav_bar_pos_left">يسار</string>
     <string name="nav_bar_pos_right">يمين</string>
 
@@ -124,7 +124,7 @@
 
     <string name="time">وقت</string>
     <string name="time_unit">قيمة الوقت</string>
-    <string name="time_unit_sub">القيمة الحالية</string>
+	<string name="time_unit_sub">القيمة الحالية: %1$s</string>
     <string name="time_unit_second">ثانية</string>
     <string name="time_unit_minute">دقيقة</string>
     <string name="time_unit_percent">نسبه مئويه</string>
@@ -139,8 +139,8 @@
     <string name="enable_vlcplayer">تمكين برنامج VLC</string>
     <string name="preferred_audio_engine">محرك الصوت المفضل</string>
     <string name="preferred_video_engine">محرك الفيديو المفضل</string>
-    <string name="engine_installed">تم تثبيت محرك الوسائط</string>
-    <string name="engine_uninstalled">تم إلغاء تثبيت محرك الوسائط</string>
+	<string name="engine_installed">تم تثبيت محرك الوسائط: %1$s</string>
+	<string name="engine_uninstalled">تم إلغاء تثبيت محرك الوسائط: %1$s</string>
 
     <string name="preferred_media_scanner">اختيار الوسائط المفضل</string>
     <string name="preferred_media_scanner_default">الإفتراضي</string>
@@ -281,7 +281,7 @@
     <string name="bookmark_name">اسم المفضلة</string>
     <string name="bookmark_time">الوقت</string>
 
-    <string name="folder_subtitle">مجلد الترجمة</string>
+	<string name="folder_subtitle">الملفات: %1$d. المجلدات: %2$d.</string>
     <string name="browsable_subtitle">المسارات: %1$d.</string>
     <string name="add_folder">إضافة مجلد</string>
     <string name="remove_folder">إزالة مجلد</string>
@@ -296,13 +296,13 @@
     <string name="delete_confirm">هل تريد حذف %1$s؟</string>
     <string name="delete_file_title">حذف الملف</string>
     <string name="delete_file_question">تأكيد الحذف؟</string>
-    <string name="delete_file_failed">فشل الحذف</string>
+	<string name="delete_file_failed">فشل حذف الملف %1$s</string>
     <string name="loading">تحميل…</string>
     <string name="press_back_again">انقر مرة أخرى للخروج</string>
     <string name="please_restart_app">يرجى إغلاق البرنامج وإعادة تشغيلة</string>
     <string name="use_phone_to_grant_perm">يرجى منح الأذونات</string>
 
-    <string name="vfs_content">Content</string>
+	<string name="vfs_content">المحتوى</string>
     <string name="vfs_file_system">إضافة من الجهاز </string>
     <string name="vfs_gdrive">Google drive</string>
     
@@ -310,12 +310,12 @@
     <string name="m3u_playlist">M3U playlist</string>
     <string name="m3u_playlist_name">الاسم</string>
     <string name="m3u_playlist_location">الموقع</string>
-    <string name="m3u_playlist_location_hint">File or http(s) URL</string>
+	<string name="m3u_playlist_location_hint">ملف أو رابط http(s)</string>
     
     
     <string name="m3u_playlist_video">قائمة تشغيل الفيديو</string>
 
-    <string name="eq_manual">Manual</string>
+	<string name="eq_manual">يدوي</string>
     <string name="eq_normal">Normal</string>
     <string name="eq_classical">Classical</string>
     <string name="eq_dance">Dance</string>
@@ -327,17 +327,17 @@
     <string name="eq_pop">Pop</string>
     <string name="eq_rock">Rock</string>
 
-    <string name="host">Host</string>
-    <string name="port">Port</string>
-    <string name="path">Path</string>
-    <string name="share_name">Share name</string>
-    <string name="domain">Domain</string>
-    <string name="username">Username</string>
-    <string name="password">Password</string>
-    <string name="private_key">Private key</string>
-    <string name="private_key_pass">Private key password</string>
+	<string name="host">المضيف</string>
+	<string name="port">المنفذ</string>
+	<string name="path">المسار</string>
+	<string name="share_name">اسم المشاركة</string>
+	<string name="domain">النطاق</string>
+	<string name="username">اسم المستخدم</string>
+	<string name="password">كلمة المرور</string>
+	<string name="private_key">المفتاح الخاص</string>
+	<string name="private_key_pass">كلمة مرور المفتاح الخاص</string>
 
-    <string name="donate">الدعم عبر Ko-fi</string>
+    <string name="donate">دعم المطور</string>
     <string name="donate_text">ادعم FermataX عبر Ko-fi.</string>
     <string name="use_phone_for_donation">افتح Ko-fi على هاتفك لدعم FermataX.</string>
 
@@ -367,17 +367,17 @@
     <string name="other">أخرى</string>
     <string name="check_updates">البحث عن تحديث عند بدء التطبيق</string>
     <string name="update">تحديث</string>
-    <string name="update_question">يوجد تحديث للتطبيق. هل تريد التحديث الآن؟</string>
+	<string name="update_question">يتوفر الإصدار الجديد %1$s.\nهل تريد تحديث التطبيق؟</string>
     <string name="export_prefs">إستخراج تفضيلات الإعدادات إلى ملف</string>
     <string name="export_prefs_sub">إستخراج تفضيلات الإعدادات والمجلدات وقوائم التشغيل إلى ملف</string>
-    <string name="export_prefs_ok">تم إستخراج تفضيلات الإعدادات إلى ملف</string>
-    <string name="export_prefs_failed">لقد فشل إستخراج تفضيلات الإعدادات إلى ملف</string>
+	<string name="export_prefs_ok">تم حفظ التفضيلات في الملف %1$s.</string>
+	<string name="export_prefs_failed">فشل تصدير التفضيلات: %1$s</string>
     <string name="import_prefs">استيراد تفضيلات الإعدادات</string>
     <string name="import_prefs_sub">استيراد تفضيلات الإعدادات من ملف خارجي</string>
     <string name="import_prefs_ok">تم استيراد التفضيلات بنجاح</string>
-    <string name="import_prefs_failed">فشلت عملية الاستيراد</string>
+	<string name="import_prefs_failed">فشل استيراد التفضيلات: %1$s</string>
     <string name="prefs_not_found">لم يتم العثور</string>
-    <string name="open_log">Open log file</string>
+	<string name="open_log">فتح ملف السجل</string>
     <string name="unlock_phone_and_grant">يرجى فتح قفل الهاتف ومنح الأذونات</string>
     <string name="screen_capture_rejected">تم رفض تصوير الشاشة</string>
     <string name="accessibility_dsc">منح الوصول للتطبيق للإستفادة من التحكم بالشاشة باللمس</string>
@@ -407,4 +407,82 @@
     <string name="err_no_audio_record_perm">لم يتم منح أذونات الموسيقى والصوتيات</string>
     <string name="addon_name_podcast">البودكاست</string>
     <string name="dashboard_podcast_sub">برامج وحلقات واستماع دون اتصال</string>
+	<string name="dashboard_audiobook_sub">الكتب والفصول والاستماع دون اتصال بالإنترنت</string>
+	<string name="dashboard_stremio_sub">الأفلام والمسلسلات والمقدمين المثبتين</string>
+	<string name="dashboard_back_to_list">العودة إلى القائمة</string>
+	<string name="addon_name_audiobook">كتب صوتية</string>
+	<string name="action_prev_folder">تشغيل المجلد السابق</string>
+	<string name="action_next_folder">تشغيل المجلد التالي</string>
+	<string name="recent">مؤخرًا</string>
+	<string name="p2p_resolving">حل سيل...</string>
+	<string name="p2p_finding_peers">العثور على أقرانهم...</string>
+	<string name="p2p_buffering_status">%1$d أقرانهم | %2$s/س | %3$d%%</string>
+	<string name="p2p_starting_player_status">%1$d أقرانهم | %2$s/س | لاعب البداية</string>
+	<string name="p2p_streaming_status">%1$d أقرانهم | %2$s/س | اللعب</string>
+	<string name="p2p_rebuffering_status">إعادة التخزين المؤقت | %1$d أقرانهم | %2$s/ث</string>
+	<string name="edit_dashboard">تحرير لوحة القيادة</string>
+	<string name="done">منتهي</string>
+	<string name="err_failed_start_service">فشل في بدء الخدمة: %s</string>
+	<string name="err_p2p_metadata_unavailable">البيانات التعريفية للتورنت غير متاحة. حاول دفق آخر.</string>
+	<string name="err_p2p_no_peers">لا يوجد أقران P2P نشطين. حاول دفق آخر.</string>
+	<string name="err_p2p_data_timeout">لم يقم أقران P2P بتسليم البيانات في الوقت المناسب. حاول دفق آخر.</string>
+	<string name="err_p2p_engine_unavailable">محرك تشغيل P2P غير متوفر. أعد فتح Stremio وحاول مرة أخرى.</string>
+	<string name="err_p2p_file_unavailable">ملف التورنت المحدد غير متاح. حاول دفق آخر.</string>
+	<string name="err_p2p_low_storage">لا توجد مساحة تخزين مجانية كافية لتشغيل P2P. قم بتحرير بعض المساحة وحاول مرة أخرى.</string>
+	<string name="initial_setup">الإعداد الأولي</string>
+	<string name="initial_setup_subtitle">اختر عناصر التحكم واللغة لهذا الجهاز.</string>
+	<string name="initial_setup_nav_position">موضع شريط التنقل</string>
+	<string name="initial_setup_left">غادر</string>
+	<string name="initial_setup_right">يمين</string>
+	<string name="initial_setup_app_language">لغة التطبيق</string>
+	<string name="initial_setup_voice_enabled">تمكين التحكم الصوتي</string>
+	<string name="initial_setup_voice_language">لغة الصوت</string>
+	<string name="initial_setup_voice_same_app">نفس التطبيق</string>
+	<string name="initial_setup_voice_system">لغة النظام</string>
+	<string name="initial_setup_voice_english">إنجليزي</string>
+	<string name="initial_setup_voice_vietnamese">الفيتنامية</string>
+	<string name="initial_setup_voice_auto">الكشف التلقائي باللغة الإنجليزية/الفيتنامية</string>
+	<string name="initial_setup_test_microphone">اختبار الميكروفون</string>
+	<string name="initial_setup_test_disabled">تم تعطيل التحكم الصوتي.</string>
+	<string name="initial_setup_test_running">جاري الاستماع...</string>
+	<string name="initial_setup_test_success">اختبار الميكروفون: %1$s</string>
+	<string name="initial_setup_test_failed">فشل اختبار الميكروفون. يمكنك المتابعة وتمكينه لاحقًا.</string>
+	<string name="initial_setup_continue">المتابعة إلى لوحة القيادة</string>
+	<string name="initial_setup_reopen">فتح الإعداد الأولي</string>
+	<string name="initial_setup_reopen_sub">قم بتغيير الجهاز أو لغة التطبيق أو تفضيلات الصوت.</string>
+	<string name="voice_control_auto_language">الكشف التلقائي عن لغة الصوت</string>
+	<string name="voice_control_auto_language_sub">استخدم اكتشاف اللغة في Android 14 مع اللغة المحددة كإجراء احتياطي.</string>
+	<string name="module_name_web">ويب</string>
+	<string name="module_name_tv">تلفزيون</string>
+	<string name="module_name_radio">راديو الإنترنت</string>
+	<string name="module_name_podcast">بودكاست</string>
+	<string name="module_name_audiobook">كتاب مسموع</string>
+	<string name="addon_name_translate">مترجم لغة</string>
+	<string name="addon_name_subgen">مولد ترجمات</string>
+	<string name="car_keyboard_cancel">يلغي</string>
+	<string name="car_keyboard_input">مدخل</string>
+	<string name="car_keyboard_shift">يحول</string>
+	<string name="car_keyboard_space">فضاء</string>
+	<string name="car_keyboard_paste">لصق</string>
+	<string name="car_keyboard_delete">يمسح</string>
+	<string name="car_keyboard_clear">واضح</string>
+	<string name="car_keyboard_ok">نعم</string>
+	<string name="m3u_playlist_timeout">مهلة الاستجابة</string>
+	<string name="diagnostics">التشخيص</string>
+	<string name="diagnostics_sub">تقارير محلية عن الأعطال وحالات التوقف وحالات التطبيق غير المتوقعة</string>
+	<string name="detailed_diagnostics">تشخيص مفصل</string>
+	<string name="detailed_diagnostics_sub">تسجيل أحداث مفصلة لمدة تصل إلى 48 ساعة. يمكنك إيقافه في أي وقت.</string>
+	<string name="export_diagnostic_report">تصدير تقرير التشخيص</string>
+	<string name="export_diagnostic_report_sub">إنشاء تقرير ZIP خاص لحفظه أو مشاركته مع الدعم</string>
+	<string name="clear_diagnostic_data">مسح بيانات التشخيص</string>
+	<string name="clear_diagnostic_data_sub">حذف السجلات والتقارير المخزنة محليًا</string>
+	<string name="share_diagnostic_report">مشاركة التقرير</string>
+	<string name="save_diagnostic_report">الحفظ في التنزيلات</string>
+	<string name="diagnostic_report_saved">تم حفظ تقرير التشخيص في التنزيلات باسم %1$s.</string>
+	<string name="diagnostic_report_failed">تعذر إنشاء تقرير التشخيص: %1$s</string>
+	<string name="diagnostic_data_cleared">تم مسح بيانات التشخيص.</string>
+	<string name="diagnostics_phone_only">صدّر تقارير التشخيص من إعدادات FermataX على هاتفك.</string>
+	<string name="retry">إعادة المحاولة</string>
+	<string name="media_list_empty">لا توجد عناصر بعد</string>
+	<string name="media_list_load_failed">تعذر تحميل العناصر.</string>
 </resources>

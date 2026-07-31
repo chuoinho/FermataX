@@ -17,6 +17,9 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.diagnostics.DiagnosticEvent;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
@@ -63,14 +66,20 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 		else i.setClass(ctx, FermataMediaService.class);
 		i.setAction(ACTION_MEDIA_SERVICE);
 		i.putExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
+		recordConnectionDiagnostic("service_connect_started", DiagnosticPriority.STATE, false,
+				false, null);
 		Log.d("Binding service to context ", ctx);
 
 		if (!ctx.bindService(i, con, Context.BIND_AUTO_CREATE)) {
 			Exception ex = new IllegalStateException("Failed to bind to FermataMediaService");
+			recordConnectionDiagnostic("service_connect_failed", DiagnosticPriority.ERROR, false,
+				false, ex.getClass().getSimpleName());
 			Log.e(ex, "Service connection failed");
 			con.fail(ex);
 		} else {
 			con.bound = true;
+			recordConnectionDiagnostic("service_bind_requested", DiagnosticPriority.STATE, true,
+				false, null);
 			con.timeout = FermataApplication.get().getScheduler().schedule(
 					() -> con.fail(new IllegalStateException("FermataMediaService connection timed out")),
 					CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -106,6 +115,8 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 			cancelTimeoutLocked();
 		}
 		if (unbind) unbind();
+		recordConnectionDiagnostic("service_connect_cancelled", DiagnosticPriority.STATE, false,
+				false, null);
 		if (pending != null) {
 			pending.completeExceptionally(new OperationCanceledException("Service connection cancelled"));
 		}
@@ -115,7 +126,11 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 	public void onServiceConnected(ComponentName name, IBinder service) {
 		Promise<FermataMediaServiceConnection> p;
 		if (!(service instanceof FermataMediaService.ServiceBinder serviceBinder)) {
-			fail(new IllegalStateException("Unexpected FermataMediaService binder: " + service));
+			IllegalStateException error =
+					new IllegalStateException("Unexpected FermataMediaService binder");
+			recordConnectionDiagnostic("service_connect_failed", DiagnosticPriority.ERROR, bound,
+					false, error.getClass().getSimpleName());
+			fail(error);
 			return;
 		}
 		synchronized (this) {
@@ -126,6 +141,8 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 			cancelTimeoutLocked();
 		}
 		p.complete(this);
+		recordConnectionDiagnostic("service_connected", DiagnosticPriority.STATE, bound, true,
+				null);
 	}
 
 	@Override
@@ -134,15 +151,21 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 		synchronized (this) {
 			binder = null;
 		}
+		recordConnectionDiagnostic("service_disconnected", DiagnosticPriority.WARN, bound, false,
+				null);
 	}
 
 	@Override
 	public void onBindingDied(ComponentName name) {
+		recordConnectionDiagnostic("service_binding_died", DiagnosticPriority.ERROR, bound, false,
+				IllegalStateException.class.getSimpleName());
 		fail(new IllegalStateException("FermataMediaService binding died"));
 	}
 
 	@Override
 	public void onNullBinding(ComponentName name) {
+		recordConnectionDiagnostic("service_null_binding", DiagnosticPriority.ERROR, bound, false,
+				IllegalStateException.class.getSimpleName());
 		fail(new IllegalStateException("FermataMediaService returned a null binding"));
 	}
 
@@ -159,6 +182,8 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 			cancelTimeoutLocked();
 		}
 		if (unbind) unbind();
+		recordConnectionDiagnostic("service_connection_failed", DiagnosticPriority.ERROR, false,
+				false, (failure == null) ? null : failure.getClass().getSimpleName());
 		if (p != null) p.completeExceptionally(failure);
 	}
 
@@ -173,6 +198,21 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 			cancelTimeoutLocked();
 		}
 		if (unbind) unbind();
+		recordConnectionDiagnostic("service_connect_cancelled", DiagnosticPriority.STATE, false,
+				false, null);
+	}
+
+	private static void recordConnectionDiagnostic(String name, DiagnosticPriority priority,
+			boolean bound, boolean hasBinder, String errorClass) {
+		try {
+			DiagnosticEvent.Builder event = DiagnosticEvent.builder("service_connection", name)
+					.scope(DiagnosticScope.ESSENTIAL).priority(priority)
+					.put("bound", bound).put("has_binder", hasBinder);
+			if (errorClass != null) event.put("error_class", errorClass);
+			FermataApplication.get().getDiagnostics().record(event.build());
+		} catch (Throwable ignored) {
+			// Diagnostics must not affect service binding or cancellation.
+		}
 	}
 
 	private void cancelTimeoutLocked() {

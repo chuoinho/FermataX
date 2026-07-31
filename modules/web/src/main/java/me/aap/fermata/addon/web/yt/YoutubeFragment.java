@@ -16,7 +16,6 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.external.ExternalPlaybackDelegateItem;
 import me.aap.fermata.addon.web.FermataChromeClient;
@@ -53,9 +52,13 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	private static final String DEFAULT_URL = "https://m.youtube.com";
 	private static final Pref<LongSupplier> RESUME_POS = Pref.l("YT_RESUME_POS", 0L);
 	private static final Pref<Supplier<String>> RESUME_VIDEO_ID = Pref.s("YT_RESUME_VIDEO_ID", "");
+	private static final long[] HOST_RESTORE_RETRY_MS = {100L, 300L, 750L, 1500L, 3000L};
 	private boolean playOnResume;
 	private String pendingResumeVideoId;
 	private boolean pendingResumePause;
+	private YoutubeFullscreenCoordinator.Suspension hostFullscreenSuspension;
+	private long hostSuspensionRelaunchGeneration;
+	private long hostRestoreOperation;
 
 	@Override
 	public int getFragmentId() {
@@ -141,7 +144,10 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	@Override
 	public void onDestroyView() {
 		YoutubeWebView view = getWebView();
-		if (view != null) view.setFullscreenTapEnabled(false);
+		if (view != null) {
+			discardHostFullscreenSuspension(view);
+			view.setFullscreenTapEnabled(false);
+		}
 		unregisterListeners(MainActivityDelegate.get(requireContext()));
 		super.onDestroyView();
 	}
@@ -166,12 +172,10 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 
 	@Override
 	public void onPause() {
-		if (BuildConfig.AUTO) {
-			YoutubeWebView view = getWebView();
-			if (view != null) {
-				view.setFullscreenTapEnabled(false);
-				view.leavePlaybackPresentation();
-			}
+		YoutubeWebView runtimeView = getWebView();
+		if ((runtimeView != null) && runtimeView.usesAutoPlaybackBehavior()) {
+			runtimeView.setFullscreenTapEnabled(false);
+			suspendPlaybackPresentation(runtimeView);
 		} else {
 			MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
 				FermataServiceUiBinder b = a.getMediaServiceBinder();
@@ -189,8 +193,10 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	@Override
 	public void onResume() {
 		super.onResume();
-		if (BuildConfig.AUTO) {
+		YoutubeWebView view = getWebView();
+		if ((view != null) && view.usesAutoPlaybackBehavior()) {
 			syncPlaybackStateSoon();
+			restorePlaybackPresentationSoon(view);
 			return;
 		}
 		if (!playOnResume) return;
@@ -206,16 +212,15 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	@Override
 	public void onHiddenChanged(boolean hidden) {
 		super.onHiddenChanged(hidden);
-		if (!BuildConfig.AUTO) return;
 		YoutubeWebView view = getWebView();
+		if ((view == null) || !view.usesAutoPlaybackBehavior()) return;
 		if (hidden) {
-			if (view != null) {
-				view.setFullscreenTapEnabled(false);
-				view.leavePlaybackPresentation();
-			}
+			discardHostFullscreenSuspension(view);
+			view.setFullscreenTapEnabled(false);
+			view.leavePlaybackPresentation();
 		} else {
 			YoutubeAddon addon = AddonManager.get().getAddon(YoutubeAddon.class);
-			if ((view != null) && (addon != null)) {
+			if (addon != null) {
 				YoutubeAddon.SessionReturnAction returnAction =
 						addon.consumePlaybackSessionReturn(System.currentTimeMillis());
 				PlayableItem current = MainActivityDelegate.get(requireContext())
@@ -241,6 +246,77 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 		if (v == null) return;
 		v.post(v::syncPlaybackState);
 		v.postDelayed(v::syncPlaybackState, 600L);
+	}
+
+	private void suspendPlaybackPresentation(YoutubeWebView view) {
+		hostRestoreOperation++;
+		YoutubeFullscreenCoordinator.Suspension current = hostFullscreenSuspension;
+		if ((current != null) && view.isPlaybackPresentationSuspensionCurrent(current)) return;
+
+		hostFullscreenSuspension = view.suspendPlaybackPresentation();
+		if (hostFullscreenSuspension != null) {
+			hostSuspensionRelaunchGeneration =
+					MainActivityDelegate.get(view.getContext()).getHostRelaunchGeneration();
+		}
+	}
+
+	private void restorePlaybackPresentationSoon(YoutubeWebView view) {
+		if (hostFullscreenSuspension == null) return;
+		long operation = ++hostRestoreOperation;
+		view.post(() -> restorePlaybackPresentation(view, operation, 0));
+	}
+
+	private void restorePlaybackPresentation(YoutubeWebView view, long operation, int attempt) {
+		YoutubeFullscreenCoordinator.Suspension suspension = hostFullscreenSuspension;
+		if ((suspension == null) || (operation != hostRestoreOperation)) return;
+
+		MainActivityDelegate activity;
+		try {
+			activity = MainActivityDelegate.get(view.getContext());
+		} catch (RuntimeException ignored) {
+			discardHostFullscreenSuspension(view);
+			return;
+		}
+
+		boolean youtubeActive = !isHidden() && (activity.getActiveFragment() == this);
+		boolean youtubeOwnsPlayback =
+				activity.getMediaSessionCallback().getEngine() instanceof YoutubeMediaEngine;
+		YoutubeHostInterruptionPolicy.Decision decision = YoutubeHostInterruptionPolicy.resolve(
+				hostSuspensionRelaunchGeneration, activity.getHostRelaunchGeneration(),
+				activity.isHostResumed(), view.isAttachedToWindow(), youtubeActive,
+				youtubeOwnsPlayback);
+
+		if (decision == YoutubeHostInterruptionPolicy.Decision.DISCARD) {
+			discardHostFullscreenSuspension(view);
+			return;
+		}
+		if ((decision == YoutubeHostInterruptionPolicy.Decision.RESTORE) &&
+				view.resumePlaybackPresentation(suspension)) {
+			clearHostFullscreenSuspension();
+			view.syncPlaybackState();
+			return;
+		}
+
+		if ((attempt >= HOST_RESTORE_RETRY_MS.length) ||
+				!view.isPlaybackPresentationSuspensionCurrent(suspension)) {
+			discardHostFullscreenSuspension(view);
+			return;
+		}
+		view.postDelayed(() -> restorePlaybackPresentation(view, operation, attempt + 1),
+				HOST_RESTORE_RETRY_MS[attempt]);
+	}
+
+	private void discardHostFullscreenSuspension(@Nullable YoutubeWebView view) {
+		YoutubeFullscreenCoordinator.Suspension suspension = hostFullscreenSuspension;
+		clearHostFullscreenSuspension();
+		if ((view != null) && (suspension != null))
+			view.discardPlaybackPresentationSuspension(suspension);
+	}
+
+	private void clearHostFullscreenSuspension() {
+		hostRestoreOperation++;
+		hostFullscreenSuspension = null;
+		hostSuspensionRelaunchGeneration = 0L;
 	}
 
 	public void loadUrl(String url) {
@@ -273,7 +349,10 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 		applyPendingResume(activity, newItem);
 		if (!YoutubeMediaEngine.isYoutubeItem(newItem)) {
 			YoutubeWebView web = getWebView();
-			if (web != null) web.setFullscreenTapEnabled(false);
+			if (web != null) {
+				discardHostFullscreenSuspension(web);
+				web.setFullscreenTapEnabled(false);
+			}
 		}
 		if (isHidden()) return;
 		if (activity.getActiveFragment() == this)
@@ -401,6 +480,13 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 		}
 
 		@Override
+		public int getVisibility(ToolBarView tb, ActivityFragment f) {
+			MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
+			return !a.isBarsHidden() && (shouldShowBack(f) || shouldShowFullScreen(a, f)) ?
+					VISIBLE : GONE;
+		}
+
+		@Override
 		public void onActivityEvent(ToolBarView tb, ActivityDelegate a, long e) {
 			ToolBarView.Mediator.BackTitle.super.onActivityEvent(tb, a, e);
 			ActivityFragment f = a.getActiveFragment();
@@ -437,7 +523,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			}
 			View fullScreen = tb.findViewById(R.id.fullscreen);
 			if (fullScreen != null) fullScreen.setVisibility(showFullScreen ? VISIBLE : GONE);
-			boolean visible = (showBack || showFullScreen) && !a.isBarsHidden();
+			boolean visible = getVisibility(tb, f) == VISIBLE;
 			tb.setVisibility(visible ? VISIBLE : GONE);
 			if (!visible) return;
 

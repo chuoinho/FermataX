@@ -44,7 +44,7 @@
     
     
 
-    <string name="addons">Addons</string>
+	<string name="addons">កម្មវិធីបន្ថែម</string>
     <string name="addon_name_tv">ទូរទស្សន៍</string>
     <string name="addon_name_web_browser">Web កម្មវិធីរុករក</string>
     
@@ -57,7 +57,7 @@
     
     
 
-    <string name="interface_prefs">Interface</string>
+	<string name="interface_prefs">ចំណុចប្រទាក់</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">ការកំណត់ការចាក់សារថ្មី</string>
     <string name="playback_control">ការគ្រប់គ្រងការចាក់សារថ្មី</string>
@@ -337,7 +337,7 @@
     <string name="private_key">សោឯកជន</string>
     <string name="private_key_pass">ពាក្យសម្ងាត់សោឯកជន</string>
 
-    <string name="donate">គាំទ្រតាម Ko-fi</string>
+    <string name="donate">គាំទ្រអ្នកអភិវឌ្ឍន៍</string>
     <string name="donate_text">គាំទ្រ FermataX តាម Ko-fi។</string>
     <string name="use_phone_for_donation">បើក Ko-fi នៅលើទូរសព្ទដើម្បីគាំទ្រ FermataX។</string>
 
@@ -407,4 +407,82 @@
     <string name="err_no_audio_record_perm">ការ​អនុញ្ញាត​ថត​សំឡេង​មិន​ត្រូវ​បាន​ផ្តល់​ទេ</string>
     <string name="addon_name_podcast">ផតខាស</string>
     <string name="dashboard_podcast_sub">កម្មវិធី ភាគ និងការស្តាប់ក្រៅបណ្តាញ</string>
+	<string name="dashboard_audiobook_sub">សៀវភៅ ជំពូក និងការស្តាប់ក្រៅបណ្តាញ</string>
+	<string name="dashboard_stremio_sub">ភាពយន្ត ស៊េរី និងអ្នកផ្តល់សេវាដែលបានដំឡើង</string>
+	<string name="dashboard_back_to_list">ត្រឡប់ទៅបញ្ជី</string>
+	<string name="addon_name_audiobook">សៀវភៅជាសំឡេង</string>
+	<string name="action_prev_folder">លេងថតឯកសារមុន។</string>
+	<string name="action_next_folder">លេងថតបន្ទាប់</string>
+	<string name="recent">ថ្មីៗ</string>
+	<string name="p2p_resolving">កំពុងដោះស្រាយ torrent…</string>
+	<string name="p2p_finding_peers">ការស្វែងរកមិត្តរួមថ្នាក់</string>
+	<string name="p2p_buffering_status">%1$d មនុសស | %2$s/s | %3$d%%</string>
+	<string name="p2p_starting_player_status">%1$d មនុសស | %2$s/s | អ្នកលេងចាប់ផ្តើម</string>
+	<string name="p2p_streaming_status">%1$d មនុសស | %2$s/s | កំពុងលេង</string>
+	<string name="p2p_rebuffering_status">តិះដៀល | %1$d មនុសស | %2$s/s</string>
+	<string name="edit_dashboard">កែសម្រួលផ្ទាំងគ្រប់គ្រង</string>
+	<string name="done">រួចរាល់</string>
+	<string name="err_failed_start_service">បរាជ័យក្នុងការចាប់ផ្តើមសេវាកម្ម៖ %s</string>
+	<string name="err_p2p_metadata_unavailable">ទិន្នន័យមេតារបស់ Torrent មិនអាចប្រើបានទេ។ សាកល្បងការផ្សាយផ្សេងទៀត។</string>
+	<string name="err_p2p_no_peers">មិនមានដៃគូ P2P សកម្មទេ។ សាកល្បងការផ្សាយផ្សេងទៀត។</string>
+	<string name="err_p2p_data_timeout">មិត្តភ័ក្តិ P2P មិនបញ្ជូនទិន្នន័យទាន់ពេលទេ។ សាកល្បងការផ្សាយផ្សេងទៀត។</string>
+	<string name="err_p2p_engine_unavailable">ម៉ាស៊ីនចាក់សារថ្មី P2P មិនអាចប្រើបានទេ។ បើក Stremio ឡើងវិញ ហើយព្យាយាមម្តងទៀត។</string>
+	<string name="err_p2p_file_unavailable">ឯកសារ torrent ដែលបានជ្រើសរើសគឺមិនមានទេ។ សាកល្បងការផ្សាយផ្សេងទៀត។</string>
+	<string name="err_p2p_low_storage">មិនមានទំហំផ្ទុកឥតគិតថ្លៃគ្រប់គ្រាន់សម្រាប់ការចាក់សារថ្មី P2P ទេ។ បង្កើនទំហំទំនេរ ហើយព្យាយាមម្តងទៀត។</string>
+	<string name="initial_setup">ការដំឡើងដំបូង</string>
+	<string name="initial_setup_subtitle">ជ្រើសរើសការគ្រប់គ្រង និងភាសាសម្រាប់ឧបករណ៍នេះ។</string>
+	<string name="initial_setup_nav_position">ទីតាំងរបាររុករក</string>
+	<string name="initial_setup_left">ឆ្វេង</string>
+	<string name="initial_setup_right">ត្រូវហើយ។</string>
+	<string name="initial_setup_app_language">ភាសាកម្មវិធី</string>
+	<string name="initial_setup_voice_enabled">បើកការគ្រប់គ្រងសំឡេង</string>
+	<string name="initial_setup_voice_language">ភាសាសំឡេង</string>
+	<string name="initial_setup_voice_same_app">ដូចគ្នានឹងកម្មវិធី</string>
+	<string name="initial_setup_voice_system">ភាសាប្រព័ន្ធ</string>
+	<string name="initial_setup_voice_english">ភាសាអង់គ្លេស</string>
+	<string name="initial_setup_voice_vietnamese">វៀតណាម</string>
+	<string name="initial_setup_voice_auto">រកឃើញភាសាអង់គ្លេស / វៀតណាមដោយស្វ័យប្រវត្តិ</string>
+	<string name="initial_setup_test_microphone">សាកល្បងមីក្រូហ្វូន</string>
+	<string name="initial_setup_test_disabled">ការគ្រប់គ្រងសំឡេងត្រូវបានបិទ។</string>
+	<string name="initial_setup_test_running">កំពុងស្តាប់...</string>
+	<string name="initial_setup_test_success">ការធ្វើតេស្តមីក្រូហ្វូន៖ %1$s</string>
+	<string name="initial_setup_test_failed">ការធ្វើតេស្តមីក្រូហ្វូនបានបរាជ័យ។ អ្នកអាចបន្ត និងបើកវានៅពេលក្រោយ។</string>
+	<string name="initial_setup_continue">បន្តទៅផ្ទាំងគ្រប់គ្រង</string>
+	<string name="initial_setup_reopen">បើកការដំឡើងដំបូង</string>
+	<string name="initial_setup_reopen_sub">ផ្លាស់ប្តូរឧបករណ៍ ភាសាកម្មវិធី ឬចំណូលចិត្តសំឡេង។</string>
+	<string name="voice_control_auto_language">ស្វែងរកភាសាសំឡេងដោយស្វ័យប្រវត្តិ</string>
+	<string name="voice_control_auto_language_sub">ប្រើការរកឃើញភាសា Android 14 ជាមួយនឹងភាសាដែលបានជ្រើសរើសជាភាសាជំនួស។</string>
+	<string name="module_name_web">បណ្តាញ</string>
+	<string name="module_name_tv">ទូរទស្សន៍</string>
+	<string name="module_name_radio">វិទ្យុអ៊ីនធឺណិត</string>
+	<string name="module_name_podcast">ផតខាស</string>
+	<string name="module_name_audiobook">សៀវភៅជាសំឡេង</string>
+	<string name="addon_name_translate">អ្នកបកប្រែភាសា</string>
+	<string name="addon_name_subgen">ម៉ាស៊ីនបង្កើតចំណងជើងរង</string>
+	<string name="car_keyboard_cancel">បោះបង់</string>
+	<string name="car_keyboard_input">បញ្ចូល</string>
+	<string name="car_keyboard_shift">ប្ដូរ</string>
+	<string name="car_keyboard_space">លំហ</string>
+	<string name="car_keyboard_paste">បិទភ្ជាប់</string>
+	<string name="car_keyboard_delete">លុប</string>
+	<string name="car_keyboard_clear">ច្បាស់</string>
+	<string name="car_keyboard_ok">យល់ព្រម</string>
+	<string name="m3u_playlist_timeout">ពេលវេលាឆ្លើយតប</string>
+	<string name="diagnostics">ការវិនិច្ឆ័យ</string>
+	<string name="diagnostics_sub">របាយការណ៍ក្នុងឧបករណ៍អំពីការគាំង ការជាប់គាំង និងស្ថានភាពកម្មវិធីដែលមិនរំពឹងទុក</string>
+	<string name="detailed_diagnostics">ការវិនិច្ឆ័យលម្អិត</string>
+	<string name="detailed_diagnostics_sub">កត់ត្រាព្រឹត្តិការណ៍លម្អិតរហូតដល់ 48 ម៉ោង។ អ្នកអាចបិទវាបានគ្រប់ពេល។</string>
+	<string name="export_diagnostic_report">នាំចេញរបាយការណ៍វិនិច្ឆ័យ</string>
+	<string name="export_diagnostic_report_sub">បង្កើតរបាយការណ៍ ZIP ឯកជន ដើម្បីរក្សាទុក ឬចែករំលែកជាមួយផ្នែកជំនួយ</string>
+	<string name="clear_diagnostic_data">សម្អាតទិន្នន័យវិនិច្ឆ័យ</string>
+	<string name="clear_diagnostic_data_sub">លុបកំណត់ហេតុ និងរបាយការណ៍ដែលបានរក្សាទុកក្នុងឧបករណ៍</string>
+	<string name="share_diagnostic_report">ចែករំលែករបាយការណ៍</string>
+	<string name="save_diagnostic_report">រក្សាទុកក្នុង Downloads</string>
+	<string name="diagnostic_report_saved">របាយការណ៍វិនិច្ឆ័យត្រូវបានរក្សាទុកក្នុង Downloads ជា %1$s។</string>
+	<string name="diagnostic_report_failed">មិនអាចបង្កើតរបាយការណ៍វិនិច្ឆ័យបានទេ៖ %1$s</string>
+	<string name="diagnostic_data_cleared">បានសម្អាតទិន្នន័យវិនិច្ឆ័យ។</string>
+	<string name="diagnostics_phone_only">នាំចេញរបាយការណ៍វិនិច្ឆ័យពីការកំណត់ FermataX លើទូរសព្ទរបស់អ្នក។</string>
+	<string name="retry">ព្យាយាមម្តងទៀត</string>
+	<string name="media_list_empty">មិនទាន់មានធាតុ</string>
+	<string name="media_list_load_failed">មិនអាចផ្ទុកធាតុបានទេ។</string>
 </resources>

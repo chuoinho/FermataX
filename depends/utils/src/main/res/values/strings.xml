@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+	<string name="download_failed">Failed to download %1$s</string>
     <string name="move_left">Move left</string>
     <string name="move_right">Move right</string>
     <string name="move_up">Move up</string>

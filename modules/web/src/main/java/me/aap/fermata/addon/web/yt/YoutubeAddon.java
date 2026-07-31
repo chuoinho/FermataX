@@ -410,10 +410,6 @@ public class YoutubeAddon extends WebBrowserAddon
 		return decodePreference(YT_ITEM_HISTORY).items();
 	}
 
-	private List<YoutubeItem> getPinnedYoutubeItems() {
-		return decodePreference(YT_PINNED_ITEMS).items();
-	}
-
 	private void updatePinnedItem(YoutubeItem item) {
 		YoutubeItemCodec.DecodeResult result = decodePreference(YT_PINNED_ITEMS);
 		if (result.isUnsupported()) return;

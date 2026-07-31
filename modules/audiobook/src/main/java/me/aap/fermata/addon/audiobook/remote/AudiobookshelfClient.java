@@ -1,10 +1,11 @@
 package me.aap.fermata.addon.audiobook.remote;
 
+import static me.aap.utils.net.http.HttpContentDecoder.decodeBuffered;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,15 +18,13 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.diagnostics.DiagnosticSourceOperation;
 import me.aap.fermata.addon.audiobook.model.AudiobookBook;
 import me.aap.fermata.addon.audiobook.model.AudiobookChapter;
 import me.aap.fermata.addon.audiobook.model.AudiobookSource;
@@ -51,7 +50,7 @@ public final class AudiobookshelfClient {
 
 	public FutureSupplier<AudiobookSourceSnapshot> connect(String endpoint, String username,
 			String password) {
-		return App.get().execute(() -> {
+		return observe(App.get().execute(() -> {
 			if (!credentials.isAvailable()) {
 				throw new IOException("Encrypted credential storage is unavailable");
 			}
@@ -70,28 +69,29 @@ public final class AudiobookshelfClient {
 				credentials.remove(reference);
 				throw error;
 			}
-		});
+		}), "connect");
 	}
 
 	public FutureSupplier<AudiobookSourceSnapshot> refresh(AudiobookSource source) {
-		return App.get().execute(() -> snapshot(source, requireCredential(source)));
+		return observe(App.get().execute(() -> snapshot(source, requireCredential(source))),
+				"refresh");
 	}
 
 	public FutureSupplier<AudiobookshelfBookDetails> loadBook(AudiobookSource source,
 			AudiobookBook summary) {
-		return App.get().execute(() -> {
+		return observe(App.get().execute(() -> {
 			AudiobookCredential credential = requireCredential(source);
 			String remoteId = summary.getRemoteId();
 			if (remoteId == null) throw new IOException("Audiobookshelf book ID is missing");
 			String json = authenticated(source, credential, "GET",
 					"/api/items/" + path(remoteId) + "?expanded=1&include=progress", null);
 			return parseDetails(json, source, summary, System.currentTimeMillis());
-		});
+		}), "details");
 	}
 
 	public FutureSupplier<Void> updateProgress(AudiobookSource source, AudiobookBook book,
 			AudiobookChapter chapter, long chapterPositionMs, boolean finished) {
-		return App.get().execute(() -> {
+		return observe(App.get().execute(() -> {
 			String remoteId = book.getRemoteId();
 			if (remoteId == null) return null;
 			AudiobookCredential credential = requireCredential(source);
@@ -104,7 +104,11 @@ public final class AudiobookshelfClient {
 			authenticated(source, credential, "PATCH",
 					"/api/me/progress/" + path(remoteId), body.toString());
 			return null;
-		});
+		}), "progress");
+	}
+
+	private static <T> FutureSupplier<T> observe(FutureSupplier<T> future, String requestType) {
+		return DiagnosticSourceOperation.observe(future, "audiobook_source", requestType);
 	}
 
 	public Map<String, String> requestHeaders(AudiobookSource source) {
@@ -205,7 +209,7 @@ public final class AudiobookshelfClient {
 			if ((status == 204) || (connection.getContentLengthLong() == 0)) return "{}";
 			long length = connection.getContentLengthLong();
 			if (length > MAX_JSON_BYTES) throw new IOException("Audiobookshelf response is too large");
-			try (InputStream decoded = decode(connection, connection.getInputStream())) {
+			try (InputStream decoded = decodeBuffered(connection, connection.getInputStream())) {
 				return readBounded(decoded);
 			}
 		} finally {
@@ -460,15 +464,6 @@ public final class AudiobookshelfClient {
 			output.write(buffer, 0, read);
 		}
 		return output.toString(StandardCharsets.UTF_8);
-	}
-
-	private static InputStream decode(HttpURLConnection connection, InputStream source)
-			throws IOException {
-		InputStream buffered = new BufferedInputStream(source);
-		String encoding = connection.getContentEncoding();
-		if ("gzip".equalsIgnoreCase(encoding)) return new GZIPInputStream(buffered);
-		if ("deflate".equalsIgnoreCase(encoding)) return new InflaterInputStream(buffered);
-		return buffered;
 	}
 
 	private static String string(JSONObject object, String key) {

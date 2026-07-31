@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import static me.aap.fermata.addon.stremio.integration.StremioFutureBridge.toCompletable;
+
 import androidx.annotation.Nullable;
 
 import java.util.Collections;
@@ -471,16 +473,6 @@ public final class StremioItemGatewayAdapter implements StremioItemGateway,
 	private static <T> FutureSupplier<T> bridge(CompletableFuture<T> stage) {
 		return StremioFutureBridge.from(stage);
 	}
-
-	private static <T> CompletableFuture<T> toCompletable(FutureSupplier<T> supplier) {
-		CompletableFuture<T> result = new CompletableFuture<>();
-		supplier.onCompletion((value, error) -> {
-			if (error == null) result.complete(value);
-			else result.completeExceptionally(error);
-		});
-		return result;
-	}
-
 	private record RequestContext(String sourceUuid, StreamAggregationRequest request) {
 	}
 

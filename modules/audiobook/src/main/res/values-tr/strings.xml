@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">Dinlemeye devam et</string>
+	<string name="audiobook_library">Kütüphane</string>
+	<string name="audiobook_downloads">İndirilenler</string>
+	<string name="audiobook_discover">Ücretsiz kitapları keşfedin</string>
+	<string name="audiobook_sources">Kaynaklar</string>
+	<string name="audiobook_source_local">Yerel klasör</string>
+	<string name="audiobook_source_librivox">LibriVox</string>
+	<string name="audiobook_source_audiobookshelf">Sesli kitaplık</string>
+	<string name="audiobook_source_opds">OPDS kataloğu</string>
+	<string name="audiobook_add_folder">Sesli kitap klasörü ekle</string>
+	<string name="audiobook_add_source">Sesli kitap kaynağı ekle</string>
+	<string name="audiobook_add_audiobookshelf">Sesli Kitaplık Ekle</string>
+	<string name="audiobook_add_opds">OPDS kataloğunu ekle</string>
+	<string name="audiobook_server_url">Sunucu URL\&apos;si</string>
+	<string name="audiobook_bearer_token">Taşıyıcı jetonu (isteğe bağlı)</string>
+	<string name="audiobook_add_failed">Sesli kitap kaynağı eklenemedi</string>
+	<string name="audiobook_delete_source_title">Sesli kitap kaynağı kaldırılsın mı?</string>
+	<string name="audiobook_delete_source_message">%1$s ve dinleme geçmişi kaldırılsın mı?</string>
+	<string name="audiobook_search_librivox">LibriVox\&apos;ta arama yapın</string>
+	<string name="audiobook_popular">Popüler ücretsiz kitaplar</string>
+	<string name="audiobook_latest">Son eklenen</string>
+	<string name="audiobook_add_to_library">Kitaplığa ekle</string>
+	<string name="audiobook_import_failed">Bu sesli kitap eklenemedi</string>
+	<string name="audiobook_download_book">Kitabı indir</string>
+	<string name="audiobook_delete_download">İndirmeyi kaldır</string>
+	<string name="audiobook_download_failed">Sesli kitap indirilemedi</string>
+</resources>

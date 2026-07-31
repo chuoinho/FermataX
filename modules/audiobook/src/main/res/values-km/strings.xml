@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">បន្តស្តាប់</string>
+	<string name="audiobook_library">បណ្ណាល័យ</string>
+	<string name="audiobook_downloads">ការទាញយក</string>
+	<string name="audiobook_discover">ស្វែងរកសៀវភៅឥតគិតថ្លៃ</string>
+	<string name="audiobook_sources">ប្រភព</string>
+	<string name="audiobook_source_local">ថតក្នុងស្រុក</string>
+	<string name="audiobook_source_librivox">LibriVox</string>
+	<string name="audiobook_source_audiobookshelf">ធ្នើសៀវភៅជាសំឡេង</string>
+	<string name="audiobook_source_opds">កាតាឡុក OPDS</string>
+	<string name="audiobook_add_folder">បន្ថែមថតឯកសារអូឌីយ៉ូ</string>
+	<string name="audiobook_add_source">បន្ថែមប្រភពសៀវភៅអូឌីយ៉ូ</string>
+	<string name="audiobook_add_audiobookshelf">បន្ថែមធ្នើសៀវភៅអូឌីយ៉ូ</string>
+	<string name="audiobook_add_opds">បន្ថែមកាតាឡុក OPDS</string>
+	<string name="audiobook_server_url">URL ម៉ាស៊ីនមេ</string>
+	<string name="audiobook_bearer_token">សញ្ញាសម្គាល់អ្នកកាន់ (ជាជម្រើស)</string>
+	<string name="audiobook_add_failed">មិនអាចបន្ថែមប្រភពសៀវភៅអូឌីយ៉ូបានទេ។</string>
+	<string name="audiobook_delete_source_title">ដក​ប្រភព​សៀវភៅ​សំឡេង​ចេញ?</string>
+	<string name="audiobook_delete_source_message">លុប %1$s និងប្រវត្តិស្តាប់របស់វាចេញ?</string>
+	<string name="audiobook_search_librivox">ស្វែងរក LibriVox</string>
+	<string name="audiobook_popular">សៀវភៅឥតគិតថ្លៃពេញនិយម</string>
+	<string name="audiobook_latest">ថ្មីៗនេះបានបន្ថែម</string>
+	<string name="audiobook_add_to_library">បន្ថែមទៅបណ្ណាល័យ</string>
+	<string name="audiobook_import_failed">មិនអាចបន្ថែមសៀវភៅជាសំឡេងនេះបានទេ។</string>
+	<string name="audiobook_download_book">ទាញយកសៀវភៅ</string>
+	<string name="audiobook_delete_download">ដកការទាញយកចេញ</string>
+	<string name="audiobook_download_failed">ការទាញយកសៀវភៅជាសំឡេងបានបរាជ័យ</string>
+</resources>

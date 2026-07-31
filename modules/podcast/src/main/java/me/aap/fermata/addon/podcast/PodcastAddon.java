@@ -134,7 +134,7 @@ public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAdd
 	}
 
 	private synchronized void writeProgress(PlaybackSnapshot snapshot, boolean force) {
-		if (snapshot == null) return;
+		if ((snapshot == null) || !snapshot.canPersistProgress()) return;
 		me.aap.fermata.media.lib.MediaLib.PlayableItem item = snapshot.getItem();
 		if (item == null) return;
 		item = PlayableItemResolver.unwrap(item);

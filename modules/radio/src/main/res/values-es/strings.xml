@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="radio_popular">Popular</string>
+	<string name="radio_top_voted">Más votados</string>
+	<string name="radio_countries">Países</string>
+	<string name="radio_tags">Etiquetas</string>
+	<string name="radio_station_count">%1$d estaciones</string>
+	<string name="radio_add_source">Agregar fuente de radio</string>
+	<string name="radio_edit_source">Editar fuente de radio</string>
+	<string name="radio_source_name">Nombre de la estación</string>
+	<string name="radio_source_url">URL de transmisión</string>
+	<string name="radio_source_add_failed">No se pudo guardar la fuente de radio: %1$s</string>
+</resources>

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import static me.aap.fermata.addon.stremio.integration.StremioFutureBridge.toCompletable;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -9,7 +11,6 @@ import me.aap.fermata.addon.stremio.playback.PlaybackDescriptor;
 import me.aap.fermata.addon.stremio.session.StremioAdjacentDirection;
 import me.aap.fermata.addon.stremio.session.StremioSessionCoordinator;
 import me.aap.fermata.media.lib.DefaultMediaLib;
-import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.async.FutureSupplier;
 
@@ -39,14 +40,5 @@ final class StremioAdjacentPlaybackResolver {
 					(item instanceof PlayableItem playable) ? playable : null);
 		}).toCompletableFuture();
 		return StremioFutureBridge.from(result);
-	}
-
-	private static <T> CompletableFuture<T> toCompletable(FutureSupplier<T> supplier) {
-		CompletableFuture<T> result = new CompletableFuture<>();
-		supplier.onCompletion((value, error) -> {
-			if (error == null) result.complete(value);
-			else result.completeExceptionally(error);
-		});
-		return result;
 	}
 }

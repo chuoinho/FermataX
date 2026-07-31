@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="radio_popular">인기 있는</string>
+	<string name="radio_top_voted">최고 투표</string>
+	<string name="radio_countries">국가</string>
+	<string name="radio_tags">태그</string>
+	<string name="radio_station_count">방송국 %1$d개</string>
+	<string name="radio_add_source">라디오 소스 추가</string>
+	<string name="radio_edit_source">라디오 소스 편집</string>
+	<string name="radio_source_name">역명</string>
+	<string name="radio_source_url">스트림 URL</string>
+	<string name="radio_source_add_failed">라디오 소스를 저장하지 못했습니다: %1$s</string>
+</resources>

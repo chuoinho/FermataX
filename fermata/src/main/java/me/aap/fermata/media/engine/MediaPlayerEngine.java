@@ -31,7 +31,8 @@ import me.aap.utils.log.Log;
  */
 public class MediaPlayerEngine extends MediaEngineBase
 		implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
-		MediaPlayer.OnVideoSizeChangedListener, MediaPlayer.OnErrorListener {
+		MediaPlayer.OnVideoSizeChangedListener, MediaPlayer.OnErrorListener,
+		MediaPlayer.OnInfoListener {
 	private final Context ctx;
 	private final MediaPlayer player;
 	private final AudioEffects audioEffects;
@@ -50,6 +51,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 		player.setOnCompletionListener(this);
 		player.setOnErrorListener(this);
 		player.setOnVideoSizeChangedListener(this);
+		player.setOnInfoListener(this);
 	}
 
 	@Override
@@ -279,6 +281,12 @@ public class MediaPlayerEngine extends MediaEngineBase
 	@Override
 	public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
 		listener.onVideoSizeChanged(this, width, height);
+	}
+
+	@Override
+	public boolean onInfo(MediaPlayer mp, int what, int extra) {
+		if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) listener.onVideoFirstFrame(this);
+		return false;
 	}
 
 	@Override

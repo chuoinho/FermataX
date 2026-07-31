@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="openai_key">OpenAI キー</string>
+	<string name="openai_key_sub">個人キーを取得します: &lt;a href=\&quot;%1$s\&quot;&gt;%1$s&lt;a&gt;</string>
+	<string name="openai_model">モデル</string>
+	<string name="openai_model_custom">カスタムモデル</string>
+	<string name="openai_model_other">その他のモデル</string>
+	<string name="chat_request_failed">リクエストが失敗しました: %1$s</string>
+	<string name="chat_tts_failed">テキスト読み上げに失敗しました: %1$s</string>
+</resources>

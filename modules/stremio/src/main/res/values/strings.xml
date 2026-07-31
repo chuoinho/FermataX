@@ -72,6 +72,9 @@
 	<string name="stremio_config_load_failed">The provider configuration page could not be loaded.</string>
 	<string name="stremio_config_webview_unsupported">Update Android System WebView before configuring this provider.</string>
 	<string name="stremio_config_save_failed">The configured addon could not be validated or saved.</string>
+	<string name="stremio_config_post_blocked_title">Form could not be submitted</string>
+	<string name="stremio_config_post_blocked_message">This provider uses a POST form that cannot be sent securely in this setup window. Go back and use the provider\'s link-based setup if available.</string>
+	<string name="stremio_config_go_back">Go back</string>
 	<string name="stremio_search">Search Stremio</string>
 	<string name="stremio_discover">Discover</string>
 	<string name="stremio_library">Library</string>
@@ -115,4 +118,9 @@
 	<string name="stremio_loading_streams_hint">Waiting for providers</string>
 	<string name="stremio_no_streams">No playable streams</string>
 	<string name="stremio_no_streams_hint">Install or enable a compatible Stremio provider</string>
+	<string name="stremio_torrent_playback_unavailable">Torrent playback is not installed</string>
+	<string name="stremio_external_web_blocked">External Web playback is unavailable for security</string>
+	<string name="stremio_stream_network_blocked">Stream blocked by source network policy</string>
+	<string name="stremio_stream_unsupported">Unsupported stream</string>
+	<string name="stremio_playback_addon_unavailable">Playback addon unavailable</string>
 </resources>

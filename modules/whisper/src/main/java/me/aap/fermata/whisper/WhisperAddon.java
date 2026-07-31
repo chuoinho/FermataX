@@ -1,7 +1,6 @@
 package me.aap.fermata.whisper;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.Pair;
 
 import androidx.annotation.Keep;
@@ -9,7 +8,6 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 

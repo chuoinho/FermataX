@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">Nastavite slušati</string>
+	<string name="audiobook_library">Knjižnica</string>
+	<string name="audiobook_downloads">Preuzimanja</string>
+	<string name="audiobook_discover">Otkrijte besplatne knjige</string>
+	<string name="audiobook_sources">Izvori</string>
+	<string name="audiobook_source_local">Lokalna mapa</string>
+	<string name="audiobook_source_librivox">LibriVox</string>
+	<string name="audiobook_source_audiobookshelf">Polica za audio knjige</string>
+	<string name="audiobook_source_opds">OPDS katalog</string>
+	<string name="audiobook_add_folder">Dodajte mapu audioknjige</string>
+	<string name="audiobook_add_source">Dodajte izvor audioknjige</string>
+	<string name="audiobook_add_audiobookshelf">Dodajte policu za audio knjige</string>
+	<string name="audiobook_add_opds">Dodaj OPDS katalog</string>
+	<string name="audiobook_server_url">URL poslužitelja</string>
+	<string name="audiobook_bearer_token">Token nositelja (neobavezno)</string>
+	<string name="audiobook_add_failed">Nije moguće dodati izvor audioknjige</string>
+	<string name="audiobook_delete_source_title">Ukloniti izvor audioknjige?</string>
+	<string name="audiobook_delete_source_message">Ukloniti %1$s i njegovu povijest slušanja?</string>
+	<string name="audiobook_search_librivox">Pretražite LibriVox</string>
+	<string name="audiobook_popular">Popularne besplatne knjige</string>
+	<string name="audiobook_latest">Nedavno dodano</string>
+	<string name="audiobook_add_to_library">Dodaj u knjižnicu</string>
+	<string name="audiobook_import_failed">Nije moguće dodati ovu audioknjigu</string>
+	<string name="audiobook_download_book">Preuzmite knjigu</string>
+	<string name="audiobook_delete_download">Ukloni preuzimanje</string>
+	<string name="audiobook_download_failed">Preuzimanje audioknjige nije uspjelo</string>
+</resources>

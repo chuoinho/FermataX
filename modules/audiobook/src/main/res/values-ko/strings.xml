@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">계속 듣기</string>
+	<string name="audiobook_library">도서관</string>
+	<string name="audiobook_downloads">다운로드</string>
+	<string name="audiobook_discover">무료 도서 검색</string>
+	<string name="audiobook_sources">출처</string>
+	<string name="audiobook_source_local">로컬 폴더</string>
+	<string name="audiobook_source_librivox">LibriVox</string>
+	<string name="audiobook_source_audiobookshelf">오디오북장</string>
+	<string name="audiobook_source_opds">OPDS 카탈로그</string>
+	<string name="audiobook_add_folder">오디오북 폴더 추가</string>
+	<string name="audiobook_add_source">오디오북 소스 추가</string>
+	<string name="audiobook_add_audiobookshelf">오디오북 추가</string>
+	<string name="audiobook_add_opds">OPDS 카탈로그 추가</string>
+	<string name="audiobook_server_url">서버 URL</string>
+	<string name="audiobook_bearer_token">무기명 토큰(선택 사항)</string>
+	<string name="audiobook_add_failed">오디오북 소스를 추가할 수 없습니다.</string>
+	<string name="audiobook_delete_source_title">오디오북 소스를 삭제하시겠습니까?</string>
+	<string name="audiobook_delete_source_message">%1$s 및 청취 기록을 삭제하시겠습니까?</string>
+	<string name="audiobook_search_librivox">LibriVox 검색</string>
+	<string name="audiobook_popular">인기 있는 무료 도서</string>
+	<string name="audiobook_latest">최근 추가됨</string>
+	<string name="audiobook_add_to_library">라이브러리에 추가</string>
+	<string name="audiobook_import_failed">이 오디오북을 추가할 수 없습니다.</string>
+	<string name="audiobook_download_book">책 다운로드</string>
+	<string name="audiobook_delete_download">다운로드 삭제</string>
+	<string name="audiobook_download_failed">오디오북 다운로드 실패</string>
+</resources>

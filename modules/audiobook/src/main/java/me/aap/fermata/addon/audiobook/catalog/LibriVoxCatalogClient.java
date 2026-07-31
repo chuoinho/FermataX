@@ -1,9 +1,10 @@
 package me.aap.fermata.addon.audiobook.catalog;
 
+import static me.aap.utils.net.http.HttpContentDecoder.decodeBuffered;
+
 import android.util.JsonReader;
 import android.util.JsonToken;
 
-import java.io.BufferedInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,12 +20,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.diagnostics.DiagnosticSourceOperation;
 import me.aap.fermata.addon.audiobook.model.AudiobookBook;
 import me.aap.fermata.addon.audiobook.model.AudiobookChapter;
 import me.aap.fermata.addon.audiobook.model.AudiobookSource;
@@ -46,14 +46,18 @@ public final class LibriVoxCatalogClient {
 	private static final Pattern NUMERIC_ENTITY = Pattern.compile("&#(x?[0-9a-fA-F]+);");
 
 	public FutureSupplier<List<LibriVoxBook>> search(String query, Sort sort, int limit) {
-		return App.get().execute(() -> request(buildSearchUrl(query, sort, limit),
-				LibriVoxCatalogClient::parseSearch));
+		return observe(App.get().execute(() -> request(buildSearchUrl(query, sort, limit),
+				LibriVoxCatalogClient::parseSearch)), "search");
 	}
 
 	public FutureSupplier<LibriVoxImport> load(String identifier) {
 		String safe = safeIdentifier(identifier);
-		return App.get().execute(() -> request(METADATA + safe,
-				input -> parseMetadata(input, safe, System.currentTimeMillis())));
+		return observe(App.get().execute(() -> request(METADATA + safe,
+				input -> parseMetadata(input, safe, System.currentTimeMillis()))), "details");
+	}
+
+	private static <T> FutureSupplier<T> observe(FutureSupplier<T> future, String requestType) {
+		return DiagnosticSourceOperation.observe(future, "audiobook_source", requestType);
 	}
 
 	private static <T> T request(String url, Parser<T> parser) throws IOException {
@@ -72,7 +76,7 @@ public final class LibriVoxCatalogClient {
 			long length = connection.getContentLengthLong();
 			if (length > MAX_JSON_BYTES) throw new IOException("LibriVox response is too large");
 			try (InputStream raw = new LimitedInputStream(connection.getInputStream(),
-					MAX_JSON_BYTES); InputStream decoded = decode(connection, raw)) {
+					MAX_JSON_BYTES); InputStream decoded = decodeBuffered(connection, raw)) {
 				return parser.parse(decoded);
 			}
 		} finally {
@@ -305,15 +309,6 @@ public final class LibriVoxCatalogClient {
 		} catch (NumberFormatException ignore) {
 			return 0;
 		}
-	}
-
-	private static InputStream decode(HttpURLConnection connection, InputStream source)
-			throws IOException {
-		InputStream buffered = new BufferedInputStream(source);
-		String encoding = connection.getContentEncoding();
-		if ("gzip".equalsIgnoreCase(encoding)) return new GZIPInputStream(buffered);
-		if ("deflate".equalsIgnoreCase(encoding)) return new InflaterInputStream(buffered);
-		return buffered;
 	}
 
 	private static String plainText(String html) {

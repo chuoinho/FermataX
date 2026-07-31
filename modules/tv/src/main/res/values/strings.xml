@@ -31,17 +31,27 @@
     <string name="logo_location">Location</string>
     <string name="logo_location_hint">Folder or http(s) base URL</string>
     <string name="logo_prefer_epg">Prefer logos from EPG</string>
-    <string name="catchup" translatable="false">Catchup</string>
+	<string name="catchup">Catchup</string>
     <string name="catchup_query">Query format</string>
     <string name="catchup_type">Catchup type</string>
     <string name="catchup_type_cur">Current catchup type: %1$s</string>
     <string name="catchup_type_auto">Auto</string>
-    <string name="catchup_type_append" translatable="false">Append</string>
-    <string name="catchup_type_default" translatable="false">Default</string>
-    <string name="catchup_type_shift" translatable="false">Shift</string>
+	<string name="catchup_type_append">Append</string>
+	<string name="catchup_type_default">Default</string>
+	<string name="catchup_type_shift">Shift</string>
     <string name="catchup_type_flussonic" translatable="false">Flussonic</string>
     <string name="catchup_days">Number of days</string>
     <string name="connection_settings">Connection settings</string>
 
     <string name="err_failed_to_add_tv_source">Failed to add source: %1$s</string>
+	<string name="xtream_error_incomplete_account">Enter host, username and password.</string>
+	<string name="xtream_error_host_not_found">Unable to find Xtream server %1$s. Check the host and port.</string>
+	<string name="xtream_error_connect">Unable to connect to Xtream server %1$s. Check the host, port and network.</string>
+	<string name="xtream_error_timeout">Xtream server did not respond in time: %1$s. Try again or increase the timeout.</string>
+	<string name="xtream_error_html_response">Xtream server returned an HTML error page instead of JSON. Check the portal URL and account.</string>
+	<string name="xtream_error_invalid_response">Xtream server returned an invalid response. Check the portal URL and account.</string>
+	<string name="xtream_error_account_rejected">Xtream server rejected the request (HTTP %1$d). Check username, password, expiry, or connection slots.</string>
+	<string name="xtream_error_api_not_found">Xtream API was not found on this server (HTTP 404). Check the portal URL, host and port.</string>
+	<string name="xtream_error_server">Xtream server error (HTTP %1$d%2$s). Try again later.</string>
+	<string name="xtream_error_http">Xtream request failed (HTTP %1$d%2$s).</string>
 </resources>

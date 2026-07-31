@@ -198,7 +198,7 @@ public class FoldersFragment extends MediaLibFragment {
 
 	public boolean canScrollUp() {
 		View v = getView();
-		return (v != null) && (v.getScrollY() > 0);
+		return (v != null) && getListView().canScrollVertically(-1);
 	}
 
 	private void addFolderVfs(String provId, @StringRes int name) {

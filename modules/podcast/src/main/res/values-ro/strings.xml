@@ -10,7 +10,7 @@
     <string name="podcast_export_private_title">Linkuri de podcast private</string>
     <string name="podcast_export_private_message">Include adresele private cu token în acest fișier OPML?</string>
     <string name="podcast_export_public_only">Doar publice</string>
-    <string name="podcast_export_include_private">Include private</string>
+	<string name="podcast_export_include_private">Include date private</string>
     <string name="podcast_feed_url">URL flux</string>
     <string name="podcast_add_failed">Acest podcast nu a putut fi adăugat</string>
     <string name="podcast_import_failed">Acest fișier OPML nu a putut fi importat</string>

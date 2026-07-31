@@ -92,6 +92,7 @@ public class DashboardFragment extends MainActivityFragment
 		prefs = activity.getPrefs();
 		RecyclerView list = view.findViewById(R.id.dashboard_list);
 		this.list = list;
+		if (activity.getRuntimeHostMode().usesAutomotivePresentation()) list.setSaveEnabled(false);
 		DashboardAdapter dashboardAdapter = new DashboardAdapter(activity, localizedCtx, prefs);
 		adapter = dashboardAdapter;
 		int spanCount = getSpanCountForWidthDp(getFullWidthDp(ctx));

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="force_dark">Wymuś tryb ciemny, jeśli jest obsługiwany</string>
+	<string name="force_dark_sub">%1$s. Wybierz opcję „Auto” , aby dostosować się do motywu urządzenia.</string>
+	<string name="force_dark_auto">Automatyczny</string>
+	<string name="force_dark_enabled">Włączony</string>
+	<string name="force_dark_disabled">Wyłączony</string>
+	<string name="user_agent">Agent użytkownika</string>
+	<string name="user_agent_desktop">User-Agent – ​​wersja na komputery stacjonarne</string>
+	<string name="desktop_version">Wersja na komputer stacjonarny</string>
+	<string name="full_screen">Pełny ekran</string>
+	<string name="full_screen_exit">Wyjdź z pełnego ekranu</string>
+	<string name="retry">Spróbować ponownie</string>
+	<string name="web_page_load_failed">Nie udało się załadować strony</string>
+	<string name="web_page_load_failed_msg">Nie można załadować: \n%1$s\n\nPowód: %2$s\n\nWebView: %3$s</string>
+	<string name="video_scaling_fill_proportional">Wypełnij proporcjonalnie</string>
+	<string name="video_quality">Jakość wideo</string>
+	<string name="open_on_start">Otwórz na początku</string>
+	<string name="auto_highest_video_quality">Automatycznie wybieraj najwyższą jakość wideo</string>
+	<string name="try_to_skip_ad">Spróbuj pominąć reklamy</string>
+	<string name="sponsorblock_sub">Pomiń segmenty pochodzące od tłumów podczas oglądania YouTube.</string>
+	<string name="sponsorblock_enable">Włącz blokadę sponsorowania</string>
+	<string name="sponsorblock_enable_sub">Pobiera dane segmentu ze sponsor.ajay.app dla bieżącego filmu.</string>
+	<string name="sponsorblock_cat_sponsor">Segmenty sponsorskie</string>
+	<string name="sponsorblock_cat_selfpromo">Autopromocja</string>
+	<string name="sponsorblock_cat_interaction">Przypomnienia o interakcji</string>
+	<string name="sponsorblock_cat_intro">Wstępy i przerwy</string>
+	<string name="sponsorblock_cat_outro">Końcówki i napisy końcowe</string>
+	<string name="sponsorblock_cat_preview">Podgląd i podsumowanie</string>
+	<string name="sponsorblock_cat_hook">Haczyki</string>
+	<string name="sponsorblock_cat_music_offtopic">Sekcje niemuzyczne</string>
+	<string name="sponsorblock_cat_filler">Podsadzkarz</string>
+	<string name="sponsorblock_cat_filler_sub">Kategoria agresywna; domyślnie wyłączone.</string>
+</resources>

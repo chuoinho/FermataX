@@ -18,7 +18,12 @@ window_views_raw/
 .agents/
 .codex/
 .codex-adb/
+.tools/
+carview-static-analysis-*/
+fermatax-dhu-gallery-*/
 docs/*
+!docs/maintainability-refactor-goal-20260730.md
+!docs/package-identity.md
 !docs/stremio/
 !docs/stremio/**
 MASTER_CONTEXT.md

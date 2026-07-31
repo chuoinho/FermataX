@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="audiobook_continue">seguir escuchando</string>
+	<string name="audiobook_library">Biblioteca</string>
+	<string name="audiobook_downloads">Descargas</string>
+	<string name="audiobook_discover">Descubre libros gratis</string>
+	<string name="audiobook_sources">Fuentes</string>
+	<string name="audiobook_source_local">Carpeta local</string>
+	<string name="audiobook_source_librivox">LibriVox</string>
+	<string name="audiobook_source_audiobookshelf">estantería de audiolibros</string>
+	<string name="audiobook_source_opds">Catálogo OPDS</string>
+	<string name="audiobook_add_folder">Agregar carpeta de audiolibros</string>
+	<string name="audiobook_add_source">Agregar fuente de audiolibro</string>
+	<string name="audiobook_add_audiobookshelf">Agregar estantería de audiolibros</string>
+	<string name="audiobook_add_opds">Agregar catálogo OPDS</string>
+	<string name="audiobook_server_url">URL del servidor</string>
+	<string name="audiobook_bearer_token">Token al portador (opcional)</string>
+	<string name="audiobook_add_failed">No se pudo agregar la fuente del audiolibro</string>
+	<string name="audiobook_delete_source_title">¿Eliminar la fuente del audiolibro?</string>
+	<string name="audiobook_delete_source_message">¿Eliminar %1$s y su historial de escucha?</string>
+	<string name="audiobook_search_librivox">Buscar en LibriVox</string>
+	<string name="audiobook_popular">Libros gratuitos populares</string>
+	<string name="audiobook_latest">Agregado recientemente</string>
+	<string name="audiobook_add_to_library">Agregar a la biblioteca</string>
+	<string name="audiobook_import_failed">No se pudo agregar este audiolibro</string>
+	<string name="audiobook_download_book">descargar libro</string>
+	<string name="audiobook_delete_download">Eliminar descarga</string>
+	<string name="audiobook_download_failed">Falló la descarga del audiolibro</string>
+</resources>

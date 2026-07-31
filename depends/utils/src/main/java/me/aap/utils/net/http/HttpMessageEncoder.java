@@ -202,8 +202,6 @@ abstract class HttpMessageEncoder<M extends HttpMessage> implements ByteBufferSu
 
 	ByteBufferSupplier retainBuf(ByteBuffer buf, int start, int end) {
 		ByteBuffer b = copyOfRange(buf, start, end);
-		// Log.d("Retaining buffer: ", b);
-
 		return () -> {
 			b.position(0);
 			ByteBuffer bb = NetThread.getReadBuffer();

@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.net.URI;
 import java.util.Map;
 
 import me.aap.fermata.addon.stremio.net.NetworkConsent;

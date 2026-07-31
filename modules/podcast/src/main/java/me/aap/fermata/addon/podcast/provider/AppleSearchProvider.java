@@ -10,7 +10,6 @@ import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import me.aap.fermata.addon.podcast.model.PodcastSearchRequest;
 import me.aap.fermata.addon.podcast.model.PodcastSearchResult;

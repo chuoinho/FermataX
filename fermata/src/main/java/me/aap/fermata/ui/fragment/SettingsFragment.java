@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 import java.util.Locale;
 import java.util.ArrayList;
+import java.util.function.BooleanSupplier;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
@@ -29,6 +30,7 @@ import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.fermata.pref.DiagnosticsPreferences;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
@@ -51,6 +53,7 @@ public class SettingsFragment extends MainActivityFragment
 	private MainActivityDelegate activityDelegate;
 	private boolean viewActive;
 	private long viewGeneration;
+	private DiagnosticsPreferences diagnosticsPreferences;
 
 	@Override
 	public int getFragmentId() {
@@ -125,6 +128,7 @@ public class SettingsFragment extends MainActivityFragment
 		addonPrefsBuilders.clear();
 		if (adapter != null) adapter.onDestroy();
 		adapter = null;
+		diagnosticsPreferences = null;
 	}
 
 	@Override
@@ -251,8 +255,8 @@ public class SettingsFragment extends MainActivityFragment
 				InterfacePrefsBuilder.addAndroidAuto(a,
 						sub1.subSet(o -> o.title = R.string.interface_prefs_aa));
 			}
-			InterfacePrefsBuilder.add(a, sub1, MainActivityPrefs.THEME_MAIN, MainActivityPrefs.HIDE_BARS,
-					MainActivityPrefs.FULLSCREEN, MainActivityPrefs.SHOW_PG_UP_DOWN, null,
+			InterfacePrefsBuilder.add(a, sub1, MainActivityPrefs.THEME_MAIN,
+					MainActivityPrefs.SHOW_PG_UP_DOWN, null,
 					MainActivityPrefs.NAV_BAR_POS, MainActivityPrefs.NAV_BAR_SIZE,
 					MainActivityPrefs.TOOL_BAR_SIZE, MainActivityPrefs.CONTROL_PANEL_SIZE,
 					MainActivityPrefs.TEXT_ICON_SIZE);
@@ -287,13 +291,43 @@ public class SettingsFragment extends MainActivityFragment
 		PlaybackPrefsBuilder.add(a, playback, mediaPrefs);
 		MediaEnginePrefsBuilder.add(a, playback, mediaPrefs, isCar);
 
-		sub1 = playback.subSet(o -> o.title = R.string.subtitles);
-		addSubtitlePrefs(a.getContext(), sub1, mediaPrefs, isCar);
-
 		VoicePrefsBuilder.add(a, set);
 
 		DashboardPrefsBuilder.add(a, set, this::refreshPrefs);
 		addAddons(set);
+
+		diagnosticsPreferences = new DiagnosticsPreferences(a.getContext());
+		diagnosticsPreferences.disableIfExpired(System.currentTimeMillis());
+		PreferenceSet diagnostics = set.subSet(o -> {
+			o.title = R.string.diagnostics;
+			o.subtitle = R.string.diagnostics_sub;
+		});
+		long diagnosticsGeneration = viewGeneration;
+		BooleanSupplier diagnosticsUiActive = () -> viewActive &&
+				(viewGeneration == diagnosticsGeneration) && (activityDelegate == a) && isAdded();
+		diagnostics.addBooleanPref(o -> {
+			o.store = diagnosticsPreferences.getStore();
+			o.pref = DiagnosticsPreferences.DETAILED_ENABLED;
+			o.title = R.string.detailed_diagnostics;
+			long remaining = diagnosticsPreferences.getRemainingMillis(System.currentTimeMillis());
+			if (remaining > 0L) {
+				long hours = Math.max(1L, (remaining + 3_599_999L) / 3_600_000L);
+				o.csubtitle = getString(R.string.detailed_diagnostics_sub) + " " +
+						hours + " " + getString(R.string.hours);
+			} else {
+				o.subtitle = R.string.detailed_diagnostics_sub;
+			}
+		});
+		diagnostics.addButton(o -> {
+			o.title = R.string.export_diagnostic_report;
+			o.subtitle = R.string.export_diagnostic_report_sub;
+			o.onClick = () -> SettingsDiagnosticsManager.exportReport(a, diagnosticsUiActive);
+		});
+		diagnostics.addButton(o -> {
+			o.title = R.string.clear_diagnostic_data;
+			o.subtitle = R.string.clear_diagnostic_data_sub;
+			o.onClick = () -> SettingsDiagnosticsManager.clear(a, diagnosticsUiActive);
+		});
 
 		if (!a.isCarActivityNotMirror()) {
 			sub1 = set.subSet(o -> o.title = R.string.other);
@@ -307,12 +341,6 @@ public class SettingsFragment extends MainActivityFragment
 				o.subtitle = R.string.import_prefs_sub;
 				o.onClick = () -> SettingsBackupManager.importPrefs(a);
 			});
-			if (BuildConfig.AUTO) {
-				sub1.addButton(o -> {
-					o.title = R.string.open_log;
-					o.onClick = () -> SettingsBackupManager.openLog(a);
-				});
-			}
 		}
 
 		return new PreferenceViewAdapter(set) {

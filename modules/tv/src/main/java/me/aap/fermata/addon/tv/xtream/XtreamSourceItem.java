@@ -32,7 +32,7 @@ public class XtreamSourceItem extends ItemContainer<XtreamSectionItem> implement
 	private XtreamSourceItem(TvRootItem root, XtreamAccount account) {
 		super(toId(account.getSourceId()), root, null);
 		this.account = account;
-		api = new XtreamApi(account);
+		api = new XtreamApi(account, root.getLib().getContext());
 	}
 
 	public static FutureSupplier<XtreamSourceItem> create(TvRootItem root, int sourceId) {
@@ -69,7 +69,7 @@ public class XtreamSourceItem extends ItemContainer<XtreamSectionItem> implement
 	public XtreamApi getApi() {
 		XtreamApi api = this.api;
 		if (api != null) return api;
-		return this.api = new XtreamApi(account);
+		return this.api = new XtreamApi(account, getLib().getContext());
 	}
 
 	public XtreamAccount getAccount() {
@@ -165,7 +165,7 @@ public class XtreamSourceItem extends ItemContainer<XtreamSectionItem> implement
 	private void clearApiCache() {
 		XtreamApi api = this.api;
 		if (api != null) api.clearCache();
-		this.api = new XtreamApi(account);
+		this.api = new XtreamApi(account, getLib().getContext());
 	}
 
 	private static boolean sameAccount(XtreamAccount a, XtreamAccount b) {

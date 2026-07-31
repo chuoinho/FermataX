@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="openai_key">Clave abierta AI</string>
+	<string name="openai_key_sub">Obtenga su clave personal: &lt;a href=\&quot;%1$s\&quot;&gt;%1$s&lt;a&gt;</string>
+	<string name="openai_model">Modelo</string>
+	<string name="openai_model_custom">Modelo personalizado</string>
+	<string name="openai_model_other">Otro modelo</string>
+	<string name="chat_request_failed">Solicitud fallida: %1$s</string>
+	<string name="chat_tts_failed">Error de conversión de texto a voz: %1$s</string>
+</resources>

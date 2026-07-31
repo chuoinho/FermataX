@@ -24,6 +24,7 @@ import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.AsyncOperationController.OperationType;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
@@ -139,13 +140,12 @@ public class BodyLayout extends SplitLayout
 	}
 
 	private boolean shouldKeepExternalVideoMode(MainActivityDelegate a) {
-		boolean auto = me.aap.fermata.BuildConfig.AUTO;
-		boolean carActivity = a.isCarActivity();
-		if (!auto && !carActivity) return false;
+		var hostMode = a.getRuntimeHostMode();
+		if (!hostMode.usesAutomotivePresentation()) return false;
 		MediaEngine eng = a.getMediaSessionCallback().getEngine();
 		if ((eng == null) || !eng.isVideoModeRequired() || eng.isSplitModeSupported()) return false;
 		ActivityFragment f = a.getActiveFragment();
-		return PlaybackLayoutPolicy.shouldKeepExternalVideoMode(auto, carActivity,
+		return PlaybackLayoutPolicy.shouldKeepExternalVideoMode(hostMode,
 				true, true, false, f instanceof MainActivityFragment,
 				(f instanceof MainActivityFragment) ? ((MainActivityFragment) f).getFragmentId() : 0);
 	}
@@ -209,7 +209,7 @@ public class BodyLayout extends SplitLayout
 		startingPlayback = new Promise<Void>().thenRun(() -> startingPlayback = completedVoid());
 		boolean requestStarted = b.playItem(i);
 		if (requestStarted) {
-			playbackLoading = a.setContentLoading(
+			playbackLoading = a.setContentLoading(i, OperationType.STREAM_PREPARE,
 					startingPlayback.timeout(PLAYBACK_LOADING_TIMEOUT_MS, () -> null));
 		} else {
 			finishPlaybackLoading();
