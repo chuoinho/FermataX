@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">Рекомендуемое – фильм</string>
 	<string name="stremio_featured_series">Рекомендуемые – сериалы</string>
 	<string name="stremio_no_sources">Добавьте провайдера, чтобы начать просмотр</string>
+	<string name="stremio_no_catalogs">Провайдер настроен, но у него нет каталога для просмотра. Добавьте провайдер каталога, например Cinemeta.</string>
 	<string name="stremio_no_content">Нет доступных фильмов и сериалов</string>
 	<string name="stremio_filter_type">Тип</string>
 	<string name="stremio_filter_catalog">Каталог</string>

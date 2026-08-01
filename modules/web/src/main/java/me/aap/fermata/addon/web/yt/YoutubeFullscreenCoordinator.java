@@ -10,6 +10,8 @@ import me.aap.fermata.addon.web.FermataWebClient.FullscreenEvent;
 /** Serializes browser fullscreen callbacks and the app video presentation. */
 final class YoutubeFullscreenCoordinator {
 	private static final long BROWSER_ENTRY_TIMEOUT_MS = 1200L;
+	private static final long HOST_READY_RETRY_MS = 100L;
+	private static final int HOST_READY_MAX_ATTEMPTS = 20;
 	private final Host host;
 	private final YoutubeFullscreenGate gate = new YoutubeFullscreenGate();
 	private final DiagnosticsObserver diagnosticsObserver;
@@ -30,6 +32,10 @@ final class YoutubeFullscreenCoordinator {
 
 	State getState() {
 		return state;
+	}
+
+	boolean isFallbackPresentationActive() {
+		return appPresentationActive && (state == State.APP_FULLSCREEN);
 	}
 
 	void requestAutoEntry(String pageUrl, String mediaUrl) {
@@ -54,7 +60,11 @@ final class YoutubeFullscreenCoordinator {
 		activeRequest = request;
 		long generation = ++this.generation;
 		emit(FullscreenEvent.REQUEST_CREATED, state, request, true);
-		host.post(() -> beginBrowserEntry(generation, request));
+		host.post(() -> beginBrowserEntry(generation, request, 0));
+	}
+
+	void authorizeExplicitSelection() {
+		gate.authorizeExplicitSelection();
 	}
 
 	boolean acceptBrowserEntry(long request) {
@@ -238,9 +248,14 @@ final class YoutubeFullscreenCoordinator {
 		gate.expireManualBrowserEntry(permit);
 	}
 
-	private void beginBrowserEntry(long generation, long request) {
+	private void beginBrowserEntry(long generation, long request, int attempt) {
 		if (!isCurrent(generation, request)) return;
 		if (!host.canEnterFullscreen()) {
+			if (attempt < HOST_READY_MAX_ATTEMPTS) {
+				host.postDelayed(() -> beginBrowserEntry(generation, request, attempt + 1),
+						HOST_READY_RETRY_MS);
+				return;
+			}
 			cancelRequestedEntry(generation, request);
 			return;
 		}
@@ -258,9 +273,11 @@ final class YoutubeFullscreenCoordinator {
 		if (!isCurrent(generation, request)) return;
 		state = State.ENTRY_DEFERRED;
 		emit(FullscreenEvent.STATE_CHANGED, state, request, true);
-		// Stop only the caller's bounded wait. The WebView request remains valid because older
-		// Android System WebView builds may deliver onShowCustomView after this deadline.
+		// A request initiated from Recent/voice has no browser user activation on some WebView
+		// versions, so requestFullscreen() can be ignored without an error or callback. Do not
+		// leave the user in the watch page indefinitely: use the app-owned video presentation.
 		host.expirePendingBrowserFullscreenWait();
+		enterFallbackVideoMode(generation, request);
 	}
 
 	private void cancelRequestedEntry(long generation, long request) {

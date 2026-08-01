@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">Destacado - Película</string>
 	<string name="stremio_featured_series">Destacado - Serie</string>
 	<string name="stremio_no_sources">Añade un proveedor para empezar a navegar</string>
+	<string name="stremio_no_catalogs">Hay un proveedor configurado, pero no tiene un catálogo navegable. Añade un proveedor de catálogos como Cinemeta.</string>
 	<string name="stremio_no_content">No hay películas ni series disponibles.</string>
 	<string name="stremio_filter_type">Tipo</string>
 	<string name="stremio_filter_catalog">Catalogar</string>

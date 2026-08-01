@@ -407,6 +407,7 @@
     <string name="err_failed_install_module">Không cài đặt được mô-đun: %1$s</string>
     <string name="err_failed_to_download">Không thể tải xuống %1$s</string>
     <string name="err_no_audio_record_perm">Không được cấp quyền ghi âm</string>
+    <string name="err_speech_recognition_unavailable">Không có dịch vụ nhận dạng giọng nói. Bạn vẫn có thể tiếp tục bằng bàn phím.</string>
     <string name="addon_name_podcast">Podcast</string>
     <string name="dashboard_podcast_sub">Chương trình, tập và nghe ngoại tuyến</string>
     <string name="addon_name_audiobook">Sách nói</string>

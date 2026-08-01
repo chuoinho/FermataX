@@ -903,7 +903,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return getItem.then(
 				item -> (next ? getNextPlayable(item) : getPrevPlayable(item)).then(this::prepareItem)
 						.then(pi -> {
-							if (pi != null) skipTo(next, pi);
+							if ((pi != null) && !PlaybackTransportDispatcher.dispatch(pi, eng, getEngine()))
+								skipTo(next, pi);
 							return completedVoid();
 						}));
 	}
@@ -2219,8 +2220,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		if (i == null) return completedNull();
 		i = PlayableItemResolver.unwrap(i);
 		PlayableItem target = i;
+		if (target.isPlaybackTransportCommand()) return completed(target).main();
 
-		// Make sure metadata is loaded
 		FutureSupplier<Long> getDur = i.getDuration();
 
 		// Make sure HTTP server is started

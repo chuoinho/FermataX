@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">Istaknuto - Film</string>
 	<string name="stremio_featured_series">Istaknuto - Serija</string>
 	<string name="stremio_no_sources">Dodajte davatelja usluga za početak pregledavanja</string>
+	<string name="stremio_no_catalogs">Davatelj je konfiguriran, ali nema katalog za pregledavanje. Dodajte davatelja kataloga kao što je Cinemeta.</string>
 	<string name="stremio_no_content">Nema dostupnih filmova ni serija</string>
 	<string name="stremio_filter_type">Tip</string>
 	<string name="stremio_filter_catalog">Katalog</string>

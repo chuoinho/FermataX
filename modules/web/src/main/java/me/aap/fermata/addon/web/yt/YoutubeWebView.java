@@ -53,6 +53,7 @@ public class YoutubeWebView extends FermataWebView {
 	private static final int RELOAD_AUDIO_MAX_ATTEMPTS = 20;
 	private static final long RELOAD_AUDIO_RETRY_MS = 300L;
 	private final Handler sponsorHandler = new Handler(Looper.getMainLooper());
+	private final YoutubeReloadCoordinator reloadCoordinator = new YoutubeReloadCoordinator();
 	private FutureSupplier<List<SponsorBlockClient.Segment>> sponsorRequest;
 	private List<SponsorBlockClient.Segment> sponsorSegments = List.of();
 	private int sponsorSegmentIndex;
@@ -178,30 +179,30 @@ public class YoutubeWebView extends FermataWebView {
 		int generation = ++reloadAudioGeneration;
 		reloadAudioRestorePending = false;
 		reloadAudioPageCommitted = false;
-		evaluateJavascript("(function(){" + PLAYBACK_SIGNAL_JS +
-				"var v=fermataActiveContentVideo();" +
-				"if(!v)return '{}';" +
-				"return JSON.stringify({id:fermataPageVideoId(),playing:!v.paused&&!v.ended," +
-				"audible:!v.muted&&v.volume>0,volume:v.volume});})()", value -> {
-			if (generation != reloadAudioGeneration) return;
-			try {
-				JSONObject state = new JSONObject(YoutubeScripts.decodeJavascriptString(value));
-				String videoId = state.optString("id", "");
-				if (state.optBoolean("playing") && state.optBoolean("audible") &&
-						mediaEngine.ownsPlayback(videoId)) {
-					reloadAudioVideoId = videoId;
-					reloadAudioVolume = Math.max(0.01d, Math.min(1d,
-								state.optDouble("volume", 1d)));
-					reloadAudioRestorePending = true;
-				}
-			} catch (Exception error) {
-				Log.d(error, "Unable to capture YouTube audio state before reload");
-			}
-			reloadPage();
-		});
+		reloadCoordinator.capture(this, generation);
 	}
 
-	private void reloadPage() {
+	int reloadAudioGeneration() {
+		return reloadAudioGeneration;
+	}
+
+	void captureReloadAudioState(String value) {
+		try {
+			JSONObject state = new JSONObject(YoutubeScripts.decodeJavascriptString(value));
+			String videoId = state.optString("id", "");
+			if (state.optBoolean("playing") && state.optBoolean("audible") &&
+					mediaEngine.ownsPlayback(videoId)) {
+				reloadAudioVideoId = videoId;
+				reloadAudioVolume = Math.max(0.01d, Math.min(1d,
+						state.optDouble("volume", 1d)));
+				reloadAudioRestorePending = true;
+			}
+		} catch (Exception error) {
+			Log.d(error, "Unable to capture YouTube audio state before reload");
+		}
+	}
+
+	void reloadPage() {
 		super.reload();
 	}
 
@@ -376,6 +377,13 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void onBrowserFullScreenRejected() {
+		// A WebView callback may arrive after the coordinator has already entered its
+		// gesture-free fallback. Reject the stale custom view without tearing down the
+		// presentation that currently owns the screen.
+		if ((mediaEngine != null) && mediaEngine.isFallbackFullScreenActive()) {
+			setImmersiveVideoMode(true);
+			return;
+		}
 		setImmersiveVideoMode(false);
 		evaluateJavascript("(function(){if(document.fullscreenElement&&document.exitFullscreen)" +
 				"document.exitFullscreen();})()", null);
@@ -463,13 +471,8 @@ public class YoutubeWebView extends FermataWebView {
 
 	protected void submitForm() {
 		if (!usesAutoPlaybackBehavior()) return;
-		loadUrl("javascript:\n" +
-				"var e = new KeyboardEvent('keydown',\n" +
-				"{ code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
-				"document.activeElement.dispatchEvent(e);\n" +
-				"e = new KeyboardEvent('keyup',\n" +
-				"{ code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
-				"document.activeElement.dispatchEvent(e);");
+		leavePlaybackPresentation();
+		super.submitForm();
 	}
 
 	private void attachListeners(long seedGeneration) {
@@ -806,6 +809,7 @@ public class YoutubeWebView extends FermataWebView {
 
 	private void cancelReloadAudioRestore() {
 		reloadAudioGeneration++;
+		reloadCoordinator.cancel(this);
 		clearReloadAudioRestore(reloadAudioGeneration);
 	}
 
@@ -1148,15 +1152,7 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void prevNext(boolean next) {
-		FermataChromeClient chrome = getWebChromeClient();
-		if (chrome == null) return;
-		chrome.exitFullScreen().thenRun(() -> evaluateJavascript(String.format(Locale.ROOT, """
-				function prevNextVideo() {
-				  const buttons = document.querySelectorAll('button.player-middle-controls-prev-next-button');
-				  if (buttons) buttons[%d].click();
-				}
-				setTimeout(prevNextVideo, 600);
-				""", next ? 1 : 0), null));
+		evaluateJavascript(YoutubeScripts.prevNext(next), null);
 	}
 
 	FutureSupplier<Long> getDuration() {
@@ -1192,65 +1188,13 @@ public class YoutubeWebView extends FermataWebView {
 
 	FutureSupplier<String> getVideoQualities() {
 		Promise<String> p = js.getResultPromise();
-		loadUrl("javascript:\n" +
-				"function retryGetVideoQualities(attempt, openMenu) {\n" +
-				"  if (attempt < 10) setTimeout(getVideoQualities, 100, attempt + 1, openMenu);\n" +
-				"  else " + JS_EVENT + '(' + JS_VIDEO_QUALITIES + ", null);\n" +
-				"  return null;\n" +
-				"}\n" +
-				"function getVideoQualities(attempt, openMenu) {\n" +
-				"  if (openMenu) {\n" +
-				"    var b = document.querySelector('.player-settings-icon');\n" +
-				"    if (b == null) return retryGetVideoQualities(attempt, true);\n" +
-				"    b.click();\n" +
-				"  }\n" +
-				"  var settings = document.querySelector('.player-quality-settings');\n" +
-				"  if (settings == null) return retryGetVideoQualities(attempt, false);\n" +
-				"  var select = settings.querySelector('.select');\n" +
-				"  if (select == null) return retryGetVideoQualities(attempt, false);\n" +
-				"  var options = select.querySelectorAll('.option');\n" +
-				"  var result = '';\n" +
-				"  for (let i = 0; i < options.length; i++) {\n" +
-				"    if (i != 0) result += ';';\n" +
-				"    if (i == select.selectedIndex) result += '*';\n" +
-				"    result += options[i].innerText;\n" +
-				"  }\n" +
-				"  " + JS_EVENT + '(' + JS_VIDEO_QUALITIES + ", result);\n" +
-				"  setTimeout(()=> {settings.parentNode.parentNode.querySelector('" +
-				".c3-material-button-button').click();}, 100);\n" +
-				"  return result;\n" +
-				"}\n" +
-				"getVideoQualities(0, true);");
+		evaluateJavascript(YoutubeScripts.videoQualities(JS_EVENT, JS_VIDEO_QUALITIES,
+				getContext().getString(me.aap.fermata.R.string.auto)), null);
 		return p;
 	}
 
 	void setVideoQuality(int idx) {
-		loadUrl("javascript:\n" +
-				"function retrySetVideoQuality(idx, attempt, openMenu) {\n" +
-				"  if (attempt < 10) setTimeout(setVideoQuality, 100, idx, attempt + 1, openMenu);\n" +
-				"  return false;\n" +
-				"}\n" +
-				"function setVideoQuality(idx, attempt, openMenu) {\n" +
-				"  if (openMenu) {\n" +
-				"    var b = document.querySelector('.player-settings-icon');\n" +
-				"    if (b == null) return retrySetVideoQuality(idx, attempt, true);\n" +
-				"    b.click();\n" +
-				"  }\n" +
-				"  var settings = document.querySelector('.player-quality-settings');\n" +
-				"  if (settings == null) return retrySetVideoQuality(idx, attempt, false);\n" +
-				"  var select = settings.querySelector('.select');\n" +
-				"  if (select == null) return retrySetVideoQuality(idx, attempt, false);\n" +
-				"  var options = select.querySelectorAll('.option');\n" +
-				"  var evt = document.createEvent(\"HTMLEvents\");\n" +
-				"  evt.initEvent(\"change\", true, true);\n" +
-				"  select.selectedIndex = idx;\n" +
-				"  options[idx].selected = true;\n" +
-				"  select.dispatchEvent(evt);\n" +
-				"  setTimeout(()=> {settings.parentNode.parentNode.querySelector('" +
-				".c3-material-button-button').click();}, 100);\n" +
-				"  return true;\n" +
-				"}\n" +
-				"setVideoQuality(" + idx + ", 0, true);");
+		evaluateJavascript(YoutubeScripts.setVideoQuality(idx), null);
 	}
 
 	void setHighestVideoQuality() {

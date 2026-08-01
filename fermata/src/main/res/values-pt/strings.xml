@@ -412,6 +412,7 @@
     <string name="err_failed_install_module">Falha ao instalar o módulo: %1$s</string>
     <string name="err_failed_to_download">Falha na transferência %1$s</string>
     <string name="err_no_audio_record_perm">Não é concedida autorização para gravação áudio</string>
+    <string name="err_speech_recognition_unavailable">O reconhecimento de voz não está disponível. Pode continuar com o teclado.</string>
     <string name="err_failed_start_service">Não iniciou o serviço: %s</string>
     <string name="addon_name_podcast">Podcasts</string>
     <string name="dashboard_podcast_sub">Programas, episódios e audição offline</string>

@@ -31,7 +31,6 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
-import android.Manifest;
 import android.Manifest.permission;
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -1150,16 +1149,14 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	private FutureSupplier<List<String>> startSpeechRecognizer(String locale, boolean textInput,
 			boolean adaptiveAllowed) {
-		FutureSupplier<int[]> check =
-				isCarActivityNotMirror() ? completed(new int[]{PERMISSION_GRANTED}) :
-						getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
+		FutureSupplier<int[]> check = SpeechRecognitionSupport.checkRecordAudioPermission(this);
 		return check.then(r -> {
 			if (r[0] == PERMISSION_GRANTED) return completedVoid();
 			else return failed(new IllegalStateException("Audio recording permission is not granted"));
 		}).onFailure(err -> {
 			Log.e(err, "Failed to request RECORD_AUDIO permission");
 			showAlert(getContext(), R.string.err_no_audio_record_perm);
-		}).then(v -> {
+		}).then(v -> SpeechRecognitionSupport.requireRecognitionService(getContext())).then(v -> {
 			if (speechListener != null) speechListener.destroy();
 			Promise<List<String>> p = new Promise<>();
 			String lang = (locale == null) ? getPrefs().getVoiceControlLang(this) : locale;
@@ -1398,7 +1395,7 @@ public class MainActivityDelegate extends ActivityDelegate
 				return;
 			}
 			fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
-			if (isCarActivityNotMirror()) return;
+			if (SpeechRecognitionSupport.handleCarVoicePreference(this)) return;
 			getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
 				if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
 				if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");

@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">Polecane — film</string>
 	<string name="stremio_featured_series">Polecane - Seria</string>
 	<string name="stremio_no_sources">Dodaj dostawcę, aby rozpocząć przeglądanie</string>
+	<string name="stremio_no_catalogs">Dostawca jest skonfigurowany, ale nie ma katalogu do przeglądania. Dodaj dostawcę katalogu, takiego jak Cinemeta.</string>
 	<string name="stremio_no_content">Brak dostępnych filmów i seriali</string>
 	<string name="stremio_filter_type">Typ</string>
 	<string name="stremio_filter_catalog">Katalog</string>

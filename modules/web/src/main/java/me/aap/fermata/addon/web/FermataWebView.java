@@ -59,6 +59,54 @@ import org.json.JSONObject;
 public class FermataWebView extends WebView
 		implements TextChangedListener, TextView.OnEditorActionListener, PreferenceStore.Listener,
 		MainActivityListener {
+	private static final long INPUT_PROBE_DELAY_MILLIS = 75L;
+	private static final long INPUT_PROBE_RETRY_MILLIS = 300L;
+	private static final String ACTIVE_TEXT_ELEMENT_JS = """
+			function fermataActiveTextElement() {
+			  var root = document;
+			  var e = null;
+			  for (var i = 0; i < 8; i++) {
+			    try { e = root.activeElement; } catch (ignored) { return null; }
+			    if (!e) return null;
+			    if (e.shadowRoot && e.shadowRoot.activeElement) {
+			      root = e.shadowRoot;
+			      continue;
+			    }
+			    if ((e.tagName || '').toLowerCase() === 'iframe') {
+			      try {
+			        if (e.contentDocument) {
+			          root = e.contentDocument;
+			          continue;
+			        }
+			      } catch (ignored) {}
+			    }
+			    return e;
+			  }
+			  return e;
+			}
+			""";
+	private static final String TEXT_INPUT_TARGET_JS = """
+			function fermataAcceptsTextInput(e) {
+			  if (!e || e.disabled || e.readOnly ||
+			      (e.getAttribute && e.getAttribute('aria-disabled') === 'true')) return false;
+			  var tag = (e.tagName || '').toLowerCase();
+			  if (tag === 'textarea') return true;
+			  if (tag === 'input') {
+			    var type = (e.type || 'text').toLowerCase();
+			    return !/^(button|checkbox|color|date|datetime-local|file|hidden|image|month|radio|range|reset|submit|time|week)$/.test(type);
+			  }
+			  var role = (e.getAttribute && e.getAttribute('role') || '').toLowerCase();
+			  return !!e.isContentEditable || role === 'textbox' || role === 'searchbox';
+			}
+			function fermataTextInputTarget() {
+			  var e = window.__fermataTextInputTarget;
+			  if (fermataAcceptsTextInput(e) && e.isConnected !== false) return e;
+			  e = fermataActiveTextElement();
+			  if (!fermataAcceptsTextInput(e)) return null;
+			  window.__fermataTextInputTarget = e;
+			  return e;
+			}
+			""";
 	private final boolean isCar;
 	private final RuntimeHostMode hostMode;
 	private WebBrowserAddon addon;
@@ -459,7 +507,10 @@ public class FermataWebView extends WebView
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (isCar()) {
-			if (event.getAction() == ACTION_UP) checkTextInput();
+			if (event.getAction() == ACTION_UP) {
+				postDelayed(this::checkTextInput, INPUT_PROBE_DELAY_MILLIS);
+				postDelayed(this::checkTextInput, INPUT_PROBE_RETRY_MILLIS);
+			}
 		}
 		return super.onTouchEvent(event);
 	}
@@ -468,53 +519,74 @@ public class FermataWebView extends WebView
 		if (!BuildConfig.AUTO || isKeyboardActive()) return;
 
 		Log.d("checkTextInput");
-		loadUrl("javascript:\n" + "function checkInput() {\n" + "  var e =  document.activeElement;" +
-				"\n" + "  if (e == null) return;\n" + "  if (e instanceof HTMLInputElement) {\n" + "    " +
-				JS_EVENT + '(' + JS_EDIT + ", e.value);\n" +
-				"  } else if(e.getAttribute('contenteditable') == 'true') {\n" + "    " + JS_EVENT + '(' +
-				JS_EDIT + ", e.innerText);\n" + "  }\n" + "}\n" + "setTimeout(checkInput, 500);");
+		evaluateJavascript(textInputProbeScript(), null);
+	}
+
+	static String textInputProbeScript() {
+		return ("""
+				(function() {
+				%s%s
+				  var e = fermataActiveTextElement();
+				  if (!fermataAcceptsTextInput(e)) return;
+				  window.__fermataTextInputTarget = e;
+				  var value = e.isContentEditable ? e.innerText :
+				      (('value' in e) ? e.value : e.textContent);
+				  %s(%d, value == null ? '' : String(value));
+				})()
+				""").formatted(ACTIVE_TEXT_ELEMENT_JS, TEXT_INPUT_TARGET_JS, JS_EVENT, JS_EDIT);
 	}
 
 	private void setTextInput(CharSequence text) {
 		if (!BuildConfig.AUTO) return;
 
 		Log.d(text);
-		evaluateJavascript("var e = document.activeElement;\n" +
-				"var text = " + JSONObject.quote(text == null ? "" : text.toString()) + ";\n" +
-				"if (e != null) {\n" +
-				"  if (e.isContentEditable) e.innerText = text;\n" +
-				"  else e.value = text;\n" +
-				"  e.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));\n" +
-				"  e.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));\n" +
-				"  e.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));\n" +
-				"  e.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));\n" +
-				"  e.dispatchEvent(new Event('change', { bubbles: true }));\n" +
-				"}", null);
+		evaluateJavascript(textInputUpdateScript(text), null);
+	}
+
+	static String textInputUpdateScript(CharSequence text) {
+		String value = JSONObject.quote(text == null ? "" : text.toString());
+		return "(function(){" + ACTIVE_TEXT_ELEMENT_JS + TEXT_INPUT_TARGET_JS +
+				"var e=fermataTextInputTarget();if(!e)return false;var text=" + value + ";" +
+				"var tag=(e.tagName||'').toLowerCase();" +
+				"if(e.isContentEditable)e.innerText=text;else if('value' in e){" +
+				"var w=(e.ownerDocument&&e.ownerDocument.defaultView)||window;" +
+				"var p=tag==='textarea'?w.HTMLTextAreaElement&&w.HTMLTextAreaElement.prototype:" +
+				"tag==='input'?w.HTMLInputElement&&w.HTMLInputElement.prototype:null;" +
+				"var d=p&&Object.getOwnPropertyDescriptor(p,'value');" +
+				"if(d&&d.set)d.set.call(e,text);else e.value=text;}" +
+				"else if((e.getAttribute&&/^(textbox|searchbox)$/i.test(e.getAttribute('role')||'')))" +
+				"e.textContent=text;else return false;" +
+				"try{e.dispatchEvent(new InputEvent('input',{bubbles:true,data:text," +
+				"inputType:'insertText'}));}catch(ignored){" +
+				"e.dispatchEvent(new Event('input',{bubbles:true}));}" +
+				"e.dispatchEvent(new Event('change',{bubbles:true}));return true;})()";
 	}
 
 
 	protected void submitForm() {
 		if (!BuildConfig.AUTO) return;
-		loadUrl("""
-				javascript:
-				var ae = document.activeElement;
-				if (ae.form != null) {
-				  ae.form.submit();
-				} else {
-				  var e = new KeyboardEvent('keydown',
-				  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });
-				  ae.dispatchEvent(e);
-				  e = new KeyboardEvent('keyup',
-				  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });
-				  ae.dispatchEvent(e);
-				}""");
+		evaluateJavascript(textInputSubmitScript(), null);
+	}
+
+	static String textInputSubmitScript() {
+		return "(function(){" + ACTIVE_TEXT_ELEMENT_JS + TEXT_INPUT_TARGET_JS +
+				"var e=fermataTextInputTarget();if(!e)return false;" +
+				"if(e.form){if(e.form.requestSubmit)e.form.requestSubmit();else e.form.submit();}" +
+				"else{var o={code:'Enter',key:'Enter',keyCode:13,which:13,bubbles:true};" +
+				"e.dispatchEvent(new KeyboardEvent('keydown',o));" +
+				"e.dispatchEvent(new KeyboardEvent('keypress',o));" +
+				"e.dispatchEvent(new KeyboardEvent('keyup',o));}" +
+				"window.__fermataTextInputTarget=null;return true;})()";
 	}
 
 	public void showKeyboard(String text) {
 		if (!BuildConfig.AUTO) return;
 
 		getActivity().onSuccess(a -> {
-			EditText et = a.getAppActivity().startInput(this);
+			EditText target = a.getAppActivity().createEditText(getContext());
+			target.setSingleLine(true);
+			target.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
+			EditText et = a.getAppActivity().startInput(target, true, this);
 			if (et == null) return;
 
 			if (text != null) {

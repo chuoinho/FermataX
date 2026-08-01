@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">مميز - فيلم</string>
 	<string name="stremio_featured_series">مميز - سلسلة</string>
 	<string name="stremio_no_sources">قم بإضافة مزود لبدء التصفح</string>
+	<string name="stremio_no_catalogs">تم إعداد موفر، لكنه لا يحتوي على فهرس قابل للتصفح. أضف موفر فهرس مثل Cinemeta.</string>
 	<string name="stremio_no_content">لا توجد أفلام أو مسلسلات متاحة</string>
 	<string name="stremio_filter_type">يكتب</string>
 	<string name="stremio_filter_catalog">كتالوج</string>

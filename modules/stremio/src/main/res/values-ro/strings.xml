@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">Prezentare - Film</string>
 	<string name="stremio_featured_series">Prezentare - Seria</string>
 	<string name="stremio_no_sources">Adăugați un furnizor pentru a începe navigarea</string>
+	<string name="stremio_no_catalogs">Un furnizor este configurat, dar nu are un catalog navigabil. Adăugați un furnizor de catalog precum Cinemeta.</string>
 	<string name="stremio_no_content">Nu există filme sau seriale disponibile</string>
 	<string name="stremio_filter_type">Tip</string>
 	<string name="stremio_filter_catalog">Catalog</string>

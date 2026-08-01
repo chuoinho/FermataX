@@ -38,6 +38,15 @@ final class YoutubeFullscreenGate {
 		return ++generation;
 	}
 
+	void authorizeExplicitSelection() {
+		// A click, voice result, or external Recent selection is a new user transaction even when
+		// it resolves to the same video. Invalidate late callbacks from the previous transaction
+		// and allow exactly one automatic entry for the selected playback identity.
+		state = EntryState.AVAILABLE;
+		manualEntryPermit = NO_REQUEST;
+		generation++;
+	}
+
 	void onUserExit() {
 		state = EntryState.USER_EXIT;
 		manualEntryPermit = NO_REQUEST;

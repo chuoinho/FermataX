@@ -405,6 +405,7 @@
     <string name="err_failed_install_module">Instalarea modulului a eșuat: %1$s</string>
     <string name="err_failed_to_download">Eroare la descărcare %1$s</string>
     <string name="err_no_audio_record_perm">Permisiunea de înregistrare audio nu este acordată</string>
+    <string name="err_speech_recognition_unavailable">Recunoașterea vocală nu este disponibilă. Puteți continua cu tastatura.</string>
     <string name="addon_name_podcast">Podcasturi</string>
     <string name="dashboard_podcast_sub">Emisiuni, episoade și ascultare offline</string>
 	<string name="dashboard_audiobook_sub">Cărți, capitole și ascultare offline</string>

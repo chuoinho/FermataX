@@ -415,6 +415,7 @@ Por favor, reinicie la aplicación.</string>
     <string name="err_failed_install_module">Error al instalar el módulo: %1$s</string>
     <string name="err_failed_to_download">No se pudo descargar %1$s</string>
     <string name="err_no_audio_record_perm">No se concede permiso de grabación de audio</string>
+    <string name="err_speech_recognition_unavailable">El reconocimiento de voz no está disponible. Puedes continuar con el teclado.</string>
     <string name="err_failed_start_service">No se pudo iniciar el servicio: %s</string>
     <string name="addon_name_podcast">Pódcasts</string>
     <string name="dashboard_podcast_sub">Programas, episodios y escucha sin conexión</string>

@@ -40,7 +40,6 @@ import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
-import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.vfs.VirtualResource;
@@ -50,7 +49,6 @@ import me.aap.utils.vfs.generic.GenericFileSystem;
  * @author Andrey Pavlenko
  */
 class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
-	private static final int VIDEO_QUALITY_MASK = 1 << 31;
 	private static final long FULLSCREEN_TAP_PAUSE_GUARD_MS = 750L;
 	private static final String ID = "youtube";
 	private static final String CURRENT_ID = ID + ":current";
@@ -67,6 +65,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private final YoutubePlaybackIntentGate playbackIntentGate = new YoutubePlaybackIntentGate();
 	private final YoutubeAdController adController = new YoutubeAdController();
 	private final YoutubePlaybackSession playbackSession = new YoutubePlaybackSession();
+	private final YoutubePlaybackOwner<PlayableItem> playbackOwner = new YoutubePlaybackOwner<>();
 	private final YoutubePlaybackMetadata playbackMetadata;
 	private final DiagnosticsObserver diagnosticsObserver;
 	private YoutubePlayableItem current;
@@ -123,9 +122,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			return;
 		}
 		if (isCurrentEngine()) {
-			setCurrent(url);
+			url = setCurrent(url);
 			completePendingTransfer();
 			resumeAudibleStartIfPending();
+			requestAutoVideoMode(url);
 			return;
 		}
 		if (!web.usesAutoPlaybackBehavior()) return;
@@ -176,9 +176,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			web.setHighestVideoQuality();
 		}
 		boolean claimed = cb.startExternalPlayback(this);
-		if (claimed) {
-			requestAutoVideoMode(url);
-		}
+		if (claimed || isCurrentEngine()) requestAutoVideoMode(url);
 		recordPlaybackSignal(PlaybackEvent.OWNERSHIP_ADOPTED, signal, true);
 		if (shouldRestoreAudibleAfterClaim(currentEngine, claimed)) web.playAudible();
 		web.onYoutubePlaybackResumed();
@@ -351,7 +349,16 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	void armExplicitPlayback() {
-		if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armExplicitPlayback();
+		if (!web.usesAutoPlaybackBehavior()) return;
+		armPlaybackIntent();
+		fullScreenCoordinator.authorizeExplicitSelection();
+	}
+
+	private void armPlaybackIntent() {
+		playbackIntentGate.armExplicitPlayback();
+		// The target video can be created after the click/navigation event. Keep the audible
+		// request until READY/PLAYING is emitted by that exact playback generation.
+		audibleStartPending = true;
 	}
 
 	void onPageLoaded(String pageUrl) {
@@ -407,6 +414,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		fullScreenCoordinator.onBrowserVisibilityChanged(fullScreen);
 	}
 
+	boolean isFallbackFullScreenActive() {
+		return fullScreenCoordinator.isFallbackPresentationActive();
+	}
+
 	long grantManualFullScreenEntry() {
 		return fullScreenCoordinator.grantManualBrowserEntry();
 	}
@@ -428,16 +439,21 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	public void prepare(PlayableItem source) {
 		source = PlayableItemResolver.unwrap(source);
 		if (source == next) {
-			if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armExplicitPlayback();
+			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
 			web.next();
 		} else if (source == prev) {
-			if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armExplicitPlayback();
+			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
 			web.prev();
 		} else {
-			if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armExplicitPlayback();
 			YoutubeDescriptorItem descriptorItem = descriptorItem(source);
+			if (web.usesAutoPlaybackBehavior()) {
+				if ((descriptorItem != null) && !(source instanceof Current)) armExplicitPlayback();
+				else armPlaybackIntent();
+			}
 			if (descriptorItem != null) {
 				YoutubeItem descriptor = descriptorItem.getYoutubeDescriptor();
+				playbackOwner.prepare(source, descriptor.videoId(),
+						!(source instanceof Current) && !(source instanceof ExternalPlaybackDelegateItem));
 				if (source instanceof ExternalPlaybackDelegateItem) {
 					externalPlaybackOwner = source;
 					externalPlaybackVideoId = descriptor.videoId();
@@ -513,6 +529,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		web.onYoutubePlaybackOwnershipLost();
 		fullScreenCoordinator.cancelPlayback();
 		clearExternalPlaybackOwner();
+		playbackOwner.clear();
 		if (markSessionLeft && !webDestroyed)
 			web.getAddon().markPlaybackSessionLeft(System.currentTimeMillis());
 	}
@@ -529,7 +546,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public PlayableItem getSource() {
-		return (externalPlaybackOwner != null) ? externalPlaybackOwner : current;
+		return (externalPlaybackOwner != null) ? externalPlaybackOwner : playbackOwner.resolve(current);
 	}
 
 	@Override
@@ -617,6 +634,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		web.onYoutubePlaybackOwnershipLost();
 		fullScreenCoordinator.cancelPlayback();
 		clearExternalPlaybackOwner();
+		playbackOwner.clear();
 	}
 
 	@Override
@@ -780,6 +798,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			replacement.current = replacement.new Current(descriptor);
 			replacement.externalPlaybackOwner = externalPlaybackOwner;
 			replacement.externalPlaybackVideoId = externalPlaybackVideoId;
+			playbackOwner.transferTo(replacement.playbackOwner);
 			replacement.playbackSessionSnapshot = replacement.playbackSession.begin(
 					descriptor, System.currentTimeMillis());
 			replacement.adPlaybackGeneration = replacement.adController
@@ -886,6 +905,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		web.onYoutubePlaybackOwnershipLost();
 		fullScreenCoordinator.cancelPlayback();
 		clearExternalPlaybackOwner();
+		playbackOwner.clear();
 	}
 
 	private void resetTransferState() {
@@ -939,6 +959,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 		boolean newItem = !(current instanceof Current c) ||
 				!c.matches(descriptor, pageUrl);
+		playbackOwner.retain((descriptor == null) ? "" : descriptor.videoId());
 		if (newItem) {
 			if ((descriptor == null) ||
 					!descriptor.videoId().equals(externalPlaybackVideoId)) {
@@ -1038,33 +1059,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		SplitCompat.install(ctx);
 		b.addItem(R.id.video_quality,
 				ResourcesCompat.getDrawable(r, R.drawable.video_quality, ctx.getTheme()),
-				r.getString(R.string.video_quality)).setFutureSubmenu(this::videoQualityMenu);
+				r.getString(R.string.video_quality)).setFutureSubmenu(
+				menu -> YoutubeQualityMenu.populate(web, menu, this));
 		b.addItem(me.aap.fermata.R.id.video_scaling,
 				ResourcesCompat.getDrawable(r, R.drawable.video_scaling, ctx.getTheme()),
 				r.getString(me.aap.fermata.R.string.video_scaling)).setSubmenu(this::videoScalingMenu);
-	}
-
-	private FutureSupplier<Void> videoQualityMenu(OverlayMenu.Builder b) {
-		b.setSelectionHandler(this);
-		return web.getVideoQualities().timeout(1100).main()
-				.onFailure(err -> Log.e(err, "Failed to load video qualities"))
-				.map(qualities -> {
-					if ((qualities == null) || (qualities.isEmpty())) {
-						b.addItem(me.aap.fermata.R.id.auto, null, me.aap.fermata.R.string.auto)
-								.setChecked(true, true);
-						return null;
-					}
-
-					String[] all = qualities.split(";");
-					for (int i = 0; i < all.length; i++) {
-						String q = all[i];
-						if (q.startsWith("*")) q = q.substring(1);
-						//noinspection StringEquality
-						b.addItem(UiUtils.getArrayItemId(i), null, q).setChecked(q != all[i], true)
-								.setData(i | VIDEO_QUALITY_MASK);
-					}
-					return null;
-				});
 	}
 
 	private void videoScalingMenu(OverlayMenu.Builder b) {
@@ -1095,10 +1094,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		} else if (itemId == me.aap.fermata.R.id.video_scaling_orig) {
 			web.setScale(VideoScale.NONE);
 			return true;
-		} else if (item.getData() instanceof Integer) {
-			int d = item.getData();
-			if ((d & VIDEO_QUALITY_MASK) != 0) web.setVideoQuality(d & ~VIDEO_QUALITY_MASK);
-		}
+		} else if (YoutubeQualityMenu.select(web, item)) return true;
 		return false;
 	}
 

@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">លក្ខណៈពិសេស - ភាពយន្ត</string>
 	<string name="stremio_featured_series">លក្ខណៈពិសេស - ស៊េរី</string>
 	<string name="stremio_no_sources">បន្ថែមអ្នកផ្តល់សេវាដើម្បីចាប់ផ្តើមរុករក</string>
+	<string name="stremio_no_catalogs">អ្នកផ្តល់សេវាត្រូវបានកំណត់រចនាសម្ព័ន្ធ ប៉ុន្តែមិនមានកាតាឡុកសម្រាប់រុករកទេ។ បន្ថែមអ្នកផ្តល់កាតាឡុកដូចជា Cinemeta។</string>
 	<string name="stremio_no_content">មិនមានភាពយន្ត ឬស៊េរីទេ។</string>
 	<string name="stremio_filter_type">ប្រភេទ</string>
 	<string name="stremio_filter_catalog">កាតាឡុក</string>

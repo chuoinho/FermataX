@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">精選 - 電影</string>
 	<string name="stremio_featured_series">精選 - 系列</string>
 	<string name="stremio_no_sources">新增提供者以開始瀏覽</string>
+	<string name="stremio_no_catalogs">已設定提供者，但沒有可瀏覽的目錄。請新增 Cinemeta 等目錄提供者。</string>
 	<string name="stremio_no_content">沒有可用的電影或連續劇</string>
 	<string name="stremio_filter_type">類型</string>
 	<string name="stremio_filter_catalog">目錄</string>

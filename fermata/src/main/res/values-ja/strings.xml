@@ -412,6 +412,7 @@
     <string name="err_failed_install_module">モジュールのインストールに失敗しました: %1$s</string>
     <string name="err_failed_to_download">ダウンロードに失敗しました %1$s</string>
     <string name="err_no_audio_record_perm">音声録音の許可が与えられていません</string>
+    <string name="err_speech_recognition_unavailable">音声認識を利用できません。キーボードで続行できます。</string>
     <string name="err_failed_start_service">サービス開始失敗:%s</string>
     <string name="addon_name_podcast">ポッドキャスト</string>
     <string name="dashboard_podcast_sub">番組、エピソード、オフライン再生</string>

@@ -581,6 +581,7 @@ public final class StremioFragment extends MainActivityFragment
 				case FEATURED_MOVIES -> R.string.stremio_featured_movies;
 				case FEATURED_SERIES -> R.string.stremio_featured_series;
 				case NO_SOURCES -> R.string.stremio_no_sources;
+				case NO_CATALOGS -> R.string.stremio_no_catalogs;
 				case NO_CONTENT -> R.string.stremio_no_content;
 				case TYPE -> R.string.stremio_filter_type;
 				case CATALOG -> R.string.stremio_filter_catalog;

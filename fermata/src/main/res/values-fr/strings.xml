@@ -412,6 +412,7 @@
     <string name="err_failed_install_module">Échec de l\'installation du module : %1$s</string>
     <string name="err_failed_to_download">Échec du téléchargement de %1$s</string>
     <string name="err_no_audio_record_perm">Autorisation d\'enregistrement audio non accordée</string>
+    <string name="err_speech_recognition_unavailable">La reconnaissance vocale n\'est pas disponible. Vous pouvez continuer avec le clavier.</string>
     <string name="err_failed_start_service"><![CDATA[Échec du démarrage du service : %s]]></string>
     <string name="addon_name_podcast">Podcasts</string>
     <string name="dashboard_podcast_sub">Émissions, épisodes et écoute hors ligne</string>

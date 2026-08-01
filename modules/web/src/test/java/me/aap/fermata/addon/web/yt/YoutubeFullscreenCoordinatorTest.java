@@ -71,7 +71,7 @@ public class YoutubeFullscreenCoordinatorTest {
 	}
 
 	@Test
-	public void timeoutExpiresWaitButAcceptsMatchingLateCallback() {
+	public void missingBrowserCallbackFallsBackToAppFullscreen() {
 		FakeHost host = new FakeHost();
 		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);
 
@@ -80,18 +80,17 @@ public class YoutubeFullscreenCoordinatorTest {
 		long request = host.lastBrowserRequest;
 		host.runDelayed();
 
-		assertEquals(YoutubeFullscreenCoordinator.State.ENTRY_DEFERRED, coordinator.getState());
+		assertEquals(YoutubeFullscreenCoordinator.State.APP_FULLSCREEN, coordinator.getState());
 		assertEquals(1, host.expirePendingWaitCount);
-		assertTrue(coordinator.acceptBrowserEntry(request));
+		assertEquals(1, host.enterFallbackPresentationCount);
+		assertTrue(coordinator.isFallbackPresentationActive());
+		assertFalse(coordinator.acceptBrowserEntry(request));
 		assertFalse(coordinator.acceptBrowserEntry(NO_REQUEST));
-		host.browserFullScreen = true;
-		coordinator.onBrowserVisibilityChanged(true);
-		assertEquals(0, host.enterFallbackPresentationCount);
-		assertEquals(1, host.enterBrowserPresentationCount);
+		assertEquals(0, host.enterBrowserPresentationCount);
 	}
 
 	@Test
-	public void backAfterDeferredTimeoutRejectsLateCallback() {
+	public void backAfterFallbackTimeoutRejectsLateCallback() {
 		FakeHost host = new FakeHost();
 		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);
 
@@ -103,7 +102,7 @@ public class YoutubeFullscreenCoordinatorTest {
 
 		assertFalse(coordinator.acceptBrowserEntry(request));
 		assertEquals(YoutubeFullscreenCoordinator.State.USER_EXITED, coordinator.getState());
-		assertEquals(1, host.cancelPendingCount);
+		assertEquals(2, host.cancelPendingCount);
 		assertEquals(1, host.leavePresentationCount);
 	}
 
@@ -168,9 +167,27 @@ public class YoutubeFullscreenCoordinatorTest {
 
 		coordinator.requestAutoEntry(PAGE, MEDIA);
 		host.runPosted();
+		host.runDelayed();
 
 		assertEquals(NO_REQUEST, host.lastBrowserRequest);
 		assertEquals(YoutubeFullscreenCoordinator.State.CANCELLED, coordinator.getState());
+	}
+
+	@Test
+	public void recentSelectionWaitsForYoutubeFragmentToResume() {
+		FakeHost host = new FakeHost();
+		host.canEnter = false;
+		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);
+
+		coordinator.requestAutoEntry(PAGE, MEDIA);
+		host.runPosted();
+		assertEquals(NO_REQUEST, host.lastBrowserRequest);
+		assertEquals(YoutubeFullscreenCoordinator.State.ENTRY_REQUESTED, coordinator.getState());
+
+		host.canEnter = true;
+		host.runNextDelayed();
+		assertTrue(host.lastBrowserRequest != NO_REQUEST);
+		assertEquals(YoutubeFullscreenCoordinator.State.ENTRY_REQUESTED, coordinator.getState());
 	}
 
 	@Test
@@ -348,6 +365,10 @@ public class YoutubeFullscreenCoordinatorTest {
 
 		private void runDelayed() {
 			runAll(delayed);
+		}
+
+		private void runNextDelayed() {
+			if (!delayed.isEmpty()) delayed.remove(0).run();
 		}
 
 		private static void runAll(List<Runnable> tasks) {

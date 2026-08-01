@@ -405,6 +405,7 @@
     <string name="err_failed_install_module">Impossibile installare modulo: %1$s</string>
     <string name="err_failed_to_download">Impossibile scaricare %1$s</string>
     <string name="err_no_audio_record_perm">Autorizzazione registrazione audio non concessa</string>
+    <string name="err_speech_recognition_unavailable">Il riconoscimento vocale non è disponibile. Puoi continuare con la tastiera.</string>
     <string name="addon_name_podcast">Podcast</string>
     <string name="dashboard_podcast_sub">Programmi, episodi e ascolto offline</string>
 	<string name="dashboard_audiobook_sub">Libri, capitoli e ascolto offline</string>

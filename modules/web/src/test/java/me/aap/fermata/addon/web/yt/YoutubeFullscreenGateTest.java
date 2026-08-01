@@ -192,6 +192,30 @@ public class YoutubeFullscreenGateTest {
 	}
 
 	@Test
+	public void explicitSelectionCanReenterSameVideoAfterPlayerBack() {
+		YoutubeFullscreenGate gate = new YoutubeFullscreenGate();
+		String page = "https://m.youtube.com/watch?v=video-1";
+		gate.requestAutoEntry(page, "https://media.example/stream-1");
+		gate.onUserExit();
+
+		gate.authorizeExplicitSelection();
+		assertNotEquals(NO_REQUEST,
+				gate.requestAutoEntry(page, "https://media.example/stream-2"));
+	}
+
+	@Test
+	public void explicitSelectionCanEnterAnotherVideoWithoutWebViewTouch() {
+		YoutubeFullscreenGate gate = new YoutubeFullscreenGate();
+		gate.requestAutoEntry(
+				"https://m.youtube.com/watch?v=video-1", "https://media.example/stream-1");
+		gate.onUserExit();
+
+		gate.authorizeExplicitSelection();
+		assertNotEquals(NO_REQUEST, gate.requestAutoEntry(
+				"https://m.youtube.com/watch?v=video-2", "https://media.example/stream-2"));
+	}
+
+	@Test
 	public void lookalikeYoutubeHostsCannotCreateVideoPlaybackKeys() {
 		YoutubeFullscreenGate gate = new YoutubeFullscreenGate();
 		assertEquals(NO_REQUEST, gate.requestAutoEntry(

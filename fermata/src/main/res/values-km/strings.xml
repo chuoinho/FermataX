@@ -405,6 +405,7 @@
     <string name="err_failed_install_module">បាន​បរាជ័យ​ក្នុង​ការ​ដំឡើង​ម៉ូឌុល៖ %1$s</string>
     <string name="err_failed_to_download">បាន​បរាជ័យ​ក្នុង​ការ​ទាញ​យក %1$s</string>
     <string name="err_no_audio_record_perm">ការ​អនុញ្ញាត​ថត​សំឡេង​មិន​ត្រូវ​បាន​ផ្តល់​ទេ</string>
+    <string name="err_speech_recognition_unavailable">មិនអាចប្រើការសម្គាល់សំឡេងបានទេ។ អ្នកអាចបន្តដោយប្រើក្ដារចុច។</string>
     <string name="addon_name_podcast">ផតខាស</string>
     <string name="dashboard_podcast_sub">កម្មវិធី ភាគ និងការស្តាប់ក្រៅបណ្តាញ</string>
 	<string name="dashboard_audiobook_sub">សៀវភៅ ជំពូក និងការស្តាប់ក្រៅបណ្តាញ</string>

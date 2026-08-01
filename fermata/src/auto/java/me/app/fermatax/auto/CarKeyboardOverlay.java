@@ -26,6 +26,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import java.util.Locale;
@@ -40,6 +41,7 @@ final class CarKeyboardOverlay {
 	private final TextView title;
 	private final TextView value;
 	private final LinearLayout keys;
+	private final AppCompatImageButton voice;
 	private EditText target;
 	private boolean submitOnEnter;
 	private boolean shift;
@@ -74,6 +76,18 @@ final class CarKeyboardOverlay {
 		title.setEllipsize(TruncateAt.END);
 		top.addView(title, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1));
 
+		voice = new AppCompatImageButton(activity);
+		voice.setImageResource(R.drawable.record_voice);
+		voice.setColorFilter(0xFFE5EDF7);
+		voice.setContentDescription(activity.getString(R.string.voice_search));
+		voice.setPadding(dp(10), dp(10), dp(10), dp(10));
+		voice.setBackground(keyBg(0xFF1F3348));
+		voice.setOnClickListener(v -> {
+			EditText input = target;
+			if (input != null) activity.requestVoiceInput(input);
+		});
+		top.addView(voice, new LinearLayout.LayoutParams(dp(44), dp(42)));
+
 		Button cancel = action(activity.getString(R.string.car_keyboard_cancel));
 		cancel.setOnClickListener(v -> activity.stopInput());
 		top.addView(cancel, new LinearLayout.LayoutParams(dp(82), dp(42)));
@@ -102,6 +116,8 @@ final class CarKeyboardOverlay {
 		CharSequence hint = target.getHint();
 		title.setText((hint == null) || (hint.length() == 0) ?
 				activity.getString(R.string.car_keyboard_input) : hint);
+		voice.setVisibility(activity.isVoiceInputEnabled() && !isPassword(target) ?
+				View.VISIBLE : View.GONE);
 		value.setText(displayValue());
 		renderKeys();
 
@@ -138,6 +154,10 @@ final class CarKeyboardOverlay {
 
 	boolean isShowing() {
 		return view.getParent() != null;
+	}
+
+	void refreshValue() {
+		if (target != null) value.setText(displayValue());
 	}
 
 	boolean dispatchTap(float x, float y) {

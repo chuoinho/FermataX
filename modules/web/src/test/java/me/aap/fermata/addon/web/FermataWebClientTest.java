@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web;
 
+import android.webkit.WebViewClient;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -31,6 +33,14 @@ public class FermataWebClientTest {
 		assertTrue(FermataWebClient.isTransientLoadError("Connection reset"));
 		assertFalse(FermataWebClient.isTransientLoadError("HTTP 404 Not Found"));
 		assertFalse(FermataWebClient.isTransientLoadError(null));
+	}
+
+	@Test
+	public void transientNetworkFailuresPreferStableErrorCodes() {
+		assertTrue(FermataWebClient.isTransientLoadError(
+				WebViewClient.ERROR_HOST_LOOKUP, "localized message"));
+		assertTrue(FermataWebClient.isTransientLoadError(503, "Service Unavailable"));
+		assertFalse(FermataWebClient.isTransientLoadError(404, "Not Found"));
 	}
 
 	@Test

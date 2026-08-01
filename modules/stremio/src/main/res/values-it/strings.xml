@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">In primo piano - Film</string>
 	<string name="stremio_featured_series">In primo piano - Serie</string>
 	<string name="stremio_no_sources">Aggiungi un fornitore per iniziare a navigare</string>
+	<string name="stremio_no_catalogs">È configurato un fornitore, ma non dispone di un catalogo navigabile. Aggiungi un fornitore di cataloghi come Cinemeta.</string>
 	<string name="stremio_no_content">Nessun film o serie disponibile</string>
 	<string name="stremio_filter_type">Tipo</string>
 	<string name="stremio_filter_catalog">Catalogare</string>

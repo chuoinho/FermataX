@@ -412,6 +412,7 @@
     <string name="err_failed_install_module">無法安裝模組: %1$s</string>
     <string name="err_failed_to_download">無法下載 %1$s</string>
     <string name="err_no_audio_record_perm">無法取得錄音權限</string>
+    <string name="err_speech_recognition_unavailable">無法使用語音辨識。您仍可使用鍵盤繼續操作。</string>
     <string name="err_failed_start_service">未能啟動服務：%s</string>
     <string name="addon_name_podcast">Podcast</string>
     <string name="dashboard_podcast_sub">節目、單集與離線收聽</string>

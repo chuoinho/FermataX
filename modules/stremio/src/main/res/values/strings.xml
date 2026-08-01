@@ -87,6 +87,7 @@
 	<string name="stremio_featured_movies">Featured - Movie</string>
 	<string name="stremio_featured_series">Featured - Series</string>
 	<string name="stremio_no_sources">Add a provider to start browsing</string>
+	<string name="stremio_no_catalogs">A provider is configured, but it has no browsable catalog. Add a catalog provider such as Cinemeta.</string>
 	<string name="stremio_no_content">No movies or series available</string>
 	<string name="stremio_filter_type">Type</string>
 	<string name="stremio_filter_catalog">Catalog</string>

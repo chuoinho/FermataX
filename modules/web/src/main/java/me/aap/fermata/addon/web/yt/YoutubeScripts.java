@@ -431,4 +431,113 @@ final class YoutubeScripts {
 			return value;
 		}
 	}
+
+	static String prevNext(boolean next) {
+		String method = next ? "nextVideo" : "previousVideo";
+		String selector = next ? ".ytp-next-button" : ".ytp-prev-button";
+		int mobileButtonIndex = next ? 1 : 0;
+		return """
+				(function() {
+				  function available(button) {
+				    return button && !button.disabled &&
+				        button.getAttribute('aria-disabled') !== 'true' &&
+				        !button.classList.contains('icon-disable');
+				  }
+				  function move() {
+				    var mobile = document.querySelectorAll(
+				        'button.player-middle-controls-prev-next-button');
+				    var button = mobile.length > %3$d ? mobile[%3$d] :
+				        document.querySelector('%2$s');
+				    if (available(button)) {
+				      button.click();
+				      return true;
+				    }
+				    var player = document.querySelector('#movie_player,.html5-video-player');
+				    if (player && typeof player.%1$s === 'function') {
+				      player.%1$s();
+				      return true;
+				    }
+				    return false;
+				  }
+				  if (!move()) setTimeout(move, 600);
+				})()
+				""".formatted(method, selector, mobileButtonIndex);
+	}
+
+	static String videoQualities(String eventFunction, int eventCode, String autoLabel) {
+		return """
+				(function() {
+				  function player() {
+				    return document.querySelector('#movie_player,.html5-video-player');
+				  }
+				  function label(level) {
+				    var names = {
+				      highres: 'Highest', hd4320: '4320p (8K)', hd2880: '2880p',
+				      hd2160: '2160p (4K)', hd1440: '1440p', hd1080: '1080p',
+				      hd720: '720p', large: '480p', medium: '360p',
+				      small: '240p', tiny: '144p', auto: %3$s
+				    };
+				    if (names[level]) return names[level];
+				    var match = /^hd(\\d+)$/.exec(level);
+				    return match ? match[1] + 'p' : level;
+				  }
+				  function finish(result) {
+				    try { %1$s(%2$d, result); } catch (ignore) {}
+				  }
+				  function read(attempt) {
+				    var p = player();
+				    var levels = [];
+				    try {
+				      if (p && typeof p.getAvailableQualityLevels === 'function')
+				        levels = p.getAvailableQualityLevels() || [];
+				    } catch (ignore) {}
+				    if (!p || !levels.length) {
+				      if (attempt < 12) setTimeout(function() { read(attempt + 1); }, 100);
+				      else finish(null);
+				      return;
+				    }
+				    var unique = [];
+				    for (var i = 0; i < levels.length; i++) {
+				      var level = String(levels[i] || '');
+				      if (level && unique.indexOf(level) < 0) unique.push(level);
+				    }
+				    window.__fermataQualityLevels = unique;
+				    var current = '';
+				    try {
+				      if (typeof p.getPlaybackQuality === 'function')
+				        current = String(p.getPlaybackQuality() || '');
+				    } catch (ignore) {}
+				    var result = [];
+				    for (var j = 0; j < unique.length; j++)
+				      result.push((unique[j] === current ? '*' : '') + label(unique[j]));
+				    finish(result.join(';'));
+				  }
+				  read(0);
+				})()
+				""".formatted(eventFunction, eventCode, org.json.JSONObject.quote(autoLabel));
+	}
+
+	static String setVideoQuality(int index) {
+		return """
+				(function(index) {
+				  var p = document.querySelector('#movie_player,.html5-video-player');
+				  if (!p) return false;
+				  var levels = window.__fermataQualityLevels;
+				  if (!levels || index < 0 || index >= levels.length) {
+				    try {
+				      levels = (typeof p.getAvailableQualityLevels === 'function') ?
+				          (p.getAvailableQualityLevels() || []) : [];
+				    } catch (ignore) { levels = []; }
+				  }
+				  var level = levels[index];
+				  if (!level) return false;
+				  try {
+				    if (typeof p.setPlaybackQualityRange === 'function')
+				      p.setPlaybackQualityRange(level, level);
+				    if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(level);
+				    return true;
+				  } catch (ignore) { return false; }
+				})(%d)
+				""".formatted(index);
+	}
 }

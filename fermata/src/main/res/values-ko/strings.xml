@@ -412,6 +412,7 @@
     <string name="err_failed_install_module">모듈설치에 실패했습니다: %1$s</string>
     <string name="err_failed_to_download">다운로드에 실패했습니다 %1$s</string>
     <string name="err_no_audio_record_perm">음성녹음 권한이 부여되지 않았습니다</string>
+    <string name="err_speech_recognition_unavailable">음성 인식을 사용할 수 없습니다. 키보드로 계속할 수 있습니다.</string>
     <string name="err_failed_start_service">서비스 시작 실패: %s</string>
     <string name="addon_name_podcast">팟캐스트</string>
     <string name="dashboard_podcast_sub">프로그램, 에피소드 및 오프라인 재생</string>

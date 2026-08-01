@@ -405,6 +405,7 @@
     <string name="err_failed_install_module">Nie udało się zainstalować modułu: %1$s</string>
     <string name="err_failed_to_download">Nie udało się pobrać %1$s</string>
     <string name="err_no_audio_record_perm">Pozwolenie na nagrywanie dźwięku nie zostało udzielone</string>
+    <string name="err_speech_recognition_unavailable">Rozpoznawanie mowy jest niedostępne. Możesz kontynuować za pomocą klawiatury.</string>
     <string name="addon_name_podcast">Podcasty</string>
     <string name="dashboard_podcast_sub">Audycje, odcinki i słuchanie offline</string>
 	<string name="dashboard_audiobook_sub">Książki, rozdziały i słuchanie offline</string>

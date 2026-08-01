@@ -14,6 +14,7 @@ import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -495,7 +496,7 @@ public class FermataWebClient extends WebViewClientCompat {
 		if (mainFrame) {
 			failedMainFrameUrl = request.getUrl().toString();
 			completeLoading(view);
-			if (!scheduleAutoRetry(view, request.getUrl(), desc))
+			if (!scheduleAutoRetry(view, request.getUrl(), error.getErrorCode(), desc))
 				showLoadError(view, request.getUrl(), desc);
 		}
 
@@ -522,7 +523,8 @@ public class FermataWebClient extends WebViewClientCompat {
 							.errorCode(errorResponse.getStatusCode()).build());
 			failedMainFrameUrl = request.getUrl().toString();
 			completeLoading(view);
-			if (!scheduleAutoRetry(view, request.getUrl(), reason))
+			if (!scheduleAutoRetry(view, request.getUrl(),
+					errorResponse.getStatusCode(), reason))
 				showLoadError(view, request.getUrl(), reason);
 		}
 
@@ -585,8 +587,8 @@ public class FermataWebClient extends WebViewClientCompat {
 		});
 	}
 
-	private boolean scheduleAutoRetry(WebView view, Uri uri, String reason) {
-		if ((uri == null) || !isTransientLoadError(reason)) return false;
+	private boolean scheduleAutoRetry(WebView view, Uri uri, int errorCode, String reason) {
+		if ((uri == null) || !isTransientLoadError(errorCode, reason)) return false;
 		String url = uri.toString();
 		if (url.startsWith("about:") || url.startsWith("data:")) return false;
 		if (!url.equals(retryUrl)) {
@@ -624,12 +626,27 @@ public class FermataWebClient extends WebViewClientCompat {
 	}
 
 	static boolean isTransientLoadError(String reason) {
+		return isTransientLoadError(Integer.MIN_VALUE, reason);
+	}
+
+	static boolean isTransientLoadError(int errorCode, String reason) {
+		if ((errorCode == WebViewClient.ERROR_CONNECT) ||
+				(errorCode == WebViewClient.ERROR_HOST_LOOKUP) ||
+				(errorCode == WebViewClient.ERROR_IO) ||
+				(errorCode == WebViewClient.ERROR_TIMEOUT) ||
+				(errorCode == WebViewClient.ERROR_TOO_MANY_REQUESTS) ||
+				(errorCode == 408) || (errorCode == 425) || (errorCode == 429) ||
+				((errorCode >= 500) && (errorCode <= 504))) return true;
 		if (reason == null) return false;
-		String r = reason.toLowerCase();
+		String r = reason.toLowerCase(Locale.ROOT);
 		return r.contains("timeout") || r.contains("timed_out") || r.contains("connection_timed_out") ||
 				r.contains("connection timed out") || r.contains("host lookup") ||
 				r.contains("name not resolved") || r.contains("connection reset") ||
-				r.contains("connection refused") || r.contains("temporarily unavailable");
+				r.contains("connection refused") || r.contains("temporarily unavailable") ||
+				r.contains("network_changed") || r.contains("network changed") ||
+				r.contains("internet_disconnected") || r.contains("internet disconnected") ||
+				r.contains("connection_closed") || r.contains("connection closed") ||
+				r.contains("address_unreachable") || r.contains("address unreachable");
 	}
 
 	private static String getWebViewPackage() {

@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">En vedette - Film</string>
 	<string name="stremio_featured_series">En vedette - Série</string>
 	<string name="stremio_no_sources">Ajoutez un fournisseur pour commencer à naviguer</string>
+	<string name="stremio_no_catalogs">Un fournisseur est configuré, mais il ne propose aucun catalogue à parcourir. Ajoutez un fournisseur de catalogue comme Cinemeta.</string>
 	<string name="stremio_no_content">Aucun film ou série disponible</string>
 	<string name="stremio_filter_type">Taper</string>
 	<string name="stremio_filter_catalog">Catalogue</string>

@@ -11,6 +11,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 import me.aap.fermata.addon.stremio.browse.BrowseMedia;
+import me.aap.fermata.addon.stremio.browse.BrowseProvider;
 import me.aap.fermata.addon.stremio.browse.CatalogDescriptor;
 import me.aap.fermata.addon.stremio.browse.CatalogPage;
 import me.aap.fermata.addon.stremio.item.StremioItemGateway;
@@ -50,15 +51,24 @@ final class StremioHomePageLoader {
 		CompletableFuture<List<StremioContinueEntry>> continueItems = (sessions == null) ?
 				CompletableFuture.completedFuture(List.of()) :
 				request.track(sessions.loadContinue(MAX_SECTION_POSTERS));
+		CompletableFuture<List<BrowseProvider>> providers = request.track(items.providers());
 
-		return request.track(items.catalogs()).thenCombine(continueItems,
-				HomePayload::new).thenCompose(payload -> {
+		return request.track(items.catalogs()).thenCombine(providers,
+				(catalogs, providerItems) -> new HomePayload(
+						catalogs, providerItems, List.of())).thenCombine(continueItems,
+				(payload, entries) -> new HomePayload(
+						payload.catalogs(), payload.providers(), entries)).thenCompose(payload -> {
 			request.ensureActive();
 			addContinueSection(base, payload.continueItems());
 			List<HomeShelf> visible = homeShelves(payload.catalogs());
 			if (visible.isEmpty()) {
-				base.models.add(StremioPresentationModels.state("state:no-sources",
-						text.label(StremioPresentationText.Label.NO_SOURCES),
+				boolean hasEnabledProvider = payload.providers().stream()
+						.anyMatch(BrowseProvider::enabled);
+				StremioPresentationText.Label label = hasEnabledProvider ?
+						StremioPresentationText.Label.NO_CATALOGS :
+						StremioPresentationText.Label.NO_SOURCES;
+				base.models.add(StremioPresentationModels.state(hasEnabledProvider ?
+						"state:no-catalogs" : "state:no-sources", text.label(label),
 						StremioUiModel.StateKind.EMPTY));
 				return CompletableFuture.completedFuture(base.build());
 			}
@@ -352,6 +362,7 @@ final class StremioHomePageLoader {
 	}
 
 	private record HomePayload(List<CatalogDescriptor> catalogs,
+			List<BrowseProvider> providers,
 			List<StremioContinueEntry> continueItems) {
 	}
 

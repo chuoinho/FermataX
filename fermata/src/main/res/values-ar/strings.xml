@@ -405,6 +405,7 @@
     <string name="err_failed_install_module">فشل التثبيت: %1$s</string>
     <string name="err_failed_to_download">فشل التحميل %1$s</string>
     <string name="err_no_audio_record_perm">لم يتم منح أذونات الموسيقى والصوتيات</string>
+    <string name="err_speech_recognition_unavailable">تعذّر استخدام التعرّف على الكلام. يمكنك المتابعة باستخدام لوحة المفاتيح.</string>
     <string name="addon_name_podcast">البودكاست</string>
     <string name="dashboard_podcast_sub">برامج وحلقات واستماع دون اتصال</string>
 	<string name="dashboard_audiobook_sub">الكتب والفصول والاستماع دون اتصال بالإنترنت</string>

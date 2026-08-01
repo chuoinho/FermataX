@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">Nổi bật - Phim</string>
 	<string name="stremio_featured_series">Nổi bật - Series</string>
 	<string name="stremio_no_sources">Thêm nguồn để bắt đầu duyệt nội dung</string>
+	<string name="stremio_no_catalogs">Đã cấu hình nguồn phát nhưng nguồn này không có danh mục để duyệt. Hãy thêm nguồn danh mục như Cinemeta.</string>
 	<string name="stremio_no_content">Không có phim hoặc series</string>
 	<string name="stremio_filter_type">Loại</string>
 	<string name="stremio_filter_catalog">Danh mục</string>

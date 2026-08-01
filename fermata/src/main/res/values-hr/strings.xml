@@ -405,6 +405,7 @@
     <string name="err_failed_install_module">Nije uspjelo instaliranje modula: %1$s</string>
     <string name="err_failed_to_download">Nije uspjelo preuzimanje %1$s</string>
     <string name="err_no_audio_record_perm">Dozvola za snimanje zvuka nije odobrena</string>
+    <string name="err_speech_recognition_unavailable">Prepoznavanje govora nije dostupno. Možete nastaviti pomoću tipkovnice.</string>
     <string name="addon_name_podcast">Podcasti</string>
     <string name="dashboard_podcast_sub">Emisije, epizode i slušanje izvan mreže</string>
 	<string name="dashboard_audiobook_sub">Knjige, poglavlja i slušanje izvan mreže</string>

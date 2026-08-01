@@ -23,7 +23,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
-import android.os.OperationCanceledException;
 import android.os.SystemClock;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
@@ -81,6 +80,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private TextWatcher textWatcher;
 	private CarKeyboardOverlay keyboardOverlay;
 	private CarTextInputSession textInputSession;
+	private long inputGeneration;
 	private Promise<MainActivityDelegate> delegatePromise;
 	private MainActivityDelegate createdDelegate;
 	private Function<Context, ActivityDelegate> contextDelegate;
@@ -318,28 +318,12 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@Override
 	public EditText startInput(TextWatcher w) {
 		cancelTextInputSession();
+		inputGeneration++;
 		if (editText == null) editText = new CarEditText(this);
 		setActiveInput(editText, w);
-		getActivityDelegate().onSuccess(a -> {
-			if (a.getPrefs().getVoiceControlEnabledPref()) {
-				a.startSpeechRecognizer(null, true).onCompletion((q, err) -> {
-					stopInput();
-					if (err instanceof OperationCanceledException) {
-						setActiveInput(editText, w);
-						if (w instanceof OnEditorActionListener)
-							editText.setOnEditorActionListener((OnEditorActionListener) w);
-						startCarInput(editText, false);
-					} else if ((q != null) && !q.isEmpty()) {
-						editText.setText(q.get(0));
-						w.afterTextChanged(editText.getText());
-					} else {
-						stopInput();
-					}
-				});
-			} else {
-				startCarInput(editText, false);
-			}
-		});
+		if (w instanceof OnEditorActionListener listener)
+			editText.setOnEditorActionListener(listener);
+		startCarInput(editText, false);
 		return editText;
 	}
 
@@ -349,9 +333,29 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		if (!(target instanceof CarEditText input)) {
 			return startInput(w);
 		}
+		inputGeneration++;
 		setActiveInput(input, w);
 		startCarInput(input, submitOnEnter);
 		return input;
+	}
+
+	boolean isVoiceInputEnabled() {
+		MainActivityDelegate delegate = createdDelegate;
+		return (delegate != null) && delegate.getPrefs().getVoiceControlEnabledPref();
+	}
+
+	void requestVoiceInput(EditText input) {
+		if ((input == null) || (input != activeInput)) return;
+		long generation = inputGeneration;
+		getActivityDelegate().onSuccess(activity ->
+				activity.startSpeechRecognizer(null, true).onSuccess(results ->
+						getWindow().getDecorView().post(() -> {
+							if ((generation != inputGeneration) || (input != activeInput) ||
+									(results == null) || results.isEmpty()) return;
+							input.setText(results.get(0));
+							input.setSelection(input.getText().length());
+							if (keyboardOverlay != null) keyboardOverlay.refreshValue();
+						})));
 	}
 
 	private void setActiveInput(EditText input, TextWatcher w) {
@@ -408,6 +412,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	public void stopInput() {
+		inputGeneration++;
 		cancelTextInputSession();
 		stopInputView();
 	}
@@ -434,6 +439,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private void finishTextInputSession(CarTextInputSession session) {
 		if (textInputSession != session) return;
 		textInputSession = null;
+		inputGeneration++;
 		stopInputView();
 	}
 

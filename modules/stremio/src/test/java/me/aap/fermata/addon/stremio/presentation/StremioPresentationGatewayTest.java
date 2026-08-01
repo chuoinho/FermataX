@@ -40,6 +40,10 @@ import me.aap.fermata.addon.stremio.playback.StreamAggregationRequest;
 import me.aap.fermata.addon.stremio.playback.StreamAggregationResult;
 import me.aap.fermata.addon.stremio.playback.StreamProvider;
 import me.aap.fermata.addon.stremio.protocol.model.CatalogExtra;
+import me.aap.fermata.addon.stremio.protocol.model.ManifestBehaviorHints;
+import me.aap.fermata.addon.stremio.protocol.model.PrefixConstraint;
+import me.aap.fermata.addon.stremio.protocol.model.ResourceCapability;
+import me.aap.fermata.addon.stremio.protocol.model.StremioManifest;
 import me.aap.fermata.addon.stremio.protocol.response.DirectStreamTarget;
 import me.aap.fermata.addon.stremio.protocol.response.StremioStream;
 import me.aap.fermata.addon.stremio.protocol.response.StreamBehaviorHints;
@@ -215,6 +219,26 @@ public class StremioPresentationGatewayTest {
 		assertTrue(page.models().stream().noneMatch(StremioUiModel.Section.class::isInstance));
 		assertTrue(page.models().stream().anyMatch(model ->
 				model instanceof StremioUiModel.StateRow));
+	}
+
+	@Test
+	public void homeDistinguishesMissingProviderFromStreamOnlyProvider() {
+		FakeItems items = new FakeItems();
+		StremioPresentationPage withoutProvider = page(
+				new StremioPresentationGateway(items, TEXT).load(new StremioRoute.Home()));
+		StremioUiModel.StateRow missing = withoutProvider.models().stream()
+				.filter(StremioUiModel.StateRow.class::isInstance)
+				.map(StremioUiModel.StateRow.class::cast).findFirst().orElseThrow();
+		assertEquals("NO_SOURCES", missing.message());
+
+		items.providers.add(streamOnlyProvider());
+		StremioPresentationPage streamOnly = page(
+				new StremioPresentationGateway(items, TEXT).load(new StremioRoute.Home()));
+		StremioUiModel.StateRow noCatalogs = streamOnly.models().stream()
+				.filter(StremioUiModel.StateRow.class::isInstance)
+				.map(StremioUiModel.StateRow.class::cast).findFirst().orElseThrow();
+		assertEquals("state:no-catalogs", noCatalogs.stableKey());
+		assertEquals("NO_CATALOGS", noCatalogs.message());
 	}
 
 	@Test
@@ -600,6 +624,15 @@ public class StremioPresentationGatewayTest {
 				null, List.of("Drama"), "en");
 	}
 
+	private static BrowseProvider streamOnlyProvider() {
+		StremioManifest manifest = new StremioManifest(
+				"org.test.streams", "Stream Provider", "", "1.0.0", List.of("movie"),
+				PrefixConstraint.unrestricted(),
+				List.of(ResourceCapability.inherited("stream")), List.of(),
+				ManifestBehaviorHints.NONE);
+		return new BrowseProvider("stream-source", "Stream Provider", manifest, true, 0);
+	}
+
 	private static BrowseEpisode episode(
 			BrowseMedia series, int season, int episode, String title) {
 		return new BrowseEpisode(series.sourceUuid(), series.type(), series.id(),
@@ -621,6 +654,7 @@ public class StremioPresentationGatewayTest {
 
 	private static final class FakeItems implements StremioItemGateway {
 		private boolean failPersistentPreparation;
+		private final List<BrowseProvider> providers = new ArrayList<>();
 		private final List<CatalogDescriptor> catalogs = new ArrayList<>();
 		private final Map<CatalogRoute, CatalogPage> pages = new LinkedHashMap<>();
 		private final List<CatalogRequest> catalogRequests = new ArrayList<>();
@@ -632,7 +666,7 @@ public class StremioPresentationGatewayTest {
 
 		@Override
 		public FutureSupplier<List<BrowseProvider>> providers() {
-			return completed(List.of());
+			return completed(List.copyOf(providers));
 		}
 
 		@Override

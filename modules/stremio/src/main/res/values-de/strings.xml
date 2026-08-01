@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">Vorgestellt – Film</string>
 	<string name="stremio_featured_series">Vorgestellt – Serie</string>
 	<string name="stremio_no_sources">Fügen Sie einen Anbieter hinzu, um mit dem Surfen zu beginnen</string>
+	<string name="stremio_no_catalogs">Ein Anbieter ist eingerichtet, verfügt aber über keinen durchsuchbaren Katalog. Fügen Sie einen Kataloganbieter wie Cinemeta hinzu.</string>
 	<string name="stremio_no_content">Keine Filme oder Serien verfügbar</string>
 	<string name="stremio_filter_type">Typ</string>
 	<string name="stremio_filter_catalog">Katalog</string>

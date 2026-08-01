@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">Öne Çıkanlar - Film</string>
 	<string name="stremio_featured_series">Öne Çıkanlar - Seriler</string>
 	<string name="stremio_no_sources">Göz atmaya başlamak için bir sağlayıcı ekleyin</string>
+	<string name="stremio_no_catalogs">Bir sağlayıcı yapılandırılmış, ancak göz atılabilir bir kataloğu yok. Cinemeta gibi bir katalog sağlayıcısı ekleyin.</string>
 	<string name="stremio_no_content">Film veya dizi mevcut değil</string>
 	<string name="stremio_filter_type">Tip</string>
 	<string name="stremio_filter_catalog">Katalog</string>

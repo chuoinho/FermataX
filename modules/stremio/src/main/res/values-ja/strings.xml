@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">特集 - 映画</string>
 	<string name="stremio_featured_series">注目のシリーズ</string>
 	<string name="stremio_no_sources">プロバイダーを追加してブラウジングを開始する</string>
+	<string name="stremio_no_catalogs">プロバイダーは設定されていますが、閲覧可能なカタログがありません。Cinemeta などのカタログプロバイダーを追加してください。</string>
 	<string name="stremio_no_content">利用できる映画やシリーズはありません</string>
 	<string name="stremio_filter_type">タイプ</string>
 	<string name="stremio_filter_catalog">カタログ</string>

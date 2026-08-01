@@ -34,6 +34,7 @@ public interface StremioPresentationText {
 		FEATURED_MOVIES,
 		FEATURED_SERIES,
 		NO_SOURCES,
+		NO_CATALOGS,
 		NO_CONTENT,
 		TYPE,
 		CATALOG,

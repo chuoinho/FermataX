@@ -82,6 +82,7 @@
 	<string name="stremio_featured_movies">추천 - 영화</string>
 	<string name="stremio_featured_series">추천 - 시리즈</string>
 	<string name="stremio_no_sources">탐색을 시작하려면 공급자를 추가하세요.</string>
+	<string name="stremio_no_catalogs">제공자가 설정되어 있지만 탐색 가능한 카탈로그가 없습니다. Cinemeta와 같은 카탈로그 제공자를 추가하세요.</string>
 	<string name="stremio_no_content">사용 가능한 영화나 시리즈가 없습니다.</string>
 	<string name="stremio_filter_type">유형</string>
 	<string name="stremio_filter_catalog">목록</string>
