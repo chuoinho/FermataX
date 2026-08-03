@@ -176,9 +176,20 @@ public class PlaybackEngineLeaseControllerTest {
 				runNormalPlayPreparedItem(true));
 		assertEquals(List.of("select", "clear-surfaces", "video", "focus", "state:8",
 					"prepare", "queue"), runNormalPlayPreparedItem(false));
+		assertEquals(List.of("select", "clear-surfaces", "video", "focus", "state:8",
+					"prepare"), runNormalPlayPreparedItemKeepingQueue());
 	}
 
 	private static List<String> runNormalPlayPreparedItem(boolean sameItem) throws Exception {
+		return runNormalPlayPreparedItem(sameItem, false);
+	}
+
+	private static List<String> runNormalPlayPreparedItemKeepingQueue() throws Exception {
+		return runNormalPlayPreparedItem(false, true);
+	}
+
+	private static List<String> runNormalPlayPreparedItem(boolean sameItem, boolean keepQueue)
+			throws Exception {
 		List<String> events = new ArrayList<>();
 		AtomicReference<PlayableItem> candidateSource = new AtomicReference<>();
 		FutureSupplier<List<MediaSessionCompat.QueueItem>> queue = immediateFuture(List.of());
@@ -213,7 +224,19 @@ public class PlaybackEngineLeaseControllerTest {
 					case "getId", "getName", "toString" -> "target";
 					default -> defaultValue(method.getReturnType());
 				});
-		if (sameItem) candidateSource.set(target);
+		PlayableItem current = sameItem ? target : keepQueue ? (PlayableItem) Proxy.newProxyInstance(
+				PlayableItem.class.getClassLoader(), new Class<?>[]{PlayableItem.class},
+				(proxy, method, args) -> switch (method.getName()) {
+					case "isVideo" -> true;
+					case "isPlaybackTransportCommand", "isExternal", "isTimerRequired" -> false;
+					case "getParent" -> parent;
+					case "getMediaData" -> pendingMetadata[0];
+					case "equals" -> proxy == args[0];
+					case "hashCode" -> System.identityHashCode(proxy);
+					case "getId", "getName", "toString" -> "current";
+					default -> defaultValue(method.getReturnType());
+				}) : null;
+		candidateSource.set(current);
 
 		FakeVideoView view = allocate(FakeVideoView.class);
 		view.events = events;
@@ -255,7 +278,7 @@ public class PlaybackEngineLeaseControllerTest {
 				new PlaybackAdvanceWatchdog((task, delay) -> {}, () -> {}));
 		set(callback, "playbackRequestRevision", pending.generation());
 		set(callback, "engine", initial);
-		set(callback, "playbackSnapshot", new PlaybackSnapshot(1L, sameItem ? target : null,
+		set(callback, "playbackSnapshot", new PlaybackSnapshot(1L, current,
 				new PlaybackStateCompat.Builder().setState(PlaybackStateCompat.STATE_PAUSED,
 						7L, 1F).build(), null));
 		set(callback, "videoView", videoQueue(view));
@@ -263,13 +286,18 @@ public class PlaybackEngineLeaseControllerTest {
 		Method play = MediaSessionCallback.class.getDeclaredMethod("playPreparedItem", MediaEngine.class,
 				PlayableItem.class, long.class, PlayableItem.class, long.class, int.class, long.class);
 		play.setAccessible(true);
-		play.invoke(callback, initial, target, 42L, sameItem ? target : null,
-				sameItem ? 7L : -1L, PlaybackStateCompat.STATE_CONNECTING, pending.generation());
+		play.invoke(callback, initial, target, 42L, current,
+				(current == null) ? -1L : 7L, PlaybackStateCompat.STATE_CONNECTING,
+				pending.generation());
 
 		assertSame(candidate, callback.getEngine());
 		assertSame(candidate, ownership.getPending().engineIdentity());
 		assertEquals(PlaybackStateCompat.STATE_CONNECTING, session.state.getState());
-		assertEquals(!sameItem, session.queuePublished);
+		assertEquals(!sameItem && !keepQueue, session.queuePublished);
+		if (keepQueue) {
+			assertFalse(session.queuePublished);
+			assertFalse(events.contains("queue"));
+		}
 		return events;
 	}
 
