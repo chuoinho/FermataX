@@ -227,6 +227,7 @@ public class StremioPresenterTest {
 			presenter.start();
 			FakeRequest request = loader.requests.remove();
 			assertTrue(failed.await(2, TimeUnit.SECONDS));
+			assertTrue(request.cancelledSignal.await(2, TimeUnit.SECONDS));
 			assertTrue(request.cancelled);
 			assertEquals(StremioScreenState.Phase.ERROR, presenter.getState().phase());
 
@@ -273,6 +274,7 @@ public class StremioPresenterTest {
 		private final CompletableFuture<StremioPresentationPage> result =
 				new CompletableFuture<>();
 		private boolean cancelled;
+		private final CountDownLatch cancelledSignal = new CountDownLatch(1);
 		private Consumer<StremioPresentationPage> updateListener;
 		private final boolean failRegistration;
 
@@ -306,6 +308,7 @@ public class StremioPresenterTest {
 		@Override
 		public void cancel() {
 			cancelled = true;
+			cancelledSignal.countDown();
 		}
 	}
 }
