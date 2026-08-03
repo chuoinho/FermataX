@@ -66,6 +66,7 @@ jobs:
         run: ./gradlew lint --no-daemon --no-parallel --stacktrace
 
       - name: Check whitespace in the PR/push diff
+        if: ${{ always() }}
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}

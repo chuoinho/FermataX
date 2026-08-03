@@ -115,6 +115,13 @@ subprojects {
             unitTests.returnDefaultValues = true
         }
 
+        // AGP 9.2.1's inferred-thread dataflow can enter a non-terminating
+        // least-fixpoint/hashCode walk on this multi-feature graph. Keep lint's
+        // other checks enabled while disabling only the pathological detector.
+        lint {
+            disable += ['ThreadConstraint']
+        }
+
         dependencies {
             coreLibraryDesugaring libs.desugarJdkLibs
         }
