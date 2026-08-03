@@ -2,7 +2,9 @@ package me.aap.fermata.media.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -52,6 +54,68 @@ public class PlaybackOwnershipTest {
 		assertSame(committed, ownership.getActive());
 		assertTrue(ownership.owns(firstEngine, firstItem));
 		assertFalse(ownership.isRequestCurrent(pending.generation(), target));
+	}
+
+	@Test
+	public void exactTokenRollbackRestoresCommittedOwnerAndRevision() {
+		PlaybackOwnership ownership = new PlaybackOwnership();
+		Token committed = ownership.adopt("committed", new Object(), new Object());
+		Token pending = ownership.begin("pending", new Object(), null);
+		long stateRevision = ownership.getStateRevision();
+
+		PlaybackOwnership.RollbackResult result = ownership.rollback(pending);
+
+		assertNotNull(result);
+		assertNull(ownership.getPending());
+		assertSame(committed, ownership.getActive());
+		assertSame(committed, result.restoredOwner());
+		assertEquals(committed.generation(), result.restoredRevision());
+		assertEquals(stateRevision + 1, ownership.getStateRevision());
+	}
+
+	@Test
+	public void exactTokenRollbackWithoutCommittedOwnerReturnsItemGeneration() {
+		PlaybackOwnership ownership = new PlaybackOwnership();
+		Token pending = ownership.begin("pending", new Object(), null);
+		long stateRevision = ownership.getStateRevision();
+
+		PlaybackOwnership.RollbackResult result = ownership.rollback(pending);
+
+		assertNotNull(result);
+		assertNull(result.restoredOwner());
+		assertNull(ownership.getActive());
+		assertEquals(ownership.getItemGeneration(), result.restoredRevision());
+		assertEquals(stateRevision + 1, ownership.getStateRevision());
+	}
+
+	@Test
+	public void exactTokenRollbackRejectsDifferentInstanceWithSameGenerationAndItem() {
+		PlaybackOwnership ownership = new PlaybackOwnership();
+		Object addon = new Object();
+		Object item = new Object();
+		Object engine = new Object();
+		Token pending = ownership.begin(addon, item, engine);
+		Token equalButDifferent = new Token(pending.generation(), addon, item, engine);
+		long stateRevision = ownership.getStateRevision();
+
+		assertEquals(pending, equalButDifferent);
+		assertNotSame(pending, equalButDifferent);
+		assertNull(ownership.rollback(equalButDifferent));
+		assertSame(pending, ownership.getPending());
+		assertEquals(stateRevision, ownership.getStateRevision());
+	}
+
+	@Test
+	public void exactTokenRollbackRejectsWhenNoPendingOwnerExists() {
+		PlaybackOwnership ownership = new PlaybackOwnership();
+		Token formerPending = ownership.begin("pending", new Object(), new Object());
+		assertTrue(ownership.commit(formerPending.engineIdentity(), formerPending.itemIdentity()));
+		long stateRevision = ownership.getStateRevision();
+
+		assertNull(ownership.rollback(formerPending));
+		assertNull(ownership.getPending());
+		assertSame(formerPending, ownership.getCommitted());
+		assertEquals(stateRevision, ownership.getStateRevision());
 	}
 
 	@Test

@@ -16,6 +16,7 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
+import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.view.AudioEffectsView;
@@ -161,10 +162,12 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 
 	@SuppressLint("SwitchIntDef")
 	@Override
-	public void onPlaybackStateChanged(MediaSessionCallback cb, PlaybackStateCompat state) {
+	public void onPlaybackSnapshotChanged(MediaSessionCallback cb,
+			@Nullable PlaybackSnapshot previous, @NonNull PlaybackSnapshot current) {
 		if (isHidden()) return;
 
 		AudioEffectsView view;
+		PlaybackStateCompat state = current.getState();
 
 		switch (state.getState()) {
 			case PlaybackStateCompat.STATE_SKIPPING_TO_NEXT:

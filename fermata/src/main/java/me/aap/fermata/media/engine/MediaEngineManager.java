@@ -158,6 +158,85 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		return create(provider, null, i, listener);
 	}
 
+	/**
+	 * Selects an engine and reports whether a rejected candidate may be disposed by the caller.
+	 *
+	 * <p>Item-supplied and custom-provider candidates are borrowed by default. Providers selected
+	 * from the manager's built-in MediaPlayer/ExoPlayer/VLC slots create caller-owned candidates.</p>
+	 */
+	public EngineSelection createEngineSelection(
+			MediaEngine current, PlayableItem i, Listener listener) {
+		recordEngineDiagnostic("engine_select_started", DiagnosticPriority.STATE, i, current, null,
+				null, null);
+		var newEng = i.getMediaEngine(current, listener);
+		if (newEng != null) {
+			if ((current != null) && (current != newEng)) current.close();
+			recordEngineDiagnostic("engine_selected", DiagnosticPriority.STATE, i, current, newEng,
+					null, null);
+			return selection(current, newEng, EngineSelection.Ownership.BORROWED);
+		}
+
+		if ((engineProvider != null) && engineProvider.supportsPlayback(i)) {
+			recordEngineDiagnostic("engine_provider_selected", DiagnosticPriority.STATE, i, current,
+					null, engineProvider, null);
+			return selection(current, createSafely(engineProvider, listener, false),
+					EngineSelection.Ownership.BORROWED);
+		}
+		if (!isAdditionalPlayerSupported()) {
+			if (!mediaPlayer.supportsPlayback(i)) {
+				if (current != null) current.close();
+				return selection(current, null, EngineSelection.Ownership.OWNED_NEW);
+			}
+			if (current != null) {
+				if (current.getId() == MEDIA_ENG_MP)
+					return createBuiltInSelection(mediaPlayer, current, i, listener);
+				current.close();
+			}
+
+			return createBuiltInSelection(mediaPlayer, null, i, listener);
+		}
+
+		PlayableItemPrefs pref = i.getPrefs();
+		int id;
+		if (requiresP2p(i) && (vlcPlayer != null) && vlcPlayer.supportsPlayback(i)) {
+			// Fermata Xtream's proven torrent path uses VLC. It is more tolerant of
+			// partially available AVI/MKV files than ExoPlayer's progressive extractors.
+			id = MEDIA_ENG_VLC;
+		} else {
+			id = i.isVideo() ? pref.getVideoEnginePref() : pref.getAudioEnginePref();
+		}
+
+		MediaEngineProvider provider = getSupportingProvider(getProvider(id), i);
+		if (provider == null) {
+			if (current != null) current.close();
+			return selection(current, null, EngineSelection.Ownership.OWNED_NEW);
+		}
+
+		if (current != null) {
+			if (!requiresFreshP2pEngine(current, i) && (current.getId() == id) &&
+					getProvider(id).supportsPlayback(i)) {
+				return createBuiltInSelection(null, current, i, listener);
+			}
+			current.close();
+		}
+
+		return createBuiltInSelection(provider, null, i, listener);
+	}
+
+	private EngineSelection createBuiltInSelection(
+			MediaEngineProvider provider, MediaEngine current, PlayableItem item, Listener listener) {
+		return selection(current, create(provider, current, item, listener),
+				EngineSelection.Ownership.OWNED_NEW);
+	}
+
+	private static EngineSelection selection(MediaEngine current, MediaEngine candidate,
+			EngineSelection.Ownership createdOwnership) {
+		EngineSelection.Ownership ownership = (candidate == null) ?
+				EngineSelection.Ownership.NO_CANDIDATE : ((candidate == current) ?
+				EngineSelection.Ownership.PREEXISTING : createdOwnership);
+		return new EngineSelection(candidate, ownership);
+	}
+
 	static boolean requiresP2p(PlayableItem item) {
 		return (item instanceof RemotePlaybackItem remote) &&
 				remote.getPlaybackRequestProfile().getRequiredEngineCapabilities()

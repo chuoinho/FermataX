@@ -36,6 +36,12 @@ final class PlaybackOwnership {
 		return pending = token.withEngine(engine);
 	}
 
+	@Nullable
+	Token bindEngine(@Nullable Token expectedPending, Object engine) {
+		if ((expectedPending == null) || (pending != expectedPending)) return null;
+		return pending = expectedPending.withEngine(engine);
+	}
+
 	boolean replaceEngine(Object expected, Object replacement) {
 		Token token = active();
 		if ((token == null) || (token.engineIdentity() != expected)) return false;
@@ -58,6 +64,17 @@ final class PlaybackOwnership {
 		pending = null;
 		stateRevision++;
 		return true;
+	}
+
+	@Nullable
+	RollbackResult rollback(@Nullable Token expectedPending) {
+		if ((expectedPending == null) || (pending != expectedPending)) return null;
+		pending = null;
+		stateRevision++;
+		Token restoredOwner = active();
+		long restoredRevision = (restoredOwner == null) ? itemGeneration :
+				restoredOwner.generation();
+		return new RollbackResult(restoredOwner, restoredRevision);
 	}
 
 	void release() {
@@ -119,6 +136,14 @@ final class PlaybackOwnership {
 		return matches(token, engine, itemIdentity) ? token.generation() : -1L;
 	}
 
+	boolean referencesEngine(@Nullable Object engine) {
+		if (engine == null) return false;
+		Token pending = this.pending;
+		Token committed = this.committed;
+		return ((pending != null) && (pending.engineIdentity() == engine)) ||
+				((committed != null) && (committed.engineIdentity() == engine));
+	}
+
 	StateToken captureState() {
 		return new StateToken(active(), stateRevision);
 	}
@@ -160,5 +185,8 @@ final class PlaybackOwnership {
 	}
 
 	record StateToken(@Nullable Token owner, long revision) {
+	}
+
+	record RollbackResult(@Nullable Token restoredOwner, long restoredRevision) {
 	}
 }
