@@ -2,6 +2,7 @@ package me.aap.fermata.addon.stremio.net.http;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -70,12 +71,22 @@ public class StremioHttpClientTest {
 	public void followsValidatedRedirectAndStripsCrossOriginSecrets() throws Exception {
 		transport.responses.add(completed(new FakeResponse(302,
 				Map.of("Location", "https://two.example.invalid/catalog"), new byte[0])));
-		FakeResponse finalResponse = new FakeResponse(200, Map.of("ETag", "v1"), bytes("ok"));
+		var closeEntered = new java.util.concurrent.CountDownLatch(1);
+		var allowClose = new java.util.concurrent.CountDownLatch(1);
+		FakeResponse finalResponse = new FakeResponse(200, Map.of("ETag", "v1"), bytes("ok"),
+				closeEntered, allowClose);
 		transport.responses.add(completed(finalResponse));
 		var request = request("https://one.example.invalid/start", 1024,
 				Map.of("Authorization", "secret", "Cookie", "session", "Accept", "application/json"));
 
-		HttpResponseData response = client.execute(request).response().get(2, TimeUnit.SECONDS);
+		CompletableFuture<HttpResponseData> result = client.execute(request).response();
+		assertTrue(closeEntered.await(2, TimeUnit.SECONDS));
+		try {
+			assertFalse(result.isDone());
+		} finally {
+			allowClose.countDown();
+		}
+		HttpResponseData response = result.get(2, TimeUnit.SECONDS);
 
 		assertArrayEquals(bytes("ok"), response.body());
 		assertEquals("v1", response.header("etag"));
@@ -282,11 +293,21 @@ public class StremioHttpClientTest {
 		private final Map<String, String> headers;
 		private final byte[] body;
 		private final AtomicBoolean closed = new AtomicBoolean();
+		private final java.util.concurrent.CountDownLatch closeEntered;
+		private final java.util.concurrent.CountDownLatch allowClose;
 
 		private FakeResponse(int status, Map<String, String> headers, byte[] body) {
+			this(status, headers, body, null, null);
+		}
+
+		private FakeResponse(int status, Map<String, String> headers, byte[] body,
+				java.util.concurrent.CountDownLatch closeEntered,
+				java.util.concurrent.CountDownLatch allowClose) {
 			this.status = status;
 			this.headers = new LinkedHashMap<>(headers);
 			this.body = body;
+			this.closeEntered = closeEntered;
+			this.allowClose = allowClose;
 		}
 
 		@Override
@@ -306,6 +327,14 @@ public class StremioHttpClientTest {
 
 		@Override
 		public void close() {
+			if (closeEntered != null) closeEntered.countDown();
+			if (allowClose != null) {
+				try {
+					allowClose.await();
+				} catch (InterruptedException ex) {
+					Thread.currentThread().interrupt();
+				}
+			}
 			closed.set(true);
 		}
 	}

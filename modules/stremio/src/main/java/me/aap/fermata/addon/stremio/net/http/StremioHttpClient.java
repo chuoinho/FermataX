@@ -195,17 +195,21 @@ public final class StremioHttpClient {
 			ScheduledFuture<?> bodyTimer = schedule(request.deadlines().body(), BODY_TIMEOUT,
 					"HTTP response body deadline exceeded");
 			bodyExecutor.execute(() -> {
+				byte[] body;
+				int status;
 				try (response; InputStream in = response.body()) {
-					byte[] body = readBounded(in, request.maxBodyBytes());
+					status = response.status();
+					body = readBounded(in, request.maxBodyBytes());
 					checkGeneration();
-					bodyTimer.cancel(false);
-					activeResponse.compareAndSet(response, null);
-					complete(new HttpResponseData(response.status(), finalUri, responseHeaders, body));
 				} catch (Throwable ex) {
 					bodyTimer.cancel(false);
 					activeResponse.compareAndSet(response, null);
 					fail(asFailure(ex));
+					return;
 				}
+				bodyTimer.cancel(false);
+				activeResponse.compareAndSet(response, null);
+				complete(new HttpResponseData(status, finalUri, responseHeaders, body));
 			});
 		}
 

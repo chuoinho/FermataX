@@ -10,10 +10,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -343,29 +345,29 @@ public class StremioBrowseRepositoryTest {
 		var active = new AtomicInteger();
 		var maximum = new AtomicInteger();
 		var started = new CountDownLatch(2);
-		var releases = new CopyOnWriteArrayList<CompletableFuture<BrowsePayload>>();
+		BlockingQueue<CompletableFuture<BrowsePayload>> releases = new LinkedBlockingQueue<>();
 		var repository = repository((selected, request, generation) -> {
 			int now = active.incrementAndGet();
 			maximum.accumulateAndGet(now, Math::max);
-			started.countDown();
 			var result = new CompletableFuture<BrowsePayload>();
 			releases.add(result);
-			result.whenComplete((value, error) -> active.decrementAndGet());
+			started.countDown();
 			return result;
 		}, 2, 20, 0);
 
 		var search = repository.search(providers, "bounded", null);
 		assertTrue(started.await(2, TimeUnit.SECONDS));
-		while (!search.result().isDone()) {
-			for (var pending : List.copyOf(releases)) {
-				if (!pending.isDone()) pending.complete(new BrowsePayload(
-						catalogJson("same", "movie", "Result").getBytes(StandardCharsets.UTF_8), false));
-			}
-			Thread.sleep(5);
+		for (int i = 0; i < providers.size(); i++) {
+			CompletableFuture<BrowsePayload> pending = releases.poll(2, TimeUnit.SECONDS);
+			assertNotNull("Search job " + i + " was not launched", pending);
+			active.decrementAndGet();
+			assertTrue(pending.complete(new BrowsePayload(
+					catalogJson("same", "movie", "Result").getBytes(StandardCharsets.UTF_8), false)));
 		}
 
 		var state = content(search.result().get(2, TimeUnit.SECONDS));
 		assertEquals(2, maximum.get());
+		assertEquals(0, active.get());
 		assertEquals(6, state.value().items().size());
 	}
 
