@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BooleanSupplier;
 
 import org.junit.After;
 import org.junit.Before;
@@ -210,8 +211,13 @@ public class DiagnosticRecorderTest {
 				.config(DiagnosticConfig.builder().flushIntervalMillis(10L).build())
 				.build();
 		try {
-			recorder.record(DiagnosticEvent.builder("diagnostics", "report_create_failed").build());
-			assertFalse(recorder.flush(1000L));
+			assertTrue(recorder.record(
+					DiagnosticEvent.builder("diagnostics", "report_create_failed").build()));
+			assertTrue(awaitCondition(() -> {
+				DiagnosticRecorder.Stats stats = recorder.getStats();
+				return !stats.isStorageHealthy() && (stats.getQueued() == 0) &&
+						(stats.getWriteFailures() > 0L);
+			}, 2000L));
 			assertTrue(blocked.delete());
 			assertTrue(blocked.mkdirs());
 			clock.wallTime += 65_000L;
@@ -243,6 +249,16 @@ public class DiagnosticRecorderTest {
 		} finally {
 			recorder.close();
 		}
+	}
+
+	private static boolean awaitCondition(BooleanSupplier condition, long timeoutMillis)
+			throws InterruptedException {
+		long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
+		do {
+			if (condition.getAsBoolean()) return true;
+			Thread.sleep(1L);
+		} while (System.nanoTime() < deadline);
+		return condition.getAsBoolean();
 	}
 
 	private static String readJournal(File directory) throws Exception {
