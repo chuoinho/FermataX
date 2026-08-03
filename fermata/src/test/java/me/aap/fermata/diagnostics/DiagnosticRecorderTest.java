@@ -217,7 +217,12 @@ public class DiagnosticRecorderTest {
 			clock.wallTime += 65_000L;
 			assertTrue(recorder.record(DiagnosticEvent.builder("diagnostics", "report_save_failed").build()));
 			assertTrue(recorder.flush(2000L));
-			assertTrue(readJournal(blocked).contains("report_save_failed"));
+			File recoveredSnapshot = new File(directory.getParentFile(),
+					"fx-recovered-" + UUID.randomUUID());
+			assertTrue(recorder.createSnapshot(recoveredSnapshot, 2000L));
+			String recovered = readJournal(recoveredSnapshot);
+			delete(recoveredSnapshot);
+			assertTrue(recovered, recovered.contains("report_save_failed"));
 		} finally {
 			recorder.close();
 		}
