@@ -9,13 +9,13 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.concurrent.TimeoutException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.BiConsumer;
@@ -34,6 +34,7 @@ import me.aap.utils.ui.activity.ActivityBase;
 
 final class AddonModuleController {
 	private static final String CHANNEL_ID = "fermata.addon.install";
+	private static final long PHYSICAL_OPERATION_TIMEOUT_MS = 180_000L;
 	private final AddonRuntimeState state;
 	private final Function<AddonInfo, FutureSupplier<Boolean>> loadAddon;
 	private final Predicate<AddonInfo> retained;
@@ -311,25 +312,27 @@ final class AddonModuleController {
 	}
 
 	private void runPhysical(PhysicalOperation operation) {
-		FutureSupplier<?> task;
+		FutureSupplier<?> task = null;
 		try {
 			task = operation.start.get();
+			if (task == null) throw new IllegalStateException("Addon module operation returned no task");
 			operation.started.accept(task);
+			FutureSupplier<?> source = task;
+			task.timeout(PHYSICAL_OPERATION_TIMEOUT_MS).onCompletion((result, error) -> {
+				if (error instanceof TimeoutException) source.cancel();
+				try {
+					operation.completed.accept(source, error);
+				} finally {
+					finishPhysical();
+				}
+			});
 		} catch (RuntimeException | LinkageError error) {
-			try {
-				operation.completed.accept(null, error);
-			} finally {
-				finishPhysical();
-			}
-			return;
-		}
-		task.onCompletion((result, error) -> {
 			try {
 				operation.completed.accept(task, error);
 			} finally {
 				finishPhysical();
 			}
-		});
+		}
 	}
 
 	private void finishPhysical() {

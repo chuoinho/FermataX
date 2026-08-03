@@ -5,6 +5,7 @@ import static me.aap.utils.async.Completed.completedNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayDeque;
@@ -13,13 +14,43 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeoutException;
 
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
+import me.aap.utils.misc.TestUtils;
+import me.aap.utils.os.OsUtils;
 
 public class AddonModuleControllerTest {
+	private static TestApp app;
+
+	@BeforeClass
+	public static void setUpClass() {
+		TestUtils.enableTestMode();
+		OsUtils.isAndroid();
+		app = new TestApp();
+		app.onCreate();
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		app.onTerminate();
+		app = null;
+	}
+
+	@Before
+	public void clearPhysicalTimeouts() {
+		app.clearTimeouts();
+	}
+
 	@Test
 	public void readinessWaitsForLifecycleReplayAndCommit() {
 		Queue<Runnable> lifecycleTasks = new ArrayDeque<>();
@@ -125,6 +156,129 @@ public class AddonModuleControllerTest {
 		harness.visible.put(first.className, true);
 		harness.operations.completeInstall("first");
 		assertEquals(1, harness.operations.installCount("second"));
+	}
+
+	@Test
+	public void physicalTimeoutUnblocksNextQueuedOperation() {
+		AddonInfo stuck = info("stuck", "test.Stuck", 1);
+		AddonInfo next = info("next", "test.Next", 2);
+		Harness harness = new Harness(stuck, next);
+
+		harness.controller.install(List.of(stuck), stuck);
+		harness.controller.install(List.of(next), next);
+		assertEquals(1, harness.operations.installCount("stuck"));
+		assertEquals(0, harness.operations.installCount("next"));
+
+		app.runNextTimeout();
+
+		assertNull(harness.state.getInstalling(stuck));
+		assertTrue(harness.operations.installTasks.get("stuck").isCancelled());
+		assertEquals(1, harness.operations.installCount("next"));
+	}
+
+	@Test
+	public void fastPhysicalOperationIsUnaffectedByTimeout() {
+		AddonInfo info = info("fast", "test.Fast", 1);
+		Harness harness = new Harness(info);
+		harness.controller.install(List.of(info), info);
+		FutureSupplier<?> ready = harness.state.getInstalling(info);
+
+		harness.visible.put(info.className, true);
+		harness.operations.completeInstall("fast");
+
+		assertTrue(ready.isDoneNotFailed());
+		assertFalse(ready.isCancelled());
+		assertNull(ready.getFailure());
+		assertEquals(0, app.pendingTimeoutCount());
+	}
+
+	@Test
+	public void physicalTimeoutCompletesOperationWithTimeoutException() {
+		AddonInfo info = info("stuck", "test.Stuck", 1);
+		Harness harness = new Harness(info);
+		harness.controller.install(List.of(info), info);
+		FutureSupplier<?> ready = harness.state.getInstalling(info);
+
+		app.runNextTimeout();
+
+		assertTrue(ready.isFailed());
+		assertTrue(ready.getFailure() instanceof TimeoutException);
+		assertFalse(ready.isCancelled());
+	}
+
+	@Test
+	public void physicalQueueOrderingIsPreservedAfterTimeout() {
+		AddonInfo first = info("first", "test.First", 1);
+		AddonInfo second = info("second", "test.Second", 2);
+		AddonInfo third = info("third", "test.Third", 3);
+		Harness harness = new Harness(first, second, third);
+
+		harness.controller.install(List.of(first), first);
+		harness.controller.install(List.of(second), second);
+		harness.controller.install(List.of(third), third);
+		assertEquals(List.of("first"), harness.operations.installOrder);
+
+		app.runNextTimeout();
+		assertEquals(List.of("first", "second"), harness.operations.installOrder);
+
+		// A late completion from the timed-out source must not finish the queue twice.
+		harness.operations.completeInstall("first");
+		assertEquals(List.of("first", "second"), harness.operations.installOrder);
+
+		harness.visible.put(second.className, true);
+		harness.operations.completeInstall("second");
+		assertEquals(List.of("first", "second", "third"), harness.operations.installOrder);
+		assertEquals(1, harness.operations.installCount("first"));
+		assertEquals(1, harness.operations.installCount("second"));
+		assertEquals(1, harness.operations.installCount("third"));
+	}
+
+	@Test
+	public void uninstallTimeoutReleasesReservationAndUnblocksQueue() {
+		AddonInfo stuck = info("stuck", "test.Stuck", 1);
+		AddonInfo next = info("next", "test.Next", 2);
+		Harness harness = new Harness(stuck, next);
+		harness.controller.install(List.of(stuck), stuck);
+		harness.visible.put(stuck.className, true);
+		harness.operations.completeInstall("stuck");
+
+		harness.retained.put(stuck.className, false);
+		harness.operations.deferUninstall = true;
+		harness.controller.uninstall(stuck);
+		harness.controller.install(List.of(next), next);
+		assertEquals(1, harness.operations.uninstallCount("stuck"));
+		assertEquals(0, harness.operations.installCount("next"));
+
+		app.runNextTimeout();
+
+		assertTrue(harness.operations.uninstallTask.isCancelled());
+		assertEquals(1, harness.operations.installCount("next"));
+		harness.visible.put(next.className, true);
+		harness.operations.completeInstall("next");
+
+		// A second request must not be blocked by the timed-out operation's reservation.
+		harness.operations.deferUninstall = false;
+		harness.controller.uninstall(stuck);
+		assertEquals(2, harness.operations.uninstallCount("stuck"));
+	}
+
+	@Test
+	public void fastPhysicalUninstallIsUnaffectedByTimeout() {
+		AddonInfo info = info("fast", "test.Fast", 1);
+		Harness harness = new Harness(info);
+		harness.controller.install(List.of(info), info);
+		harness.visible.put(info.className, true);
+		harness.operations.completeInstall("fast");
+
+		harness.retained.put(info.className, false);
+		harness.operations.deferUninstall = true;
+		harness.controller.uninstall(info);
+		FutureSupplier<?> uninstall = harness.operations.uninstallTask;
+		harness.operations.completeUninstall();
+
+		assertTrue(uninstall.isDoneNotFailed());
+		assertFalse(uninstall.isCancelled());
+		assertEquals(0, app.pendingTimeoutCount());
 	}
 
 	@Test
@@ -343,6 +497,7 @@ public class AddonModuleControllerTest {
 		final Map<String, Integer> installs = new HashMap<>();
 		final Map<String, Integer> uninstalls = new HashMap<>();
 		final Map<String, Promise<Void>> installTasks = new HashMap<>();
+		final List<String> installOrder = new ArrayList<>();
 		final Queue<Runnable> scheduled = new ArrayDeque<>();
 		boolean deferUninstall;
 		Promise<Void> uninstallTask;
@@ -350,6 +505,7 @@ public class AddonModuleControllerTest {
 		@Override
 		public FutureSupplier<?> install(AddonInfo info) {
 			installs.merge(info.moduleName, 1, Integer::sum);
+			installOrder.add(info.moduleName);
 			Promise<Void> task = new Promise<>();
 			installTasks.put(info.moduleName, task);
 			return task;
@@ -388,6 +544,48 @@ public class AddonModuleControllerTest {
 
 		void completeUninstall() {
 			uninstallTask.complete(null);
+		}
+	}
+
+	private static final class TestApp extends App {
+		private final ScheduledThreadPoolExecutor scheduler =
+				new ScheduledThreadPoolExecutor(1);
+
+		TestApp() {
+			scheduler.setRemoveOnCancelPolicy(true);
+		}
+
+		@Override
+		public String getLogTag() {
+			return "AddonModuleControllerTest";
+		}
+
+		@Override
+		public ScheduledExecutorService getScheduler() {
+			return scheduler;
+		}
+
+		@Override
+		public void onTerminate() {
+			scheduler.shutdownNow();
+			super.onTerminate();
+		}
+
+		void runNextTimeout() {
+			assertFalse(scheduler.getQueue().isEmpty());
+			Runnable timeout = scheduler.getQueue().iterator().next();
+			assertTrue(scheduler.remove(timeout));
+			timeout.run();
+		}
+
+		int pendingTimeoutCount() {
+			return scheduler.getQueue().size();
+		}
+
+		void clearTimeouts() {
+			for (Runnable timeout : new ArrayList<>(scheduler.getQueue())) {
+				scheduler.remove(timeout);
+			}
 		}
 	}
 }
