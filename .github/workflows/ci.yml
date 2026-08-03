@@ -54,19 +54,22 @@ jobs:
         run: ./gradlew testMobileDebugUnitTest --no-daemon --no-parallel --stacktrace
 
       - name: Auto unit suite
+        if: ${{ !cancelled() }}
         run: ./gradlew testAutoDebugUnitTest --no-daemon --no-parallel --stacktrace
 
       - name: Architecture hotspot guard
+        if: ${{ !cancelled() }}
         run: >-
           ./gradlew :fermata:testMobileDebugUnitTest
           --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.hotspotClassesCannotGrowPastTheRecordedBaseline
           --no-daemon --no-parallel --stacktrace
 
       - name: Lint
+        if: ${{ !cancelled() }}
         run: ./gradlew lint --no-daemon --no-parallel --stacktrace
 
       - name: Check whitespace in the PR/push diff
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
