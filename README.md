@@ -24,6 +24,10 @@ FermataX is a GPL-3.0 fork of [Fermata Media Player](https://github.com/AndreyPa
 
 It brings local media, IPTV and Xtream, Internet Radio, Podcasts, Audiobooks, Stremio-compatible services, YouTube and Web media together in one interface. Favorites, Recent, playback progress, voice control, and media controls are integrated across supported sources.
 
+## Continuous integration
+
+Every pull request targeting `main` and every push to `main` runs the repository's verification pipeline. CI executes the Mobile and Auto unit suites, the `MediaSessionCallback` architecture hotspot guard, Android Lint, and a three-dot `git diff --check` against the pull-request base (or push base). The workflow verifies source and tests only; it does not build, sign, publish, or upload release APKs.
+
 ## Highlights
 
 - **Dashboard-first interface** designed for quick access on Android Auto screens.
