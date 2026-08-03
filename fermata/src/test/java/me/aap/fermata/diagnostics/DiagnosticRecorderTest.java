@@ -184,11 +184,16 @@ public class DiagnosticRecorderTest {
 			assertFalse(frozen.contains("navigation_completed"));
 
 			assertTrue(recorder.clear(2000L));
-			recorder.record(DiagnosticEvent.builder("navigation", "navigation_failed").build());
+			assertTrue(recorder.record(DiagnosticEvent.builder("navigation", "navigation_failed").build()));
 			assertTrue(recorder.flush(2000L));
-			String current = readJournal(directory);
+			// Observe the post-clear state through the writer-owned snapshot command rather than
+			// racing a direct directory scan against any final writer bookkeeping.
+			File currentSnapshot = new File(directory.getParentFile(), "fx-current-" + UUID.randomUUID());
+			assertTrue(recorder.createSnapshot(currentSnapshot, 2000L));
+			String current = readJournal(currentSnapshot);
+			delete(currentSnapshot);
 			assertFalse(current.contains("navigation_started"));
-			assertTrue(current.contains("navigation_failed"));
+			assertTrue(current, current.contains("navigation_failed"));
 		} finally {
 			recorder.close();
 			delete(snapshot);
