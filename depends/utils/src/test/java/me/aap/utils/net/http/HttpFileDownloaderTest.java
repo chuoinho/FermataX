@@ -36,10 +36,34 @@ import me.aap.utils.function.BiFunction;
 import me.aap.utils.function.Cancellable;
 import me.aap.utils.function.CheckedRunnable;
 import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.net.TlsTrustPolicy;
 
 class HttpFileDownloaderTest {
 	@TempDir
 	Path temp;
+
+	@Test
+	void downloaderFactoriesKeepModelDownloadsStrictAndUserSourcesExplicit() throws Exception {
+		assertEquals(TlsTrustPolicy.STRICT, new HttpFileDownloader().tlsTrustPolicy());
+		assertEquals(TlsTrustPolicy.TRUST_ALL_USER_SOURCE,
+				HttpFileDownloader.forUserSource().tlsTrustPolicy());
+		URL source = new URL("https://self-hosted.example.test/playlist.m3u");
+		TrackingConnector strictConnector = new TrackingConnector();
+		TrackingConnector sourceConnector = new TrackingConnector();
+		ManualScheduler scheduler = new ManualScheduler();
+		ManualWorker worker = new ManualWorker();
+		HttpFileDownloader strict = new HttpFileDownloader(scheduler, scheduler::now, worker,
+				strictConnector, TlsTrustPolicy.STRICT);
+		HttpFileDownloader userSource = new HttpFileDownloader(scheduler, scheduler::now, worker,
+				sourceConnector, TlsTrustPolicy.TRUST_ALL_USER_SOURCE);
+
+		strict.download(source, temp.resolve("model.bin").toFile(), new BasicPreferenceStore());
+		userSource.download(source, temp.resolve("playlist.m3u").toFile(), new BasicPreferenceStore());
+
+		assertEquals(TlsTrustPolicy.STRICT, strictConnector.opts.trustPolicyFor(source));
+		assertEquals(TlsTrustPolicy.TRUST_ALL_USER_SOURCE,
+				sourceConnector.opts.trustPolicyFor(source));
+	}
 
 	@Test
 	void bodyIdleTimeoutIsResetByProgress() throws Exception {
@@ -413,12 +437,14 @@ class HttpFileDownloaderTest {
 
 	private static final class TrackingConnector implements HttpFileDownloader.Connector {
 		private final AtomicBoolean cancelled = new AtomicBoolean();
+		private HttpConnection.Opts opts;
 		@SuppressWarnings("unused")
 		private BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer;
 
 		@Override
 		public Cancellable connect(HttpConnection.Opts opts,
 				BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer) {
+			this.opts = opts;
 			this.consumer = consumer;
 			return () -> {
 				cancelled.set(true);

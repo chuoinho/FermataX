@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import me.aap.fermata.addon.stremio.net.NetworkConsent;
 import me.aap.fermata.addon.stremio.net.RequestGeneration;
+import me.aap.utils.net.TlsTrustPolicy;
 
 public class StremioHttpClientTest {
 	private java.util.concurrent.ScheduledExecutorService scheduler;
@@ -91,8 +92,27 @@ public class StremioHttpClientTest {
 		assertArrayEquals(bytes("ok"), response.body());
 		assertEquals("v1", response.header("etag"));
 		assertEquals(2, transport.requests.size());
+		assertEquals(TlsTrustPolicy.TRUST_ALL_USER_SOURCE,
+				transport.requests.get(0).tlsTrustPolicy());
+		assertEquals(TlsTrustPolicy.STRICT, transport.requests.get(1).tlsTrustPolicy());
 		assertEquals(Map.of("accept", "application/json"), transport.requests.get(1).headers());
 		assertTrue(finalResponse.closed.get());
+	}
+
+	@Test
+	public void sameOriginRedirectRetainsUserSourceTrustPolicy() throws Exception {
+		transport.responses.add(completed(new FakeResponse(302,
+				Map.of("Location", "/catalog"), new byte[0])));
+		transport.responses.add(completed(new FakeResponse(200, Map.of(), bytes("ok"))));
+
+		client.execute(request("https://one.example.invalid/start", 1024, Map.of()))
+				.response().get(2, TimeUnit.SECONDS);
+
+		assertEquals(2, transport.requests.size());
+		assertEquals(TlsTrustPolicy.TRUST_ALL_USER_SOURCE,
+				transport.requests.get(0).tlsTrustPolicy());
+		assertEquals(TlsTrustPolicy.TRUST_ALL_USER_SOURCE,
+				transport.requests.get(1).tlsTrustPolicy());
 	}
 
 	@Test

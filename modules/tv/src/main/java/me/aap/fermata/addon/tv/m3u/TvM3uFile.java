@@ -153,7 +153,7 @@ public class TvM3uFile extends M3uFile {
 		String url = getEpgUrl();
 		if (url == null) return failed(new MalformedURLException("EPG URL is not set"));
 		File epgFile = getEpgFile();
-		HttpFileDownloader d = new HttpFileDownloader();
+		HttpFileDownloader d = HttpFileDownloader.forUserSource();
 		Context ctx = App.get();
 		HttpDownloadStatusListener l = new HttpDownloadStatusListener(ctx);
 		l.setSmallIcon(me.aap.fermata.R.drawable.notification);

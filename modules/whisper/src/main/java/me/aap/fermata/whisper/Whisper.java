@@ -140,7 +140,7 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 			if (file.isFile()) {
 				load = completedVoid();
 			} else {
-				load = Utils.createDownloader(app, url).download(url, file);
+				load = Utils.createStrictDownloader(app, url).download(url, file);
 			}
 		} else if (new File(modelNameOrPath).isFile()) {
 			modelPath = modelNameOrPath;

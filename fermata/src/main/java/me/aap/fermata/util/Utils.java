@@ -67,18 +67,28 @@ public class Utils {
 		return (mime != null) && mime.startsWith("video/");
 	}
 
-	public static HttpFileDownloader createDownloader(String url) {
-		return createDownloader(App.get(), url);
+	public static HttpFileDownloader createStrictDownloader(String url) {
+		return createStrictDownloader(App.get(), url);
 	}
 
-	public static HttpFileDownloader createDownloader(Context ctx, String url) {
+	public static HttpFileDownloader createStrictDownloader(Context ctx, String url) {
 		HttpFileDownloader d = new HttpFileDownloader();
+		configureDownloader(ctx, url, d);
+		return d;
+	}
+
+	public static HttpFileDownloader createUserSourceDownloader(Context ctx, String url) {
+		HttpFileDownloader d = HttpFileDownloader.forUserSource();
+		configureDownloader(ctx, url, d);
+		return d;
+	}
+
+	private static void configureDownloader(Context ctx, String url, HttpFileDownloader d) {
 		HttpDownloadStatusListener l = new HttpDownloadStatusListener(ctx);
 		l.setSmallIcon(R.drawable.notification);
 		l.setTitle(ctx.getResources().getString(R.string.downloading, url));
 		l.setFailureTitle(s -> ctx.getResources().getString(R.string.err_failed_to_download, url));
 		d.setStatusListener(l);
-		return d;
 	}
 
 	// A workaround for Resources$NotFoundException

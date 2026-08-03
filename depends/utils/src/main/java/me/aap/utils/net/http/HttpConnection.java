@@ -44,6 +44,7 @@ import me.aap.utils.net.ConnectionClosedException;
 import me.aap.utils.net.NetChannel;
 import me.aap.utils.net.NetHandler;
 import me.aap.utils.net.NetHandler.ConnectOpts;
+import me.aap.utils.net.TlsTrustPolicy;
 import me.aap.utils.text.SharedTextBuilder;
 
 /**
@@ -62,6 +63,8 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 
 	public static class Opts extends ConnectOpts {
 		public URL url;
+		@Nullable
+		private URL trustAllUserSourceOrigin;
 		public HttpMethod method = HttpMethod.GET;
 		public HttpVersion version = HttpVersion.HTTP_1_1;
 		@Nullable
@@ -85,6 +88,16 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 			} catch (MalformedURLException ex) {
 				throw new IllegalArgumentException(ex);
 			}
+		}
+
+		/** Authorizes trust-all only for this configured source origin and same-origin redirects. */
+		public void trustAllUserSourceOrigin(URL source) {
+			trustAllUserSourceOrigin = source;
+		}
+
+		TlsTrustPolicy trustPolicyFor(URL target) {
+			return sameOrigin(trustAllUserSourceOrigin, target) ?
+					TlsTrustPolicy.TRUST_ALL_USER_SOURCE : TlsTrustPolicy.STRICT;
 		}
 	}
 
@@ -111,7 +124,8 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 		if (request.isCancelled()) return;
 		Opts o = request.o;
 		if (!checkRedirect(o, request)) return;
-		ConnectionId id = new ConnectionId(o.url);
+		o.tlsTrustPolicy = o.trustPolicyFor(o.url);
+		ConnectionId id = new ConnectionId(o.url, o.tlsTrustPolicy);
 		FutureSupplier<HttpConnection> f;
 		o.port = id.port;
 		o.host = id.host;
@@ -282,13 +296,28 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 		return true;
 	}
 
-	private static final class ConnectionId {
+	static boolean sameOrigin(@Nullable URL first, @Nullable URL second) {
+		if ((first == null) || (second == null)) return false;
+		return first.getProtocol().equalsIgnoreCase(second.getProtocol()) &&
+				first.getHost().equalsIgnoreCase(second.getHost()) &&
+				(effectivePort(first) == effectivePort(second));
+	}
+
+	private static int effectivePort(URL url) {
+		int port = url.getPort();
+		if (port != -1) return port;
+		return "https".equalsIgnoreCase(url.getProtocol()) ? 443 : 80;
+	}
+
+	static final class ConnectionId {
 		final int port;
 		final String host;
 		final boolean ssl;
+		final TlsTrustPolicy tlsTrustPolicy;
 
-		ConnectionId(URL url) {
+		ConnectionId(URL url, TlsTrustPolicy tlsTrustPolicy) {
 			ssl = "https".equals(url.getProtocol());
+			this.tlsTrustPolicy = tlsTrustPolicy;
 			int p = url.getPort();
 			String h = url.getHost();
 			port = (p == -1) ? (ssl ? 443 : 80) : p;
@@ -299,18 +328,21 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 		@Override
 		public boolean equals(Object o) {
 			ConnectionId id = (ConnectionId) o;
-			return host.equals(id.host) && (port == id.port) && (ssl == id.ssl);
+			return host.equals(id.host) && (port == id.port) && (ssl == id.ssl) &&
+					(tlsTrustPolicy == id.tlsTrustPolicy);
 		}
 
 		@Override
 		public int hashCode() {
 			int h = (host.hashCode() ^ port);
-			return ssl ? -h : h;
+			h = ssl ? -h : h;
+			return (31 * h) + tlsTrustPolicy.hashCode();
 		}
 
 		@Override
 		public String toString() {
-			return (ssl ? "https://" : "http://") + host + ':' + port;
+			return (ssl ? "https://" : "http://") + host + ':' + port + " [" +
+					tlsTrustPolicy + ']';
 		}
 	}
 

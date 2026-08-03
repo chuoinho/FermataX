@@ -1,6 +1,6 @@
 package me.aap.fermata.vfs.m3u;
 
-import static me.aap.fermata.util.Utils.createDownloader;
+import static me.aap.fermata.util.Utils.createUserSourceDownloader;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 
@@ -89,7 +89,7 @@ public class M3uFileSystem implements VirtualFileSystem {
 
 		File cacheFile = file.getLocalFile();
 		Context ctx = App.get();
-		HttpFileDownloader d = createDownloader(ctx,url);
+		HttpFileDownloader d = createUserSourceDownloader(ctx, url);
 		d.setReturnExistingOnFail(true);
 		d.download(url, cacheFile, file.getPrefs()).onCompletion((f, err) -> {
 			if (err == null) {

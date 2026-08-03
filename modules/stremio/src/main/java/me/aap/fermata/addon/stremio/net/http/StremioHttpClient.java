@@ -23,6 +23,7 @@ import me.aap.fermata.addon.stremio.net.NetworkLimits;
 import me.aap.fermata.addon.stremio.net.NetworkPolicy;
 import me.aap.fermata.addon.stremio.net.RedirectPolicy;
 import me.aap.fermata.addon.stremio.net.ValidatedEndpoint;
+import me.aap.utils.net.TlsTrustPolicy;
 
 /** Executes bounded GET requests while keeping network policy outside the transport. */
 public final class StremioHttpClient {
@@ -119,7 +120,8 @@ public final class StremioHttpClient {
 			try {
 				checkGeneration();
 				TransportCall transportCall = transport.execute(new TransportRequest(
-						endpoint, headers, request.deadlines(), request.maxBodyBytes()));
+						endpoint, headers, request.deadlines(), request.maxBodyBytes(),
+						tlsPolicyFor(request.uri(), endpoint.endpoint().uri())));
 				activeCall.set(transportCall);
 				ScheduledFuture<?> headerTimer = schedule(request.deadlines().headers(),
 						HttpFailure.Code.HEADER_TIMEOUT, "HTTP response header deadline exceeded");
@@ -303,6 +305,22 @@ public final class StremioHttpClient {
 	private static boolean isRedirect(int status) {
 		return (status == 301) || (status == 302) || (status == 303) ||
 				(status == 307) || (status == 308);
+	}
+
+	static TlsTrustPolicy tlsPolicyFor(URI configuredSource, URI target) {
+		return sameOrigin(configuredSource, target) ? TlsTrustPolicy.TRUST_ALL_USER_SOURCE :
+				TlsTrustPolicy.STRICT;
+	}
+
+	private static boolean sameOrigin(URI first, URI second) {
+		return first.getScheme().equalsIgnoreCase(second.getScheme()) &&
+				first.getHost().equalsIgnoreCase(second.getHost()) &&
+				(effectivePort(first) == effectivePort(second));
+	}
+
+	private static int effectivePort(URI uri) {
+		if (uri.getPort() != -1) return uri.getPort();
+		return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
 	}
 
 	private static HttpFailure asFailure(Throwable error) {

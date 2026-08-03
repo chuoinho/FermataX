@@ -43,6 +43,7 @@ import me.aap.utils.function.Supplier;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.log.Log;
+import me.aap.utils.net.TlsTrustPolicy;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
@@ -68,10 +69,15 @@ public class HttpFileDownloader {
 	private final LongSupplier monotonicClock;
 	private final WorkExecutor workExecutor;
 	private final Connector connector;
+	private final TlsTrustPolicy tlsTrustPolicy;
 	private StatusListener statusListener;
 	private boolean returnExistingOnFail;
 
 	public HttpFileDownloader() {
+		this(TlsTrustPolicy.STRICT);
+	}
+
+	private HttpFileDownloader(TlsTrustPolicy tlsTrustPolicy) {
 		this((task, delay) -> {
 			var timer = App.get().getScheduler().schedule(task, delay, TimeUnit.MILLISECONDS);
 			return () -> timer.cancel(false);
@@ -80,7 +86,16 @@ public class HttpFileDownloader {
 				(opts, consumer) -> {
 					opts.keepAlive = false;
 					return HttpConnection.connect(opts, consumer);
-				});
+				}, tlsTrustPolicy);
+	}
+
+	/** Downloader for an explicitly user-configured IPTV/M3U or XMLTV/EPG source. */
+	public static HttpFileDownloader forUserSource() {
+		return new HttpFileDownloader(TlsTrustPolicy.TRUST_ALL_USER_SOURCE);
+	}
+
+	TlsTrustPolicy tlsTrustPolicy() {
+		return tlsTrustPolicy;
 	}
 
 	HttpFileDownloader(TimeoutScheduler timeoutScheduler, LongSupplier monotonicClock) {
@@ -89,15 +104,21 @@ public class HttpFileDownloader {
 				(opts, consumer) -> {
 					opts.keepAlive = false;
 					return HttpConnection.connect(opts, consumer);
-				});
+				}, TlsTrustPolicy.STRICT);
 	}
 
 	HttpFileDownloader(TimeoutScheduler timeoutScheduler, LongSupplier monotonicClock,
 			WorkExecutor workExecutor, Connector connector) {
+		this(timeoutScheduler, monotonicClock, workExecutor, connector, TlsTrustPolicy.STRICT);
+	}
+
+	HttpFileDownloader(TimeoutScheduler timeoutScheduler, LongSupplier monotonicClock,
+			WorkExecutor workExecutor, Connector connector, TlsTrustPolicy tlsTrustPolicy) {
 		this.timeoutScheduler = timeoutScheduler;
 		this.monotonicClock = monotonicClock;
 		this.workExecutor = workExecutor;
 		this.connector = connector;
+		this.tlsTrustPolicy = tlsTrustPolicy;
 	}
 
 	public void setStatusListener(StatusListener statusListener) {
@@ -241,6 +262,9 @@ public class HttpFileDownloader {
 
 			HttpConnection.Opts opts = new HttpConnection.Opts();
 			opts.url = source;
+			if (tlsTrustPolicy == TlsTrustPolicy.TRUST_ALL_USER_SOURCE) {
+				opts.trustAllUserSourceOrigin(source);
+			}
 			opts.responseTimeout = Math.max(0, prefs.getIntPref(RESP_TIMEOUT));
 			opts.userAgent = prefs.getStringPref(AGENT);
 			if (exists) opts.ifNonMatch = prefs.getStringPref(ETAG);

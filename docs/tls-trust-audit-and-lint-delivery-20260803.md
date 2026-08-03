@@ -92,3 +92,78 @@ The hosted job recorded every relevant step as successful:
 The isolated local snapshot of the same commit also reported zero lint errors for both
 variants (352 warnings Auto and 351 warnings Mobile). Warnings remain visible; no lint
 baseline was introduced.
+
+## Scoped trust-policy follow-up
+
+### Product decision
+
+The compatibility exception is now deliberate and limited to three user-configured
+source families: IPTV/M3U playlist downloads, XMLTV/EPG downloads, and Stremio HTTP
+requests (manifest, catalog, metadata, stream/subtitle metadata, and configuration).
+These requests use `TRUST_ALL_USER_SOURCE`; all other traffic defaults to `STRICT`.
+This preserves compatibility with self-hosted sources using self-signed certificates
+while removing the former application-wide trust-all behavior.
+
+`STRICT` uses the platform trust store and explicitly enables HTTPS endpoint
+identification on every client `SSLEngine`. Thus both certificate-chain validation and
+hostname verification apply to ChatGPT, Whisper/OpusMT model downloads, generic
+downloaders, artwork, and every other unmarked HTTPS request.
+
+### Authoritative call-site mapping
+
+| Traffic | Concrete entry path | Policy |
+| --- | --- | --- |
+| M3U playlist | `M3uFileSystem.load()` -> `Utils.createUserSourceDownloader()` -> `HttpFileDownloader` -> `HttpConnection` | `TRUST_ALL_USER_SOURCE` for the configured origin |
+| XMLTV/EPG | `TvM3uFile.downloadEpg()` -> `HttpFileDownloader.forUserSource()` -> `HttpConnection` | `TRUST_ALL_USER_SOURCE` for the configured origin |
+| Stremio | `StremioRuntimeFactory`/`LifecycleHttpTransport` -> `StremioHttpClient.execute()` -> `ProjectHttpTransport.execute()` -> `HttpConnection` | Explicit policy on each `TransportRequest` |
+| ChatGPT | `ChatGpt.sendRequest()` -> `HttpConnection.connect()` | Explicit `STRICT` |
+| Whisper | `Whisper` -> `Utils.createStrictDownloader()` -> `HttpFileDownloader` | `STRICT` |
+| OpusMT | `OpusMtTranslateAddon` -> `Utils.createStrictDownloader()` -> `HttpFileDownloader` | `STRICT` |
+| Artwork | `BitmapCache` -> default `HttpFileDownloader`; `FermataContentProvider` -> `HttpConnection` | `STRICT` |
+
+`BitmapCache` and `FermataContentProvider` remain strict. They are shared artwork paths
+and do not carry trustworthy provenance tying an image URL to a configured IPTV or
+Stremio source. Automatically applying trust-all based only on the artwork URL would
+expand the exception beyond the three authorized source families. Supporting
+self-signed artwork later requires explicit source-origin provenance, not URL guessing.
+
+### Redirect and isolation rules
+
+The trust exception is scoped to the original logical request origin (scheme, host, and
+effective port). A same-origin redirect retains `TRUST_ALL_USER_SOURCE`; every
+cross-origin redirect becomes `STRICT`, even if another independently configured source
+uses that destination. This avoids one source granting TLS trust to another request.
+Stremio applies this rule before constructing each redirected `TransportRequest`.
+`HttpConnection` recalculates the rule after every M3U/EPG redirect, including cached
+permanent redirects.
+
+The `HttpConnection` pool/cache key now contains `TlsTrustPolicy`, so strict and
+trust-all connections are never shared for the same host and port. Policy is carried as
+an explicit connection option; there is no global mutable selector and no `ThreadLocal`.
+The two SSL contexts are immutable holders, while each connection independently selects
+which context it is authorized to use.
+
+### Verification coverage
+
+- A real local TLS handshake proves `STRICT` rejects the generated self-signed server.
+- A real local TLS handshake with a chain explicitly trusted by the test proves
+  `STRICT` still rejects the wrong hostname. This exercises HTTPS endpoint
+  identification rather than merely inspecting an enum or SSL parameter.
+- A real local TLS handshake proves `TRUST_ALL_USER_SOURCE` accepts the self-signed
+  server.
+- Unit tests prove source-origin/same-origin redirect retention, cross-origin downgrade
+  to strict, and connection-cache identity separation by policy.
+- Downloader tests prove the default/fixed model-download path is strict and the
+  user-source factory is the only downloader path that authorizes trust-all.
+- Stremio tests prove the initial and same-origin redirected requests carry trust-all,
+  while a cross-origin redirect carries strict and strips sensitive headers.
+
+### Explicitly not done
+
+No user-facing warning was added in this change. A future source editor should warn that
+IPTV/EPG/Stremio compatibility mode accepts any certificate for the configured origin
+and therefore does not protect that source against certificate impersonation. A
+fingerprint approval/pinning UI remains the preferred long-term replacement.
+
+Hosted-runner commit and Actions evidence for this follow-up are recorded below after
+the exact commit is pushed and the workflow completes.

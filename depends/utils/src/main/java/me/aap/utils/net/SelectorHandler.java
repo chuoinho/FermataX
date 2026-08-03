@@ -216,7 +216,10 @@ class SelectorHandler implements NetHandler, Runnable {
 					Runnable exec = () -> getExecutor().execute(() -> {
 						if (o.ssl) {
 							if (o.host == null) o.host = ((InetSocketAddress) addr).getHostString();
-							if (o.sslEngine == null) o.sslEngine = SecurityUtils::createClientSslEngine;
+							if (o.sslEngine == null) {
+								o.sslEngine = (host, port) -> SecurityUtils.createClientSslEngine(
+										host, port, o.tlsTrustPolicy);
+							}
 							SslChannel.create(nc, o.sslEngine.apply(o.host, o.port)).onCompletionSupply(p);
 						} else {
 							p.complete(nc);

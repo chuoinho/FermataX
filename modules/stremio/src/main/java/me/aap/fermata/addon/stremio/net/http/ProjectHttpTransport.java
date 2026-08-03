@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import me.aap.utils.function.Cancellable;
 import me.aap.utils.net.http.HttpConnection;
+import me.aap.utils.net.TlsTrustPolicy;
 
 /** Adapter over the project's async HTTP stack. Redirects remain owned by StremioHttpClient. */
 public final class ProjectHttpTransport implements HttpTransport {
@@ -30,6 +31,9 @@ public final class ProjectHttpTransport implements HttpTransport {
 		var options = new HttpConnection.Opts();
 		try {
 			options.url = request.endpoint().endpoint().uri().toURL();
+			if (request.tlsTrustPolicy() == TlsTrustPolicy.TRUST_ALL_USER_SOURCE) {
+				options.trustAllUserSourceOrigin(options.url);
+			}
 			options.address = new InetSocketAddress(request.endpoint().pinnedAddress(),
 					request.endpoint().endpoint().port());
 			options.connectTimeout = secondsCeil(request.deadlines().connect());

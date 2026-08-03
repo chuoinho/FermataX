@@ -273,7 +273,7 @@ public class OpusMtTranslateAddon extends TranslateAddon {
 			if (dest.isFile() && dest.length() > 0) return completedVoid();
 			var url = base + "/" + dest.getName() + "?download=true";
 			Log.i("Downloading OpusMT model file: ", url);
-			return Utils.createDownloader(url).download(url, dest);
+			return Utils.createStrictDownloader(url).download(url, dest);
 		}
 	}
 

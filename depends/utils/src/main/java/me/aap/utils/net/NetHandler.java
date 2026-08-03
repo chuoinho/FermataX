@@ -122,6 +122,7 @@ public interface NetHandler extends Closeable {
 		public String bindHost;
 		public int bindPort;
 		public int connectTimeout;
+		public TlsTrustPolicy tlsTrustPolicy = TlsTrustPolicy.STRICT;
 		public BiFunction<String, Integer, SSLEngine> sslEngine;
 
 		SocketAddress getBindAddress() {

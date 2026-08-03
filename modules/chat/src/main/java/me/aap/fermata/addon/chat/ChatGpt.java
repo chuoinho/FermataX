@@ -24,6 +24,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.io.IoUtils;
+import me.aap.utils.net.TlsTrustPolicy;
 import me.aap.utils.net.http.HttpConnection;
 import me.aap.utils.net.http.HttpHeader;
 import me.aap.utils.net.http.HttpMethod;
@@ -75,6 +76,7 @@ class ChatGpt implements EventBroadcaster<ChatGpt.Listener> {
 		var p = new Promise<String>();
 		HttpConnection.connect(o -> {
 			o.url("https://api.openai.com/v1/chat/completions");
+			o.tlsTrustPolicy = TlsTrustPolicy.STRICT;
 			o.method = HttpMethod.POST;
 			o.builder = b -> {
 				b.addHeader(HttpHeader.ACCEPT);
