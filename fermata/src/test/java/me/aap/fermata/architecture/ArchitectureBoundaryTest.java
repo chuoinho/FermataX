@@ -1,6 +1,7 @@
 package me.aap.fermata.architecture;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -8,21 +9,36 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
 public class ArchitectureBoundaryTest {
-	private static final Map<String, String> ADDON_PACKAGES = Map.of(
-			"audiobook", "me.aap.fermata.addon.audiobook.",
-			"cast", "me.aap.fermata.addon.cast.",
-			"chat", "me.aap.fermata.addon.chat.",
-			"podcast", "me.aap.fermata.addon.podcast.",
-			"radio", "me.aap.fermata.addon.radio.",
-			"stremio", "me.aap.fermata.addon.stremio.",
-			"tv", "me.aap.fermata.addon.tv.",
-			"web", "me.aap.fermata.addon.web.");
+	private static final Pattern PROJECT_DEPENDENCY = Pattern.compile(
+			"project\\s*\\(\\s*(?:path\\s*:\\s*)?['\"]:([^'\"]+)['\"]");
+	private static final Map<String, String> ADDON_PACKAGES = Map.ofEntries(
+			Map.entry("audiobook", "me.aap.fermata.addon.audiobook."),
+			Map.entry("cast", "me.aap.fermata.addon.cast."),
+			Map.entry("chat", "me.aap.fermata.addon.chat."),
+			Map.entry("exoplayer", "me.aap.fermata.engine.exoplayer."),
+			Map.entry("gdrive", "me.aap.fermata.vfs.gdrive."),
+			Map.entry("mlkit", "me.aap.fermata.mlkit."),
+			Map.entry("opusmt", "me.aap.fermata.opusmt."),
+			Map.entry("podcast", "me.aap.fermata.addon.podcast."),
+			Map.entry("radio", "me.aap.fermata.addon.radio."),
+			Map.entry("sftp", "me.aap.fermata.vfs.sftp."),
+			Map.entry("smb", "me.aap.fermata.vfs.smb."),
+			Map.entry("stremio", "me.aap.fermata.addon.stremio."),
+			Map.entry("tv", "me.aap.fermata.addon.tv."),
+			Map.entry("vlc", "me.aap.fermata.engine.vlc."),
+			Map.entry("web", "me.aap.fermata.addon.web."),
+			Map.entry("whisper", "me.aap.fermata.whisper."));
 
 	@Test
 	public void coreDoesNotImportConcreteAddonImplementations() throws IOException {
@@ -32,11 +48,32 @@ public class ArchitectureBoundaryTest {
 	}
 
 	@Test
-	public void contentAddonsDoNotImportSiblingImplementations() throws IOException {
+	public void addonModulesDoNotImportSiblingImplementations() throws IOException {
 		Path root = projectRoot();
+		Path modules = root.resolve("modules");
+		Set<String> discovered;
+		try (var directories = Files.list(modules)) {
+			discovered = directories.filter(Files::isDirectory)
+					.map(path -> path.getFileName().toString())
+					.collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+		}
+		Set<String> mapped = new TreeSet<>(ADDON_PACKAGES.keySet());
+		if (!mapped.equals(discovered)) {
+			fail("Addon package ownership map must match modules/ directories; mapped=" + mapped +
+					", discovered=" + discovered);
+		}
+
+		List<String> violations = new ArrayList<>();
 		for (Map.Entry<String, String> addon : ADDON_PACKAGES.entrySet()) {
-			Path source = root.resolve("modules").resolve(addon.getKey()).resolve("src/main");
-			if (Files.isDirectory(source)) assertNoForbiddenImports(source, addon.getValue());
+			Path module = modules.resolve(addon.getKey());
+			assertNoForbiddenImports(root, module.resolve("src"), addon.getKey(),
+					addon.getValue(), violations);
+			assertNoSiblingProjectDependencies(root, module.resolve("build.gradle"),
+					addon.getKey(), violations);
+		}
+		if (!violations.isEmpty()) {
+			fail("Cross-addon dependencies are forbidden. Move shared contracts into :fermata or " +
+					":utils:\n" + String.join("\n", violations));
 		}
 	}
 
@@ -96,18 +133,65 @@ public class ArchitectureBoundaryTest {
 
 	private static void assertNoForbiddenImports(Path source, String allowedPrefix)
 			throws IOException {
+		List<String> violations = new ArrayList<>();
+		assertNoForbiddenImports(projectRoot(), source, "core", allowedPrefix, violations);
+		if (!violations.isEmpty()) fail(String.join("\n", violations));
+	}
+
+	private static void assertNoForbiddenImports(Path root, Path source, String sourceModule,
+			String allowedPrefix, List<String> violations) throws IOException {
 		if (!Files.isDirectory(source)) return;
 		try (var files = Files.walk(source)) {
-			List<Path> javaFiles = files.filter(path -> path.toString().endsWith(".java")).toList();
-			for (Path file : javaFiles) {
-				for (String line : Files.readAllLines(file)) {
+			List<Path> sourceFiles = files.filter(Files::isRegularFile)
+					.filter(path -> path.toString().endsWith(".java") ||
+							path.toString().endsWith(".kt")).toList();
+			for (Path file : sourceFiles) {
+				List<String> lines = Files.readAllLines(file);
+				for (int i = 0; i < lines.size(); i++) {
+					String line = lines.get(i);
 					String value = line.trim();
-					if (!value.startsWith("import ")) continue;
-					for (String forbidden : ADDON_PACKAGES.values()) {
-						if (forbidden.equals(allowedPrefix)) continue;
-						assertTrue(file + " imports sibling addon implementation: " + value,
-								!value.startsWith("import " + forbidden));
+					if ((allowedPrefix != null) && value.startsWith("package ")) {
+						String declared = value.substring("package ".length()).replace(";", "").trim();
+						String rootPackage = allowedPrefix.substring(0, allowedPrefix.length() - 1);
+						if (!declared.equals(rootPackage) && !declared.startsWith(allowedPrefix)) {
+							violations.add(root.relativize(file) + ":" + (i + 1) + " [" +
+									sourceModule + " package ownership] " + value +
+									"; expected " + rootPackage);
+						}
 					}
+					if (!value.startsWith("import ")) continue;
+					String imported = importedName(value);
+					for (Map.Entry<String, String> target : ADDON_PACKAGES.entrySet()) {
+						if (target.getValue().equals(allowedPrefix)) continue;
+						if (imported.startsWith(target.getValue())) {
+							violations.add(root.relativize(file) + ":" + (i + 1) + " [" +
+									sourceModule + " -> " + target.getKey() + "] " + value);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static String importedName(String importLine) {
+		String imported = importLine.substring("import ".length()).trim();
+		if (imported.startsWith("static ")) imported = imported.substring("static ".length()).trim();
+		int end = imported.indexOf(';');
+		if (end >= 0) imported = imported.substring(0, end);
+		end = imported.indexOf(' '); // Kotlin alias: import package.Type as Alias
+		return (end < 0) ? imported : imported.substring(0, end);
+	}
+
+	private static void assertNoSiblingProjectDependencies(Path root, Path buildFile,
+			String sourceModule, List<String> violations) throws IOException {
+		List<String> lines = Files.readAllLines(buildFile);
+		for (int i = 0; i < lines.size(); i++) {
+			Matcher dependency = PROJECT_DEPENDENCY.matcher(lines.get(i));
+			while (dependency.find()) {
+				String targetModule = dependency.group(1);
+				if (!targetModule.equals(sourceModule) && ADDON_PACKAGES.containsKey(targetModule)) {
+					violations.add(root.relativize(buildFile) + ":" + (i + 1) + " [" +
+							sourceModule + " -> " + targetModule + "] " + lines.get(i).trim());
 				}
 			}
 		}

@@ -57,11 +57,12 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./gradlew testAutoDebugUnitTest --no-daemon --no-parallel --stacktrace
 
-      - name: Architecture hotspot guard
+      - name: Architecture boundary guards
         if: ${{ !cancelled() }}
         run: >-
           ./gradlew :fermata:testMobileDebugUnitTest
           --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.hotspotClassesCannotGrowPastTheRecordedBaseline
+          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.addonModulesDoNotImportSiblingImplementations
           --no-daemon --no-parallel --stacktrace
 
       - name: Lint
