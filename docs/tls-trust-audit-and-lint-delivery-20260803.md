@@ -165,5 +165,14 @@ IPTV/EPG/Stremio compatibility mode accepts any certificate for the configured o
 and therefore does not protect that source against certificate impersonation. A
 fingerprint approval/pinning UI remains the preferred long-term replacement.
 
-Hosted-runner commit and Actions evidence for this follow-up are recorded below after
-the exact commit is pushed and the workflow completes.
+### Scoped-policy hosted-runner evidence
+
+- Implementation and test commit: `9fae0fe6c68a1f5294ddcc0fed64dcac4b831eaa`
+- Push target: `origin/main`
+- GitHub Actions run: <https://github.com/chuoinho/FermataX/actions/runs/30832277716>
+- Job: `Verify Mobile, Auto, lint, hotspot, and whitespace`
+- Result: `success` in 6m 4s
+
+The hosted job completed the Mobile unit suite, Auto unit suite, architecture hotspot
+guard, both explicit lint variants, and push-diff whitespace check successfully for the
+exact scoped-policy implementation commit.
