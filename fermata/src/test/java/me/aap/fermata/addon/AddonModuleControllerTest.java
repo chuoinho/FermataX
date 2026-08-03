@@ -6,6 +6,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayDeque;
@@ -216,17 +217,31 @@ public class AddonModuleControllerTest {
 		harness.controller.install(List.of(first), first);
 		harness.controller.install(List.of(second), second);
 		harness.controller.install(List.of(third), third);
+		FutureSupplier<?> firstReady = harness.state.getInstalling(first);
+		FutureSupplier<?> secondReady = harness.state.getInstalling(second);
+		FutureSupplier<?> thirdReady = harness.state.getInstalling(third);
 		assertEquals(List.of("first"), harness.operations.installOrder);
 
 		app.runNextTimeout();
+		assertTrue(firstReady.isFailed());
+		assertFalse(secondReady.isDone());
+		assertFalse(thirdReady.isDone());
 		assertEquals(List.of("first", "second"), harness.operations.installOrder);
 
-		// A late completion from the timed-out source must not finish the queue twice.
+		// A late completion from the timed-out source must neither finish the queue twice nor
+		// replace/remove the ownership state of the operation that is now active.
 		harness.operations.completeInstall("first");
 		assertEquals(List.of("first", "second"), harness.operations.installOrder);
+		assertNull(harness.state.getInstalling(first));
+		assertSame(secondReady, harness.state.getInstalling(second));
+		assertSame(thirdReady, harness.state.getInstalling(third));
+		assertFalse(secondReady.isDone());
+		assertFalse(thirdReady.isDone());
 
 		harness.visible.put(second.className, true);
 		harness.operations.completeInstall("second");
+		assertTrue(secondReady.isDoneNotFailed());
+		assertFalse(thirdReady.isDone());
 		assertEquals(List.of("first", "second", "third"), harness.operations.installOrder);
 		assertEquals(1, harness.operations.installCount("first"));
 		assertEquals(1, harness.operations.installCount("second"));
