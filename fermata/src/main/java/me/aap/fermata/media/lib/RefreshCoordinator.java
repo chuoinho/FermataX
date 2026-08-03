@@ -25,10 +25,14 @@ import me.aap.utils.function.CheckedSupplier;
 
 /** Coordinates keyed refresh work without coupling observer cancellation to shared work. */
 public final class RefreshCoordinator<K> {
+	private static final long DEFAULT_BACKOFF_BASE_MILLIS = 60_000L;
+	private static final long DEFAULT_BACKOFF_MAX_MILLIS = 30 * 60_000L;
 	private final long cooldownMillis;
 	private final LongSupplier clock;
+	private final BackoffPolicy backoffPolicy;
 	private final Map<K, Entry> inFlight = new HashMap<>();
 	private final Map<K, Long> lastSuccess = new HashMap<>();
+	private final Map<K, FailureState> lastFailure = new HashMap<>();
 	private boolean active = true;
 
 	public RefreshCoordinator(long cooldownMillis) {
@@ -36,9 +40,15 @@ public final class RefreshCoordinator<K> {
 	}
 
 	public RefreshCoordinator(long cooldownMillis, LongSupplier clock) {
+		this(cooldownMillis, clock, RefreshCoordinator::defaultBackoffMillis);
+	}
+
+	public RefreshCoordinator(long cooldownMillis, LongSupplier clock,
+			BackoffPolicy backoffPolicy) {
 		if (cooldownMillis < 0L) throw new IllegalArgumentException("Negative cooldown");
 		this.cooldownMillis = cooldownMillis;
 		this.clock = Objects.requireNonNull(clock);
+		this.backoffPolicy = Objects.requireNonNull(backoffPolicy);
 	}
 
 	public FutureSupplier<Result<K>> auto(K key, Operation operation) {
@@ -75,6 +85,7 @@ public final class RefreshCoordinator<K> {
 		stop();
 		synchronized (this) {
 			lastSuccess.clear();
+			lastFailure.clear();
 			active = true;
 		}
 	}
@@ -82,7 +93,10 @@ public final class RefreshCoordinator<K> {
 	boolean isDue(K key, long now) {
 		synchronized (this) {
 			Long last = lastSuccess.get(key);
-			return (last == null) || ((now - last) >= cooldownMillis);
+			if ((last != null) && ((now - last) < cooldownMillis)) return false;
+			FailureState failure = lastFailure.get(key);
+			return (failure == null) ||
+					((now - failure.timestamp) >= backoffMillis(failure));
 		}
 	}
 
@@ -104,6 +118,10 @@ public final class RefreshCoordinator<K> {
 				long now = clock.getAsLong();
 				if ((last != null) && ((now - last) < cooldownMillis))
 					return completed(Result.skipped(key, trigger));
+				FailureState failure = lastFailure.get(key);
+				if ((failure != null) &&
+						((now - failure.timestamp) < backoffMillis(failure)))
+					return completed(Result.skippedBackoff(key, trigger));
 			}
 
 			if (current != null) previous = current;
@@ -141,7 +159,17 @@ public final class RefreshCoordinator<K> {
 		synchronized (this) {
 			if (inFlight.get(entry.key) != entry) return;
 			inFlight.remove(entry.key);
-			if (error == null) lastSuccess.put(entry.key, clock.getAsLong());
+			if (error == null) {
+				lastSuccess.put(entry.key, clock.getAsLong());
+				lastFailure.remove(entry.key);
+			} else if (!isCancellation(error)) {
+				FailureState previous = lastFailure.get(entry.key);
+				int failures = (previous == null) ? 1 :
+						(previous.consecutiveFailures == Integer.MAX_VALUE) ?
+								Integer.MAX_VALUE : previous.consecutiveFailures + 1;
+				lastFailure.put(entry.key, new FailureState(clock.getAsLong(), failures,
+						Result.classify(error)));
+			}
 		}
 
 		if (error == null) {
@@ -163,6 +191,24 @@ public final class RefreshCoordinator<K> {
 		return ProxySupplier.create(result);
 	}
 
+	private long backoffMillis(FailureState failure) {
+		return Math.max(0L, backoffPolicy.getDelayMillis(
+				failure.consecutiveFailures, failure.failureKind));
+	}
+
+	private static long defaultBackoffMillis(int consecutiveFailures,
+			FailureKind failureKind) {
+		if (consecutiveFailures <= 0) return 0L;
+		long delay = Math.min(DEFAULT_BACKOFF_BASE_MILLIS, DEFAULT_BACKOFF_MAX_MILLIS);
+		for (int i = 1; (i < consecutiveFailures) &&
+				(delay < DEFAULT_BACKOFF_MAX_MILLIS); i++) {
+			if (delay > (DEFAULT_BACKOFF_MAX_MILLIS / 2L))
+				return DEFAULT_BACKOFF_MAX_MILLIS;
+			delay *= 2L;
+		}
+		return Math.min(delay, DEFAULT_BACKOFF_MAX_MILLIS);
+	}
+
 	public enum Trigger {
 		AUTO,
 		MANUAL,
@@ -174,6 +220,7 @@ public final class RefreshCoordinator<K> {
 		FAILED,
 		CANCELLED,
 		SKIPPED_COOLDOWN,
+		SKIPPED_BACKOFF,
 		INACTIVE
 	}
 
@@ -189,6 +236,11 @@ public final class RefreshCoordinator<K> {
 
 	@FunctionalInterface
 	public interface Operation extends CheckedSupplier<FutureSupplier<?>, Throwable> {
+	}
+
+	@FunctionalInterface
+	public interface BackoffPolicy {
+		long getDelayMillis(int consecutiveFailures, FailureKind failureKind);
 	}
 
 	public record Result<K>(@NonNull K key, @NonNull Trigger trigger, @NonNull Status status,
@@ -207,6 +259,10 @@ public final class RefreshCoordinator<K> {
 
 		static <K> Result<K> skipped(K key, Trigger trigger) {
 			return new Result<>(key, trigger, Status.SKIPPED_COOLDOWN, null, null);
+		}
+
+		static <K> Result<K> skippedBackoff(K key, Trigger trigger) {
+			return new Result<>(key, trigger, Status.SKIPPED_BACKOFF, null, null);
 		}
 
 		static <K> Result<K> inactive(K key, Trigger trigger) {
@@ -241,5 +297,9 @@ public final class RefreshCoordinator<K> {
 			this.key = key;
 			this.trigger = trigger;
 		}
+	}
+
+	private record FailureState(long timestamp, int consecutiveFailures,
+			FailureKind failureKind) {
 	}
 }

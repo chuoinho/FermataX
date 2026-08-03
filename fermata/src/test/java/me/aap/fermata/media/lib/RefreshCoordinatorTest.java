@@ -4,6 +4,7 @@ import static me.aap.fermata.media.lib.RefreshCoordinator.FailureKind.NETWORK;
 import static me.aap.fermata.media.lib.RefreshCoordinator.Status.CANCELLED;
 import static me.aap.fermata.media.lib.RefreshCoordinator.Status.FAILED;
 import static me.aap.fermata.media.lib.RefreshCoordinator.Status.INACTIVE;
+import static me.aap.fermata.media.lib.RefreshCoordinator.Status.SKIPPED_BACKOFF;
 import static me.aap.fermata.media.lib.RefreshCoordinator.Status.SKIPPED_COOLDOWN;
 import static me.aap.fermata.media.lib.RefreshCoordinator.Status.SUCCESS;
 import static org.junit.Assert.assertEquals;
@@ -22,6 +23,9 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 
 public class RefreshCoordinatorTest {
+	private static final long BACKOFF_BASE_MILLIS = 100L;
+	private static final long BACKOFF_MAX_MILLIS = 400L;
+
 	@Test
 	public void simultaneousAutoAndManualRequestsJoinByKey() {
 		AtomicLong now = new AtomicLong(1_000L);
@@ -58,6 +62,7 @@ public class RefreshCoordinatorTest {
 		}).peek();
 		assertEquals(FAILED, first.status());
 
+		now.addAndGet(60_000L);
 		Promise<Void> success = new Promise<>();
 		RefreshCoordinator.Result<String> retry = coordinator.auto("source", () -> {
 			starts.incrementAndGet();
@@ -72,6 +77,168 @@ public class RefreshCoordinatorTest {
 				coordinator.auto("source", () -> new Promise<>()).peek().status());
 		now.incrementAndGet();
 		assertFalse(coordinator.auto("source", Promise::new).isDone());
+	}
+
+	@Test
+	public void autoRequestIsSkippedWithinFailureBackoff() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = coordinator(now);
+		AtomicInteger starts = new AtomicInteger();
+
+		assertEquals(FAILED, coordinator.auto("source", () -> {
+			starts.incrementAndGet();
+			return failedNetworkOperation();
+		}).peek().status());
+		assertFalse(coordinator.isDue("source", now.get()));
+
+		RefreshCoordinator.Result<String> skipped = coordinator.auto("source", () -> {
+			starts.incrementAndGet();
+			return new Promise<>();
+		}).peek();
+		assertEquals(SKIPPED_BACKOFF, skipped.status());
+		assertEquals(1, starts.get());
+	}
+
+	@Test
+	public void autoRequestProceedsAfterFailureBackoffElapses() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = coordinator(now);
+		coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation);
+		now.addAndGet(BACKOFF_BASE_MILLIS);
+		assertTrue(coordinator.isDue("source", now.get()));
+
+		AtomicInteger starts = new AtomicInteger();
+		FutureSupplier<RefreshCoordinator.Result<String>> retry =
+				coordinator.auto("source", () -> {
+					starts.incrementAndGet();
+					return new Promise<>();
+				});
+
+		assertEquals(1, starts.get());
+		assertFalse(retry.isDone());
+	}
+
+	@Test
+	public void failureBackoffEscalatesAndCaps() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = coordinator(now);
+
+		coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation);
+		assertBackoffBoundary(coordinator, now, BACKOFF_BASE_MILLIS);
+
+		coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation);
+		assertBackoffBoundary(coordinator, now, BACKOFF_BASE_MILLIS * 2L);
+
+		coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation);
+		assertBackoffBoundary(coordinator, now, BACKOFF_MAX_MILLIS);
+
+		coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation);
+		assertBackoffBoundary(coordinator, now, BACKOFF_MAX_MILLIS);
+	}
+
+	@Test
+	public void defaultBackoffGrowsFromOneMinuteAndCapsAtThirtyMinutes() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = new RefreshCoordinator<>(0L, now::get);
+		long[] delays = {60_000L, 120_000L, 240_000L, 480_000L, 960_000L,
+				1_800_000L, 1_800_000L};
+
+		for (long delay : delays) {
+			assertEquals(FAILED,
+					coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation)
+							.peek().status());
+			assertBackoffBoundary(coordinator, now, delay);
+		}
+	}
+
+	@Test
+	public void providerFailuresAlsoUseBackoff() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = new RefreshCoordinator<>(0L, now::get);
+
+		assertEquals(FAILED,
+				coordinator.auto("source", RefreshCoordinatorTest::failedProviderOperation)
+						.peek().status());
+		now.addAndGet(59_999L);
+		assertEquals(SKIPPED_BACKOFF,
+				coordinator.auto("source", Promise::new).peek().status());
+		now.incrementAndGet();
+		assertFalse(coordinator.auto("source", Promise::new).isDone());
+	}
+
+	@Test
+	public void successResetsFailureBackoff() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = coordinator(now);
+		coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation);
+		now.addAndGet(BACKOFF_BASE_MILLIS);
+		assertEquals(SUCCESS,
+				coordinator.auto("source", () -> completedOperation()).peek().status());
+		assertEquals(FAILED,
+				coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation)
+						.peek().status());
+
+		now.addAndGet(BACKOFF_BASE_MILLIS - 1L);
+		assertEquals(SKIPPED_BACKOFF,
+				coordinator.auto("source", Promise::new).peek().status());
+		now.incrementAndGet();
+		assertFalse(coordinator.auto("source", Promise::new).isDone());
+	}
+
+	@Test
+	public void manualAndReplaceBypassFailureBackoff() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = coordinator(now);
+		coordinator.auto("manual", RefreshCoordinatorTest::failedNetworkOperation);
+		coordinator.auto("edit", RefreshCoordinatorTest::failedNetworkOperation);
+
+		AtomicInteger starts = new AtomicInteger();
+		FutureSupplier<?> manual = coordinator.manual("manual", () -> {
+			starts.incrementAndGet();
+			return new Promise<>();
+		});
+		FutureSupplier<?> edit = coordinator.replace("edit", () -> {
+			starts.incrementAndGet();
+			return new Promise<>();
+		});
+
+		assertEquals(2, starts.get());
+		assertFalse(manual.isDone());
+		assertFalse(edit.isDone());
+	}
+
+	@Test
+	public void resetClearsFailureBackoff() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = coordinator(now);
+		coordinator.auto("source", RefreshCoordinatorTest::failedNetworkOperation);
+
+		coordinator.reset();
+
+		assertFalse(coordinator.auto("source", Promise::new).isDone());
+	}
+
+	@Test
+	public void allSuccessBehaviorStillUsesOnlyTheConfiguredCooldown() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = new RefreshCoordinator<>(600_000L, now::get);
+		AtomicInteger starts = new AtomicInteger();
+
+		assertEquals(SUCCESS, coordinator.auto("source", () -> {
+			starts.incrementAndGet();
+			return completedOperation();
+		}).peek().status());
+		now.addAndGet(599_999L);
+		assertEquals(SKIPPED_COOLDOWN, coordinator.auto("source", () -> {
+			starts.incrementAndGet();
+			return completedOperation();
+		}).peek().status());
+		now.incrementAndGet();
+		assertEquals(SUCCESS, coordinator.auto("source", () -> {
+			starts.incrementAndGet();
+			return completedOperation();
+		}).peek().status());
+		assertEquals(2, starts.get());
 	}
 
 	@Test
@@ -182,5 +349,40 @@ public class RefreshCoordinatorTest {
 
 		coordinator.reset();
 		assertFalse(coordinator.auto("source", Promise::new).isDone());
+	}
+
+	private static RefreshCoordinator<String> coordinator(AtomicLong now) {
+		return new RefreshCoordinator<>(0L, now::get, (failures, kind) -> {
+			long delay = BACKOFF_BASE_MILLIS;
+			for (int i = 1; (i < failures) && (delay < BACKOFF_MAX_MILLIS); i++)
+				delay = Math.min(delay * 2L, BACKOFF_MAX_MILLIS);
+			return delay;
+		});
+	}
+
+	private static FutureSupplier<?> failedNetworkOperation() {
+		Promise<Void> failed = new Promise<>();
+		failed.completeExceptionally(new UnknownHostException("offline.example"));
+		return failed;
+	}
+
+	private static FutureSupplier<?> failedProviderOperation() {
+		Promise<Void> failed = new Promise<>();
+		failed.completeExceptionally(new IllegalStateException("malformed provider response"));
+		return failed;
+	}
+
+	private static FutureSupplier<?> completedOperation() {
+		Promise<Void> completed = new Promise<>();
+		completed.complete(null);
+		return completed;
+	}
+
+	private static void assertBackoffBoundary(RefreshCoordinator<String> coordinator,
+			AtomicLong now, long delayMillis) {
+		now.addAndGet(delayMillis - 1L);
+		assertEquals(SKIPPED_BACKOFF,
+				coordinator.auto("source", Promise::new).peek().status());
+		now.incrementAndGet();
 	}
 }
