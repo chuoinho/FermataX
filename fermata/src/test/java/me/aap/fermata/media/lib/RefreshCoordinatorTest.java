@@ -290,6 +290,28 @@ public class RefreshCoordinatorTest {
 	}
 
 	@Test
+	public void lateSupersededFailureCannotRestoreBackoffAfterReplacementSuccess() {
+		AtomicLong now = new AtomicLong(1_000L);
+		RefreshCoordinator<String> coordinator = new RefreshCoordinator<>(0L, now::get);
+		UncancellablePromise<Void> staleTask = new UncancellablePromise<>();
+		FutureSupplier<RefreshCoordinator.Result<String>> stale =
+				coordinator.auto("source", () -> staleTask);
+
+		assertEquals(SUCCESS,
+				coordinator.replace("source", RefreshCoordinatorTest::completedOperation)
+						.peek().status());
+		assertEquals(CANCELLED, stale.peek().status());
+
+		// Simulate a provider that ignores cancellation and reports its old failure after the
+		// replacement has already succeeded and reset the key's failure state.
+		staleTask.completeExceptionally(new UnknownHostException("stale-offline.example"));
+
+		FutureSupplier<RefreshCoordinator.Result<String>> next =
+				coordinator.auto("source", Promise::new);
+		assertFalse(next.isDone());
+	}
+
+	@Test
 	public void stopCancelsOnlyOwnedWorkAndRejectsNewRequestsUntilRestart() {
 		RefreshCoordinator<String> firstCoordinator = new RefreshCoordinator<>(0L);
 		RefreshCoordinator<String> secondCoordinator = new RefreshCoordinator<>(0L);
@@ -384,5 +406,12 @@ public class RefreshCoordinatorTest {
 		assertEquals(SKIPPED_BACKOFF,
 				coordinator.auto("source", Promise::new).peek().status());
 		now.incrementAndGet();
+	}
+
+	private static final class UncancellablePromise<T> extends Promise<T> {
+		@Override
+		public boolean cancel(boolean mayInterruptIfRunning) {
+			return false;
+		}
 	}
 }
