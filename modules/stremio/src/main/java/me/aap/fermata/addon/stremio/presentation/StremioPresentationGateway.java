@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.presentation;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -78,7 +80,7 @@ public final class StremioPresentationGateway implements StremioPresenter.Loader
 			} else if (route instanceof StremioRoute.Library library) {
 				result = libraryLoader.load(request, library);
 			} else {
-				result = CompletableFuture.failedFuture(
+				result = StremioFutures.failedFuture(
 						new IllegalArgumentException("Unsupported Stremio route"));
 			}
 			request.finish(result);

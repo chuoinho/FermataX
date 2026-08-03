@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.torrent;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,7 +62,7 @@ final class TorrentPreparationCoordinator implements AutoCloseable {
 			if (diagnostics != null) diagnostics.fail(
 					new IllegalStateException("Stremio torrent runtime is closed"),
 					Map.of("status", "failed", "phase", "closed"));
-			return CompletableFuture.failedFuture(
+			return StremioFutures.failedFuture(
 					new IllegalStateException("Stremio torrent runtime is closed"));
 		}
 		Consumer<RemotePlaybackProgress> observedProgress = progressObserver(progress, diagnostics);

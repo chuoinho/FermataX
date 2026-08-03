@@ -3,6 +3,7 @@ package me.aap.utils.pref;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
@@ -73,7 +74,9 @@ public class PreferenceViewAdapter extends RecyclerView.Adapter<PreferenceViewAd
 		return set.preferences.size();
 	}
 
+	@SuppressLint("NotifyDataSetChanged")
 	public void setPreferenceSet(PreferenceSet set) {
+		// Switching preference roots replaces the complete hierarchy and invalidates every row.
 		PreferenceSet old = getPreferenceSet();
 		if (old != null) old.setAdapter(null);
 

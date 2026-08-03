@@ -224,7 +224,9 @@ public class PreferenceView extends ConstraintLayout {
 		setStringPreference(o, R.layout.string_pref_layout);
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	private void setStringPreference(StringOpts o, @LayoutRes int layout) {
+		// The touch listener returns false; EditText retains native click/accessibility handling.
 		setPreference(layout, o);
 		EditText t = activityEditText(R.id.pref_footer);
 		boolean[] ignoreChange = new boolean[1];
@@ -484,9 +486,11 @@ public class PreferenceView extends ConstraintLayout {
 				});
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	private <S> void setNumberPreference(NumberOpts<S> o, Supplier<String> get, Consumer<String> set,
-																			 IntFunction<String> fromInt, ToIntFunction<String> toInt,
-																			 BiConsumer<EditText, SeekBar> viewConfigurator) {
+														 IntFunction<String> fromInt, ToIntFunction<String> toInt,
+														 BiConsumer<EditText, SeekBar> viewConfigurator) {
+		// The touch listener returns false; EditText retains native click/accessibility handling.
 		setPreference(R.layout.number_pref_layout, o);
 		EditText t = activityEditText(R.id.pref_value);
 		SeekBar sb = findViewById(R.id.pref_footer);

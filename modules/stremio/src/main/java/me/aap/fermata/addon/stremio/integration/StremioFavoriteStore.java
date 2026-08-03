@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -42,7 +44,7 @@ final class StremioFavoriteStore {
 		return projectionLoader.apply(update.stableId()).thenCompose(projection -> {
 			if (projection == null) return CompletableFuture.completedFuture(null);
 			if (!projection.item().canonicalContentKey().equals(update.canonicalContentKey())) {
-				return CompletableFuture.failedFuture(
+				return StremioFutures.failedFuture(
 						new IllegalStateException("Favorite content identity mismatch"));
 			}
 			return projectionWriter.apply(projection).thenCompose(ignored ->
@@ -52,7 +54,7 @@ final class StremioFavoriteStore {
 	}
 
 	private <T> CompletableFuture<T> open(CompletableFuture<T> future) {
-		return closed.getAsBoolean() ? CompletableFuture.failedFuture(
+		return closed.getAsBoolean() ? StremioFutures.failedFuture(
 				new IllegalStateException("Stremio runtime is closed")) : future;
 	}
 }

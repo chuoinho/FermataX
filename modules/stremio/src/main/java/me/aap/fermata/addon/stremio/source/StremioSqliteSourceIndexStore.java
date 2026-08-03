@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.source;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,7 +26,7 @@ public final class StremioSqliteSourceIndexStore implements StremioSourceIndexSt
 		return repository.getSourceState().thenCompose(current -> {
 			if (!index(current).equals(expected)) return CompletableFuture.completedFuture(false);
 			if (!expected.orderedSourceUuids().equals(replacement.orderedSourceUuids())) {
-				return CompletableFuture.failedFuture(new IllegalArgumentException(
+				return StremioFutures.failedFuture(new IllegalArgumentException(
 						"Row changes require compareAndSetSnapshot"));
 			}
 			SourceState next = new SourceState(replacement.revision(), current.sources(),

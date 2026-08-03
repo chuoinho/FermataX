@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.data;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import android.database.Cursor;
 
 import java.io.Closeable;
@@ -93,7 +95,7 @@ public final class StremioRepository implements Closeable {
 		Objects.requireNonNull(meta, "meta");
 		Objects.requireNonNull(provider, "provider");
 		if (!meta.metaKey().equals(provider.metaKey())) {
-			return CompletableFuture.failedFuture(
+			return StremioFutures.failedFuture(
 					new IllegalArgumentException("Metadata owner key mismatch"));
 		}
 		return worker.submit(database -> {

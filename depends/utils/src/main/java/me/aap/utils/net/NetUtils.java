@@ -18,6 +18,8 @@ import androidx.annotation.Nullable;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -30,6 +32,24 @@ import me.aap.utils.log.Log;
  * @author Andrey Pavlenko
  */
 public class NetUtils {
+
+	/** UTF-8 form encoding using the Android-compatible String overload. */
+	public static String urlEncode(String value) {
+		try {
+			return URLEncoder.encode(value, "UTF-8");
+		} catch (java.io.UnsupportedEncodingException impossible) {
+			throw new AssertionError(impossible);
+		}
+	}
+
+	/** UTF-8 form decoding using the Android-compatible String overload. */
+	public static String urlDecode(String value) {
+		try {
+			return URLDecoder.decode(value, "UTF-8");
+		} catch (java.io.UnsupportedEncodingException impossible) {
+			throw new AssertionError(impossible);
+		}
+	}
 
 	@Nullable
 	public static InetAddress getInterfaceAddress() {
@@ -91,7 +111,7 @@ public class NetUtils {
 	}
 
 	private static InetAddress getWiFiAddr(Context ctx) {
-		WifiManager wmgr = (WifiManager) ctx.getSystemService(WIFI_SERVICE);
+		WifiManager wmgr = (WifiManager) ctx.getApplicationContext().getSystemService(WIFI_SERVICE);
 
 		if ((wmgr != null) && wmgr.isWifiEnabled()) {
 			WifiInfo info = wmgr.getConnectionInfo();

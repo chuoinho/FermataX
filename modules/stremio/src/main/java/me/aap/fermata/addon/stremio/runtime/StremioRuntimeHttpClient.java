@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.runtime;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
@@ -119,7 +121,7 @@ public final class StremioRuntimeHttpClient implements AutoCloseable {
 	}
 
 	private static CachedCall cancelled() {
-		CompletableFuture<CachedResponse> result = CompletableFuture.failedFuture(
+		CompletableFuture<CachedResponse> result = StremioFutures.failedFuture(
 				new HttpFailure(HttpFailure.Code.CANCELLED, "Stremio runtime is closed"));
 		return new CachedCall() {
 			@Override
@@ -134,7 +136,7 @@ public final class StremioRuntimeHttpClient implements AutoCloseable {
 	}
 
 	private static HttpCall cancelledRaw() {
-		CompletableFuture<HttpResponseData> result = CompletableFuture.failedFuture(
+		CompletableFuture<HttpResponseData> result = StremioFutures.failedFuture(
 				new HttpFailure(HttpFailure.Code.CANCELLED, "Stremio runtime is closed"));
 		return new HttpCall() {
 			@Override

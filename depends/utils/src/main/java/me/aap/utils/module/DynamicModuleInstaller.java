@@ -2,8 +2,10 @@ package me.aap.utils.module;
 
 import static android.app.NotificationManager.IMPORTANCE_LOW;
 import static android.content.Context.NOTIFICATION_SERVICE;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static me.aap.utils.function.ProgressiveResultConsumer.progressShift;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -13,6 +15,7 @@ import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.play.core.splitcompat.SplitCompat;
 import com.google.android.play.core.splitinstall.SplitInstallException;
@@ -177,7 +180,16 @@ public class DynamicModuleInstaller {
 					return;
 			}
 
-			notif.notify(TAG, sessionId, notification.build());
+			if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) ||
+					(ContextCompat.checkSelfPermission(activity,
+							Manifest.permission.POST_NOTIFICATIONS) == PERMISSION_GRANTED)) {
+				try {
+					notif.notify(TAG, sessionId, notification.build());
+				} catch (SecurityException ex) {
+					// Permission may be revoked while the installation is progressing.
+					Log.w(ex, "Unable to post dynamic-module progress notification");
+				}
+			}
 		}
 	}
 }

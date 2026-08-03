@@ -178,7 +178,7 @@ public class DialogView extends FrameLayout implements DialogInterface {
 					me.aap.utils.R.style.Theme_Utils_Base_AlertDialog_Style);
 			int layout = a.getResourceId(DialogView_listLayout, 0);
 			int itemLayout = a.getResourceId(DialogView_singleChoiceItemLayout,
-					R.layout.mtrl_alert_select_dialog_singlechoice);
+					me.aap.utils.R.layout.dialog_single_choice_item);
 			a.recycle();
 
 			ListView list = (ListView) LayoutInflater.from(getContext()).inflate(layout, null);

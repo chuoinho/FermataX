@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import me.aap.utils.net.NetUtils;
+
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
@@ -29,7 +31,7 @@ record YoutubeAdSignal(Phase phase, String podId, String adId, String pageUrl, l
 
 	private static String decode(String value) {
 		try {
-			return URLDecoder.decode(value, StandardCharsets.UTF_8);
+			return NetUtils.urlDecode(value);
 		} catch (IllegalArgumentException ignored) {
 			return "";
 		}

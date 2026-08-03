@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import java.util.Locale;
+
 import org.json.JSONTokener;
 
 final class YoutubeScripts {
@@ -436,7 +438,7 @@ final class YoutubeScripts {
 		String method = next ? "nextVideo" : "previousVideo";
 		String selector = next ? ".ytp-next-button" : ".ytp-prev-button";
 		int mobileButtonIndex = next ? 1 : 0;
-		return """
+		return String.format(Locale.ROOT, """
 				(function() {
 				  function available(button) {
 				    return button && !button.disabled &&
@@ -461,11 +463,11 @@ final class YoutubeScripts {
 				  }
 				  if (!move()) setTimeout(move, 600);
 				})()
-				""".formatted(method, selector, mobileButtonIndex);
+				""", method, selector, mobileButtonIndex);
 	}
 
 	static String videoQualities(String eventFunction, int eventCode, String autoLabel) {
-		return """
+		return String.format(Locale.ROOT, """
 				(function() {
 				  function player() {
 				    return document.querySelector('#movie_player,.html5-video-player');
@@ -514,11 +516,11 @@ final class YoutubeScripts {
 				  }
 				  read(0);
 				})()
-				""".formatted(eventFunction, eventCode, org.json.JSONObject.quote(autoLabel));
+				""", eventFunction, eventCode, org.json.JSONObject.quote(autoLabel));
 	}
 
 	static String setVideoQuality(int index) {
-		return """
+		return String.format(Locale.ROOT, """
 				(function(index) {
 				  var p = document.querySelector('#movie_player,.html5-video-player');
 				  if (!p) return false;
@@ -538,6 +540,6 @@ final class YoutubeScripts {
 				    return true;
 				  } catch (ignore) { return false; }
 				})(%d)
-				""".formatted(index);
+				""", index);
 	}
 }

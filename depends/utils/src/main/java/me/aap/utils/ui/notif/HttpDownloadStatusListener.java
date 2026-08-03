@@ -1,5 +1,8 @@
 package me.aap.utils.ui.notif;
 
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+
+import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -8,6 +11,7 @@ import android.os.Build;
 import androidx.annotation.DrawableRes;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -74,7 +78,7 @@ public class HttpDownloadStatusListener implements HttpFileDownloader.StatusList
 			builder.setProgress((int) (total >>> shift), (int) (status.bytesDownloaded() >>> shift), false);
 		}
 
-		mgr.notify(channelId, id, builder.build());
+		notifyIfPermitted();
 	}
 
 	@Override
@@ -87,7 +91,18 @@ public class HttpDownloadStatusListener implements HttpFileDownloader.StatusList
 		if (failureTitle != null) builder.setContentTitle(failureTitle.apply(status));
 		else builder.setContentTitle(context.getString(me.aap.utils.R.string.download_failed,
 				status.getUrl()));
-		mgr.notify(channelId, id, builder.build());
+		notifyIfPermitted();
+	}
+
+	private void notifyIfPermitted() {
+		if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) &&
+				(ContextCompat.checkSelfPermission(context,
+						Manifest.permission.POST_NOTIFICATIONS) != PERMISSION_GRANTED)) return;
+		try {
+			mgr.notify(channelId, id, builder.build());
+		} catch (SecurityException ignored) {
+			// Permission may be revoked between the check and the binder call; downloads continue.
+		}
 	}
 
 	private static int progressShift(long total) {

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import static me.aap.fermata.addon.stremio.integration.StremioFutureBridge.toCompletable;
 
 import androidx.annotation.Nullable;
@@ -170,7 +172,7 @@ public final class StremioItemGatewayAdapter implements StremioItemGateway,
 		CompletableFuture<StreamAggregationResult> result = repository.getSourceState()
 				.thenCompose(state -> {
 					String sourceUuid = findSourceUuid(request, state.sources());
-					if (sourceUuid == null) return CompletableFuture.failedFuture(
+					if (sourceUuid == null) return StremioFutures.failedFuture(
 							new IllegalStateException(
 									"Stremio playback source identity is unavailable"));
 					return toCompletable(streams(sourceUuid, request));
@@ -234,7 +236,7 @@ public final class StremioItemGatewayAdapter implements StremioItemGateway,
 			PlaybackDescriptor.DescriptorRefreshRequest refresh) {
 		RequestContext context = descriptorRequests.get(refresh.previousDescriptorId());
 		if ((context == null) || !context.request().identity().equals(refresh.identity())) {
-			return bridge(CompletableFuture.failedFuture(
+			return bridge(StremioFutures.failedFuture(
 					new IllegalStateException("Playback choice can no longer be resolved")));
 		}
 		CompletableFuture<PlaybackDescriptor> result = finalStreams(
@@ -268,13 +270,13 @@ public final class StremioItemGatewayAdapter implements StremioItemGateway,
 
 	@Override
 	public FutureSupplier<PlaybackDescriptor> validatePlayback(PlaybackDescriptor descriptor) {
-		if (closed) return bridge(CompletableFuture.failedFuture(
+		if (closed) return bridge(StremioFutures.failedFuture(
 				new IllegalStateException("Stremio runtime is closed")));
 		try {
 			me.aap.fermata.addon.stremio.playback.DirectPlaybackValidator.validate(
 					descriptor, System.currentTimeMillis());
 		} catch (Throwable error) {
-			return bridge(CompletableFuture.failedFuture(error));
+			return bridge(StremioFutures.failedFuture(error));
 		}
 		CompletableFuture<PlaybackDescriptor> result = providerCatalog
 				.isCurrent(descriptor.providerSnapshot()).thenApply(current -> {
@@ -308,7 +310,7 @@ public final class StremioItemGatewayAdapter implements StremioItemGateway,
 				}));
 			}
 			if (validated.targetValue() == null || validated.requestProfile() == null) {
-				return bridge(CompletableFuture.failedFuture(
+				return bridge(StremioFutures.failedFuture(
 						new IllegalStateException("Unsupported Stremio playback target")));
 			}
 			return bridge(CompletableFuture.completedFuture(new RemotePlaybackRequest(
@@ -345,7 +347,7 @@ public final class StremioItemGatewayAdapter implements StremioItemGateway,
 	@Override
 	public FutureSupplier<Void> saveProgress(StremioPlaybackIdentity identity,
 			long position, boolean completed) {
-		return bridge(CompletableFuture.failedFuture(new IllegalStateException(
+		return bridge(StremioFutures.failedFuture(new IllegalStateException(
 				"Stremio progress must be written through the session coordinator")));
 	}
 
@@ -397,7 +399,7 @@ public final class StremioItemGatewayAdapter implements StremioItemGateway,
 	private CompletableFuture<Void> persistVideo(
 			String sourceUuid, StreamAggregationRequest request) {
 		return repository.getSource(sourceUuid).thenCompose(source -> {
-			if ((source == null) || !source.enabled()) return CompletableFuture.failedFuture(
+			if ((source == null) || !source.enabled()) return StremioFutures.failedFuture(
 					new IllegalStateException("Stremio playback source is unavailable"));
 			long now = System.currentTimeMillis();
 			long duration = request.metadata().durationMillis();
@@ -454,7 +456,7 @@ public final class StremioItemGatewayAdapter implements StremioItemGateway,
 	}
 
 	private <T> CompletableFuture<T> open(CompletableFuture<T> stage) {
-		if (closed) return CompletableFuture.failedFuture(
+		if (closed) return StremioFutures.failedFuture(
 				new IllegalStateException("Stremio runtime is closed"));
 		return stage;
 	}

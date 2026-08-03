@@ -220,7 +220,7 @@ public final class StremioPresentationAdapter
 		StringBuilder result = new StringBuilder();
 		for (String value : values) {
 			if ((value == null) || value.isEmpty()) continue;
-			if (!result.isEmpty()) result.append(", ");
+			if (result.length() != 0) result.append(", ");
 			result.append(value);
 		}
 		return result.toString();

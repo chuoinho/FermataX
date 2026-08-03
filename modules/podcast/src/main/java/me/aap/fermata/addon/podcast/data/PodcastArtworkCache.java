@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.podcast.data;
 
+import me.aap.utils.io.FileUtils;
+
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
 
@@ -83,7 +85,7 @@ final class PodcastArtworkCache {
 		}
 		try {
 			try (FileOutputStream output = new FileOutputStream(partial)) {
-				input.transferTo(output);
+				FileUtils.copy(input, output);
 				output.getFD().sync();
 			}
 			if (!isSupportedImage(partial)) {

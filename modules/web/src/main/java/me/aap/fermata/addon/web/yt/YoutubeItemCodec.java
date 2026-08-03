@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import me.aap.utils.net.NetUtils;
+
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -76,10 +78,10 @@ final class YoutubeItemCodec {
 	}
 
 	private static String field(String value) {
-		return URLEncoder.encode(value, StandardCharsets.UTF_8);
+		return NetUtils.urlEncode(value);
 	}
 
 	private static String value(String field) {
-		return URLDecoder.decode(field, StandardCharsets.UTF_8);
+		return NetUtils.urlDecode(field);
 	}
 }

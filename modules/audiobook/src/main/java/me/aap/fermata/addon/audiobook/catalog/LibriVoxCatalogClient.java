@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.audiobook.catalog;
 
+import me.aap.utils.net.NetUtils;
+
 import static me.aap.utils.net.http.HttpContentDecoder.decodeBuffered;
 
 import android.util.JsonReader;
@@ -346,7 +348,7 @@ public final class LibriVoxCatalogClient {
 	}
 
 	private static String encode(String value) {
-		return URLEncoder.encode(value, StandardCharsets.UTF_8);
+		return NetUtils.urlEncode(value);
 	}
 
 	private static String encodePath(String value) {

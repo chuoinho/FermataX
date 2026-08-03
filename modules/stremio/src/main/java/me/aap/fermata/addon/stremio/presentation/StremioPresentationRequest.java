@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.presentation;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -136,6 +138,6 @@ final class StremioPresentationRequest implements StremioPresenter.Request {
 	}
 
 	private static <T> CompletableFuture<T> cancelledFuture() {
-		return CompletableFuture.failedFuture(new CancellationException());
+		return StremioFutures.failedFuture(new CancellationException());
 	}
 }

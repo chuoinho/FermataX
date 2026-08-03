@@ -8,6 +8,7 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.toPx;
 
 import android.content.Context;
+import android.annotation.SuppressLint;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Color;
@@ -25,6 +26,7 @@ import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
+import androidx.core.widget.TextViewCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -164,7 +166,9 @@ public class ListView<I> extends RecyclerView {
 	}
 
 	@SuppressWarnings("unchecked")
+	@SuppressLint("NotifyDataSetChanged")
 	private void notifyDataSetChanged() {
+		// setItems replaces, filters, and sorts the complete collection; no stable item diff exists.
 		RecyclerView.Adapter<Holder> a = getAdapter();
 		if (a != null) a.notifyDataSetChanged();
 		if (itemsChangeListener != null) itemsChangeListener.onListItemsChange(parent, items);
@@ -344,7 +348,7 @@ public class ListView<I> extends RecyclerView {
 				TextView t = (TextView) itemView;
 				t.setTextAppearance(getTextAppearance());
 				t.setTextColor(getTextColor());
-				t.setCompoundDrawableTintList(getIconTint());
+				TextViewCompat.setCompoundDrawableTintList(t, getIconTint());
 				int pad = (int) toPx(getContext(), 5);
 				t.setCompoundDrawablePadding(pad);
 				t.setPadding(pad, 2 * pad, pad, 2 * pad);

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import static me.aap.fermata.addon.stremio.integration.StremioFutureBridge.toCompletable;
 
 import androidx.annotation.Nullable;
@@ -61,7 +63,7 @@ final class StremioProjectionStore {
 	}
 
 	CompletableFuture<StremioPersistedItem> load(String stableId) {
-		if (closed.getAsBoolean()) return CompletableFuture.failedFuture(
+		if (closed.getAsBoolean()) return StremioFutures.failedFuture(
 				new IllegalStateException("Stremio runtime is closed"));
 		return open(repository.getVideo(stableId)).thenCompose(video -> {
 			if (video == null) return loadCached(stableId);
@@ -366,7 +368,7 @@ final class StremioProjectionStore {
 	}
 
 	private <T> CompletableFuture<T> open(CompletableFuture<T> future) {
-		return closed.getAsBoolean() ? CompletableFuture.failedFuture(
+		return closed.getAsBoolean() ? StremioFutures.failedFuture(
 				new IllegalStateException("Stremio runtime is closed")) : future;
 	}
 	private record ProviderBinding(String sourceUuid, String providerMetaId) {

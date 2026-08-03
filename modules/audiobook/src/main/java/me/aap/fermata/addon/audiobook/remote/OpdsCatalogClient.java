@@ -343,7 +343,7 @@ public final class OpdsCatalogClient {
 			if (output.size() + read > MAX_XML_BYTES) throw new IOException("OPDS feed is too large");
 			output.write(buffer, 0, read);
 		}
-		return output.toString(StandardCharsets.UTF_8);
+		return new String(output.toByteArray(), StandardCharsets.UTF_8);
 	}
 
 	private static boolean isTextElement(String name) {

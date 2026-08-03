@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.security;
 
+import me.aap.utils.net.NetUtils;
+
 import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
@@ -189,7 +191,7 @@ public final class SecretTaintDetector {
 		for (String secret : secrets) {
 			if ((secret == null) || secret.isEmpty()) continue;
 			if (value.contains(secret)) return true;
-			String encoded = URLEncoder.encode(secret, StandardCharsets.UTF_8);
+			String encoded = NetUtils.urlEncode(secret);
 			if (value.contains(encoded) || value.contains(encoded.replace("+", "%20"))) return true;
 			String base64 = Base64.getEncoder().encodeToString(secret.getBytes(StandardCharsets.UTF_8));
 			if (value.contains(base64)) return true;
@@ -290,8 +292,7 @@ public final class SecretTaintDetector {
 
 	private static String decode(String value, boolean queryComponent) {
 		try {
-			return URLDecoder.decode(queryComponent ? value : value.replace("+", "%2B"),
-					StandardCharsets.UTF_8);
+			return NetUtils.urlDecode(queryComponent ? value : value.replace("+", "%2B"));
 		} catch (IllegalArgumentException error) {
 			return value;
 		}

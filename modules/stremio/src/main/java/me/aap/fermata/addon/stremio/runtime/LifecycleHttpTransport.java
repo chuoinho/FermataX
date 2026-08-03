@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.runtime;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -48,7 +50,7 @@ final class LifecycleHttpTransport implements HttpTransport, AutoCloseable {
 	}
 
 	private static TransportCall cancelled() {
-		CompletableFuture<TransportResponse> response = CompletableFuture.failedFuture(
+		CompletableFuture<TransportResponse> response = StremioFutures.failedFuture(
 				new HttpFailure(HttpFailure.Code.CANCELLED, "Stremio runtime is closed"));
 		return new TransportCall() {
 			@Override

@@ -54,7 +54,7 @@ public final class PodcastHtmlDiscovery {
 			}
 			output.write(buffer, 0, read);
 		}
-		return output.toString(StandardCharsets.UTF_8);
+		return new String(output.toByteArray(), StandardCharsets.UTF_8);
 	}
 
 	private static boolean isFeedLink(String type, String rel) {

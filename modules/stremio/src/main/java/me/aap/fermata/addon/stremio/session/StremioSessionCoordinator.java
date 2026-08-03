@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.session;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.text.Collator;
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -477,7 +479,7 @@ public final class StremioSessionCoordinator {
 	}
 
 	private static <T> CompletionStage<T> failed(Throwable failure) {
-		return CompletableFuture.failedFuture(failure);
+		return StremioFutures.failedFuture(failure);
 	}
 
 	public static final class UnavailableItemException extends IllegalStateException {

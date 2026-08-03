@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -25,10 +27,10 @@ final class StremioRestoreStore {
 
 	CompletionStage<Void> save(StremioRestorePoint restorePoint) {
 		return projectionLoader.apply(restorePoint.stableId()).thenCompose(projection -> {
-			if (projection == null) return CompletableFuture.failedFuture(
+			if (projection == null) return StremioFutures.failedFuture(
 					new IllegalStateException("Restore item is unavailable"));
 			if (!projection.item().backToListId().equals(restorePoint.backToListId())) {
-				return CompletableFuture.failedFuture(
+				return StremioFutures.failedFuture(
 						new IllegalStateException("Restore destination identity mismatch"));
 			}
 			return open(repository.putSessionState(new StremioSessionRecord(
@@ -44,7 +46,7 @@ final class StremioRestoreStore {
 	}
 
 	private <T> CompletableFuture<T> open(CompletableFuture<T> future) {
-		return closed.getAsBoolean() ? CompletableFuture.failedFuture(
+		return closed.getAsBoolean() ? StremioFutures.failedFuture(
 				new IllegalStateException("Stremio runtime is closed")) : future;
 	}
 }

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.presentation;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -87,7 +89,7 @@ final class StremioStreamPageLoader {
 			StremioPresentationRequest request, StremioRoute.Streams route,
 			StremioBrowseTarget restored) {
 		request.ensureActive();
-		if (restored == null) return CompletableFuture.failedFuture(
+		if (restored == null) return StremioFutures.failedFuture(
 				new IllegalStateException("Content selection expired"));
 		if (restored.episode() == null) targets.putMedia(route.stableId(), restored.media());
 		else targets.putEpisode(route.stableId(), restored.media(), restored.episode(),

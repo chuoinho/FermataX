@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -145,17 +147,17 @@ public final class StremioSubtitlePlaybackBridge implements AutoCloseable {
 		Objects.requireNonNull(runtime, "runtime");
 		Objects.requireNonNull(descriptor, "descriptor");
 		if (!descriptor.isPlayable(Instant.now())) {
-			return StremioFutureBridge.from(CompletableFuture.failedFuture(
+			return StremioFutureBridge.from(StremioFutures.failedFuture(
 					new IllegalStateException("Subtitle descriptor is unavailable or expired")));
 		}
 		if (!descriptor.format().isSupported() &&
 				!descriptor.format().isEngineReadable(descriptor.location())) {
-			return StremioFutureBridge.from(CompletableFuture.failedFuture(
+			return StremioFutureBridge.from(StremioFutures.failedFuture(
 					new UnsupportedOperationException(
 							"Subtitle format is not readable by the existing engines")));
 		}
 		if (descriptor.requestHeaders() != null) {
-			return StremioFutureBridge.from(CompletableFuture.failedFuture(
+			return StremioFutureBridge.from(StremioFutures.failedFuture(
 					new UnsupportedOperationException(
 							"Authenticated subtitle sidecar is unavailable")));
 		}
@@ -164,7 +166,7 @@ public final class StremioSubtitlePlaybackBridge implements AutoCloseable {
 		try {
 			sourceUuid = UUID.fromString(descriptor.providerKey());
 		} catch (IllegalArgumentException ex) {
-			return StremioFutureBridge.from(CompletableFuture.failedFuture(
+			return StremioFutureBridge.from(StremioFutures.failedFuture(
 					new IllegalStateException("Subtitle provider identity is invalid", ex)));
 		}
 		StremioSourceLease lease = descriptor.sourceLease();
@@ -299,7 +301,7 @@ public final class StremioSubtitlePlaybackBridge implements AutoCloseable {
 	}
 
 	private static <T> CompletableFuture<T> closedFuture() {
-		return CompletableFuture.failedFuture(
+		return StremioFutures.failedFuture(
 				new IllegalStateException("Stremio subtitle bridge is closed"));
 	}
 

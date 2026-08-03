@@ -66,7 +66,9 @@ jobs:
 
       - name: Lint
         if: ${{ !cancelled() }}
-        run: ./gradlew lint --no-daemon --no-parallel --stacktrace
+        run: >-
+          ./gradlew :fermata:lintMobileDebug :fermata:lintAutoDebug
+          --no-daemon --no-parallel --stacktrace
 
       - name: Check whitespace in the PR/push diff
         if: ${{ !cancelled() }}

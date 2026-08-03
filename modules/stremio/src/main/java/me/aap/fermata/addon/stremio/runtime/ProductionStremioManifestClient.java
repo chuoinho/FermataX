@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.runtime;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -66,7 +68,7 @@ public final class ProductionStremioManifestClient implements StremioManifestCli
 			manifestUri = normalizeManifestUri(request.secret().transportUrl());
 			headers = requestHeaders(request);
 		} catch (StremioSourceException ex) {
-			return CompletableFuture.failedFuture(ex);
+			return StremioFutures.failedFuture(ex);
 		}
 
 		HttpRequestSpec spec = new HttpRequestSpec(manifestUri, headers,
@@ -157,7 +159,7 @@ public final class ProductionStremioManifestClient implements StremioManifestCli
 	}
 
 	private static CompletableFuture<Response> failed(Code code) {
-		return CompletableFuture.failedFuture(failure(code));
+		return StremioFutures.failedFuture(failure(code));
 	}
 
 	private static StremioSourceException failure(Code code) {

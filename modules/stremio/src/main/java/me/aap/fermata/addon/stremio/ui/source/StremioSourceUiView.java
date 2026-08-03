@@ -379,11 +379,11 @@ public final class StremioSourceUiView extends FrameLayout implements SourceUiCo
 		StringBuilder details = new StringBuilder();
 		if (!item.version().isEmpty()) details.append('v').append(item.version());
 		if (!item.description().isEmpty()) {
-			if (!details.isEmpty()) details.append("\n\n");
+			if (details.length() != 0) details.append("\n\n");
 			details.append(item.description());
 		}
 		if (item.protectedAddon() || item.configurable()) {
-			if (!details.isEmpty()) details.append("\n\n");
+			if (details.length() != 0) details.append("\n\n");
 			details.append(getContext().getString(R.string.stremio_discover_protected));
 		}
 		var builder = host.createDialogBuilder(getContext())

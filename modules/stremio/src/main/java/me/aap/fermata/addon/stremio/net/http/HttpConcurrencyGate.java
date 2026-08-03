@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.net.http;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,10 +58,10 @@ final class HttpConcurrencyGate {
 		Waiter waiter;
 		ArrayList<Grant> grants;
 		synchronized (this) {
-			if (permit.closed.get()) return CompletableFuture.failedFuture(
+			if (permit.closed.get()) return StremioFutures.failedFuture(
 					new IllegalStateException("HTTP concurrency permit is closed"));
 			if (target.equals(permit.host)) return CompletableFuture.completedFuture(null);
-			if (permit.waiter != null) return CompletableFuture.failedFuture(
+			if (permit.waiter != null) return StremioFutures.failedFuture(
 					new IllegalStateException("HTTP concurrency permit is already moving"));
 
 			releaseHostLocked(permit.host);

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.source;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,7 +49,7 @@ public final class StremioSourceRepositoryAdapter implements StremioSourceStore 
 		java.util.Objects.requireNonNull(expected, "expected");
 		java.util.Objects.requireNonNull(replacement, "replacement");
 		if (replacement.revision() != expected.revision() + 1) {
-			return CompletableFuture.failedFuture(new IllegalArgumentException(
+			return StremioFutures.failedFuture(new IllegalArgumentException(
 					"Replacement revision must advance exactly once"));
 		}
 		return serialized(() -> commitUnserialized(expected, replacement));
@@ -83,19 +85,19 @@ public final class StremioSourceRepositoryAdapter implements StremioSourceStore 
 		if (indexStore instanceof StremioSourceIndexStore.Transactional transactional) {
 			return transactional.compareAndSetSnapshot(expected, replacement)
 					.thenCompose(updated -> updated ? CompletableFuture.completedFuture(null) :
-							CompletableFuture.failedFuture(new StremioSourceException(
+							StremioFutures.failedFuture(new StremioSourceException(
 									Code.CONCURRENT_MODIFICATION)));
 		}
 		return loadUnserialized().thenCompose(current -> {
 			if (!current.equals(expected)) {
-				return CompletableFuture.failedFuture(
+				return StremioFutures.failedFuture(
 						new StremioSourceException(Code.CONCURRENT_MODIFICATION));
 			}
 
 			return applyRows(expected, replacement)
 					.thenCompose(ignored -> indexStore.compareAndSet(index(expected), index(replacement)))
 					.thenCompose(updated -> updated ? CompletableFuture.completedFuture(null) :
-							CompletableFuture.failedFuture(
+							StremioFutures.failedFuture(
 									new StremioSourceException(Code.CONCURRENT_MODIFICATION)))
 					.handle((ignored, failure) -> failure)
 					.thenCompose(failure -> {

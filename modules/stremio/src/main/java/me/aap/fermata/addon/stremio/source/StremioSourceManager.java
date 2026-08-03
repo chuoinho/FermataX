@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.source;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -95,7 +97,7 @@ public final class StremioSourceManager implements AutoCloseable {
 	}
 
 	public CompletableFuture<StremioSourceSnapshot> sources() {
-		if (closed.get()) return CompletableFuture.failedFuture(
+		if (closed.get()) return StremioFutures.failedFuture(
 				new StremioSourceException(Code.CLOSED));
 		return loadState();
 	}
@@ -155,7 +157,7 @@ public final class StremioSourceManager implements AutoCloseable {
 		CompletableFuture<PreparedManifest> preparation = loadState().thenCompose(snapshot -> {
 			StremioSourceRecord current = requireSource(snapshot, id);
 			return loadSecret(current).thenCompose(secret -> {
-				if (secret == null) return CompletableFuture.failedFuture(
+				if (secret == null) return StremioFutures.failedFuture(
 						new StremioSourceException(Code.SECURE_STORAGE));
 				return prepare(secret, current.networkConsent(), current.manifestJson(), current.manifestEtag(),
 						current.manifestLastModified(), token);
@@ -188,7 +190,7 @@ public final class StremioSourceManager implements AutoCloseable {
 			token.throwIfStale();
 			StremioSourceRecord source = requireSource(before, id);
 			return loadSecret(source).thenCompose(oldSecret -> {
-				if (oldSecret == null) return CompletableFuture.failedFuture(
+				if (oldSecret == null) return StremioFutures.failedFuture(
 						new StremioSourceException(Code.SECURE_STORAGE));
 				List<StremioSourceRecord> sources = new ArrayList<>(before.sources());
 				sources.remove(source.position());
@@ -210,7 +212,7 @@ public final class StremioSourceManager implements AutoCloseable {
 		return mutate(() -> loadState().thenCompose(before -> {
 			token.throwIfStale();
 			if (!sameIds(before.sources(), requested)) {
-				return CompletableFuture.failedFuture(
+				return StremioFutures.failedFuture(
 						new StremioSourceException(Code.INVALID_ORDER));
 			}
 			boolean same = true;
@@ -274,12 +276,12 @@ public final class StremioSourceManager implements AutoCloseable {
 			try {
 				fingerprint = fingerprint(secret);
 			} catch (RuntimeException failure) {
-				return CompletableFuture.failedFuture(
+				return StremioFutures.failedFuture(
 						new StremioSourceException(Code.INVALID_TRANSPORT, failure));
 			}
 			StremioSourceRecord duplicate = sourceWithFingerprint(before, fingerprint, null);
 			if (duplicate != null) {
-				if (!markCinemetaHandled) return CompletableFuture.failedFuture(
+				if (!markCinemetaHandled) return StremioFutures.failedFuture(
 						new StremioSourceException(Code.DUPLICATE_TRANSPORT));
 				StremioSourceSnapshot after = before.next(before.sources(), true);
 				return commit(before, after).thenApply(ignored -> changed(action,
@@ -292,7 +294,7 @@ public final class StremioSourceManager implements AutoCloseable {
 						StremioSecretReference.create(sourceUuid),
 						prepared, before.sources().size(), now);
 			} catch (RuntimeException failure) {
-				return CompletableFuture.failedFuture(
+				return StremioFutures.failedFuture(
 						new StremioSourceException(Code.PERSISTENCE, failure));
 			}
 			List<StremioSourceRecord> sources = new ArrayList<>(before.sources());
@@ -302,7 +304,7 @@ public final class StremioSourceManager implements AutoCloseable {
 				after = before.next(sources,
 						markCinemetaHandled || before.cinemetaInstallHandled());
 			} catch (RuntimeException failure) {
-				return CompletableFuture.failedFuture(
+				return StremioFutures.failedFuture(
 						new StremioSourceException(Code.PERSISTENCE, failure));
 			}
 			return stageThenCommit(token, sourceUuid, secret, null, before, after)
@@ -318,11 +320,11 @@ public final class StremioSourceManager implements AutoCloseable {
 			StremioSourceRecord current = requireSource(before, sourceUuid);
 			String fingerprint = fingerprint(replacementSecret);
 			if (sourceWithFingerprint(before, fingerprint, sourceUuid) != null) {
-				return CompletableFuture.failedFuture(
+				return StremioFutures.failedFuture(
 						new StremioSourceException(Code.DUPLICATE_TRANSPORT));
 			}
 			return loadSecret(current).thenCompose(oldSecret -> {
-				if (oldSecret == null) return CompletableFuture.failedFuture(
+				if (oldSecret == null) return StremioFutures.failedFuture(
 						new StremioSourceException(Code.SECURE_STORAGE));
 				String replacementSecretId = canonicalUuid(secretUuidFactory.get());
 				long now = clock.getAsLong();
@@ -418,14 +420,14 @@ public final class StremioSourceManager implements AutoCloseable {
 			redactedUrl = StremioUrlRedactor.forStorage(secret.transportUrl());
 			if (redactedUrl == null) throw new StremioSourceException(Code.INVALID_TRANSPORT);
 		} catch (StremioSourceException failure) {
-			return CompletableFuture.failedFuture(failure);
+			return StremioFutures.failedFuture(failure);
 		}
 		Request request = new Request(secret, etag, lastModified, token, consent);
 		CompletableFuture<Response> fetched;
 		try {
 			fetched = manifestClient.fetch(request);
 		} catch (RuntimeException failure) {
-			return CompletableFuture.failedFuture(
+			return StremioFutures.failedFuture(
 					new StremioSourceException(Code.TRANSPORT, failure));
 		}
 		return fetched.handle((response, failure) -> {
@@ -459,7 +461,7 @@ public final class StremioSourceManager implements AutoCloseable {
 		try {
 			staged = secretVault.save(stagedSecretId, stagedSecret);
 		} catch (RuntimeException failure) {
-			return CompletableFuture.failedFuture(secretFailure(failure));
+			return StremioFutures.failedFuture(secretFailure(failure));
 		}
 		return staged.handle((ignored, failure) -> {
 			if (failure != null) throw secretFailure(unwrap(failure));
@@ -470,7 +472,7 @@ public final class StremioSourceManager implements AutoCloseable {
 				token.throwIfStale();
 				persisted = commit(before, after);
 			} catch (RuntimeException failure) {
-				persisted = CompletableFuture.failedFuture(failure);
+				persisted = StremioFutures.failedFuture(failure);
 			}
 			return persisted.handle((unused, failure) -> failure).thenCompose(failure -> {
 				if (failure == null) return CompletableFuture.completedFuture(null);
@@ -479,7 +481,7 @@ public final class StremioSourceManager implements AutoCloseable {
 				try {
 					cleanup = secretVault.remove(stagedSecretId);
 				} catch (RuntimeException cleanupFailure) {
-					return CompletableFuture.failedFuture(rollbackFailure(original, cleanupFailure));
+					return StremioFutures.failedFuture(rollbackFailure(original, cleanupFailure));
 				}
 				return cleanup.handle((removed, cleanupFailure) -> {
 					if (cleanupFailure != null) {
@@ -533,7 +535,7 @@ public final class StremioSourceManager implements AutoCloseable {
 
 	private <T> CompletableFuture<T> mutate(Supplier<CompletableFuture<T>> operation) {
 		synchronized (mutationLock) {
-			if (closed.get()) return CompletableFuture.failedFuture(
+			if (closed.get()) return StremioFutures.failedFuture(
 					new StremioSourceException(Code.CLOSED));
 			CompletableFuture<T> result = mutationTail.handle((ignored, failure) -> null)
 					.thenCompose(ignored -> operation.get());

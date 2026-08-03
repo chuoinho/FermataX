@@ -4,6 +4,7 @@ package me.aap.utils.text;
 import static java.util.Collections.emptyMap;
 
 import android.os.Build;
+import android.annotation.SuppressLint;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +31,9 @@ public class PatternCompat {
 		return getPattern().matcher(s);
 	}
 
+	@SuppressLint("NewApi")
 	public String group(Matcher m, String g) {
+		// This base implementation is instantiated only on API 26+; pre-26 instances override it.
 		return m.group(g);
 	}
 

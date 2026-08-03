@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.audiobook.remote;
 
+import me.aap.utils.net.NetUtils;
+
 import static me.aap.utils.net.http.HttpContentDecoder.decodeBuffered;
 
 import org.json.JSONArray;
@@ -450,7 +452,7 @@ public final class AudiobookshelfClient {
 	}
 
 	private static String path(String value) {
-		return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+		return NetUtils.urlEncode(value).replace("+", "%20");
 	}
 
 	private static String readBounded(InputStream input) throws IOException {
@@ -463,7 +465,7 @@ public final class AudiobookshelfClient {
 			if (total > MAX_JSON_BYTES) throw new IOException("Audiobookshelf response is too large");
 			output.write(buffer, 0, read);
 		}
-		return output.toString(StandardCharsets.UTF_8);
+		return new String(output.toByteArray(), StandardCharsets.UTF_8);
 	}
 
 	private static String string(JSONObject object, String key) {

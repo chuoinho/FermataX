@@ -73,7 +73,7 @@
 			android:background="?android:attr/selectableItemBackgroundBorderless"
 			android:focusable="true"
 			android:padding="11dp"
-			android:tint="?android:attr/textColorPrimary" />
+			app:tint="?android:attr/textColorPrimary" />
 
 		<ImageButton
 			android:id="@+id/stremio_presentation_details_favorite"
@@ -83,7 +83,7 @@
 			android:background="?android:attr/selectableItemBackgroundBorderless"
 			android:focusable="true"
 			android:padding="11dp"
-			android:tint="?android:attr/textColorPrimary" />
+			app:tint="?android:attr/textColorPrimary" />
 
 		<Button
 			android:id="@+id/stremio_presentation_details_subtitles"

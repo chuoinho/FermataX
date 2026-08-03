@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import me.aap.utils.net.NetUtils;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
@@ -190,7 +192,7 @@ public final class SponsorBlockClient {
 	}
 
 	private static String encode(String value) {
-		return URLEncoder.encode(value, UTF_8);
+		return NetUtils.urlEncode(value);
 	}
 
 	private static String string(Object value) {
@@ -375,7 +377,7 @@ public final class SponsorBlockClient {
 			}
 			output.write(buffer, 0, read);
 		}
-		return output.toString(UTF_8);
+		return new String(output.toByteArray(), UTF_8);
 	}
 
 	private static void close(InputStream input) throws IOException {

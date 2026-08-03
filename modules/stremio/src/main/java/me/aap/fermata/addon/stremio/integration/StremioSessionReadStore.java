@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -117,7 +119,7 @@ final class StremioSessionReadStore {
 	}
 
 	private <T> CompletableFuture<T> open(CompletableFuture<T> future) {
-		return closed.getAsBoolean() ? CompletableFuture.failedFuture(
+		return closed.getAsBoolean() ? StremioFutures.failedFuture(
 				new IllegalStateException("Stremio runtime is closed")) : future;
 	}
 }

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.EnumSet;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -133,7 +135,7 @@ public final class StremioSourceUiGatewayAdapter implements SourceUiGateway, Aut
 	public CompletableFuture<SourceUiDraft> loadDraft(String sourceUuid) {
 		return sources.sources().thenCompose(snapshot -> {
 			StremioSourceRecord source = snapshot.source(sourceUuid);
-			if (source == null) return CompletableFuture.failedFuture(
+			if (source == null) return StremioFutures.failedFuture(
 					new SourceUiFailure(SourceUiError.NOT_FOUND));
 			return secrets.load(source).thenApply(secret -> {
 				if (secret == null) throw new SourceUiFailure(SourceUiError.SECURE_STORAGE);
@@ -148,15 +150,15 @@ public final class StremioSourceUiGatewayAdapter implements SourceUiGateway, Aut
 	public CompletableFuture<StremioConfigLaunch> loadConfiguration(String sourceUuid) {
 		return sources.sources().thenCompose(snapshot -> {
 			StremioSourceRecord source = snapshot.source(sourceUuid);
-			if ((source == null) || !configurable(source)) return CompletableFuture.failedFuture(
+			if ((source == null) || !configurable(source)) return StremioFutures.failedFuture(
 					new SourceUiFailure(SourceUiError.NOT_FOUND));
 			return secrets.load(source).thenApply(secret -> {
 				if (secret == null) throw new SourceUiFailure(SourceUiError.SECURE_STORAGE);
 				var consent = new me.aap.fermata.addon.stremio.net.NetworkConsent(
 						source.allowCleartext(), source.allowLan());
 				return new StremioConfigLaunch(secret, consent, (uri, headers) -> {
-					if (configHttp == null) return java.util.concurrent.CompletableFuture
-							.failedFuture(new IllegalStateException(
+					if (configHttp == null) return StremioFutures.failedFuture(
+							new IllegalStateException(
 									"Configuration transport is unavailable"));
 					return configHttp.fetchRaw(uri, headers, MAX_CONFIG_RESOURCE_BYTES, consent)
 							.response().thenApply(response ->
@@ -309,7 +311,7 @@ public final class StremioSourceUiGatewayAdapter implements SourceUiGateway, Aut
 		result.consumeUrl(configuredUrl::set);
 		CompletableFuture<StremioSourceOutcome> configured = sources.sources().thenCompose(snapshot -> {
 			StremioSourceRecord source = snapshot.source(sourceUuid);
-			if (source == null) return CompletableFuture.failedFuture(
+			if (source == null) return StremioFutures.failedFuture(
 					new SourceUiFailure(SourceUiError.NOT_FOUND));
 			return sources.edit(sourceUuid, new StremioSourceInput(configuredUrl.get(), null,
 					new me.aap.fermata.addon.stremio.net.NetworkConsent(

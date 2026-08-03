@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.podcast.provider;
 
+import me.aap.utils.net.NetUtils;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.util.JsonReader;
@@ -32,7 +34,7 @@ public final class FyydSearchProvider implements PodcastSearchProvider {
 	@Override
 	public FutureSupplier<List<PodcastSearchResult>> search(PodcastSearchRequest request) {
 		int count = Math.min(request.getLimit(), 20);
-		String url = ENDPOINT + "?title=" + URLEncoder.encode(request.getQuery(), UTF_8)
+		String url = ENDPOINT + "?title=" + NetUtils.urlEncode(request.getQuery())
 				.replace("+", "%20") + "&count=" + count + "&page=0";
 		return http.getJson(url, input -> parse(input, count));
 	}

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.ui.config;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +29,7 @@ public interface StremioConfigResourceLoader {
 	}
 
 	static StremioConfigResourceLoader unavailable() {
-		return (uri, headers) -> CompletableFuture.failedFuture(
+		return (uri, headers) -> StremioFutures.failedFuture(
 				new IllegalStateException("Configuration transport is unavailable"));
 	}
 }

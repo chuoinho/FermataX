@@ -34,6 +34,7 @@ import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -523,7 +524,7 @@ public class FermataWebView extends WebView
 	}
 
 	static String textInputProbeScript() {
-		return ("""
+		return String.format(Locale.ROOT, """
 				(function() {
 				%s%s
 				  var e = fermataActiveTextElement();
@@ -533,7 +534,7 @@ public class FermataWebView extends WebView
 				      (('value' in e) ? e.value : e.textContent);
 				  %s(%d, value == null ? '' : String(value));
 				})()
-				""").formatted(ACTIVE_TEXT_ELEMENT_JS, TEXT_INPUT_TARGET_JS, JS_EVENT, JS_EDIT);
+				""", ACTIVE_TEXT_ELEMENT_JS, TEXT_INPUT_TARGET_JS, JS_EVENT, JS_EDIT);
 	}
 
 	private void setTextInput(CharSequence text) {

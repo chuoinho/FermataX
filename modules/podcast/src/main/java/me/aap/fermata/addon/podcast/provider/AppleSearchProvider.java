@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.podcast.provider;
 
+import me.aap.utils.net.NetUtils;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.util.JsonReader;
@@ -107,6 +109,6 @@ public final class AppleSearchProvider implements PodcastSearchProvider {
 	}
 
 	private static String encode(String value) {
-		return URLEncoder.encode(value, UTF_8).replace("+", "%20");
+		return NetUtils.urlEncode(value).replace("+", "%20");
 	}
 }

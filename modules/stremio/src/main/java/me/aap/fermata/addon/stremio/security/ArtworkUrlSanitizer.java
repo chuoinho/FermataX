@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.security;
 
+import me.aap.utils.net.NetUtils;
+
 import androidx.annotation.Nullable;
 
 import java.net.URI;
@@ -60,7 +62,7 @@ public final class ArtworkUrlSanitizer {
 		String normalized = path;
 		for (int i = 0; i < 2; i++) {
 			try {
-				String decoded = URLDecoder.decode(normalized, StandardCharsets.UTF_8);
+				String decoded = NetUtils.urlDecode(normalized);
 				if (decoded.equals(normalized)) break;
 				normalized = decoded;
 			} catch (IllegalArgumentException error) {
@@ -78,7 +80,7 @@ public final class ArtworkUrlSanitizer {
 		String normalized = path;
 		for (int i = 0; i < 2; i++) {
 			try {
-				String decoded = URLDecoder.decode(normalized, StandardCharsets.UTF_8);
+				String decoded = NetUtils.urlDecode(normalized);
 				if (decoded.equals(normalized)) break;
 				normalized = decoded;
 			} catch (IllegalArgumentException error) {

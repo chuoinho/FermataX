@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -48,7 +50,7 @@ public final class StremioStreamProviderClientAdapter implements StreamProviderC
 	}
 
 	private static ProviderStreamCall failed() {
-		CompletableFuture<List<StremioStream>> response = CompletableFuture.failedFuture(
+		CompletableFuture<List<StremioStream>> response = StremioFutures.failedFuture(
 				new StremioIntegrationException(
 						StremioIntegrationException.Code.SOURCE_DISABLED, false));
 		return new ProviderStreamCall() {

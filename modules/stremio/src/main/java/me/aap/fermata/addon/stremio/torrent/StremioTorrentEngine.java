@@ -1,5 +1,9 @@
 package me.aap.fermata.addon.stremio.torrent;
 
+import me.aap.utils.net.NetUtils;
+
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -105,7 +109,7 @@ public final class StremioTorrentEngine implements AutoCloseable {
 
 	/** Starts DHT/native networking before the user selects one of the visible P2P choices. */
 	public CompletableFuture<Void> warmUp() {
-		if (closed.get()) return CompletableFuture.failedFuture(
+		if (closed.get()) return StremioFutures.failedFuture(
 				new IllegalStateException("Stremio torrent runtime is closed"));
 		return CompletableFuture.runAsync(() -> {
 			cacheMaintenance.run();
@@ -367,7 +371,7 @@ public final class StremioTorrentEngine implements AutoCloseable {
 		StringBuilder magnet = new StringBuilder("magnet:?xt=urn:btih:")
 				.append(infoHash.toLowerCase(Locale.ROOT));
 		for (String tracker : trackers) {
-			magnet.append("&tr=").append(URLEncoder.encode(tracker, StandardCharsets.UTF_8));
+			magnet.append("&tr=").append(NetUtils.urlEncode(tracker));
 		}
 		return magnet.toString();
 	}

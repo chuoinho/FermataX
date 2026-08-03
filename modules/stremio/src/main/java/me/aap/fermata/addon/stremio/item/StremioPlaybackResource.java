@@ -260,7 +260,7 @@ final class StremioPlaybackResource implements VirtualResource {
 			char c = language.charAt(i);
 			if (Character.isLetterOrDigit(c) || (c == '-')) safe.append(c);
 		}
-		return safe.isEmpty() ? "und" : safe.toString();
+		return (safe.length() == 0) ? "und" : safe.toString();
 	}
 
 	static long stableTrackId(String identity) {

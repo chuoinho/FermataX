@@ -84,7 +84,15 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 			b.setSmallIcon(icon).setContentTitle(title).setContentText(text);
 			Intent intent = new Intent(ctx, c);
 			b.setFullScreenIntent(PendingIntent.getActivity(ctx, 0, intent, FLAG_IMMUTABLE), true);
-			NotificationManagerCompat.from(ctx).notify(0, b.build());
+			if ((SDK_INT < VERSION_CODES.TIRAMISU) || (ContextCompat.checkSelfPermission(ctx,
+					Manifest.permission.POST_NOTIFICATIONS) == PERMISSION_GRANTED)) {
+				try {
+					NotificationManagerCompat.from(ctx).notify(0, b.build());
+				} catch (SecurityException ex) {
+					// Permission may be revoked between the check and the binder call.
+					Log.w(ex, "Unable to post activity-launch notification");
+				}
+			}
 		}
 		return ((FutureSupplier<A>) (FutureSupplier<?>) request.future()).main();
 	}

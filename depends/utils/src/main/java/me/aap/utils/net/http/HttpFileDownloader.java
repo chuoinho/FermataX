@@ -4,6 +4,8 @@ import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.net.http.HttpHeader.USER_AGENT;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.NonNull;
 
 import java.io.File;
@@ -18,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -503,7 +506,7 @@ public class HttpFileDownloader {
 		try {
 			return destination.getCanonicalPath();
 		} catch (IOException ex) {
-			return destination.getAbsoluteFile().toPath().normalize().toString();
+			return destination.getAbsolutePath();
 		}
 	}
 
@@ -549,7 +552,9 @@ public class HttpFileDownloader {
 		}
 	}
 
+	@SuppressLint("NewApi")
 	static void replaceFile(File source, File destination) throws IOException {
+		// java.nio.file is available below API 26 through the enabled core-library desugaring.
 		Files.move(source.toPath(), destination.toPath(), StandardCopyOption.ATOMIC_MOVE,
 				StandardCopyOption.REPLACE_EXISTING);
 	}
@@ -1196,7 +1201,7 @@ public class HttpFileDownloader {
 		}
 
 		public void setCharset(CharSequence charset) {
-			if (charset != null) this.charset = charset.toString().toUpperCase();
+			if (charset != null) this.charset = charset.toString().toUpperCase(Locale.ROOT);
 		}
 
 		@Override

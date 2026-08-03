@@ -93,6 +93,8 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 	private boolean recreating;
 	private int activeFragmentId = ID_NULL;
 	private int activeNavItemId = ID_NULL;
+	@Nullable
+	private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
 
 	public ActivityDelegate(@Nonnull AppActivity activity) {
 		this.activity = activity;
@@ -162,6 +164,9 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 	}
 
 	protected void setUncaughtExceptionHandler() {
+		Thread.UncaughtExceptionHandler current = Thread.getDefaultUncaughtExceptionHandler();
+		if (current == this) return;
+		previousUncaughtExceptionHandler = current;
 		Thread.setDefaultUncaughtExceptionHandler(this);
 	}
 
@@ -202,6 +207,9 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 
 	protected void onActivityDestroy() {
 		Log.d("onActivityDestroy");
+		if (Thread.getDefaultUncaughtExceptionHandler() == this) {
+			Thread.setDefaultUncaughtExceptionHandler(previousUncaughtExceptionHandler);
+		}
 		fireBroadcastEvent(ACTIVITY_DESTROY);
 		activeMenu = null;
 		fullScreen = false;
@@ -241,6 +249,8 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 	public void uncaughtException(@NonNull Thread t, @NonNull Throwable err) {
 		Log.e(err, "Uncaught exception in thread ", t);
 		sendCrashReport(err);
+		Thread.UncaughtExceptionHandler previous = previousUncaughtExceptionHandler;
+		if ((previous != null) && (previous != this)) previous.uncaughtException(t, err);
 	}
 
 	protected FutureSupplier<Void> sendCrashReport(Throwable err) {

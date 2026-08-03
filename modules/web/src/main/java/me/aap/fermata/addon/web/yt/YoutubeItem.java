@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import me.aap.utils.net.NetUtils;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -130,7 +132,7 @@ record YoutubeItem(String videoId, String pageUrl, String title, String thumbnai
 	}
 
 	private static String decode(String value) {
-		return (value == null) ? null : URLDecoder.decode(value, StandardCharsets.UTF_8);
+		return (value == null) ? null : NetUtils.urlDecode(value);
 	}
 
 	private static boolean isVideoId(String value) {

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.stremio.integration;
 
+import me.aap.fermata.addon.stremio.util.StremioFutures;
+
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -46,7 +48,7 @@ final class StremioProgressStore {
 			boolean completed, long playbackGeneration) {
 		Objects.requireNonNull(identity, "identity");
 		if (playbackGeneration < 0L) return StremioFutureBridge.from(
-				CompletableFuture.failedFuture(
+				StremioFutures.failedFuture(
 						new IllegalArgumentException("Negative playback generation")));
 		long normalized = completed ? 0L : Math.max(position, 0L);
 		long now = System.currentTimeMillis();
@@ -66,14 +68,14 @@ final class StremioProgressStore {
 					if ((failure == null) || stale(failure)) {
 						return CompletableFuture.<Void>completedFuture(null);
 					}
-					return CompletableFuture.<Void>failedFuture(unwrap(failure));
+					return StremioFutures.<Void>failedFuture(unwrap(failure));
 				}).thenCompose(stage -> stage);
 		return StremioFutureBridge.from(write);
 	}
 
 	CompletionStage<Void> write(StremioProgressSnapshot snapshot) {
 		return open(repository.getVideo(snapshot.stableId())).thenCompose(video -> {
-			if (video == null) return CompletableFuture.failedFuture(
+			if (video == null) return StremioFutures.failedFuture(
 					new IllegalStateException("Stremio progress item is unavailable"));
 			return open(repository.putProgress(new StremioProgressRecord(video.videoKey(),
 					snapshot.positionMs(), video.durationMs(), snapshot.completed(),
@@ -92,7 +94,7 @@ final class StremioProgressStore {
 	private CompletionStage<StremioPlaybackOwnership> ownership(
 			String requestedStableId, long generation, long nowMs) {
 		synchronized (lock) {
-			if (closed.getAsBoolean()) return CompletableFuture.failedFuture(
+			if (closed.getAsBoolean()) return StremioFutures.failedFuture(
 					new IllegalStateException("Stremio runtime is closed"));
 			if (requestedStableId.equals(stableId) && (generation == ownershipGeneration) &&
 					(ownership != null)) return ownership;
@@ -116,7 +118,7 @@ final class StremioProgressStore {
 	}
 
 	private <T> CompletableFuture<T> open(CompletableFuture<T> future) {
-		return closed.getAsBoolean() ? CompletableFuture.failedFuture(
+		return closed.getAsBoolean() ? StremioFutures.failedFuture(
 				new IllegalStateException("Stremio runtime is closed")) : future;
 	}
 

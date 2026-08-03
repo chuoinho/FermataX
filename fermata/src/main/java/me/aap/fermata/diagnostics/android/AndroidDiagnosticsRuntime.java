@@ -16,6 +16,7 @@ import android.os.Process;
 import android.os.SystemClock;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -380,7 +381,13 @@ public final class AndroidDiagnosticsRuntime {
 	}
 
 	private void collectPreviousProcessExits() {
-		if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.R) || stopped.get()) return;
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return;
+		collectPreviousProcessExitsApi30();
+	}
+
+	@RequiresApi(Build.VERSION_CODES.R)
+	private void collectPreviousProcessExitsApi30() {
+		if (stopped.get()) return;
 		try {
 			ActivityManager manager =
 					(ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
@@ -423,6 +430,7 @@ public final class AndroidDiagnosticsRuntime {
 		}
 	}
 
+	@RequiresApi(Build.VERSION_CODES.R)
 	private static String exitFingerprint(ApplicationExitInfo info) {
 		String process = info.getProcessName();
 		return info.getTimestamp() + ":" + info.getReason() + ':' + info.getStatus() + ':' +

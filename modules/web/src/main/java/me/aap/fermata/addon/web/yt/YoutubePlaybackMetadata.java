@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import me.aap.utils.net.NetUtils;
+
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -128,7 +130,7 @@ final class YoutubePlaybackMetadata {
 
 	private static String decode(String value) {
 		try {
-			return URLDecoder.decode(value, StandardCharsets.UTF_8);
+			return NetUtils.urlDecode(value);
 		} catch (IllegalArgumentException ex) {
 			return clean(value);
 		}

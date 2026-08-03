@@ -1,5 +1,7 @@
 package me.aap.fermata.media.lib;
 
+import android.annotation.SuppressLint;
+
 import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.content.pm.PackageManager.FEATURE_LEANBACK;
 import static android.graphics.Bitmap.Config.ARGB_8888;
@@ -163,6 +165,9 @@ public class AtvInterface implements Item.ChangeListener {
 		if (p != null) updateProg(p);
 	}
 
+	// PreviewProgram.Builder is the only supported way to publish preview rows; tvprovider
+	// incorrectly marks these public builder setters as library-restricted in this version.
+	@SuppressLint("RestrictedApi")
 	private void updateProg(Prog p) {
 		p.cancelLoading();
 		p.loading = getDescription(p.item).main().onSuccess(d -> {
