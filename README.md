@@ -26,7 +26,9 @@ It brings local media, IPTV and Xtream, Internet Radio, Podcasts, Audiobooks, St
 
 ## Continuous integration
 
-Every pull request targeting `main` and every push to `main` runs the repository's verification pipeline. CI executes the Mobile and Auto unit suites, the `MediaSessionCallback` architecture hotspot guard, Android Lint, and a three-dot `git diff --check` against the pull-request base (or push base). The workflow verifies source and tests only; it does not build, sign, publish, or upload release APKs.
+Every pull request targeting `main` and every push to `main` runs the repository's verification pipeline. CI executes the Mobile and Auto unit suites, architecture boundary guards (hotspot baselines and zero cross-addon dependencies), Android Lint, and a three-dot `git diff --check` against the pull-request base (or push base). The workflow verifies source and tests only; it does not build, sign, publish, or upload release APKs.
+
+Maintainers and coding agents should also read [MASTER_CONTEXT.md](MASTER_CONTEXT.md), the tracked canonical product and architecture context. README remains the concise onboarding and build-status entry point.
 
 ## Highlights
 

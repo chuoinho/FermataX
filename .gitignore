@@ -26,7 +26,6 @@ docs/*
 !docs/package-identity.md
 !docs/stremio/
 !docs/stremio/**
-MASTER_CONTEXT.md
 BUILDING_README_SECTION.md
 codex-*.gradle
 *.iml
