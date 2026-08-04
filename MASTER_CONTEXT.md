@@ -931,6 +931,9 @@ when a new artifact is intentionally designated as the verified snapshot.
   overwrite them without explicit approval.
 - Do not commit build outputs, local secrets, temporary XML dumps, or bulk DHU screenshots
   unless the user explicitly selects them for documentation.
+- Repository-wide source metrics and audits must enumerate tracked files (`git grep` or
+  `git ls-files`) or walk explicit `src/` roots. Do not recursively scan the raw workspace: ignored
+  Gradle/CMake output such as `.cxx/` can otherwise be miscounted as production source.
 
 ## 15. Known Risks and Technical Debt
 
