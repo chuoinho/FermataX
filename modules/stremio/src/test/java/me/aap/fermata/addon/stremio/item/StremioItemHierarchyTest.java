@@ -9,6 +9,8 @@ import static me.aap.fermata.media.net.PlaybackRequestProfile.EngineCapability.P
 
 import android.support.v4.media.MediaMetadataCompat;
 
+import androidx.annotation.NonNull;
+
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +50,12 @@ import me.aap.fermata.addon.stremio.protocol.response.StreamBehaviorHints;
 import me.aap.fermata.addon.stremio.protocol.response.StremioDuration;
 import me.aap.fermata.addon.stremio.protocol.response.StremioStream;
 import me.aap.fermata.media.lib.ExtRoot;
+import me.aap.fermata.media.lib.ExtPlayable;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.PlaybackProgressItem;
+import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.net.PlaybackHeaderResolver;
 import me.aap.fermata.media.net.PlaybackRequestProfile;
 import me.aap.fermata.media.net.PlaybackRequestProfile.HeaderReference;
@@ -320,8 +324,10 @@ public class StremioItemHierarchyTest {
 	}
 
 	@Test
-	public void directAndExportedItemsDelegateSkipToEpisodeNavigation() throws Exception {
+	public void nativeItemUsesStremioAdjacencyButCollectionExportUsesCollectionOrder()
+			throws Exception {
 		ExtRoot root = new ExtRoot("Stremio", null);
+		CollectionRoot collection = new CollectionRoot();
 		FakeGateway gateway = new FakeGateway();
 		StremioDirectPlayableItem current = new StremioDirectPlayableItem(root, gateway,
 				descriptor(request(EPISODE_2), "https://cdn.invalid/current.mp4",
@@ -330,11 +336,17 @@ public class StremioItemHierarchyTest {
 				descriptor(request(EPISODE_10), "https://cdn.invalid/next.mp4",
 						1_000L, 60_000L), 0L);
 		gateway.adjacent = adjacent;
+		PlayableItem exported = current.export("collection:stremio", collection);
+		PlayableItem other = new ExtPlayable("collection:other", collection,
+				current.getResource());
+		collection.children = List.of(exported, other);
 
 		assertSame(adjacent, current.getNextPlayable().get());
 		assertSame(adjacent, current.getPrevPlayable().get());
-		assertSame(adjacent, current.export("favorite", root).getNextPlayable().get());
-		assertEquals(3, gateway.adjacentCalls.get());
+		assertSame(collection, exported.getParent());
+		assertSame(other, exported.getNextPlayable().get());
+		assertSame(current, PlayableItemResolver.unwrap(exported));
+		assertEquals(2, gateway.adjacentCalls.get());
 	}
 
 	@Test
@@ -448,6 +460,35 @@ public class StremioItemHierarchyTest {
 		assertEquals(1, children.size());
 		assertTrue(type.isInstance(children.get(0)));
 		return type.cast(children.get(0));
+	}
+
+	private static final class CollectionRoot extends ExtRoot {
+		private List<Item> children = List.of();
+
+		private CollectionRoot() {
+			super("Collection", null);
+		}
+
+		@NonNull
+		@Override
+		public FutureSupplier<List<Item>> getChildren() {
+			return me.aap.utils.async.Completed.completed(children);
+		}
+
+		@Override
+		public boolean getShufflePref() {
+			return false;
+		}
+
+		@Override
+		public boolean getRepeatPref() {
+			return false;
+		}
+
+		@Override
+		public String getRepeatItemPref() {
+			return null;
+		}
 	}
 
 	private static final class FakeGateway implements StremioItemGateway, PlaybackHeaderResolver {

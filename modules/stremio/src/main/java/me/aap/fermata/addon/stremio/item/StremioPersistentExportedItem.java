@@ -15,6 +15,7 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.PersistentMediaItem;
 import me.aap.fermata.media.lib.PlaybackProgressItem;
+import me.aap.fermata.media.lib.PlaybackPresentationItem;
 import me.aap.fermata.media.net.RemotePlaybackItem;
 import me.aap.fermata.media.net.RemotePlaybackLifecycleItem;
 import me.aap.fermata.media.net.RemotePlaybackRequest;
@@ -22,7 +23,7 @@ import me.aap.utils.async.FutureSupplier;
 
 /** Collection projection that cannot rewrite a stable Stremio ID back to a stream ID. */
 class StremioPersistentExportedItem extends ExtPlayable
-		implements PersistentMediaItem, PlaybackProgressItem {
+		implements PersistentMediaItem, PlaybackProgressItem, PlaybackPresentationItem {
 	private final PlayableItem original;
 	private final String persistentId;
 
@@ -54,18 +55,6 @@ class StremioPersistentExportedItem extends ExtPlayable
 	@Override
 	public boolean isCacheable() {
 		return false;
-	}
-
-	@NonNull
-	@Override
-	public BrowsableItem getParent() {
-		return original.getParent();
-	}
-
-	@NonNull
-	@Override
-	public BrowsableItem getRoot() {
-		return original.getRoot();
 	}
 
 	@NonNull
@@ -116,18 +105,6 @@ class StremioPersistentExportedItem extends ExtPlayable
 
 	@NonNull
 	@Override
-	public FutureSupplier<PlayableItem> getPrevPlayable() {
-		return original.getPrevPlayable();
-	}
-
-	@NonNull
-	@Override
-	public FutureSupplier<PlayableItem> getNextPlayable() {
-		return original.getNextPlayable();
-	}
-
-	@NonNull
-	@Override
 	public Uri getLocation() {
 		return original.getLocation();
 	}
@@ -164,6 +141,12 @@ class StremioPersistentExportedItem extends ExtPlayable
 	@Override
 	public String getPersistentId() {
 		return persistentId;
+	}
+
+	@NonNull
+	@Override
+	public PlayableItem getCanonicalPlaybackItem() {
+		return original;
 	}
 
 	@NonNull
