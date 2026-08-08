@@ -57,6 +57,27 @@ public class YoutubeFullscreenCoordinatorTest {
 	}
 
 	@Test
+	public void nextVideoKeepsFullscreenAndBackStillExits() {
+		FakeHost host = new FakeHost();
+		host.browserRequestSupported = false;
+		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);
+
+		coordinator.requestAutoEntry(PAGE, MEDIA);
+		host.runPosted();
+		coordinator.requestAutoEntry("https://m.youtube.com/watch?v=video-2",
+				"https://media.example/stream-2");
+		host.runPosted();
+
+		assertEquals(YoutubeFullscreenCoordinator.State.APP_FULLSCREEN,
+				coordinator.getState());
+		assertTrue(host.appVideoMode);
+		assertEquals(0, host.leavePresentationCount);
+		assertTrue(coordinator.onPlayerBack(true, true, false));
+		assertFalse(host.appVideoMode);
+		assertEquals(1, host.leavePresentationCount);
+	}
+
+	@Test
 	public void backInvalidatesEntryBeforePostedRequestCanRun() {
 		FakeHost host = new FakeHost();
 		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);

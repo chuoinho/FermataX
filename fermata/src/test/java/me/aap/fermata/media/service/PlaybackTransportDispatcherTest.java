@@ -14,7 +14,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 
 public class PlaybackTransportDispatcherTest {
 	@Test
-	public void dispatchesOnlyToTheCurrentOwningEngine() {
+	public void nativeYoutubeTransportIsConsumedOnlyByTheCurrentOwningEngine() {
 		AtomicInteger prepares = new AtomicInteger();
 		MediaEngine owner = proxy(MediaEngine.class, (method, args) -> {
 			if (method.equals("prepare")) prepares.incrementAndGet();
@@ -29,6 +29,18 @@ public class PlaybackTransportDispatcherTest {
 		assertTrue(PlaybackTransportDispatcher.dispatch(command, owner, replacement));
 		assertEquals(1, prepares.get());
 		assertFalse(PlaybackTransportDispatcher.dispatch(item(false), owner, owner));
+	}
+
+	@Test
+	public void collectionCandidateDoesNotDispatchYoutubeNativeTransport() {
+		AtomicInteger prepares = new AtomicInteger();
+		MediaEngine youtube = proxy(MediaEngine.class, (method, args) -> {
+			if (method.equals("prepare")) prepares.incrementAndGet();
+			return defaultValue(method);
+		});
+
+		assertFalse(PlaybackTransportDispatcher.dispatch(item(false), youtube, youtube));
+		assertEquals(0, prepares.get());
 	}
 
 	private static PlayableItem item(boolean transport) {

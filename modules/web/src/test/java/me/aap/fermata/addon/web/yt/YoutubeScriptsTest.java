@@ -43,4 +43,17 @@ public class YoutubeScriptsTest {
 		assertTrue(script.contains("setPlaybackQuality"));
 		assertTrue(script.contains("})(3)"));
 	}
+
+	@Test
+	public void previousAndNextKeepPlayerApiDesktopAndMobileFallbacks() {
+		String next = YoutubeScripts.prevNext(true);
+		String previous = YoutubeScripts.prevNext(false);
+
+		assertTrue(next.contains("nextVideo"));
+		assertTrue(previous.contains("previousVideo"));
+		assertTrue(next.contains(".ytp-next-button"));
+		assertTrue(previous.contains(".ytp-prev-button"));
+		assertTrue(next.contains("player-middle-controls-prev-next-button"));
+		assertTrue(previous.contains("player-middle-controls-prev-next-button"));
+	}
 }
