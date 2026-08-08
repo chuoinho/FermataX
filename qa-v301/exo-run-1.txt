@@ -1,0 +1,1162 @@
+--------- beginning of main
+08-08 17:32:49.832  1162  2541 D BufferPoolAccessor2.0: bufferpool2 0xe7980148 : 5(1920000 size) total buffers - 4(1536000 size) used buffers - 62336/62348 (recycle/alloc) - 21/62344 (fetch/transfer)
+08-08 17:32:49.832  1162  2541 D BufferPoolAccessor2.0: evictor expired: 1, evicted: 1
+--------- beginning of kernel
+08-08 17:32:49.706     0     0 I logd    : logdr: UID=2000 GID=2000 PID=9028 b tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+08-08 17:32:50.500  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:32:50.500  4017 21155 D LOG_TGA : ]
+08-08 17:32:50.502  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:32:50.502  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:50.503  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:32:50.503  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:50.503  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:32:50.504  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:32:50.504  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:32:50.509  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:32:50.509  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:32:50.509  4017 21156 D LOG_TGA : ]
+08-08 17:32:50.544  1115  1180 D audio_hw_primary: out_standby: enter: stream (0xe56c0010) usecase(1: low-latency-playback)
+08-08 17:32:50.409     0     0 I         : max98927_stream_mute--- stream 0, mute 1
+08-08 17:32:50.409     0     0 I         : max98927_stream_mute ------ disable max98927
+08-08 17:32:50.438     0     0 I         : max98927_feedforward_event---feedforward event 4
+08-08 17:32:50.438     0     0 I         : max98927_feedforward_event---feedforward event 8
+08-08 17:32:50.582  1115  1180 D audio_hw_primary: disable_audio_route: reset and update mixer path: low-latency-playback
+08-08 17:32:50.585  1115  1180 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(0) new_snd_devices(0)
+08-08 17:32:50.585  1115  1180 I msm8974_platform: platform_get_custom_mtmx_params: no matching param with id 0 ip_ch 2 op_ch 2 uc_id 1 snd_dev 2
+08-08 17:32:50.585  1115  1180 D hardware_info: hw_info_append_hw_type : device_name = speaker
+08-08 17:32:50.585  1115  1180 D audio_hw_primary: disable_snd_device: snd_device(2: speaker)
+08-08 17:32:50.585  1115  1180 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(0) new_snd_devices(0)
+08-08 17:32:50.587  1115  1180 D audio_hw_primary: out_standby: exit
+--------- beginning of system
+08-08 17:32:50.588  1790  2370 V PowerManagerService: FrozenStateChangeCallback was already unregistered
+08-08 17:32:50.984  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:32:50.984  1790  2442 D WifiDataStall: tx tput in kbps: 383171
+08-08 17:32:50.984  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:32:50.984  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:32:50.985  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:32:50.985  1790  2442 D WifiDataStall: L2 txTputKbps: 395400, rxTputKbps: 407628, L3 txTputKbps: 80, rxTputKbps: 4673, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:32:50.986  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:32:50.986  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:32:50.986  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:32:50.986  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:32:50.991  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:32:50.991  1790  2442 D WifiScoreCard: txRate: 62 txSpeed: 433
+08-08 17:32:50.991  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:32:50.991  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=58.5, 2.8, 0.0 rx=182.3 bcn=350863 [on:1054 tx:12 rx:22 period:3026] from screen [on:1420193 period:11348941] score=79
+08-08 17:32:51.587     0     0 I binder  : 9036:9036 ioctl 40046210 7fc9403154 returned -22
+08-08 17:32:51.751  1790  4107 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 117
+08-08 17:32:51.753  1115  6084 D audio_hw_primary: start_output_stream: enter: stream(0xe56c0010)usecase(1: low-latency-playback) devices(0x2) is_haptic_usecase(0)
+08-08 17:32:51.753  1115  6084 D audio_hw_primary: select_devices for use case (low-latency-playback)
+08-08 17:32:51.753  1115  6084 I msm8974_platform: platform_check_and_set_codec_backend_cfg:becf: afe: bitwidth 16, samplerate 48000 channels 2, backend_idx 0 usecase = 1 device (speaker)
+08-08 17:32:51.753  1115  6084 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(1) new_snd_devices(0)
+08-08 17:32:51.753  1115  6084 I msm8974_platform: platform_check_and_set_codec_backend_cfg: new_snd_devices[0] is 2
+08-08 17:32:51.753  1115  6084 I msm8974_platform: platform_check_codec_backend_cfg:becf: afe: bitwidth 16, samplerate 48000 channels 2, backend_idx 0 usecase = 1 device (speaker)
+08-08 17:32:51.755  1115  6084 D audio_hw_extn: audio_extn_enable_hifi_filter: mixer_value set 0
+08-08 17:32:51.755  1115  6084 D msm8974_platform: platform_check_codec_backend_cfg:becf: updated afe: bitwidth 16, samplerate 48000 channels 2,backend_idx 0 usecase = 1 device (speaker)
+08-08 17:32:51.755  1115  6084 D msm8974_platform: platform_check_codec_backend_cfg:becf: afe: playback on codec device not supporting native playback set default Sample Rate(48k)
+08-08 17:32:51.755  1115  6084 I msm8974_platform: platform_check_codec_backend_cfg:becf: afe: Codec selected backend: 0 updated bit width: 16 and sample rate: 48000
+08-08 17:32:51.756  1115  6084 D audio_hw_primary: check_usecases_codec_backend:becf: force routing 0
+08-08 17:32:51.756  1115  6084 E msm8974_platform: platform_check_backends_match: Invalid snd_device = 
+08-08 17:32:51.756  1115  6084 D audio_hw_primary: check_usecases_codec_backend:becf: (78) check_usecases curr device: speaker, usecase device: backends match 0
+08-08 17:32:51.756  1115  6084 E msm8974_platform: platform_check_backends_match: Invalid snd_device = 
+08-08 17:32:51.756  1115  6084 D audio_hw_primary: check_usecases_codec_backend:becf: (78) check_usecases curr device: speaker, usecase device: backends match 0
+08-08 17:32:51.756  1115  6084 D audio_hw_primary: check_usecases_codec_backend:becf: check_usecases num.of Usecases to switch 0
+08-08 17:32:51.756  1115  6084 D hardware_info: hw_info_append_hw_type : device_name = speaker
+08-08 17:32:51.756  1115  6084 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(0) new_snd_devices(0)
+08-08 17:32:51.756  1115  6084 D audio_hw_primary: enable_snd_device: snd_device(2: speaker)
+08-08 17:32:51.756  1115  6084 D msm8974_platform: platform_get_island_cfg_on_device:island cfg status on snd_device = (speaker 0)
+08-08 17:32:51.756  1115  6084 D audio_route: Apply path: speaker
+08-08 17:32:51.758  1115  6084 I audio_hw_utils: audio_extn_utils_update_stream_output_app_type_cfg Allowing 24 and above bits playback on speaker ONLY at default sampling rate
+08-08 17:32:51.758  1115  6084 D audio_hw_primary: audio_is_true_native_stream_active:napb: (0) (low-latency-playback)id (1) sr 48000 bw (16) device speaker
+08-08 17:32:51.758  1115  6084 D audio_hw_utils: audio_extn_utils_send_app_type_cfg: usecase->out_snd_device speaker
+08-08 17:32:51.758  1115  6084 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(0) new_snd_devices(0)
+08-08 17:32:51.759  1115  6084 D audio_hw_utils: audio_extn_btsco_get_sample_rate:Not a BT SCO device, need not update sampling rate
+08-08 17:32:51.759  1115  6084 I audio_hw_utils: send_app_type_cfg_for_device PLAYBACK app_type 69937, acdb_dev_id 10011, sample_rate 48000, snd_device_be_idx 43
+08-08 17:32:51.760  1115  6084 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(1) new_snd_devices(0)
+08-08 17:32:51.760  1115  6084 D audio_hw_utils: audio_extn_btsco_get_sample_rate:Not a BT SCO device, need not update sampling rate
+08-08 17:32:51.760  1115  6084 D ACDB-LOADER: ACDB -> send_audio_cal, acdb_id = 10011, path = 0, app id = 0x11131, sample rate = 48000, afe_sample_rate = 48000
+08-08 17:32:51.760  1115  6084 D ACDB-LOADER: ACDB -> send_asm_topology
+08-08 17:32:51.760  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_STREAM_TOPOLOGY_ID
+08-08 17:32:51.760  1115  6084 D ACDB-LOADER: ACDB -> send_adm_topology
+08-08 17:32:51.760  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_COMMON_TOPOLOGY_ID
+08-08 17:32:51.760  1115  6084 D ACDB-LOADER: ACDB -> send_audtable
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_INSTANCE_COMMON_TABLE_SIZE
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_INSTANCE_COMMON_TABLE
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> AUDIO_SET_AUDPROC_CAL cal_type[11] acdb_id[10011] app_type[69937]
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> send_audvoltable
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_INSTANCE_GAIN_DEP_STEP_TABLE_SIZE
+08-08 17:32:51.761  1115  6084 D android.hardware.audio.service: Failed to fetch the lookup information of the device 0000271B 
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: Error: ACDB_CMD_GET_AUDPROC_INSTANCE_GAIN_DEP_STEP_TABLE_SIZE Returned = -19
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_INSTANCE_GAIN_DEP_STEP_TABLE, vol index 0
+08-08 17:32:51.761  1115  6084 D android.hardware.audio.service: Failed to fetch the lookup information of the device 0000271B 
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: Error: ACDB AudProc vol returned = -19
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> AUDIO_SET_VOL_CAL cal type = 12
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_INSTANCE_STREAM_TABLE_SIZE
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> send_audstrmtable
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AUDPROC_INSTANCE_STREAM_TABLE
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> audstrm_cal->cal_type.cal_data.cal_size = 20
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> send_afe_topology
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_TOPOLOGY_ID
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> GET_AFE_TOPOLOGY_ID for adcd_id 10011, Topology Id 10001061
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> send_afe_cal
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_INSTANCE_COMMON_TABLE_SIZE
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_CMD_GET_AFE_INSTANCE_COMMON_TABLE
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> AUDIO_SET_AFE_CAL cal_type[16] acdb_id[10011]
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> send_hw_delay : acdb_id = 10011 path = 0
+08-08 17:32:51.761  1115  6084 D ACDB-LOADER: ACDB -> ACDB_AVSYNC_INFO: ACDB_CMD_GET_DEVICE_PROPERTY
+08-08 17:32:51.761  1115  6084 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(0) new_snd_devices(0)
+08-08 17:32:51.761  1115  6084 I msm8974_platform: platform_get_custom_mtmx_params: no matching param with id 0 ip_ch 2 op_ch 2 uc_id 1 snd_dev 2
+08-08 17:32:51.761  1115  6084 D audio_hw_primary: enable_audio_route: apply mixer and update path: low-latency-playback
+08-08 17:32:51.761  1115  6084 D audio_route: Apply path: low-latency-playback
+08-08 17:32:51.764  1115  6084 D audio_hw_primary: select_devices: done
+08-08 17:32:51.632     0     0 I max98937 max98927_dai_hw_params: format supported
+08-08 17:32:51.632     0     0 I max98927_dai_hw_params: Playback stream, format: 32, ch: 1, sampling_rate: 48000
+08-08 17:32:51.632     0     0 I max98927_set_clock: BLCK fix to 64
+08-08 17:32:51.634     0     0 I         : max98927_feedforward_event---feedforward event 1
+08-08 17:32:51.634     0     0 I         : max98927_feedforward_event---feedforward event 2
+08-08 17:32:51.636     0     0 E afe_callback: cmd = 0x100ef returned error = 0x2
+08-08 17:32:51.636     0     0 E afe_apr_send_pkt: DSP returned error[ADSP_EBADPARAM]
+08-08 17:32:51.636     0     0 E afe_send_cal_block: AFE cal for port 0x1000 failed -22
+08-08 17:32:51.645     0     0 I         : max98927_stream_mute--- stream 0, mute 0
+08-08 17:32:51.647     0     0 E i2c_geni 4a84000.i2c: i2c error :-107
+08-08 17:32:51.647     0     0 E max98927_regmap_write: reg:0x600, val: 0x54, retry(1), rc = -107
+08-08 17:32:51.672     0     0 E q6asm_callback: cmd = 0x10da1 returned error = 0x12
+08-08 17:32:51.672     0     0 E q6asm_set_pp_params: DSP returned error[ADSP_ENEEDMORE]
+08-08 17:32:51.672     0     0 E q6asm_send_cal: audio audstrm cal send failed
+08-08 17:32:51.684     0     0 E adm_callback: cmd = 0x10328 returned error = 0x12
+08-08 17:32:51.684     0     0 E adm_set_pp_params: DSP returned error[ADSP_ENEEDMORE]
+08-08 17:32:51.822  1115  6084 D msm8974_platform: platform_set_channel_map mixer_ctl_name:Playback Channel Map13
+08-08 17:32:51.823  1115  6084 D msm8974_platform: platform_set_channel_map: set mapping(1 2 0 0 0 0 0 0) for channel:2
+08-08 17:32:51.824  1115  6084 D audio_hw_primary: start_output_stream: exit
+08-08 17:32:51.824  1115  6084 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(0) new_snd_devices(0)
+08-08 17:32:51.824  1115  6084 I msm8974_platform: platform_get_custom_mtmx_params: no matching param with id 0 ip_ch 2 op_ch 2 uc_id 1 snd_dev 2
+08-08 17:32:52.502  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:32:52.502  4017 21155 D LOG_TGA : ]
+08-08 17:32:52.503  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:32:52.504  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:52.505  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:32:52.505  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:52.505  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:32:52.505  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:32:52.505  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:32:52.515  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:32:52.515  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:32:52.515  4017 21157 D LOG_TGA : ]
+08-08 17:32:53.026 27652  4818 I CAR.AUDIO.PERF: Estimated buffer list in the last 10 seconds for stream type AUDIO_STREAM_MEDIA is [1.9765625, 1.4609375, 1.9453125, 1.4296875, 1.890625, 1.375, 1.859375, 1.3203125, 1.8046875, 1.2890625, 1.7734375, 1.234375, 1.71875, 1.203125, 1.6875, 1.1484375, 1.6328125, 1.1171875, 1.6015625, 1.0859375, 1.546875, 2.03125, 1.515625, 1.9765625, 1.4609375, 1.9453125, 1.40625, 1.890625, 1.375, 1.859375, 1.34375, 1.8046875, 1.2890625, 1.7734375, 1.2578125, 1.7421875, 1.2265625, 1.6875, 1.171875, 1.65625, 1.140625, 1.625, 1.0859375, 1.5703125, 1.0546875, 1.5390625, 2.0234375, 1.484375, 1.96875, 1.453125, 1.9375, 1.3984375, 1.8828125, 1.3671875, 1.828125, 1.3125, 1.796875, 1.28125, 1.7421875, 1.2265625, 1.7109375, 1.1953125, 1.6796875, 1.1640625, 1.625, 1.109375]
+08-08 17:32:54.003  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:32:54.003  1790  2442 D WifiDataStall: tx tput in kbps: 395400
+08-08 17:32:54.003  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:32:54.003  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:32:54.003  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:32:54.003  1790  2442 D WifiDataStall: L2 txTputKbps: 366866, rxTputKbps: 407628, L3 txTputKbps: 75, rxTputKbps: 4507, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:32:54.004  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:32:54.004  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:32:54.004  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:32:54.004  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:32:54.008  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:32:54.008  1790  2442 D WifiScoreCard: txRate: 64 txSpeed: 433
+08-08 17:32:54.009  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:32:54.009  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=58.7, 5.2, 0.0 rx=193.9 bcn=350877 [on:895 tx:13 rx:25 period:3018] from screen [on:1421088 period:11351959] score=79
+08-08 17:32:54.059  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62344)/Done(62344)| Work-Rate: Q(0.0/s Avg=24.1/s) Done(0.000/s Avg=24.067/s)| Stream: 42.43fps 2.5Kbps| Pending(0) i/p-done(0)
+08-08 17:32:54.351 27652  4371 I CAR.AUDIO.MEDIA: Latency stats for stream MEDIA in the last 234 pcm frames: timeSpentInCaptureThread: [45, 42.56] ms, timeSpentInTxQ: [3, 0.16] ms, timeSpentWaitingForAckAndEnqueuingFrames: [1, 0.16] ms, audioPipelineLatency: [46, 42.88] ms
+08-08 17:32:54.351 27652  4359 I CAR.AUDIO.STATS: Time spent in sender lib for stream MEDIA in the last 234 frames: avg: 0.84 ms, max: 3 ms
+08-08 17:32:54.309     0     0 W healthd : battery l=68 v=4050 t=38.2 h=2 st=2 c=247039 fc=3984000 cc=8 chg=u
+08-08 17:32:54.512  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:32:54.512  4017 21155 D LOG_TGA : ]
+08-08 17:32:54.514  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:32:54.514  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:54.515  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:32:54.515  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:54.515  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:32:54.516  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:32:54.516  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:32:54.520  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:32:54.520  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:32:54.520  4017 21157 D LOG_TGA : ]
+08-08 17:32:54.707     0     0 I binder  : 9046:9046 ioctl 40046210 7fe053f0f4 returned -22
+08-08 17:32:54.872  1790  4107 W AS.PlaybackActivityMon: No piid assigned for invalid/internal port id 117
+08-08 17:32:56.520  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:32:56.520  4017 21155 D LOG_TGA : ]
+08-08 17:32:56.522  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:32:56.522  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:56.523  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:32:56.523  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:56.524  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:32:56.524  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:32:56.524  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:32:56.527  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:32:56.527  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:32:56.527  4017 21156 D LOG_TGA : ]
+08-08 17:32:57.024  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:32:57.024  1790  2442 D WifiDataStall: tx tput in kbps: 366866
+08-08 17:32:57.025  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:32:57.025  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:32:57.025  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:32:57.025  1790  2442 D WifiDataStall: L2 txTputKbps: 391323, rxTputKbps: 407628, L3 txTputKbps: 46, rxTputKbps: 2456, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:32:57.026  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:32:57.026  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:32:57.026  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:32:57.026  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:32:57.030  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:32:57.030  1790  2442 D WifiScoreCard: txRate: 48 txSpeed: 433
+08-08 17:32:57.030  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:32:57.030  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=45.0, 2.9, 0.0 rx=140.3 bcn=350889 [on:795 tx:8 rx:17 period:3021] from screen [on:1421883 period:11354980] score=79
+08-08 17:32:57.228 27652  4365 I CAR.AUDIO.STATS: MEDIA bitrate in the last 10 seconds: [1509,1509,1574,1509,1574,1509,1574,1509,1509,1574] kbps
+08-08 17:32:57.232 27652  4365 I CAR.AUDIO.STATS: Acks from MEDIA received in the last 10 seconds with avg latency: [23:4ms,23:3ms,24:4ms,23:5ms,24:4ms,23:4ms,24:4ms,23:5ms,24:3ms,23:4ms]
+08-08 17:32:57.970  1115  1180 D audio_hw_primary: out_standby: enter: stream (0xe56c0010) usecase(1: low-latency-playback)
+08-08 17:32:57.835     0     0 I         : max98927_stream_mute--- stream 0, mute 1
+08-08 17:32:57.835     0     0 I         : max98927_stream_mute ------ disable max98927
+08-08 17:32:57.864     0     0 I         : max98927_feedforward_event---feedforward event 4
+08-08 17:32:57.864     0     0 I         : max98927_feedforward_event---feedforward event 8
+08-08 17:32:58.007  1115  1180 D audio_hw_primary: disable_audio_route: reset and update mixer path: low-latency-playback
+08-08 17:32:58.010  1115  1180 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(0) new_snd_devices(0)
+08-08 17:32:58.010  1115  1180 I msm8974_platform: platform_get_custom_mtmx_params: no matching param with id 0 ip_ch 2 op_ch 2 uc_id 1 snd_dev 2
+08-08 17:32:58.010  1115  1180 D hardware_info: hw_info_append_hw_type : device_name = speaker
+08-08 17:32:58.010  1115  1180 D audio_hw_primary: disable_snd_device: snd_device(2: speaker)
+08-08 17:32:58.010  1115  1180 D msm8974_platform: platform_split_snd_device: snd_device(2) num devices(0) new_snd_devices(0)
+08-08 17:32:58.012  1115  1180 D audio_hw_primary: out_standby: exit
+08-08 17:32:58.013  1790  2370 V PowerManagerService: FrozenStateChangeCallback was already unregistered
+08-08 17:32:58.522  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:32:58.522  4017 21155 D LOG_TGA : ]
+08-08 17:32:58.524  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:32:58.524  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:58.525  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:32:58.525  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:32:58.525  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:32:58.525  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:32:58.525  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:32:58.532  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:32:58.532  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:32:58.532  4017 21157 D LOG_TGA : ]
+08-08 17:32:59.059  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62344)/Done(62344)| Work-Rate: Q(0.0/s Avg=24.0/s) Done(0.000/s Avg=24.021/s)| Stream: 42.43fps 2.5Kbps| Pending(0) i/p-done(0)
+08-08 17:32:59.669  4017  4017 W pool-16-thread-: type=1400 audit(0.0:5115): avc:  denied  { search } for  name="/" dev="cgroup2" ino=1 scontext=u:r:untrusted_app:s0:c58,c256,c512,c768 tcontext=u:object_r:cgroup_v2:s0 tclass=dir permissive=0 app=com.mcu.visionlook
+08-08 17:32:59.669  4017  4017 W pool-16-thread-: type=1400 audit(0.0:5116): avc:  denied  { search } for  name="/" dev="cgroup2" ino=1 scontext=u:r:untrusted_app:s0:c58,c256,c512,c768 tcontext=u:object_r:cgroup_v2:s0 tclass=dir permissive=0 app=com.mcu.visionlook
+08-08 17:32:59.833 26003 26201 I PlayCommon: [87] Preparing logs for uploading
+08-08 17:32:59.838  1790  2491 D BackgroundInstallControlService: Package event received: 0
+08-08 17:32:59.855 13951 13963 E AuthPII : [RequestTokenManager] getToken() -> BAD_AUTHENTICATION. App: com.android.vending, Service: oauth2:https://www.googleapis.com/auth/googleplay
+08-08 17:32:59.855 13951 13963 E AuthPII : blbw: Long live credential not available.
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at ainv.a(:com.google.android.gms@262932035@26.29.32 (260400-956293556):1386)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at aioc.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):26)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at aioa.a(:com.google.android.gms@262932035@26.29.32 (260400-956293556):626)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at ainz.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):153)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at abfa.d(:com.google.android.gms@262932035@26.29.32 (260400-956293556):115)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at aiho.getAuthToken(:com.google.android.gms@262932035@26.29.32 (260400-956293556):408)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:254)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at cvhq.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):12)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at cftl.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):169)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.os.Binder.execTransactInternal(Binder.java:1478)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.os.Binder.execTransact(Binder.java:1418)
+08-08 17:32:59.855 13951 13963 E AuthPII : Message is Long live credential not available.
+08-08 17:32:59.855 13951 13963 E AuthPII : blbw: Long live credential not available.
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at ainv.a(:com.google.android.gms@262932035@26.29.32 (260400-956293556):1386)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at aioc.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):26)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at aioa.a(:com.google.android.gms@262932035@26.29.32 (260400-956293556):626)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at ainz.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):153)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at abfa.d(:com.google.android.gms@262932035@26.29.32 (260400-956293556):115)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at aiho.getAuthToken(:com.google.android.gms@262932035@26.29.32 (260400-956293556):408)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:254)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at cvhq.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):12)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at cftl.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):169)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.os.Binder.execTransactInternal(Binder.java:1478)
+08-08 17:32:59.855 13951 13963 E AuthPII : 	at android.os.Binder.execTransact(Binder.java:1418)
+08-08 17:32:59.872 13951 13963 I Auth    : [GetToken] GetToken failed for app=com.android.vending with userRecoverable status: BadAuthentication  [CONTEXT service_id=343 ]
+08-08 17:32:59.872 13951 13963 W Auth    : [ChimeraGetToken] exception while trying to fetch auth tokens for app=com.google.android.gms, scope=oauth2:https://www.googleapis.com/auth/googleplay [CONTEXT service_id=153 ]
+08-08 17:32:59.872 13951 13963 W Auth    : ainu: GetToken failed with status code and recovery intent: BadAuthentication
+08-08 17:32:59.872 13951 13963 W Auth    : 	at ainz.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):350)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at abfa.d(:com.google.android.gms@262932035@26.29.32 (260400-956293556):115)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at aiho.getAuthToken(:com.google.android.gms@262932035@26.29.32 (260400-956293556):408)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:254)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at cvhq.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):12)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at cftl.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):169)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at android.os.Binder.execTransactInternal(Binder.java:1478)
+08-08 17:32:59.872 13951 13963 W Auth    : 	at android.os.Binder.execTransact(Binder.java:1418)
+08-08 17:32:59.872 13951 13963 W GLSActivity: [GmsAccountAuthenticatorImpl] error status while fetching token:BadAuthentication
+08-08 17:32:59.878 26003 26201 W PlayCommon: [87] Deferring log upload because couldn't retrieve auth token
+08-08 17:32:59.957  9053  9053 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: media.audio_flinger
+08-08 17:32:59.821     0     0 I binder  : 9053:9053 ioctl 40046210 7fd95974f4 returned -22
+08-08 17:32:59.966  1115  8693 W offload_effect_bundle: effect_command invalid command 21
+08-08 17:32:59.966  1115  8693 W EffectHAL: Effect 0xe61bdcd0 command DUMP error: Invalid argument
+08-08 17:32:59.966  1115  8693 W offload_effect_bundle: effect_command invalid command 21
+08-08 17:32:59.966  1115  8693 W EffectHAL: Effect 0xe61b6ed0 command DUMP error: Invalid argument
+08-08 17:32:59.966  1115  8693 W EffectLE: LE_command invalid command 21
+08-08 17:32:59.966  1115  8693 W EffectHAL: Effect 0xe61bc8b0 command DUMP error: Invalid argument
+08-08 17:32:59.966  1115  8693 W volume_listener: volume_listener_command invalid command 21
+08-08 17:32:59.966  1115  8693 W EffectHAL: Effect 0xe61bda90 command DUMP error: Function not implemented
+08-08 17:32:59.967  1115  8693 W EffectDP: DP_command invalid command 21
+08-08 17:32:59.967  1115  8693 W EffectHAL: Effect 0xe61bc0b0 command DUMP error: Invalid argument
+08-08 17:33:00.039  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:00.039  1790  2442 D WifiDataStall: tx tput in kbps: 391323
+08-08 17:33:00.039  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:00.040  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:00.040  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:00.040  1790  2442 D WifiDataStall: L2 txTputKbps: 375018, rxTputKbps: 407628, L3 txTputKbps: 74, rxTputKbps: 4717, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:00.041  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:00.041  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:00.041  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:00.041  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:00.046  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:00.046  1790  2442 D WifiScoreCard: txRate: 61 txSpeed: 433
+08-08 17:33:00.047  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:33:00.047  1162  4460 I QC2Buf  : Buffer 0xea5c2c90 imported as 0xea5c3490
+08-08 17:33:00.047  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=56.1, 4.8, 0.0 rx=184.1 bcn=350902 [on:667 tx:18 rx:35 period:3017] from screen [on:1422550 period:11357997] score=79
+08-08 17:33:00.047  1162  4460 I QC2Buf  : Buffer 0xea5c3490 imported as 0xea5c2c90
+08-08 17:33:00.048  1162  4460 I QC2Buf  : Buffer 0xea5c1c10 imported as 0xea5c1210
+08-08 17:33:00.050  1162  4501 D BufferPoolAccessor2.0: bufferpool2 0xe7980148 : 5(1920000 size) total buffers - 5(1920000 size) used buffers - 62336/62349 (recycle/alloc) - 21/62344 (fetch/transfer)
+08-08 17:33:00.061 27652  4459 D PipelineWatcher: onInputBufferReleased: frameIndex not found (62344); ignored
+08-08 17:33:00.199  9058  9058 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: SurfaceFlingerAIDL
+08-08 17:33:00.063     0     0 I binder  : 9058:9058 ioctl 40046210 7fce55b974 returned -22
+08-08 17:33:00.200  9058  9058 W libbinder.BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+08-08 17:33:00.200  9058  9058 W libbinder.ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+08-08 17:33:00.075     0     0 I servicemanager: Caller(pid=9058,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+08-08 17:33:00.076     0     0 I binder  : 9058:9059 ioctl 40046210 7a2d2be6d4 returned -22
+08-08 17:33:00.232  9058  9059 I Gralloc4: Adding additional valid usage bits: 0x8202000
+08-08 17:33:00.098     0     0 I servicemanager: Caller(pid=9058,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+08-08 17:33:00.531  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:00.531  4017 21155 D LOG_TGA : ]
+08-08 17:33:00.534  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:00.534  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:00.535  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:00.535  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:00.535  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:00.535  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:00.535  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:00.545  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:00.545  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:00.545  4017 21157 D LOG_TGA : ]
+08-08 17:33:02.542  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:02.542  4017 21155 D LOG_TGA : ]
+08-08 17:33:02.545  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:02.545  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:02.547  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:02.547  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:02.548  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:02.548  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:02.548  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:02.416     0     0 W healthd : battery l=68 v=4045 t=38.3 h=2 st=2 c=252075 fc=3984000 cc=8 chg=u
+08-08 17:33:02.552  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:02.552  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:02.552  4017 21156 D LOG_TGA : ]
+08-08 17:33:02.947 27652  4818 I CAR.AUDIO.PERF: Estimated buffer list in the last 10 seconds for stream type AUDIO_STREAM_MEDIA is [1.5703125, 1.0546875, 1.515625, 2.0, 1.484375, 1.96875, 1.4296875, 1.9140625, 1.3984375, 1.8828125, 1.34375, 1.828125, 1.3125, 1.796875, 1.28125, 1.7421875, 1.2265625, 1.7109375, 1.1953125, 1.6796875, 1.140625, 1.625, 1.109375, 1.59375, 1.078125, 1.5390625, 2.0234375, 1.5078125, 1.9921875, 1.453125, 1.9375, 1.421875, 1.90625, 1.390625, 1.8515625, 1.3125, 1.796875, 1.2578125, 1.7421875, 1.2265625, 1.6875, 1.171875, 1.65625, 1.1171875, 1.6015625, 1.0859375, 1.546875, 1.03125, 1.515625, 2.0, 1.4609375, 1.9453125, 1.4296875, 1.9140625, 1.375, 1.8359375, 1.3203125, 1.8046875, 1.265625, 1.75, 1.2109375, 1.6953125, 1.15625, 1.640625, 1.125, 1.5859375]
+08-08 17:33:03.064  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:03.064  1790  2442 D WifiDataStall: tx tput in kbps: 375018
+08-08 17:33:03.064  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:03.064  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:03.065  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:03.065  1790  2442 D WifiDataStall: L2 txTputKbps: 391323, rxTputKbps: 407628, L3 txTputKbps: 33, rxTputKbps: 2284, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:03.065  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:03.065  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:03.065  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:03.065  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:03.070  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:03.070  1790  2442 D WifiScoreCard: txRate: 42 txSpeed: 433
+08-08 17:33:03.070  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:33:03.071  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=38.4, 2.6, 0.0 rx=131.3 bcn=350917 [on:1066 tx:6 rx:77 period:3024] from screen [on:1423616 period:11361021] score=79
+08-08 17:33:03.659  1790  2442 D WifiNetworkSelector: Current connected network: 4
+08-08 17:33:03.660  1790  2442 V WifiConnectivityManager: No partial scan because firmware roaming is supported.
+08-08 17:33:03.660  1790  2442 V WifiConnectivityManager: schedulePeriodicScanTimer intervalMs 20000
+08-08 17:33:04.060  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62345)/Done(62345)| Work-Rate: Q(0.2/s Avg=24.0/s) Done(0.200/s Avg=23.975/s)| Stream: 42.43fps 2.5Kbps| Pending(0) i/p-done(0)
+08-08 17:33:04.335 27652  4371 I CAR.AUDIO.MEDIA: Latency stats for stream MEDIA in the last 234 pcm frames: timeSpentInCaptureThread: [44, 42.56] ms, timeSpentInTxQ: [1, 0.18] ms, timeSpentWaitingForAckAndEnqueuingFrames: [1, 0.18] ms, audioPipelineLatency: [45, 42.92] ms
+08-08 17:33:04.336 27652  4359 I CAR.AUDIO.STATS: Time spent in sender lib for stream MEDIA in the last 234 frames: avg: 0.85 ms, max: 2 ms
+08-08 17:33:04.428 27652  4358 I CAR.GAL.VIDEO.LITE: Input Focus Gained
+08-08 17:33:04.432  4522  4522 W CAR.PROJECTION.PRES: me.app.fermataX.auto/me.app.fermatax.auto.MainCarActivity requestFocus() on com.android.internal.policy.DecorView{3838d92 V.E...... R....... 0,0-800,400}[MainCarActivity] returned false
+08-08 17:33:04.485  1162  4460 I QC2Buf  : Buffer 0xea5c2990 imported as 0xea5c3510
+08-08 17:33:04.485  1162  4460 I QC2Buf  : Buffer 0xea5c3510 imported as 0xea5c2990
+08-08 17:33:04.485  1162  4460 I QC2Buf  : Buffer 0xea5c0610 imported as 0xea5c3490
+08-08 17:33:04.517  1162  4460 I QC2Buf  : Buffer 0xea5c2d90 imported as 0xea5c0110
+08-08 17:33:04.518  1162  4460 I QC2Buf  : Buffer 0xea5c0110 imported as 0xea5c2d90
+08-08 17:33:04.518  1162  4460 I QC2Buf  : Buffer 0xea5c0b10 imported as 0xea5c3510
+08-08 17:33:04.529 27652  4459 D PipelineWatcher: onInputBufferReleased: frameIndex not found (62346); ignored
+08-08 17:33:04.551  1162  4460 I QC2Buf  : Buffer 0xea5c1b10 imported as 0xea5c2a90
+08-08 17:33:04.552  1162  4460 I QC2Buf  : Buffer 0xea5c2a90 imported as 0xea5c1b10
+08-08 17:33:04.552  1162  4460 I QC2Buf  : Buffer 0xea5c1490 imported as 0xea5c0110
+08-08 17:33:04.553  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:04.553  4017 21155 D LOG_TGA : ]
+08-08 17:33:04.554  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:04.555  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:04.556  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:04.556  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:04.556  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:04.556  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:04.556  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:04.558  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:04.558  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:04.558  4017 21156 D LOG_TGA : ]
+08-08 17:33:04.565 27652  4459 D PipelineWatcher: onInputBufferReleased: frameIndex not found (62347); ignored
+08-08 17:33:04.583  1162  4460 I QC2Buf  : Buffer 0xea5c2d10 imported as 0xea5c3190
+08-08 17:33:04.583  1162  4460 I QC2Buf  : Buffer 0xea5c3190 imported as 0xea5c2d10
+08-08 17:33:04.584  1162  4460 I QC2Buf  : Buffer 0xea5c2210 imported as 0xea5c2a90
+08-08 17:33:04.594 27652  4459 D PipelineWatcher: onInputBufferReleased: frameIndex not found (62348); ignored
+08-08 17:33:05.981 20508 22258 I GH.ConnLoggerV2: Session cd82d76a-84e5-4e3f-9ae6-832f2313a0d9, event 99, detail OptionalInt.empty, SESSION_CONNECTED, at 118591523 
+08-08 17:33:05.983  2664  2681 I BluetoothAdapterProperties: getBondedDevices: length=1
+08-08 17:33:05.985  2664  2681 I bt_btif_dm: system/btif/src/btif_dm.cc:880 btif_dm_get_connection_state: Acl is not connected to peer:xx:xx:xx:xx:ed:f0
+08-08 17:33:05.985  2664  2681 I bt_btif_dm: system/btif/src/btif_dm.cc:880 btif_dm_get_connection_state: Acl is not connected to peer:xx:xx:xx:xx:ed:f0
+08-08 17:33:06.078  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:06.078  1790  2442 D WifiDataStall: tx tput in kbps: 391323
+08-08 17:33:06.078  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:06.078  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:06.078  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:06.078  1790  2442 D WifiDataStall: L2 txTputKbps: 379094, rxTputKbps: 407628, L3 txTputKbps: 99, rxTputKbps: 4480, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:06.079  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:06.079  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:06.079  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:06.079  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:06.084  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:06.084  1790  2442 D WifiScoreCard: txRate: 80 txSpeed: 433
+08-08 17:33:06.084  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:33:06.085  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=74.1, 5.7, 0.0 rx=176.0 bcn=350933 [on:1258 tx:27 rx:20 period:3014] from screen [on:1424874 period:11364035] score=79
+08-08 17:33:06.558  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:06.558  4017 21155 D LOG_TGA : ]
+08-08 17:33:06.560  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:06.560  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:06.561  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:06.561  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:06.562  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:06.562  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:06.562  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:06.568  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:06.568  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:06.568  4017 21157 D LOG_TGA : ]
+08-08 17:33:07.227 27652  4365 I CAR.AUDIO.STATS: MEDIA bitrate in the last 10 seconds: [1509,1574,1509,1574,1509,1574,1509,1509,1574,1509] kbps
+08-08 17:33:07.232 27652  4365 I CAR.AUDIO.STATS: Acks from MEDIA received in the last 10 seconds with avg latency: [23:3ms,24:4ms,23:4ms,24:4ms,23:5ms,24:4ms,23:5ms,23:4ms,24:4ms,23:3ms]
+08-08 17:33:07.131     0     0 W healthd : battery l=68 v=4049 t=38.3 h=2 st=2 c=80413 fc=3984000 cc=8 chg=u
+08-08 17:33:08.564  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:08.564  4017 21155 D LOG_TGA : ]
+08-08 17:33:08.566  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:08.566  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:08.567  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:08.568  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:08.568  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:08.568  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:08.568  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:08.575  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:08.575  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:08.575  4017 21157 D LOG_TGA : ]
+08-08 17:33:09.060  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62349)/Done(62349)| Work-Rate: Q(0.8/s Avg=23.9/s) Done(0.800/s Avg=23.930/s)| Stream: 42.43fps 3.5Kbps| Pending(0) i/p-done(0)
+08-08 17:33:09.091  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-52 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:09.091  1790  2442 D WifiDataStall: tx tput in kbps: 379094
+08-08 17:33:09.091  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:09.091  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:09.092  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:09.092  1790  2442 D WifiDataStall: L2 txTputKbps: 375018, rxTputKbps: 407628, L3 txTputKbps: 96, rxTputKbps: 5033, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:09.092  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:09.092  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:09.092  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:09.092  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:09.096  1790  2442 D WifiScoreReport: report new wifi score 78
+08-08 17:33:09.097  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -52, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:09.097  1790  2442 D WifiScoreCard: txRate: 87 txSpeed: 433
+08-08 17:33:09.097  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -52 txSpeed 433
+08-08 17:33:09.097  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-52 f=5180 sc=78 link=433 tx=79.4, 7.1, 0.0 rx=207.2 bcn=350948 [on:779 tx:22 rx:27 period:3012] from screen [on:1425653 period:11367047] score=78
+08-08 17:33:09.099  1790  2449 D ConnectivityService: NetReassign [no changes] [c 0] [a 0] [i 2]
+08-08 17:33:09.829  1117  1117 D vendor.qti.bluetooth@1.0-ibs_handler: SerialClockVote: vote for UART CLK ON
+08-08 17:33:09.830  1117  1117 D vendor.qti.bluetooth@1.0-wake_lock: Acquire wakelock is acquired 
+08-08 17:33:09.831  1117  1117 I vendor.qti.bluetooth@1.0-ibs_handler: DeviceWakeUp: Writing IBS_WAKE_IND
+08-08 17:33:09.834  1117  3012 I vendor.qti.bluetooth@1.0-ibs_handler: ProcessIbsCmd: Received IBS_WAKE_ACK: 0xFC
+08-08 17:33:09.834  2664  2910 I bluetooth: system/gd/hci/le_address_manager.cc:581 GetNextPrivateAddressIntervalRange: client=LeAddressManager, nonwake=8m45s, wake=14m6s
+08-08 17:33:09.835  1117  3012 I vendor.qti.bluetooth@1.0-ibs_handler: ProcessIbsCmd: Received IBS_WAKE_IND: 0xFD
+08-08 17:33:09.835  1117  3012 I vendor.qti.bluetooth@1.0-ibs_handler: ProcessIbsCmd: Writing IBS_WAKE_ACK
+08-08 17:33:09.837  2664  2910 I bluetooth: system/gd/hci/le_address_manager.cc:782 OnCommandComplete: Received command complete with op_code LE_SET_RANDOM_ADDRESS(0x2005)
+08-08 17:33:09.837  2664  2910 I bluetooth: system/gd/hci/le_address_manager.cc:802 OnCommandComplete: update random address : xx:xx:xx:xx:4a:b6
+08-08 17:33:09.837  2664  2910 I bluetooth: system/gd/hci/le_address_manager.cc:397 resume_registered_clients: Resuming registered clients
+08-08 17:33:09.837  2664  2910 I bluetooth: system/gd/hci/le_scanning_manager_impl.cc:627 stop_scan: Scanning already stopped, return!
+08-08 17:33:09.880  1117  3012 I vendor.qti.bluetooth@1.0-ibs_handler: ProcessIbsCmd: Received IBS_SLEEP_IND: 0xFE
+08-08 17:33:10.054  1162  2541 D BufferPoolAccessor2.0: bufferpool2 0xe7980148 : 5(1920000 size) total buffers - 4(1536000 size) used buffers - 62340/62353 (recycle/alloc) - 22/62349 (fetch/transfer)
+08-08 17:33:10.054  1162  2541 D BufferPoolAccessor2.0: evictor expired: 1, evicted: 1
+08-08 17:33:10.571  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:10.571  4017 21155 D LOG_TGA : ]
+08-08 17:33:10.573  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:10.573  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:10.575  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:10.575  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:10.575  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:10.575  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:10.575  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:10.581  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:10.581  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:10.581  4017 21157 D LOG_TGA : ]
+08-08 17:33:10.669  4017  4017 W pool-16-thread-: type=1400 audit(0.0:5117): avc:  denied  { search } for  name="/" dev="cgroup2" ino=1 scontext=u:r:untrusted_app:s0:c58,c256,c512,c768 tcontext=u:object_r:cgroup_v2:s0 tclass=dir permissive=0 app=com.mcu.visionlook
+08-08 17:33:10.669  4017  4017 W pool-16-thread-: type=1400 audit(0.0:5118): avc:  denied  { search } for  name="/" dev="cgroup2" ino=1 scontext=u:r:untrusted_app:s0:c58,c256,c512,c768 tcontext=u:object_r:cgroup_v2:s0 tclass=dir permissive=0 app=com.mcu.visionlook
+08-08 17:33:10.705  9074  9074 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: media.audio_flinger
+08-08 17:33:10.568     0     0 I binder  : 9074:9074 ioctl 40046210 7ff3a8c1b4 returned -22
+08-08 17:33:10.576     0     0 W healthd : battery l=68 v=4046 t=38.3 h=2 st=2 c=257110 fc=3984000 cc=8 chg=u
+08-08 17:33:10.718  1115  1180 W offload_effect_bundle: effect_command invalid command 21
+08-08 17:33:10.718  1115  1180 W EffectHAL: Effect 0xe61bdcd0 command DUMP error: Invalid argument
+08-08 17:33:10.719  1115  8693 W offload_effect_bundle: effect_command invalid command 21
+08-08 17:33:10.719  1115  8693 W EffectHAL: Effect 0xe61b6ed0 command DUMP error: Invalid argument
+08-08 17:33:10.720  1115  1180 W EffectLE: LE_command invalid command 21
+08-08 17:33:10.720  1115  1180 W EffectHAL: Effect 0xe61bc8b0 command DUMP error: Invalid argument
+08-08 17:33:10.720  1115  1180 W volume_listener: volume_listener_command invalid command 21
+08-08 17:33:10.720  1115  1180 W EffectHAL: Effect 0xe61bda90 command DUMP error: Function not implemented
+08-08 17:33:10.721  1115  1180 W EffectDP: DP_command invalid command 21
+08-08 17:33:10.721  1115  1180 W EffectHAL: Effect 0xe61bc0b0 command DUMP error: Invalid argument
+08-08 17:33:10.839  1117  3015 I vendor.qti.bluetooth@1.0-ibs_handler: DeviceSleep: TX Awake, Sending SLEEP_IND
+08-08 17:33:10.839  1117  3015 D vendor.qti.bluetooth@1.0-ibs_handler: SerialClockVote: vote for UART CLK OFF
+08-08 17:33:10.919  9079  9079 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: SurfaceFlingerAIDL
+08-08 17:33:10.784     0     0 I binder  : 9079:9079 ioctl 40046210 7fd1437484 returned -22
+08-08 17:33:10.920  9079  9079 W libbinder.BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+08-08 17:33:10.920  9079  9079 W libbinder.ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+08-08 17:33:10.797     0     0 I servicemanager: Caller(pid=9079,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+08-08 17:33:10.797     0     0 I binder  : 9079:9080 ioctl 40046210 74658e46d4 returned -22
+08-08 17:33:10.953  9079  9080 I Gralloc4: Adding additional valid usage bits: 0x8202000
+08-08 17:33:10.819     0     0 I servicemanager: Caller(pid=9079,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+08-08 17:33:10.990  1117  2921 D vendor.qti.bluetooth@1.0-wake_lock: Release wakelock is released 
+08-08 17:33:12.115  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:12.116  1790  2442 D WifiDataStall: tx tput in kbps: 375018
+08-08 17:33:12.116  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:12.116  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:12.116  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:12.116  1790  2442 D WifiDataStall: L2 txTputKbps: 375018, rxTputKbps: 407628, L3 txTputKbps: 47, rxTputKbps: 2496, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:12.117  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:12.117  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:12.117  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:12.117  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:12.121  1790  2442 D WifiScoreReport: report new wifi score 79
+08-08 17:33:12.121  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:12.121  1790  2442 D WifiScoreCard: txRate: 59 txSpeed: 433
+08-08 17:33:12.122  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:33:12.122  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=53.2, 4.7, 0.0 rx=148.2 bcn=350959 [on:491 tx:11 rx:11 period:3024] from screen [on:1426144 period:11370072] score=79
+08-08 17:33:12.123  1790  2449 D ConnectivityService: NetReassign [no changes] [c 1] [a 0] [i 1]
+08-08 17:33:12.574  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:12.574  4017 21155 D LOG_TGA : ]
+08-08 17:33:12.575  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:12.575  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:12.577  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:12.577  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:12.577  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:12.577  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:12.577  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:12.584  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:12.584  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:12.584  4017 21156 D LOG_TGA : ]
+08-08 17:33:12.869 27652  4818 I CAR.AUDIO.PERF: Estimated buffer list in the last 10 seconds for stream type AUDIO_STREAM_MEDIA is [1.0703125, 1.5546875, 2.015625, 1.4765625, 1.9609375, 1.4453125, 1.9296875, 1.4140625, 1.875, 1.359375, 1.8203125, 1.28125, 1.765625, 1.25, 1.7109375, 1.1953125, 1.6796875, 1.140625, 1.625, 1.0859375, 1.5703125, 1.03125, 1.515625, 2.0, 1.484375, 1.96875, 1.453125, 1.9140625, 1.3984375, 1.859375, 1.34375, 1.8046875, 1.2890625, 1.75, 1.234375, 1.71875, 1.1796875, 1.6640625, 1.1484375, 1.6328125, 1.1171875, 1.578125, 1.0625, 1.546875, 2.03125, 1.4921875, 1.9765625, 1.4375, 1.921875, 1.3828125, 1.8671875, 1.328125, 1.8125, 1.296875, 1.78125, 1.2421875, 1.7265625, 1.2109375, 1.671875, 1.15625, 1.6171875, 1.1015625, 1.5859375, 1.0703125, 1.5546875, 2.0390625]
+08-08 17:33:14.060  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62349)/Done(62349)| Work-Rate: Q(0.0/s Avg=23.9/s) Done(0.000/s Avg=23.885/s)| Stream: 42.43fps 3.5Kbps| Pending(0) i/p-done(0)
+08-08 17:33:14.319 27652  4371 I CAR.AUDIO.MEDIA: Latency stats for stream MEDIA in the last 234 pcm frames: timeSpentInCaptureThread: [44, 42.56] ms, timeSpentInTxQ: [1, 0.22] ms, timeSpentWaitingForAckAndEnqueuingFrames: [1, 0.15] ms, audioPipelineLatency: [44, 42.94] ms
+08-08 17:33:14.320 27652  4359 I CAR.AUDIO.STATS: Time spent in sender lib for stream MEDIA in the last 234 frames: avg: 0.88 ms, max: 2 ms
+08-08 17:33:14.582  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:14.582  4017 21155 D LOG_TGA : ]
+08-08 17:33:14.584  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:14.584  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:14.585  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:14.585  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:14.585  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:14.585  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:14.585  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:14.593  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:14.593  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:14.593  4017 21157 D LOG_TGA : ]
+08-08 17:33:15.133  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:15.134  1790  2442 D WifiDataStall: tx tput in kbps: 375018
+08-08 17:33:15.134  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:15.134  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:15.134  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:15.134  1790  2442 D WifiDataStall: L2 txTputKbps: 391323, rxTputKbps: 407628, L3 txTputKbps: 48, rxTputKbps: 2543, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:15.135  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:15.135  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:15.135  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:15.135  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:15.138  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:15.138  1790  2442 D WifiScoreCard: txRate: 47 txSpeed: 433
+08-08 17:33:15.139  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:33:15.139  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=44.0, 2.7, 0.0 rx=125.8 bcn=350974 [on:496 tx:11 rx:11 period:3017] from screen [on:1426640 period:11373089] score=79
+08-08 17:33:16.593  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:16.593  4017 21155 D LOG_TGA : ]
+08-08 17:33:16.594  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:16.594  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:16.596  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:16.596  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:16.596  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:16.596  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:16.596  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:16.603  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:16.603  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:16.603  4017 21156 D LOG_TGA : ]
+08-08 17:33:17.227 27652  4365 I CAR.AUDIO.STATS: MEDIA bitrate in the last 10 seconds: [1574,1509,1574,1509,1509,1574,1509,1574,1509,1574] kbps
+08-08 17:33:17.232 27652  4365 I CAR.AUDIO.STATS: Acks from MEDIA received in the last 10 seconds with avg latency: [24:4ms,23:3ms,24:4ms,23:3ms,23:4ms,24:5ms,23:4ms,24:5ms,23:4ms,24:5ms]
+08-08 17:33:17.884 22545 22576 I native  : I0000 00:00:1786185197.884830   22576 soda_async_impl.cc:1420] Current audio timestamp: 1786185197473428
+08-08 17:33:18.003 22545 22585 I xas     : (REDACTED) numBytesRead: %d, usingMicHotword: %b
+08-08 17:33:18.157  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-52 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:18.157  1790  2442 D WifiDataStall: tx tput in kbps: 391323
+08-08 17:33:18.157  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:18.157  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:18.157  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:18.157  1790  2442 D WifiDataStall: L2 txTputKbps: 334255, rxTputKbps: 407628, L3 txTputKbps: 48, rxTputKbps: 2612, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:18.158  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:18.158  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:18.158  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:18.158  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:18.162  1790  2442 D WifiScoreReport: report new wifi score 78
+08-08 17:33:18.163  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -52, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:18.163  1790  2442 D WifiScoreCard: txRate: 47 txSpeed: 433
+08-08 17:33:18.163  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -52 txSpeed 433
+08-08 17:33:18.163  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-52 f=5180 sc=78 link=433 tx=40.4, 6.4, 0.0 rx=119.4 bcn=350983 [on:557 tx:9 rx:13 period:3024] from screen [on:1427197 period:11376113] score=78
+08-08 17:33:18.164  1790  2449 D ConnectivityService: NetReassign [no changes] [c 0] [a 0] [i 2]
+08-08 17:33:18.603  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:18.603  4017 21155 D LOG_TGA : ]
+08-08 17:33:18.605  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:18.605  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:18.607  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:18.607  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:18.607  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:18.607  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:18.607  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:18.613  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:18.613  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:18.613  4017 21156 D LOG_TGA : ]
+08-08 17:33:18.738     0     0 W healthd : battery l=68 v=4048 t=38.2 h=2 st=2 c=237884 fc=3984000 cc=8 chg=u
+08-08 17:33:19.061  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62349)/Done(62349)| Work-Rate: Q(0.0/s Avg=23.8/s) Done(0.000/s Avg=23.839/s)| Stream: 42.43fps 3.5Kbps| Pending(0) i/p-done(0)
+08-08 17:33:20.611  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:20.611  4017 21155 D LOG_TGA : ]
+08-08 17:33:20.612  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:20.613  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:20.614  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:20.614  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:20.614  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:20.614  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:20.614  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:20.621  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:20.622  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:20.622  4017 21156 D LOG_TGA : ]
+08-08 17:33:21.179  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-52 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:21.180  1790  2442 D WifiDataStall: tx tput in kbps: 334255
+08-08 17:33:21.180  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:21.180  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:21.180  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:21.180  1790  2442 D WifiDataStall: L2 txTputKbps: 391323, rxTputKbps: 407628, L3 txTputKbps: 85, rxTputKbps: 4623, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:21.181  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:21.181  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:21.181  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:21.181  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:21.186  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -52, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:21.186  1790  2442 D WifiScoreCard: txRate: 64 txSpeed: 433
+08-08 17:33:21.186  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -52 txSpeed 433
+08-08 17:33:21.186  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-52 f=5180 sc=78 link=433 tx=58.6, 4.4, 0.0 rx=175.4 bcn=350997 [on:832 tx:15 rx:20 period:3023] from screen [on:1428029 period:11379136] score=78
+08-08 17:33:21.669  4017  4017 W pool-16-thread-: type=1400 audit(0.0:5119): avc:  denied  { search } for  name="/" dev="cgroup2" ino=1 scontext=u:r:untrusted_app:s0:c58,c256,c512,c768 tcontext=u:object_r:cgroup_v2:s0 tclass=dir permissive=0 app=com.mcu.visionlook
+08-08 17:33:21.669  4017  4017 W pool-16-thread-: type=1400 audit(0.0:5120): avc:  denied  { search } for  name="/" dev="cgroup2" ino=1 scontext=u:r:untrusted_app:s0:c58,c256,c512,c768 tcontext=u:object_r:cgroup_v2:s0 tclass=dir permissive=0 app=com.mcu.visionlook
+08-08 17:33:22.620  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:22.620  4017 21155 D LOG_TGA : ]
+08-08 17:33:22.621  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:22.621  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:22.624  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:22.624  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:22.624  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:22.624  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:22.624  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:22.630  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:22.630  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:22.630  4017 21157 D LOG_TGA : ]
+08-08 17:33:22.790 27652  4818 I CAR.AUDIO.PERF: Estimated buffer list in the last 10 seconds for stream type AUDIO_STREAM_MEDIA is [1.4765625, 1.9609375, 1.4453125, 1.9296875, 1.390625, 1.875, 1.359375, 1.8203125, 1.3046875, 1.765625, 1.25, 1.7109375, 1.1953125, 1.6796875, 1.1640625, 1.625, 1.109375, 1.59375, 1.078125, 1.5625, 2.0234375, 1.5078125, 1.9921875, 1.453125, 1.9375, 1.421875, 1.90625, 1.390625, 1.8515625, 1.3359375, 1.8203125, 1.28125, 1.7421875, 1.2265625, 1.7109375, 1.1953125, 1.65625, 1.140625, 1.6015625, 1.0859375, 1.5703125, 1.0546875, 1.5390625, 2.0, 1.4609375, 1.9453125, 1.4296875, 1.9140625, 1.3984375, 1.8828125, 1.34375, 1.828125, 1.3125, 1.796875, 1.2578125, 1.7421875, 1.2265625, 1.7109375, 1.171875, 1.65625, 1.1171875, 1.6015625, 1.0859375, 1.546875, 1.03125, 1.515625]
+08-08 17:33:22.833 26003 26464 I PlayCommon: [96] Preparing logs for uploading
+08-08 17:33:22.838  1790  2491 D BackgroundInstallControlService: Package event received: 0
+08-08 17:33:22.849 13951 13963 E AuthPII : [RequestTokenManager] getToken() -> BAD_AUTHENTICATION. App: com.android.vending, Service: oauth2:https://www.googleapis.com/auth/googleplay
+08-08 17:33:22.849 13951 13963 E AuthPII : blbw: Long live credential not available.
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at ainv.a(:com.google.android.gms@262932035@26.29.32 (260400-956293556):1386)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at aioc.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):26)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at aioa.a(:com.google.android.gms@262932035@26.29.32 (260400-956293556):626)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at ainz.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):153)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at abfa.d(:com.google.android.gms@262932035@26.29.32 (260400-956293556):115)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at aiho.getAuthToken(:com.google.android.gms@262932035@26.29.32 (260400-956293556):408)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:254)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at cvhq.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):12)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at cftl.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):169)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.os.Binder.execTransactInternal(Binder.java:1478)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.os.Binder.execTransact(Binder.java:1418)
+08-08 17:33:22.849 13951 13963 E AuthPII : Message is Long live credential not available.
+08-08 17:33:22.849 13951 13963 E AuthPII : blbw: Long live credential not available.
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at ainv.a(:com.google.android.gms@262932035@26.29.32 (260400-956293556):1386)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at aioc.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):26)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at aioa.a(:com.google.android.gms@262932035@26.29.32 (260400-956293556):626)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at ainz.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):153)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at abfa.d(:com.google.android.gms@262932035@26.29.32 (260400-956293556):115)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at aiho.getAuthToken(:com.google.android.gms@262932035@26.29.32 (260400-956293556):408)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:254)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at cvhq.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):12)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at cftl.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):169)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.os.Binder.execTransactInternal(Binder.java:1478)
+08-08 17:33:22.849 13951 13963 E AuthPII : 	at android.os.Binder.execTransact(Binder.java:1418)
+08-08 17:33:22.864 13951 13963 I Auth    : [GetToken] GetToken failed for app=com.android.vending with userRecoverable status: BadAuthentication  [CONTEXT service_id=343 ]
+08-08 17:33:22.865 13951 13963 W Auth    : [ChimeraGetToken] exception while trying to fetch auth tokens for app=com.google.android.gms, scope=oauth2:https://www.googleapis.com/auth/googleplay [CONTEXT service_id=153 ]
+08-08 17:33:22.865 13951 13963 W Auth    : ainu: GetToken failed with status code and recovery intent: BadAuthentication
+08-08 17:33:22.865 13951 13963 W Auth    : 	at ainz.b(:com.google.android.gms@262932035@26.29.32 (260400-956293556):350)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at abfa.d(:com.google.android.gms@262932035@26.29.32 (260400-956293556):115)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at aiho.getAuthToken(:com.google.android.gms@262932035@26.29.32 (260400-956293556):408)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at android.accounts.AbstractAccountAuthenticator$Transport.getAuthToken(AbstractAccountAuthenticator.java:248)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at android.accounts.IAccountAuthenticator$Stub.onTransact(IAccountAuthenticator.java:254)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at cvhq.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):12)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at android.os.Binder.transact(Binder.java:1325)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at cftl.onTransact(:com.google.android.gms@262932035@26.29.32 (260400-956293556):169)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at android.os.Binder.execTransactInternal(Binder.java:1478)
+08-08 17:33:22.865 13951 13963 W Auth    : 	at android.os.Binder.execTransact(Binder.java:1418)
+08-08 17:33:22.865 13951 13963 W GLSActivity: [GmsAccountAuthenticatorImpl] error status while fetching token:BadAuthentication
+08-08 17:33:22.871 26003 26464 W PlayCommon: [96] Deferring log upload because couldn't retrieve auth token
+08-08 17:33:23.663  1790  2442 D WifiNetworkSelector: Current connected network: 4
+08-08 17:33:23.664  1790  2442 V WifiConnectivityManager: No partial scan because firmware roaming is supported.
+08-08 17:33:23.664  1790  2442 V WifiConnectivityManager: schedulePeriodicScanTimer intervalMs 20000
+08-08 17:33:24.061  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62349)/Done(62349)| Work-Rate: Q(0.0/s Avg=23.8/s) Done(0.000/s Avg=23.793/s)| Stream: 42.43fps 3.5Kbps| Pending(0) i/p-done(0)
+08-08 17:33:24.201  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-52 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:24.202  1790  2442 D WifiDataStall: tx tput in kbps: 391323
+08-08 17:33:24.202  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:24.202  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:24.202  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:24.202  1790  2442 D WifiDataStall: L2 txTputKbps: 387247, rxTputKbps: 407628, L3 txTputKbps: 68, rxTputKbps: 4788, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:24.203  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:24.203  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:24.203  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:24.203  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:24.207  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -52, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:24.207  1790  2442 D WifiScoreCard: txRate: 62 txSpeed: 433
+08-08 17:33:24.207  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -52 txSpeed 433
+08-08 17:33:24.208  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-52 f=5180 sc=78 link=433 tx=57.7, 3.7, 0.0 rx=201.2 bcn=351010 [on:894 tx:13 rx:21 period:3022] from screen [on:1428923 period:11382158] score=78
+08-08 17:33:24.304 27652  4371 I CAR.AUDIO.MEDIA: Latency stats for stream MEDIA in the last 234 pcm frames: timeSpentInCaptureThread: [44, 42.59] ms, timeSpentInTxQ: [1, 0.15] ms, timeSpentWaitingForAckAndEnqueuingFrames: [1, 0.18] ms, audioPipelineLatency: [45, 42.92] ms
+08-08 17:33:24.305 27652  4359 I CAR.AUDIO.STATS: Time spent in sender lib for stream MEDIA in the last 234 frames: avg: 0.88 ms, max: 2 ms
+08-08 17:33:24.624  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:24.624  4017 21155 D LOG_TGA : ]
+08-08 17:33:24.625  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:24.625  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:24.627  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:24.627  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:24.627  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:24.627  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:24.627  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:24.635  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:24.635  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:24.635  4017 21157 D LOG_TGA : ]
+08-08 17:33:24.877  1790  1885 I BrightnessSynchronizer: [372] New Update 1(i) set brightness values: 0.0(f) 
+08-08 17:33:24.882  1790  2000 V DisplayPowerController[0]: Brightness [0.0] reason changing to: 'automatic [ auto_adj ]', previous reason: 'automatic'.
+08-08 17:33:24.882  1790  2000 I DisplayPowerController[0]: BrightnessEvent: brt=0.0(user_set)(0.0%), nits=-1.0, lux=2.9093044, reason=automatic [ auto_adj ], strat=AutomaticBrightnessStrategy, state=ON, stateReason=KEY, policy=BRIGHT, flags=user_set , initBrt=0.098425195, rcmdBrt=0.0, preBrt=0.098425195, preLux=3.7308881, lastReadLux=2.835, wasShortTermModelActive=true, autoBrightness=true (default), unclampedBrt=0.0, hbmMax=1.0, hbmMode=off, thrmMax=1.0, rbcStrength=50, powerFactor=1.0, physDisp=Màn hình tích hợp(local:4630946506125973377), logicalId=0, slowChange=true, rampSpeed=0.23228346
+08-08 17:33:24.885  1790  1885 I BrightnessSynchronizer: Swallowing update of 0.0(f) by update: {[372] 1(i), mUpdatedTypes=2, mConfirmedTypes=2, mTimeUpdated=27446387}
+08-08 17:33:24.885  1790  1885 I BrightnessSynchronizer: Completed Update: {[372] 1(i), mUpdatedTypes=2, mConfirmedTypes=2, mTimeUpdated=27446387}
+08-08 17:33:24.751     0     0 I         : [brightness]sgm_brightness_set brightness = 201
+08-08 17:33:24.768     0     0 I         : [brightness]sgm_brightness_set brightness = 198
+08-08 17:33:24.906  2546  2596 W ImageLoader: Failed to load source Resource{name=com.android.systemui:drawable/ic_brightness_low}
+08-08 17:33:24.906  2546  2596 W ImageLoader: android.graphics.ImageDecoder$DecodeException: Failed to create image decoder with message 'unimplemented'Input contained an error.
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at android.graphics.ImageDecoder.nCreate(Native Method)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at android.graphics.ImageDecoder.createFromAsset(ImageDecoder.java:548)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at android.graphics.ImageDecoder.-$$Nest$smcreateFromAsset(Unknown Source:0)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at android.graphics.ImageDecoder$ResourceSource.createImageDecoder(ImageDecoder.java:525)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at android.graphics.ImageDecoder.decodeDrawableImpl(ImageDecoder.java:1750)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at android.graphics.ImageDecoder.decodeDrawable(ImageDecoder.java:1742)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at com.android.systemui.graphics.ImageLoader.loadDrawableSync(go/retraceme 0bc59e18e28c8dde95e2c970b37998acf9b95c46726b9b3025a637f76adacae8:5)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at com.android.systemui.graphics.ImageLoader.loadDrawableSync(go/retraceme 0bc59e18e28c8dde95e2c970b37998acf9b95c46726b9b3025a637f76adacae8:22)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at com.android.systemui.graphics.ImageLoader$loadDrawable$4.invokeSuspend(go/retraceme 0bc59e18e28c8dde95e2c970b37998acf9b95c46726b9b3025a637f76adacae8:25)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(go/retraceme 0bc59e18e28c8dde95e2c970b37998acf9b95c46726b9b3025a637f76adacae8:8)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at kotlinx.coroutines.DispatchedTask.run(go/retraceme 0bc59e18e28c8dde95e2c970b37998acf9b95c46726b9b3025a637f76adacae8:110)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:348)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+08-08 17:33:24.906  2546  2596 W ImageLoader: 	at java.lang.Thread.run(Thread.java:1563)
+08-08 17:33:24.785     0     0 I         : [brightness]sgm_brightness_set brightness = 194
+08-08 17:33:24.805     0     0 I         : [brightness]sgm_brightness_set brightness = 191
+08-08 17:33:24.818     0     0 I         : [brightness]sgm_brightness_set brightness = 188
+08-08 17:33:24.835     0     0 I         : [brightness]sgm_brightness_set brightness = 185
+08-08 17:33:24.852     0     0 I         : [brightness]sgm_brightness_set brightness = 182
+08-08 17:33:24.869     0     0 I         : [brightness]sgm_brightness_set brightness = 180
+08-08 17:33:24.886     0     0 I         : [brightness]sgm_brightness_set brightness = 177
+08-08 17:33:24.902     0     0 I         : [brightness]sgm_brightness_set brightness = 174
+08-08 17:33:24.919     0     0 I         : [brightness]sgm_brightness_set brightness = 171
+08-08 17:33:24.936     0     0 I         : [brightness]sgm_brightness_set brightness = 169
+08-08 17:33:24.951     0     0 I         : [brightness]sgm_brightness_set brightness = 166
+08-08 17:33:24.969     0     0 I         : [brightness]sgm_brightness_set brightness = 163
+08-08 17:33:24.985     0     0 I         : [brightness]sgm_brightness_set brightness = 161
+08-08 17:33:25.002     0     0 I         : [brightness]sgm_brightness_set brightness = 158
+08-08 17:33:25.019     0     0 I         : [brightness]sgm_brightness_set brightness = 156
+08-08 17:33:25.035     0     0 I         : [brightness]sgm_brightness_set brightness = 153
+08-08 17:33:25.052     0     0 I         : [brightness]sgm_brightness_set brightness = 151
+08-08 17:33:25.069     0     0 I         : [brightness]sgm_brightness_set brightness = 148
+08-08 17:33:25.085     0     0 I         : [brightness]sgm_brightness_set brightness = 146
+08-08 17:33:25.102     0     0 I         : [brightness]sgm_brightness_set brightness = 143
+08-08 17:33:25.119     0     0 I         : [brightness]sgm_brightness_set brightness = 141
+08-08 17:33:25.135     0     0 I         : [brightness]sgm_brightness_set brightness = 139
+08-08 17:33:25.152     0     0 I         : [brightness]sgm_brightness_set brightness = 136
+08-08 17:33:25.169     0     0 I         : [brightness]sgm_brightness_set brightness = 134
+08-08 17:33:25.185     0     0 I         : [brightness]sgm_brightness_set brightness = 132
+08-08 17:33:25.202     0     0 I         : [brightness]sgm_brightness_set brightness = 129
+08-08 17:33:25.219     0     0 I         : [brightness]sgm_brightness_set brightness = 127
+08-08 17:33:25.236     0     0 I         : [brightness]sgm_brightness_set brightness = 125
+08-08 17:33:25.252     0     0 I         : [brightness]sgm_brightness_set brightness = 123
+08-08 17:33:25.269     0     0 I         : [brightness]sgm_brightness_set brightness = 120
+08-08 17:33:25.286     0     0 I         : [brightness]sgm_brightness_set brightness = 118
+08-08 17:33:25.302     0     0 I         : [brightness]sgm_brightness_set brightness = 116
+08-08 17:33:25.319     0     0 I         : [brightness]sgm_brightness_set brightness = 114
+08-08 17:33:25.336     0     0 I         : [brightness]sgm_brightness_set brightness = 112
+08-08 17:33:25.352     0     0 I         : [brightness]sgm_brightness_set brightness = 110
+08-08 17:33:25.368     0     0 I         : [brightness]sgm_brightness_set brightness = 107
+08-08 17:33:25.386     0     0 I         : [brightness]sgm_brightness_set brightness = 105
+08-08 17:33:25.402     0     0 I         : [brightness]sgm_brightness_set brightness = 103
+08-08 17:33:25.419     0     0 I         : [brightness]sgm_brightness_set brightness = 101
+08-08 17:33:25.435     0     0 I         : [brightness]sgm_brightness_set brightness = 99
+08-08 17:33:25.452     0     0 I         : [brightness]sgm_brightness_set brightness = 97
+08-08 17:33:25.470     0     0 I         : [brightness]sgm_brightness_set brightness = 95
+08-08 17:33:25.486     0     0 I         : [brightness]sgm_brightness_set brightness = 93
+08-08 17:33:25.502     0     0 I         : [brightness]sgm_brightness_set brightness = 91
+08-08 17:33:25.518     0     0 I         : [brightness]sgm_brightness_set brightness = 89
+08-08 17:33:25.535     0     0 I         : [brightness]sgm_brightness_set brightness = 88
+08-08 17:33:25.553     0     0 I         : [brightness]sgm_brightness_set brightness = 86
+08-08 17:33:25.570     0     0 I         : [brightness]sgm_brightness_set brightness = 84
+08-08 17:33:25.586     0     0 I         : [brightness]sgm_brightness_set brightness = 82
+08-08 17:33:25.602     0     0 I         : [brightness]sgm_brightness_set brightness = 80
+08-08 17:33:25.619     0     0 I         : [brightness]sgm_brightness_set brightness = 78
+08-08 17:33:25.635     0     0 I         : [brightness]sgm_brightness_set brightness = 77
+08-08 17:33:25.651     0     0 I         : [brightness]sgm_brightness_set brightness = 75
+08-08 17:33:25.668     0     0 I         : [brightness]sgm_brightness_set brightness = 73
+08-08 17:33:25.685     0     0 I         : [brightness]sgm_brightness_set brightness = 71
+08-08 17:33:25.702     0     0 I         : [brightness]sgm_brightness_set brightness = 70
+08-08 17:33:25.719     0     0 I         : [brightness]sgm_brightness_set brightness = 68
+08-08 17:33:25.735     0     0 I         : [brightness]sgm_brightness_set brightness = 66
+08-08 17:33:25.753     0     0 I         : [brightness]sgm_brightness_set brightness = 65
+08-08 17:33:25.768     0     0 I         : [brightness]sgm_brightness_set brightness = 63
+08-08 17:33:25.786     0     0 I         : [brightness]sgm_brightness_set brightness = 62
+08-08 17:33:25.805     0     0 I         : [brightness]sgm_brightness_set brightness = 60
+08-08 17:33:25.818     0     0 I         : [brightness]sgm_brightness_set brightness = 58
+08-08 17:33:25.836     0     0 I         : [brightness]sgm_brightness_set brightness = 57
+08-08 17:33:25.852     0     0 I         : [brightness]sgm_brightness_set brightness = 55
+08-08 17:33:25.869     0     0 I         : [brightness]sgm_brightness_set brightness = 54
+08-08 17:33:25.886     0     0 I         : [brightness]sgm_brightness_set brightness = 52
+08-08 17:33:25.902     0     0 I         : [brightness]sgm_brightness_set brightness = 51
+08-08 17:33:25.919     0     0 I         : [brightness]sgm_brightness_set brightness = 50
+08-08 17:33:25.936     0     0 I         : [brightness]sgm_brightness_set brightness = 48
+08-08 17:33:25.952     0     0 I         : [brightness]sgm_brightness_set brightness = 47
+08-08 17:33:25.969     0     0 I         : [brightness]sgm_brightness_set brightness = 45
+08-08 17:33:25.986     0     0 I         : [brightness]sgm_brightness_set brightness = 44
+08-08 17:33:26.002     0     0 I         : [brightness]sgm_brightness_set brightness = 43
+08-08 17:33:26.019     0     0 I         : [brightness]sgm_brightness_set brightness = 41
+08-08 17:33:26.036     0     0 I         : [brightness]sgm_brightness_set brightness = 40
+08-08 17:33:26.052     0     0 I         : [brightness]sgm_brightness_set brightness = 39
+08-08 17:33:26.069     0     0 I         : [brightness]sgm_brightness_set brightness = 38
+08-08 17:33:26.086     0     0 I         : [brightness]sgm_brightness_set brightness = 36
+08-08 17:33:26.103     0     0 I         : [brightness]sgm_brightness_set brightness = 35
+08-08 17:33:26.119     0     0 I         : [brightness]sgm_brightness_set brightness = 34
+08-08 17:33:26.135     0     0 I         : [brightness]sgm_brightness_set brightness = 33
+08-08 17:33:26.152     0     0 I         : [brightness]sgm_brightness_set brightness = 32
+08-08 17:33:26.169     0     0 I         : [brightness]sgm_brightness_set brightness = 31
+08-08 17:33:26.186     0     0 I         : [brightness]sgm_brightness_set brightness = 29
+08-08 17:33:26.202     0     0 I         : [brightness]sgm_brightness_set brightness = 28
+08-08 17:33:26.219     0     0 I         : [brightness]sgm_brightness_set brightness = 27
+08-08 17:33:26.235     0     0 I         : [brightness]sgm_brightness_set brightness = 26
+08-08 17:33:26.252     0     0 I         : [brightness]sgm_brightness_set brightness = 25
+08-08 17:33:26.269     0     0 I         : [brightness]sgm_brightness_set brightness = 24
+08-08 17:33:26.285     0     0 I         : [brightness]sgm_brightness_set brightness = 23
+08-08 17:33:26.302     0     0 I         : [brightness]sgm_brightness_set brightness = 22
+08-08 17:33:26.451  9095  9095 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: media.audio_flinger
+08-08 17:33:26.315     0     0 I binder  : 9095:9095 ioctl 40046210 7fcf972494 returned -22
+08-08 17:33:26.319     0     0 I         : [brightness]sgm_brightness_set brightness = 21
+08-08 17:33:26.464  1115  1180 W offload_effect_bundle: effect_command invalid command 21
+08-08 17:33:26.464  1115  1180 W EffectHAL: Effect 0xe61bdcd0 command DUMP error: Invalid argument
+08-08 17:33:26.465  1115  1180 W offload_effect_bundle: effect_command invalid command 21
+08-08 17:33:26.465  1115  1180 W EffectHAL: Effect 0xe61b6ed0 command DUMP error: Invalid argument
+08-08 17:33:26.335     0     0 I         : [brightness]sgm_brightness_set brightness = 21
+08-08 17:33:26.466  1115  1180 W EffectLE: LE_command invalid command 21
+08-08 17:33:26.466  1115  1180 W EffectHAL: Effect 0xe61bc8b0 command DUMP error: Invalid argument
+08-08 17:33:26.466  1115  1180 W volume_listener: volume_listener_command invalid command 21
+08-08 17:33:26.466  1115  1180 W EffectHAL: Effect 0xe61bda90 command DUMP error: Function not implemented
+08-08 17:33:26.467  1115 22408 W EffectDP: DP_command invalid command 21
+08-08 17:33:26.467  1115 22408 W EffectHAL: Effect 0xe61bc0b0 command DUMP error: Invalid argument
+08-08 17:33:26.352     0     0 I         : [brightness]sgm_brightness_set brightness = 20
+08-08 17:33:26.369     0     0 I         : [brightness]sgm_brightness_set brightness = 19
+08-08 17:33:26.386     0     0 I         : [brightness]sgm_brightness_set brightness = 18
+08-08 17:33:26.402     0     0 I         : [brightness]sgm_brightness_set brightness = 17
+08-08 17:33:26.419     0     0 I         : [brightness]sgm_brightness_set brightness = 16
+08-08 17:33:26.435     0     0 I         : [brightness]sgm_brightness_set brightness = 15
+08-08 17:33:26.451     0     0 I         : [brightness]sgm_brightness_set brightness = 15
+08-08 17:33:26.469     0     0 I         : [brightness]sgm_brightness_set brightness = 14
+08-08 17:33:26.485     0     0 I         : [brightness]sgm_brightness_set brightness = 13
+08-08 17:33:26.631  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:26.631  4017 21155 D LOG_TGA : ]
+08-08 17:33:26.633  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:26.633  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:26.634  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:26.634  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:26.634  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:26.634  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:26.634  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:26.637  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:26.637  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:26.637  4017 21156 D LOG_TGA : ]
+08-08 17:33:26.502     0     0 I         : [brightness]sgm_brightness_set brightness = 12
+08-08 17:33:26.519     0     0 I         : [brightness]sgm_brightness_set brightness = 12
+08-08 17:33:26.536     0     0 I         : [brightness]sgm_brightness_set brightness = 11
+08-08 17:33:26.684  9100  9100 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: SurfaceFlingerAIDL
+08-08 17:33:26.684  9100  9100 W libbinder.BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+08-08 17:33:26.684  9100  9100 W libbinder.ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+08-08 17:33:26.547     0     0 I binder  : 9100:9100 ioctl 40046210 7fc05450c4 returned -22
+08-08 17:33:26.552     0     0 I         : [brightness]sgm_brightness_set brightness = 10
+08-08 17:33:26.559     0     0 I servicemanager: Caller(pid=9100,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+08-08 17:33:26.560     0     0 I binder  : 9100:9103 ioctl 40046210 77504116d4 returned -22
+08-08 17:33:26.569     0     0 I         : [brightness]sgm_brightness_set brightness = 10
+08-08 17:33:26.716  9100  9103 I Gralloc4: Adding additional valid usage bits: 0x8202000
+08-08 17:33:26.582     0     0 I servicemanager: Caller(pid=9100,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+08-08 17:33:26.585     0     0 I         : [brightness]sgm_brightness_set brightness = 9
+08-08 17:33:26.602     0     0 I         : [brightness]sgm_brightness_set brightness = 9
+08-08 17:33:26.619     0     0 I         : [brightness]sgm_brightness_set brightness = 8
+08-08 17:33:26.636     0     0 I         : [brightness]sgm_brightness_set brightness = 8
+08-08 17:33:26.652     0     0 I         : [brightness]sgm_brightness_set brightness = 7
+08-08 17:33:26.668     0     0 I         : [brightness]sgm_brightness_set brightness = 7
+08-08 17:33:26.687     0     0 I         : [brightness]sgm_brightness_set brightness = 6
+08-08 17:33:26.702     0     0 I         : [brightness]sgm_brightness_set brightness = 6
+08-08 17:33:26.719     0     0 I         : [brightness]sgm_brightness_set brightness = 5
+08-08 17:33:26.735     0     0 I         : [brightness]sgm_brightness_set brightness = 5
+08-08 17:33:26.752     0     0 I         : [brightness]sgm_brightness_set brightness = 4
+08-08 17:33:26.769     0     0 I         : [brightness]sgm_brightness_set brightness = 4
+08-08 17:33:26.786     0     0 I         : [brightness]sgm_brightness_set brightness = 4
+08-08 17:33:26.805     0     0 I         : [brightness]sgm_brightness_set brightness = 3
+08-08 17:33:26.819     0     0 I         : [brightness]sgm_brightness_set brightness = 3
+08-08 17:33:26.836     0     0 I         : [brightness]sgm_brightness_set brightness = 3
+08-08 17:33:26.853     0     0 I         : [brightness]sgm_brightness_set brightness = 2
+08-08 17:33:26.869     0     0 I         : [brightness]sgm_brightness_set brightness = 2
+08-08 17:33:26.886     0     0 I         : [brightness]sgm_brightness_set brightness = 2
+08-08 17:33:26.898     0     0 W healthd : battery l=68 v=4004 t=38.4 h=2 st=2 c=23193 fc=3984000 cc=8 chg=u
+08-08 17:33:26.902     0     0 I         : [brightness]sgm_brightness_set brightness = 2
+08-08 17:33:26.919     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:26.936     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:26.953     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:26.969     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:26.986     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:27.002     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:27.020     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:27.037     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:27.053     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:27.070     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:27.215  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:27.215  1790  2442 D WifiDataStall: tx tput in kbps: 387247
+08-08 17:33:27.215  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:27.215  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:27.215  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:27.215  1790  2442 D WifiDataStall: L2 txTputKbps: 391323, rxTputKbps: 407628, L3 txTputKbps: 48, rxTputKbps: 2535, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:27.216  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:27.216  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:27.216  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:27.216  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:27.220  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:27.220  1790  2442 D WifiScoreCard: txRate: 49 txSpeed: 433
+08-08 17:33:27.220  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:33:27.221  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=78 link=433 tx=46.2, 2.6, 0.0 rx=145.3 bcn=351023 [on:400 tx:10 rx:13 period:3013] from screen [on:1429323 period:11385171] score=78
+08-08 17:33:27.228 27652  4365 I CAR.AUDIO.STATS: MEDIA bitrate in the last 10 seconds: [1509,1574,1509,1509,1574,1509,1574,1509,1574,1509] kbps
+08-08 17:33:27.086     0     0 I         : [brightness]sgm_brightness_set brightness = 1
+08-08 17:33:27.232 27652  4365 I CAR.AUDIO.STATS: Acks from MEDIA received in the last 10 seconds with avg latency: [23:4ms,24:4ms,23:3ms,23:4ms,24:3ms,23:4ms,24:5ms,23:4ms,24:5ms,23:3ms]
+08-08 17:33:27.418 13951 13951 D BoundBrokerSvc: onRebind: Intent { act=com.google.android.gms.libs.gmscorelogger.service.START dat=chimera-action:/... xflg=0x4 cmp=com.google.android.gms/.chimera.PersistentDirectBootAwareApiService }
+08-08 17:33:28.634  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:28.634  4017 21155 D LOG_TGA : ]
+08-08 17:33:28.636  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:28.636  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:28.638  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:28.638  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:28.638  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:28.638  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:28.638  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:28.644  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:28.644  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:28.644  4017 21156 D LOG_TGA : ]
+08-08 17:33:29.062  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62349)/Done(62349)| Work-Rate: Q(0.0/s Avg=23.7/s) Done(0.000/s Avg=23.748/s)| Stream: 42.43fps 3.5Kbps| Pending(0) i/p-done(0)
+08-08 17:33:30.229  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:30.229  1790  2442 D WifiDataStall: tx tput in kbps: 391323
+08-08 17:33:30.230  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:30.230  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:30.230  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:30.230  1790  2442 D WifiDataStall: L2 txTputKbps: 391323, rxTputKbps: 407628, L3 txTputKbps: 26, rxTputKbps: 2381, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:30.231  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:30.231  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:30.231  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:30.231  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:30.234  1790  2442 D WifiScoreReport: report new wifi score 79
+08-08 17:33:30.235  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 79, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:30.235  1790  2442 D WifiScoreCard: txRate: 32 txSpeed: 433
+08-08 17:33:30.235  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:33:30.236  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=79 link=433 tx=30.2, 1.5, 0.0 rx=121.8 bcn=351035 [on:528 tx:6 rx:10 period:3015] from screen [on:1429851 period:11388186] score=79
+08-08 17:33:30.237  1790  2449 D ConnectivityService: NetReassign [no changes] [c 0] [a 1] [i 1]
+08-08 17:33:30.640  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:30.640  4017 21155 D LOG_TGA : ]
+08-08 17:33:30.642  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:30.642  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:30.644  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:30.644  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:30.645  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:30.645  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:30.645  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:30.645  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:30.645  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:30.645  4017 21156 D LOG_TGA : ]
+08-08 17:33:31.556 27652  4371 I CAR.GAL.AUDIO.LITE: MD BUF = 42.666664 ms HU BUF = 70.114479 ms [CONTEXT ratelimit_period="1 MINUTES" skipped=1406 ]
+08-08 17:33:32.643  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:32.643  4017 21155 D LOG_TGA : ]
+08-08 17:33:32.645  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:32.645  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:32.647  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:32.647  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:32.647  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:32.647  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:32.647  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:32.654  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:32.654  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:32.654  4017 21156 D LOG_TGA : ]
+08-08 17:33:32.679  4017  4017 W pool-16-thread-: type=1400 audit(0.0:5121): avc:  denied  { search } for  name="/" dev="cgroup2" ino=1 scontext=u:r:untrusted_app:s0:c58,c256,c512,c768 tcontext=u:object_r:cgroup_v2:s0 tclass=dir permissive=0 app=com.mcu.visionlook
+08-08 17:33:32.679  4017  4017 W pool-16-thread-: type=1400 audit(0.0:5122): avc:  denied  { search } for  name="/" dev="cgroup2" ino=1 scontext=u:r:untrusted_app:s0:c58,c256,c512,c768 tcontext=u:object_r:cgroup_v2:s0 tclass=dir permissive=0 app=com.mcu.visionlook
+08-08 17:33:32.711 27652  4818 I CAR.AUDIO.PERF: Estimated buffer list in the last 10 seconds for stream type AUDIO_STREAM_MEDIA is [1.9765625, 1.4609375, 1.9453125, 1.4296875, 1.890625, 1.375, 1.8359375, 1.3203125, 1.8046875, 1.265625, 1.75, 1.2109375, 1.6953125, 1.15625, 1.640625, 1.125, 1.5859375, 1.0703125, 1.5546875, 2.015625, 1.5, 1.984375, 1.46875, 1.9296875, 1.4140625, 1.8984375, 1.3828125, 1.84375, 1.328125, 1.8125, 1.2734375, 1.7578125, 1.2421875, 1.703125, 1.1875, 1.671875, 1.1328125, 1.6171875, 1.1015625, 1.5625, 1.046875, 1.53125, 2.015625, 1.5, 1.9609375, 1.4453125, 1.9296875, 1.4140625, 1.875, 1.359375, 1.84375, 1.328125, 1.8125, 1.2734375, 1.7578125, 1.2421875, 1.703125, 1.1640625, 1.6484375, 1.1328125, 1.6171875, 1.078125, 1.5625, 1.0234375, 1.5078125, 1.9921875]
+08-08 17:33:33.252  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-52 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:33.252  1790  2442 D WifiDataStall: tx tput in kbps: 391323
+08-08 17:33:33.252  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:33.252  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:33.252  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:33.253  1790  2442 D WifiDataStall: L2 txTputKbps: 387247, rxTputKbps: 407628, L3 txTputKbps: 87, rxTputKbps: 4727, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:33.253  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:33.253  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:33.253  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:33.253  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:33.257  1790  2442 D WifiScoreReport: report new wifi score 78
+08-08 17:33:33.258  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -52, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:33.258  1790  2442 D WifiScoreCard: txRate: 59 txSpeed: 433
+08-08 17:33:33.258  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -52 txSpeed 433
+08-08 17:33:33.258  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-52 f=5180 sc=78 link=433 tx=55.4, 3.1, 0.0 rx=178.4 bcn=351047 [on:873 tx:13 rx:23 period:3022] from screen [on:1430724 period:11391208] score=78
+08-08 17:33:33.260  1790  2449 D ConnectivityService: NetReassign [no changes] [c 0] [a 0] [i 2]
+08-08 17:33:34.062  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62349)/Done(62349)| Work-Rate: Q(0.0/s Avg=23.7/s) Done(0.000/s Avg=23.703/s)| Stream: 42.43fps 3.5Kbps| Pending(0) i/p-done(0)
+08-08 17:33:34.288 27652  4371 I CAR.AUDIO.MEDIA: Latency stats for stream MEDIA in the last 234 pcm frames: timeSpentInCaptureThread: [44, 42.56] ms, timeSpentInTxQ: [1, 0.21] ms, timeSpentWaitingForAckAndEnqueuingFrames: [1, 0.20] ms, audioPipelineLatency: [44, 42.98] ms
+08-08 17:33:34.289 27652  4359 I CAR.AUDIO.STATS: Time spent in sender lib for stream MEDIA in the last 234 frames: avg: 0.94 ms, max: 2 ms
+08-08 17:33:34.648  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:34.648  4017 21155 D LOG_TGA : ]
+08-08 17:33:34.649  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:34.649  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:34.652  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:34.652  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:34.652  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:34.652  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:34.652  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:34.658  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:34.658  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:34.658  4017 21156 D LOG_TGA : ]
+08-08 17:33:35.080     0     0 W healthd : battery l=68 v=4053 t=38.2 h=2 st=2 c=302276 fc=3984000 cc=8 chg=u
+08-08 17:33:36.266  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-52 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:36.267  1790  2442 D WifiDataStall: tx tput in kbps: 387247
+08-08 17:33:36.267  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:36.267  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:36.267  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:36.267  1790  2442 D WifiDataStall: L2 txTputKbps: 362789, rxTputKbps: 407628, L3 txTputKbps: 82, rxTputKbps: 4897, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:36.268  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:36.268  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:36.268  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:36.268  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:36.272  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -52, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:36.272  1790  2442 D WifiScoreCard: txRate: 69 txSpeed: 433
+08-08 17:33:36.272  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -52 txSpeed 433
+08-08 17:33:36.273  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-52 f=5180 sc=78 link=433 tx=62.0, 6.5, 0.0 rx=200.8 bcn=351062 [on:1005 tx:12 rx:36 period:3015] from screen [on:1431729 period:11394223] score=78
+08-08 17:33:36.649  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:36.649  4017 21155 D LOG_TGA : ]
+08-08 17:33:36.652  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:36.652  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:36.653  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:36.653  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:36.653  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:36.653  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:36.653  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:36.659  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:36.660  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:36.660  4017 21157 D LOG_TGA : ]
+08-08 17:33:37.228 27652  4365 I CAR.AUDIO.STATS: MEDIA bitrate in the last 10 seconds: [1509,1574,1509,1574,1509,1574,1509,1574,1509,1509] kbps
+08-08 17:33:37.232 27652  4365 I CAR.AUDIO.STATS: Acks from MEDIA received in the last 10 seconds with avg latency: [24:5ms,23:4ms,23:4ms,24:4ms,23:4ms,24:4ms,23:4ms,24:5ms,23:4ms,23:5ms]
+08-08 17:33:37.945 22545 22576 I native  : I0000 00:00:1786185217.944943   22576 soda_impl.cc:1990] Adding hotword timeout event
+08-08 17:33:37.946 22545 22601 I GsaHotwordDetectionServ: (REDACTED) HDM. HDS. Hotword score : %f, Hotword model id : %s.
+08-08 17:33:37.946 22545 22601 I GsaHotwordDetectionServ: (REDACTED) HDM. HDS. Timeout reason %s, Coarse channel index %d.
+08-08 17:33:37.946 22545 22601 I GsaHotwordDetectionServ: (REDACTED) HDM. HDS. Not notifying interactor of rejection because software / non-DSP hotword is running.  Rejection reason was: %d
+08-08 17:33:38.653  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:38.653  4017 21155 D LOG_TGA : ]
+08-08 17:33:38.654  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:38.654  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:38.656  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:38.656  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:38.656  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:38.656  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:38.656  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:38.656  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:38.656  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:38.656  4017 21157 D LOG_TGA : ]
+08-08 17:33:38.657  4017 21157 D LOG_TGA : event_notice: event_id[5], context[]
+08-08 17:33:39.063  1162  4460 I QC2Comp : [avcE_55] Stats: Works: Q(62349)/Done(62349)| Work-Rate: Q(0.0/s Avg=23.7/s) Done(0.000/s Avg=23.658/s)| Stream: 42.43fps 3.5Kbps| Pending(0) i/p-done(0)
+08-08 17:33:39.288  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-51 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:39.289  1790  2442 D WifiDataStall: tx tput in kbps: 362789
+08-08 17:33:39.289  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:39.289  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:39.289  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:39.289  1790  2442 D WifiDataStall: L2 txTputKbps: 350560, rxTputKbps: 407628, L3 txTputKbps: 44, rxTputKbps: 2397, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:39.290  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:39.290  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:39.290  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:39.290  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -51 Nss: 1 Mode: 5 symDur: 3600 snrDb 23 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:39.294  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -51, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:39.294  1790  2442 D WifiScoreCard: txRate: 53 txSpeed: 433
+08-08 17:33:39.294  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -51 txSpeed 433
+08-08 17:33:39.295  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-51 f=5180 sc=78 link=433 tx=45.6, 6.4, 0.0 rx=140.8 bcn=351073 [on:485 tx:7 rx:16 period:3022] from screen [on:1432214 period:11397245] score=78
+08-08 17:33:40.018  1790  5381 V PowerManagerService: FrozenStateChangeCallback was already unregistered
+08-08 17:33:40.658  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:40.658  4017 21155 D LOG_TGA : ]
+08-08 17:33:40.660  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:40.660  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:40.661  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:40.661  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:40.661  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:40.661  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:40.661  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:40.669  4017 21156 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:40.669  4017 21156 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:40.669  4017 21156 D LOG_TGA : ]
+08-08 17:33:42.063     0     0 I binder  : 9122:9122 ioctl 40046210 7ffc641d54 returned -22
+08-08 17:33:42.199  9122  9122 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: media.audio_flinger
+08-08 17:33:42.212  1115  8693 W offload_effect_bundle: effect_command invalid command 21
+08-08 17:33:42.212  1115  8693 W EffectHAL: Effect 0xe61bdcd0 command DUMP error: Invalid argument
+08-08 17:33:42.213  1115  1180 W offload_effect_bundle: effect_command invalid command 21
+08-08 17:33:42.213  1115  1180 W EffectHAL: Effect 0xe61b6ed0 command DUMP error: Invalid argument
+08-08 17:33:42.214  1115 22379 W EffectLE: LE_command invalid command 21
+08-08 17:33:42.214  1115 22379 W EffectHAL: Effect 0xe61bc8b0 command DUMP error: Invalid argument
+08-08 17:33:42.214  1115  8529 W volume_listener: volume_listener_command invalid command 21
+08-08 17:33:42.215  1115  8529 W EffectHAL: Effect 0xe61bda90 command DUMP error: Function not implemented
+08-08 17:33:42.215  1115  2227 W EffectDP: DP_command invalid command 21
+08-08 17:33:42.215  1115  2227 W EffectHAL: Effect 0xe61bc0b0 command DUMP error: Invalid argument
+08-08 17:33:42.302  1790  2442 D WifiClientModeImpl[31764:wlan0]: updateLinkLayerStatsRssiSpeedFrequencyCapabilities rssi=-52 TxLinkspeed=433 freq=5180 RxLinkSpeed=433
+08-08 17:33:42.302  1790  2442 D WifiDataStall: tx tput in kbps: 350560
+08-08 17:33:42.303  1790  2442 D WifiDataStall: rx tput in kbps: 407628
+08-08 17:33:42.303  1790  2442 V WifiConfigManager: Updating scan detail cache freq=5180 BSSID=e4:60:4d:d2:91:b4 RSSI=-51 for "Nova"WPA_PSK
+08-08 17:33:42.303  1790  2442 D WifiDataStall:  ccaLevel = 15
+08-08 17:33:42.303  1790  2442 D WifiDataStall: L2 txTputKbps: 403552, rxTputKbps: 407628, L3 txTputKbps: 73, rxTputKbps: 4680, TxTrafficHigh: true, RxTrafficHigh: true, Throughput Sufficient: true
+08-08 17:33:42.304  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:42.304  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:42.304  1790  2442 D WifiThroughputPredictor:  utilization (LLS) 15 isBluetoothConnected: false final utilization: 15
+08-08 17:33:42.304  1790  2442 D WifiThroughputPredictor:  BW: 2 RSSI: -52 Nss: 1 Mode: 5 symDur: 3600 snrDb 22 bitPerTone: 6667 rate: 433 throughput: 407
+08-08 17:33:42.308  1790  2442 D WifiScoreCard: BSSID update SIGNAL_POLL ID: 1335063975 SSID: "Nova", BSSID: e4:60:4d:d2:91:b4, MAC: 82:50:8c:4b:33:61, IP: /192.168.1.11, Security type: 2, Supplicant state: COMPLETED, Wi-Fi standard: 11ac, RSSI: -52, Link speed: 433Mbps, Tx Link speed: 433Mbps, Max Supported Tx Link speed: 433Mbps, Rx Link speed: 433Mbps, Max Supported Rx Link speed: 433Mbps, Frequency: 5180MHz, Net ID: 4, Metered hint: false, score: 78, isUsable: true, CarrierMerged: false, SubscriptionId: -1, IsPrimary: 1, Trusted: true, Restricted: false, Ephemeral: false, OEM paid: false, OEM private: false, OSU AP: false, FQDN: <none>, Provider friendly name: <none>, Requesting package name: <none>"Nova"wpa2-pskMLO Information: , Is TID-To-Link negotiation supported by the AP: false, AP MLD Address: <none>, AP MLO Link Id: <none>, AP MLO Affiliated links: <none>, Vendor Data: <none>
+08-08 17:33:42.308  1790  2442 D WifiScoreCard: txRate: 60 txSpeed: 433
+08-08 17:33:42.308  1790  2442 D WifiScoreCard: network update SIGNAL_POLL "Nova" ID: 797453884 RSSI -52 txSpeed 433
+08-08 17:33:42.308  1790  2442 D WifiClientModeImpl[31764:wlan0]:  ClientModeImpl$L2ConnectedState screen=on 6 0 "Nova" e4:60:4d:d2:91:b4 rssi=-52 f=5180 sc=78 link=433 tx=56.1, 2.9, 0.0 rx=179.9 bcn=351087 [on:681 tx:11 rx:84 period:3013] from screen [on:1432895 period:11400258] score=78
+08-08 17:33:42.422  9127  9127 W libbinder.BackendUnifiedServiceManager: Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: SurfaceFlingerAIDL
+08-08 17:33:42.423  9127  9127 W libbinder.BpBinder: Linking to death on android.gui.ISurfaceComposer but there are no threads (yet?) listening to incoming transactions. See ProcessState::startThreadPool and ProcessState::setThreadPoolMaxThreadCount. Generally you should setup the binder threadpool before other initialization steps.
+08-08 17:33:42.423  9127  9127 W libbinder.ProcessState: Extra binder thread started, but 0 threads requested. Do not use *startThreadPool when zero threads are requested.
+08-08 17:33:42.286     0     0 I binder  : 9127:9127 ioctl 40046210 7ffe80d334 returned -22
+08-08 17:33:42.298     0     0 I servicemanager: Caller(pid=9127,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+08-08 17:33:42.299     0     0 I binder  : 9127:9128 ioctl 40046210 71ef1e16d4 returned -22
+08-08 17:33:42.455  9127  9128 I Gralloc4: Adding additional valid usage bits: 0x8202000
+08-08 17:33:42.321     0     0 I servicemanager: Caller(pid=9127,uid=2000,sid=u:r:shell:s0) Could not find android.hardware.graphics.allocator.IAllocator/default in the VINTF manifest. No alternative instances declared in VINTF.
+08-08 17:33:42.633 27652  4818 I CAR.AUDIO.PERF: Estimated buffer list in the last 10 seconds for stream type AUDIO_STREAM_MEDIA is [1.453125, 1.9375, 1.421875, 1.8828125, 1.3671875, 1.828125, 1.3125, 1.7734375, 1.2578125, 1.7421875, 1.203125, 1.6875, 1.171875, 1.6328125, 1.1171875, 1.6015625, 1.0859375, 1.546875, 2.03125, 1.515625, 1.9765625, 1.4609375, 1.9453125, 1.40625, 1.890625, 1.375, 1.8359375, 1.296875, 1.78125, 1.2421875, 1.7265625, 1.1875, 1.671875, 1.15625, 1.640625, 1.125, 1.5859375, 1.0703125, 1.5546875, 2.0390625, 1.5, 1.984375, 1.46875, 1.953125, 1.4375, 1.8984375, 1.3828125, 1.8671875, 1.328125, 1.8125, 1.2734375, 1.7578125, 1.21875, 1.703125, 1.1875, 1.6484375, 1.1328125, 1.6171875, 1.1015625, 1.5625, 1.046875, 1.53125, 2.015625, 1.5, 1.9609375, 1.4453125]
+08-08 17:33:42.669  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[cnt_lbs_redirect_do:358]	sdk_error:0, othercode:0, info:cnt_state_lbs_redirect, times:1 
+08-08 17:33:42.669  4017 21155 D LOG_TGA : ]
+08-08 17:33:42.670  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.mdev.sgp.ezvizlife.com fail,errno.103,[Software caused connection abort]]
+08-08 17:33:42.670  4017 21155 D LOG_TGA : level[1], sdk_error[8], othercode[0], buf[[lbs_connect:1328]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect host error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:42.672  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[net_connect:260]	sdk_error:8, othercode:0, info:ParseHost.8.222.249.237 fail,errno.103,[Software caused connection abort]]
+08-08 17:33:42.672  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[lbs_connect:1350]	sdk_error:8, othercode:0, info:lbs_connect net_work_connect ip error, server:mdev.sgp.ezvizlife.com, ip:8.222.249.237, port:8777]
+08-08 17:33:42.672  4017 21155 D LOG_TGA : level[2], sdk_error[8], othercode[0], buf[[cnt_state_lbs_redirect:286]	sdk_error:8, othercode:0, info:cnt_state_lbs_redirect result:8, type:2]
+08-08 17:33:42.672  4017 21155 D LOG_TGA : level[0], sdk_error[8], othercode[0], buf[[cnt_lbs_redirect_do:394]	sdk_error:8, othercode:0, info:lbs register fail]
+08-08 17:33:42.672  4017 21155 D LOG_TGA : level[3], sdk_error[0], othercode[0], buf[[push_queue_inner_cb_notic:29]	sdk_error:0, othercode:0, info:inner_cb_notic size:0, max size:256]
+08-08 17:33:42.679  4017 21157 D LOG_TGA : level[4], sdk_error[0], othercode[0], buf[[consume_extend_event:164]	sdk_error:0, othercode:0, info:throw to module.9000]
+08-08 17:33:42.680  4017 21157 D LOG_TGA : level[1], sdk_error[0], othercode[0], buf[[event_notice_callback:130]	sdk_error:0, othercode:0, info:err_tag:0, err_code:0xe0000105
+08-08 17:33:42.680  4017 21157 D LOG_TGA : ]
