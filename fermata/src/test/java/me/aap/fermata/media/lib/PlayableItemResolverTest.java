@@ -24,9 +24,25 @@ public class PlayableItemResolverTest {
 		assertSame(engine, new PlayableItemWrapper(item).getMediaEngine(null, null));
 	}
 
+	@Test
+	public void unwrapsAddonDefinedPresentationContract() {
+		PlayableItem item = proxy(PlayableItem.class, null);
+		PlayableItem presented = proxy(new Class[]{PlayableItem.class,
+				PlaybackPresentationItem.class}, item);
+		assertSame(item, PlayableItemResolver.unwrap(presented));
+	}
+
 	@SuppressWarnings("unchecked")
 	private static <T> T proxy(Class<T> type, MediaEngine engine) {
-		return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type},
-				(proxy, method, args) -> method.getName().equals("getMediaEngine") ? engine : null);
+		return (T) proxy(new Class[]{type}, engine);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> T proxy(Class<?>[] types, Object canonical) {
+		return (T) Proxy.newProxyInstance(PlayableItem.class.getClassLoader(), types,
+				(proxy, method, args) -> switch (method.getName()) {
+					case "getMediaEngine", "getCanonicalPlaybackItem" -> canonical;
+					default -> null;
+				});
 	}
 }

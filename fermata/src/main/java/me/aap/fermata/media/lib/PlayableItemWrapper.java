@@ -19,7 +19,7 @@ import me.aap.utils.vfs.VirtualResource;
 /**
  * @author Andrey Pavlenko
  */
-public class PlayableItemWrapper implements PlayableItem {
+public class PlayableItemWrapper implements PlayableItem, PlaybackPresentationItem {
 	private final PlayableItem item;
 
 	public PlayableItemWrapper(PlayableItem item) {
@@ -27,6 +27,12 @@ public class PlayableItemWrapper implements PlayableItem {
 	}
 
 	public PlayableItem getItem() {
+		return item;
+	}
+
+	@NonNull
+	@Override
+	public PlayableItem getCanonicalPlaybackItem() {
 		return item;
 	}
 

@@ -799,10 +799,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
 		return lib.getItem(mediaId).then(i -> {
 			if (i instanceof PlayableItem) {
-				return completed(PlayableItemResolver.unwrap((PlayableItem) i));
+				return completed(selectPlaybackItem((PlayableItem) i));
 			} else if (i instanceof BrowsableItem) {
 				return ((BrowsableItem) i).getFirstPlayable().map(pi ->
-						(pi == null) ? null : PlayableItemResolver.unwrap(pi));
+						(pi == null) ? null : selectPlaybackItem(pi));
 			} else {
 				return completedNull();
 			}
@@ -1191,7 +1191,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			if (i instanceof PlayableItem) return completed((PlayableItem) i);
 			else if (i instanceof BrowsableItem) return ((BrowsableItem) i).getFirstPlayable();
 			else return completedNull();
-		}).then(this::prepareItem).then(i -> {
+		}).map(i -> (i == null) ? null : selectPlaybackItem(i)).then(this::prepareItem).then(i -> {
 			if (i == null) return completedVoid();
 			playPreparedItem(i, 0, PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM);
 			return completedVoid();
@@ -1770,11 +1770,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public void playItem(PlayableItem i, long pos) {
 		if (terminal) return;
 		permanentFocusLoss.cancel();
-		playbackQueueContext.select(i);
-		i = PlayableItemResolver.unwrap(i);
+		i = selectPlaybackItem(i);
 		playerTask.cancel();
 		resetStreamRetry();
 		playerTask = createPlayItemTask(i, pos);
+	}
+
+	private PlayableItem selectPlaybackItem(PlayableItem presented) {
+		return playbackQueueContext.selectAndCanonicalize(presented);
 	}
 
 	/** Persists the current managed item without changing playback or media-session state. */

@@ -13,8 +13,8 @@ public final class PlayableItemResolver {
 	public static PlayableItem unwrap(@NonNull PlayableItem item) {
 		for (int depth = 0; depth < 16; depth++) {
 			PlayableItem next;
-			if (item instanceof ExportedItem exported) next = exported.getOrig();
-			else if (item instanceof PlayableItemWrapper wrapper) next = wrapper.getItem();
+			if (item instanceof PlaybackPresentationItem presentation)
+				next = presentation.getCanonicalPlaybackItem();
 			else return item;
 
 			if (next == item) return item;

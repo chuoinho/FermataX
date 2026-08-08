@@ -23,8 +23,11 @@ final class PlaybackQueueContext<T> {
 		this.canonicalizer = canonicalizer;
 	}
 
-	void select(@NonNull T item) {
-		presentedItem = (canonicalizer.canonicalize(item) == item) ? null : item;
+	@NonNull
+	T selectAndCanonicalize(@NonNull T item) {
+		T canonical = canonicalizer.canonicalize(item);
+		presentedItem = (canonical == item) ? null : item;
+		return canonical;
 	}
 
 	@NonNull

@@ -32,7 +32,7 @@ import me.aap.utils.vfs.VirtualResource;
 /**
  * @author Andrey Pavlenko
  */
-public class ExportedItem extends PlayableItemBase {
+public class ExportedItem extends PlayableItemBase implements PlaybackPresentationItem {
 	private final PlayableItemBase orig;
 	private List<ListenerWrapper> listeners;
 
@@ -283,6 +283,12 @@ public class ExportedItem extends PlayableItemBase {
 	}
 
 	public PlayableItemBase getOrig() {
+		return orig;
+	}
+
+	@NonNull
+	@Override
+	public PlayableItem getCanonicalPlaybackItem() {
 		return orig;
 	}
 
