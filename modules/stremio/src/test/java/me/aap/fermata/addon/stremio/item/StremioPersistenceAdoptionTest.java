@@ -42,6 +42,7 @@ import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.PersistentMediaItem;
+import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.net.RemotePlaybackItem;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
@@ -77,17 +78,21 @@ public class StremioPersistenceAdoptionTest {
 		PlaybackDescriptor descriptor = direct(request);
 		StremioDirectPlayableItem direct = new StremioDirectPlayableItem(
 				stremioRoot, gateway, descriptor, 0L);
+		ExtRoot recentCollection = new ExtRoot("recent", null);
+		ExtRoot favoriteCollection = new ExtRoot("favorite", null);
 
-		PlayableItem recent = direct.export("recent:item", new ExtRoot("recent", null));
-		PlayableItem favorite = recent.export("favorite:item", new ExtRoot("favorite", null));
+		PlayableItem recent = direct.export("recent:item", recentCollection);
+		PlayableItem favorite = recent.export("favorite:item", favoriteCollection);
 
 		assertFalse(direct.getId().equals(direct.getPersistentId()));
 		assertEquals(direct.getPersistentId(), PersistentMediaItem.idOf(recent));
 		assertEquals(direct.getPersistentId(), recent.getOrigId());
 		assertEquals(direct.getPersistentId(), PersistentMediaItem.idOf(favorite));
 		assertEquals(direct.getPersistentId(), favorite.getOrigId());
-		assertSame(direct.getParent(), recent.getParent());
-		assertSame(direct.getRoot(), favorite.getRoot());
+		assertSame(recentCollection, recent.getParent());
+		assertSame(favoriteCollection, favorite.getParent());
+		assertSame(favoriteCollection, favorite.getRoot());
+		assertSame(direct, PlayableItemResolver.unwrap(favorite));
 		assertEquals(R.drawable.stremio, direct.getIcon());
 		assertEquals(R.drawable.stremio, recent.getIcon());
 		assertEquals(R.drawable.stremio, favorite.getIcon());
