@@ -21,7 +21,11 @@ public class ProjectionLauncherContractTest {
 		assertTrue(manifest.contains("me.app.fermatax.auto.PhoneLauncherActivity"));
 		assertTrue(manifest.contains("android.intent.category.LAUNCHER"));
 		assertTrue(launcher.contains("ProjectionActivity.resumePendingRequest(this)"));
-		assertTrue(launcher.contains("target.setClass(this, MainActivity.class)"));
+		assertTrue(launcher.contains("new Intent(this, MainActivity.class)"));
+		assertTrue(launcher.contains("target.setAction(Intent.ACTION_MAIN)"));
+		assertTrue(launcher.contains("FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP"));
+		assertFalse(launcher.contains("new Intent(getIntent())"));
+		assertFalse(launcher.contains("target.addCategory"));
 	}
 
 	@Test
