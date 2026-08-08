@@ -51,7 +51,9 @@ jobs:
           ./gradlew --version
 
       - name: Mobile unit suite
-        run: ./gradlew testMobileDebugUnitTest --no-daemon --no-parallel --stacktrace
+        run: >-
+          ./gradlew testMobileDebugUnitTest :whisper:testMobileDebugUnitTest
+          --no-daemon --no-parallel --stacktrace
 
       - name: Auto unit suite
         if: ${{ !cancelled() }}

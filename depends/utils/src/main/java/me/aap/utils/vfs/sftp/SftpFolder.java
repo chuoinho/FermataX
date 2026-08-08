@@ -14,6 +14,7 @@ import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
+import me.aap.utils.vfs.VfsNetworkSafety;
 
 /**
  * @author Andrey Pavlenko
@@ -32,7 +33,8 @@ class SftpFolder extends SftpResource implements VirtualFolder {
 	public FutureSupplier<List<VirtualResource>> getChildren() {
 		SftpRoot root = getRoot();
 		return root.useChannel(ch -> {
-			@SuppressWarnings("unchecked") List<LsEntry> ls = ch.ls(getPath());
+		@SuppressWarnings("unchecked") List<LsEntry> ls = VfsNetworkSafety.requireDirectoryListing(
+					"SFTP", ch.ls(getPath()));
 			if (ls.isEmpty()) return Collections.emptyList();
 
 			List<VirtualResource> children = new ArrayList<>(ls.size());
@@ -41,12 +43,14 @@ class SftpFolder extends SftpResource implements VirtualFolder {
 				tb.append(getPath()).append('/');
 				int len = tb.length();
 
-				for (LsEntry e : ls) {
-					String name = e.getFilename();
-					if (name.equals(".") || name.equals("..")) continue;
-					tb.setLength(len);
-					String p = tb.append(name).toString();
-					if (e.getAttrs().isDir()) children.add(new SftpFolder(root, p, this));
+			for (LsEntry e : ls) {
+				e = VfsNetworkSafety.requireEntry("SFTP", e);
+				String name = VfsNetworkSafety.requireEntryName("SFTP", e.getFilename());
+				if (name.equals(".") || name.equals("..")) continue;
+				tb.setLength(len);
+				String p = tb.append(name).toString();
+				if (VfsNetworkSafety.requireField("SFTP", "directory entry attributes",
+						e.getAttrs()).isDir()) children.add(new SftpFolder(root, p, this));
 					else children.add(new SftpFile(root, p, this));
 				}
 			}

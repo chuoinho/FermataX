@@ -174,6 +174,7 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 
 	@Override
 	public boolean reconfigure(PreferenceStore ps) {
+		ensureOpen();
 		reconfigure(sessionPtr, ps.getStringPref(WhisperAddon.LANG));
 		return true;
 	}
@@ -181,15 +182,15 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	@Override
 	public boolean read(ByteBuffer buf, int chunkLen, int bytesPerSample, int channels,
 											int frameRate) {
-		assert buf.isDirect();
-		var slice = buf.position() == 0 && buf.limit() == buf.capacity() ? buf : buf.slice();
+		ensureOpen();
+		var slice = WhisperAudioInput.prepare(buf, chunkLen, bytesPerSample, channels, frameRate);
 		int consumed = resample(sessionPtr, slice, chunkLen, bytesPerSample, channels, frameRate);
-		buf.position(buf.position() + Math.abs(consumed));
-		return consumed <= 0;
+		return WhisperAudioInput.applyNativeConsumed(buf, slice.remaining(), consumed);
 	}
 
 	@Override
 	public List<Subtitles.Text> transcribe(long timeOffset) {
+		ensureOpen();
 		Log.d("Transcribing...");
 		int segments = fullTranscribe(sessionPtr);
 		Log.d("Number of segments: ", segments);
@@ -219,10 +220,12 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 
 	@Override
 	public String getLang() {
+		ensureOpen();
 		return lang(sessionPtr);
 	}
 
 	public void reset() {
+		ensureOpen();
 		reset(sessionPtr);
 		sb.setLength(0);
 		start = -1;
@@ -240,6 +243,10 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	@Override
 	protected void finalize() {
 		release();
+	}
+
+	private void ensureOpen() {
+		if (released) throw new IllegalStateException("Whisper session has been released");
 	}
 
 	private static File cacheDir(Context ctx) {

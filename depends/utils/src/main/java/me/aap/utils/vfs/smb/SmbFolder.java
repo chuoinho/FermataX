@@ -15,6 +15,7 @@ import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
+import me.aap.utils.vfs.VfsNetworkSafety;
 
 /**
  * @author Andrey Pavlenko
@@ -33,15 +34,17 @@ class SmbFolder extends SmbResource implements VirtualFolder {
 	public FutureSupplier<List<VirtualResource>> getChildren() {
 		SmbRoot root = getRoot();
 		return root.useShare(s -> {
-			List<FileIdBothDirectoryInformation> info = s.list(smbPath());
+			List<FileIdBothDirectoryInformation> info = VfsNetworkSafety.requireDirectoryListing(
+					"SMB", s.list(smbPath()));
 			List<VirtualResource> ls = new ArrayList<>(info.size());
 
 			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
 				tb.append(getPath()).append('/');
 				int len = tb.length();
 
-				for (FileIdBothDirectoryInformation i : info) {
-					String name = i.getFileName();
+			for (FileIdBothDirectoryInformation i : info) {
+				i = VfsNetworkSafety.requireEntry("SMB", i);
+				String name = VfsNetworkSafety.requireEntryName("SMB", i.getFileName());
 					if (name.equals(".") || name.equals("..")) continue;
 
 					tb.setLength(len);

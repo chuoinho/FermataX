@@ -27,6 +27,7 @@ import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.resource.Rid;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
+import me.aap.utils.vfs.VfsNetworkSafety;
 
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completed;
@@ -128,7 +129,9 @@ class SmbRoot extends SmbFolder {
 
 				ref.release();
 			}
-		})));
+		}))).ifFail(error -> {
+			throw VfsNetworkSafety.operationFailure("SMB", error);
+		});
 	}
 
 	private static class SessionPool extends ObjectPool<SmbSession> {

@@ -38,6 +38,7 @@ import me.aap.utils.resource.Rid;
 import me.aap.utils.vfs.VfsException;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
+import me.aap.utils.vfs.VfsNetworkSafety;
 
 /**
  * @author Andrey Pavlenko
@@ -143,7 +144,9 @@ class SftpRoot extends SftpFolder {
 
 				ref.release();
 			}
-		})));
+		}))).ifFail(error -> {
+			throw VfsNetworkSafety.operationFailure("SFTP", error);
+		});
 	}
 
 	private static class SessionPool extends ObjectPool<SftpSession> {

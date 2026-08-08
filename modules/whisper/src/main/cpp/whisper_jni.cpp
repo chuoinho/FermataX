@@ -252,9 +252,21 @@ Java_me_aap_fermata_whisper_Whisper_reconfigure(JNIEnv *env, jclass, jlong sessi
 
 extern "C" JNIEXPORT jint JNICALL
 Java_me_aap_fermata_whisper_Whisper_resample(JNIEnv *env, jclass, jlong sessionPtr, jobject byteBuf,
-																						 jint chunkLen, jint bytesPerSample, jint channels,
-																						 jint frameRate) {
-	assert(sessionPtr);
+											 jint chunkLen, jint bytesPerSample, jint channels,
+											 jint frameRate) {
+	if (!sessionPtr || !byteBuf || chunkLen <= 0 || bytesPerSample < 1 || bytesPerSample > 4 ||
+			channels <= 0 || channels > 8 || frameRate <= 0 || frameRate > 192000 ||
+			env->GetDirectBufferAddress(byteBuf) == nullptr ||
+			env->GetDirectBufferCapacity(byteBuf) < 0) {
+		env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"),
+										"Invalid Whisper PCM input");
+		return 0;
+	}
+	if ((env->GetDirectBufferCapacity(byteBuf) % (bytesPerSample * channels)) != 0) {
+		env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"),
+										"Whisper PCM buffer ends in a partial frame");
+		return 0;
+	}
 	static auto resamplers = std::map<std::tuple<jint, jint, jint>, size_t (*)(JNIEnv *, jobject,
 																																						 WhisperSession *)>{
 			{{1, 1, 16000}, &FrameBuffer<1, 1, 16000>::copy},
