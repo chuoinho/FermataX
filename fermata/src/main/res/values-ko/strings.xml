@@ -473,6 +473,9 @@
 	<string name="car_keyboard_delete">삭제</string>
 	<string name="car_keyboard_clear">분명한</string>
 	<string name="car_keyboard_ok">좋아요</string>
+	<string name="car_keyboard_go">이동</string>
+	<string name="car_keyboard_send">보내기</string>
+	<string name="car_keyboard_enter">입력</string>
 	<string name="m3u_playlist_timeout">응답 시간 초과</string>
 	<string name="diagnostics">진단</string>
 	<string name="diagnostics_sub">충돌, 멈춤 및 예기치 않은 앱 상태에 대한 로컬 보고서</string>

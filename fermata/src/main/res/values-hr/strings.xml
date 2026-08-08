@@ -468,6 +468,9 @@
 	<string name="car_keyboard_delete">Izbrisati</string>
 	<string name="car_keyboard_clear">Jasan</string>
 	<string name="car_keyboard_ok">U REDU</string>
+	<string name="car_keyboard_go">Idi</string>
+	<string name="car_keyboard_send">Pošalji</string>
+	<string name="car_keyboard_enter">Enter</string>
 	<string name="m3u_playlist_timeout">Istek vremena odgovora</string>
 	<string name="diagnostics">Dijagnostika</string>
 	<string name="diagnostics_sub">Lokalna izvješća o rušenjima, zastojima i neočekivanim stanjima aplikacije</string>

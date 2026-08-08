@@ -468,6 +468,9 @@
 	<string name="car_keyboard_delete">يمسح</string>
 	<string name="car_keyboard_clear">واضح</string>
 	<string name="car_keyboard_ok">نعم</string>
+	<string name="car_keyboard_go">انتقال</string>
+	<string name="car_keyboard_send">إرسال</string>
+	<string name="car_keyboard_enter">إدخال</string>
 	<string name="m3u_playlist_timeout">مهلة الاستجابة</string>
 	<string name="diagnostics">التشخيص</string>
 	<string name="diagnostics_sub">تقارير محلية عن الأعطال وحالات التوقف وحالات التطبيق غير المتوقعة</string>

@@ -468,6 +468,9 @@
 	<string name="car_keyboard_delete">Şterge</string>
 	<string name="car_keyboard_clear">Clar</string>
 	<string name="car_keyboard_ok">Bine</string>
+	<string name="car_keyboard_go">Mergi</string>
+	<string name="car_keyboard_send">Trimite</string>
+	<string name="car_keyboard_enter">Enter</string>
 	<string name="m3u_playlist_timeout">Timp de răspuns</string>
 	<string name="diagnostics">Diagnosticare</string>
 	<string name="diagnostics_sub">Rapoarte locale despre blocări, suspendări și stări neașteptate ale aplicației</string>

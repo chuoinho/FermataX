@@ -80,6 +80,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private CarEditText editText;
 	private EditText activeInput;
 	private TextWatcher textWatcher;
+	private boolean ownsEditorActionListener;
 	private CarKeyboardOverlay keyboardOverlay;
 	private CarTextInputSession textInputSession;
 	private long inputGeneration;
@@ -218,6 +219,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	public void onPause() {
+		stopInput();
 		super.onPause();
 		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.PAUSED, diagnosticsActivityId);
 		resumed = false;
@@ -371,13 +373,25 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private void setActiveInput(EditText input, TextWatcher w) {
 		if ((activeInput != null) && (textWatcher != null)) {
 			activeInput.removeTextChangedListener(textWatcher);
-			activeInput.setOnEditorActionListener(null);
 		}
+		if ((activeInput != null) && ownsEditorActionListener)
+			activeInput.setOnEditorActionListener(null);
 
 		activeInput = input;
 		textWatcher = w;
+		ownsEditorActionListener = true;
 		input.setOnEditorActionListener(null);
 		input.addTextChangedListener(w);
+	}
+
+	private void setActiveEmbeddedInput(EditText input) {
+		if ((activeInput != null) && (textWatcher != null))
+			activeInput.removeTextChangedListener(textWatcher);
+		if ((activeInput != null) && ownsEditorActionListener)
+			activeInput.setOnEditorActionListener(null);
+		activeInput = input;
+		textWatcher = null;
+		ownsEditorActionListener = false;
 	}
 
 	private void startCarInput(CarEditText input, boolean submitOnEnter) {
@@ -411,7 +425,9 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		input.setOnEditorActionListener((view, actionId, event) -> {
 			if ((actionId != EditorInfo.IME_ACTION_DONE) &&
 					(actionId != EditorInfo.IME_ACTION_GO) &&
-					(actionId != EditorInfo.IME_ACTION_SEARCH)) return false;
+					(actionId != EditorInfo.IME_ACTION_SEARCH) &&
+					(actionId != EditorInfo.IME_ACTION_SEND) &&
+					(actionId != EditorInfo.IME_ACTION_NEXT)) return false;
 			if (textInputSession == session) session.submit(input.getText());
 			return true;
 		});
@@ -431,11 +447,12 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		if (keyboardOverlay != null) keyboardOverlay.dismiss();
 		if (activeInput != null) {
 			if (textWatcher != null) activeInput.removeTextChangedListener(textWatcher);
-			activeInput.setOnEditorActionListener(null);
+			if (ownsEditorActionListener) activeInput.setOnEditorActionListener(null);
 		}
 
 		activeInput = null;
 		textWatcher = null;
+		ownsEditorActionListener = false;
 		a().stopInput();
 	}
 
@@ -464,6 +481,9 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		CarEditText et = new CarEditText(ctx);
 		et.setOnClickListener(v -> {
 			if ((keyboardOverlay == null) || !keyboardOverlay.isShowing()) {
+				cancelTextInputSession();
+				inputGeneration++;
+				setActiveEmbeddedInput(et);
 				et.requestFocus();
 				getKeyboardOverlay().show(et, false);
 			}

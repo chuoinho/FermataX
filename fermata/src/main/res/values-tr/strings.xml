@@ -468,6 +468,9 @@
 	<string name="car_keyboard_delete">Silmek</string>
 	<string name="car_keyboard_clear">Temizlemek</string>
 	<string name="car_keyboard_ok">TAMAM</string>
+	<string name="car_keyboard_go">Git</string>
+	<string name="car_keyboard_send">Gönder</string>
+	<string name="car_keyboard_enter">Enter</string>
 	<string name="m3u_playlist_timeout">Yanıt zaman aşımı</string>
 	<string name="diagnostics">Tanılama</string>
 	<string name="diagnostics_sub">Çökmeler, donmalar ve beklenmeyen uygulama durumları için yerel raporlar</string>

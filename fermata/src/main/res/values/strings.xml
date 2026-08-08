@@ -84,6 +84,9 @@
 	<string name="car_keyboard_delete">Delete</string>
 	<string name="car_keyboard_clear">Clear</string>
 	<string name="car_keyboard_ok">OK</string>
+	<string name="car_keyboard_go">Go</string>
+	<string name="car_keyboard_send">Send</string>
+	<string name="car_keyboard_enter">Enter</string>
 
     <string name="theme">Application theme</string>
     <string name="theme_sub">Current theme: %1$s</string>

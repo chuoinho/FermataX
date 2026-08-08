@@ -468,6 +468,9 @@
 	<string name="car_keyboard_delete">Удалить</string>
 	<string name="car_keyboard_clear">Прозрачный</string>
 	<string name="car_keyboard_ok">ХОРОШО</string>
+	<string name="car_keyboard_go">Перейти</string>
+	<string name="car_keyboard_send">Отправить</string>
+	<string name="car_keyboard_enter">Ввод</string>
 	<string name="m3u_playlist_timeout">Тайм-аут ответа</string>
 	<string name="diagnostics">Диагностика</string>
 	<string name="diagnostics_sub">Локальные отчёты о сбоях, зависаниях и неожиданных состояниях приложения</string>

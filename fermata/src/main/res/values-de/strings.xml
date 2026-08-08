@@ -473,6 +473,9 @@
 	<string name="car_keyboard_delete">Löschen</string>
 	<string name="car_keyboard_clear">Klar</string>
 	<string name="car_keyboard_ok">OK</string>
+	<string name="car_keyboard_go">Los</string>
+	<string name="car_keyboard_send">Senden</string>
+	<string name="car_keyboard_enter">Eingabe</string>
 	<string name="m3u_playlist_timeout">Antwortzeitüberschreitung</string>
 	<string name="diagnostics">Diagnose</string>
 	<string name="diagnostics_sub">Lokale Berichte zu Abstürzen, Hängern und unerwarteten App-Zuständen</string>

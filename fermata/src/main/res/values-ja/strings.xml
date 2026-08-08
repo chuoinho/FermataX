@@ -473,6 +473,9 @@
 	<string name="car_keyboard_delete">消去</string>
 	<string name="car_keyboard_clear">クリア</string>
 	<string name="car_keyboard_ok">わかりました</string>
+	<string name="car_keyboard_go">移動</string>
+	<string name="car_keyboard_send">送信</string>
+	<string name="car_keyboard_enter">改行</string>
 	<string name="m3u_playlist_timeout">応答タイムアウト</string>
 	<string name="diagnostics">診断</string>
 	<string name="diagnostics_sub">クラッシュ、フリーズ、予期しないアプリ状態のローカルレポート</string>

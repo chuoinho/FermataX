@@ -473,6 +473,9 @@
 	<string name="car_keyboard_delete">Excluir</string>
 	<string name="car_keyboard_clear">Claro</string>
 	<string name="car_keyboard_ok">OK</string>
+	<string name="car_keyboard_go">Ir</string>
+	<string name="car_keyboard_send">Enviar</string>
+	<string name="car_keyboard_enter">Enter</string>
 	<string name="m3u_playlist_timeout">Tempo limite de resposta</string>
 	<string name="diagnostics">Diagnóstico</string>
 	<string name="diagnostics_sub">Relatórios locais sobre falhas, bloqueios e estados inesperados da aplicação</string>

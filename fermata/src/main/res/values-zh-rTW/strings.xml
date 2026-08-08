@@ -473,6 +473,9 @@
 	<string name="car_keyboard_delete">刪除</string>
 	<string name="car_keyboard_clear">清除</string>
 	<string name="car_keyboard_ok">好的</string>
+	<string name="car_keyboard_go">前往</string>
+	<string name="car_keyboard_send">傳送</string>
+	<string name="car_keyboard_enter">輸入</string>
 	<string name="m3u_playlist_timeout">回應超時</string>
 	<string name="diagnostics">診斷</string>
 	<string name="diagnostics_sub">儲存在裝置上的當機、卡住及應用程式異常狀態報告</string>

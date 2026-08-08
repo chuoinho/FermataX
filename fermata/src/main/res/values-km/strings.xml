@@ -468,6 +468,9 @@
 	<string name="car_keyboard_delete">លុប</string>
 	<string name="car_keyboard_clear">ច្បាស់</string>
 	<string name="car_keyboard_ok">យល់ព្រម</string>
+	<string name="car_keyboard_go">ទៅ</string>
+	<string name="car_keyboard_send">ផ្ញើ</string>
+	<string name="car_keyboard_enter">បញ្ចូល</string>
 	<string name="m3u_playlist_timeout">ពេលវេលាឆ្លើយតប</string>
 	<string name="diagnostics">ការវិនិច្ឆ័យ</string>
 	<string name="diagnostics_sub">របាយការណ៍ក្នុងឧបករណ៍អំពីការគាំង ការជាប់គាំង និងស្ថានភាពកម្មវិធីដែលមិនរំពឹងទុក</string>

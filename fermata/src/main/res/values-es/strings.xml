@@ -476,6 +476,9 @@ Por favor, reinicie la aplicación.</string>
 	<string name="car_keyboard_delete">Borrar</string>
 	<string name="car_keyboard_clear">Claro</string>
 	<string name="car_keyboard_ok">DE ACUERDO</string>
+	<string name="car_keyboard_go">Ir</string>
+	<string name="car_keyboard_send">Enviar</string>
+	<string name="car_keyboard_enter">Intro</string>
 	<string name="m3u_playlist_timeout">Tiempo de espera de respuesta</string>
 	<string name="diagnostics">Diagnóstico</string>
 	<string name="diagnostics_sub">Informes locales de fallos, bloqueos y estados inesperados de la aplicación</string>

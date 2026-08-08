@@ -468,6 +468,9 @@
 	<string name="car_keyboard_delete">Usuwać</string>
 	<string name="car_keyboard_clear">Jasne</string>
 	<string name="car_keyboard_ok">OK</string>
+	<string name="car_keyboard_go">Idź</string>
+	<string name="car_keyboard_send">Wyślij</string>
+	<string name="car_keyboard_enter">Enter</string>
 	<string name="m3u_playlist_timeout">Przekroczono limit czasu odpowiedzi</string>
 	<string name="diagnostics">Diagnostyka</string>
 	<string name="diagnostics_sub">Lokalne raporty o awariach, zawieszeniach i nieoczekiwanych stanach aplikacji</string>

@@ -468,6 +468,9 @@
 	<string name="car_keyboard_delete">Xóa bỏ</string>
 	<string name="car_keyboard_clear">Thông thoáng</string>
 	<string name="car_keyboard_ok">ĐƯỢC RỒI</string>
+	<string name="car_keyboard_go">Đi</string>
+	<string name="car_keyboard_send">Gửi</string>
+	<string name="car_keyboard_enter">Xuống dòng</string>
 	<string name="m3u_playlist_timeout">Hết thời gian phản hồi</string>
 	<string name="diagnostics">Chẩn đoán</string>
 	<string name="diagnostics_sub">Báo cáo cục bộ về sự cố, treo ứng dụng và trạng thái bất thường</string>
