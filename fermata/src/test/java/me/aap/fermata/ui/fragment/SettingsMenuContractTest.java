@@ -35,13 +35,15 @@ public class SettingsMenuContractTest {
 	public void diagnosticsReplacesLegacyRawLogAction() throws Exception {
 		String settings = source("SettingsFragment.java");
 		String backup = source("SettingsBackupManager.java");
+		String stateStore = mainSource("me/aap/fermata/backup/AndroidBackupStateStore.java");
 
 		assertTrue(settings.contains("R.string.detailed_diagnostics"));
 		assertTrue(settings.contains("R.string.export_diagnostic_report"));
 		assertTrue(settings.contains("R.string.clear_diagnostic_data"));
 		assertFalse(settings.contains("R.string.open_log"));
 		assertFalse(backup.contains("static void openLog"));
-		assertTrue(backup.contains("!\"diagnostics.xml\".equals(name)"));
+		assertFalse(backup.contains("PrefUtils.exportSharedPreferences"));
+		assertTrue(stateStore.contains("\"diagnostics\""));
 	}
 
 	private static String source(String name) throws Exception {
@@ -50,6 +52,13 @@ public class SettingsMenuContractTest {
 		if (!Files.isRegularFile(file)) {
 			file = root.resolve("fermata/src/main/java/me/aap/fermata/ui/fragment").resolve(name);
 		}
+		return new String(Files.readAllBytes(file), UTF_8);
+	}
+
+	private static String mainSource(String path) throws Exception {
+		Path root = Path.of(System.getProperty("user.dir"));
+		Path file = root.resolve("src/main/java").resolve(path);
+		if (!Files.isRegularFile(file)) file = root.resolve("fermata/src/main/java").resolve(path);
 		return new String(Files.readAllBytes(file), UTF_8);
 	}
 }

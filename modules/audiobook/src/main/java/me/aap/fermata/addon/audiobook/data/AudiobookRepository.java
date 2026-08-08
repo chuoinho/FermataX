@@ -89,6 +89,13 @@ public final class AudiobookRepository implements Closeable, AudiobookDownloadSt
 				AudiobookDatabase.getSource(db, sourceId)));
 	}
 
+	/** Replaces portable source configuration; books and chapters remain refreshable data. */
+	public FutureSupplier<Void> replaceSources(List<AudiobookSource> sources) {
+		List<AudiobookSource> snapshot = List.copyOf(sources);
+		return initialized.thenIgnoreResult(() -> database.execute(db ->
+				AudiobookDatabase.replaceSources(db, snapshot)));
+	}
+
 	public FutureSupplier<Boolean> deleteSource(String sourceId) {
 		return initialized.thenIgnoreResult(() -> database.query(db ->
 				AudiobookDatabase.deleteSource(db, sourceId)));

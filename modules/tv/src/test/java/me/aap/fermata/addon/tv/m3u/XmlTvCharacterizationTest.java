@@ -12,13 +12,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import me.aap.fermata.FermataApplication;
+
 @RunWith(RobolectricTestRunner.class)
+@Config(application = FermataApplication.class)
 public class XmlTvCharacterizationTest {
 	private SQLiteDatabase database;
 

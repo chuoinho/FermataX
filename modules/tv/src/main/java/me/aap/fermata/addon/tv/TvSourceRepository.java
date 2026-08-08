@@ -38,6 +38,14 @@ final class TvSourceRepository {
 		return store.getIntPref(SOURCE_COUNTER) + 1;
 	}
 
+	int getSourceCounter() {
+		return store.getIntPref(SOURCE_COUNTER);
+	}
+
+	PreferenceStore getStore() {
+		return store;
+	}
+
 	void saveM3uSource(PreferenceStore.Edit e, int sourceId, String m3uId) {
 		e.setIntPref(SOURCE_COUNTER, sourceId);
 		e.setStringPref(sourceTypePref(sourceId), TvSourceItem.TYPE_M3U);
@@ -76,6 +84,20 @@ final class TvSourceRepository {
 
 	String getSourceType(int sourceId) {
 		return getSourceType(store, sourceId);
+	}
+
+	void restoreSources(int counter, java.util.List<TvAddon.SourceBackup> sources) {
+		int[] ids = new int[sources.size()];
+		try (PreferenceStore.Edit edit = store.editPreferenceStore()) {
+			for (int i = 0; i < sources.size(); i++) {
+				TvAddon.SourceBackup source = sources.get(i);
+				ids[i] = source.id;
+				if (source.account != null) saveXtreamSource(edit, source.id, source.account);
+				else saveM3uSource(edit, source.id, source.m3uId);
+			}
+			edit.setIntPref(SOURCE_COUNTER, counter);
+			edit.setIntArrayPref(SOURCE_IDS, ids);
+		}
 	}
 
 	void removeSource(int sourceId) {

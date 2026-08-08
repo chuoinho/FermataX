@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Резервное копирование</string>
+	<string name="backup_restore_sub">Перенос настроек и учетных записей между устройствами</string>
+	<string name="backup_all_data">Сохранить все данные</string>
+	<string name="backup_all_data_sub">Создать один зашифрованный файл FermataX</string>
+	<string name="restore_backup">Восстановить копию</string>
+	<string name="restore_backup_sub">Восстановить файл .fxbackup или старый ZIP</string>
+	<string name="backup_password_title">Защитить копию</string>
+	<string name="backup_password">Пароль копии</string>
+	<string name="backup_password_confirm">Подтвердите пароль</string>
+	<string name="backup_all_data_ok">Все переносимые данные сохранены в %1$s.</string>
+	<string name="backup_all_data_failed">Не удалось создать резервную копию.</string>
+	<string name="restore_backup_ok">Резервная копия восстановлена.\nПерезапустите приложение.</string>
+	<string name="restore_legacy_secure_skipped">Старые настройки восстановлены. Учетные данные, связанные с установкой, необходимо ввести повторно.\nПерезапустите приложение.</string>
+	<string name="restore_backup_auth_failed">Неверный пароль или поврежденная копия.</string>
+	<string name="restore_backup_unsupported">Копия использует неподдерживаемый новый формат.</string>
+	<string name="restore_backup_secure_unavailable">Защищенное хранилище недоступно. Данные не восстановлены.</string>
+	<string name="restore_backup_failed">Не удалось восстановить копию. Текущие данные сохранены.</string>
+</resources>

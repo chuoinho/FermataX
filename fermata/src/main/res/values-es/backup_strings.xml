@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Copia y restauración</string>
+	<string name="backup_restore_sub">Transfiere ajustes y cuentas portátiles entre dispositivos</string>
+	<string name="backup_all_data">Copiar todos los datos</string>
+	<string name="backup_all_data_sub">Crea un único archivo cifrado de FermataX</string>
+	<string name="restore_backup">Restaurar copia</string>
+	<string name="restore_backup_sub">Restaura un archivo .fxbackup o un ZIP antiguo</string>
+	<string name="backup_password_title">Proteger copia</string>
+	<string name="backup_password">Contraseña de la copia</string>
+	<string name="backup_password_confirm">Confirmar contraseña</string>
+	<string name="backup_all_data_ok">Todos los datos portátiles se guardaron en %1$s.</string>
+	<string name="backup_all_data_failed">No se pudo crear la copia.</string>
+	<string name="restore_backup_ok">Copia restaurada correctamente.\nReinicia la aplicación.</string>
+	<string name="restore_legacy_secure_skipped">Se restauraron los ajustes antiguos. Las credenciales ligadas a la instalación deben introducirse de nuevo.\nReinicia la aplicación.</string>
+	<string name="restore_backup_auth_failed">Contraseña incorrecta o copia dañada.</string>
+	<string name="restore_backup_unsupported">La copia usa un formato más reciente no compatible.</string>
+	<string name="restore_backup_secure_unavailable">El almacenamiento seguro no está disponible. No se restauraron datos.</string>
+	<string name="restore_backup_failed">No se pudo restaurar la copia. Se conservaron los datos existentes.</string>
+</resources>

@@ -193,6 +193,22 @@ public class AudiobookDatabaseTest {
 		assertEquals(0, stored.getDownloadState());
 	}
 
+	@Test
+	public void portableRestoreReplacesSourcesAndDropsDerivedCatalog() {
+		AudiobookSource old = source("source-old");
+		AudiobookBook book = book("book-old", old.getId(), "Old");
+		AudiobookDatabase.replaceSourceBook(database, old, book,
+				List.of(chapter(book.getId(), "chapter-old", 0)));
+		AudiobookSource restored = source("source-restored");
+
+		AudiobookDatabase.replaceSources(database, List.of(restored));
+
+		assertEquals(List.of(restored.getId()), AudiobookDatabase.listSources(database)
+				.stream().map(AudiobookSource::getId).toList());
+		assertNull(AudiobookDatabase.getBook(database, book.getId()));
+		assertTrue(AudiobookDatabase.listChapters(database, book.getId()).isEmpty());
+	}
+
 	private static AudiobookSource source(String id) {
 		return new AudiobookSource(id, AudiobookSourceType.LOCAL, "Folder", "file:///books",
 				null, 1, 2);

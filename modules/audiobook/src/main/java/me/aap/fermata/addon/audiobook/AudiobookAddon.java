@@ -5,6 +5,16 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataMediaServiceAddon;
@@ -22,6 +32,10 @@ import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.addon.AutomotiveShutdownParticipant;
+import me.aap.fermata.backup.BackupContributor;
+import me.aap.fermata.backup.BackupIO;
+import me.aap.fermata.addon.audiobook.model.AudiobookSource;
+import me.aap.fermata.addon.audiobook.model.AudiobookSourceType;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -29,7 +43,10 @@ import android.support.v4.media.session.PlaybackStateCompat;
 @Keep
 @SuppressWarnings("unused")
 public final class AudiobookAddon implements MediaLibAddon, FermataMediaServiceAddon, VoiceSearchAddon,
-		MediaSessionCallback.Listener, AutomotiveShutdownParticipant {
+		MediaSessionCallback.Listener, AutomotiveShutdownParticipant, BackupContributor {
+	private static final String BACKUP_ID = "audiobook.sources";
+	private static final int BACKUP_VERSION = 1;
+	private static final int MAX_BACKUP_SOURCES = 10_000;
 	private static final long PROGRESS_WRITE_INTERVAL_MS = 15_000;
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(
@@ -182,5 +199,128 @@ public final class AudiobookAddon implements MediaLibAddon, FermataMediaServiceA
 		boolean completed = (duration > 0) &&
 				(position >= Math.max(duration - 30_000, (long) (duration * 0.95)));
 		chapter.savePlaybackProgress(completed ? 0 : position, completed);
+	}
+
+	@Override
+	public String getBackupId() {
+		return BACKUP_ID;
+	}
+
+	@Override
+	public int getBackupVersion() {
+		return BACKUP_VERSION;
+	}
+
+	@Override
+	public byte[] exportBackup() throws Exception {
+		RepositoryLease lease = backupRepository();
+		try {
+			List<AudiobookSource> sources = lease.repository.listSources().get();
+			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+			try (DataOutputStream output = new DataOutputStream(bytes)) {
+				output.writeInt(sources.size());
+				for (AudiobookSource source : sources) writeSource(output, source);
+			}
+			return bytes.toByteArray();
+		} finally {
+			lease.close();
+		}
+	}
+
+	@Override
+	public void validateRestore(int version, byte[] data) throws Exception {
+		readSources(version, data);
+	}
+
+	@Override
+	public void restoreBackup(int version, byte[] data) throws Exception {
+		List<AudiobookSource> sources = readSources(version, data);
+		RepositoryLease lease = backupRepository();
+		try {
+			lease.repository.replaceSources(sources).get();
+		} finally {
+			lease.close();
+		}
+	}
+
+	@Override
+	public void verifyRestore(int version, byte[] data) throws Exception {
+		List<AudiobookSource> expected = readSources(version, data);
+		RepositoryLease lease = backupRepository();
+		try {
+			List<AudiobookSource> actual = lease.repository.listSources().get();
+			if (expected.size() != actual.size()) throw incomplete();
+			java.util.Map<String, AudiobookSource> byId = new java.util.HashMap<>();
+			for (AudiobookSource source : actual) byId.put(source.getId(), source);
+			for (AudiobookSource source : expected) {
+				if (!sameSource(source, byId.get(source.getId()))) throw incomplete();
+			}
+		} finally {
+			lease.close();
+		}
+	}
+
+	private synchronized RepositoryLease backupRepository() {
+		if (repository != null) return new RepositoryLease(repository, false);
+		FermataApplication app = FermataApplication.get();
+		return new RepositoryLease(new AudiobookRepository(app, app.getVfsManager()), true);
+	}
+
+	static void writeSource(DataOutputStream output, AudiobookSource source)
+			throws Exception {
+		BackupIO.writeString(output, source.getId());
+		BackupIO.writeString(output, source.getType().name());
+		BackupIO.writeString(output, source.getName());
+		BackupIO.writeString(output, source.getEndpoint());
+		BackupIO.writeNullableString(output, source.getCredentialRef());
+		output.writeLong(source.getCreatedMs());
+		output.writeLong(source.getUpdatedMs());
+	}
+
+	static List<AudiobookSource> readSources(int version, byte[] data) throws Exception {
+		if (version != BACKUP_VERSION) throw new IllegalArgumentException(
+				"Unsupported Audiobook backup version");
+		try (DataInputStream input = new DataInputStream(new ByteArrayInputStream(data))) {
+			int count = BackupIO.readCount(input, MAX_BACKUP_SOURCES, "audiobook sources");
+			List<AudiobookSource> result = new ArrayList<>(count);
+			Set<String> ids = new HashSet<>();
+			for (int i = 0; i < count; i++) {
+				String id = BackupIO.readString(input);
+				if (id.isBlank() || !ids.add(id)) throw new IllegalArgumentException(
+						"Invalid Audiobook source ID");
+				AudiobookSourceType type = AudiobookSourceType.valueOf(BackupIO.readString(input));
+				String name = BackupIO.readString(input);
+				String endpoint = BackupIO.readString(input);
+				if (endpoint.isBlank()) throw new IllegalArgumentException(
+						"Missing Audiobook source endpoint");
+				result.add(new AudiobookSource(id, type, name, endpoint,
+						BackupIO.readNullableString(input),
+						input.readLong(), input.readLong()));
+			}
+			if (input.read() != -1) throw new IllegalArgumentException(
+					"Trailing Audiobook backup data");
+			return List.copyOf(result);
+		}
+	}
+
+	private static boolean sameSource(AudiobookSource first, @Nullable AudiobookSource second) {
+		return (second != null) && first.getId().equals(second.getId()) &&
+				(first.getType() == second.getType()) && first.getName().equals(second.getName()) &&
+				first.getEndpoint().equals(second.getEndpoint()) &&
+				java.util.Objects.equals(first.getCredentialRef(), second.getCredentialRef()) &&
+				(first.getCreatedMs() == second.getCreatedMs()) &&
+				(first.getUpdatedMs() == second.getUpdatedMs());
+	}
+
+	private static IllegalStateException incomplete() {
+		return new IllegalStateException("Audiobook sources did not restore completely");
+	}
+
+	private record RepositoryLease(AudiobookRepository repository, boolean owned)
+			implements AutoCloseable {
+		@Override
+		public void close() {
+			if (owned) repository.close();
+		}
 	}
 }

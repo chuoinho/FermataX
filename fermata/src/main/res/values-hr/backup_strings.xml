@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Sigurnosna kopija i vraćanje</string>
+	<string name="backup_restore_sub">Prenesite prenosive postavke i račune između uređaja</string>
+	<string name="backup_all_data">Kopiraj sve podatke</string>
+	<string name="backup_all_data_sub">Izradi jednu šifriranu FermataX datoteku</string>
+	<string name="restore_backup">Vrati sigurnosnu kopiju</string>
+	<string name="restore_backup_sub">Vrati .fxbackup datoteku ili staru ZIP arhivu</string>
+	<string name="backup_password_title">Zaštiti sigurnosnu kopiju</string>
+	<string name="backup_password">Lozinka sigurnosne kopije</string>
+	<string name="backup_password_confirm">Potvrdi lozinku</string>
+	<string name="backup_all_data_ok">Svi prenosivi podaci spremljeni su u %1$s.</string>
+	<string name="backup_all_data_failed">Sigurnosnu kopiju nije moguće izraditi.</string>
+	<string name="restore_backup_ok">Sigurnosna kopija je vraćena.\nPonovno pokrenite aplikaciju.</string>
+	<string name="restore_legacy_secure_skipped">Stare postavke su vraćene. Vjerodajnice vezane uz instalaciju moraju se ponovno unijeti.\nPonovno pokrenite aplikaciju.</string>
+	<string name="restore_backup_auth_failed">Pogrešna lozinka ili oštećena kopija.</string>
+	<string name="restore_backup_unsupported">Kopija koristi nepodržani noviji format.</string>
+	<string name="restore_backup_secure_unavailable">Sigurna pohrana nije dostupna. Podaci nisu vraćeni.</string>
+	<string name="restore_backup_failed">Kopiju nije moguće vratiti. Postojeći podaci su zadržani.</string>
+</resources>

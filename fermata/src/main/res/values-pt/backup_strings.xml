@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Cópia e restauro</string>
+	<string name="backup_restore_sub">Transfira definições e contas portáteis entre dispositivos</string>
+	<string name="backup_all_data">Copiar todos os dados</string>
+	<string name="backup_all_data_sub">Crie um único ficheiro FermataX encriptado</string>
+	<string name="restore_backup">Restaurar cópia</string>
+	<string name="restore_backup_sub">Restaure um ficheiro .fxbackup ou ZIP antigo</string>
+	<string name="backup_password_title">Proteger cópia</string>
+	<string name="backup_password">Palavra-passe da cópia</string>
+	<string name="backup_password_confirm">Confirmar palavra-passe</string>
+	<string name="backup_all_data_ok">Todos os dados portáteis foram guardados em %1$s.</string>
+	<string name="backup_all_data_failed">Não foi possível criar a cópia.</string>
+	<string name="restore_backup_ok">Cópia restaurada.\nReinicie a aplicação.</string>
+	<string name="restore_legacy_secure_skipped">As definições antigas foram restauradas. As credenciais ligadas à instalação devem ser introduzidas novamente.\nReinicie a aplicação.</string>
+	<string name="restore_backup_auth_failed">Palavra-passe errada ou cópia danificada.</string>
+	<string name="restore_backup_unsupported">A cópia usa um formato mais recente não suportado.</string>
+	<string name="restore_backup_secure_unavailable">O armazenamento seguro não está disponível. Nenhum dado foi restaurado.</string>
+	<string name="restore_backup_failed">Não foi possível restaurar a cópia. Os dados existentes foram mantidos.</string>
+</resources>

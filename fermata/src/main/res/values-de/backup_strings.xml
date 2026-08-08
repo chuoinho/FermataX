@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Sichern &amp; Wiederherstellen</string>
+	<string name="backup_restore_sub">Alle übertragbaren Einstellungen und Kontodaten zwischen Geräten verschieben</string>
+	<string name="backup_all_data">Alle Daten sichern</string>
+	<string name="backup_all_data_sub">Eine verschlüsselte FermataX-Sicherungsdatei erstellen</string>
+	<string name="restore_backup">Sicherung wiederherstellen</string>
+	<string name="restore_backup_sub">Eine .fxbackup-Datei oder eine ältere Einstellungs-ZIP wiederherstellen</string>
+	<string name="backup_password_title">Sicherung schützen</string>
+	<string name="backup_password">Sicherungspasswort</string>
+	<string name="backup_password_confirm">Passwort bestätigen</string>
+	<string name="backup_all_data_ok">Alle übertragbaren Daten wurden in %1$s gespeichert.</string>
+	<string name="backup_all_data_failed">Die Sicherung konnte nicht erstellt werden.</string>
+	<string name="restore_backup_ok">Sicherung erfolgreich wiederhergestellt.\nBitte die Anwendung neu starten.</string>
+	<string name="restore_legacy_secure_skipped">Ältere Einstellungen wurden wiederhergestellt. Installationsgebundene Zugangsdaten müssen erneut eingegeben werden.\nBitte die Anwendung neu starten.</string>
+	<string name="restore_backup_auth_failed">Falsches Passwort oder beschädigte Sicherung.</string>
+	<string name="restore_backup_unsupported">Diese Sicherung verwendet ein nicht unterstütztes neueres Format.</string>
+	<string name="restore_backup_secure_unavailable">Der sichere Speicher ist nicht verfügbar. Es wurden keine Daten wiederhergestellt.</string>
+	<string name="restore_backup_failed">Die Sicherung konnte nicht wiederhergestellt werden. Vorhandene Daten wurden beibehalten.</string>
+</resources>

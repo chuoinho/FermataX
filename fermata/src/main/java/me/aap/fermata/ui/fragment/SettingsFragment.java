@@ -331,15 +331,19 @@ public class SettingsFragment extends MainActivityFragment
 
 		if (!a.isCarActivityNotMirror()) {
 			sub1 = set.subSet(o -> o.title = R.string.other);
-			sub1.addButton(o -> {
-				o.title = R.string.export_prefs;
-				o.subtitle = R.string.export_prefs_sub;
-				o.onClick = () -> SettingsBackupManager.exportPrefs(a);
+			PreferenceSet backup = sub1.subSet(o -> {
+				o.title = R.string.backup_restore;
+				o.subtitle = R.string.backup_restore_sub;
 			});
-			sub1.addButton(o -> {
-				o.title = R.string.import_prefs;
-				o.subtitle = R.string.import_prefs_sub;
-				o.onClick = () -> SettingsBackupManager.importPrefs(a);
+			backup.addButton(o -> {
+				o.title = R.string.backup_all_data;
+				o.subtitle = R.string.backup_all_data_sub;
+				o.onClick = () -> SettingsBackupManager.backupAllData(a);
+			});
+			backup.addButton(o -> {
+				o.title = R.string.restore_backup;
+				o.subtitle = R.string.restore_backup_sub;
+				o.onClick = () -> SettingsBackupManager.restoreBackup(a);
 			});
 		}
 

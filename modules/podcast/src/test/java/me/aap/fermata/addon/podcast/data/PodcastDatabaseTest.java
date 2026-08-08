@@ -204,6 +204,24 @@ public class PodcastDatabaseTest {
 				"feed-download", stored.episode.getKey()));
 	}
 
+	@Test
+	public void portableRestoreReplacesSubscriptionsAndDropsDerivedEpisodeCache() {
+		PodcastSubscription old = subscription("feed-old", "Old");
+		PodcastStoredEpisode episode = episode("old-episode", "Old episode");
+		PodcastDatabase.upsert(database, old, List.of(episode), 1);
+		PodcastDatabase.updateDownload(database, old.getFeedKey(), episode.episode.getKey(),
+				PodcastDownloadState.DOWNLOADING, null, "partial", 1, 2, null, null, null);
+		PodcastSubscription restored = subscription("feed-restored", "Restored");
+
+		PodcastDatabase.replaceSubscriptions(database, List.of(restored), 2);
+
+		assertEquals(List.of(restored.getFeedKey()), PodcastDatabase.listSubscriptions(database)
+				.stream().map(PodcastSubscription::getFeedKey).toList());
+		assertTrue(PodcastDatabase.listEpisodes(database, old.getFeedKey(), 10, 0).isEmpty());
+		assertEquals(PodcastDownloadInfo.EMPTY, PodcastDatabase.getDownloadInfo(database,
+				old.getFeedKey(), episode.episode.getKey()));
+	}
+
 	private static PodcastSubscription subscription(String key, String title) {
 		return new PodcastSubscription(key, "https://example.test/feed.xml", null, title,
 				"Host", "Description", "https://example.test/art.jpg", null,

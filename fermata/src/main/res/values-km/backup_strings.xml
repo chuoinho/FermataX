@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">បម្រុងទុក និងស្ដារ</string>
+	<string name="backup_restore_sub">ផ្ទេរការកំណត់ និងគណនីដែលអាចផ្ទេរបានរវាងឧបករណ៍</string>
+	<string name="backup_all_data">បម្រុងទុកទិន្នន័យទាំងអស់</string>
+	<string name="backup_all_data_sub">បង្កើតឯកសារ FermataX ដែលបានអ៊ិនគ្រីបមួយ</string>
+	<string name="restore_backup">ស្ដារការបម្រុងទុក</string>
+	<string name="restore_backup_sub">ស្ដារឯកសារ .fxbackup ឬ ZIP ចាស់</string>
+	<string name="backup_password_title">ការពារការបម្រុងទុក</string>
+	<string name="backup_password">ពាក្យសម្ងាត់បម្រុងទុក</string>
+	<string name="backup_password_confirm">បញ្ជាក់ពាក្យសម្ងាត់</string>
+	<string name="backup_all_data_ok">ទិន្នន័យដែលអាចផ្ទេរបានទាំងអស់ត្រូវបានរក្សាទុកក្នុង %1$s។</string>
+	<string name="backup_all_data_failed">មិនអាចបង្កើតការបម្រុងទុកបានទេ។</string>
+	<string name="restore_backup_ok">បានស្ដារការបម្រុងទុក។\nសូមចាប់ផ្ដើមកម្មវិធីឡើងវិញ។</string>
+	<string name="restore_legacy_secure_skipped">បានស្ដារការកំណត់ចាស់។ ព័ត៌មានចូលដែលភ្ជាប់នឹងការដំឡើងត្រូវបញ្ចូលឡើងវិញ។\nសូមចាប់ផ្ដើមកម្មវិធីឡើងវិញ។</string>
+	<string name="restore_backup_auth_failed">ពាក្យសម្ងាត់ខុស ឬឯកសារបម្រុងទុកខូច។</string>
+	<string name="restore_backup_unsupported">ការបម្រុងទុកប្រើទម្រង់ថ្មីជាងដែលមិនគាំទ្រ។</string>
+	<string name="restore_backup_secure_unavailable">កន្លែងផ្ទុកសុវត្ថិភាពមិនអាចប្រើបាន។ មិនមានទិន្នន័យត្រូវបានស្ដារ។</string>
+	<string name="restore_backup_failed">មិនអាចស្ដារការបម្រុងទុកបាន។ ទិន្នន័យបច្ចុប្បន្នត្រូវបានរក្សាទុក។</string>
+</resources>

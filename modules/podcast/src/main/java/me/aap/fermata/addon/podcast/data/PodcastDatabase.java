@@ -69,6 +69,24 @@ final class PodcastDatabase {
 		return result;
 	}
 
+	static void replaceSubscriptions(SQLiteDatabase database,
+			List<PodcastSubscription> subscriptions, long now) {
+		database.beginTransaction();
+		try {
+			database.delete("podcast_download", null, null);
+			database.delete("podcast_subscription", null, null);
+			for (PodcastSubscription subscription : subscriptions) {
+				ContentValues values = subscriptionValues(subscription, now);
+				if (database.insertOrThrow("podcast_subscription", null, values) < 0) {
+					throw new SQLiteException("Unable to restore Podcast subscription");
+				}
+			}
+			database.setTransactionSuccessful();
+		} finally {
+			database.endTransaction();
+		}
+	}
+
 	static PodcastSubscription getSubscription(SQLiteDatabase database, String feedKey) {
 		try (Cursor cursor = database.query("podcast_subscription", null, "feed_key=?",
 				new String[]{feedKey}, null, null, null, "1")) {

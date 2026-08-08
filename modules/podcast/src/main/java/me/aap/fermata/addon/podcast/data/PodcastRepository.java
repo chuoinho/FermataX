@@ -124,6 +124,13 @@ public final class PodcastRepository implements Closeable, PodcastDownloadStore 
 				db -> PodcastDatabase.getSubscription(db, feedKey)));
 	}
 
+	/** Replaces portable subscription configuration; episode metadata remains a refreshable cache. */
+	public FutureSupplier<Void> replaceSubscriptions(List<PodcastSubscription> subscriptions) {
+		List<PodcastSubscription> snapshot = List.copyOf(subscriptions);
+		return initialized.thenIgnoreResult(() -> database.execute(db ->
+				PodcastDatabase.replaceSubscriptions(db, snapshot, System.currentTimeMillis())));
+	}
+
 	public FutureSupplier<Boolean> deleteSubscription(String feedKey) {
 		return initialized.thenIgnoreResult(() -> database.query(db -> {
 			Set<String> refs = PodcastDatabase.credentialRefs(db, feedKey);

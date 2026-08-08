@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Copiere și restaurare</string>
+	<string name="backup_restore_sub">Transferă setările și conturile portabile între dispozitive</string>
+	<string name="backup_all_data">Copiază toate datele</string>
+	<string name="backup_all_data_sub">Creează un singur fișier FermataX criptat</string>
+	<string name="restore_backup">Restaurează copia</string>
+	<string name="restore_backup_sub">Restaurează un fișier .fxbackup sau un ZIP vechi</string>
+	<string name="backup_password_title">Protejează copia</string>
+	<string name="backup_password">Parola copiei</string>
+	<string name="backup_password_confirm">Confirmă parola</string>
+	<string name="backup_all_data_ok">Toate datele portabile au fost salvate în %1$s.</string>
+	<string name="backup_all_data_failed">Copia nu a putut fi creată.</string>
+	<string name="restore_backup_ok">Copia a fost restaurată.\nRepornește aplicația.</string>
+	<string name="restore_legacy_secure_skipped">Setările vechi au fost restaurate. Datele de autentificare legate de instalare trebuie reintroduse.\nRepornește aplicația.</string>
+	<string name="restore_backup_auth_failed">Parolă greșită sau copie deteriorată.</string>
+	<string name="restore_backup_unsupported">Copia folosește un format mai nou neacceptat.</string>
+	<string name="restore_backup_secure_unavailable">Stocarea securizată nu este disponibilă. Nu au fost restaurate date.</string>
+	<string name="restore_backup_failed">Copia nu a putut fi restaurată. Datele existente au fost păstrate.</string>
+</resources>

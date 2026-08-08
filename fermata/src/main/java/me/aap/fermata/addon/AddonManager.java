@@ -19,8 +19,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.lang.reflect.InvocationTargetException;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.backup.BackupContributor;
+import me.aap.fermata.backup.BackupException;
 import me.aap.fermata.addon.external.ExternalPlaybackHandler;
 import me.aap.fermata.addon.external.ExternalPlaybackRequest;
 import me.aap.fermata.addon.external.ExternalPlaybackRouter;
@@ -244,6 +247,37 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	public synchronized Collection<FermataAddon> getAddons() {
 		return state.getAll();
+	}
+
+	/**
+	 * Snapshot of installed addon-owned portable configuration providers. Disabled addons are
+	 * instantiated without install/start lifecycle callbacks so their retained configuration is not
+	 * silently omitted from a full backup.
+	 */
+	public synchronized List<BackupContributor> getBackupContributors() throws BackupException {
+		List<BackupContributor> result = new ArrayList<>();
+		for (AddonInfo info : registry.getAvailable()) {
+			FermataAddon addon = state.getRegistered(info.className);
+			if (addon instanceof BackupContributor contributor) {
+				result.add(contributor);
+				continue;
+			}
+			try {
+				Class<?> type = Class.forName(info.className, false,
+						AddonManager.class.getClassLoader());
+				if (!BackupContributor.class.isAssignableFrom(type)) continue;
+				Object instance = type.getDeclaredConstructor().newInstance();
+				result.add((BackupContributor) instance);
+			} catch (ClassNotFoundException ignored) {
+				// An undelivered dynamic feature has no executable contributor to invoke.
+			} catch (ReflectiveOperationException | LinkageError failure) {
+				Throwable cause = (failure instanceof InvocationTargetException invocation &&
+						(invocation.getCause() != null)) ? invocation.getCause() : failure;
+				throw new BackupException(BackupException.Code.INCOMPLETE_BACKUP,
+						"Unable to initialize an installed addon backup contributor", cause);
+			}
+		}
+		return List.copyOf(result);
 	}
 
 	public FutureSupplier<PlayableItem> resolveExternalPlayback(DefaultMediaLib lib,

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Kopia i przywracanie</string>
+	<string name="backup_restore_sub">Przenieś ustawienia i konta między urządzeniami</string>
+	<string name="backup_all_data">Utwórz kopię wszystkich danych</string>
+	<string name="backup_all_data_sub">Utwórz jeden zaszyfrowany plik FermataX</string>
+	<string name="restore_backup">Przywróć kopię</string>
+	<string name="restore_backup_sub">Przywróć plik .fxbackup lub starsze archiwum ZIP</string>
+	<string name="backup_password_title">Chroń kopię</string>
+	<string name="backup_password">Hasło kopii</string>
+	<string name="backup_password_confirm">Potwierdź hasło</string>
+	<string name="backup_all_data_ok">Wszystkie przenośne dane zapisano w %1$s.</string>
+	<string name="backup_all_data_failed">Nie udało się utworzyć kopii.</string>
+	<string name="restore_backup_ok">Kopia została przywrócona.\nUruchom ponownie aplikację.</string>
+	<string name="restore_legacy_secure_skipped">Przywrócono stare ustawienia. Dane logowania powiązane z instalacją trzeba wpisać ponownie.\nUruchom ponownie aplikację.</string>
+	<string name="restore_backup_auth_failed">Nieprawidłowe hasło lub uszkodzona kopia.</string>
+	<string name="restore_backup_unsupported">Kopia używa nieobsługiwanego nowszego formatu.</string>
+	<string name="restore_backup_secure_unavailable">Bezpieczna pamięć jest niedostępna. Nie przywrócono danych.</string>
+	<string name="restore_backup_failed">Nie udało się przywrócić kopii. Zachowano istniejące dane.</string>
+</resources>

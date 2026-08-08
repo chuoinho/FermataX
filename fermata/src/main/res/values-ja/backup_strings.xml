@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">バックアップと復元</string>
+	<string name="backup_restore_sub">移行可能な設定とアカウント情報を端末間で移動します</string>
+	<string name="backup_all_data">すべてのデータをバックアップ</string>
+	<string name="backup_all_data_sub">暗号化された FermataX バックアップを1つ作成します</string>
+	<string name="restore_backup">バックアップを復元</string>
+	<string name="restore_backup_sub">.fxbackup または旧形式の ZIP を復元します</string>
+	<string name="backup_password_title">バックアップを保護</string>
+	<string name="backup_password">バックアップのパスワード</string>
+	<string name="backup_password_confirm">パスワードを確認</string>
+	<string name="backup_all_data_ok">移行可能なデータを %1$s に保存しました。</string>
+	<string name="backup_all_data_failed">バックアップを作成できませんでした。</string>
+	<string name="restore_backup_ok">バックアップを復元しました。\nアプリを再起動してください。</string>
+	<string name="restore_legacy_secure_skipped">旧設定を復元しました。インストールに紐付いた認証情報は再入力が必要です。\nアプリを再起動してください。</string>
+	<string name="restore_backup_auth_failed">パスワードが違うか、バックアップが破損しています。</string>
+	<string name="restore_backup_unsupported">このバックアップは未対応の新しい形式です。</string>
+	<string name="restore_backup_secure_unavailable">安全なストレージを利用できません。データは復元されませんでした。</string>
+	<string name="restore_backup_failed">バックアップを復元できませんでした。既存データは保持されました。</string>
+</resources>

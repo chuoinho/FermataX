@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Backup &amp; Restore</string>
+	<string name="backup_restore_sub">Move all portable settings and account configuration between devices</string>
+	<string name="backup_all_data">Backup all data</string>
+	<string name="backup_all_data_sub">Create one encrypted FermataX backup file</string>
+	<string name="restore_backup">Restore backup</string>
+	<string name="restore_backup_sub">Restore an .fxbackup file or a legacy preferences ZIP</string>
+	<string name="backup_password_title">Protect backup</string>
+	<string name="backup_password">Backup password</string>
+	<string name="backup_password_confirm">Confirm password</string>
+	<string name="backup_all_data_ok">All portable data was saved to %1$s.</string>
+	<string name="backup_all_data_failed">Could not create the backup.</string>
+	<string name="restore_backup_ok">Backup restored successfully.\nPlease restart the application.</string>
+	<string name="restore_legacy_secure_skipped">Legacy settings were restored. Installation-bound account credentials could not be migrated and must be entered again.\nPlease restart the application.</string>
+	<string name="restore_backup_auth_failed">Wrong password or corrupted backup.</string>
+	<string name="restore_backup_unsupported">This backup was created by an unsupported newer format.</string>
+	<string name="restore_backup_secure_unavailable">Secure storage is unavailable. No data was restored.</string>
+	<string name="restore_backup_failed">Could not restore the backup. Existing data was kept.</string>
+</resources>

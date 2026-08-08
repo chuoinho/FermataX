@@ -179,4 +179,5 @@ dependencies {
     implementation libs.firebaseEncoders
     implementation libs.javaxInject
     autoImplementation libs.androidxCarApp
+	testImplementation libs.robolectric
 }

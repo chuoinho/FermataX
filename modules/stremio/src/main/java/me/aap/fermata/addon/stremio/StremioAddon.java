@@ -16,12 +16,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.util.HashSet;
+import java.util.Set;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AutomotiveShutdownParticipant;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.backup.BackupContributor;
+import me.aap.fermata.backup.BackupIO;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.addon.MediaItemResolverAddon;
 import me.aap.fermata.addon.VoiceSearchAddon;
@@ -37,6 +45,9 @@ import me.aap.fermata.addon.stremio.session.StremioVoiceCandidate;
 import me.aap.fermata.addon.stremio.session.StremioItemAvailability;
 import me.aap.fermata.addon.stremio.session.StremioItemResolution;
 import me.aap.fermata.addon.stremio.source.StremioSourceInput;
+import me.aap.fermata.addon.stremio.source.StremioSourceSnapshot;
+import me.aap.fermata.addon.stremio.data.StremioRepository.SourceState;
+import me.aap.fermata.addon.stremio.data.StremioSourceRecord;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -56,7 +67,10 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 @Keep
 @SuppressWarnings("unused")
 public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon,
-		VoiceSearchAddon, AutomotiveShutdownParticipant {
+		VoiceSearchAddon, AutomotiveShutdownParticipant, BackupContributor {
+	private static final String BACKUP_ID = "stremio.sources";
+	private static final int BACKUP_VERSION = 1;
+	private static final int MAX_BACKUP_SOURCES = 10_000;
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(StremioAddon.class.getName());
 	private static final StremioSourceInput CINEMETA = new StremioSourceInput(
@@ -508,6 +522,136 @@ public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon
 
 	private synchronized boolean isCurrentRoot(StremioRootItem candidate, DefaultMediaLib lib) {
 		return (root == candidate) && (candidate.getLib() == lib) && (runtimeFuture != null);
+	}
+
+	@Override
+	public String getBackupId() {
+		return BACKUP_ID;
+	}
+
+	@Override
+	public int getBackupVersion() {
+		return BACKUP_VERSION;
+	}
+
+	@Override
+	public byte[] exportBackup() throws Exception {
+		RuntimeLease lease = backupRuntime();
+		try {
+			SourceState state = lease.runtime.repository().getSourceState().get();
+			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+			try (DataOutputStream output = new DataOutputStream(bytes)) {
+				output.writeBoolean(state.cinemetaInstallHandled());
+				output.writeInt(state.sources().size());
+				for (StremioSourceRecord source : state.sources()) writeSource(output, source);
+			}
+			return bytes.toByteArray();
+		} finally {
+			lease.close();
+		}
+	}
+
+	@Override
+	public void validateRestore(int version, byte[] data) throws Exception {
+		readSources(version, data);
+	}
+
+	@Override
+	public void restoreBackup(int version, byte[] data) throws Exception {
+		StremioSourceSnapshot restored = readSources(version, data);
+		RuntimeLease lease = backupRuntime();
+		try {
+			SourceState current = lease.runtime.repository().getSourceState().get();
+			SourceState replacement = new SourceState(current.revision() + 1,
+					restored.sources(), restored.cinemetaInstallHandled());
+			if (!lease.runtime.repository().compareAndSetSourceState(current, replacement).get()) {
+				throw new IllegalStateException("Stremio source state changed during restore");
+			}
+		} finally {
+			lease.close();
+		}
+	}
+
+	@Override
+	public void verifyRestore(int version, byte[] data) throws Exception {
+		StremioSourceSnapshot expected = readSources(version, data);
+		RuntimeLease lease = backupRuntime();
+		try {
+			SourceState actual = lease.runtime.repository().getSourceState().get();
+			if (!expected.sources().equals(actual.sources()) ||
+					(expected.cinemetaInstallHandled() != actual.cinemetaInstallHandled())) {
+				throw new IllegalStateException("Stremio sources did not restore completely");
+			}
+		} finally {
+			lease.close();
+		}
+	}
+
+	private RuntimeLease backupRuntime() throws Exception {
+		CompletableFuture<StremioRuntime> current;
+		synchronized (this) {
+			current = runtimeFuture;
+		}
+		if (current != null) return new RuntimeLease(current.get(), false);
+		return new RuntimeLease(StremioRuntimeFactory.open(
+				FermataApplication.get(), NetworkConsent.STRICT).get(), true);
+	}
+
+	static void writeSource(DataOutputStream output, StremioSourceRecord source)
+			throws Exception {
+		BackupIO.writeString(output, source.sourceUuid());
+		BackupIO.writeString(output, source.transportFingerprint());
+		BackupIO.writeString(output, source.addonId());
+		BackupIO.writeString(output, source.name());
+		BackupIO.writeString(output, source.version());
+		BackupIO.writeString(output, source.redactedTransportUrl());
+		BackupIO.writeNullableString(output, source.secretRef());
+		output.writeBoolean(source.enabled());
+		output.writeInt(source.position());
+		BackupIO.writeString(output, source.manifestJson());
+		BackupIO.writeNullableString(output, source.manifestEtag());
+		BackupIO.writeNullableString(output, source.manifestLastModified());
+		output.writeLong(source.lastCheckedMs());
+		output.writeLong(source.lastSuccessMs());
+		BackupIO.writeNullableString(output, source.lastErrorCode());
+		output.writeLong(source.installedMs());
+		output.writeLong(source.updatedMs());
+		output.writeBoolean(source.allowCleartext());
+		output.writeBoolean(source.allowLan());
+	}
+
+	static StremioSourceSnapshot readSources(int version, byte[] data) throws Exception {
+		if (version != BACKUP_VERSION) throw new IllegalArgumentException(
+				"Unsupported Stremio backup version");
+		try (DataInputStream input = new DataInputStream(new ByteArrayInputStream(data))) {
+			boolean handled = input.readBoolean();
+			int count = BackupIO.readCount(input, MAX_BACKUP_SOURCES, "Stremio sources");
+			List<StremioSourceRecord> sources = new ArrayList<>(count);
+			Set<String> ids = new HashSet<>();
+			for (int i = 0; i < count; i++) {
+				String sourceUuid = BackupIO.readString(input);
+				if (!ids.add(sourceUuid)) throw new IllegalArgumentException("Duplicate Stremio source");
+				sources.add(new StremioSourceRecord(sourceUuid, BackupIO.readString(input),
+						BackupIO.readString(input), BackupIO.readString(input),
+						BackupIO.readString(input), BackupIO.readString(input),
+						BackupIO.readNullableString(input), input.readBoolean(), input.readInt(),
+						BackupIO.readString(input), BackupIO.readNullableString(input),
+						BackupIO.readNullableString(input), input.readLong(), input.readLong(),
+						BackupIO.readNullableString(input), input.readLong(), input.readLong(),
+						input.readBoolean(), input.readBoolean()));
+			}
+			if (input.read() != -1) throw new IllegalArgumentException(
+					"Trailing Stremio backup data");
+			return new StremioSourceSnapshot(0, sources, handled);
+		}
+	}
+
+	private record RuntimeLease(StremioRuntime runtime, boolean owned)
+			implements AutoCloseable {
+		@Override
+		public void close() throws Exception {
+			if (owned) runtime.closeAsync().get();
+		}
 	}
 
 }

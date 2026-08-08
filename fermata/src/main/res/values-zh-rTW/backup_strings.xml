@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">備份與還原</string>
+	<string name="backup_restore_sub">在裝置間移轉可攜式設定與帳戶資料</string>
+	<string name="backup_all_data">備份所有資料</string>
+	<string name="backup_all_data_sub">建立一個加密的 FermataX 備份檔</string>
+	<string name="restore_backup">還原備份</string>
+	<string name="restore_backup_sub">還原 .fxbackup 檔案或舊版 ZIP</string>
+	<string name="backup_password_title">保護備份</string>
+	<string name="backup_password">備份密碼</string>
+	<string name="backup_password_confirm">確認密碼</string>
+	<string name="backup_all_data_ok">所有可攜式資料已儲存至 %1$s。</string>
+	<string name="backup_all_data_failed">無法建立備份。</string>
+	<string name="restore_backup_ok">備份已還原。\n請重新啟動應用程式。</string>
+	<string name="restore_legacy_secure_skipped">舊版設定已還原。與原安裝綁定的帳戶憑證必須重新輸入。\n請重新啟動應用程式。</string>
+	<string name="restore_backup_auth_failed">密碼錯誤或備份已損毀。</string>
+	<string name="restore_backup_unsupported">此備份使用尚未支援的較新格式。</string>
+	<string name="restore_backup_secure_unavailable">安全儲存空間無法使用，未還原任何資料。</string>
+	<string name="restore_backup_failed">無法還原備份，現有資料已保留。</string>
+</resources>

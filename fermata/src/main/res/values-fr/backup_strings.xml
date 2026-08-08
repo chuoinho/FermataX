@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Sauvegarde et restauration</string>
+	<string name="backup_restore_sub">Transférer les réglages et comptes portables entre appareils</string>
+	<string name="backup_all_data">Sauvegarder toutes les données</string>
+	<string name="backup_all_data_sub">Créer un fichier FermataX chiffré unique</string>
+	<string name="restore_backup">Restaurer une sauvegarde</string>
+	<string name="restore_backup_sub">Restaurer un fichier .fxbackup ou une ancienne archive ZIP</string>
+	<string name="backup_password_title">Protéger la sauvegarde</string>
+	<string name="backup_password">Mot de passe de sauvegarde</string>
+	<string name="backup_password_confirm">Confirmer le mot de passe</string>
+	<string name="backup_all_data_ok">Toutes les données portables ont été enregistrées dans %1$s.</string>
+	<string name="backup_all_data_failed">Impossible de créer la sauvegarde.</string>
+	<string name="restore_backup_ok">Sauvegarde restaurée.\nRedémarrez l’application.</string>
+	<string name="restore_legacy_secure_skipped">Les anciens réglages ont été restaurés. Les identifiants liés à l’installation doivent être saisis à nouveau.\nRedémarrez l’application.</string>
+	<string name="restore_backup_auth_failed">Mot de passe incorrect ou sauvegarde endommagée.</string>
+	<string name="restore_backup_unsupported">Cette sauvegarde utilise un format plus récent non pris en charge.</string>
+	<string name="restore_backup_secure_unavailable">Le stockage sécurisé est indisponible. Aucune donnée n’a été restaurée.</string>
+	<string name="restore_backup_failed">Impossible de restaurer la sauvegarde. Les données existantes ont été conservées.</string>
+</resources>

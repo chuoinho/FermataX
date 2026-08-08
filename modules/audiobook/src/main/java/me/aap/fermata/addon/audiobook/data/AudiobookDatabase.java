@@ -100,6 +100,17 @@ final class AudiobookDatabase {
 		return result;
 	}
 
+	static void replaceSources(SQLiteDatabase database, List<AudiobookSource> sources) {
+		database.beginTransaction();
+		try {
+			database.delete("audiobook_source", null, null);
+			for (AudiobookSource source : sources) upsertSource(database, source);
+			database.setTransactionSuccessful();
+		} finally {
+			database.endTransaction();
+		}
+	}
+
 	static AudiobookSource getSource(SQLiteDatabase database, String id) {
 		try (Cursor cursor = database.query("audiobook_source", null, "source_id=?",
 				new String[]{id}, null, null, null, "1")) {

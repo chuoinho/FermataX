@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Sao lưu &amp; khôi phục</string>
+	<string name="backup_restore_sub">Chuyển toàn bộ cài đặt và cấu hình tài khoản có thể di chuyển giữa các thiết bị</string>
+	<string name="backup_all_data">Sao lưu toàn bộ dữ liệu</string>
+	<string name="backup_all_data_sub">Tạo một tệp sao lưu FermataX được mã hóa</string>
+	<string name="restore_backup">Khôi phục bản sao lưu</string>
+	<string name="restore_backup_sub">Khôi phục tệp .fxbackup hoặc ZIP cấu hình cũ</string>
+	<string name="backup_password_title">Bảo vệ bản sao lưu</string>
+	<string name="backup_password">Mật khẩu sao lưu</string>
+	<string name="backup_password_confirm">Xác nhận mật khẩu</string>
+	<string name="backup_all_data_ok">Toàn bộ dữ liệu có thể di chuyển đã được lưu vào %1$s.</string>
+	<string name="backup_all_data_failed">Không thể tạo bản sao lưu.</string>
+	<string name="restore_backup_ok">Đã khôi phục bản sao lưu thành công.\nVui lòng khởi động lại ứng dụng.</string>
+	<string name="restore_legacy_secure_skipped">Đã khôi phục cài đặt cũ. Không thể chuyển thông tin tài khoản gắn với bản cài đặt cũ; bạn cần nhập lại các thông tin này.\nVui lòng khởi động lại ứng dụng.</string>
+	<string name="restore_backup_auth_failed">Sai mật khẩu hoặc tệp sao lưu đã hỏng.</string>
+	<string name="restore_backup_unsupported">Bản sao lưu này dùng định dạng mới hơn chưa được hỗ trợ.</string>
+	<string name="restore_backup_secure_unavailable">Kho lưu trữ bảo mật không khả dụng. Không có dữ liệu nào được khôi phục.</string>
+	<string name="restore_backup_failed">Không thể khôi phục bản sao lưu. Dữ liệu hiện tại được giữ nguyên.</string>
+</resources>

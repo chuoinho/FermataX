@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">백업 및 복원</string>
+	<string name="backup_restore_sub">이동 가능한 설정과 계정 정보를 기기 간에 전송합니다</string>
+	<string name="backup_all_data">모든 데이터 백업</string>
+	<string name="backup_all_data_sub">암호화된 FermataX 백업 파일 하나를 만듭니다</string>
+	<string name="restore_backup">백업 복원</string>
+	<string name="restore_backup_sub">.fxbackup 파일 또는 이전 ZIP을 복원합니다</string>
+	<string name="backup_password_title">백업 보호</string>
+	<string name="backup_password">백업 비밀번호</string>
+	<string name="backup_password_confirm">비밀번호 확인</string>
+	<string name="backup_all_data_ok">이동 가능한 모든 데이터를 %1$s에 저장했습니다.</string>
+	<string name="backup_all_data_failed">백업을 만들 수 없습니다.</string>
+	<string name="restore_backup_ok">백업을 복원했습니다.\n앱을 다시 시작하세요.</string>
+	<string name="restore_legacy_secure_skipped">이전 설정을 복원했습니다. 설치에 연결된 자격 증명은 다시 입력해야 합니다.\n앱을 다시 시작하세요.</string>
+	<string name="restore_backup_auth_failed">비밀번호가 잘못되었거나 백업이 손상되었습니다.</string>
+	<string name="restore_backup_unsupported">지원되지 않는 최신 백업 형식입니다.</string>
+	<string name="restore_backup_secure_unavailable">보안 저장소를 사용할 수 없습니다. 데이터가 복원되지 않았습니다.</string>
+	<string name="restore_backup_failed">백업을 복원할 수 없습니다. 기존 데이터는 유지되었습니다.</string>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">النسخ الاحتياطي والاستعادة</string>
+	<string name="backup_restore_sub">نقل الإعدادات والحسابات القابلة للنقل بين الأجهزة</string>
+	<string name="backup_all_data">نسخ جميع البيانات</string>
+	<string name="backup_all_data_sub">إنشاء ملف FermataX واحد مشفر</string>
+	<string name="restore_backup">استعادة نسخة احتياطية</string>
+	<string name="restore_backup_sub">استعادة ملف .fxbackup أو ملف ZIP قديم</string>
+	<string name="backup_password_title">حماية النسخة الاحتياطية</string>
+	<string name="backup_password">كلمة مرور النسخة الاحتياطية</string>
+	<string name="backup_password_confirm">تأكيد كلمة المرور</string>
+	<string name="backup_all_data_ok">تم حفظ جميع البيانات القابلة للنقل في %1$s.</string>
+	<string name="backup_all_data_failed">تعذر إنشاء النسخة الاحتياطية.</string>
+	<string name="restore_backup_ok">تمت استعادة النسخة الاحتياطية.\nيرجى إعادة تشغيل التطبيق.</string>
+	<string name="restore_legacy_secure_skipped">تمت استعادة الإعدادات القديمة. يجب إعادة إدخال بيانات الاعتماد المرتبطة بالتثبيت.\nيرجى إعادة تشغيل التطبيق.</string>
+	<string name="restore_backup_auth_failed">كلمة المرور غير صحيحة أو النسخة تالفة.</string>
+	<string name="restore_backup_unsupported">تستخدم النسخة تنسيقًا أحدث غير مدعوم.</string>
+	<string name="restore_backup_secure_unavailable">التخزين الآمن غير متاح. لم تتم استعادة أي بيانات.</string>
+	<string name="restore_backup_failed">تعذرت استعادة النسخة. تم الاحتفاظ بالبيانات الحالية.</string>
+</resources>

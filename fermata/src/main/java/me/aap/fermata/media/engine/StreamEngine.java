@@ -496,6 +496,11 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	}
 
 	@Override
+	public void onVideoFirstFrame(MediaEngine engine) {
+		listener.onVideoFirstFrame(this);
+	}
+
+	@Override
 	public void onEngineError(MediaEngine engine, Throwable ex) {
 		state = STATE_ERROR;
 		listener.onEngineError(this, ex);

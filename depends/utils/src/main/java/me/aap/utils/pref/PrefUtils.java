@@ -110,7 +110,6 @@ public class PrefUtils {
 		for (Map.Entry<String, ?> entry : from.getAll().entrySet()) {
 			String k = entry.getKey();
 			Object v = entry.getValue();
-			Log.d(k, '=', v);
 			if (v instanceof Boolean) ed.putBoolean(k, (Boolean) v);
 			else if (v instanceof Float) ed.putFloat(k, (Float) v);
 			else if (v instanceof Integer) ed.putInt(k, (Integer) v);
