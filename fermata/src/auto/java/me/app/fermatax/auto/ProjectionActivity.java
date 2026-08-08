@@ -4,6 +4,7 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
 import static android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES;
 import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 import android.app.NotificationChannel;
@@ -12,7 +13,6 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.database.ContentObserver;
 import android.media.projection.MediaProjectionConfig;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
@@ -25,6 +25,7 @@ import androidx.core.app.NotificationCompat;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.service.AutomotiveRuntimeGate;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
@@ -33,36 +34,44 @@ import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.activity.AppActivity;
 
 public class ProjectionActivity extends ActivityBase {
-	private static final int REQUEST_TIMEOUT_MS = 5000;
 	private static final int NOTIFICATION_ID = 3;
 	private static Promise<Intent> promise;
 	private static boolean starting;
 
 	static FutureSupplier<Intent> start() {
+		if (!AutomotiveRuntimeGate.allowsNewWork()) {
+			return failed(new IllegalStateException(
+					"Automotive projection generation is quiescent"));
+		}
 		if (promise != null) promise.cancel();
 		var p = promise = new Promise<>();
 		p.thenRun(() -> {
 			if (promise != p) return;
 			promise = null;
 			starting = false;
+			cancelPermissionNotification(FermataApplication.get());
 		});
-		try {
-			var app = FermataApplication.get();
-			var intent = new Intent(app, ProjectionActivity.class);
-			intent.setFlags(FLAG_ACTIVITY_NEW_TASK);
-			app.startActivity(intent);
-			app.getHandler().schedule(() -> {
-				if ((promise != p) || p.isDone() || starting) return;
-				Log.e("ProjectionActivity did not start. Prompting from notification.");
-				showPermissionNotification(app);
-				p.completeExceptionally(new IllegalStateException("Projection permission screen did not open"));
-			}, REQUEST_TIMEOUT_MS);
-		} catch (Exception err) {
-			Log.e(err, "Failed to start ProjectionActivity");
-			showPermissionNotification(FermataApplication.get());
-			p.completeExceptionally(err);
-		}
+		showPermissionNotification(FermataApplication.get());
 		return p;
+	}
+
+	/** Routes a phone launcher tap into the permission flow only while AA is waiting for it. */
+	static boolean resumePendingRequest(Context context) {
+		var p = promise;
+		if ((p == null) || p.isDone()) return false;
+		try {
+			openPermissionActivity(context);
+		} catch (Exception err) {
+			Log.e(err, "Failed to resume ProjectionActivity");
+			showPermissionNotification(context);
+		}
+		return true;
+	}
+
+	private static void openPermissionActivity(Context context) {
+		var intent = new Intent(context, ProjectionActivity.class);
+		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
+		context.startActivity(intent);
 	}
 
 	@Override
@@ -82,8 +91,8 @@ public class ProjectionActivity extends ActivityBase {
 			return;
 		}
 		starting = true;
-		checkOverlayPermission().thenIgnoreResult(this::checkWriteSettingsPermission)
-				.thenIgnoreResult(this::checkAccessibilityPermission)
+		checkOverlayPermission().then(ignore -> checkWriteSettingsPermission())
+				.then(ignore -> checkAccessibilityPermission())
 				.thenIgnoreResult(this::requestRootPermission)
 				.thenIgnoreResult(this::requestScreenCapturePermission).onCompletion((i, err) -> {
 					AccessibilityEventDispatcherService.autoClickOnButton(null);
@@ -105,35 +114,34 @@ public class ProjectionActivity extends ActivityBase {
 		if (Settings.canDrawOverlays(this)) return completedVoid();
 		Log.i("Requesting ACTION_MANAGE_OVERLAY_PERMISSION permission");
 		return startActivityForResult(() -> new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-				Uri.parse("package:" + getPackageName())));
+				Uri.parse("package:" + getPackageName()))).then(ignore ->
+				Settings.canDrawOverlays(this) ? completedVoid() : permissionRejected("overlay"));
 	}
 
 	private FutureSupplier<?> checkWriteSettingsPermission() {
 		if (Settings.System.canWrite(this)) return completedVoid();
 		Log.i("Requesting ACTION_MANAGE_WRITE_SETTINGS permission");
 		return startActivityForResult(() -> new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS,
-				Uri.parse("package:" + getPackageName())));
+				Uri.parse("package:" + getPackageName()))).then(ignore ->
+				Settings.System.canWrite(this) ? completedVoid() : permissionRejected("write settings"));
 	}
 
 	private FutureSupplier<?> checkAccessibilityPermission() {
 		if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.O) || isAccessibilityEnabled())
 			return completedVoid();
 		Log.i("Requesting ACTION_ACCESSIBILITY_SETTINGS permission");
-		var p = new Promise<>();
-		var intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
-		startActivity(intent);
-		getContentResolver().registerContentObserver(
-				Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES), false,
-				new ContentObserver(FermataApplication.get().getHandler()) {
-					@Override
-					public void onChange(boolean selfChange) {
-						if (!isAccessibilityEnabled()) return;
-						getContentResolver().unregisterContentObserver(this);
-						p.complete(null);
-					}
-				});
-		return p;
+		return startActivityForResult(() -> {
+			var intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+			intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
+			return intent;
+		}).then(ignore -> isAccessibilityEnabled() ? completedVoid() :
+				permissionRejected("accessibility"));
+	}
+
+	private FutureSupplier<Void> permissionRejected(String permission) {
+		var err = new IllegalStateException("Required " + permission + " permission is not granted");
+		Log.i(err, "Projection permission flow cancelled");
+		return failed(err);
 	}
 
 	private boolean isAccessibilityEnabled() {

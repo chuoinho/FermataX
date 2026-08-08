@@ -20,7 +20,6 @@
 	<uses-feature
 		android:name="android.hardware.touchscreen"
 		android:required="false" />
-
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
@@ -39,8 +38,26 @@
 			android:name="me.aap.fermata.ui.activity.MainActivity"
 			android:exported="true">
 			<intent-filter tools:node="remove">
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+			<intent-filter tools:node="remove">
 				<action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
 				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+
+		<activity
+			android:name="me.app.fermatax.auto.PhoneLauncherActivity"
+			android:excludeFromRecents="true"
+			android:exported="true"
+			android:launchMode="singleTop"
+			android:theme="@android:style/Theme.NoDisplay">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
 			</intent-filter>
 		</activity>
 

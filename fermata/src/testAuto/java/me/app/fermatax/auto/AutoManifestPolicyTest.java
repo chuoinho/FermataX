@@ -45,11 +45,24 @@ public class AutoManifestPolicyTest {
 		Element mainActivity = findNamed(manifest, "activity",
 				"me.aap.fermata.ui.activity.MainActivity");
 		assertNotNull(mainActivity);
-		Element removedSearchFilter = firstChild(mainActivity, "intent-filter");
+		Element removedSearchFilter = findChildWithNamed(mainActivity, "intent-filter", "action",
+				"android.media.action.MEDIA_PLAY_FROM_SEARCH");
 		assertNotNull(removedSearchFilter);
 		assertEquals("remove", removedSearchFilter.getAttributeNS(TOOLS_NS, "node"));
-		assertTrue(hasNamed(removedSearchFilter, "action",
-				"android.media.action.MEDIA_PLAY_FROM_SEARCH"));
+
+		Element removedLauncherFilter = findChildWithNamed(mainActivity, "intent-filter", "action",
+				"android.intent.action.MAIN");
+		assertNotNull(removedLauncherFilter);
+		assertEquals("remove", removedLauncherFilter.getAttributeNS(TOOLS_NS, "node"));
+		assertTrue(hasNamed(removedLauncherFilter, "category",
+				"android.intent.category.LAUNCHER"));
+
+		Element phoneLauncher = findNamed(manifest, "activity",
+				"me.app.fermatax.auto.PhoneLauncherActivity");
+		assertNotNull(phoneLauncher);
+		assertEquals("true", phoneLauncher.getAttributeNS(ANDROID_NS, "exported"));
+		assertTrue(hasNamed(phoneLauncher, "action", "android.intent.action.MAIN"));
+		assertTrue(hasNamed(phoneLauncher, "category", "android.intent.category.LAUNCHER"));
 	}
 
 	@Test
@@ -96,8 +109,13 @@ public class AutoManifestPolicyTest {
 		return null;
 	}
 
-	private static Element firstChild(Element parent, String tag) {
+	private static Element findChildWithNamed(Element parent, String tag, String childTag,
+			String name) {
 		NodeList elements = parent.getElementsByTagName(tag);
-		return (elements.getLength() == 0) ? null : (Element) elements.item(0);
+		for (int i = 0; i < elements.getLength(); i++) {
+			Element element = (Element) elements.item(i);
+			if (hasNamed(element, childTag, name)) return element;
+		}
+		return null;
 	}
 }

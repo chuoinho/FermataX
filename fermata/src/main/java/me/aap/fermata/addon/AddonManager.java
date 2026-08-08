@@ -319,6 +319,37 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		lifecycle.onServiceDestroy(service);
 	}
 
+	/** Starts a fresh automotive runtime generation without reloading addon settings or modules. */
+	public List<String> onAutomotiveSessionStarted() {
+		return notifyAutomotiveParticipants(false);
+	}
+
+	/** Releases addon-owned runtime resources at a confirmed automotive session boundary. */
+	public List<String> onAutomotiveShutdown() {
+		return notifyAutomotiveParticipants(true);
+	}
+
+	private List<String> notifyAutomotiveParticipants(boolean shutdown) {
+		List<FermataAddon> snapshot;
+		synchronized (this) {
+			snapshot = new ArrayList<>(state.getAll());
+		}
+		List<String> failures = new ArrayList<>();
+		for (FermataAddon addon : snapshot) {
+			if (!(addon instanceof AutomotiveShutdownParticipant participant)) continue;
+			try {
+				if (shutdown) participant.onAutomotiveShutdown();
+				else participant.onAutomotiveSessionStarted();
+			} catch (Throwable failure) {
+				String name = addon.getClass().getName();
+				failures.add(name + ':' + failure.getClass().getSimpleName());
+				Log.e(failure, shutdown ? "Automotive addon shutdown failed: " :
+						"Automotive addon restart failed: ", name);
+			}
+		}
+		return List.copyOf(failures);
+	}
+
 	public synchronized boolean hasAddon(@IdRes int id) {
 		return state.get(id) != null;
 	}

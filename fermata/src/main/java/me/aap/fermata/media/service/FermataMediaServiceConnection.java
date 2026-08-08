@@ -20,6 +20,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.diagnostics.DiagnosticEvent;
 import me.aap.fermata.diagnostics.DiagnosticPriority;
 import me.aap.fermata.diagnostics.DiagnosticScope;
+import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
@@ -57,6 +58,13 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 	}
 
 	public static FutureSupplier<FermataMediaServiceConnection> connect(int notifColor) {
+		if (BuildConfig.AUTO && !AutomotiveRuntimeGate.allowsNewWork()) {
+			OperationCanceledException error = new OperationCanceledException(
+					"Automotive media generation is quiescent");
+			recordConnectionDiagnostic("service_connect_rejected", DiagnosticPriority.WARN,
+					false, false, error.getClass().getSimpleName());
+			return Completed.failed(error);
+		}
 		Context ctx = FermataApplication.get();
 		FermataMediaServiceConnection con = new FermataMediaServiceConnection();
 		Promise<FermataMediaServiceConnection> p = con.promise = new Promise<>();
@@ -131,6 +139,10 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 			recordConnectionDiagnostic("service_connect_failed", DiagnosticPriority.ERROR, bound,
 					false, error.getClass().getSimpleName());
 			fail(error);
+			return;
+		}
+		if (BuildConfig.AUTO && !AutomotiveRuntimeGate.allowsNewWork()) {
+			fail(new OperationCanceledException("Automotive media generation is quiescent"));
 			return;
 		}
 		synchronized (this) {

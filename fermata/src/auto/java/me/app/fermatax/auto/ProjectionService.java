@@ -21,6 +21,8 @@ import androidx.core.app.NotificationCompat;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.service.AutomotiveRuntimeGate;
+import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
@@ -30,6 +32,10 @@ public class ProjectionService extends Service {
 	private static Promise<MediaProjection> promise;
 
 	static FutureSupplier<MediaProjection> start() {
+		if (!AutomotiveRuntimeGate.allowsNewWork()) {
+			return Completed.failed(new IllegalStateException(
+					"Automotive projection generation is quiescent"));
+		}
 		if (promise != null) promise.cancel();
 		var p = promise = new Promise<>();
 		p.thenRun(() -> {
@@ -105,6 +111,12 @@ public class ProjectionService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		if (!AutomotiveRuntimeGate.allowsNewWork()) {
+			if (promise != null) promise.cancel();
+			promise = null;
+			stopSelf(startId);
+			return START_NOT_STICKY;
+		}
 		var p = promise;
 		if (p != null) {
 			promise = null;

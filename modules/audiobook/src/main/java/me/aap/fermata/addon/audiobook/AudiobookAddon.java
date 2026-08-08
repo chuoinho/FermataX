@@ -21,6 +21,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.PlaybackSnapshot;
+import me.aap.fermata.addon.AutomotiveShutdownParticipant;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -28,7 +29,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 @Keep
 @SuppressWarnings("unused")
 public final class AudiobookAddon implements MediaLibAddon, FermataMediaServiceAddon, VoiceSearchAddon,
-		MediaSessionCallback.Listener {
+		MediaSessionCallback.Listener, AutomotiveShutdownParticipant {
 	private static final long PROGRESS_WRITE_INTERVAL_MS = 15_000;
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(
@@ -124,6 +125,11 @@ public final class AudiobookAddon implements MediaLibAddon, FermataMediaServiceA
 		repository = null;
 		lastProgressItemId = null;
 		lastProgressWriteMs = 0;
+	}
+
+	@Override
+	public void onAutomotiveShutdown() {
+		stop();
 	}
 
 	@Override

@@ -73,6 +73,7 @@ public class WebBrowserFragment extends MainActivityFragment
 		FermataWebClient webClient = new FermataWebClient();
 		FermataChromeClient chromeClient = new FermataChromeClient(webView, fullScreenView);
 		webView.init(addon, webClient, chromeClient);
+		addon.attachRuntimeFragment(this);
 		if (!addon.attachExternalFragment(this)) webView.loadUrl(addon.getLastUrl());
 		MainActivityDelegate.getActivityDelegate(ctx).onSuccess(this::registerListeners);
 	}
@@ -87,10 +88,23 @@ public class WebBrowserFragment extends MainActivityFragment
 		if (web != null) web.closeExternalPlayback(engine.getRequest());
 	}
 
+	void onAutomotiveShutdown() {
+		FermataWebView web = getWebView();
+		if (web != null) web.onAutomotiveShutdown();
+	}
+
+	void onAutomotiveSessionStarted() {
+		FermataWebView web = getWebView();
+		if (web != null) web.onAutomotiveSessionStarted();
+	}
+
 	@Override
 	public void onDestroyView() {
 		WebBrowserAddon addon = getAddon();
-		if (addon != null) addon.detachExternalFragment(this);
+		if (addon != null) {
+			addon.detachExternalFragment(this);
+			addon.detachRuntimeFragment(this);
+		}
 		MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(this::unregisterListeners);
 		super.onDestroyView();
 	}

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import me.aap.utils.net.NetUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -106,6 +108,6 @@ public class YoutubePlaybackMetadataTest {
 	}
 
 	private static String encode(String value) {
-		return URLEncoder.encode(value, StandardCharsets.UTF_8);
+		return NetUtils.urlEncode(value);
 	}
 }

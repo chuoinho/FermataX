@@ -12,13 +12,15 @@ public class MirrorService extends CarActivityService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		AutoConnectionMonitor.hostCreated(this);
 		md = MirrorDisplay.get();
 	}
 
 	@Override
 	public void onDestroy() {
-		md.release();
+		if (md != null) md.release();
 		md = null;
+		AutoConnectionMonitor.hostDestroyed(this);
 		super.onDestroy();
 	}
 

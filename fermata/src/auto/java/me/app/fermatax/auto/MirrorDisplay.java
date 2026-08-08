@@ -1,6 +1,5 @@
 package me.app.fermatax.auto;
 
-import static android.content.Context.POWER_SERVICE;
 import static android.content.Context.WINDOW_SERVICE;
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP;
@@ -9,7 +8,6 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAP
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 import static android.os.Build.VERSION.SDK_INT;
-import static android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP;
 import static android.os.SystemClock.uptimeMillis;
 import static android.provider.Settings.System.ACCELEROMETER_ROTATION;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
@@ -23,7 +21,6 @@ import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 import static android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
 import static android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
-import static android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
 import static android.view.WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
 import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
@@ -43,8 +40,6 @@ import android.media.AudioManager;
 import android.media.projection.MediaProjection;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
-import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 import android.provider.Settings;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -65,9 +60,11 @@ import androidx.media.AudioFocusRequestCompat;
 import androidx.media.AudioManagerCompat;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.service.AutomotiveRuntimeGate;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.Completed;
@@ -78,15 +75,16 @@ import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 
 public class MirrorDisplay {
+	private static final long SURFACE_IDLE_GRACE_MS = 1500L;
 	private static final int OVERLAY_FLAGS =
-			FLAG_NOT_FOCUSABLE | FLAG_KEEP_SCREEN_ON | FLAG_DISMISS_KEYGUARD | FLAG_TURN_SCREEN_ON |
+			FLAG_NOT_FOCUSABLE | FLAG_KEEP_SCREEN_ON | FLAG_DISMISS_KEYGUARD |
 					FLAG_SHOW_WHEN_LOCKED | FLAG_NOT_TOUCHABLE | FLAG_WATCH_OUTSIDE_TOUCH;
 	private static WeakReference<MirrorDisplay> ref;
+	private static long activeProjectionGeneration;
 	private final int[] loc = new int[2];
 	private final Display defaultDisplay;
 	private final float scaleDiff;
 	private final AudioFocusRequestCompat audioFocusReq;
-	private WakeLock wakeLock;
 	private static int accel = -1;
 	private int brightness = -1;
 	private int refCounter;
@@ -97,8 +95,12 @@ public class MirrorDisplay {
 	private Metrics pMetrics;
 	private float dx;
 	private float dy;
+	private long projectionGeneration;
+	private int surfaceLease;
+	private boolean closed;
 
 	private MirrorDisplay() {
+		projectionGeneration = activeProjectionGeneration;
 		var ctx = FermataApplication.get();
 		var vm = (WindowManager) ctx.getSystemService(WINDOW_SERVICE);
 		defaultDisplay = vm.getDefaultDisplay();
@@ -121,19 +123,43 @@ public class MirrorDisplay {
 		return md;
 	}
 
+	static void projectionSessionStarted(long generation) {
+		activeProjectionGeneration = generation;
+		MirrorDisplay md = (ref == null) ? null : ref.get();
+		if ((md != null) && !md.closed && (md.projectionGeneration == 0L)) {
+			md.projectionGeneration = generation;
+		}
+	}
+
+	boolean isClosed() {
+		return closed;
+	}
+
+	private boolean runtimeActive() {
+		if (closed || !AutomotiveRuntimeGate.allowsNewWork()) return false;
+		long current = AutomotiveRuntimeGate.currentGeneration();
+		if (current == 0L) return projectionGeneration == 0L;
+		if (projectionGeneration == 0L) projectionGeneration = current;
+		return projectionGeneration == current;
+	}
+
 	public static void close() {
 		MirrorDisplay md;
 		if ((ref == null) || ((md = ref.get()) == null)) return;
+		ref = null;
+		md.closed = true;
 		var sc = md.sc;
 		md.cleanUp();
 		if (sc != null) drawMsg(sc, R.string.app_name);
 	}
 
 	public void release() {
-		if (--refCounter == 0) cleanUp();
+		if ((refCounter > 0) && (--refCounter == 0)) cleanUp();
 	}
 
 	public void setSurface(@NonNull SurfaceContainer sc) {
+		if (!runtimeActive()) return;
+		surfaceLease++;
 		var oldSc = this.sc;
 		if (oldSc == sc) return;
 		this.sc = sc;
@@ -158,10 +184,20 @@ public class MirrorDisplay {
 	public void releaseSurface(@NonNull SurfaceContainer sc) {
 		var oldSc = this.sc;
 		if (oldSc != sc) return;
+		int lease = ++surfaceLease;
 		this.sc = null;
 		lMetrics = pMetrics = null;
-		if (session.isDoneNotFailed()) session.getOrThrow().vd.setSurface(null);
+		if (session.isDoneNotFailed()) {
+			try {
+				session.getOrThrow().vd.setSurface(null);
+			} catch (RuntimeException error) {
+				Log.d(error, "Failed to detach mirror surface");
+			}
+		}
 		drawMsg(oldSc, R.string.app_name);
+		FermataApplication.get().getHandler().postDelayed(() -> {
+			if (!closed && (surfaceLease == lease) && (this.sc == null)) suspendSurfaceResources();
+		}, SURFACE_IDLE_GRACE_MS);
 	}
 
 	public void tap(float x, float y) {
@@ -280,24 +316,15 @@ public class MirrorDisplay {
 	}
 
 	private void started() {
-		if (sc == null) return;
+		if ((sc == null) || !runtimeActive()) return;
 		var app = FermataApplication.get();
 		var mode = sc.getWidth() > sc.getHeight() ? 1 : 2;
 
 		if (app.isMirroringMode()) {
 			app.setMirroringMode(mode);
-			return;
-		}
-
-		dimScreen(app);
-		disableAccelRotation(app);
-
-		var pmg = (PowerManager) app.getSystemService(POWER_SERVICE);
-		if (pmg != null) {
-			//noinspection deprecation
-			wakeLock = pmg.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | ACQUIRE_CAUSES_WAKEUP,
-					"Fermata:ScreenLock");
-			if (wakeLock != null) wakeLock.acquire(24 * 3600000);
+		} else {
+			dimScreen(app);
+			disableAccelRotation(app);
 		}
 
 		if ((overlay == null) && (SDK_INT >= VERSION_CODES.O)) {
@@ -322,37 +349,66 @@ public class MirrorDisplay {
 
 		var amgr = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
 		if (amgr != null) AudioManagerCompat.requestAudioFocus(amgr, audioFocusReq);
-		setMirroringMode(app, mode);
+		if (!app.isMirroringMode()) setMirroringMode(app, mode);
 	}
 
 	private void cleanUp() {
-		noSession();
+		surfaceLease++;
+		try {
+			noSession();
+		} catch (Throwable error) {
+			Log.d(error, "Failed to close mirror projection session");
+		}
 		sc = null;
 		lMetrics = pMetrics = null;
 		var app = FermataApplication.get();
-		if (overlay != null) {
-			overlay.dimAndRotate.cancel();
-			var wm = (WindowManager) app.getSystemService(WINDOW_SERVICE);
-			wm.removeView(overlay);
-			overlay = null;
+		suspendSurfaceResources();
+		try {
+			ProjectionService.stop();
+		} catch (Throwable error) {
+			Log.d(error, "Failed to stop projection service");
 		}
-		if (wakeLock != null) {
-			wakeLock.release();
-			wakeLock = null;
-		}
-		setMirroringMode(app, 0);
-		restoreBrightness(app);
-		restoreAccelRotation(app);
-		ProjectionService.stop();
+	}
 
+	/** Releases screen-on resources while keeping audio playback independent from surface visibility. */
+	private void suspendSurfaceResources() {
+		var app = FermataApplication.get();
+		removeOverlay(app);
+		app.setMirroringMode(0);
+		try {
+			restoreBrightness(app);
+		} catch (Throwable error) {
+			Log.d(error, "Failed to restore screen brightness");
+		}
+		try {
+			restoreAccelRotation(app);
+		} catch (Throwable error) {
+			Log.d(error, "Failed to restore screen rotation");
+		}
 		try {
 			app.stopService(new Intent(app, XposedEventDispatcherService.class));
-		} catch (Exception err) {
-			Log.d(err, "Failed to stop XposedEventDispatcherService");
+		} catch (Throwable error) {
+			Log.d(error, "Failed to stop XposedEventDispatcherService");
 		}
+		try {
+			var amgr = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
+			if (amgr != null) AudioManagerCompat.abandonAudioFocusRequest(amgr, audioFocusReq);
+		} catch (Throwable error) {
+			Log.d(error, "Failed to abandon mirror audio focus");
+		}
+	}
 
-		var amgr = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
-		if (amgr != null) AudioManagerCompat.abandonAudioFocusRequest(amgr, audioFocusReq);
+	private void removeOverlay(FermataApplication app) {
+		Overlay current = overlay;
+		overlay = null;
+		if (current == null) return;
+		current.dimAndRotate.cancel();
+		try {
+			var wm = (WindowManager) app.getSystemService(WINDOW_SERVICE);
+			if (wm != null) wm.removeView(current);
+		} catch (Throwable error) {
+			Log.d(error, "Failed to remove mirror screen overlay");
+		}
 	}
 
 	private void noSession() {
@@ -362,11 +418,15 @@ public class MirrorDisplay {
 	}
 
 	private void createSession() {
-		if (!session.isDone()) return;
+		if (!runtimeActive() || !session.isDone()) return;
 		var p = new Promise<Session>();
 		session = p;
 		createSession(p);
 		p.onSuccess(s -> {
+			if (!runtimeActive()) {
+				s.close();
+				return;
+			}
 			Log.i("Session created: ", s);
 			session = Completed.completed(s);
 			started();
@@ -375,11 +435,17 @@ public class MirrorDisplay {
 	}
 
 	private void createSession(Promise<Session> p) {
-		if (session != p) return;
+		if ((session != p) || !runtimeActive()) {
+			p.cancel();
+			return;
+		}
 		if (sc == null) noSession();
 		if (p.isDone()) return;
 		ProjectionService.start().onCompletion((mp, err) -> {
-			if (session != p) return;
+			if ((session != p) || !runtimeActive()) {
+				if (mp != null) mp.stop();
+				return;
+			}
 			if (sc == null) noSession();
 			if (p.isDone()) return;
 			if (err != null) {
@@ -398,6 +464,11 @@ public class MirrorDisplay {
 					p.complete(new Session(mp, this));
 				} catch (Exception ex) {
 					Log.e(ex, "Failed to create media projection");
+					try {
+						mp.stop();
+					} catch (RuntimeException stopError) {
+						Log.d(stopError, "Failed to discard incomplete media projection");
+					}
 					retryCreateSession(p);
 				}
 			}
@@ -406,7 +477,7 @@ public class MirrorDisplay {
 
 	private void retryCreateSession(Promise<Session> p) {
 		FermataApplication.get().getHandler().schedule(() -> {
-			if (p.isDone()) return;
+			if (p.isDone() || !runtimeActive()) return;
 			Log.i("Retrying to create media projection");
 			drawMsg(R.string.unlock_phone_and_grant);
 			createSession(p);
@@ -415,7 +486,7 @@ public class MirrorDisplay {
 
 	private void schedulePendingMessage(Promise<Session> p, long delay) {
 		FermataApplication.get().getHandler().schedule(() -> {
-			if ((session != p) || p.isDone()) return;
+			if ((session != p) || p.isDone() || !runtimeActive()) return;
 			drawMsg(R.string.unlock_phone_and_grant);
 			schedulePendingMessage(p, 3000);
 		}, delay);
@@ -523,6 +594,7 @@ public class MirrorDisplay {
 		final MediaProjection mp;
 		final VirtualDisplay vd;
 		final WeakReference<MirrorDisplay> mdRef;
+		final AtomicBoolean closed = new AtomicBoolean();
 
 		Session(MediaProjection mp, MirrorDisplay md) {
 			this.mp = mp;
@@ -547,9 +619,22 @@ public class MirrorDisplay {
 		}
 
 		void close() {
-			mp.unregisterCallback(this);
-			vd.release();
-			mp.stop();
+			if (!closed.compareAndSet(false, true)) return;
+			try {
+				mp.unregisterCallback(this);
+			} catch (Throwable error) {
+				Log.d(error, "Failed to unregister media projection callback");
+			}
+			try {
+				vd.release();
+			} catch (Throwable error) {
+				Log.d(error, "Failed to release virtual display");
+			}
+			try {
+				mp.stop();
+			} catch (Throwable error) {
+				Log.d(error, "Failed to stop media projection");
+			}
 		}
 	}
 

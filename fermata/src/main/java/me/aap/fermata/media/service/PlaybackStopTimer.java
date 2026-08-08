@@ -40,7 +40,9 @@ final class PlaybackStopTimer {
 
 		@Override
 		public void run() {
-			if (active == this) stopPlayback.run();
+			if (active != this) return;
+			active = null;
+			stopPlayback.run();
 		}
 	}
 

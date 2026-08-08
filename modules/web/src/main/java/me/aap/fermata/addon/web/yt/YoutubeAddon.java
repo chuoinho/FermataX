@@ -87,6 +87,7 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final long HISTORY_ATTACH_RETRY_MS = 100L;
 	private static final long HISTORY_ATTACH_TIMEOUT_MS =
 			(HISTORY_ATTACH_MAX_ATTEMPTS * HISTORY_ATTACH_RETRY_MS) + 1_000L;
+	private static final long HOST_HANDOFF_DEBOUNCE_MS = 2_000L;
 
 	@NonNull
 	@Override
@@ -130,6 +131,8 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
 	private final YoutubePlaybackMetadata playbackMetadata = new YoutubePlaybackMetadata();
 	private boolean ignorePrefChange;
+	private String lastHostHandoffVideoId = "";
+	private long lastHostHandoffAt;
 
 	@Override
 	public void install() {
@@ -596,6 +599,9 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	@Nullable
 	private MainActivityDelegate currentActivity() {
+		MainActivityDelegate automotive = activeAutomotiveActivity();
+		if (automotive != null) return automotive;
+
 		MainActivity mobile = MainActivity.getActiveInstance();
 		if (mobile != null) {
 			MainActivityDelegate activity = mobile.getActivityDelegate().peek();
@@ -610,6 +616,57 @@ public class YoutubeAddon extends WebBrowserAddon
 		} catch (RuntimeException ignored) {
 			return null;
 		}
+	}
+
+	boolean isPreferredPlaybackActivity(MainActivityDelegate activity) {
+		MainActivityDelegate automotive = activeAutomotiveActivity();
+		return (automotive == null) || (automotive == activity);
+	}
+
+	boolean forwardPlaybackToPreferredHost(YoutubeWebView source,
+			YoutubePlaybackMetadata.Signal signal) {
+		MainActivityDelegate automotive = activeAutomotiveActivity();
+		if (automotive == null) return false;
+
+		MainActivityDelegate sourceActivity;
+		try {
+			sourceActivity = MainActivityDelegate.get(source.getContext());
+		} catch (RuntimeException ignored) {
+			return false;
+		}
+		if (automotive == sourceActivity) return false;
+
+		YoutubeItem descriptor;
+		try {
+			descriptor = YoutubeItem.fromPageUrl(signal.pageUrl(), signal.title(),
+					System.currentTimeMillis());
+		} catch (IllegalArgumentException ignored) {
+			return false;
+		}
+		if (!descriptor.videoId().equals(signal.videoId())) return false;
+
+		long now = System.currentTimeMillis();
+		if (descriptor.videoId().equals(lastHostHandoffVideoId) &&
+				((now - lastHostHandoffAt) < HOST_HANDOFF_DEBOUNCE_MS)) return true;
+		lastHostHandoffVideoId = descriptor.videoId();
+		lastHostHandoffAt = now;
+		updateYoutubeItem(descriptor);
+		automotive.getMediaSessionCallback().playItem(
+				new YoutubeHistoryItem(this, (DefaultMediaLib) automotive.getLib(), descriptor), 0L);
+		return true;
+	}
+
+	@Nullable
+	private MainActivityDelegate activeAutomotiveActivity() {
+		try {
+			var resolver = ActivityDelegate.getContextToDelegate();
+			if (resolver == null) return null;
+			ActivityDelegate activity = resolver.apply(FermataApplication.get());
+			if (activity instanceof MainActivityDelegate main && main.isCarActivityNotMirror() &&
+					main.isHostResumed()) return main;
+		} catch (RuntimeException ignored) {
+		}
+		return null;
 	}
 
 	private void attachHistoryEngine(MainActivityDelegate activity,

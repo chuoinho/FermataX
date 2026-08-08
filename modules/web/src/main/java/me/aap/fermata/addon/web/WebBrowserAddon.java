@@ -13,9 +13,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.lang.ref.WeakReference;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
+import me.aap.fermata.addon.AutomotiveShutdownParticipant;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataFragmentAddon;
 import me.aap.fermata.addon.VoiceSearchAddon;
@@ -49,7 +51,7 @@ import me.aap.utils.log.Log;
 @Keep
 @SuppressWarnings("unused")
 public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceStore, VoiceSearchAddon,
-		ExternalPlaybackHandler, WebExternalMediaEngine.Host {
+		ExternalPlaybackHandler, WebExternalMediaEngine.Host, AutomotiveShutdownParticipant {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(WebBrowserAddon.class.getName());
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
@@ -72,6 +74,7 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	private boolean ignorePrefChange;
 	private WebExternalMediaEngine externalEngine;
 	private WebBrowserFragment externalFragment;
+	private WeakReference<WebBrowserFragment> runtimeFragment;
 	private static final int EXTERNAL_ATTACH_MAX_ATTEMPTS = 50;
 	private static final long EXTERNAL_ATTACH_RETRY_MS = 100L;
 
@@ -136,6 +139,14 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 		if (externalFragment == fragment) externalFragment = null;
 	}
 
+	void attachRuntimeFragment(WebBrowserFragment fragment) {
+		runtimeFragment = new WeakReference<>(fragment);
+	}
+
+	void detachRuntimeFragment(WebBrowserFragment fragment) {
+		if ((runtimeFragment != null) && (runtimeFragment.get() == fragment)) runtimeFragment = null;
+	}
+
 	@Override
 	public void detachExternalPlayback(WebExternalMediaEngine engine) {
 		if (externalEngine != engine) return;
@@ -149,6 +160,19 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	public void stop() {
 		WebExternalMediaEngine engine = externalEngine;
 		if (engine != null) engine.close();
+	}
+
+	@Override
+	public void onAutomotiveShutdown() {
+		stop();
+		WebBrowserFragment fragment = (runtimeFragment == null) ? null : runtimeFragment.get();
+		if (fragment != null) fragment.onAutomotiveShutdown();
+	}
+
+	@Override
+	public void onAutomotiveSessionStarted() {
+		WebBrowserFragment fragment = (runtimeFragment == null) ? null : runtimeFragment.get();
+		if (fragment != null) fragment.onAutomotiveSessionStarted();
 	}
 
 	private void attachExternalPlayback(WebExternalMediaEngine engine, int attempt) {

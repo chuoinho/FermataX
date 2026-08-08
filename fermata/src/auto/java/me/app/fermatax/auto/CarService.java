@@ -3,7 +3,6 @@ package me.app.fermatax.auto;
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarActivityService;
 
-import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.utils.log.Log;
 
 /**
@@ -20,15 +19,14 @@ public class CarService extends CarActivityService {
 	public void onCreate() {
 		Log.d("Creating CarService: " + this);
 		super.onCreate();
+		AutoConnectionMonitor.hostCreated(this);
 	}
 
 	@Override
 	public void onDestroy() {
 		Log.d("Destroying CarService: " + this);
 		try {
-			FermataMediaServiceConnection s = MainCarActivity.takeServiceForShutdown();
-			if (s == null) return;
-			s.disconnect();
+			AutoConnectionMonitor.hostDestroyed(this);
 		} finally {
 			super.onDestroy();
 		}

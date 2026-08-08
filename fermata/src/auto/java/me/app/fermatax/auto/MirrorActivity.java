@@ -33,6 +33,7 @@ import com.google.android.apps.auto.sdk.CarActivity;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.service.AutomotiveRuntimeGate;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.concurrent.ReschedulableTask;
@@ -43,6 +44,7 @@ import me.aap.utils.concurrent.ReschedulableTask;
 public class MirrorActivity extends CarActivity implements SurfaceHolder.Callback {
 	private MirrorDisplay md;
 	private SurfaceContainer sc;
+	private long projectionGeneration;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -55,9 +57,10 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			@SuppressLint("ClickableViewAccessibility")
 			@Override
 			public boolean onTouchEvent(MotionEvent e) {
-				if (sc != null) md.setSurface(sc);
+				MirrorDisplay display = currentDisplay();
+				if ((display != null) && (sc != null)) display.setSurface(sc);
 				tb.show();
-				return md.motionEvent(e);
+				return (display != null) && display.motionEvent(e);
 			}
 		};
 		s.setLayoutParams(new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
@@ -70,7 +73,7 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 
 	@Override
 	public void onDestroy() {
-		md.release();
+		if (md != null) md.release();
 		md = null;
 		super.onDestroy();
 	}
@@ -78,13 +81,16 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 	@Override
 	public void onResume() {
 		super.onResume();
-		if (sc != null) md.setSurface(sc);
+		MirrorDisplay display = currentDisplay();
+		if ((display != null) && (sc != null)) display.setSurface(sc);
 	}
 
 	@Override
 	public void onPause() {
 		super.onPause();
-		if (MirrorServiceFS.sc != null) md.setSurface(MirrorServiceFS.sc);
+		MirrorDisplay display = currentDisplay();
+		if ((display != null) && (MirrorServiceFS.sc != null))
+			display.setSurface(MirrorServiceFS.sc);
 	}
 
 	@Override
@@ -92,14 +98,16 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		var r = h.getSurfaceFrame();
 		sc = new SurfaceContainer(h.getSurface(), r.width(), r.height(),
 				getResources().getDisplayMetrics().densityDpi);
-		md.setSurface(sc);
+		MirrorDisplay display = currentDisplay();
+		if (display != null) display.setSurface(sc);
 	}
 
 	@Override
 	public void surfaceChanged(@NonNull SurfaceHolder h, int format, int width, int height) {
 		sc = new SurfaceContainer(h.getSurface(), width, height,
 				getResources().getDisplayMetrics().densityDpi);
-		md.setSurface(sc);
+		MirrorDisplay display = currentDisplay();
+		if (display != null) display.setSurface(sc);
 	}
 
 	@Override
@@ -108,6 +116,19 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			if (md != null) md.releaseSurface(sc);
 			sc = null;
 		}
+	}
+
+	private MirrorDisplay currentDisplay() {
+		if (!AutomotiveRuntimeGate.allowsNewWork()) return null;
+		long current = AutomotiveRuntimeGate.currentGeneration();
+		if (current == 0L) {
+			if (projectionGeneration != 0L) return null;
+		} else {
+			if (projectionGeneration == 0L) projectionGeneration = current;
+			if (!AutomotiveRuntimeGate.isActiveGeneration(projectionGeneration)) return null;
+		}
+		if ((md == null) || md.isClosed()) md = MirrorDisplay.get();
+		return md;
 	}
 
 	static void onHomeButtonClick() {

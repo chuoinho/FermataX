@@ -96,6 +96,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private static final String NOTIF_CHANNEL_ID = "Fermata";
 	private static final String ACTION_PLAYBACK_KEEP_ALIVE =
 			"me.aap.fermata.action.PLAYBACK_KEEP_ALIVE";
+	private static volatile FermataMediaService activeInstance;
 	private DefaultMediaLib lib;
 	private MediaSessionCompat session;
 	MediaSessionCallback callback;
@@ -114,6 +115,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private Action actionNext;
 	private Action actionFavAdd;
 	private Action actionFavRm;
+	private volatile boolean hardShutdownRequested;
 	private Bitmap defaultAudioIcon;
 	private Bitmap defaultVideoIcon;
 
@@ -135,6 +137,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 				FermataApplication.get().getHandler());
 		if (runtimeGate.takeAutomaticPrepare(BuildConfig.AUTO)) callback.onPrepare();
 		session.setCallback(callback);
+		activeInstance = this;
 
 		Intent mediaButtonIntent =
 				new Intent(Intent.ACTION_MEDIA_BUTTON, null, ctx, MediaButtonReceiver.class);
@@ -147,36 +150,77 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 			AddonManager.get().onServiceCreate(callback);
 		}
 		recordServiceDiagnostic("service_created", DiagnosticPriority.STATE, true, true, false);
+		if (!AutomotiveRuntimeGate.allowsNewWork()) shutdownImmediately();
 	}
 
 	@Override
 	public void onDestroy() {
 		recordServiceDiagnostic("service_destroy_started", DiagnosticPriority.STATE, true,
 				callback != null, false);
-		if (runtimeGate.takeAddonDetachOnDestroy()) {
-			AddonManager.get().onServiceDestroy(callback);
-		}
-		NotificationManagerCompat.from(this).cancel(NOTIF_ID);
-		if (intentReceiver != null) unregisterReceiver(intentReceiver);
+		if (activeInstance == this) activeInstance = null;
+		cleanup("addons", () -> {
+			if (runtimeGate.takeAddonDetachOnDestroy()) AddonManager.get().onServiceDestroy(callback);
+		});
+		cleanup("notification", () -> NotificationManagerCompat.from(this).cancel(NOTIF_ID));
+		BroadcastReceiver receiver = intentReceiver;
 		intentReceiver = null;
-		callback.close();
-		session.release();
-		if (cleanupTask != null) cleanupTask.cancel(false);
+		if (receiver != null) cleanup("receiver", () -> unregisterReceiver(receiver));
+		MediaSessionCallback cb = callback;
+		callback = null;
+		if (cb != null) cleanup("callback", cb::close);
+		MediaSessionCompat mediaSession = session;
+		session = null;
+		if (mediaSession != null) cleanup("media_session", mediaSession::release);
+		ScheduledFuture<?> scheduled = cleanupTask;
 		cleanupTask = null;
-		lib.close();
+		if (scheduled != null) cleanup("preference_cleanup", () -> scheduled.cancel(false));
+		DefaultMediaLib mediaLib = lib;
+		lib = null;
+		if (mediaLib != null) cleanup("media_library", mediaLib::close);
 		Log.d("FermataMediaService destroyed");
 		recordServiceDiagnostic("service_destroyed", DiagnosticPriority.STATE, false, false, false);
 		super.onDestroy();
 	}
 
+	/** Stops the in-process playback service at an explicit automotive session boundary. */
+	public static boolean shutdownActiveInstance() {
+		FermataMediaService service = activeInstance;
+		if (service == null) return false;
+		service.shutdownImmediately();
+		return true;
+	}
+
+	private void shutdownImmediately() {
+		if (hardShutdownRequested) return;
+		hardShutdownRequested = true;
+		MediaSessionCallback cb = callback;
+		MediaSessionCompat mediaSession = session;
+		if (mediaSession != null) cleanup("terminal_media_session", () -> {
+			mediaSession.setCallback(null);
+			mediaSession.setActive(false);
+		});
+		if (cb != null) cleanup("terminal_playback", cb::stopImmediately);
+		cleanup("terminal_foreground", () -> stopForeground(true));
+		stopSelf();
+	}
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		if (hardShutdownRequested || !AutomotiveRuntimeGate.allowsNewWork()) {
+			stopSelf(startId);
+			return START_NOT_STICKY;
+		}
 		if (intent != null) MediaButtonReceiver.handleIntent(session, intent);
 		return START_NOT_STICKY;
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
+		if (hardShutdownRequested || !AutomotiveRuntimeGate.allowsNewWork()) {
+			recordServiceDiagnostic("service_bind_rejected", DiagnosticPriority.WARN, false,
+					false, false);
+			return null;
+		}
 		boolean mediaAction = (intent != null) && ACTION_MEDIA_SERVICE.equals(intent.getAction());
 		recordServiceDiagnostic("service_bind_requested", DiagnosticPriority.STATE, mediaAction,
 				callback != null, false);
@@ -255,6 +299,10 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@SuppressLint("SwitchIntDef")
 	void updateNotification(int st, PlayableItem currentItem) {
+		if (hardShutdownRequested || !AutomotiveRuntimeGate.allowsNewWork()) {
+			stopForeground(true);
+			return;
+		}
 		if ((st == STATE_NONE) || (st == STATE_STOPPED) || (st == STATE_ERROR)) {
 			if (runtimeGate.takePlaybackLifetimeStop()) stopSelf();
 		} else if (runtimeGate.takePlaybackLifetimeStart()) {
@@ -372,6 +420,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		intentReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
+				if (hardShutdownRequested || !AutomotiveRuntimeGate.allowsNewWork()) return;
 				String action = intent.getAction();
 				if (action == null) return;
 
@@ -415,7 +464,15 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	public final class ServiceBinder extends Binder {
 		public MediaSessionCallback getMediaSessionCallback() {
-			return callback;
+			return (hardShutdownRequested || !AutomotiveRuntimeGate.allowsNewWork()) ? null : callback;
+		}
+	}
+
+	private static void cleanup(String name, Runnable action) {
+		try {
+			action.run();
+		} catch (Throwable error) {
+			Log.e(error, "Media service cleanup failed: ", name);
 		}
 	}
 }

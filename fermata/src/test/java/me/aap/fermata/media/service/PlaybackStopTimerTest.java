@@ -52,4 +52,31 @@ public class PlaybackStopTimerTest {
 		tasks.get(1).run();
 		assertEquals(1, stops.get());
 	}
+
+	@Test
+	public void expiryCallbackFiresExactlyOnce() {
+		List<Runnable> tasks = new ArrayList<>();
+		AtomicInteger stops = new AtomicInteger();
+		PlaybackStopTimer timer = new PlaybackStopTimer(
+				(task, delay) -> tasks.add(task), () -> 0L, stops::incrementAndGet);
+
+		timer.setSeconds(10);
+		tasks.get(0).run();
+		tasks.get(0).run();
+
+		assertEquals(1, stops.get());
+		assertEquals(0, timer.getRemainingSeconds());
+	}
+
+	@Test
+	public void remainingSecondsNeverBecomesNegativeAfterDeadline() {
+		AtomicLong clock = new AtomicLong(1_000L);
+		PlaybackStopTimer timer = new PlaybackStopTimer(
+				(task, delay) -> {}, clock::get, () -> {});
+
+		timer.setSeconds(1);
+		clock.set(2_001L);
+
+		assertEquals(0, timer.getRemainingSeconds());
+	}
 }

@@ -32,10 +32,23 @@ public class MainActivity extends SplitCompatActivityBase
 		implements FermataActivity, AddonManager.Listener {
 	private static FermataMediaServiceConnection service;
 	private static MainActivity activeInstance;
+	private static MainActivity currentInstance;
 
 	@Nullable
 	public static MainActivity getActiveInstance() {
 		return activeInstance;
+	}
+
+	/** Disconnects the phone UI from playback and removes its task during automotive shutdown. */
+	public static void finishForAutoDisconnect() {
+		FermataMediaServiceConnection connection = service;
+		service = null;
+		if (connection != null) connection.disconnect();
+		MainActivity activity = currentInstance;
+		if (activity == null) return;
+		activity.runOnUiThread(() -> {
+			if (!activity.isFinishing()) activity.finishAndRemoveTask();
+		});
 	}
 
 	@Override
@@ -68,6 +81,7 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		currentInstance = this;
 		MainActivityDelegate.setTheme(this,
 				isCarActivity() || FermataApplication.get().isMirroringMode());
 		AddonManager.get().addBroadcastListener(this);
@@ -82,6 +96,8 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	protected void onDestroy() {
+		if (currentInstance == this) currentInstance = null;
+		if (activeInstance == this) activeInstance = null;
 		AddonManager.get().removeBroadcastListener(this);
 		super.onDestroy();
 	}

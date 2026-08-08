@@ -20,6 +20,7 @@ import java.util.Objects;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.AutomotiveShutdownParticipant;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.addon.MediaItemResolverAddon;
@@ -55,7 +56,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 @Keep
 @SuppressWarnings("unused")
 public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon,
-		VoiceSearchAddon {
+		VoiceSearchAddon, AutomotiveShutdownParticipant {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(StremioAddon.class.getName());
 	private static final StremioSourceInput CINEMETA = new StremioSourceInput(
@@ -428,6 +429,11 @@ public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon
 		directFavoriteUpdates.clear();
 		closeWhenReady(opening);
 		if (future != opening) closeWhenReady(future);
+	}
+
+	@Override
+	public void onAutomotiveShutdown() {
+		stop();
 	}
 
 	FutureSupplier<StremioRuntimeGraph> getGraph(DefaultMediaLib lib) {

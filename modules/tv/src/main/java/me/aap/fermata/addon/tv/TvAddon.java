@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import me.aap.fermata.addon.AddonInfo;
+import me.aap.fermata.addon.AutomotiveShutdownParticipant;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.addon.VoiceSearchAddon;
@@ -19,7 +20,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
  */
 @Keep
 @SuppressWarnings("unused")
-public class TvAddon implements MediaLibAddon, VoiceSearchAddon {
+public class TvAddon implements MediaLibAddon, VoiceSearchAddon, AutomotiveShutdownParticipant {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(TvAddon.class.getName());
 	private static TvRootItem root;
@@ -75,6 +76,16 @@ public class TvAddon implements MediaLibAddon, VoiceSearchAddon {
 	@Override
 	public void stop() {
 		refreshCoordinator.stop();
+	}
+
+	@Override
+	public void onAutomotiveShutdown() {
+		stop();
+	}
+
+	@Override
+	public void onAutomotiveSessionStarted() {
+		start();
 	}
 
 	@Nullable

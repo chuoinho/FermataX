@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import me.aap.utils.net.NetUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -14,7 +16,7 @@ public class YoutubeAdSignalTest {
 	public void parsesEncodedSignalWithGeneration() {
 		String page = "https://m.youtube.com/watch?v=video-1&feature=test";
 		YoutubeAdSignal signal = YoutubeAdSignal.parse("ytad1|ad-start|pod-1|ad-1|" +
-				URLEncoder.encode(page, StandardCharsets.UTF_8) + "|17");
+				NetUtils.urlEncode(page) + "|17");
 
 		assertEquals(YoutubeAdSignal.Phase.AD_START, signal.phase());
 		assertEquals("pod-1", signal.podId());

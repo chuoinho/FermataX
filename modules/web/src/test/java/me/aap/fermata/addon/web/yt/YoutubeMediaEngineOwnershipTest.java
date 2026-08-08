@@ -48,6 +48,18 @@ public class YoutubeMediaEngineOwnershipTest {
 	}
 
 	@Test
+	public void explicitPhoneSelectionForwardsWhenAutomotiveHostOwnsPresentation() {
+		assertTrue(YoutubePlaybackHostPolicy.shouldForward(
+				false, false, false, true));
+		assertFalse(YoutubePlaybackHostPolicy.shouldForward(
+				false, false, false, false));
+		assertFalse(YoutubePlaybackHostPolicy.shouldForward(
+				true, true, false, true));
+		assertFalse(YoutubePlaybackHostPolicy.shouldForward(
+				false, true, true, true));
+	}
+
+	@Test
 	public void externalOwnerRejectsYouTubeAutoNextIdentityChange() {
 		assertTrue(YoutubeMediaEngine.acceptsExternalPlaybackVideo("video-a", "video-a"));
 		assertFalse(YoutubeMediaEngine.acceptsExternalPlaybackVideo("video-a", "video-c"));

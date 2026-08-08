@@ -7,6 +7,7 @@ import static android.view.MotionEvent.ACTION_UP;
 import static androidx.core.graphics.drawable.IconCompat.createWithResource;
 
 import android.content.Intent;
+import android.view.Surface;
 
 import androidx.annotation.NonNull;
 import androidx.car.app.AppManager;
@@ -24,8 +25,14 @@ import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.NavigationTemplate;
 import androidx.car.app.validation.HostValidator;
 
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
+
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.service.AutomotiveRuntimeGate;
 import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.function.Cancellable;
 import me.aap.utils.log.Log;
@@ -33,17 +40,25 @@ import me.aap.utils.log.Log;
 public class MirrorServiceFS extends CarAppService {
 	private MirrorDisplay md;
 	static SurfaceContainer sc;
+	private static WeakReference<MirrorScreen> activeScreen;
+	private static final Set<Surface> releasedSurfaces =
+			Collections.newSetFromMap(new WeakHashMap<>());
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		AutoConnectionMonitor.hostCreated(this);
 		md = MirrorDisplay.get();
 	}
 
 	@Override
 	public void onDestroy() {
-		md.release();
+		MirrorScreen screen = (activeScreen == null) ? null : activeScreen.get();
+		if (screen != null) screen.cancelPendingInput();
+		activeScreen = null;
+		if (md != null) md.release();
 		md = null;
+		AutoConnectionMonitor.hostDestroyed(this);
 		super.onDestroy();
 	}
 
@@ -83,6 +98,7 @@ public class MirrorServiceFS extends CarAppService {
 
 		MirrorScreen(@NonNull CarContext ctx) {
 			super(ctx);
+			activeScreen = new WeakReference<>(this);
 			ctx.getCarService(AppManager.class).setSurfaceCallback(this);
 			Log.i("MirrorScreen created. API level: ", ctx.getCarAppApiLevel());
 		}
@@ -90,16 +106,23 @@ public class MirrorServiceFS extends CarAppService {
 		@Override
 		public void onSurfaceAvailable(@NonNull SurfaceContainer sc) {
 			if (sc.getSurface() == null) return;
+			if (!isActiveGeneration()) {
+				releaseSurface(sc);
+				return;
+			}
 			MirrorServiceFS.sc = sc;
-			md.setSurface(sc);
+			currentDisplay().setSurface(sc);
 			scrollStartX = sc.getWidth() / 2f;
 			scrollStartY = sc.getHeight() / 2f;
 		}
 
 		@Override
 		public void onSurfaceDestroyed(@NonNull SurfaceContainer sc) {
-			md.releaseSurface(MirrorServiceFS.sc);
-			MirrorServiceFS.sc = null;
+			cancelPendingInput();
+			MirrorDisplay display = md;
+			if (display != null) display.releaseSurface(sc);
+			if (MirrorServiceFS.sc == sc) MirrorServiceFS.sc = null;
+			releaseSurface(sc);
 		}
 
 		@Override
@@ -164,8 +187,60 @@ public class MirrorServiceFS extends CarAppService {
 		}
 
 		private MirrorDisplay md() {
-			if (sc != null) md.setSurface(sc);
+			MirrorDisplay display = currentDisplay();
+			if (isActiveGeneration() && (sc != null)) display.setSurface(sc);
+			return display;
+		}
+
+		private long generation;
+
+		private boolean isActiveGeneration() {
+			if (!AutomotiveRuntimeGate.allowsNewWork()) return false;
+			long current = AutomotiveRuntimeGate.currentGeneration();
+			if (current == 0L) return generation == 0L;
+			if (generation == 0L) generation = current;
+			return AutomotiveRuntimeGate.isActiveGeneration(generation);
+		}
+
+		private MirrorDisplay currentDisplay() {
+			if ((md == null) || md.isClosed()) md = MirrorDisplay.get();
 			return md;
+		}
+
+		private void cancelPendingInput() {
+			Cancellable pending = scrollUp;
+			scrollUp = null;
+			if (pending != null) pending.cancel();
+		}
+
+		private void releaseForShutdown(SurfaceContainer surface) {
+			if (MirrorServiceFS.this.md != null) MirrorServiceFS.this.md.releaseSurface(surface);
+			MirrorServiceFS.releaseSurface(surface);
+		}
+	}
+
+	static void shutdownForAutoDisconnect() {
+		MirrorScreen screen = (activeScreen == null) ? null : activeScreen.get();
+		activeScreen = null;
+		if (screen != null) screen.cancelPendingInput();
+		SurfaceContainer surface = sc;
+		sc = null;
+		if (surface != null) {
+			if (screen != null) screen.releaseForShutdown(surface);
+			else releaseSurface(surface);
+		}
+	}
+
+	private static void releaseSurface(SurfaceContainer container) {
+		try {
+			Surface surface = container.getSurface();
+			if (surface == null) return;
+			synchronized (releasedSurfaces) {
+				if (!releasedSurfaces.add(surface)) return;
+			}
+			surface.release();
+		} catch (RuntimeException error) {
+			Log.d(error, "Failed to release Android Auto mirror surface");
 		}
 	}
 }

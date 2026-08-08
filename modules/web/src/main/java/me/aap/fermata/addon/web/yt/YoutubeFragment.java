@@ -375,6 +375,13 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			YoutubeToolBarMediator.instance.updateVisibility(activity.getToolBar(), this);
 	}
 
+	void onPageNavigationChanged() {
+		if (isHidden() || (getContext() == null)) return;
+		MainActivityDelegate activity = MainActivityDelegate.get(getContext());
+		if (activity.getActiveFragment() == this)
+			YoutubeToolBarMediator.instance.updateVisibility(activity.getToolBar(), this);
+	}
+
 	private void applyPendingResume(MainActivityDelegate activity, @Nullable PlayableItem item) {
 		String videoId = pendingResumeVideoId;
 		if ((videoId == null) || videoId.isBlank() || (item == null) ||
@@ -529,8 +536,11 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 
 			PlaybackSnapshot snapshot = a.getMediaSessionCallback().getPlaybackSnapshot();
 			TextView title = tb.findViewById(getTitleId());
-			if (title != null) title.setText(YoutubeMediaEngine.isYoutubeItem(snapshot.getItem()) ?
-					snapshot.getDisplayTitle() : f.getTitle());
+			YoutubeWebView web = (f instanceof YoutubeFragment youtube) ?
+					youtube.getWebView() : null;
+			boolean playbackTitle = (web != null) && YoutubeToolbarPolicy.usePlaybackTitle(
+					web.getUrl(), YoutubeMediaEngine.isYoutubeItem(snapshot.getItem()));
+			if (title != null) title.setText(playbackTitle ? snapshot.getDisplayTitle() : f.getTitle());
 		}
 
 		private boolean shouldShowFullScreen(MainActivityDelegate activity, ActivityFragment f) {
@@ -553,8 +563,8 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 					.getMediaSessionCallback().getEngine();
 			boolean externalPlayback = (engine instanceof YoutubeMediaEngine youtube) &&
 					(youtube.getExternalPlaybackOwner() != null);
-			return externalPlayback || ((c != null) && c.isFullScreen()) ||
-					v.canGoBack() || !y.isRootPage();
+			return YoutubeToolbarPolicy.showBack(externalPlayback,
+					(c != null) && c.isFullScreen(), v.canGoBack(), y.isRootPage(), v.getUrl());
 		}
 	}
 }

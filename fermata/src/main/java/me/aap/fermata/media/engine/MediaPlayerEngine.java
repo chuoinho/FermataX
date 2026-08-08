@@ -10,6 +10,8 @@ import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.PlaybackParams;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,9 +35,11 @@ public class MediaPlayerEngine extends MediaEngineBase
 		implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
 		MediaPlayer.OnVideoSizeChangedListener, MediaPlayer.OnErrorListener,
 		MediaPlayer.OnInfoListener {
+	private static final long PREPARE_TIMEOUT_MILLIS = 20_000L;
 	private final Context ctx;
 	private final MediaPlayer player;
 	private final AudioEffects audioEffects;
+	private final MediaPlayerPrepareWatchdog prepareWatchdog;
 	private PlayableItem source;
 
 	public MediaPlayerEngine(Context ctx, Listener listener) {
@@ -52,6 +56,9 @@ public class MediaPlayerEngine extends MediaEngineBase
 		player.setOnErrorListener(this);
 		player.setOnVideoSizeChangedListener(this);
 		player.setOnInfoListener(this);
+		Handler handler = new Handler(Looper.getMainLooper());
+		prepareWatchdog = new MediaPlayerPrepareWatchdog(handler::postDelayed,
+				this::onPrepareTimeout);
 	}
 
 	@Override
@@ -61,6 +68,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 
 	@Override
 	public void prepare(PlayableItem source) {
+		prepareWatchdog.cancel();
 		stopped(false);
 		this.source = source;
 		Uri u = source.getLocation();
@@ -84,7 +92,9 @@ public class MediaPlayerEngine extends MediaEngineBase
 				player.setDataSource(ctx, u);
 			}
 			player.prepareAsync();
+			prepareWatchdog.arm(PREPARE_TIMEOUT_MILLIS);
 		} catch (Exception ex) {
+			prepareWatchdog.cancel();
 			listener.onEngineError(this, ex);
 			this.source = null;
 		}
@@ -99,6 +109,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 
 	@Override
 	public void stop() {
+		prepareWatchdog.cancel();
 		stopped(false);
 		player.stop();
 		player.reset();
@@ -241,6 +252,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 
 	@Override
 	public void close() {
+		prepareWatchdog.cancel();
 		super.close();
 
 		try {
@@ -265,6 +277,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 
 	@Override
 	public void onPrepared(MediaPlayer mp) {
+		prepareWatchdog.cancel();
 		if (source == null) return;
 		long off = source.getOffset();
 		if (off > 0) player.seekTo((int) off);
@@ -291,6 +304,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
+		prepareWatchdog.cancel();
 		MediaEngineException err;
 
 		switch (extra) {
@@ -314,5 +328,14 @@ public class MediaPlayerEngine extends MediaEngineBase
 
 		listener.onEngineError(this, err);
 		return true;
+	}
+
+	private void onPrepareTimeout() {
+		if (source == null) return;
+		try {
+			player.reset();
+		} catch (IllegalStateException ignored) {
+		}
+		listener.onEngineError(this, new MediaEngineException("MEDIA_PREPARE_TIMEOUT"));
 	}
 }

@@ -214,6 +214,26 @@ public class FermataWebView extends WebView
 		stopLoading();
 	}
 
+	void onAutomotiveShutdown() {
+		FermataChromeClient chrome = getWebChromeClient();
+		if ((chrome != null) && chrome.isFullScreen()) chrome.exitFullScreen();
+		stopLoading();
+		try {
+			evaluateJavascript("(function(){document.querySelectorAll('video,audio').forEach(" +
+					"function(m){try{m.pause();m.removeAttribute('src');m.load();}catch(e){}});})()",
+					null);
+		} catch (RuntimeException error) {
+			Log.d(error, "Failed to stop automotive WebView media");
+		}
+		onPause();
+		pauseTimers();
+	}
+
+	void onAutomotiveSessionStarted() {
+		resumeTimers();
+		onResume();
+	}
+
 	@Override
 	protected void onWindowVisibilityChanged(int visibility) {
 		if (!BuildConfig.AUTO || !keepWindowVisibleOnAuto())

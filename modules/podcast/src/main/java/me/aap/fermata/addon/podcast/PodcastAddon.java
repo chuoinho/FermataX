@@ -22,11 +22,12 @@ import me.aap.fermata.media.lib.PlayableItemResolver;
 import android.support.v4.media.session.PlaybackStateCompat;
 import me.aap.fermata.addon.podcast.refresh.PodcastRefreshCoordinator;
 import me.aap.fermata.addon.podcast.download.PodcastDownloadCoordinator;
+import me.aap.fermata.addon.AutomotiveShutdownParticipant;
 
 @Keep
 @SuppressWarnings("unused")
 public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAddon, VoiceSearchAddon,
-		MediaSessionCallback.Listener {
+		MediaSessionCallback.Listener, AutomotiveShutdownParticipant {
 	private static final long PROGRESS_WRITE_INTERVAL_MS = 15_000;
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(PodcastAddon.class.getName());
@@ -101,6 +102,11 @@ public final class PodcastAddon implements MediaLibAddon, FermataMediaServiceAdd
 		repository = null;
 		lastProgressItemId = null;
 		lastProgressWriteMs = 0;
+	}
+
+	@Override
+	public void onAutomotiveShutdown() {
+		stop();
 	}
 
 	@Override

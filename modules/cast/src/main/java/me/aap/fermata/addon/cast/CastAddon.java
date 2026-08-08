@@ -16,6 +16,7 @@ import com.google.android.gms.cast.framework.SessionManagerListener;
 import com.google.android.gms.cast.framework.media.RemoteMediaClient;
 
 import me.aap.fermata.addon.AddonInfo;
+import me.aap.fermata.addon.AutomotiveShutdownParticipant;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataMediaServiceAddon;
 import me.aap.fermata.addon.FermataToolAddon;
@@ -35,7 +36,8 @@ import me.aap.utils.ui.view.ToolBarView;
 @Keep
 @SuppressWarnings("unused")
 public class CastAddon
-		implements FermataMediaServiceAddon, FermataToolAddon, SessionManagerListener<CastSession> {
+		implements FermataMediaServiceAddon, FermataToolAddon, SessionManagerListener<CastSession>,
+		AutomotiveShutdownParticipant {
 	private static final AddonInfo info = FermataAddon.findAddonInfo(CastAddon.class.getName());
 	@Nullable
 	private MediaSessionCallback cb;
@@ -143,6 +145,15 @@ public class CastAddon
 
 	@Override
 	public void uninstall() {
+		deactivate();
+		cb = null;
+		routeButton = null;
+	}
+
+	@Override
+	public void onAutomotiveShutdown() {
+		CastMediaEngineProvider provider = engProvider;
+		if (provider != null) provider.shutdownPlayback();
 		deactivate();
 		cb = null;
 		routeButton = null;

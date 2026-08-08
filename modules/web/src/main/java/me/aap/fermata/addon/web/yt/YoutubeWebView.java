@@ -121,12 +121,14 @@ public class YoutubeWebView extends FermataWebView {
 			FermataChromeClient chromeClient) {
 		super.init(addon, webClient, chromeClient);
 		initialPlaybackNavigationClaimed = false;
-		MediaSessionCallback callback = MainActivityDelegate.get(getContext())
-				.getMediaSessionCallback();
-		if ((callback.getEngine() instanceof YoutubeDeferredMediaEngine pending) &&
+		MainActivityDelegate activity = MainActivityDelegate.get(getContext());
+		MediaSessionCallback callback = activity.getMediaSessionCallback();
+		boolean preferredHost = getAddon().isPreferredPlaybackActivity(activity);
+		if (preferredHost &&
+				(callback.getEngine() instanceof YoutubeDeferredMediaEngine pending) &&
 				pending.belongsTo(getAddon()))
 			initialPlaybackNavigationClaimed = pending.attach(mediaEngine);
-		else if ((callback.getEngine() instanceof YoutubeMediaEngine previous) &&
+		else if (preferredHost && (callback.getEngine() instanceof YoutubeMediaEngine previous) &&
 				(previous != mediaEngine) && previous.belongsTo(getAddon()))
 			previous.transferTo(mediaEngine);
 	}
@@ -455,7 +457,10 @@ public class YoutubeWebView extends FermataWebView {
 		getAddon().setLastYoutubeUrl(uri);
 		if (clearHistoryOnNextPageCommit) {
 			clearHistoryOnNextPageCommit = false;
-			post(this::clearHistory);
+			post(() -> {
+				clearHistory();
+				notifyToolbarPageChanged();
+			});
 		}
 		attachListeners((mediaEngine == null) ? 0L : mediaEngine.playbackGenerationSeed());
 		if (mediaEngine != null) mediaEngine.onPageLoaded(uri);
@@ -463,10 +468,18 @@ public class YoutubeWebView extends FermataWebView {
 		configureAdSkip();
 		addFocusHighlight();
 		flushCookiesSoon();
+		notifyToolbarPageChanged();
 		if (reloadAudioRestorePending) {
 			reloadAudioPageCommitted = true;
 			restoreReloadAudio(0, reloadAudioGeneration);
 		}
+	}
+
+	private void notifyToolbarPageChanged() {
+		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(activity -> {
+			if (activity.getActiveFragment() instanceof YoutubeFragment youtube)
+				youtube.onPageNavigationChanged();
+		});
 	}
 
 	protected void submitForm() {

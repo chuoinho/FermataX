@@ -46,6 +46,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
@@ -71,6 +72,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private static final DirectAppStartupCoordinator<FermataMediaServiceConnection> STARTUP =
 			new DirectAppStartupCoordinator<>(FermataMediaServiceConnection::isConnected,
 					FermataMediaServiceConnection::disconnect);
+	private static MainCarActivity currentInstance;
 	@SuppressWarnings("unchecked")
 	@NonNull
 	private FutureSupplier<MainActivityDelegate> delegate =
@@ -111,6 +113,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		currentInstance = this;
 		MainActivityDelegate.setTheme(this, true);
 		super.onCreate(savedInstanceState);
 		initCarActivity(this);
@@ -229,6 +232,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	public void onDestroy() {
 		stopInput();
 		destroyed = true;
+		if (currentInstance == this) currentInstance = null;
 		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.DESTROYED, diagnosticsActivityId);
 		super.onDestroy();
 		MainActivityDelegate d = createdDelegate;
@@ -299,6 +303,12 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	static FermataMediaServiceConnection takeServiceForShutdown() {
 		return STARTUP.shutdown();
+	}
+
+	static void finishForAutoDisconnect() {
+		MainCarActivity activity = currentInstance;
+		if (activity == null) return;
+		FermataApplication.get().getHandler().post(activity::finish);
 	}
 
 	@Override

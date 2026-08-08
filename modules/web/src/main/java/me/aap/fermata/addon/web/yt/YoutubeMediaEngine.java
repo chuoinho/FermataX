@@ -132,8 +132,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		boolean activeHost = isActivePlaybackHost();
 		boolean intentAccepted = activeHost && acceptsPlaybackSignal();
 		if (!canClaimExternalPlayback(false, activeHost, true, intentAccepted)) {
+			boolean forwarded = YoutubePlaybackHostPolicy.forward(web, false, activeHost, signal, this::acceptsPlaybackSignal);
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
-			Log.d("Ignoring YouTube ready signal without playback intent");
+			Log.d(forwarded ? "Forwarding YouTube playback to automotive host" :
+					"Ignoring YouTube ready signal without playback intent");
 			web.silenceRejectedPlayback(url);
 			return;
 		}
@@ -161,8 +163,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 				(activeHost && acceptsPlaybackSignal());
 		if (!canClaimExternalPlayback(currentEngine, activeHost, autoPlayback,
 				intentAccepted)) {
+			boolean forwarded = YoutubePlaybackHostPolicy.forward(web, currentEngine, activeHost, signal, this::acceptsPlaybackSignal);
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
-			Log.d("Ignoring YouTube preview playback");
+			Log.d(forwarded ? "Forwarding YouTube playback to automotive host" :
+					"Ignoring YouTube preview playback");
 			web.silenceRejectedPlayback(url);
 			return;
 		}
@@ -697,7 +701,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private boolean isActivePlaybackHost() {
 		try {
 			MainActivityDelegate activity = MainActivityDelegate.get(web.getContext());
-			return (activity.getActiveFragment() instanceof YoutubeFragment youtube) &&
+			return YoutubePlaybackHostPolicy.isPreferredHost(web) &&
+					(activity.getActiveFragment() instanceof YoutubeFragment youtube) &&
 					(youtube.getWebView() == web);
 		} catch (RuntimeException ignored) {
 			return false;
