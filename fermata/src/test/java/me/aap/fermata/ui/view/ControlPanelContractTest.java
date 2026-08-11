@@ -99,6 +99,22 @@ public class ControlPanelContractTest {
 	}
 
 	@Test
+	public void overlayInsetsEveryAttachedRecyclerViewAndHiddenPanelsStayGone()
+			throws Exception {
+		String coordinator = source("ui/view/ControlPanelContentInsetCoordinator.java");
+		assertTrue(coordinator.contains("view instanceof RecyclerView list"));
+		assertTrue(coordinator.contains("boolean clip = (insetBottom == 0)"));
+		assertTrue(coordinator.contains("setClipToPadding(clip)"));
+		assertTrue(coordinator.contains("addOnGlobalLayoutListener(this)"));
+		assertTrue(coordinator.contains("R.dimen.control_panel_height"));
+		String presentation = source("ui/view/ControlPanelPresentationView.java");
+		assertTrue(presentation.contains("contentInsets.setPanelVisible"));
+		String panel = source("ui/view/ControlPanelView.java");
+		assertTrue(panel.contains("setPanelVisibility(state.controlsVisible() ? VISIBLE : GONE)"));
+		assertFalse(panel.contains("setPanelVisibility(INVISIBLE)"));
+	}
+
+	@Test
 	public void noSeekConstraintLayoutRemainsAnActiveDependency() throws Exception {
 		String seek = source("ui/view/ControlPanelSeekView.java");
 		assertTrue(seek.contains("load(R.layout.control_panel_view2)"));

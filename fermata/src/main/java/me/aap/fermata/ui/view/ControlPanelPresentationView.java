@@ -20,6 +20,8 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 final class ControlPanelPresentationView {
 	private final ControlPanelView panel;
 	private final Drawable audioBackground;
+	private final ControlPanelContentInsetCoordinator contentInsets =
+			new ControlPanelContentInsetCoordinator();
 	private boolean videoMode;
 
 	ControlPanelPresentationView(ControlPanelView panel) {
@@ -36,8 +38,14 @@ final class ControlPanelPresentationView {
 
 	void onPanelVisibilityChanged(int visibility) {
 		if (!(panel.getParent() instanceof View parent)) return;
+		if (parent instanceof android.view.ViewGroup host)
+			contentInsets.setPanelVisible(host, visibility == VISIBLE);
 		View scrim = parent.findViewById(R.id.control_panel_scrim);
 		if (scrim != null) scrim.setVisibility(videoMode && (visibility == VISIBLE) ? VISIBLE : GONE);
+	}
+
+	void release() {
+		contentInsets.release();
 	}
 
 	void updateVideoTitle(MainActivityDelegate activity) {

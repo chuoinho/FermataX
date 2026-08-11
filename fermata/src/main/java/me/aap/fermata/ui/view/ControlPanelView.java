@@ -228,12 +228,14 @@ public class ControlPanelView extends ConstraintLayout
 		if (visibility == VISIBLE) {
 			mask |= MASK_VISIBLE;
 			if (isVideoModeActive(a)) return;
+			boolean showAudio = isAudioPanelSupported(a);
 			if (isAutoUi(a)) {
-				presentationCoordinator.leaveVideo(isAudioPanelSupported(a));
+				presentationCoordinator.leaveVideo(showAudio);
 				return;
 			}
 
-			setPanelVisibility(VISIBLE);
+			setPanelVisibility(showAudio ? VISIBLE : GONE);
+			if (!showAudio) return;
 
 			if (a.getPrefs().getHideBarsPref(a)) {
 				a.setBarsHidden(true);
@@ -531,6 +533,7 @@ public class ControlPanelView extends ConstraintLayout
 	public void onActivityEvent(MainActivityDelegate a, long e) {
 		if (handleActivityDestroyEvent(a, e)) {
 			presentationCoordinator.cancel();
+			presentationView.release();
 			a.getMediaServiceBinder().removeBroadcastListener(this);
 			a.getMediaServiceBinder().unbind();
 			a.getPrefs().removeBroadcastListener(this);
@@ -996,8 +999,8 @@ public class ControlPanelView extends ConstraintLayout
 	}
 
 	private int getTouchDelay() {
-		int delay = (prefs == null) ? 5000 : prefs.getVideoControlTouchDelayPref() * 1000;
-		return (isAutoUi(getActivity()) && (delay == 0)) ? 5000 : delay;
+		int delay = (prefs == null) ? 8000 : prefs.getVideoControlTouchDelayPref() * 1000;
+		return (isAutoUi(getActivity()) && (delay == 0)) ? 8000 : delay;
 	}
 
 	private int getSeekDelay() {

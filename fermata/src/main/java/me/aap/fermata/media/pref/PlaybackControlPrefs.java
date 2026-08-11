@@ -27,7 +27,7 @@ public interface PlaybackControlPrefs extends SharedPreferenceStore {
 			Pref.i("PREV_NEXT_LONG_TIME_UNIT", TIME_UNIT_PERCENT);
 	Pref<BooleanSupplier> PLAY_PAUSE_STOP = Pref.b("PLAY_PAUSE_STOP", true);
 	Pref<IntSupplier> VIDEO_CONTROL_START_DELAY = Pref.i("VIDEO_CONTROL_START_DELAY", 0);
-	Pref<IntSupplier> VIDEO_CONTROL_TOUCH_DELAY = Pref.i("VIDEO_CONTROL_TOUCH_DELAY", 5);
+	Pref<IntSupplier> VIDEO_CONTROL_TOUCH_DELAY = Pref.i("VIDEO_CONTROL_TOUCH_DELAY", 8);
 	Pref<IntSupplier> VIDEO_CONTROL_SEEK_DELAY = Pref.i("VIDEO_CONTROL_SEEK_DELAY", 3);
 	Pref<BooleanSupplier> VIDEO_AA_SHOW_STATUS = Pref.b("VIDEO_AA_SHOW_STATUS", false);
 
