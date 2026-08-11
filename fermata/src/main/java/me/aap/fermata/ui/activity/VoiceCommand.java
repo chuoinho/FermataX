@@ -11,10 +11,16 @@ public class VoiceCommand {
 
 	private final String query;
 	private final int action;
+	private final long voiceRequestId;
 
 	public VoiceCommand(String query, int action) {
+		this(query, action, 0L);
+	}
+
+	public VoiceCommand(String query, int action, long voiceRequestId) {
 		this.query = query;
 		this.action = action;
+		this.voiceRequestId = voiceRequestId;
 	}
 
 	public String getQuery() {
@@ -23,6 +29,10 @@ public class VoiceCommand {
 
 	public int getAction() {
 		return action;
+	}
+
+	public long getVoiceRequestId() {
+		return voiceRequestId;
 	}
 
 	public boolean isPlay() {

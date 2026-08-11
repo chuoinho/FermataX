@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Läuft gerade</string>
     <string name="dashboard_continue">Weiterschauen</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Für dich empfohlen</string>
+    <string name="dashboard_smart_discover">Entdecken</string>
+    <string name="dashboard_smart_empty_title">Add-on auswählen</string>
+    <string name="dashboard_smart_empty_subtitle">Wiedergabe starten</string>
+    <string name="dashboard_smart_recovery">Fortsetzen nicht möglich</string>
+    <string name="dashboard_smart_recovery_title">Quelle unterbrochen</string>
+    <string name="dashboard_smart_recovery_subtitle">Erneut versuchen oder Add-on öffnen</string>
     <string name="dashboard_home_sub">Startbildschirm und Schnellzugriff</string>
     <string name="dashboard_folders_sub">Lokale Dateien und Ordner</string>
     <string name="dashboard_favorites_sub">Angeheftete Sender und Medien</string>
@@ -494,4 +501,18 @@
 	<string name="retry">Erneut versuchen</string>
 	<string name="media_list_empty">Noch keine Einträge</string>
 	<string name="media_list_load_failed">Elemente konnten nicht geladen werden.</string>
+	<string name="vehicle_key_test">Fahrzeugtasten testen</string>
+	<string name="vehicle_key_test_sub">Lenkrad- und Headunit-Tasten 30 Sekunden lang erfassen</string>
+	<string name="vehicle_key_test_started">Tastentest gestartet. Drücke die zu testenden Fahrzeugtasten und wähle diesen Eintrag erneut, um das Ergebnis anzuzeigen.</string>
+	<string name="vehicle_key_test_no_events">Keine Steuertaste hat FermataX erreicht. Die Headunit oder Fahrzeug-Firmware hat das Signal möglicherweise abgefangen.</string>
+	<string name="vehicle_key_test_result">Ergebnisse der Fahrzeugtasten:\n%1$s</string>
+	<string name="voice_trigger_assign">Sprachtaste im Fahrzeug zuweisen</string>
+	<string name="voice_trigger_current">Aktuell: %1$s. Nur aktiv, solange FermataX sichtbar ist.</string>
+	<string name="voice_trigger_unassigned">Nicht zugewiesen</string>
+	<string name="voice_trigger_capture_started">Drücke einmal die Lenkrad- oder Headunit-Taste. Die normale Funktion wird dabei nicht ausgeführt.</string>
+	<string name="voice_trigger_capture_timeout">Keine unterstützte Taste erkannt. Es wurde nichts geändert.</string>
+	<string name="voice_trigger_capture_success">%1$s (%2$d) zugewiesen. Die Taste öffnet FermataX Voice nur, solange die App sichtbar ist.</string>
+	<string name="voice_trigger_clear">Zuweisung der Sprachtaste löschen</string>
+	<string name="voice_trigger_cleared">Zuweisung der Sprachtaste wurde gelöscht.</string>
+	<string name="voice_selection_prompt">Sage Nummer eins, zwei oder drei</string>
 </resources>

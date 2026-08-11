@@ -9,6 +9,36 @@ import org.junit.Test;
 
 public class VoiceIntentParserTest {
 	@Test
+	public void parsesOpenAddonWithoutEmptySearch() {
+		VoiceIntent youtube = VoiceIntentParser.parse("Open YouTube", Locale.ENGLISH);
+		assertEquals(VoiceIntent.Kind.OPEN_ADDON, youtube.getKind());
+		assertEquals("youtube", youtube.getAddon());
+		assertNull(youtube.getQuery());
+
+		VoiceIntent stremio = VoiceIntentParser.parse("Mở Stremio", new Locale("vi"));
+		assertEquals(VoiceIntent.Kind.OPEN_ADDON, stremio.getKind());
+		assertEquals("stremio", stremio.getAddon());
+		VoiceIntent xtream = VoiceIntentParser.parse("Mở Xtream", new Locale("vi"));
+		assertEquals(VoiceIntent.Kind.OPEN_ADDON, xtream.getKind());
+		assertEquals("tv", xtream.getAddon());
+	}
+
+	@Test
+	public void parsesGlobalNextPreviousAndNavigationBack() {
+		assertEquals(VoiceIntent.PlaybackAction.NEXT,
+				VoiceIntentParser.parse("bài tiếp theo", new Locale("vi")).getPlaybackAction());
+		assertEquals(VoiceIntent.PlaybackAction.PREVIOUS,
+				VoiceIntentParser.parse("previous track", Locale.ENGLISH).getPlaybackAction());
+		assertEquals(VoiceIntent.PlaybackAction.BACK,
+				VoiceIntentParser.parse("quay lại", new Locale("vi")).getPlaybackAction());
+	}
+
+	@Test
+	public void playAndFindStillRequireContent() {
+		assertNull(VoiceIntentParser.parse("Play YouTube", Locale.ENGLISH));
+		assertNull(VoiceIntentParser.parse("Tìm Radio", new Locale("vi")));
+	}
+	@Test
 	public void parsesEnglishAddonSearchWithoutAnLlm() {
 		VoiceIntent i = VoiceIntentParser.parse("Open YouTube video Numb", Locale.ENGLISH);
 		assertEquals(VoiceIntent.Kind.ADDON_SEARCH, i.getKind());

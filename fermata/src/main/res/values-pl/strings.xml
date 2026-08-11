@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Teraz odtwarzane</string>
     <string name="dashboard_continue">Oglądaj dalej</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Polecane dla Ciebie</string>
+    <string name="dashboard_smart_discover">Odkrywaj</string>
+    <string name="dashboard_smart_empty_title">Wybierz dodatek</string>
+    <string name="dashboard_smart_empty_subtitle">Zacznij oglądać lub słuchać</string>
+    <string name="dashboard_smart_recovery">Nie można kontynuować</string>
+    <string name="dashboard_smart_recovery_title">Źródło przerwane</string>
+    <string name="dashboard_smart_recovery_subtitle">Spróbuj ponownie lub otwórz dodatek</string>
     <string name="dashboard_home_sub">Ekran startowy i szybki dostęp</string>
     <string name="dashboard_folders_sub">Lokalne pliki i foldery</string>
     <string name="dashboard_favorites_sub">Przypięte kanały i multimedia</string>
@@ -489,4 +496,18 @@
 	<string name="retry">Spróbuj ponownie</string>
 	<string name="media_list_empty">Brak elementów</string>
 	<string name="media_list_load_failed">Nie udało się wczytać elementów.</string>
+	<string name="vehicle_key_test">Testuj elementy sterowania pojazdu</string>
+	<string name="vehicle_key_test_sub">Rejestruj przyciski kierownicy i jednostki głównej przez 30 sekund</string>
+	<string name="vehicle_key_test_started">Test rozpoczęty. Naciśnij testowane przyciski, a następnie ponownie wybierz tę pozycję, aby zobaczyć wynik.</string>
+	<string name="vehicle_key_test_no_events">Żaden przycisk nie dotarł do FermataX. Jednostka główna lub firmware pojazdu mogły przechwycić sygnał.</string>
+	<string name="vehicle_key_test_result">Wyniki sterowania pojazdem:\n%1$s</string>
+	<string name="voice_trigger_assign">Przypisz przycisk głosowy pojazdu</string>
+	<string name="voice_trigger_current">Obecnie: %1$s. Aktywny tylko wtedy, gdy FermataX jest widoczny.</string>
+	<string name="voice_trigger_unassigned">Nieprzypisany</string>
+	<string name="voice_trigger_capture_started">Naciśnij raz przycisk na kierownicy lub jednostce głównej. Naciśnięcie nie uruchomi jego zwykłej funkcji.</string>
+	<string name="voice_trigger_capture_timeout">Nie wykryto obsługiwanego przycisku. Niczego nie zmieniono.</string>
+	<string name="voice_trigger_capture_success">Przypisano %1$s (%2$d). Otwiera sterowanie głosowe FermataX tylko wtedy, gdy aplikacja jest widoczna.</string>
+	<string name="voice_trigger_clear">Usuń przypisanie przycisku głosowego</string>
+	<string name="voice_trigger_cleared">Usunięto przypisanie przycisku głosowego pojazdu.</string>
+	<string name="voice_selection_prompt">Powiedz numer jeden, dwa lub trzy</string>
 </resources>

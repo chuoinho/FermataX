@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Redare acum</string>
     <string name="dashboard_continue">Continuă vizionarea</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Recomandat pentru tine</string>
+    <string name="dashboard_smart_discover">Descoperă</string>
+    <string name="dashboard_smart_empty_title">Alege un supliment</string>
+    <string name="dashboard_smart_empty_subtitle">Începe să vizionezi sau să asculți</string>
+    <string name="dashboard_smart_recovery">Nu se poate continua</string>
+    <string name="dashboard_smart_recovery_title">Sursă întreruptă</string>
+    <string name="dashboard_smart_recovery_subtitle">Încearcă din nou sau deschide suplimentul</string>
     <string name="dashboard_home_sub">Ecran de start și acces rapid</string>
     <string name="dashboard_folders_sub">Fișiere și foldere locale</string>
     <string name="dashboard_favorites_sub">Canale și media fixate</string>
@@ -489,4 +496,18 @@
 	<string name="retry">Reîncercați</string>
 	<string name="media_list_empty">Nu există încă elemente</string>
 	<string name="media_list_load_failed">Elementele nu au putut fi încărcate.</string>
+	<string name="vehicle_key_test">Testează comenzile vehiculului</string>
+	<string name="vehicle_key_test_sub">Înregistrează timp de 30 de secunde tastele volanului și unității principale</string>
+	<string name="vehicle_key_test_started">Testul a început. Apasă comenzile dorite, apoi selectează din nou acest element pentru rezultat.</string>
+	<string name="vehicle_key_test_no_events">Nicio tastă de control nu a ajuns la FermataX. Este posibil ca unitatea principală sau firmware-ul vehiculului să fi reținut intrarea.</string>
+	<string name="vehicle_key_test_result">Rezultatele comenzilor vehiculului:\n%1$s</string>
+	<string name="voice_trigger_assign">Atribuie butonul vocal al vehiculului</string>
+	<string name="voice_trigger_current">Curent: %1$s. Activ numai cât timp FermataX este vizibil.</string>
+	<string name="voice_trigger_unassigned">Neatribuit</string>
+	<string name="voice_trigger_capture_started">Apasă o dată butonul de pe volan sau unitatea principală. Apăsarea nu va executa funcția obișnuită.</string>
+	<string name="voice_trigger_capture_timeout">Nu a fost detectat niciun buton compatibil. Nu s-a schimbat nimic.</string>
+	<string name="voice_trigger_capture_success">A fost atribuit %1$s (%2$d). Deschide controlul vocal FermataX numai cât timp aplicația este vizibilă.</string>
+	<string name="voice_trigger_clear">Șterge atribuirea butonului vocal</string>
+	<string name="voice_trigger_cleared">Atribuirea butonului vocal al vehiculului a fost ștearsă.</string>
+	<string name="voice_selection_prompt">Spune numărul unu, doi sau trei</string>
 </resources>

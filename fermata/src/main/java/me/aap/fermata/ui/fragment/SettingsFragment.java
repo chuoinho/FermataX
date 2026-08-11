@@ -319,6 +319,11 @@ public class SettingsFragment extends MainActivityFragment
 			}
 		});
 		diagnostics.addButton(o -> {
+			o.title = R.string.vehicle_key_test;
+			o.subtitle = R.string.vehicle_key_test_sub;
+			o.onClick = () -> SettingsDiagnosticsManager.testVehicleKeys(a, diagnosticsUiActive);
+		});
+		diagnostics.addButton(o -> {
 			o.title = R.string.export_diagnostic_report;
 			o.subtitle = R.string.export_diagnostic_report_sub;
 			o.onClick = () -> SettingsDiagnosticsManager.exportReport(a, diagnosticsUiActive);

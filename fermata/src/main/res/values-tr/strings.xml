@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Şimdi oynatılıyor</string>
     <string name="dashboard_continue">İzlemeye devam et</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Sizin için önerilen</string>
+    <string name="dashboard_smart_discover">Keşfet</string>
+    <string name="dashboard_smart_empty_title">Bir eklenti seçin</string>
+    <string name="dashboard_smart_empty_subtitle">İzlemeye veya dinlemeye başlayın</string>
+    <string name="dashboard_smart_recovery">Devam edilemiyor</string>
+    <string name="dashboard_smart_recovery_title">Kaynak kesintiye uğradı</string>
+    <string name="dashboard_smart_recovery_subtitle">Tekrar deneyin veya eklentiyi açın</string>
     <string name="dashboard_home_sub">Başlangıç ekranı ve hızlı erişim</string>
     <string name="dashboard_folders_sub">Yerel dosyalar ve klasörler</string>
     <string name="dashboard_favorites_sub">Sabitlenmiş kanallar ve medya</string>
@@ -489,4 +496,18 @@
 	<string name="retry">Tekrar dene</string>
 	<string name="media_list_empty">Henüz öğe yok</string>
 	<string name="media_list_load_failed">Öğeler yüklenemedi.</string>
+	<string name="vehicle_key_test">Araç kontrollerini test et</string>
+	<string name="vehicle_key_test_sub">Direksiyon ve ana ünite tuşlarını 30 saniye boyunca yakala</string>
+	<string name="vehicle_key_test_started">Test başladı. Denemek istediğiniz kontrollere basın, ardından sonucu görmek için bu öğeyi yeniden seçin.</string>
+	<string name="vehicle_key_test_no_events">FermataX’e hiçbir kontrol tuşu ulaşmadı. Ana ünite veya araç yazılımı girişi tutmuş olabilir.</string>
+	<string name="vehicle_key_test_result">Araç kontrol sonuçları:\n%1$s</string>
+	<string name="voice_trigger_assign">Araç ses düğmesini ata</string>
+	<string name="voice_trigger_current">Geçerli: %1$s. Yalnızca FermataX görünürken etkindir.</string>
+	<string name="voice_trigger_unassigned">Atanmamış</string>
+	<string name="voice_trigger_capture_started">Direksiyon veya ana ünite düğmesine bir kez basın. Bu basış normal işlevini çalıştırmaz.</string>
+	<string name="voice_trigger_capture_timeout">Desteklenen bir düğme algılanmadı. Hiçbir şey değiştirilmedi.</string>
+	<string name="voice_trigger_capture_success">%1$s (%2$d) atandı. FermataX sesini yalnızca uygulama görünürken açar.</string>
+	<string name="voice_trigger_clear">Ses düğmesi atamasını temizle</string>
+	<string name="voice_trigger_cleared">Araç ses düğmesi ataması temizlendi.</string>
+	<string name="voice_selection_prompt">Bir, iki veya üç numara deyin</string>
 </resources>

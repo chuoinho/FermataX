@@ -62,4 +62,30 @@ public class MinimumTouchTargetDelegateTest {
 		assertArrayEquals(new int[]{392, 100, 440, 148},
 				MinimumTouchTargetDelegate.expandBounds(412, 120, 440, 148, 48, 440, 148));
 	}
+
+	@Test
+	public void automotiveActionGapsArePartitionedAt64And76Dp() {
+		for (int targetSize : new int[]{64, 76}) {
+			int[][] actual = {
+					{20, 100, 68, 148},
+					{72, 100, 120, 148},
+					{124, 100, 172, 148}
+			};
+			int[][] expanded = new int[actual.length][];
+			for (int i = 0; i < actual.length; i++) {
+				int[] bounds = actual[i];
+				expanded[i] = MinimumTouchTargetDelegate.expandBounds(bounds[0], bounds[1],
+						bounds[2], bounds[3], targetSize, 220, 176);
+				assertEquals(targetSize, expanded[i][2] - expanded[i][0]);
+				assertEquals(targetSize, expanded[i][3] - expanded[i][1]);
+			}
+
+			assertEquals(0, MinimumTouchTargetDelegate.selectTargetIndex(
+					actual, expanded, 69, 124));
+			assertEquals(1, MinimumTouchTargetDelegate.selectTargetIndex(
+					actual, expanded, 71, 124));
+			assertEquals(2, MinimumTouchTargetDelegate.selectTargetIndex(
+					actual, expanded, 150, 124));
+		}
+	}
 }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:state_enabled="false" android:drawable="@drawable/aa_nav_button_inactive" />
+	<item android:state_selected="true" android:state_focused="true"
+		android:drawable="@drawable/aa_nav_button_selected_focused_right" />
+	<item android:state_focused="true" android:drawable="@drawable/aa_nav_button_focused" />
+	<item android:state_pressed="true" android:drawable="@drawable/aa_nav_button_pressed" />
+	<item android:state_selected="true" android:drawable="@drawable/aa_projected_nav_button_selected_right" />
+	<item android:drawable="@drawable/aa_nav_button_inactive" />
+</selector>

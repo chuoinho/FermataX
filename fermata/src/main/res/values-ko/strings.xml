@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">지금 재생 중</string>
     <string name="dashboard_continue">이어보기</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">추천 콘텐츠</string>
+    <string name="dashboard_smart_discover">둘러보기</string>
+    <string name="dashboard_smart_empty_title">애드온 선택</string>
+    <string name="dashboard_smart_empty_subtitle">시청하거나 감상해 보세요</string>
+    <string name="dashboard_smart_recovery">계속할 수 없음</string>
+    <string name="dashboard_smart_recovery_title">소스 연결 끊김</string>
+    <string name="dashboard_smart_recovery_subtitle">다시 시도하거나 애드온을 여세요</string>
     <string name="dashboard_home_sub">시작 화면 및 빠른 접근</string>
     <string name="dashboard_folders_sub">로컬 파일과 폴더</string>
     <string name="dashboard_favorites_sub">고정된 채널과 미디어</string>
@@ -494,4 +501,18 @@
 	<string name="retry">다시 시도</string>
 	<string name="media_list_empty">아직 항목이 없습니다</string>
 	<string name="media_list_load_failed">항목을 불러올 수 없습니다.</string>
+	<string name="vehicle_key_test">차량 컨트롤 테스트</string>
+	<string name="vehicle_key_test_sub">스티어링 휠 및 헤드 유닛 키를 30초 동안 기록</string>
+	<string name="vehicle_key_test_started">테스트가 시작되었습니다. 테스트할 버튼을 누른 후 이 항목을 다시 선택하여 결과를 확인하세요.</string>
+	<string name="vehicle_key_test_no_events">FermataX에 도달한 컨트롤 키가 없습니다. 헤드 유닛 또는 차량 펌웨어가 입력을 가로챘을 수 있습니다.</string>
+	<string name="vehicle_key_test_result">차량 컨트롤 결과:\n%1$s</string>
+	<string name="voice_trigger_assign">차량 음성 버튼 할당</string>
+	<string name="voice_trigger_current">현재: %1$s. FermataX가 표시될 때만 활성화됩니다.</string>
+	<string name="voice_trigger_unassigned">할당되지 않음</string>
+	<string name="voice_trigger_capture_started">스티어링 휠 또는 헤드 유닛 버튼을 한 번 누르세요. 이 누름으로 원래 기능은 실행되지 않습니다.</string>
+	<string name="voice_trigger_capture_timeout">지원되는 버튼을 감지하지 못했습니다. 변경 사항이 없습니다.</string>
+	<string name="voice_trigger_capture_success">%1$s(%2$d)을 할당했습니다. 앱이 표시될 때만 FermataX 음성 제어를 엽니다.</string>
+	<string name="voice_trigger_clear">음성 버튼 할당 지우기</string>
+	<string name="voice_trigger_cleared">차량 음성 버튼 할당을 지웠습니다.</string>
+	<string name="voice_selection_prompt">1번, 2번 또는 3번이라고 말하세요</string>
 </resources>

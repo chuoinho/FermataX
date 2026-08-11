@@ -38,6 +38,7 @@ docs/*
 !docs/package-identity.md
 !docs/stremio/
 !docs/stremio/**
+mockups/
 BUILDING_README_SECTION.md
 codex-*.gradle
 local.properties

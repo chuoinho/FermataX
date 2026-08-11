@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Lecture en cours</string>
     <string name="dashboard_continue">Continuer à regarder</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Recommandé pour vous</string>
+    <string name="dashboard_smart_discover">Découvrir</string>
+    <string name="dashboard_smart_empty_title">Choisissez une extension</string>
+    <string name="dashboard_smart_empty_subtitle">Commencez à regarder ou écouter</string>
+    <string name="dashboard_smart_recovery">Impossible de continuer</string>
+    <string name="dashboard_smart_recovery_title">Source interrompue</string>
+    <string name="dashboard_smart_recovery_subtitle">Réessayez ou ouvrez l’extension</string>
     <string name="dashboard_home_sub">Écran d\'accueil et accès rapide</string>
     <string name="dashboard_folders_sub">Fichiers et dossiers locaux</string>
     <string name="dashboard_favorites_sub">Chaînes et médias épinglés</string>
@@ -494,4 +501,18 @@
 	<string name="retry">Réessayer</string>
 	<string name="media_list_empty">Aucun élément pour le moment</string>
 	<string name="media_list_load_failed">Impossible de charger les éléments.</string>
+	<string name="vehicle_key_test">Tester les commandes du véhicule</string>
+	<string name="vehicle_key_test_sub">Capturer les touches du volant et de l’unité principale pendant 30 secondes</string>
+	<string name="vehicle_key_test_started">Test démarré. Appuyez sur les commandes à tester, puis sélectionnez à nouveau cet élément pour voir le résultat.</string>
+	<string name="vehicle_key_test_no_events">Aucune commande n’a atteint FermataX. L’unité principale ou le firmware du véhicule a peut-être intercepté l’entrée.</string>
+	<string name="vehicle_key_test_result">Résultats des commandes du véhicule :\n%1$s</string>
+	<string name="voice_trigger_assign">Attribuer le bouton vocal du véhicule</string>
+	<string name="voice_trigger_current">Actuel : %1$s. Actif uniquement lorsque FermataX est visible.</string>
+	<string name="voice_trigger_unassigned">Non attribué</string>
+	<string name="voice_trigger_capture_started">Appuyez une fois sur le bouton du volant ou de l’unité principale. Sa fonction habituelle ne sera pas exécutée.</string>
+	<string name="voice_trigger_capture_timeout">Aucun bouton compatible détecté. Rien n’a été modifié.</string>
+	<string name="voice_trigger_capture_success">%1$s (%2$d) attribué. Il ouvre la commande vocale FermataX uniquement lorsque l’application est visible.</string>
+	<string name="voice_trigger_clear">Effacer l’attribution du bouton vocal</string>
+	<string name="voice_trigger_cleared">L’attribution du bouton vocal du véhicule a été effacée.</string>
+	<string name="voice_selection_prompt">Dites numéro un, deux ou trois</string>
 </resources>

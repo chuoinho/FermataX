@@ -2,6 +2,7 @@ package me.aap.fermata.ui.policy;
 
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -19,17 +20,15 @@ public final class PlaybackUiPolicy {
 		if ((source == null) || engine.isVideoModeRequired()) return false;
 
 		ActivityFragment fragment = activity.getActiveFragment();
-		return shouldShowAudioPlayerBar(true, false,
-				fragment != null,
-				(fragment == null) ? 0 : fragment.getFragmentId(),
-				ItemRoutePolicy.getFragmentId(source));
+		return shouldShowAudioPlayerBar(true, false, fragment != null,
+				(fragment == null) ? 0 : fragment.getFragmentId(), R.id.dashboard_fragment);
 	}
 
 	static boolean shouldShowAudioPlayerBar(boolean hasAudioSource, boolean videoModeRequired,
 										boolean hasActiveFragment, int activeFragmentId,
-										int sourceFragmentId) {
+										int dashboardFragmentId) {
 		return hasAudioSource && !videoModeRequired && hasActiveFragment &&
-				(activeFragmentId == sourceFragmentId);
+				(activeFragmentId != dashboardFragmentId);
 	}
 
 	public static boolean goToCurrentAudioSource(MainActivityDelegate activity) {

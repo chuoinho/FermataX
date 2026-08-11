@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Сейчас играет</string>
     <string name="dashboard_continue">Продолжить просмотр</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Рекомендовано для вас</string>
+    <string name="dashboard_smart_discover">Обзор</string>
+    <string name="dashboard_smart_empty_title">Выберите дополнение</string>
+    <string name="dashboard_smart_empty_subtitle">Начните смотреть или слушать</string>
+    <string name="dashboard_smart_recovery">Невозможно продолжить</string>
+    <string name="dashboard_smart_recovery_title">Источник прерван</string>
+    <string name="dashboard_smart_recovery_subtitle">Повторите попытку или откройте дополнение</string>
     <string name="dashboard_home_sub">Стартовый экран и быстрый доступ</string>
     <string name="dashboard_folders_sub">Локальные файлы и папки</string>
     <string name="dashboard_favorites_sub">Закрепленные каналы и медиа</string>
@@ -489,4 +496,18 @@
 	<string name="retry">Повторить</string>
 	<string name="media_list_empty">Пока нет элементов</string>
 	<string name="media_list_load_failed">Не удалось загрузить элементы.</string>
+	<string name="vehicle_key_test">Проверка кнопок автомобиля</string>
+	<string name="vehicle_key_test_sub">Запись кнопок руля и головного устройства в течение 30 секунд</string>
+	<string name="vehicle_key_test_started">Проверка началась. Нажмите нужные кнопки, затем снова выберите этот пункт для просмотра результата.</string>
+	<string name="vehicle_key_test_no_events">Ни одна кнопка не дошла до FermataX. Головное устройство или прошивка автомобиля могли перехватить сигнал.</string>
+	<string name="vehicle_key_test_result">Результаты проверки кнопок:\n%1$s</string>
+	<string name="voice_trigger_assign">Назначить голосовую кнопку автомобиля</string>
+	<string name="voice_trigger_current">Текущая: %1$s. Активна только когда FermataX отображается на экране.</string>
+	<string name="voice_trigger_unassigned">Не назначена</string>
+	<string name="voice_trigger_capture_started">Один раз нажмите кнопку на руле или головном устройстве. Обычное действие кнопки не будет выполнено.</string>
+	<string name="voice_trigger_capture_timeout">Поддерживаемая кнопка не обнаружена. Изменения не внесены.</string>
+	<string name="voice_trigger_capture_success">Назначена %1$s (%2$d). Она открывает голосовое управление FermataX только когда приложение видно.</string>
+	<string name="voice_trigger_clear">Удалить назначение голосовой кнопки</string>
+	<string name="voice_trigger_cleared">Назначение голосовой кнопки автомобиля удалено.</string>
+	<string name="voice_selection_prompt">Скажите номер один, два или три</string>
 </resources>

@@ -106,6 +106,20 @@ public class PlaybackPresentationCoordinatorTest {
 		}
 	}
 
+	@Test
+	public void pausedControlsNeverScheduleTimeoutUntilPlaybackResumes() {
+		FakeHost host = new FakeHost();
+		PlaybackPresentationCoordinator coordinator = new PlaybackPresentationCoordinator(host);
+		coordinator.enterVideo(owner("paused"), false, false);
+		coordinator.showControls(5000, false);
+		assertTrue(host.scheduled.isEmpty());
+		assertFalse(host.last().timeoutPending());
+
+		coordinator.playingChanged(true, 5000);
+		assertEquals(1, host.scheduled.size());
+		assertTrue(host.last().timeoutPending());
+	}
+
 	private static Identity owner(String itemId) {
 		return new Identity(10, 20, itemId);
 	}

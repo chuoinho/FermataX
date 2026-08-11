@@ -21,8 +21,12 @@ final class PlaybackPresentationCoordinator {
 	}
 
 	Token enterVideo(Identity identity, boolean splitMode) {
+		return enterVideo(identity, splitMode, true);
+	}
+
+	Token enterVideo(Identity identity, boolean splitMode, boolean playing) {
 		Token token = claim(identity);
-		transition(PlaybackPresentationReducer.enterVideo(splitMode), 0);
+		transition(PlaybackPresentationReducer.enterVideo(splitMode, playing), 0);
 		return token;
 	}
 
@@ -47,15 +51,27 @@ final class PlaybackPresentationCoordinator {
 	}
 
 	void toggleControls(int delay) {
-		transition(PlaybackPresentationReducer.toggleControls(state, delay), delay);
+		toggleControls(delay, true);
+	}
+
+	void toggleControls(int delay, boolean playing) {
+		transition(PlaybackPresentationReducer.toggleControls(state, delay, playing), delay);
 	}
 
 	void showSeekControls(int delay) {
-		transition(PlaybackPresentationReducer.showSeekControls(state, delay), delay);
+		showSeekControls(delay, true);
+	}
+
+	void showSeekControls(int delay, boolean playing) {
+		transition(PlaybackPresentationReducer.showSeekControls(state, delay, playing), delay);
 	}
 
 	void showControls(int delay) {
-		transition(PlaybackPresentationReducer.showControls(state, delay), delay);
+		showControls(delay, true);
+	}
+
+	void showControls(int delay, boolean playing) {
+		transition(PlaybackPresentationReducer.showControls(state, delay, playing), delay);
 	}
 
 	void showControlsPersistent() {
@@ -70,6 +86,10 @@ final class PlaybackPresentationCoordinator {
 	void cancel() {
 		clearOwner();
 		transitionGeneration++;
+	}
+
+	void playingChanged(boolean playing, int delay) {
+		transition(PlaybackPresentationReducer.playingChanged(state, playing, delay), delay);
 	}
 
 	private void transition(State next, int delay) {

@@ -64,4 +64,23 @@ public class PlaybackPresentationReducerTest {
 		assertEquals(new State(false, false, false, false, false, false),
 				PlaybackPresentationReducer.leaveVideo(false));
 	}
+
+	@Test
+	public void pausedVideoKeepsControlsVisibleWithoutTimeout() {
+		State paused = PlaybackPresentationReducer.enterVideo(false, false);
+		assertEquals(new State(true, false, true, false, false, false), paused);
+		assertEquals(paused, PlaybackPresentationReducer.toggleControls(paused, 5000, false));
+		assertEquals(new State(true, false, true, false, false, true),
+				PlaybackPresentationReducer.showSeekControls(paused, 5000, false));
+	}
+
+	@Test
+	public void pauseCancelsPendingTimeoutAndResumeArmsItAgain() {
+		State shown = PlaybackPresentationReducer.showControls(
+				PlaybackPresentationReducer.enterVideo(false), 5000, true);
+		State paused = PlaybackPresentationReducer.playingChanged(shown, false, 5000);
+		assertEquals(new State(true, false, true, false, false, false), paused);
+		assertEquals(new State(true, false, true, false, true, false),
+				PlaybackPresentationReducer.playingChanged(paused, true, 5000));
+	}
 }

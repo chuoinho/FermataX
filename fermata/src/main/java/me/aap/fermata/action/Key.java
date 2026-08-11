@@ -27,9 +27,13 @@ public enum Key {
 	MEDIA_NEXT(KeyEvent.KEYCODE_MEDIA_NEXT, Action.NEXT),
 	MEDIA_REWIND(KeyEvent.KEYCODE_MEDIA_REWIND, Action.RW, Action.RW, Action.RW),
 	MEDIA_FAST_FORWARD(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, Action.FF, Action.FF, Action.FF),
+	MEDIA_SKIP_BACKWARD(KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD, Action.RW, Action.RW, Action.RW),
+	MEDIA_SKIP_FORWARD(KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD, Action.FF, Action.FF, Action.FF),
 	VOLUME_UP(KeyEvent.KEYCODE_VOLUME_UP, Action.VOLUME_UP, Action.VOLUME_UP, Action.VOLUME_UP),
 	VOLUME_DOWN(KeyEvent.KEYCODE_VOLUME_DOWN, Action.VOLUME_DOWN, Action.VOLUME_DOWN,
 			Action.VOLUME_DOWN),
+	CHANNEL_UP(KeyEvent.KEYCODE_CHANNEL_UP, Action.NONE),
+	CHANNEL_DOWN(KeyEvent.KEYCODE_CHANNEL_DOWN, Action.NONE),
 	HEADSETHOOK(KeyEvent.KEYCODE_HEADSETHOOK, Action.PLAY_PAUSE, Action.STOP,
 			Action.ACTIVATE_VOICE_CTRL),
 	SEARCH(KeyEvent.KEYCODE_SEARCH, Action.ACTIVATE_VOICE_CTRL),
@@ -129,6 +133,10 @@ public enum Key {
 
 	public boolean isMedia() {
 		return media;
+	}
+
+	public boolean isCompatibilityOptIn() {
+		return (this == CHANNEL_UP) || (this == CHANNEL_DOWN);
 	}
 
 	public static final class PrefsListener implements PreferenceStore.Listener {

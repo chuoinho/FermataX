@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Reproduciendo ahora</string>
     <string name="dashboard_continue">Seguir viendo</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Recomendado para ti</string>
+    <string name="dashboard_smart_discover">Descubrir</string>
+    <string name="dashboard_smart_empty_title">Elige un complemento</string>
+    <string name="dashboard_smart_empty_subtitle">Empieza a ver o escuchar</string>
+    <string name="dashboard_smart_recovery">No se puede continuar</string>
+    <string name="dashboard_smart_recovery_title">Fuente interrumpida</string>
+    <string name="dashboard_smart_recovery_subtitle">Reintenta o abre el complemento</string>
     <string name="dashboard_home_sub">Pantalla inicial y acceso rápido</string>
     <string name="dashboard_folders_sub">Archivos y carpetas locales</string>
     <string name="dashboard_favorites_sub">Canales y medios fijados</string>
@@ -497,4 +504,18 @@ Por favor, reinicie la aplicación.</string>
 	<string name="retry">Reintentar</string>
 	<string name="media_list_empty">Aún no hay elementos</string>
 	<string name="media_list_load_failed">No se pudieron cargar los elementos.</string>
+	<string name="vehicle_key_test">Probar controles del vehículo</string>
+	<string name="vehicle_key_test_sub">Captura durante 30 segundos las teclas del volante y de la unidad principal</string>
+	<string name="vehicle_key_test_started">Prueba iniciada. Pulsa los controles que quieras probar y vuelve a seleccionar esta opción para ver el resultado.</string>
+	<string name="vehicle_key_test_no_events">Ninguna tecla de control llegó a FermataX. Es posible que la unidad principal o el firmware la haya retenido.</string>
+	<string name="vehicle_key_test_result">Resultados de los controles:\n%1$s</string>
+	<string name="voice_trigger_assign">Asignar botón de voz del vehículo</string>
+	<string name="voice_trigger_current">Actual: %1$s. Solo está activo mientras FermataX está visible.</string>
+	<string name="voice_trigger_unassigned">Sin asignar</string>
+	<string name="voice_trigger_capture_started">Pulsa una vez el botón del volante o de la unidad principal. La pulsación no ejecutará su función normal.</string>
+	<string name="voice_trigger_capture_timeout">No se detectó ningún botón compatible. No se cambió nada.</string>
+	<string name="voice_trigger_capture_success">Se asignó %1$s (%2$d). Solo abre la voz de FermataX mientras la aplicación está visible.</string>
+	<string name="voice_trigger_clear">Borrar asignación del botón de voz</string>
+	<string name="voice_trigger_cleared">Se borró la asignación del botón de voz del vehículo.</string>
+	<string name="voice_selection_prompt">Di número uno, dos o tres</string>
 </resources>

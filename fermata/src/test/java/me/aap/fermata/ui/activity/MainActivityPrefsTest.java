@@ -12,6 +12,11 @@ public class MainActivityPrefsTest {
 	}
 
 	@Test
+	public void smartTopV2IsEnabledByDefaultAfterReleaseGatesPass() {
+		assertTrue(MainActivityPrefs.SMART_TOP_V2_ENABLED.getDefaultValue().getAsBoolean());
+	}
+
+	@Test
 	public void setupIsShownOnlyForAnEmptyFreshInstall() {
 		assertTrue(MainActivityPrefs.shouldShowInitialSetup(10, 10, false, false));
 		assertFalse(MainActivityPrefs.shouldShowInitialSetup(10, 10, true, false));

@@ -5,6 +5,7 @@ import static android.view.View.FOCUS_RIGHT;
 import static me.aap.fermata.BuildConfig.VERSION_CODE;
 import static me.aap.fermata.BuildConfig.VERSION_NAME;
 import static me.aap.utils.ui.UiUtils.showInfo;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 import static me.aap.utils.ui.view.NavBarItem.create;
 
 import android.content.Context;
@@ -25,7 +26,9 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.policy.BackNavigationPolicy;
+import me.aap.fermata.ui.view.FermataNavBarView;
 import me.aap.fermata.ui.view.MediaItemListView;
+import me.aap.fermata.ui.voice.VoiceUiPolicy;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
@@ -89,7 +92,24 @@ public class NavBarMediator extends PrefNavBarMediator
 	@Override
 	public void enable(NavBarView nb, ActivityFragment f) {
 		super.enable(nb, f);
+		addVoiceButton(nb);
 		FermataApplication.get().getAddonManager().addBroadcastListener(this);
+	}
+
+	private void addVoiceButton(NavBarView nb) {
+		MainActivityDelegate activity = MainActivityDelegate.get(nb.getContext());
+		if (nb instanceof FermataNavBarView rail) {
+			NavButtonView voice = addButton(nb, R.drawable.voice_microphone,
+					R.string.action_activate_voice_ctrl, R.id.nav_voice,
+					NavBarMediator::onVoiceClick);
+			voice.setContentDescription(getText(nb, R.string.action_activate_voice_ctrl));
+			voice.setSelected(false);
+			rail.setVoiceVisible(VoiceUiPolicy.showNavBarButton(activity));
+		}
+	}
+
+	private static void onVoiceClick(View view) {
+		MainActivityDelegate.get(view.getContext()).startGlobalVoiceControl();
 	}
 
 	@Override
@@ -107,6 +127,15 @@ public class NavBarMediator extends PrefNavBarMediator
 	@Override
 	public void reload(NavBarView nb) {
 		super.reload(nb);
+		addVoiceButton(nb);
+	}
+
+	@Override
+	public void onActivityEvent(NavBarView nb, ActivityDelegate a, long event) {
+		super.onActivityEvent(nb, a, event);
+		if ((event == FRAGMENT_CONTENT_CHANGED) && (nb instanceof FermataNavBarView rail)) {
+			rail.setVoiceVisible(VoiceUiPolicy.showNavBarButton((MainActivityDelegate) a));
+		}
 	}
 
 	@Override
@@ -142,9 +171,15 @@ public class NavBarMediator extends PrefNavBarMediator
 	}
 
 	private static void selectOnly(NavBarView nb, View selected) {
-		for (int i = 0, count = nb.getChildCount(); i < count; i++) {
-			View child = nb.getChildAt(i);
-			child.setSelected(child == selected);
+		if (nb instanceof FermataNavBarView rail) {
+			rail.forEachNavigationItem(child ->
+					child.setSelected((child != null) && (child.getId() != R.id.nav_voice) &&
+							(child == selected)));
+		} else {
+			for (int i = 0, count = nb.getChildCount(); i < count; i++) {
+				View child = nb.getChildAt(i);
+				child.setSelected(child == selected);
+			}
 		}
 	}
 

@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Đang phát</string>
     <string name="dashboard_continue">Xem tiếp</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Gợi ý cho bạn</string>
+    <string name="dashboard_smart_discover">Khám phá</string>
+    <string name="dashboard_smart_empty_title">Chọn một addon</string>
+    <string name="dashboard_smart_empty_subtitle">Bắt đầu xem hoặc nghe</string>
+    <string name="dashboard_smart_recovery">Không thể tiếp tục</string>
+    <string name="dashboard_smart_recovery_title">Nguồn gián đoạn</string>
+    <string name="dashboard_smart_recovery_subtitle">Thử lại hoặc mở addon</string>
     <string name="dashboard_home_sub">Màn hình bắt đầu và truy cập nhanh</string>
     <string name="dashboard_folders_sub">Tệp và thư mục cục bộ</string>
     <string name="dashboard_favorites_sub">Kênh và media đã ghim</string>
@@ -147,7 +154,16 @@
     <string name="preferred_media_scanner_system">Theo hệ thống</string>
 
     <string name="voice_search">Tìm kiếm bằng giọng nói</string>
-    <string name="voice_control">Điều khiển bằng giọng nói</string>
+	<string name="voice_control">Điều khiển bằng giọng nói</string>
+	<string name="voice_trigger_assign">Gán nút voice trên xe</string>
+	<string name="voice_trigger_current">Hiện tại: %1$s. Chỉ hoạt động khi FermataX đang hiển thị.</string>
+	<string name="voice_trigger_unassigned">Chưa gán</string>
+	<string name="voice_trigger_capture_started">Hãy nhấn một lần nút trên vô-lăng hoặc head unit. Lần nhấn này sẽ không chạy chức năng gốc.</string>
+	<string name="voice_trigger_capture_timeout">Không phát hiện nút được hỗ trợ. Không có thay đổi nào được lưu.</string>
+	<string name="voice_trigger_capture_success">Đã gán %1$s (%2$d). Nút chỉ mở voice của FermataX khi ứng dụng đang hiển thị.</string>
+	<string name="voice_trigger_clear">Xóa nút voice đã gán</string>
+	<string name="voice_trigger_cleared">Đã xóa nút voice trên xe.</string>
+	<string name="voice_selection_prompt">Hãy nói số một, hai hoặc ba</string>
     <string name="voice_control_fb">Nút nhấn</string>
     <string name="voice_control_sub_long">Kích hoạt điều khiển bằng giọng nói khi nhấn giữ</string>
     <string name="voice_control_subst">Từ thay thế</string>
@@ -476,6 +492,11 @@
 	<string name="diagnostics_sub">Báo cáo cục bộ về sự cố, treo ứng dụng và trạng thái bất thường</string>
 	<string name="detailed_diagnostics">Chẩn đoán chi tiết</string>
 	<string name="detailed_diagnostics_sub">Ghi lại sự kiện chi tiết trong tối đa 48 giờ. Bạn có thể tắt bất cứ lúc nào.</string>
+	<string name="vehicle_key_test">Kiểm tra nút điều khiển trên xe</string>
+	<string name="vehicle_key_test_sub">Ghi nhận nút vô lăng và đầu xe trong 30 giây</string>
+	<string name="vehicle_key_test_started">Đã bắt đầu kiểm tra. Hãy nhấn các nút cần thử, sau đó chọn lại mục này để xem kết quả.</string>
+	<string name="vehicle_key_test_no_events">Không có nút điều khiển nào tới FermataX. Đầu xe hoặc firmware có thể đã giữ lại sự kiện.</string>
+	<string name="vehicle_key_test_result">Kết quả điều khiển trên xe:\n%1$s</string>
 	<string name="export_diagnostic_report">Xuất báo cáo chẩn đoán</string>
 	<string name="export_diagnostic_report_sub">Tạo báo cáo ZIP riêng tư để lưu hoặc chia sẻ với bộ phận hỗ trợ</string>
 	<string name="clear_diagnostic_data">Xóa dữ liệu chẩn đoán</string>

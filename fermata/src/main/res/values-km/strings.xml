@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">កំពុងចាក់</string>
     <string name="dashboard_continue">បន្តមើល</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">បានណែនាំសម្រាប់អ្នក</string>
+    <string name="dashboard_smart_discover">ស្វែងរក</string>
+    <string name="dashboard_smart_empty_title">ជ្រើសរើសកម្មវិធីបន្ថែម</string>
+    <string name="dashboard_smart_empty_subtitle">ចាប់ផ្តើមមើល ឬស្តាប់</string>
+    <string name="dashboard_smart_recovery">មិនអាចបន្តបានទេ</string>
+    <string name="dashboard_smart_recovery_title">ប្រភពត្រូវបានផ្អាក</string>
+    <string name="dashboard_smart_recovery_subtitle">សាកល្បងម្តងទៀត ឬបើកកម្មវិធីបន្ថែម</string>
     <string name="dashboard_home_sub">អេក្រង់ចាប់ផ្ដើម និងចូលប្រើរហ័ស</string>
     <string name="dashboard_folders_sub">ឯកសារ និងថតក្នុងម៉ាស៊ីន</string>
     <string name="dashboard_favorites_sub">ឆានែល និងមេឌៀដែលបានដោត</string>
@@ -489,4 +496,18 @@
 	<string name="retry">ព្យាយាមម្តងទៀត</string>
 	<string name="media_list_empty">មិនទាន់មានធាតុ</string>
 	<string name="media_list_load_failed">មិនអាចផ្ទុកធាតុបានទេ។</string>
+	<string name="vehicle_key_test">សាកល្បងប៊ូតុងរថយន្ត</string>
+	<string name="vehicle_key_test_sub">ចាប់យកប៊ូតុងចង្កូត និងឧបករណ៍ក្បាលរយៈពេល 30 វិនាទី</string>
+	<string name="vehicle_key_test_started">បានចាប់ផ្តើមសាកល្បង។ ចុចប៊ូតុងដែលចង់សាកល្បង រួចជ្រើសធាតុនេះម្តងទៀតដើម្បីមើលលទ្ធផល។</string>
+	<string name="vehicle_key_test_no_events">មិនមានប៊ូតុងបញ្ជាណាមួយមកដល់ FermataX ទេ។ ឧបករណ៍ក្បាល ឬ firmware រថយន្តអាចបានទប់ស្កាត់វា។</string>
+	<string name="vehicle_key_test_result">លទ្ធផលប៊ូតុងរថយន្ត៖\n%1$s</string>
+	<string name="voice_trigger_assign">កំណត់ប៊ូតុងសំឡេងក្នុងរថយន្ត</string>
+	<string name="voice_trigger_current">បច្ចុប្បន្ន៖ %1$s។ ដំណើរការតែពេល FermataX បង្ហាញប៉ុណ្ណោះ។</string>
+	<string name="voice_trigger_unassigned">មិនទាន់កំណត់</string>
+	<string name="voice_trigger_capture_started">ចុចប៊ូតុងលើចង្កូត ឬឧបករណ៍មេម្តង។ ការចុចនេះនឹងមិនដំណើរការមុខងារធម្មតាទេ។</string>
+	<string name="voice_trigger_capture_timeout">រកមិនឃើញប៊ូតុងដែលគាំទ្រ។ គ្មានអ្វីត្រូវបានផ្លាស់ប្តូរ។</string>
+	<string name="voice_trigger_capture_success">បានកំណត់ %1$s (%2$d)។ វាបើកសំឡេង FermataX តែពេលកម្មវិធីបង្ហាញប៉ុណ្ណោះ។</string>
+	<string name="voice_trigger_clear">លុបការកំណត់ប៊ូតុងសំឡេង</string>
+	<string name="voice_trigger_cleared">បានលុបការកំណត់ប៊ូតុងសំឡេងក្នុងរថយន្ត។</string>
+	<string name="voice_selection_prompt">និយាយលេខមួយ ពីរ ឬបី</string>
 </resources>

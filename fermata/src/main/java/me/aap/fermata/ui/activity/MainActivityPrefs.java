@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.activity;
 
 import static me.aap.fermata.BuildConfig.AUTO;
+import static android.view.KeyEvent.KEYCODE_UNKNOWN;
 
 import android.content.pm.PackageInfo;
 
@@ -63,6 +64,9 @@ public interface MainActivityPrefs
 	Pref<Supplier<String>> VOICE_CONTROL_LANG =
 			Pref.s("VOICE_CONTROL_LANG", () -> Locale.getDefault().toLanguageTag());
 	Pref<BooleanSupplier> VOICE_CONTROL_AUTO_LANG = Pref.b("VOICE_CONTROL_AUTO_LANG", false);
+	Pref<IntSupplier> VOICE_TRIGGER_KEY_CODE =
+			Pref.i("VOICE_TRIGGER_KEY_CODE", KEYCODE_UNKNOWN);
+	Pref<BooleanSupplier> SMART_TOP_V2_ENABLED = Pref.b("smart_top/v2_enabled", true);
 	Pref<IntSupplier> CLOCK_POS = Pref.i("CLOCK_POS", CLOCK_POS_NONE);
 	Pref<IntSupplier> LOCALE = Pref.i("LOCALE", Lang.EN.ordinal());
 	int INITIAL_SETUP_CURRENT_VERSION = 1;
@@ -77,8 +81,6 @@ public interface MainActivityPrefs
 	Pref<IntSupplier> NAV_BAR_POS_AA =
 			AUTO ? Pref.i("NAV_BAR_POS_AA", NavBarView.POSITION_LEFT) : null;
 	Pref<DoubleSupplier> NAV_BAR_SIZE_AA = AUTO ? Pref.f("NAV_BAR_SIZE_AA", 1.85f) : null;
-	Pref<BooleanSupplier> NAV_BAR_SCROLL_NUDGE_AA =
-			AUTO ? Pref.b("NAV_BAR_SCROLL_NUDGE_AA", false) : null;
 	Pref<DoubleSupplier> TOOL_BAR_SIZE_AA = AUTO ? Pref.f("TOOL_BAR_SIZE_AA", 1f) : null;
 	Pref<DoubleSupplier> CONTROL_PANEL_SIZE_AA = AUTO ? Pref.f("CONTROL_PANEL_SIZE_AA", 1f) : null;
 	Pref<DoubleSupplier> TEXT_ICON_SIZE_AA = AUTO ? Pref.f("TEXT_ICON_SIZE_AA", 1f) : null;
@@ -245,6 +247,10 @@ public interface MainActivityPrefs
 
 	default boolean getVoiceControlAutoLangPref() {
 		return getBooleanPref(VOICE_CONTROL_AUTO_LANG);
+	}
+
+	default boolean isSmartTopV2Enabled() {
+		return getBooleanPref(SMART_TOP_V2_ENABLED);
 	}
 
 	default int getClockPosPref() {

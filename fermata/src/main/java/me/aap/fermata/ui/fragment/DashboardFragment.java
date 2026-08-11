@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,8 +24,11 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 
 import me.aap.fermata.FermataApplication;
@@ -35,8 +39,17 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.PlaybackSnapshot;
+import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.smarttop.SmartTopAction;
+import me.aap.fermata.ui.smarttop.SmartTopBinder;
+import me.aap.fermata.ui.smarttop.SmartTopCoordinator;
+import me.aap.fermata.ui.smarttop.SmartTopLayoutController;
+import me.aap.fermata.ui.smarttop.SmartTopLayoutMode;
+import me.aap.fermata.ui.smarttop.SmartTopLayoutPolicy;
+import me.aap.fermata.ui.smarttop.SmartTopViewState;
 import me.aap.fermata.ui.view.MinimumTouchTargetDelegate;
+import me.aap.fermata.ui.voice.VoiceUiPolicy;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -119,8 +132,12 @@ public class DashboardFragment extends MainActivityFragment
 		prefs.addBroadcastListener(this);
 		binder = activity.getMediaServiceBinder();
 		binder.addBroadcastListener(this);
-		list.post(dashboardAdapter::reload);
-		list.postDelayed(dashboardAdapter::reload, 1200);
+		if (dashboardAdapter.isSmartTopV2Enabled()) {
+			dashboardAdapter.refreshSmartTopCard();
+		} else {
+			list.post(dashboardAdapter::reload);
+			list.postDelayed(dashboardAdapter::reload, 1200);
+		}
 		requestStableViewport(viewportState.consumeScrollTopRequest(true));
 	}
 
@@ -213,6 +230,12 @@ public class DashboardFragment extends MainActivityFragment
 		refreshSmartTopCard();
 	}
 
+	@Override
+	public void onPlaybackTimelineChanged(PlaybackTimelineSnapshot snapshot) {
+		DashboardAdapter adapter = this.adapter;
+		if (adapter != null) adapter.onPlaybackTimelineChanged(snapshot);
+	}
+
 	private void refreshSmartTopCard() {
 		DashboardAdapter adapter = this.adapter;
 		if (adapter != null) adapter.refreshSmartTopCard();
@@ -233,6 +256,8 @@ public class DashboardFragment extends MainActivityFragment
 	private void requestDashboardTopAfterRefresh() {
 		RecyclerView dashboard = list;
 		if (dashboard == null) return;
+		DashboardAdapter adapter = this.adapter;
+		if ((adapter != null) && adapter.isSmartTopV2Enabled()) return;
 		Runnable reset = () -> {
 			if ((list == dashboard) && isStableDashboardViewport(true)) {
 				requestStableViewport(true);
@@ -307,6 +332,14 @@ public class DashboardFragment extends MainActivityFragment
 		int spans = getSpanCount(width, list.getRootView().getWidth(),
 				getFullWidthDp(list.getContext()),
 				list.getResources().getDisplayMetrics().density);
+		DashboardAdapter adapter = this.adapter;
+		if (adapter != null) {
+			float widthDp = getMeasuredWidthDp(width, list.getRootView().getWidth(),
+					getFullWidthDp(list.getContext()),
+					list.getResources().getDisplayMetrics().density);
+			adapter.setSmartTopLayout(SmartTopLayoutPolicy.resolve(widthDp,
+					list.getResources().getConfiguration().fontScale));
+		}
 		if (editMode) spans = getEditSpanCount(spans);
 		if (spans != layoutManager.getSpanCount()) {
 			layoutManager.setSpanCount(spans);
@@ -364,10 +397,15 @@ public class DashboardFragment extends MainActivityFragment
 	}
 
 	static int getSpanCount(int widthPx, int rootWidthPx, int screenWidthDp, float density) {
-		float widthDp = ((rootWidthPx > 0) && (screenWidthDp > 0)) ?
+		float widthDp = getMeasuredWidthDp(widthPx, rootWidthPx, screenWidthDp, density);
+		return getSpanCountForWidthDp(widthDp);
+	}
+
+	static float getMeasuredWidthDp(int widthPx, int rootWidthPx,
+			int screenWidthDp, float density) {
+		return ((rootWidthPx > 0) && (screenWidthDp > 0)) ?
 				(widthPx * (float) screenWidthDp / rootWidthPx) :
 				(widthPx / Math.max(0.1F, density));
-		return getSpanCountForWidthDp(widthDp);
 	}
 
 	static int getSpanCountForWidthDp(float widthDp) {
@@ -387,13 +425,21 @@ public class DashboardFragment extends MainActivityFragment
 		return target;
 	}
 
-	private static final class DashboardAdapter extends MovableRecyclerViewAdapter<ItemHolder> {
+	private static final class DashboardAdapter extends MovableRecyclerViewAdapter<ItemHolder>
+			implements SmartTopBinder.Handler, SmartTopCoordinator.Listener {
 		private static final int VIEW_TYPE_CARD = 0;
 		private static final int VIEW_TYPE_SMART_TOP = 1;
+		private static final int VIEW_TYPE_SMART_TOP_V2 = 2;
+		private static final Object PAYLOAD_SMART_TOP_TIMELINE = new Object();
 		private final Context ctx;
 		private final MainActivityDelegate activity;
 		private final PreferenceStore store;
 		private final DashboardModelBuilder modelBuilder;
+		private final boolean smartTopV2Enabled;
+		@Nullable
+		private final SmartTopCoordinator smartTopCoordinator;
+		@Nullable
+		private final SmartTopBinder smartTopBinder;
 		private final List<DashboardCard> cards = new ArrayList<>();
 		private long ignoreClicksUntil;
 		private int smartRefreshGeneration;
@@ -406,6 +452,10 @@ public class DashboardFragment extends MainActivityFragment
 			this.ctx = ctx;
 			this.store = store;
 			modelBuilder = new DashboardModelBuilder(ctx, store);
+			smartTopV2Enabled = activity.getPrefs().isSmartTopV2Enabled();
+			smartTopCoordinator = smartTopV2Enabled ?
+					new SmartTopCoordinator(activity, ctx, this) : null;
+			smartTopBinder = smartTopV2Enabled ? new SmartTopBinder(ctx, this) : null;
 			reload();
 		}
 
@@ -413,6 +463,9 @@ public class DashboardFragment extends MainActivityFragment
 			if (closed) return;
 			int pos = findSmartTopCardPosition();
 			DashboardCard smartTopCard = (pos == -1) ? null : cards.get(pos);
+			if (smartTopV2Enabled && (smartTopCard == null)) {
+				smartTopCard = DashboardCard.smartTop(smartTopCoordinator.initialState());
+			}
 			rebuildCards(smartTopCard);
 			notifyDataSetChanged();
 			refreshDashboardSummaries();
@@ -425,6 +478,19 @@ public class DashboardFragment extends MainActivityFragment
 
 		private void close() {
 			closed = true;
+			if (smartTopCoordinator != null) smartTopCoordinator.close();
+		}
+
+		private boolean isSmartTopV2Enabled() {
+			return smartTopV2Enabled;
+		}
+
+		private void setSmartTopLayout(SmartTopLayoutMode layout) {
+			if (smartTopCoordinator != null) smartTopCoordinator.setLayout(layout);
+		}
+
+		private void onPlaybackTimelineChanged(PlaybackTimelineSnapshot snapshot) {
+			if (smartTopCoordinator != null) smartTopCoordinator.onTimeline(snapshot);
 		}
 
 		private void setEditMode(boolean editMode) {
@@ -440,8 +506,11 @@ public class DashboardFragment extends MainActivityFragment
 		@NonNull
 		@Override
 		public ItemHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-			int layout = (viewType == VIEW_TYPE_SMART_TOP) ?
-					R.layout.dashboard_smart_top_item : R.layout.dashboard_item;
+			int layout = switch (viewType) {
+				case VIEW_TYPE_SMART_TOP -> R.layout.dashboard_smart_top_item;
+				case VIEW_TYPE_SMART_TOP_V2 -> R.layout.dashboard_smart_top_v2_item;
+				default -> R.layout.dashboard_item;
+			};
 			View v = LayoutInflater.from(parent.getContext())
 					.inflate(layout, parent, false);
 			return new ItemHolder(v);
@@ -451,14 +520,25 @@ public class DashboardFragment extends MainActivityFragment
 		public void onBindViewHolder(@NonNull ItemHolder holder, int position) {
 			DashboardCard card = cards.get(position);
 			boolean smartTop = card.fixed && card.wide;
-			if (smartTop) applySmartTopFontScale(holder.itemView);
+			if (smartTop) {
+				if (card.smartTopState != null) SmartTopLayoutController.apply(holder.itemView,
+						card.smartTopState, activity.isCarActivity());
+				else applySmartTopFontScale(holder.itemView);
+			}
 			boolean editable = editMode && !card.fixed;
+			if ((card.smartTopState != null) && (smartTopBinder != null)) {
+				smartTopBinder.bind(holder.smartTopViews(), card.smartTopState, editMode);
+				bindEditActions(holder, card, editable);
+				return;
+			}
 			holder.icon.setImageResource(card.icon);
 			if (holder.eyebrow != null) {
-				boolean showEyebrow = smartTop && (card.playable != null);
+				boolean showEyebrow = smartTop &&
+						((card.smartTopState != null) || (card.playable != null));
 				holder.eyebrow.setVisibility(showEyebrow ? View.VISIBLE : View.GONE);
 				if (showEyebrow) {
-					holder.eyebrow.setText(card.playing ?
+					if (card.smartTopState != null) holder.eyebrow.setText(card.smartTopState.eyebrow());
+					else holder.eyebrow.setText(card.playing ?
 							R.string.dashboard_now_playing : R.string.dashboard_continue);
 				}
 			}
@@ -501,14 +581,14 @@ public class DashboardFragment extends MainActivityFragment
 			if (holder.prev != null) {
 				holder.prev.setOnClickListener(v -> {
 					if (editMode || !acceptClick() || (card.playable == null)) return;
-					activity.getMediaSessionCallback().onSkipToPrevious();
+					activity.getMediaServiceBinder().skipToPrevious();
 					refreshSmartTopCard();
 				});
 			}
 			if (holder.next != null) {
 				holder.next.setOnClickListener(v -> {
 					if (editMode || !acceptClick() || (card.playable == null)) return;
-					activity.getMediaSessionCallback().onSkipToNext();
+					activity.getMediaServiceBinder().skipToNext();
 					refreshSmartTopCard();
 				});
 			}
@@ -526,6 +606,27 @@ public class DashboardFragment extends MainActivityFragment
 				if (editMode || !acceptClick() || (card.playable == null)) return;
 				DashboardPlayableNavigator.goToPlayable(activity, card.playable);
 			});
+		}
+
+		@Override
+		public void onBindViewHolder(@NonNull ItemHolder holder, int position,
+				@NonNull List<Object> payloads) {
+			if (payloads.isEmpty()) {
+				onBindViewHolder(holder, position);
+				return;
+			}
+			for (Object payload : payloads) {
+				if (payload != PAYLOAD_SMART_TOP_TIMELINE) {
+					onBindViewHolder(holder, position);
+					return;
+				}
+			}
+			DashboardCard card = cards.get(position);
+			if ((card.smartTopState == null) || (smartTopBinder == null)) {
+				onBindViewHolder(holder, position);
+				return;
+			}
+			smartTopBinder.bindTimelineUpdate(holder.smartTopViews(), card.smartTopState);
 		}
 
 		private static void applySmartTopFontScale(View card) {
@@ -592,6 +693,7 @@ public class DashboardFragment extends MainActivityFragment
 		@Override
 		public int getItemViewType(int position) {
 			DashboardCard card = cards.get(position);
+			if (card.smartTopState != null) return VIEW_TYPE_SMART_TOP_V2;
 			return card.fixed && card.wide ? VIEW_TYPE_SMART_TOP : VIEW_TYPE_CARD;
 		}
 
@@ -613,6 +715,10 @@ public class DashboardFragment extends MainActivityFragment
 
 		private void refreshSmartTopCard() {
 			if (closed) return;
+			if (smartTopCoordinator != null) {
+				smartTopCoordinator.refresh();
+				return;
+			}
 			int generation = ++smartRefreshGeneration;
 
 			MainActivityDelegate a = activity;
@@ -636,6 +742,139 @@ public class DashboardFragment extends MainActivityFragment
 					}
 				}
 			}).onFailure(err -> refreshLastPlayedTopCard(generation));
+		}
+
+		@Override
+		public void onSmartTopState(SmartTopViewState state) {
+			if (closed || !smartTopV2Enabled) return;
+			int position = findSmartTopCardPosition();
+			DashboardCard card = DashboardCard.smartTop(state);
+			if (position == -1) {
+				rebuildCards(card);
+				notifyDataSetChanged();
+				return;
+			}
+			cards.set(position, card);
+			notifyItemChanged(position);
+		}
+
+		@Override
+		public void onSmartTopTimeline(SmartTopViewState state) {
+			if (closed || !smartTopV2Enabled) return;
+			int position = findSmartTopCardPosition();
+			if (position == -1) return;
+			cards.set(position, DashboardCard.smartTop(state));
+			notifyItemChanged(position, PAYLOAD_SMART_TOP_TIMELINE);
+		}
+
+		@Override
+		public void onCard(SmartTopViewState state) {
+			if (editMode || !acceptSmartTop(state)) return;
+			PlayableItem item = state.presentedItem();
+			if (item != null) {
+				DashboardPlayableNavigator.openSmartTop(activity, item);
+			} else if (state.providerResult() != null) {
+				resolveProvider(state, resolved ->
+						DashboardPlayableNavigator.openSmartTop(activity, resolved));
+			} else if (state.mode() == me.aap.fermata.ui.smarttop.SmartTopMode.EMPTY) {
+				activity.setActiveNavItemId(R.id.dashboard_fragment);
+				activity.showFragmentWhenReady(R.id.settings_fragment);
+			}
+		}
+
+		@Override
+		public void onAction(SmartTopAction action, SmartTopViewState state) {
+			if (editMode || !acceptSmartTop(state)) return;
+			PlayableItem item = state.presentedItem();
+			switch (action) {
+				case PREVIOUS -> {
+					activity.getMediaServiceBinder().skipToPrevious();
+					refreshSmartTopCard();
+				}
+				case NEXT -> {
+					activity.getMediaServiceBinder().skipToNext();
+					refreshSmartTopCard();
+				}
+				case PLAY_PAUSE -> {
+					if (item != null) {
+						DashboardPlayableNavigator.togglePlayback(activity, item);
+						refreshSmartTopCard();
+					}
+				}
+				case PLAY -> {
+					if (item != null) {
+						DashboardPlayableNavigator.playAndGoToPlayable(activity, item);
+						refreshSmartTopCard();
+					} else if (state.providerResult() != null) {
+						resolveProvider(state, resolved ->
+								DashboardPlayableNavigator.playAndGoToPlayable(activity, resolved));
+					}
+				}
+				case FAVORITE -> toggleFavorite(item);
+				case OPEN_CONTEXT -> {
+					if (item != null) DashboardPlayableNavigator.goToPlayable(activity, item);
+					else if (state.providerResult() != null) {
+						resolveProvider(state, resolved ->
+								DashboardPlayableNavigator.goToPlayable(activity, resolved));
+					}
+				}
+				case HISTORY -> openAllRecent();
+				case OPEN_ADDONS -> {
+					activity.setActiveNavItemId(R.id.dashboard_fragment);
+					activity.showFragmentWhenReady(R.id.settings_fragment);
+				}
+				case RETRY -> {
+					if (smartTopCoordinator != null) smartTopCoordinator.refresh();
+				}
+			}
+		}
+
+		@Override
+		public void onAllRecent() {
+			if (editMode || !acceptClick()) return;
+			openAllRecent();
+		}
+
+		@Override
+		public void onQuickRecent(PlayableItem item) {
+			if (editMode || !acceptClick()) return;
+			DashboardPlayableNavigator.playAndGoToPlayable(activity, item);
+		}
+
+		private boolean acceptSmartTop(SmartTopViewState state) {
+			int position = findSmartTopCardPosition();
+			if (position == -1) return false;
+			DashboardCard current = cards.get(position);
+			return (current.smartTopState == state) && acceptClick();
+		}
+
+		private void openAllRecent() {
+			activity.setActiveNavItemId(R.id.dashboard_fragment);
+			activity.showFragment(R.id.recent_fragment);
+		}
+
+		private void toggleFavorite(@Nullable PlayableItem item) {
+			if ((item == null) || item.isExternal()) return;
+			if (item.isFavoriteItem()) {
+				item.getLib().getFavorites().removeItem(item)
+						.main().onSuccess(done -> refreshSmartTopCard());
+			} else {
+				item.getLib().getFavorites().addItem(item)
+						.main().onSuccess(done -> refreshSmartTopCard());
+			}
+		}
+
+		private void resolveProvider(SmartTopViewState state, Consumer<PlayableItem> action) {
+			SmartTopCoordinator coordinator = smartTopCoordinator;
+			if (coordinator == null) return;
+			coordinator.resolveCandidate(state).main().onCompletion((item, failure) -> {
+				if (!coordinator.isCurrentState(state)) return;
+				if ((failure != null) || (item == null)) {
+					coordinator.showRecovery(state);
+					return;
+				}
+				action.accept(item);
+			});
 		}
 
 		private void refreshLastPlayedTopCard(int generation) {
@@ -820,12 +1059,18 @@ public class DashboardFragment extends MainActivityFragment
 		final TextView title;
 		final TextView subtitle;
 		final View actions;
+		final MaterialButton labeledAction;
 		final ImageButton playPause;
 		final ImageButton favorite;
 		final ImageButton backToList;
 		final ImageButton prev;
 		final ImageButton next;
+		final View progressGroup;
+		final ProgressBar progress;
+		final TextView progressCurrent;
+		final TextView progressTotal;
 		final View recentPanel;
+		final TextView recentTitle;
 		final TextView[] recentItems;
 		final View editActions;
 		final ImageButton moveEarlier;
@@ -838,12 +1083,18 @@ public class DashboardFragment extends MainActivityFragment
 			title = itemView.findViewById(R.id.dashboard_item_title);
 			subtitle = itemView.findViewById(R.id.dashboard_item_subtitle);
 			actions = itemView.findViewById(R.id.dashboard_item_actions);
+			labeledAction = itemView.findViewById(R.id.dashboard_action_label);
 			playPause = itemView.findViewById(R.id.dashboard_action_play_pause);
 			favorite = itemView.findViewById(R.id.dashboard_action_favorite);
 			backToList = itemView.findViewById(R.id.dashboard_action_back_to_list);
 			prev = itemView.findViewById(R.id.dashboard_action_prev);
 			next = itemView.findViewById(R.id.dashboard_action_next);
+			progressGroup = itemView.findViewById(R.id.dashboard_smart_progress_group);
+			progress = itemView.findViewById(R.id.dashboard_smart_progress);
+			progressCurrent = itemView.findViewById(R.id.dashboard_smart_progress_current);
+			progressTotal = itemView.findViewById(R.id.dashboard_smart_progress_total);
 			recentPanel = itemView.findViewById(R.id.dashboard_recent_panel);
+			recentTitle = itemView.findViewById(R.id.dashboard_recent_title);
 			recentItems = new TextView[]{
 					itemView.findViewById(R.id.dashboard_recent_item_1),
 					itemView.findViewById(R.id.dashboard_recent_item_2),
@@ -855,6 +1106,13 @@ public class DashboardFragment extends MainActivityFragment
 			editActions = itemView.findViewById(R.id.dashboard_item_edit_actions);
 			moveEarlier = itemView.findViewById(R.id.dashboard_action_move_earlier);
 			moveLater = itemView.findViewById(R.id.dashboard_action_move_later);
+		}
+
+		private SmartTopBinder.Views smartTopViews() {
+			return new SmartTopBinder.Views(itemView, icon, eyebrow, title, subtitle, actions,
+					labeledAction, List.of(prev, playPause, next, favorite, backToList),
+					progressGroup, progress, progressCurrent, progressTotal,
+					recentPanel, recentTitle, List.of(recentItems[0]));
 		}
 	}
 
@@ -898,13 +1156,13 @@ public class DashboardFragment extends MainActivityFragment
 		}
 
 		private static void onVoiceClick(View v) {
-			MainActivityDelegate.get(v.getContext()).startVoiceAssistant();
+			MainActivityDelegate.get(v.getContext()).startGlobalVoiceControl();
 		}
 
 		private static void updateVoiceVisibility(ToolBarView tb) {
 			View voice = tb.findViewById(R.id.tool_voice);
-			if (voice != null) voice.setVisibility(MainActivityDelegate.get(tb.getContext())
-					.getPrefs().getVoiceControlEnabledPref() ? View.VISIBLE : View.GONE);
+			if (voice != null) voice.setVisibility(VoiceUiPolicy.showToolbarButton(
+					MainActivityDelegate.get(tb.getContext())) ? View.VISIBLE : View.GONE);
 		}
 
 		@Override

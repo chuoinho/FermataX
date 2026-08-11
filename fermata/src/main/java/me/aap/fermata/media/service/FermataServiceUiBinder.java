@@ -52,6 +52,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	@Nullable
 	private RuntimeSessionCoordinator.Token presentationToken;
 	private PlaybackSnapshot deliveredSnapshot;
+	@Nullable
+	private PlaybackTimelineSnapshot playbackTimelineSnapshot;
 	private boolean bound;
 	@Nullable
 	private View playPauseButton;
@@ -109,6 +111,11 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		return playItem(i, -1);
 	}
 
+	@Nullable
+	public PlaybackTimelineSnapshot getPlaybackTimelineSnapshot() {
+		return playbackTimelineSnapshot;
+	}
+
 	public boolean playItem(PlayableItem i, long pos) {
 		boolean sameItem = i.equals(getCurrentItem());
 		if (!shouldCreatePlaybackRequest(sameItem, pos)) {
@@ -130,6 +137,24 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		mediaController.getTransportControls().stop();
 	}
 
+	/** Common transport path used by Playerbar, SmartTop and projected controls. */
+	public void togglePlayback(PlayableItem item) {
+		PlayableItem current = getCurrentItem();
+		if ((current != null) && DashboardPlaybackIdentity.same(current, item) && isPlaying()) {
+			mediaController.getTransportControls().pause();
+		} else {
+			playItem(item);
+		}
+	}
+
+	public void skipToPrevious() {
+		mediaController.getTransportControls().skipToPrevious();
+	}
+
+	public void skipToNext() {
+		mediaController.getTransportControls().skipToNext();
+	}
+
 	public void bindPlayPauseButton(View v) {
 		playPauseButton = v;
 		v.setOnClickListener(b -> onPlayPauseButtonClick());
@@ -147,8 +172,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 			mediaController.getTransportControls().stop();
 		} else {
 			playPauseTime = time;
-			if (isPlaying()) getMediaSessionCallback().onPause();
-			else getMediaSessionCallback().onPlay();
+			if (isPlaying()) mediaController.getTransportControls().pause();
+			else mediaController.getTransportControls().play();
 		}
 	}
 
@@ -192,8 +217,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	public void onPrevNextButtonClick(boolean next) {
-		if (next) mediaController.getTransportControls().skipToNext();
-		else mediaController.getTransportControls().skipToPrevious();
+		if (next) skipToNext();
+		else skipToPrevious();
 	}
 
 	private boolean onPrevNextButtonLongClick(View v) {
@@ -285,6 +310,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 			mediaController.unregisterCallback(callback);
 		}
 		deliveredSnapshot = null;
+		playbackTimelineSnapshot = null;
 		if (progressBar != null) progressBar.setOnSeekBarChangeListener(null);
 		unbindButtons(playPauseButton, prevButton, nextButton, rwButton, ffButton);
 		playPauseButton = prevButton = nextButton = rwButton = ffButton = null;
@@ -445,6 +471,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 								(eng != sessionCallback.getEngine())) return;
 
 						int pos = (int) (position / 1000);
+						long knownDuration = (duration == null) ? 0L : duration.peek(0L);
+						publishTimeline(eng, src, position, knownDuration, true);
 						if (progressBar != null) {
 							progressBar.setProgress(pos);
 
@@ -460,6 +488,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 										progressBar.setMax(max);
 										if (progressTotal != null) progressTotal.setText(timeToString(max));
 										if (src.isSeekable() && eng.canSeek()) showSeekableTimeline(max, pos);
+										publishTimeline(eng, src, position, dur, true);
 										fireBroadcastEvent(l -> l.onDurationChanged(src));
 									}
 								});
@@ -562,6 +591,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 					item.isLiveStream(), item.isSeekable(), eng.canSeek(), dur * 1000L);
 			boolean canResolveTimeline = (item != null) && item.isSeekable() && eng.canSeek();
 			boolean canSeek = timeline == PlaybackTimelinePolicy.Mode.SEEKABLE;
+			if (item != null) publishTimeline(eng, item, pos * 1000L,
+					dur * 1000L, st == STATE_PLAYING);
 
 			if (canSeek) {
 				showSeekableTimeline(dur, pos);
@@ -638,6 +669,18 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 			return (progressUpdateStamp == stamp) && ownsPlayback(engine, item);
 		}
 
+		private void publishTimeline(MediaEngine engine, PlayableItem item,
+				long positionMillis, long durationMillis, boolean playing) {
+			if (!ownsPlayback(engine, item)) return;
+			PlaybackTimelinePolicy.Mode mode = PlaybackTimelinePolicy.resolve(
+					item.isLiveStream(), item.isSeekable(), engine.canSeek(), durationMillis);
+			PlaybackTimelineSnapshot next = new PlaybackTimelineSnapshot(item,
+					ownerToken.generation(), mode, Math.max(0L, positionMillis),
+					Math.max(0L, durationMillis), playing);
+			playbackTimelineSnapshot = next;
+			fireBroadcastEvent(listener -> listener.onPlaybackTimelineChanged(next));
+		}
+
 		private void hideTimeline() {
 			if (progressBar != null) {
 				progressBar.setEnabled(false);
@@ -709,6 +752,9 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		}
 
 		default void onDurationChanged(PlayableItem i) {
+		}
+
+		default void onPlaybackTimelineChanged(PlaybackTimelineSnapshot snapshot) {
 		}
 	}
 }

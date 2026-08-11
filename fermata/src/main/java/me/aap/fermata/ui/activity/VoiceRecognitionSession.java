@@ -34,6 +34,7 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.voice.VoiceEndpointPolicy;
 import me.aap.fermata.ui.voice.VoiceIntent;
 import me.aap.fermata.ui.voice.VoiceIntentParser;
+import me.aap.fermata.ui.voice.VoiceCommandOutcome;
 import me.aap.fermata.ui.voice.VoiceRecognitionController;
 import me.aap.utils.async.Promise;
 import me.aap.utils.function.Cancellable;
@@ -48,6 +49,7 @@ final class VoiceRecognitionSession implements RecognitionListener,
 	private final MaterialTextView text;
 	private final VoiceRecognitionController controller;
 	private final boolean adaptiveAllowed;
+	private final boolean selectionMode;
 	private long generation;
 	private PlaybackStateCompat playbackState;
 	private MediaEngine pausedEngine;
@@ -55,11 +57,12 @@ final class VoiceRecognitionSession implements RecognitionListener,
 	private boolean destroyed;
 
 	VoiceRecognitionSession(MainActivityDelegate activity, Promise<List<String>> promise,
-			boolean textInput, boolean adaptiveAllowed) {
+			boolean textInput, boolean adaptiveAllowed, boolean selectionMode) {
 		this.activity = activity;
 		this.promise = promise;
 		this.textInput = textInput;
 		this.adaptiveAllowed = adaptiveAllowed;
+		this.selectionMode = selectionMode;
 		recognizer = SpeechRecognizer.createSpeechRecognizer(activity.getContext());
 		recognizer.setRecognitionListener(this);
 		text = new MaterialTextView(activity.getContext());
@@ -109,6 +112,10 @@ final class VoiceRecognitionSession implements RecognitionListener,
 		activity.clearVoiceRecognitionSession(this);
 	}
 
+	void applyCommandOutcome(VoiceCommandOutcome outcome) {
+		if ((outcome != null) && outcome.shouldKeepPaused()) clearPausedPlayback();
+	}
+
 	private void clearPausedPlayback() {
 		playbackState = null;
 		pausedEngine = null;
@@ -143,6 +150,7 @@ final class VoiceRecognitionSession implements RecognitionListener,
 			text.setMaxLines(5);
 			text.setGravity(Gravity.CENTER);
 			text.setEllipsize(TextUtils.TruncateAt.MARQUEE);
+			if (selectionMode) text.setText(R.string.voice_selection_prompt);
 			attrs = context.getTheme().obtainStyledAttributes(
 					new int[]{android.R.attr.textColorSecondary});
 			text.setTextColor(ColorStateList.valueOf(attrs.getColor(0, 0)));

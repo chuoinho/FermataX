@@ -14,6 +14,8 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.Recent;
+import me.aap.fermata.ui.smarttop.SmartTopMode;
+import me.aap.fermata.ui.smarttop.SmartTopViewState;
 
 final class DashboardCard {
 	final DashboardItems.Item item;
@@ -27,10 +29,13 @@ final class DashboardCard {
 	final boolean playing;
 	@Nullable
 	final List<PlayableItem> recentItems;
+	@Nullable
+	final SmartTopViewState smartTopState;
 
 	private DashboardCard(DashboardItems.Item item, PlayableItem playable, int targetId, int icon,
 								CharSequence title, CharSequence subtitle, boolean fixed, boolean wide,
-								boolean playing, @Nullable List<PlayableItem> recentItems) {
+								boolean playing, @Nullable List<PlayableItem> recentItems,
+								@Nullable SmartTopViewState smartTopState) {
 		this.item = item;
 		this.playable = playable;
 		this.targetId = targetId;
@@ -41,16 +46,17 @@ final class DashboardCard {
 		this.wide = wide;
 		this.playing = playing;
 		this.recentItems = recentItems;
+		this.smartTopState = smartTopState;
 	}
 
 	static DashboardCard item(DashboardItems.Item item) {
 		return new DashboardCard(item, null, item.id, item.icon, item.title, item.subtitle,
-				false, false, false, null);
+				false, false, false, null, null);
 	}
 
 	DashboardCard withSubtitle(CharSequence subtitle) {
 		return new DashboardCard(item, playable, targetId, icon, title, subtitle, fixed, wide,
-				playing, recentItems);
+				playing, recentItems, smartTopState);
 	}
 
 	static DashboardCard playable(PlayableItem playable, boolean playing,
@@ -67,7 +73,7 @@ final class DashboardCard {
 		}
 
 		return new DashboardCard(null, playable, ID_NULL, playable.getIcon(), title,
-				subtitle, true, true, playing, recentItems);
+				subtitle, true, true, playing, recentItems, null);
 	}
 
 	static DashboardCard recent(Context ctx, List<Item> items) {
@@ -79,7 +85,14 @@ final class DashboardCard {
 		return new DashboardCard(null, null, R.id.recent_fragment, R.drawable.timer,
 				ctx.getString(R.string.recent),
 				itemSummary(items, ctx.getString(R.string.dashboard_recent_sub)),
-				true, true, false, recent);
+				true, true, false, recent, null);
+	}
+
+	static DashboardCard smartTop(SmartTopViewState state) {
+		PlayableItem playable = state.presentedItem();
+		int targetId = (state.mode() == SmartTopMode.EMPTY) ? R.id.settings_fragment : ID_NULL;
+		return new DashboardCard(null, playable, targetId, state.icon(), state.title(),
+				state.subtitle(), true, true, state.timeline().playing(), state.quickRecent(), state);
 	}
 
 	static CharSequence itemSummary(List<Item> items, CharSequence fallback) {

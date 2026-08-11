@@ -118,7 +118,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	}
 
 	private static void onVoiceButtonClick(View v) {
-		MainActivityDelegate.get(v.getContext()).startVoiceAssistant();
+		MainActivityDelegate.get(v.getContext()).startGlobalVoiceControl();
 	}
 
 	@Nullable

@@ -25,34 +25,29 @@ final class DashboardPlayableNavigator {
 	}
 
 	static void goToPlayable(MainActivityDelegate activity, PlayableItem item) {
-		route(activity, PlayableItemResolver.unwrap(item), null, false);
+		route(activity, item, null, false);
 	}
 
 	static void openSmartTop(MainActivityDelegate activity, PlayableItem item) {
-		route(activity, PlayableItemResolver.unwrap(item),
+		route(activity, item,
 				resolved -> onSmartTopTargetOpened(activity, resolved), true);
 	}
 
 	static void playAndGoToPlayable(MainActivityDelegate activity, PlayableItem item) {
-		route(activity, PlayableItemResolver.unwrap(item), null, true);
+		route(activity, item, null, true);
 	}
 
 	static void togglePlayback(MainActivityDelegate activity, PlayableItem item) {
-		PlayableItem target = PlayableItemResolver.unwrap(item);
-		PlayableItem current = activity.getCurrentPlayable();
-		if ((current != null) && isSamePlayable(current, target) &&
-				activity.getMediaServiceBinder().isPlaying()) {
-			activity.getMediaSessionCallback().onPause();
-		} else {
-			activity.getMediaServiceBinder().playItem(target);
-		}
+		activity.getMediaServiceBinder().togglePlayback(item);
 	}
 
 	private static void route(MainActivityDelegate activity, PlayableItem item,
 			@Nullable Consumer<PlayableItem> onOpened, boolean play) {
-		if (!activity.goToItem(item)) return;
+		PlayableItem presented = item;
+		PlayableItem canonical = PlayableItemResolver.unwrap(item);
+		if (!activity.goToItem(canonical)) return;
 		if (!play) {
-			if (onOpened != null) activity.post(() -> onOpened.accept(item));
+			if (onOpened != null) activity.post(() -> onOpened.accept(canonical));
 			return;
 		}
 
@@ -60,8 +55,8 @@ final class DashboardPlayableNavigator {
 		// This is especially important for immutable WebView items opened from Recent/Favorites:
 		// selecting an engine first can hand the request to the WebView for the previous item.
 		activity.post(() -> {
-			playIfNeeded(activity, item);
-			if (onOpened != null) activity.post(() -> onOpened.accept(item));
+			playIfNeeded(activity, presented);
+			if (onOpened != null) activity.post(() -> onOpened.accept(canonical));
 		});
 	}
 

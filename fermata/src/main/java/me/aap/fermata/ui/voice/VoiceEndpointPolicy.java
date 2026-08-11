@@ -50,7 +50,7 @@ public final class VoiceEndpointPolicy {
 	public boolean isAdaptiveCandidate(VoiceIntent intent) {
 		if ((intent == null) || (intent.getKind() != VoiceIntent.Kind.PLAYBACK)) return false;
 		return switch (intent.getPlaybackAction()) {
-			case PAUSE, STOP, OPEN_CURRENT -> true;
+			case PAUSE, STOP, NEXT, PREVIOUS, BACK, OPEN_CURRENT -> true;
 			default -> false;
 		};
 	}

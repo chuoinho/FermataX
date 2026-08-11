@@ -16,8 +16,10 @@ public final class VoiceIntentParser {
 
 	static {
 		alias("youtube", "youtube", "you tube", "yt");
-		alias("tv", "tv", "television", "truyền hình", "truyen hinh");
+		alias("tv", "tv", "television", "tivi", "truyền hình", "truyen hinh",
+				"xtream", "xtreme", "iptv");
 		alias("radio", "radio", "đài", "dai");
+		alias("stremio", "stremio");
 		alias("podcast", "podcast", "podcasts");
 		alias("audiobook", "audiobook", "audiobooks", "sách nói", "sach noi");
 		alias("web", "web", "browser", "trình duyệt", "trinh duyet");
@@ -42,6 +44,14 @@ public final class VoiceIntentParser {
 			return VoiceIntent.playback(VoiceIntent.PlaybackAction.PAUSE);
 		if (isAny(text, "stop", "dừng", "dung"))
 			return VoiceIntent.playback(VoiceIntent.PlaybackAction.STOP);
+		if (isAny(text, "next", "next track", "next item", "bài tiếp theo", "bai tiep theo",
+				"kênh tiếp theo", "kenh tiep theo", "tập tiếp theo", "tap tiep theo"))
+			return VoiceIntent.playback(VoiceIntent.PlaybackAction.NEXT);
+		if (isAny(text, "previous", "previous track", "previous item", "bài trước",
+				"bai truoc", "kênh trước", "kenh truoc", "tập trước", "tap truoc"))
+			return VoiceIntent.playback(VoiceIntent.PlaybackAction.PREVIOUS);
+		if (isAny(text, "go back", "quay lại", "quay lai"))
+			return VoiceIntent.playback(VoiceIntent.PlaybackAction.BACK);
 		if (isAny(text, "what is playing", "now playing", "đang phát gì", "dang phat gi"))
 			return VoiceIntent.playback(VoiceIntent.PlaybackAction.OPEN_CURRENT);
 		if (isAny(text, "play favorites", "play my favorites", "phát mục yêu thích",
@@ -66,6 +76,9 @@ public final class VoiceIntentParser {
 			}
 		}
 
+		if ((action == VoiceIntent.SearchAction.OPEN) && (addon != null) && remainder.isEmpty()) {
+			return VoiceIntent.openAddon(addon);
+		}
 		remainder = removeContentQualifier(remainder);
 		return remainder.isEmpty() ? null : VoiceIntent.search(action, addon, remainder);
 	}
@@ -117,6 +130,7 @@ public final class VoiceIntentParser {
 
 	private static String removeContentQualifier(String text) {
 		String[] qualifiers = {"video ", "channel ", "kênh ", "kenh ", "bài ", "bai ",
+				"movie ", "film ", "phim ", "series ",
 				"episode ", "tập ", "tap ", "book ", "sách ", "sach "};
 		for (String qualifier : qualifiers) if (text.startsWith(qualifier)) return text.substring(qualifier.length()).trim();
 		return text;

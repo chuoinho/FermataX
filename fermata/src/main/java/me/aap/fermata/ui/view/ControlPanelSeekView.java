@@ -44,15 +44,15 @@ public class ControlPanelSeekView extends AppCompatSeekBar {
 			constraints.applyTo(p);
 			prev.setNextFocusLeftId(R.id.control_next);
 			showHide.setNextFocusLeftId(R.id.control_menu_button);
-			next.setNextFocusRightId(R.id.control_favorite);
-			favorite.setNextFocusRightId(R.id.control_prev);
+			next.setNextFocusRightId(R.id.control_prev);
+			favorite.setNextFocusRightId(R.id.control_menu_button);
 			menu.setNextFocusRightId(R.id.show_hide_bars);
 		} else {
 			if (constraintsNoSeek == null) constraintsNoSeek = load(R.layout.control_panel_view2);
 			constraintsNoSeek.applyTo(p);
 			prev.setNextFocusLeftId(R.id.show_hide_bars);
 			showHide.setNextFocusLeftId(R.id.control_menu_button);
-			next.setNextFocusRightId(R.id.control_favorite);
+			next.setNextFocusRightId(R.id.control_prev);
 			favorite.setNextFocusRightId(R.id.control_menu_button);
 			menu.setNextFocusRightId(R.id.show_hide_bars);
 		}

@@ -20,20 +20,19 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
-        app:constraint_referenced_ids="seek_bar" />
+        app:constraint_referenced_ids="show_hide_bars, control_favorite, control_menu_button" />
 
     <LinearLayout
         android:id="@+id/show_hide_bars"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:background="@drawable/focusable_shape_transparent"
         android:focusable="true"
         android:gravity="center"
         android:nextFocusLeft="@id/control_menu_button"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/control_prev"
+        app:layout_constraintEnd_toStartOf="@id/control_favorite"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/barrier">
+        app:layout_constraintTop_toTopOf="parent">
 
         <me.aap.utils.ui.view.ImageButton
             android:id="@+id/show_hide_bars_icon"
@@ -64,51 +63,60 @@
         android:id="@+id/control_prev"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
-        android:layout_height="32dp"
+        android:layout_height="64dp"
         android:background="@drawable/focusable_shape_transparent"
         android:clickable="true"
         android:focusable="true"
         android:longClickable="true"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
         android:scaleType="fitCenter"
         android:src="@drawable/prev"
         app:layout_constraintEnd_toStartOf="@id/control_rw"
-        app:layout_constraintStart_toEndOf="@id/show_hide_bars"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/barrier" />
 
     <me.aap.utils.ui.view.ImageButton
         android:id="@+id/control_rw"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
-        android:layout_height="32dp"
+        android:layout_height="64dp"
         android:background="@drawable/focusable_shape_transparent"
         android:clickable="true"
         android:focusable="true"
         android:longClickable="true"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
         android:scaleType="fitCenter"
         android:src="@drawable/rw"
         app:layout_constraintEnd_toStartOf="@id/control_play_pause"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toEndOf="@id/control_prev"
         app:layout_constraintTop_toBottomOf="@id/barrier" />
 
     <me.aap.utils.ui.view.ImageButton
         android:id="@+id/control_play_pause"
         style="?attr/appControlPanelStyle"
-        android:layout_width="72dp"
-        android:layout_height="32dp"
+        android:layout_width="0dp"
+        android:layout_height="64dp"
         android:background="@drawable/aa_play_button_bg"
         android:clickable="true"
         android:focusable="true"
         android:longClickable="true"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
         android:scaleType="fitCenter"
         android:src="@drawable/play_pause"
         app:tint="?android:attr/colorBackground"
         app:layout_constraintEnd_toStartOf="@id/control_ff"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toEndOf="@id/control_rw"
         app:layout_constraintTop_toBottomOf="@id/barrier" />
 
@@ -116,16 +124,19 @@
         android:id="@+id/control_ff"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
-        android:layout_height="32dp"
+        android:layout_height="64dp"
         android:background="@drawable/focusable_shape_transparent"
         android:clickable="true"
         android:focusable="true"
         android:longClickable="true"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ff"
         app:layout_constraintEnd_toStartOf="@id/control_next"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toEndOf="@id/control_play_pause"
         app:layout_constraintTop_toBottomOf="@id/barrier" />
 
@@ -133,16 +144,20 @@
         android:id="@+id/control_next"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
-        android:layout_height="32dp"
+        android:layout_height="64dp"
         android:background="@drawable/focusable_shape_transparent"
         android:clickable="true"
         android:focusable="true"
         android:longClickable="true"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
         android:scaleType="fitCenter"
         android:src="@drawable/next"
-        app:layout_constraintEnd_toStartOf="@id/control_favorite"
+        android:nextFocusRight="@id/control_prev"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toEndOf="@id/control_ff"
         app:layout_constraintTop_toBottomOf="@id/barrier" />
 
@@ -160,21 +175,20 @@
         android:src="@drawable/favorite"
         android:visibility="gone"
         app:layout_constraintEnd_toStartOf="@id/control_menu_button"
-        app:layout_constraintStart_toEndOf="@id/control_next"
-        app:layout_constraintTop_toBottomOf="@id/barrier" />
+        app:layout_constraintStart_toEndOf="@id/show_hide_bars"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/control_menu_button"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:background="@drawable/focusable_shape_transparent"
         android:focusable="true"
         android:gravity="center"
         android:nextFocusRight="@id/show_hide_bars"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/control_favorite"
-        app:layout_constraintTop_toBottomOf="@id/barrier">
+        app:layout_constraintTop_toTopOf="parent">
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/seek_total"

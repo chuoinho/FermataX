@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:left="8dp" android:top="8dp" android:right="8dp" android:bottom="8dp">
+		<shape android:shape="rectangle">
+			<solid android:color="?attr/colorPrimarySurface" />
+			<stroke android:width="2dp" android:color="?attr/colorOnPrimary" />
+			<corners android:radius="14dp" />
+		</shape>
+	</item>
+	<item android:gravity="right" android:width="4dp" android:top="18dp" android:bottom="18dp">
+		<shape android:shape="rectangle">
+			<solid android:color="?attr/colorAccent" />
+			<corners android:topLeftRadius="3dp" android:bottomLeftRadius="3dp" />
+		</shape>
+	</item>
+</layer-list>

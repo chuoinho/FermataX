@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">再生中</string>
     <string name="dashboard_continue">続きから見る</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">おすすめ</string>
+    <string name="dashboard_smart_discover">見つける</string>
+    <string name="dashboard_smart_empty_title">アドオンを選択</string>
+    <string name="dashboard_smart_empty_subtitle">視聴または再生を始めましょう</string>
+    <string name="dashboard_smart_recovery">続行できません</string>
+    <string name="dashboard_smart_recovery_title">ソースが中断されました</string>
+    <string name="dashboard_smart_recovery_subtitle">再試行するかアドオンを開いてください</string>
     <string name="dashboard_home_sub">開始画面とクイックアクセス</string>
     <string name="dashboard_folders_sub">ローカルファイルとフォルダー</string>
     <string name="dashboard_favorites_sub">ピン留めしたチャンネルとメディア</string>
@@ -494,4 +501,18 @@
 	<string name="retry">再試行</string>
 	<string name="media_list_empty">項目はまだありません</string>
 	<string name="media_list_load_failed">項目を読み込めませんでした。</string>
+	<string name="vehicle_key_test">車両コントロールをテスト</string>
+	<string name="vehicle_key_test_sub">ステアリングとヘッドユニットのキーを30秒間記録します</string>
+	<string name="vehicle_key_test_started">テストを開始しました。確認するボタンを押し、もう一度この項目を選択して結果を表示してください。</string>
+	<string name="vehicle_key_test_no_events">FermataXにコントロールキーが届きませんでした。ヘッドユニットまたは車両ファームウェアが入力を保持した可能性があります。</string>
+	<string name="vehicle_key_test_result">車両コントロールの結果：\n%1$s</string>
+	<string name="voice_trigger_assign">車両の音声ボタンを割り当てる</string>
+	<string name="voice_trigger_current">現在: %1$s。FermataX が表示されている間だけ有効です。</string>
+	<string name="voice_trigger_unassigned">未割り当て</string>
+	<string name="voice_trigger_capture_started">ステアリングまたはヘッドユニットのボタンを1回押してください。この操作では通常の機能は実行されません。</string>
+	<string name="voice_trigger_capture_timeout">対応するボタンを検出できませんでした。変更はありません。</string>
+	<string name="voice_trigger_capture_success">%1$s（%2$d）を割り当てました。アプリが表示されている間だけ FermataX の音声操作を開きます。</string>
+	<string name="voice_trigger_clear">音声ボタンの割り当てを解除</string>
+	<string name="voice_trigger_cleared">車両の音声ボタンの割り当てを解除しました。</string>
+	<string name="voice_selection_prompt">1、2、3のいずれかを言ってください</string>
 </resources>

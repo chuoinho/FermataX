@@ -98,11 +98,17 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	@Nullable
 	public synchronized AddonInfo getVoiceAddonInfo(String target) {
+		AddonInfo info = findVoiceAddonInfo(target);
+		return ((info != null) && store.getBooleanPref(info.enabledPref)) ? info : null;
+	}
+
+	/** Finds declared voice metadata without silently treating a disabled addon as unknown. */
+	@Nullable
+	public synchronized AddonInfo findVoiceAddonInfo(String target) {
 		if ((target == null) || target.isBlank()) return null;
 		for (AddonInfo info : registry.getAvailable()) {
 			if (!info.hasCapability(AddonCapability.VOICE_SEARCH) ||
-					!target.equals(info.voiceTarget) ||
-					!store.getBooleanPref(info.enabledPref)) continue;
+					!target.equals(info.voiceTarget)) continue;
 			return info;
 		}
 		return null;
@@ -247,6 +253,77 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	public synchronized Collection<FermataAddon> getAddons() {
 		return state.getAll();
+	}
+
+	synchronized List<SmartTopProviderLease> snapshotSmartTopProviderLeases() {
+		List<SmartTopProviderLease> result = new ArrayList<>();
+		for (FermataAddon addon : state.getAll()) {
+			if (!(addon instanceof SmartTopProvider)) continue;
+			AddonInfo info = addon.getInfo();
+			AddonLifecycleCoordinator.LifecycleToken token = lifecycle.getToken(addon);
+			if ((token == null) || !state.isLoaded(info, addon) ||
+					!store.getBooleanPref(info.enabledPref)) continue;
+			result.add(new SmartTopProviderLease(addon, token.generation()));
+		}
+		result.sort(Comparator.comparing(SmartTopProviderLease::addonClass));
+		return List.copyOf(result);
+	}
+
+	synchronized boolean ownsSmartTopProviderLease(SmartTopProviderLease lease) {
+		if (lease == null) return false;
+		FermataAddon addon = lease.addon();
+		if (!(addon instanceof SmartTopProvider) ||
+				!lease.addonClass().equals(addon.getClass().getName())) return false;
+		AddonInfo info = addon.getInfo();
+		AddonLifecycleCoordinator.LifecycleToken token = lifecycle.getToken(addon);
+		return (token != null) && (token.addon() == addon) &&
+				(token.generation() == lease.lifecycleGeneration()) &&
+				state.isLoaded(info, addon) && store.getBooleanPref(info.enabledPref);
+	}
+
+	boolean acceptsSmartTopCandidate(SmartTopProviderLease lease,
+			@Nullable SmartTopCandidate candidate) {
+		return (candidate != null) && ownsSmartTopProviderLease(lease) &&
+				lease.addonClass().equals(candidate.addonClass()) &&
+				(lease.lifecycleGeneration() == candidate.lifecycleGeneration());
+	}
+
+	FutureSupplier<List<SmartTopCandidate>> loadSmartTopCandidates(
+			SmartTopProviderLease lease) {
+		SmartTopProvider provider;
+		synchronized (this) {
+			if (!ownsSmartTopProviderLease(lease)) return me.aap.utils.async.Completed.completed(List.of());
+			provider = (SmartTopProvider) lease.addon();
+		}
+		try {
+			FutureSupplier<List<SmartTopCandidate>> candidates =
+					provider.loadSmartTopCandidates(lease);
+			return (candidates == null) ? me.aap.utils.async.Completed.completed(List.of()) : candidates;
+		} catch (Throwable failure) {
+			Log.e(failure, "SmartTop provider load failed: ", lease.addonClass());
+			return me.aap.utils.async.Completed.completed(List.of());
+		}
+	}
+
+	FutureSupplier<PlayableItem> resolveSmartTopCandidate(DefaultMediaLib lib,
+			SmartTopProviderLease lease, SmartTopCandidate candidate) {
+		SmartTopProvider provider;
+		synchronized (this) {
+			if (!acceptsSmartTopCandidate(lease, candidate)) return completedNull();
+			provider = (SmartTopProvider) lease.addon();
+		}
+		try {
+			FutureSupplier<PlayableItem> resolved = provider.resolveSmartTopCandidate(
+					lib, lease, candidate.opaqueId());
+			if (resolved == null) return completedNull();
+			return resolved.map(item -> {
+				if ((item == null) || !acceptsSmartTopCandidate(lease, candidate)) return null;
+				return item;
+			});
+		} catch (Throwable failure) {
+			Log.e(failure, "SmartTop provider resolution failed: ", lease.addonClass());
+			return completedNull();
+		}
 	}
 
 	/**

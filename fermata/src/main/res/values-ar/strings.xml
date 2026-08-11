@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">يتم التشغيل الآن</string>
     <string name="dashboard_continue">متابعة المشاهدة</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">موصى به لك</string>
+    <string name="dashboard_smart_discover">اكتشف</string>
+    <string name="dashboard_smart_empty_title">اختر إضافة</string>
+    <string name="dashboard_smart_empty_subtitle">ابدأ المشاهدة أو الاستماع</string>
+    <string name="dashboard_smart_recovery">تعذر المتابعة</string>
+    <string name="dashboard_smart_recovery_title">انقطع المصدر</string>
+    <string name="dashboard_smart_recovery_subtitle">حاول مرة أخرى أو افتح الإضافة</string>
     <string name="dashboard_home_sub">شاشة البدء والوصول السريع</string>
     <string name="dashboard_folders_sub">الملفات والمجلدات المحلية</string>
     <string name="dashboard_favorites_sub">القنوات والوسائط المثبتة</string>
@@ -489,4 +496,18 @@
 	<string name="retry">إعادة المحاولة</string>
 	<string name="media_list_empty">لا توجد عناصر بعد</string>
 	<string name="media_list_load_failed">تعذر تحميل العناصر.</string>
+	<string name="vehicle_key_test">اختبار أزرار السيارة</string>
+	<string name="vehicle_key_test_sub">التقاط أزرار المقود ووحدة الرأس لمدة 30 ثانية</string>
+	<string name="vehicle_key_test_started">بدأ الاختبار. اضغط أزرار السيارة المطلوبة، ثم اختر هذا العنصر مرة أخرى لعرض النتيجة.</string>
+	<string name="vehicle_key_test_no_events">لم يصل أي زر تحكم إلى FermataX. ربما احتفظت وحدة الرأس أو برمجيات السيارة بالإدخال.</string>
+	<string name="vehicle_key_test_result">نتائج أزرار السيارة:\n%1$s</string>
+	<string name="voice_trigger_assign">تعيين زر الصوت في السيارة</string>
+	<string name="voice_trigger_current">الحالي: %1$s. يعمل فقط عندما يكون FermataX ظاهراً.</string>
+	<string name="voice_trigger_unassigned">غير معيّن</string>
+	<string name="voice_trigger_capture_started">اضغط مرة واحدة على زر عجلة القيادة أو الوحدة الرئيسية. لن ينفذ الضغط وظيفته المعتادة.</string>
+	<string name="voice_trigger_capture_timeout">لم يتم اكتشاف زر مدعوم. لم يتم تغيير أي شيء.</string>
+	<string name="voice_trigger_capture_success">تم تعيين %1$s ‏(%2$d). يفتح صوت FermataX فقط عندما يكون التطبيق ظاهراً.</string>
+	<string name="voice_trigger_clear">مسح تعيين زر الصوت في السيارة</string>
+	<string name="voice_trigger_cleared">تم مسح تعيين زر الصوت في السيارة.</string>
+	<string name="voice_selection_prompt">قل الرقم واحد أو اثنين أو ثلاثة</string>
 </resources>

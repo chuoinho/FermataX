@@ -14,6 +14,12 @@ public interface VoiceSearchAddon extends FermataAddon {
 		return false;
 	}
 
+	/** Additive generation-aware entry; legacy implementations keep their existing behavior. */
+	default boolean handleVoiceSearch(MainActivityDelegate activity, String query, boolean play,
+			long voiceRequestId) {
+		return handleVoiceSearch(activity, query, play);
+	}
+
 	default boolean resolveVoiceSelection(MainActivityDelegate activity, String stableId) {
 		return false;
 	}

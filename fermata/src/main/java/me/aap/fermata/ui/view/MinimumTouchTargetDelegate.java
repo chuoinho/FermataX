@@ -16,19 +16,27 @@ public final class MinimumTouchTargetDelegate extends TouchDelegate {
 	static final int MIN_TARGET_DP = 48;
 	private final ViewGroup delegateView;
 	private final View[] targets;
+	private final int minTargetDp;
 	private TouchDelegate activeDelegate;
 
-	private MinimumTouchTargetDelegate(ViewGroup delegateView, View[] targets) {
+	private MinimumTouchTargetDelegate(ViewGroup delegateView, int minTargetDp, View[] targets) {
 		super(new Rect(), delegateView);
 		this.delegateView = delegateView;
+		this.minTargetDp = minTargetDp;
 		this.targets = targets;
 	}
 
 	public static void install(ViewGroup delegateView, View... targets) {
+		install(delegateView, MIN_TARGET_DP, targets);
+	}
+
+	public static void install(ViewGroup delegateView, int minTargetDp, View... targets) {
 		View[] valid = Arrays.stream(targets).filter(target -> target != null).toArray(View[]::new);
-		delegateView.setTouchDelegate(new MinimumTouchTargetDelegate(delegateView, valid));
+		int boundedTargetDp = Math.max(MIN_TARGET_DP, minTargetDp);
+		delegateView.setTouchDelegate(new MinimumTouchTargetDelegate(
+				delegateView, boundedTargetDp, valid));
 		for (View target : valid) target.setAccessibilityDelegate(
-				new MinimumTargetAccessibilityDelegate());
+				new MinimumTargetAccessibilityDelegate(boundedTargetDp));
 	}
 
 	@Override
@@ -48,7 +56,7 @@ public final class MinimumTouchTargetDelegate extends TouchDelegate {
 		int count = targets.length;
 		int[][] actual = new int[count][4];
 		int[][] expanded = new int[count][4];
-		int minSize = UiUtils.toIntPx(delegateView.getContext(), MIN_TARGET_DP);
+		int minSize = UiUtils.toIntPx(delegateView.getContext(), minTargetDp);
 		Rect bounds = new Rect();
 
 		for (int i = 0; i < count; i++) {
@@ -117,12 +125,18 @@ public final class MinimumTouchTargetDelegate extends TouchDelegate {
 	}
 
 	private static final class MinimumTargetAccessibilityDelegate extends View.AccessibilityDelegate {
+		private final int minTargetDp;
+
+		private MinimumTargetAccessibilityDelegate(int minTargetDp) {
+			this.minTargetDp = minTargetDp;
+		}
+
 		@Override
 		public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
 			super.onInitializeAccessibilityNodeInfo(host, info);
 			if (!host.isShown() || !host.isEnabled() || !host.isClickable()) return;
 			if (!(host.getParent() instanceof View parent)) return;
-			int minSize = UiUtils.toIntPx(host.getContext(), MIN_TARGET_DP);
+			int minSize = UiUtils.toIntPx(host.getContext(), minTargetDp);
 			int[] bounds = expandBounds(host.getLeft(), host.getTop(), host.getRight(),
 					host.getBottom(), minSize, parent.getWidth(), parent.getHeight());
 			info.setBoundsInParent(new Rect(bounds[0], bounds[1], bounds[2], bounds[3]));

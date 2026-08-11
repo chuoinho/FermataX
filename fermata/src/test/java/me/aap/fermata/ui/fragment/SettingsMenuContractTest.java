@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 
@@ -38,12 +39,34 @@ public class SettingsMenuContractTest {
 		String stateStore = mainSource("me/aap/fermata/backup/AndroidBackupStateStore.java");
 
 		assertTrue(settings.contains("R.string.detailed_diagnostics"));
+		assertTrue(settings.contains("R.string.vehicle_key_test"));
 		assertTrue(settings.contains("R.string.export_diagnostic_report"));
 		assertTrue(settings.contains("R.string.clear_diagnostic_data"));
 		assertFalse(settings.contains("R.string.open_log"));
 		assertFalse(backup.contains("static void openLog"));
 		assertFalse(backup.contains("PrefUtils.exportSharedPreferences"));
 		assertTrue(stateStore.contains("\"diagnostics\""));
+	}
+
+	@Test
+	public void vehicleKeyTestIsTranslatedInEverySupportedLocale() throws Exception {
+		Path root = Path.of(System.getProperty("user.dir"));
+		Path resources = root.resolve("src/main/res");
+		if (!Files.isDirectory(resources)) resources = root.resolve("fermata/src/main/res");
+		try (Stream<Path> directories = Files.list(resources)) {
+			directories.filter(Files::isDirectory)
+					.filter(path -> path.getFileName().toString().startsWith("values"))
+					.map(path -> path.resolve("strings.xml"))
+					.filter(Files::isRegularFile)
+					.forEach(path -> {
+						try {
+							String strings = new String(Files.readAllBytes(path), UTF_8);
+							assertTrue(path.toString(), strings.contains("name=\"vehicle_key_test\""));
+						} catch (Exception error) {
+							throw new AssertionError(path.toString(), error);
+						}
+					});
+		}
 	}
 
 	private static String source(String name) throws Exception {

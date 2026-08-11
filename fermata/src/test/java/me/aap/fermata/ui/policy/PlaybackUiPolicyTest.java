@@ -7,12 +7,17 @@ import org.junit.Test;
 
 public class PlaybackUiPolicyTest {
 	@Test
-	public void audioPlayerBarRequiresMatchingAudioRoute() {
-		assertTrue(PlaybackUiPolicy.shouldShowAudioPlayerBar(true, false, true, 10, 10));
-		assertTrue(PlaybackUiPolicy.shouldShowAudioPlayerBar(true, false, true, 0, 0));
-		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(false, false, true, 10, 10));
-		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(true, true, true, 10, 10));
-		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(true, false, false, 0, 0));
-		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(true, false, true, 10, 11));
+	public void audioPlayerBarShowsOutsideDashboardRegardlessOfAddonRoute() {
+		int dashboard = 1;
+		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(
+				true, false, true, dashboard, dashboard));
+		assertTrue(PlaybackUiPolicy.shouldShowAudioPlayerBar(
+				true, false, true, 20, dashboard));
+		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(
+				true, true, true, 20, dashboard));
+		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(
+				false, false, true, 20, dashboard));
+		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(
+				true, false, false, 20, dashboard));
 	}
 }

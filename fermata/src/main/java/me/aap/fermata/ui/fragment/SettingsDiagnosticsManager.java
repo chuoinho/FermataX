@@ -18,6 +18,7 @@ import java.util.function.BooleanSupplier;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.action.HardwareInputTestSession;
 import me.aap.fermata.diagnostics.DiagnosticEvent;
 import me.aap.fermata.diagnostics.DiagnosticPriority;
 import me.aap.fermata.diagnostics.DiagnosticScope;
@@ -79,6 +80,29 @@ final class SettingsDiagnosticsManager {
 							});
 				})
 				.show();
+	}
+
+	static void testVehicleKeys(MainActivityDelegate activity, BooleanSupplier uiActive) {
+		if (!canUseUi(activity, uiActive)) return;
+		AndroidDiagnosticsRuntime runtime = FermataApplication.get().getDiagnostics();
+		HardwareInputTestSession.Result result = HardwareInputTestSession.toggle();
+		if (result.isStarted()) {
+			runtime.setDetailedEnabled(true);
+			runtime.record(DiagnosticEvent.builder("hardware_input", "input_test_started")
+					.scope(DiagnosticScope.DETAILED)
+					.priority(DiagnosticPriority.STATE)
+					.build());
+			UiUtils.showInfo(activity.getContext(), R.string.vehicle_key_test_started);
+			return;
+		}
+		runtime.record(DiagnosticEvent.builder("hardware_input", "input_test_completed")
+				.scope(DiagnosticScope.DETAILED)
+				.priority(DiagnosticPriority.STATE)
+				.build());
+		String summary = result.getSummary();
+		UiUtils.showInfo(activity.getContext(), summary.isEmpty() ?
+				activity.getString(R.string.vehicle_key_test_no_events) :
+				activity.getString(R.string.vehicle_key_test_result, summary));
 	}
 
 	private static void showExportActions(MainActivityDelegate activity, File report,

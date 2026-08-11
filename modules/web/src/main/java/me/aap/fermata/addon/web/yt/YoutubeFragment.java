@@ -327,7 +327,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	@Override
 	public void voiceCommand(VoiceCommand cmd) {
 		YoutubeWebView v = getWebView();
-		if (v != null) v.prepareVoiceSearch();
+		if (v != null) v.prepareVoiceSearch(cmd.getVoiceRequestId());
 		super.voiceCommand(cmd);
 	}
 

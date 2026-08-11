@@ -32,6 +32,10 @@ import me.aap.fermata.backup.BackupContributor;
 import me.aap.fermata.backup.BackupIO;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.addon.MediaItemResolverAddon;
+import me.aap.fermata.addon.SmartTopCandidate;
+import me.aap.fermata.addon.SmartTopProvider;
+import me.aap.fermata.addon.SmartTopProviderCoordinator;
+import me.aap.fermata.addon.SmartTopProviderLease;
 import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.fermata.addon.stremio.integration.StremioFutureBridge;
 import me.aap.fermata.addon.stremio.item.StremioItemIds;
@@ -44,6 +48,8 @@ import me.aap.fermata.addon.stremio.session.StremioVoiceResult;
 import me.aap.fermata.addon.stremio.session.StremioVoiceCandidate;
 import me.aap.fermata.addon.stremio.session.StremioItemAvailability;
 import me.aap.fermata.addon.stremio.session.StremioItemResolution;
+import me.aap.fermata.addon.stremio.session.StremioContinueEntry;
+import me.aap.fermata.addon.stremio.session.StremioLibraryItem;
 import me.aap.fermata.addon.stremio.source.StremioSourceInput;
 import me.aap.fermata.addon.stremio.source.StremioSourceSnapshot;
 import me.aap.fermata.addon.stremio.data.StremioRepository.SourceState;
@@ -67,7 +73,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 @Keep
 @SuppressWarnings("unused")
 public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon,
-		VoiceSearchAddon, AutomotiveShutdownParticipant, BackupContributor {
+		VoiceSearchAddon, AutomotiveShutdownParticipant, BackupContributor, SmartTopProvider {
 	private static final String BACKUP_ID = "stremio.sources";
 	private static final int BACKUP_VERSION = 1;
 	private static final int MAX_BACKUP_SOURCES = 10_000;
@@ -335,18 +341,25 @@ public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon
 
 	@Override
 	public boolean handleVoiceSearch(MainActivityDelegate activity, String query, boolean play) {
+		return handleVoiceSearch(activity, query, play, 0L);
+	}
+
+	@Override
+	public boolean handleVoiceSearch(MainActivityDelegate activity, String query, boolean play,
+			long voiceRequestId) {
 		if ((activity == null) || (query == null) || query.isBlank()) return false;
 		long searchGeneration = beginVoiceRequest();
 		DefaultMediaLib lib = (DefaultMediaLib) activity.getLib();
 		StremioRootItem currentRoot = getRootItem(lib);
 		getGraph(lib).main(activity.getHandler()).onSuccess(graph -> {
-			if (!isCurrentVoiceRequest(searchGeneration, activity)) return;
+			if (!isCurrentVoiceRequest(searchGeneration, activity, voiceRequestId)) return;
 			graph.sessions().searchVoice(query, activity.getPrefs().getLocalePref())
 				.whenComplete((result, error) -> activity.post(() -> {
-					if (!isCurrentVoiceRequest(searchGeneration, activity)) return;
+					if (!isCurrentVoiceRequest(searchGeneration, activity, voiceRequestId)) return;
 					if ((error != null) || (result == null) || result.choices().isEmpty()) {
 						voiceResult = null;
 						voiceSelectionPlay = false;
+						if (voiceRequestId != 0L) activity.completeVoiceTransaction(voiceRequestId);
 						return;
 					}
 					voiceResult = result;
@@ -357,12 +370,16 @@ public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon
 						voiceResult = null;
 						graph.sessions().selectVoiceResult(result, 1)
 								.whenComplete((resolution, selectionError) -> activity.post(() -> {
-									if (!isCurrentVoiceRequest(searchGeneration, activity)) return;
+									if (!isCurrentVoiceRequest(searchGeneration, activity,
+											voiceRequestId)) return;
 									if ((selectionError == null) && (resolution != null) &&
 											resolution.isAvailable()) {
 										openVoiceItem(activity, graph.sessionItems()
 												.resolveMediaItem(lib, currentRoot,
 														result.choices().get(0).stableId()), play);
+										if (voiceRequestId != 0L) {
+											activity.completeVoiceTransaction(voiceRequestId);
+										}
 									}
 								}));
 						return;
@@ -373,7 +390,7 @@ public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon
 						options.add(new VoiceSession.Option(candidate.stableId(), candidate.title(),
 								candidate.subtitle(), getVoiceTarget()));
 					}
-					activity.beginVoiceSelectionOptions(options);
+					activity.beginVoiceSelectionOptions(voiceRequestId, options);
 				}));
 		});
 		return true;
@@ -454,6 +471,84 @@ public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon
 		return StremioFutureBridge.from(getRuntime(lib).thenApply(StremioRuntime::graph));
 	}
 
+	@Override
+	public FutureSupplier<List<SmartTopCandidate>> loadSmartTopCandidates(
+			SmartTopProviderLease lease) {
+		return loadCachedSmartTopCandidates(lease.addonClass(), lease.lifecycleGeneration());
+	}
+
+	FutureSupplier<List<SmartTopCandidate>> loadCachedSmartTopCandidates(
+			String addonClass, long lifecycleGeneration) {
+		OpenSmartTopContext open = getOpenSmartTopContext(null);
+		if (open == null) return me.aap.utils.async.Completed.completed(List.of());
+		var continues = open.graph().sessions().loadContinue(
+				SmartTopProviderCoordinator.MAX_PROVIDER_CANDIDATES);
+		var favorites = open.graph().sessions().loadLibraryFavorites(
+				SmartTopProviderCoordinator.MAX_PROVIDER_CANDIDATES);
+		return StremioFutureBridge.from(continues.thenCombine(favorites,
+				(resume, recommended) -> smartTopCandidates(addonClass,
+						lifecycleGeneration, resume, recommended)));
+	}
+
+	@Override
+	public FutureSupplier<PlayableItem> resolveSmartTopCandidate(DefaultMediaLib lib,
+			SmartTopProviderLease lease, String opaqueId) {
+		OpenSmartTopContext open = getOpenSmartTopContext(lib);
+		if (open == null) return me.aap.utils.async.Completed.completedNull();
+		return open.graph().sessionItems().resolveMediaItem(lib, open.root(), opaqueId)
+				.map(item -> (item instanceof PlayableItem playable) ? playable : null);
+	}
+
+	static List<SmartTopCandidate> smartTopCandidates(String addonClass, long lifecycleGeneration,
+			List<StremioContinueEntry> continues, List<StremioLibraryItem> favorites) {
+		List<SmartTopCandidate> result = new ArrayList<>(
+				SmartTopProviderCoordinator.MAX_PROVIDER_CANDIDATES);
+		Set<String> seen = new HashSet<>();
+		for (StremioContinueEntry entry : continues) {
+			if (result.size() == SmartTopProviderCoordinator.MAX_PROVIDER_CANDIDATES) break;
+			long position = entry.positionMs();
+			long duration = entry.durationMs();
+			if ((position < 30_000L) || ((duration - position) < 60_000L) ||
+					(((double) position / (double) duration) >= 0.95D)) continue;
+			var item = entry.item();
+			result.add(new SmartTopCandidate(addonClass, lifecycleGeneration,
+					item.stableId(), SmartTopCandidate.Kind.RESUME, true, position, duration,
+					false, item.title(), item.subtitle(), false, false, entry.lastPlayedMs()));
+			seen.add(item.stableId());
+		}
+
+		for (StremioLibraryItem favorite : favorites) {
+			if (result.size() == SmartTopProviderCoordinator.MAX_PROVIDER_CANDIDATES) break;
+			var item = favorite.item();
+			if (!seen.add(item.stableId())) continue;
+			result.add(new SmartTopCandidate(addonClass, lifecycleGeneration,
+					item.stableId(), SmartTopCandidate.Kind.RECOMMENDED, true, 0L, 0L,
+					false, item.title(), item.subtitle(), true, true,
+					favorite.favoriteUpdatedMs()));
+		}
+		return List.copyOf(result);
+	}
+
+	@Nullable
+	private synchronized OpenSmartTopContext getOpenSmartTopContext(
+			@Nullable DefaultMediaLib requiredLib) {
+		StremioRootItem currentRoot = root;
+		CompletableFuture<StremioRuntime> future = runtimeFuture;
+		if ((currentRoot == null) || (future == null) || !future.isDone() ||
+				future.isCompletedExceptionally() || future.isCancelled() ||
+				((requiredLib != null) && (currentRoot.getLib() != requiredLib))) return null;
+		try {
+			StremioRuntime runtime = future.getNow(null);
+			if ((runtime == null) || runtime.graph().isClosed()) return null;
+			return new OpenSmartTopContext(currentRoot, runtime.graph());
+		} catch (RuntimeException failure) {
+			return null;
+		}
+	}
+
+	private record OpenSmartTopContext(StremioRootItem root, StremioRuntimeGraph graph) {
+	}
+
 	private synchronized CompletableFuture<StremioRuntime> getRuntime(DefaultMediaLib lib) {
 		if (runtimeFuture != null) return runtimeFuture;
 		long expectedGeneration = runtimeGeneration;
@@ -511,6 +606,12 @@ public final class StremioAddon implements MediaLibAddon, MediaItemResolverAddon
 			MainActivityDelegate activity) {
 		return (voiceGeneration == generation) &&
 				(activity.getActiveFragment() instanceof StremioFragment);
+	}
+
+	private boolean isCurrentVoiceRequest(long generation, MainActivityDelegate activity,
+			long voiceRequestId) {
+		return isCurrentVoiceRequest(generation, activity) && ((voiceRequestId == 0L) ||
+				activity.isCurrentVoiceTransaction(voiceRequestId));
 	}
 
 	private static void closeWhenReady(CompletableFuture<StremioRuntime> future) {

@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">Trenutno se reproducira</string>
     <string name="dashboard_continue">Nastavi gledati</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Preporučeno za vas</string>
+    <string name="dashboard_smart_discover">Otkrijte</string>
+    <string name="dashboard_smart_empty_title">Odaberite dodatak</string>
+    <string name="dashboard_smart_empty_subtitle">Počnite gledati ili slušati</string>
+    <string name="dashboard_smart_recovery">Nije moguće nastaviti</string>
+    <string name="dashboard_smart_recovery_title">Izvor je prekinut</string>
+    <string name="dashboard_smart_recovery_subtitle">Pokušajte ponovno ili otvorite dodatak</string>
     <string name="dashboard_home_sub">Početni zaslon i brzi pristup</string>
     <string name="dashboard_folders_sub">Lokalne datoteke i mape</string>
     <string name="dashboard_favorites_sub">Prikvačeni kanali i mediji</string>
@@ -489,4 +496,18 @@
 	<string name="retry">Pokušaj ponovno</string>
 	<string name="media_list_empty">Još nema stavki</string>
 	<string name="media_list_load_failed">Nije moguće učitati stavke.</string>
+	<string name="vehicle_key_test">Testiraj kontrole vozila</string>
+	<string name="vehicle_key_test_sub">Bilježi tipke upravljača i glavne jedinice 30 sekundi</string>
+	<string name="vehicle_key_test_started">Test je pokrenut. Pritisnite kontrole koje želite testirati, zatim ponovno odaberite ovu stavku za rezultat.</string>
+	<string name="vehicle_key_test_no_events">Nijedna kontrolna tipka nije stigla do FermataX-a. Glavna jedinica ili firmware vozila možda je zadržao unos.</string>
+	<string name="vehicle_key_test_result">Rezultati kontrola vozila:\n%1$s</string>
+	<string name="voice_trigger_assign">Dodijeli glasovnu tipku vozila</string>
+	<string name="voice_trigger_current">Trenutačno: %1$s. Aktivno samo dok je FermataX vidljiv.</string>
+	<string name="voice_trigger_unassigned">Nije dodijeljeno</string>
+	<string name="voice_trigger_capture_started">Jednom pritisnite tipku na upravljaču ili glavnoj jedinici. Pritisak neće pokrenuti njezinu uobičajenu radnju.</string>
+	<string name="voice_trigger_capture_timeout">Nije otkrivena podržana tipka. Ništa nije promijenjeno.</string>
+	<string name="voice_trigger_capture_success">Dodijeljeno: %1$s (%2$d). Otvara FermataX glas samo dok je aplikacija vidljiva.</string>
+	<string name="voice_trigger_clear">Ukloni dodjelu glasovne tipke</string>
+	<string name="voice_trigger_cleared">Dodjela glasovne tipke vozila je uklonjena.</string>
+	<string name="voice_selection_prompt">Recite broj jedan, dva ili tri</string>
 </resources>

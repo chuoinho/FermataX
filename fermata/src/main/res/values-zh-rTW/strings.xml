@@ -8,6 +8,13 @@
     <string name="dashboard_now_playing">正在播放</string>
     <string name="dashboard_continue">繼續觀看</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">為你推薦</string>
+    <string name="dashboard_smart_discover">探索</string>
+    <string name="dashboard_smart_empty_title">選擇附加元件</string>
+    <string name="dashboard_smart_empty_subtitle">開始觀看或聆聽</string>
+    <string name="dashboard_smart_recovery">無法繼續</string>
+    <string name="dashboard_smart_recovery_title">來源已中斷</string>
+    <string name="dashboard_smart_recovery_subtitle">請重試或開啟附加元件</string>
     <string name="dashboard_home_sub">啟動畫面與快速存取</string>
     <string name="dashboard_folders_sub">本機檔案與資料夾</string>
     <string name="dashboard_favorites_sub">已釘選的頻道與媒體</string>
@@ -494,4 +501,18 @@
 	<string name="retry">重試</string>
 	<string name="media_list_empty">尚無項目</string>
 	<string name="media_list_load_failed">無法載入項目。</string>
+	<string name="vehicle_key_test">測試車輛控制鍵</string>
+	<string name="vehicle_key_test_sub">記錄方向盤與車機控制鍵 30 秒</string>
+	<string name="vehicle_key_test_started">測試已開始。請按下要測試的控制鍵，然後再次選取此項目以查看結果。</string>
+	<string name="vehicle_key_test_no_events">沒有控制鍵傳到 FermataX。車機或車輛韌體可能已攔截輸入。</string>
+	<string name="vehicle_key_test_result">車輛控制結果：\n%1$s</string>
+	<string name="voice_trigger_assign">指派車輛語音按鈕</string>
+	<string name="voice_trigger_current">目前：%1$s。僅在 FermataX 顯示時啟用。</string>
+	<string name="voice_trigger_unassigned">尚未指派</string>
+	<string name="voice_trigger_capture_started">請按一下方向盤或主機按鈕。此次按壓不會執行原本功能。</string>
+	<string name="voice_trigger_capture_timeout">未偵測到支援的按鈕。未變更任何設定。</string>
+	<string name="voice_trigger_capture_success">已指派 %1$s（%2$d）。僅在應用程式顯示時開啟 FermataX 語音控制。</string>
+	<string name="voice_trigger_clear">清除語音按鈕指派</string>
+	<string name="voice_trigger_cleared">已清除車輛語音按鈕指派。</string>
+	<string name="voice_selection_prompt">請說一、二或三</string>
 </resources>

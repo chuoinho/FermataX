@@ -20,12 +20,10 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CLOCK_POS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_AUTO_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
@@ -45,7 +43,6 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.LocaleList;
 import android.provider.Settings;
-import android.speech.RecognizerIntent;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Base64;
 import android.view.KeyEvent;
@@ -75,7 +72,6 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.addon.FermataAddon;
-import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
@@ -115,12 +111,8 @@ import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.VideoView;
-import me.aap.fermata.ui.voice.VoiceIntent;
-import me.aap.fermata.ui.voice.VoiceIntentParser;
-import me.aap.fermata.ui.voice.VoiceSession;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.async.Promise;
 import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.event.ListenerLeakDetector;
 import me.aap.utils.function.Cancellable;
@@ -165,9 +157,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	private boolean barsHidden;
 	private boolean videoMode;
 	private int brightness = 255;
-	private VoiceRecognitionSession speechListener;
-	private VoiceCommandHandler voiceCommandHandler;
-	private final VoiceSession voiceSession = new VoiceSession();
+	private final VoiceInteractionCoordinator voiceInteraction;
 	private final long diagnosticsActivityId = AsyncOperationController.DiagnosticsObserver.nextId();
 	private long hostRelaunchGeneration;
 	private boolean hostResumed;
@@ -175,6 +165,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
 		mediaServiceBinder = binder;
+		voiceInteraction = new VoiceInteractionCoordinator(this);
 	}
 
 	@NonNull
@@ -448,6 +439,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public void onActivityResume() {
 		hostResumed = true;
+		getMediaSessionCallback().getHardwareInputRouter().onHostResumed(this);
 		super.onActivityResume();
 		AsyncOperationController.DiagnosticsObserver.activity(
 				AsyncOperationController.DiagnosticsObserver.ActivityEvent.RESUMED,
@@ -466,6 +458,8 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public void onActivityPause() {
 		hostResumed = false;
+		getMediaSessionCallback().getHardwareInputRouter().onHostPaused(this);
+		voiceInteraction.onHostPaused();
 		super.onActivityPause();
 		AsyncOperationController.DiagnosticsObserver.activity(
 				AsyncOperationController.DiagnosticsObserver.ActivityEvent.PAUSED,
@@ -485,7 +479,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		handler.close();
 		getMediaServiceBinder().getMediaSessionCallback().removeAssistant(this);
 		getPrefs().removeBroadcastListener(this);
-		if (speechListener != null) speechListener.destroy();
+		voiceInteraction.close();
 
 		AddonManager.get().onActivityDestroy(this);
 
@@ -845,7 +839,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		long operationId = AsyncOperationController.DiagnosticsObserver.navigationStarted(
 				diagnosticsActivityId, fromId, id);
 		try {
-			voiceSession.clear();
+			voiceInteraction.clearSelection();
 			BodyLayout b = getBody();
 			if (b.isVideoMode()) b.setMode(PlaybackLayoutPolicy.getModeAfterLeavingVideo(isCarActivity()));
 			ActivityFragment fragment = super.showFragment(id, input);
@@ -1006,25 +1000,16 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public void startVoiceAssistant() {
-		ActivityFragment f = getActiveFragment();
-		if (!(f instanceof MainActivityFragment) || !((MainActivityFragment) f).startVoiceAssistant())
-			voiceSearch(getCurrentFocus());
+		voiceInteraction.startContextualAssistant();
+	}
+
+	public void startGlobalVoiceControl() {
+		voiceInteraction.startGlobalVoiceControl();
 	}
 
 	@Override
 	public boolean handleVoiceSearch(String query) {
-		if (!getPrefs().getVoiceControlEnabledPref()) return false;
-		Locale locale = Locale.forLanguageTag(getPrefs().getVoiceControlLang(this));
-		String command = VoiceIntentParser.mediaSearchCommand(query, locale);
-		if (command == null) return false;
-		VoiceIntent intent = VoiceIntentParser.parse(command, locale);
-		if ((intent == null) || !canRouteVoiceIntent(intent)) return false;
-		post(() -> {
-			VoiceCommandHandler handler = voiceCommandHandler;
-			if (handler == null) handler = voiceCommandHandler = new VoiceCommandHandler(this);
-			if (!handler.handle(command)) Log.w("Failed to handle media voice search: ", query);
-		});
-		return true;
+		return voiceInteraction.handleVoiceSearch(query);
 	}
 
 	/** Starts a selected item through the active body without exposing its concrete view type. */
@@ -1032,156 +1017,54 @@ public class MainActivityDelegate extends ActivityDelegate
 		getBody().playItem(item);
 	}
 
-	private boolean canRouteVoiceIntent(VoiceIntent intent) {
-		if (intent.getKind() == VoiceIntent.Kind.PLAYBACK) return true;
-		if (intent.getKind() == VoiceIntent.Kind.SELECTION)
-			return voiceSession.isSelectionActive(System.currentTimeMillis());
-		String target = intent.getAddon();
-		if (target != null) return AddonManager.get().getVoiceAddonInfo(target) != null;
-		MainActivityFragment fragment = getActiveMainActivityFragment();
-		return (fragment != null) && fragment.isVoiceCommandsSupported();
-	}
-
 	public void beginVoiceSelection(List<PlayableItem> items) {
-		List<VoiceSession.Option> options = new ArrayList<>(Math.min(3, items.size()));
-		for (PlayableItem item : items) {
-			if (item == null) continue;
-			options.add(new VoiceSession.Option(item.getId(), item.getName(), null));
-			if (options.size() == 3) break;
-		}
-		voiceSession.beginSelection(options, System.currentTimeMillis());
+		voiceInteraction.beginSelection(items);
 	}
 
-	public void beginVoiceSelectionOptions(List<VoiceSession.Option> options) {
-		voiceSession.beginSelection(options, System.currentTimeMillis());
+	public void beginVoiceSelection(long requestId, List<PlayableItem> items) {
+		voiceInteraction.beginSelection(requestId, items);
+	}
+
+	public void beginVoiceSelectionOptions(List<me.aap.fermata.ui.voice.VoiceSession.Option> options) {
+		voiceInteraction.beginSelectionOptions(options);
+	}
+
+	public void beginVoiceSelectionOptions(long requestId,
+			List<me.aap.fermata.ui.voice.VoiceSession.Option> options) {
+		voiceInteraction.beginSelectionOptions(requestId, options);
+	}
+
+	public boolean isCurrentVoiceTransaction(long requestId) {
+		return voiceInteraction.isCurrentTransaction(requestId);
+	}
+
+	public void completeVoiceTransaction(long requestId) {
+		voiceInteraction.completeTransaction(requestId);
 	}
 
 	public void clearVoiceSelection() {
-		voiceSession.clear();
+		voiceInteraction.clearSelection();
 	}
 
 	/** Returns true while an active selection owns the next voice utterance. */
 	public boolean resolveVoiceSelection(String phrase) {
-		long now = System.currentTimeMillis();
-		if (!voiceSession.isSelectionActive(now)) {
-			voiceSession.clear();
-			return false;
-		}
-		VoiceIntent intent = VoiceIntentParser.parse(phrase, getPrefs().getLocalePref());
-		if ((intent == null) || (intent.getKind() != VoiceIntent.Kind.SELECTION)) {
-			voiceSession.clear();
-			return false;
-		}
-
-		VoiceSession.Option option = voiceSession.resolveSelection(phrase, getPrefs().getLocalePref(), now);
-		if (option == null) return true;
-		String target = option.getVoiceTarget();
-		if (target != null) {
-			if (!resolveVoiceSelection(target, option.getStableId(),
-					VoiceReadinessPolicy.deadline(android.os.SystemClock.uptimeMillis())))
-				Log.e("Failed to route voice selection to addon ", target);
-			return true;
-		}
-		for (FermataAddon addon : AddonManager.get().getAddons()) {
-			if ((addon instanceof VoiceSearchAddon voice) &&
-					voice.resolveVoiceSelection(this, option.getStableId())) return true;
-		}
-		getLib().getItem(option.getStableId()).main(getHandler()).onSuccess(item -> {
-			if (item instanceof PlayableItem playable) {
-				getMediaServiceBinder().playItem(playable);
-				goToItem(playable);
-			}
-		});
-		return true;
-	}
-
-	private boolean resolveVoiceSelection(String target, String stableId, long deadline) {
-		AddonManager manager = AddonManager.get();
-		AddonInfo info = manager.getVoiceAddonInfo(target);
-		if (info == null) return false;
-
-		FermataAddon addon = manager.getAddon(info.className);
-		ActivityFragment active = getActiveFragment();
-		boolean activeTarget = (active != null) && (active.getFragmentId() == info.addonId);
-		if (activeTarget && (addon instanceof VoiceSearchAddon voice) &&
-				voice.resolveVoiceSelection(this, stableId)) return true;
-		boolean alive = !getAppActivity().isDestroyed() && !getAppActivity().isFinishing();
-		if (!VoiceReadinessPolicy.shouldRetry(android.os.SystemClock.uptimeMillis(),
-				deadline, alive)) return false;
-		if (!activeTarget && !showFragmentWhenReady(info.addonId)) return false;
-		postDelayed(() -> {
-			if (!resolveVoiceSelection(target, stableId, deadline) &&
-					(android.os.SystemClock.uptimeMillis() >= deadline))
-				Log.e("Failed to resolve voice selection for addon ", target);
-		}, VoiceReadinessPolicy.RETRY_DELAY_MS);
-		return true;
-	}
-
-	private void voiceSearch(View focus) {
-		boolean textInput = (focus instanceof EditText) || getAppActivity().isInputActive();
-		if (textInput) voiceSession.beginTextInput();
-		else if (voiceSession.getMode() != VoiceSession.Mode.SELECTION) voiceSession.beginCommand();
-		boolean adaptiveAllowed = !textInput && (voiceSession.getMode() == VoiceSession.Mode.COMMAND);
-		startSpeechRecognizer(null, textInput, adaptiveAllowed).onSuccess(q -> {
-			if ((q == null) || q.isEmpty()) return;
-			if (focus instanceof EditText) {
-				((EditText) focus).setText(q.get(0));
-				focus.requestFocus();
-			} else if (getAppActivity().isInputActive()) {
-				getAppActivity().setTextInput(q.get(0));
-			} else {
-				VoiceCommandHandler h = voiceCommandHandler;
-				if (h == null) h = voiceCommandHandler = new VoiceCommandHandler(this);
-				h.handle(q);
-			}
-		}).onCompletion((result, fail) -> {
-			if (textInput) voiceSession.beginCommand();
-		});
+		return voiceInteraction.resolveSelection(phrase);
 	}
 
 	public FutureSupplier<List<String>> startSpeechRecognizer() {
-		return startSpeechRecognizer(null, false);
+		return voiceInteraction.startSpeechRecognizer();
 	}
 
 	public FutureSupplier<List<String>> startSpeechRecognizer(String locale, boolean textInput) {
-		return startSpeechRecognizer(locale, textInput, false);
-	}
-
-	private FutureSupplier<List<String>> startSpeechRecognizer(String locale, boolean textInput,
-			boolean adaptiveAllowed) {
-		FutureSupplier<int[]> check = SpeechRecognitionSupport.checkRecordAudioPermission(this);
-		return check.then(r -> {
-			if (r[0] == PERMISSION_GRANTED) return completedVoid();
-			else return failed(new IllegalStateException("Audio recording permission is not granted"));
-		}).onFailure(err -> {
-			Log.e(err, "Failed to request RECORD_AUDIO permission");
-			showAlert(getContext(), R.string.err_no_audio_record_perm);
-		}).then(v -> SpeechRecognitionSupport.requireRecognitionService(getContext())).then(v -> {
-			if (speechListener != null) speechListener.destroy();
-			Promise<List<String>> p = new Promise<>();
-			String lang = (locale == null) ? getPrefs().getVoiceControlLang(this) : locale;
-			Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-			i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-			i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang);
-			i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-			if ((VERSION.SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE) && (locale == null) &&
-					getPrefs().getBooleanPref(VOICE_CONTROL_AUTO_LANG)) {
-				i.putExtra(RecognizerIntent.EXTRA_ENABLE_LANGUAGE_DETECTION, true);
-				i.putStringArrayListExtra(RecognizerIntent.EXTRA_LANGUAGE_DETECTION_ALLOWED_LANGUAGES,
-						new ArrayList<>(List.of("en-US", "vi-VN")));
-			}
-			speechListener = new VoiceRecognitionSession(this, p, textInput, adaptiveAllowed);
-			speechListener.start(i);
-			return p;
-		});
+		return voiceInteraction.startSpeechRecognizer(locale, textInput);
 	}
 
 	boolean isCurrentVoiceRecognitionSession(VoiceRecognitionSession session) {
-		return speechListener == session;
+		return voiceInteraction.isCurrentSession(session);
 	}
 
 	void clearVoiceRecognitionSession(VoiceRecognitionSession session) {
-		if (speechListener == session) speechListener = null;
+		voiceInteraction.clearSession(session);
 	}
 
 	@NonNull
@@ -1209,11 +1092,11 @@ public class MainActivityDelegate extends ActivityDelegate
 		EditText t = getAppActivity().createEditText(ctx);
 		if (isCarActivity() && getPrefs().getVoiceControlEnabledPref()) {
 			t.setOnLongClickListener(v -> {
-			voiceSession.beginTextInput();
+				voiceInteraction.beginTextInput();
 				startSpeechRecognizer(null, true).onSuccess(q -> {
 					if ((q != null) && !q.isEmpty()) t.setText(q.get(0));
 				})
-						.onCompletion((result, fail) -> voiceSession.beginCommand());
+						.onCompletion((result, fail) -> voiceInteraction.beginCommand());
 				return true;
 			});
 		}
@@ -1403,7 +1286,7 @@ public class MainActivityDelegate extends ActivityDelegate
 				getPrefs().applyBooleanPref(VOICE_CONTROl_FB, false);
 			});
 		} else if (prefs.contains(VOICE_CONTROL_SUBST)) {
-			if (voiceCommandHandler != null) voiceCommandHandler.updateWordSubst();
+			voiceInteraction.updateWordSubst();
 		} else if (prefs.contains(CLOCK_POS)) {
 			getBody().getVideoView().setClockPos(getPrefs().getClockPosPref());
 		} else if (prefs.contains(LOCALE)) {

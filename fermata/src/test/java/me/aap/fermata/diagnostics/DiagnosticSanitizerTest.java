@@ -15,7 +15,9 @@ public class DiagnosticSanitizerTest {
 	@Test
 	public void schemaRecognizesProductionEnvelopeIdentifiers() {
 		assertTrue(DiagnosticSchema.isCategory("application"));
+		assertTrue(DiagnosticSchema.isCategory("hardware_input"));
 		assertTrue(DiagnosticSchema.isEvent("application_initialized"));
+		assertTrue(DiagnosticSchema.isEvent("input_received"));
 		assertTrue(DiagnosticSchema.isEvent("database_open_retry"));
 		assertTrue(DiagnosticSchema.isOperation("protocol_request"));
 		assertFalse(DiagnosticSchema.isCategory("private_movie"));
@@ -127,6 +129,33 @@ public class DiagnosticSanitizerTest {
 		assertEquals(3, clean.get("result_count"));
 		assertEquals(true, clean.get("stale"));
 		assertFalse(clean.containsKey("unknown_payload"));
+	}
+
+	@Test
+	public void hardwareInputSchemaKeepsOnlyNonTextControlMetadata() {
+		Map<String, Object> attributes = new LinkedHashMap<>();
+		attributes.put("key_code", 87);
+		attributes.put("key_action", 0);
+		attributes.put("repeat_count", 0);
+		attributes.put("scan_code", 0);
+		attributes.put("device_id", 4);
+		attributes.put("input_source", 257);
+		attributes.put("input_origin", "MEDIA_SESSION");
+		attributes.put("mapped_key", "MEDIA_NEXT");
+		attributes.put("session_active", true);
+		attributes.put("playback_revision", 9);
+		attributes.put("playback_state", 3);
+		attributes.put("supported_actions", 48);
+		attributes.put("unknown_text", "private input");
+		Map<String, Object> clean = sanitizer.sanitizeEventAttributes(
+				"hardware_input", "input_received", attributes);
+
+		assertEquals(87, clean.get("key_code"));
+		assertEquals("MEDIA_SESSION", clean.get("input_origin"));
+		assertEquals("MEDIA_NEXT", clean.get("mapped_key"));
+		assertEquals(true, clean.get("session_active"));
+		assertFalse(clean.containsKey("unknown_text"));
+		assertFalse(clean.toString().contains("private input"));
 	}
 
 	@Test

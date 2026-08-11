@@ -29,6 +29,10 @@
     <item name="dashboard_settings" type="id" />
     <item name="dashboard_edit" type="id" />
     <item name="dashboard_menu" type="id" />
+    <item name="dashboard_smart_bind_token" type="id" />
+    <item name="dashboard_smart_action_tag" type="id" />
+    <item name="dashboard_smart_state_tag" type="id" />
+    <item name="dashboard_smart_layout_token" type="id" />
     <item name="folders_fragment" type="id" />
     <item name="favorites_fragment" type="id" />
     <item name="recent_fragment" type="id" />
@@ -55,6 +59,7 @@
     <item name="nav_donate" type="id" />
     <item name="nav_about" type="id" />
     <item name="nav_exit" type="id" />
+	<item name="nav_voice" type="id" />
     <item name="nav_select" type="id" />
     <item name="nav_select_all" type="id" />
     <item name="nav_unselect_all" type="id" />

@@ -7,7 +7,7 @@ final class DiagnosticSchema {
 	private static final Set<String> CATEGORIES = Set.of(
 			"aa_startup", "addon", "application", "audiobook_source", "content",
 			"database", "diagnostics", "engine", "engine_exoplayer", "engine_vlc", "legacy_log",
-			"lifecycle", "navigation", "network", "performance", "playback",
+			"hardware_input", "lifecycle", "navigation", "network", "performance", "playback",
 			"podcast_source", "process", "radio_source", "service", "service_connection",
 			"search", "stremio_protocol", "stremio_subtitle", "stremio_torrent", "tv_source", "voice",
 			"web_custom_view", "web_fullscreen", "web_page", "web_playback");
@@ -59,6 +59,8 @@ final class DiagnosticSchema {
 			"service_ready", "session_invalidated", "session_marker_write_failed", "session_started",
 			"session_state", "signal_rejected", "started", "state_changed", "stopped",
 			"suspected_main_thread_stall", "ui_attach_started", "ui_failed", "ui_ready",
+			"input_deduplicated", "input_delegated", "input_executed", "input_mapped",
+			"input_received", "input_rejected", "input_test_completed", "input_test_started",
 			"video_layout_ready", "video_mode_changed", "video_mode_failed");
 
 	private static final Set<String> OPERATIONS = Set.of(

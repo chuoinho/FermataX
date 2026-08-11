@@ -36,6 +36,7 @@ import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.voice.VoiceIntent;
 import me.aap.fermata.ui.voice.VoiceIntentParser;
+import me.aap.fermata.ui.voice.VoiceCommandOutcome;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.PatternCompat;
 import me.aap.utils.text.SharedTextBuilder;
@@ -77,6 +78,8 @@ class VoiceCommandHandler {
 	private String[] nums;
 	private Map<String, String> subst = Collections.emptyMap();
 	private int candidateResultCount = 1;
+	private VoiceCommandOutcome lastOutcome = VoiceCommandOutcome.unhandled();
+	private long currentRequestId;
 
 	VoiceCommandHandler(MainActivityDelegate activity) {
 		this.activity = activity;
@@ -119,26 +122,54 @@ class VoiceCommandHandler {
 	}
 
 	public boolean handle(List<String> cmd) {
-		if (cmd.isEmpty()) return false;
+		return handleWithOutcome(cmd).isHandled();
+	}
+
+	public VoiceCommandOutcome handleWithOutcome(List<String> cmd) {
+		return handleWithOutcome(cmd, 0L);
+	}
+
+	public VoiceCommandOutcome handleWithOutcome(List<String> cmd, long requestId) {
+		if (cmd.isEmpty()) return VoiceCommandOutcome.unhandled();
 		candidateResultCount = Math.max(1, cmd.size());
+		long previousRequestId = currentRequestId;
+		currentRequestId = requestId;
 		try {
-			return handle(cmd.get(0));
+			return handleWithOutcome(cmd.get(0));
 		} finally {
 			candidateResultCount = 1;
+			currentRequestId = previousRequestId;
 		}
 	}
 
 	public boolean handle(String cmd) {
+		return handleWithOutcome(cmd).isHandled();
+	}
+
+	public VoiceCommandOutcome handleWithOutcome(String cmd) {
+		lastOutcome = VoiceCommandOutcome.unhandled();
+		boolean handled = handleCommand(cmd);
+		if (!handled) return VoiceCommandOutcome.unhandled();
+		return lastOutcome.isHandled() ? lastOutcome :
+				VoiceCommandOutcome.completed(VoiceCommandOutcome.PlaybackEffect.PRESERVE);
+	}
+
+	private boolean handleCommand(String cmd) {
 		init();
 		cmd = subst(cmd);
 		if (activity.resolveVoiceSelection(cmd)) {
+			lastOutcome = VoiceCommandOutcome.pending(
+					VoiceCommandOutcome.PlaybackEffect.REPLACE_PENDING);
 			recordCommand("selection");
 			return true;
 		}
 
 		AddonManager amgr = AddonManager.get();
 		VoiceIntent parsed = VoiceIntentParser.parse(cmd, Locale.forLanguageTag(lang));
-		if ((parsed != null) && handleParsed(parsed, amgr)) {
+		VoiceCommandOutcome parsedOutcome = (parsed == null) ? VoiceCommandOutcome.unhandled() :
+				handleParsed(parsed, amgr);
+		if (parsedOutcome.isHandled()) {
+			lastOutcome = parsedOutcome;
 			recordCommand(commandType(parsed));
 			return true;
 		}
@@ -243,7 +274,10 @@ class VoiceCommandHandler {
 			int action = matches(aFind, cFindPlayOpen.group(m, ACTION)) ? VoiceCommand.ACTION_FIND :
 					matches(aOpen, cFindPlayOpen.group(m, ACTION)) ? VoiceCommand.ACTION_OPEN :
 							VoiceCommand.ACTION_PLAY;
-			VoiceCommand vcmd = new VoiceCommand(q, action);
+			VoiceCommand vcmd = new VoiceCommand(q, action, currentRequestId);
+			lastOutcome = VoiceCommandOutcome.pending(vcmd.isPlay() ?
+					VoiceCommandOutcome.PlaybackEffect.REPLACE_PENDING :
+					VoiceCommandOutcome.PlaybackEffect.PRESERVE);
 			String location = cFindPlayOpen.group(m, LOCATION);
 
 			if (location == null) {
@@ -278,50 +312,77 @@ class VoiceCommandHandler {
 		return false;
 	}
 
-	private boolean handleParsed(VoiceIntent intent, AddonManager addons) {
-		if (intent.getKind() == VoiceIntent.Kind.SELECTION) return false;
+	private VoiceCommandOutcome handleParsed(VoiceIntent intent, AddonManager addons) {
+		if (intent.getKind() == VoiceIntent.Kind.SELECTION) return VoiceCommandOutcome.unhandled();
 
 		if (intent.getKind() == VoiceIntent.Kind.PLAYBACK) {
 			VoiceIntent.PlaybackAction action = intent.getPlaybackAction();
-			if (action == null) return false;
+			if (action == null) return VoiceCommandOutcome.unhandled();
 			switch (action) {
 				case PLAY -> activity.getMediaSessionCallback().play().thenRun(activity::goToCurrent);
 				case PAUSE -> activity.getMediaSessionCallback().onPause();
 				case STOP -> activity.getMediaSessionCallback().onStop();
+				case NEXT -> activity.getMediaSessionCallback().onSkipToNext();
+				case PREVIOUS -> activity.getMediaSessionCallback().onSkipToPrevious();
+				case BACK -> activity.onBackPressed();
 				case OPEN_CURRENT -> activity.goToCurrent();
 				case PLAY_FAVORITES -> {
 					activity.showFragment(R.id.favorites_fragment);
 					playFavorites(0);
 				}
 			}
-			return true;
+			VoiceCommandOutcome.PlaybackEffect effect =
+					((action == VoiceIntent.PlaybackAction.PAUSE) ||
+							(action == VoiceIntent.PlaybackAction.STOP)) ?
+							VoiceCommandOutcome.PlaybackEffect.KEEP_PAUSED :
+							VoiceCommandOutcome.PlaybackEffect.PRESERVE;
+			return VoiceCommandOutcome.completed(effect);
+		}
+
+		if (intent.getKind() == VoiceIntent.Kind.OPEN_ADDON) {
+			String target = intent.getAddon();
+			var info = addons.findVoiceAddonInfo(target);
+			if ((info == null) || !activity.showFragmentWhenReady(info.addonId)) {
+				return VoiceCommandOutcome.unhandled();
+			}
+			return VoiceCommandOutcome.completed(VoiceCommandOutcome.PlaybackEffect.PRESERVE);
 		}
 
 		String query = intent.getQuery();
 		VoiceIntent.SearchAction action = intent.getSearchAction();
-		if ((query == null) || query.isBlank() || (action == null)) return false;
+		if ((query == null) || query.isBlank() || (action == null)) {
+			return VoiceCommandOutcome.unhandled();
+		}
 		int legacyAction = switch (action) {
 			case PLAY -> VoiceCommand.ACTION_PLAY;
 			case FIND -> VoiceCommand.ACTION_FIND;
 			case OPEN -> VoiceCommand.ACTION_OPEN;
 		};
-		VoiceCommand command = new VoiceCommand(query, legacyAction);
+		VoiceCommand command = new VoiceCommand(query, legacyAction, currentRequestId);
 		String target = intent.getAddon();
 
 		if (target == null) {
 			MainActivityFragment fragment = activity.getActiveMainActivityFragment();
-			if ((fragment == null) || !fragment.isVoiceCommandsSupported()) return false;
+			if ((fragment == null) || !fragment.isVoiceCommandsSupported()) {
+				return VoiceCommandOutcome.unhandled();
+			}
 			fragment.voiceCommand(command);
-			return true;
+			return VoiceCommandOutcome.pending(action == VoiceIntent.SearchAction.PLAY ?
+					VoiceCommandOutcome.PlaybackEffect.REPLACE_PENDING :
+					VoiceCommandOutcome.PlaybackEffect.PRESERVE);
 		}
 
 		// Use generated addon metadata first so an enabled dynamic feature can be
 		// loaded on demand. The runtime contract still validates the loaded addon.
-		var info = addons.getVoiceAddonInfo(target);
-		if ((info == null) || !activity.showFragmentWhenReady(info.addonId)) return false;
+		var info = addons.findVoiceAddonInfo(target);
+		if ((info == null) || !activity.showFragmentWhenReady(info.addonId)) {
+			return VoiceCommandOutcome.unhandled();
+		}
 		searchInFragment(info.addonId, command,
-				VoiceReadinessPolicy.deadline(SystemClock.uptimeMillis()));
-		return true;
+			VoiceReadinessPolicy.deadline(SystemClock.uptimeMillis()));
+		return VoiceCommandOutcome.pending(action == VoiceIntent.SearchAction.PLAY ?
+				VoiceCommandOutcome.PlaybackEffect.REPLACE_PENDING :
+				VoiceCommandOutcome.PlaybackEffect.PRESERVE);
 	}
 
 	private void searchInFragment(@IdRes int id, VoiceCommand cmd, long deadline) {
@@ -350,7 +411,8 @@ class VoiceCommandHandler {
 			var info = AddonManager.get().getAddonInfo(id);
 			var addon = (info == null) ? null : AddonManager.get().getAddon(info.className);
 			if ((addon instanceof me.aap.fermata.addon.VoiceSearchAddon voice) &&
-					voice.handleVoiceSearch(activity, cmd.getQuery(), cmd.isPlay())) return;
+					voice.handleVoiceSearch(activity, cmd.getQuery(), cmd.isPlay(),
+							cmd.getVoiceRequestId())) return;
 			f.voiceCommand(cmd);
 		}
 	}
@@ -379,6 +441,7 @@ class VoiceCommandHandler {
 		return switch (intent.getKind()) {
 			case PLAYBACK -> "playback";
 			case ADDON_SEARCH -> "addon_search";
+			case OPEN_ADDON -> "addon_open";
 			case SELECTION -> "selection";
 		};
 	}

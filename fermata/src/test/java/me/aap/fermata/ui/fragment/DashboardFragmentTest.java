@@ -23,6 +23,12 @@ public class DashboardFragmentTest {
 	}
 
 	@Test
+	public void measuredWidthRepresentsContentAfterTheNavigationRail() {
+		assertEquals(704F, DashboardFragment.getMeasuredWidthDp(704, 800, 800, 2F), 0.01F);
+		assertEquals(363F, DashboardFragment.getMeasuredWidthDp(998, 1080, 393, 2.75F), 0.5F);
+	}
+
+	@Test
 	public void fullWidthRecoversAfterTransientSplitLayout() {
 		int fullWidthDp = 800;
 		assertEquals(1, DashboardFragment.getSpanCount(360, 800, fullWidthDp, 2F));

@@ -36,6 +36,13 @@
     <string name="dashboard_now_playing">Now playing</string>
     <string name="dashboard_continue">Continue watching</string>
     <string name="dashboard_continue_sub">%1$s - %2$s</string>
+    <string name="dashboard_smart_recommended">Recommended for you</string>
+    <string name="dashboard_smart_discover">Discover</string>
+    <string name="dashboard_smart_empty_title">Choose an add-on</string>
+    <string name="dashboard_smart_empty_subtitle">Start watching or listening</string>
+    <string name="dashboard_smart_recovery">Unable to continue</string>
+    <string name="dashboard_smart_recovery_title">Source interrupted</string>
+    <string name="dashboard_smart_recovery_subtitle">Try again or open the add-on</string>
     <string name="dashboard_home_sub">Start screen and quick access</string>
     <string name="dashboard_folders_sub">Local files and folders</string>
     <string name="dashboard_favorites_sub">Pinned channels and media</string>
@@ -174,7 +181,16 @@
     <string name="preferred_media_scanner_system">System</string>
 
     <string name="voice_search">Voice search</string>
-    <string name="voice_control">Voice control</string>
+	<string name="voice_control">Voice control</string>
+	<string name="voice_trigger_assign">Assign vehicle voice button</string>
+	<string name="voice_trigger_current">Current: %1$s. Active only while FermataX is visible.</string>
+	<string name="voice_trigger_unassigned">Not assigned</string>
+	<string name="voice_trigger_capture_started">Press the steering-wheel or head-unit button once. The press will not run its normal action.</string>
+	<string name="voice_trigger_capture_timeout">No supported button was detected. Nothing was changed.</string>
+	<string name="voice_trigger_capture_success">Assigned %1$s (%2$d). It opens FermataX voice only while the app is visible.</string>
+	<string name="voice_trigger_clear">Clear vehicle voice button</string>
+	<string name="voice_trigger_cleared">Vehicle voice button assignment cleared.</string>
+	<string name="voice_selection_prompt">Say number one, two, or three</string>
     <string name="voice_control_fb">Floating button</string>
     <string name="voice_control_sub_long">Activate voice control on long press</string>
     <string name="voice_control_subst">Word substitution</string>
@@ -419,6 +435,11 @@
     <string name="diagnostics_sub">Local reports for crashes, hangs, and unexpected app states</string>
     <string name="detailed_diagnostics">Detailed diagnostics</string>
     <string name="detailed_diagnostics_sub">Record detailed events for up to 48 hours. You can turn this off at any time.</string>
+    <string name="vehicle_key_test">Test vehicle controls</string>
+    <string name="vehicle_key_test_sub">Capture steering-wheel and head-unit control keys for 30 seconds</string>
+    <string name="vehicle_key_test_started">Key test started. Press the vehicle controls you want to test, then select this item again to view the result.</string>
+    <string name="vehicle_key_test_no_events">No control key reached FermataX. The head unit or vehicle firmware may have retained the input.</string>
+    <string name="vehicle_key_test_result">Vehicle control results:\n%1$s</string>
     <string name="export_diagnostic_report">Export diagnostic report</string>
     <string name="export_diagnostic_report_sub">Create a private ZIP report to save or share with support</string>
     <string name="clear_diagnostic_data">Clear diagnostic data</string>

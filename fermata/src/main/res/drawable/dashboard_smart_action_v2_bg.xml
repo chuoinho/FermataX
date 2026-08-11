@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true" android:state_activated="true"
+        android:drawable="@drawable/dashboard_smart_action_v2_focused_primary" />
+    <item android:state_focused="true"
+        android:drawable="@drawable/dashboard_smart_action_v2_focused" />
+    <item android:state_activated="true"
+        android:drawable="@drawable/dashboard_smart_action_v2_primary" />
+    <item android:drawable="@drawable/dashboard_smart_action_v2_normal" />
+</selector>

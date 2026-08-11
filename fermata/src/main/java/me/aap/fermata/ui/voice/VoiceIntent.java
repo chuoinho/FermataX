@@ -4,10 +4,10 @@ import androidx.annotation.Nullable;
 
 /** Deterministic, UI-independent result of parsing one voice utterance. */
 public final class VoiceIntent {
-	public enum Kind { PLAYBACK, ADDON_SEARCH, SELECTION }
+	public enum Kind { PLAYBACK, ADDON_SEARCH, OPEN_ADDON, SELECTION }
 
 	public enum PlaybackAction {
-		PLAY, PAUSE, STOP, OPEN_CURRENT, PLAY_FAVORITES
+		PLAY, PAUSE, STOP, NEXT, PREVIOUS, BACK, OPEN_CURRENT, PLAY_FAVORITES
 	}
 
 	public enum SearchAction { PLAY, FIND, OPEN }
@@ -35,6 +35,10 @@ public final class VoiceIntent {
 
 	public static VoiceIntent search(SearchAction action, @Nullable String addon, String query) {
 		return new VoiceIntent(Kind.ADDON_SEARCH, null, action, addon, query, -1);
+	}
+
+	public static VoiceIntent openAddon(String addon) {
+		return new VoiceIntent(Kind.OPEN_ADDON, null, SearchAction.OPEN, addon, null, -1);
 	}
 
 	public static VoiceIntent selection(int index) {

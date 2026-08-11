@@ -131,6 +131,7 @@ import me.aap.fermata.media.net.RemotePlaybackItem;
 import me.aap.fermata.media.net.RemotePlaybackLifecycleItem;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
+import me.aap.fermata.action.HardwareInputRouter;
 import me.aap.fermata.diagnostics.DiagnosticEvent;
 import me.aap.fermata.diagnostics.DiagnosticPriority;
 import me.aap.fermata.diagnostics.DiagnosticScope;
@@ -167,6 +168,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private final MediaSessionCompat session;
 	private final PlaybackControlPrefs playbackControlPrefs;
 	private final Handler handler;
+	private final HardwareInputRouter hardwareInputRouter;
 	private final AudioManager audioManager;
 	private final AudioFocusRequestCompat audioFocusReq;
 	private final PlaybackCustomActions playbackActions;
@@ -216,6 +218,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		this.session = session;
 		this.playbackControlPrefs = playbackControlPrefs;
 		this.handler = handler;
+		hardwareInputRouter = new HardwareInputRouter(this);
 		permanentFocusLoss = new PermanentFocusLoss(new PermanentFocusLoss.Scheduler() {
 			@Override public void postDelayed(Runnable task, long delay) { handler.postDelayed(task, delay); }
 			@Override public void removeCallbacks(Runnable task) { handler.removeCallbacks(task); }
@@ -616,6 +619,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	@NonNull
+	public HardwareInputRouter getHardwareInputRouter() {
+		return hardwareInputRouter;
+	}
+
+	@NonNull
 	public MediaSessionCallbackAssistant getAssistant() {
 		if (assistants == null) return this;
 		Prioritized<MediaSessionCallbackAssistant> w = assistants.peek();
@@ -677,6 +685,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	public void close() {
+		hardwareInputRouter.close();
 		stopImmediately();
 		progressCoordinator.cancelCheckpoint();
 		progressPolicy.clear();

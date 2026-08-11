@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/dashboard_smart_v2_compact_height"
+    android:minHeight="@dimen/dashboard_smart_v2_compact_height"
+    android:layout_margin="4dp"
+    android:padding="12dp"
+    android:background="@drawable/dashboard_smart_top_bg"
+    android:clickable="true"
+    android:focusable="true">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/dashboard_smart_context_guide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="1.0" />
+
+    <ImageView
+        android:id="@+id/dashboard_item_icon"
+        android:layout_width="66dp"
+        android:layout_height="66dp"
+        android:background="@drawable/dashboard_smart_icon_bg"
+        android:contentDescription="@null"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/audiotrack"
+        app:tint="?attr/colorOnSecondary" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/dashboard_item_eyebrow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/dashboard_now_playing"
+        android:textAllCaps="true"
+        android:textColor="?attr/colorOnSecondary"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/dashboard_item_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="1dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:textSize="21sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
+        app:layout_constraintTop_toBottomOf="@id/dashboard_item_eyebrow" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/dashboard_item_subtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
+        app:layout_constraintTop_toBottomOf="@id/dashboard_item_title" />
+
+    <LinearLayout
+        android:id="@+id/dashboard_item_actions"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/dashboard_smart_v2_control_size"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dashboard_action_label"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/dashboard_smart_v2_control_size"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/dashboard_smart_action_v2_bg"
+            android:ellipsize="end"
+            android:focusable="true"
+            android:gravity="center"
+            android:maxLines="1"
+            android:maxWidth="112dp"
+            android:minWidth="0dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textColor="?attr/colorSecondary"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:backgroundTint="@null"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconSize="@dimen/dashboard_smart_v2_action_glyph_size"
+            app:iconTint="?attr/colorSecondary" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_prev"
+            style="@style/Widget.AppCompat.ImageButton"
+            android:layout_width="@dimen/dashboard_smart_v2_control_size"
+            android:layout_height="@dimen/dashboard_smart_v2_control_size"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/dashboard_smart_action_v2_bg"
+            android:padding="@dimen/dashboard_smart_v2_action_padding"
+            android:scaleType="fitCenter"
+            app:tint="@color/dashboard_smart_action_v2_tint" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_play_pause"
+            style="@style/Widget.AppCompat.ImageButton"
+            android:layout_width="@dimen/dashboard_smart_v2_control_size"
+            android:layout_height="@dimen/dashboard_smart_v2_control_size"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/dashboard_smart_action_v2_bg"
+            android:padding="@dimen/dashboard_smart_v2_action_padding"
+            android:scaleType="fitCenter"
+            app:tint="@color/dashboard_smart_action_v2_tint" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_next"
+            style="@style/Widget.AppCompat.ImageButton"
+            android:layout_width="@dimen/dashboard_smart_v2_control_size"
+            android:layout_height="@dimen/dashboard_smart_v2_control_size"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/dashboard_smart_action_v2_bg"
+            android:padding="@dimen/dashboard_smart_v2_action_padding"
+            android:scaleType="fitCenter"
+            app:tint="@color/dashboard_smart_action_v2_tint" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_favorite"
+            style="@style/Widget.AppCompat.ImageButton"
+            android:layout_width="@dimen/dashboard_smart_v2_control_size"
+            android:layout_height="@dimen/dashboard_smart_v2_control_size"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/dashboard_smart_action_v2_bg"
+            android:padding="@dimen/dashboard_smart_v2_action_padding"
+            android:scaleType="fitCenter"
+            app:tint="@color/dashboard_smart_action_v2_tint" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/dashboard_action_back_to_list"
+            style="@style/Widget.AppCompat.ImageButton"
+            android:layout_width="@dimen/dashboard_smart_v2_control_size"
+            android:layout_height="@dimen/dashboard_smart_v2_control_size"
+            android:background="@drawable/dashboard_smart_action_v2_bg"
+            android:padding="@dimen/dashboard_smart_v2_action_padding"
+            android:scaleType="fitCenter"
+            app:tint="@color/dashboard_smart_action_v2_tint" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/dashboard_smart_progress_group"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="4dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/dashboard_item_actions"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintStart_toEndOf="@id/dashboard_item_icon">
+
+        <ProgressBar
+            android:id="@+id/dashboard_smart_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:max="1000"
+            android:progress="0"
+            android:progressBackgroundTint="?attr/colorSecondaryVariant"
+            android:progressTint="?attr/colorOnSecondary" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/dashboard_smart_progress_current"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/dashboard_smart_progress_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/dashboard_recent_panel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="4dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/dashboard_recent_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/recent"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textSize="11sp" />
+
+        <LinearLayout
+            android:id="@+id/dashboard_recent_items"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/dashboard_recent_item_1"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:background="@drawable/focusable_shape_transparent"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/dashboard_recent_item_2"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/dashboard_recent_item_3"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

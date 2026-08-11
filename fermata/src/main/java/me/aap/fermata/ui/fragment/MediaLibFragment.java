@@ -586,20 +586,29 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		};
 
 		boolean play = cmd.isPlay();
+		long voiceRequestId = cmd.getVoiceRequestId();
 		SearchFolder.search(cmd.getQuery(), ps).main(a.getHandler()).onSuccess(f -> {
-			if (f == null) return;
+			if ((voiceRequestId != 0L) && !a.isCurrentVoiceTransaction(voiceRequestId)) return;
+			if (f == null) {
+				if (voiceRequestId != 0L) a.completeVoiceTransaction(voiceRequestId);
+				return;
+			}
 			List<PlayableItem> items = f.getItemsFound();
-			if (items.isEmpty()) return;
+			if (items.isEmpty()) {
+				if (voiceRequestId != 0L) a.completeVoiceTransaction(voiceRequestId);
+				return;
+			}
 			if (items.size() == 1) {
 				PlayableItem first = items.get(0);
 				if (play) b.playItem(first);
 				a.goToItem(first);
+				if (voiceRequestId != 0L) a.completeVoiceTransaction(voiceRequestId);
 				return;
 			}
 
 			// Ambiguous voice searches open the result list and wait for an explicit
 			// number selection instead of silently playing the first match.
-			a.beginVoiceSelection(items);
+			a.beginVoiceSelection(voiceRequestId, items);
 			getAdapter().setParent(f);
 			PlayableItem first = items.get(0);
 			a.post(() -> getListView().focusTo(first));

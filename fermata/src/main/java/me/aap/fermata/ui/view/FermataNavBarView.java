@@ -1,57 +1,50 @@
 package me.aap.fermata.ui.view;
 
-import static me.aap.fermata.BuildConfig.AUTO;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
-import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.LinearGradient;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.core.view.GestureDetectorCompat;
+import androidx.core.widget.ImageViewCompat;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 import me.aap.fermata.R;
-import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.GestureListener;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.NavButtonView;
 
-/**
- * @author Andrey Pavlenko
- */
+/** Shared responsive navigation rail used by phone, mirror, and projection hosts. */
 public class FermataNavBarView extends NavBarView implements GestureListener {
+	private static final float INACTIVE_ICON_ALPHA = 0.74F;
 	private final GestureDetectorCompat gestureDetector;
-	private final Paint fadePaint = new Paint();
-	private final Paint chevronPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-	private final Path chevronPath = new Path();
 	private final Runnable refreshScrollStateTask = this::refreshScrollState;
-	private int touchSlop;
-	private int fadeExtent;
+	private int platformTouchSlop;
 	private float touchDownX;
 	private float touchDownY;
 	private View touchTargetChild;
 	private boolean suppressClickUntilUp;
-	private boolean scrollAffordanceTouch;
-	private boolean nudgeScheduled;
-	private Runnable nudgeTask;
-	private ObjectAnimator nudgeAnimator;
+	private NavRailLayoutPolicy.GestureAxis gestureAxis =
+			NavRailLayoutPolicy.GestureAxis.UNDECIDED;
+	private boolean initialized;
+	private LinearLayoutCompat fixedZone;
+	private NavRailViewport scrollViewport;
 
 	public FermataNavBarView(@NonNull Context context, @Nullable AttributeSet attrs) {
 		super(context, attrs);
@@ -66,101 +59,87 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 	}
 
 	private void init() {
-		touchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
-		fadeExtent = UiUtils.toIntPx(getContext(), 42);
-		chevronPaint.setStyle(Paint.Style.STROKE);
-		chevronPaint.setStrokeWidth(UiUtils.toIntPx(getContext(), 2));
-		chevronPaint.setStrokeCap(Paint.Cap.ROUND);
-		chevronPaint.setStrokeJoin(Paint.Join.ROUND);
+		platformTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 		setClipToPadding(true);
-		setWillNotDraw(false);
 		setVerticalScrollBarEnabled(false);
-		if (AUTO && MainActivityDelegate.get(getContext()).isCarActivity()) {
-			setBackgroundResource(isRight() ? R.drawable.aa_nav_rail_bg_right :
-					R.drawable.aa_nav_rail_bg_left);
-		}
+		initialized = true;
+		setBackgroundResource(isRight() ? R.drawable.aa_projected_nav_rail_bg_right :
+				R.drawable.aa_projected_nav_rail_bg_left);
+		ensureRailStructure();
+		setSize(getMainActivity().getPrefs().getNavBarSizePref(getMainActivity()));
 	}
 
 	@Override
-	public boolean dispatchTouchEvent(MotionEvent e) {
-		switch (e.getActionMasked()) {
+	public boolean dispatchTouchEvent(MotionEvent event) {
+		switch (event.getActionMasked()) {
 			case MotionEvent.ACTION_DOWN -> {
-				touchDownX = e.getX();
-				touchDownY = e.getY();
-				scrollAffordanceTouch = NavRailScrollPolicy.isAffordanceTouch(e.getY(),
-						getHeight(), getScrollY(), getMaxScrollY(), getIndicatorExtent());
-				touchTargetChild = scrollAffordanceTouch ? null : findTouchedChild(e);
+				touchDownX = event.getX();
+				touchDownY = event.getY();
+				touchTargetChild = findTouchedChild(event);
 				suppressClickUntilUp = false;
-				if (scrollAffordanceTouch) {
-					gestureDetector.onTouchEvent(e);
-					return true;
-				}
+				gestureAxis = NavRailLayoutPolicy.GestureAxis.UNDECIDED;
+				gestureDetector.onTouchEvent(event);
 			}
 			case MotionEvent.ACTION_MOVE -> {
-				if (scrollAffordanceTouch) {
-					gestureDetector.onTouchEvent(e);
-					return true;
-				}
-				if (shouldSuppressClickForGesture(e)) {
-					if (!suppressClickUntilUp) {
+				if (!suppressClickUntilUp) {
+					gestureAxis = resolveGestureAxis(event);
+					if (gestureAxis != NavRailLayoutPolicy.GestureAxis.UNDECIDED) {
 						suppressClickUntilUp = true;
-						dispatchCancelToPressedChild(e);
+						dispatchCancelToPressedChild(event);
 					}
-					gestureDetector.onTouchEvent(e);
+				}
+				if (suppressClickUntilUp) {
+					gestureDetector.onTouchEvent(event);
 					return true;
 				}
 			}
 			case MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-				if (scrollAffordanceTouch) {
-					gestureDetector.onTouchEvent(e);
-					scrollAffordanceTouch = false;
-					touchTargetChild = null;
-					return true;
-				}
 				if (suppressClickUntilUp) {
-					gestureDetector.onTouchEvent(e);
+					gestureDetector.onTouchEvent(event);
 					suppressClickUntilUp = false;
+					gestureAxis = NavRailLayoutPolicy.GestureAxis.UNDECIDED;
 					touchTargetChild = null;
 					return true;
 				}
-				suppressClickUntilUp = false;
+				gestureDetector.onTouchEvent(event);
+				gestureAxis = NavRailLayoutPolicy.GestureAxis.UNDECIDED;
 				touchTargetChild = null;
 			}
 		}
 
-		return super.dispatchTouchEvent(e);
+		return super.dispatchTouchEvent(event);
 	}
 
-	protected boolean interceptTouchEvent(MotionEvent e) {
-		gestureDetector.onTouchEvent(e);
-		return super.onTouchEvent(e);
+	@Override
+	protected boolean interceptTouchEvent(MotionEvent event) {
+		// ACTION_DOWN is supplied by dispatchTouchEvent(). MOVE must not reach Android's
+		// lower default slop before the rail's projection-aware threshold is crossed.
+		return super.onTouchEvent(event);
 	}
 
-	private boolean shouldSuppressClickForGesture(MotionEvent e) {
-		if (suppressClickUntilUp) return true;
-		if (touchSlop <= 0) return false;
-
-		float dx = Math.abs(e.getX() - touchDownX);
-		float dy = Math.abs(e.getY() - touchDownY);
-		return (dx > touchSlop) || (dy > touchSlop);
+	private NavRailLayoutPolicy.GestureAxis resolveGestureAxis(MotionEvent event) {
+		float dx = Math.abs(event.getX() - touchDownX);
+		float dy = Math.abs(event.getY() - touchDownY);
+		boolean projection = getMainActivity().getRuntimeHostMode().isProjection();
+		return NavRailLayoutPolicy.resolveGestureAxis(dx, dy, platformTouchSlop, projection);
 	}
 
-	private void dispatchCancelToPressedChild(MotionEvent src) {
+	private void dispatchCancelToPressedChild(MotionEvent source) {
 		if (touchTargetChild == null) return;
-		MotionEvent cancel = MotionEvent.obtain(src);
+		MotionEvent cancel = MotionEvent.obtain(source);
 		cancel.setAction(MotionEvent.ACTION_CANCEL);
 		touchTargetChild.dispatchTouchEvent(cancel);
 		cancel.recycle();
 	}
 
 	@Nullable
-	private View findTouchedChild(MotionEvent e) {
-		float x = e.getX() + getScrollX();
-		float y = e.getY() + getScrollY();
+	private View findTouchedChild(MotionEvent event) {
+		float x = event.getX();
+		float y = event.getY();
 		for (int i = getChildCount() - 1; i >= 0; i--) {
 			View child = getChildAt(i);
-			if ((child.getVisibility() == VISIBLE) && (x >= child.getLeft()) && (x < child.getRight()) &&
-					(y >= child.getTop()) && (y < child.getBottom())) {
+			if ((child.getVisibility() == VISIBLE) && (x >= child.getLeft()) &&
+					(x < child.getRight()) && (y >= child.getTop()) && (y < child.getBottom())) {
 				return child;
 			}
 		}
@@ -174,292 +153,265 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 
 	@Override
 	public void addView(View child) {
-		super.addView(child);
-		sizeVerticalNavButton(child, getVerticalButtonExtent());
-		post(refreshScrollStateTask);
+		if (!initialized) {
+			super.addView(child);
+			return;
+		}
+		addNavigationItem(child);
 	}
 
 	@Override
-	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-		super.onSizeChanged(w, h, oldw, oldh);
-		sizeVerticalNavButtons(w);
+	public void removeAllViews() {
+		if (!initialized || (fixedZone == null)) {
+			super.removeAllViews();
+			return;
+		}
+		fixedZone.removeAllViews();
+		scrollViewport.clearNavigationItems();
+	}
+
+	@Override
+	public void setSize(float scale) {
+		if (!initialized) {
+			super.setSize(scale);
+			return;
+		}
+		var config = getResources().getConfiguration();
+		boolean projection = getMainActivity().getRuntimeHostMode().isProjection();
+		int widthDp = NavRailLayoutPolicy.railWidthDp(projection, config.screenWidthDp, scale);
+		var lp = getLayoutParams();
+		if (lp == null) lp = new LinearLayoutCompat.LayoutParams(0, 0);
+		lp.width = UiUtils.toIntPx(getContext(), widthDp);
+		lp.height = LinearLayoutCompat.LayoutParams.MATCH_PARENT;
+		setLayoutParams(lp);
+		requestLayout();
+	}
+
+	@Override
+	protected boolean setMediator(ActivityFragment fragment) {
+		boolean attached = super.setMediator(fragment);
+		// NavBarView restores its legacy raw width when scale == 1. Re-apply the shared
+		// responsive width after every mediator attachment, including Mobile reloads.
+		if (initialized) setSize(getMainActivity().getPrefs().getNavBarSizePref(getMainActivity()));
+		return attached;
+	}
+
+	public void forEachNavigationItem(Consumer<View> consumer) {
+		if (!initialized || (fixedZone == null)) {
+			for (int i = 0, count = getChildCount(); i < count; i++) consumer.accept(getChildAt(i));
+			return;
+		}
+		for (int i = 0, count = fixedZone.getChildCount(); i < count; i++) {
+			consumer.accept(fixedZone.getChildAt(i));
+		}
+		scrollViewport.forEachNavigationItem(consumer);
+	}
+
+	public void setVoiceVisible(boolean visible) {
+		View voice = findViewById(R.id.nav_voice);
+		if (voice != null) voice.setVisibility(visible ? VISIBLE : GONE);
+		post(refreshScrollStateTask);
+	}
+
+	private void ensureRailStructure() {
+		if (fixedZone != null) return;
+		List<View> earlyChildren = new ArrayList<>(getChildCount());
+		for (int i = 0, count = getChildCount(); i < count; i++) earlyChildren.add(getChildAt(i));
+		super.removeAllViews();
+
+		fixedZone = new LinearLayoutCompat(getContext());
+		fixedZone.setOrientation(VERTICAL);
+		fixedZone.setClipChildren(false);
+		View divider = new View(getContext());
+		divider.setBackgroundResource(R.drawable.aa_nav_divider);
+		scrollViewport = new NavRailViewport(getContext(), getTint(), isRight());
+
+		super.addView(fixedZone, new LinearLayoutCompat.LayoutParams(
+				LinearLayoutCompat.LayoutParams.MATCH_PARENT,
+				LinearLayoutCompat.LayoutParams.WRAP_CONTENT));
+		int dividerHeight = UiUtils.toIntPx(getContext(), NavRailLayoutPolicy.separatorExtentDp());
+		var dividerLp = new LinearLayoutCompat.LayoutParams(
+				LinearLayoutCompat.LayoutParams.MATCH_PARENT, dividerHeight);
+		int horizontal = UiUtils.toIntPx(getContext(), 16);
+		dividerLp.setMargins(horizontal, 0, horizontal, 0);
+		super.addView(divider, dividerLp);
+		super.addView(scrollViewport, new LinearLayoutCompat.LayoutParams(
+				LinearLayoutCompat.LayoutParams.MATCH_PARENT, 0, 1F));
+
+		for (View child : earlyChildren) addNavigationItem(child);
+	}
+
+	private void addNavigationItem(View child) {
+		ensureRailStructure();
+		int id = child.getId();
+		if ((id == R.id.dashboard_fragment) || (id == R.id.nav_voice)) fixedZone.addView(child);
+		else scrollViewport.addNavigationItem(child);
+		child.setOnFocusChangeListener(this::onNavigationItemFocusChanged);
+		sizeVerticalNavButton(child, getVerticalButtonExtent());
+		applyVisualState(child);
+		post(refreshScrollStateTask);
+	}
+
+	private void onNavigationItemFocusChanged(View view, boolean focused) {
+		applyVisualState(view);
+		if (focused && scrollViewport.contains(view)) {
+			post(() -> scrollViewport.ensureVisible(view, true));
+		}
+	}
+
+	@Override
+	protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
+		super.onSizeChanged(width, height, oldWidth, oldHeight);
+		sizeVerticalNavButtons(height);
 		post(refreshScrollStateTask);
 	}
 
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		sizeVerticalNavButtons(MeasureSpec.getSize(widthMeasureSpec));
+		sizeVerticalNavButtons(MeasureSpec.getSize(heightMeasureSpec));
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 	}
 
 	@Override
-	protected void onLayout(boolean changed, int l, int t, int r, int b) {
-		sizeVerticalNavButtons(r - l);
-		super.onLayout(changed, l, t, r, b);
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+		sizeVerticalNavButtons(bottom - top);
+		super.onLayout(changed, left, top, right, bottom);
 		refreshScrollState();
 	}
 
 	@Override
-	protected void dispatchDraw(Canvas canvas) {
-		int scroll = getScrollY();
-		int max = getMaxScrollY();
-		ChildClip clip = childClip(scroll, getHeight(), max, getIndicatorExtent());
-		int save = canvas.save();
-		canvas.clipRect(0, clip.top(), getWidth(), clip.bottom());
-		super.dispatchDraw(canvas);
-		canvas.restoreToCount(save);
-		drawScrollAffordance(canvas);
-	}
-
-	@Override
-	protected void onScrollChanged(int l, int t, int oldl, int oldt) {
-		super.onScrollChanged(l, t, oldl, oldt);
-		invalidate();
-	}
-
-	@Override
-	public void onActivityEvent(ActivityDelegate a, long e) {
-		super.onActivityEvent(a, e);
-		if ((e == FRAGMENT_CHANGED) || (e == FRAGMENT_CONTENT_CHANGED))
+	public void onActivityEvent(ActivityDelegate activity, long event) {
+		super.onActivityEvent(activity, event);
+		if ((event == FRAGMENT_CHANGED) || (event == FRAGMENT_CONTENT_CHANGED)) {
 			post(refreshScrollStateTask);
-	}
-
-	@Override
-	public boolean onSwipeLeft(MotionEvent e1, MotionEvent e2) {
-		return getMainActivity().getControlPanel().onSwipeLeft(e1, e2);
-	}
-
-	@Override
-	public boolean onSwipeRight(MotionEvent e1, MotionEvent e2) {
-		return getMainActivity().getControlPanel().onSwipeRight(e1, e2);
-	}
-
-	@Override
-	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-		if (scrollNavBar(distanceY)) return true;
-		return getMainActivity().getControlPanel().onScroll(e1, e2, distanceX, distanceY);
-	}
-
-	private boolean scrollNavBar(float distanceY) {
-		int max = getMaxScrollY();
-		if (max == 0) return false;
-		int next = NavRailScrollPolicy.nextScroll(getScrollY(), distanceY, max);
-		if (next == getScrollY()) return true;
-		scrollTo(0, next);
-		return true;
-	}
-
-	private int getContentHeight() {
-		int count = getChildCount();
-		if (count == 0) return 0;
-		View child = getChildAt(count - 1);
-		return child.getBottom() + getPaddingBottom();
-	}
-
-	private int getMaxScrollY() {
-		return NavRailScrollPolicy.maxScroll(
-				getContentHeight(), getHeight(), getIndicatorExtent());
-	}
-
-	private void refreshScrollState() {
-		if (!isAttachedToWindow()) return;
-		ensureActiveItemVisible();
-		scheduleFirstRunNudge();
-		invalidate();
-	}
-
-	private void ensureActiveItemVisible() {
-		if (getHeight() <= 0) return;
-		View active = findViewById(getMainActivity().getActiveNavItemId());
-		if (active == null) return;
-
-		int top = active.getTop();
-		int bottom = active.getBottom();
-		int scroll = getScrollY();
-		int max = getMaxScrollY();
-		int next = scroll;
-		int indicatorExtent = getIndicatorExtent();
-		int visibleTop = NavRailScrollPolicy.visibleTop(scroll, indicatorExtent);
-		int visibleBottom = NavRailScrollPolicy.visibleBottom(
-				scroll, getHeight(), max, indicatorExtent);
-
-		if (top < visibleTop) {
-			next = top - indicatorExtent;
-		} else {
-			if (bottom > visibleBottom) next = bottom - getHeight() + indicatorExtent;
 		}
-
-		next = clamp(next, 0, max);
-		if (next != scroll) scrollTo(0, next);
 	}
 
-	private void scheduleFirstRunNudge() {
-		if (!AUTO || nudgeScheduled || (getMaxScrollY() <= 0)) return;
+	@Override
+	public boolean onSwipeLeft(MotionEvent first, MotionEvent second) {
+		return (gestureAxis == NavRailLayoutPolicy.GestureAxis.HORIZONTAL) &&
+				getMainActivity().getControlPanel().onSwipeLeft(first, second);
+	}
 
-		MainActivityDelegate a = getMainActivity();
-		if (!a.isCarActivity()) return;
-		MainActivityPrefs prefs = a.getPrefs();
-		if (prefs.getBooleanPref(MainActivityPrefs.NAV_BAR_SCROLL_NUDGE_AA)) return;
+	@Override
+	public boolean onSwipeRight(MotionEvent first, MotionEvent second) {
+		return (gestureAxis == NavRailLayoutPolicy.GestureAxis.HORIZONTAL) &&
+				getMainActivity().getControlPanel().onSwipeRight(first, second);
+	}
 
-		nudgeScheduled = true;
-		prefs.applyBooleanPref(MainActivityPrefs.NAV_BAR_SCROLL_NUDGE_AA, true);
-		nudgeTask = () -> {
-			nudgeTask = null;
-			if (!isAttachedToWindow()) return;
-			int start = getScrollY();
-			int max = getMaxScrollY();
-			if ((max <= 0) || (getVisibility() != VISIBLE)) return;
-			int peek = Math.min(max, Math.max(UiUtils.toIntPx(getContext(), 24), getHeight() / 8));
-			nudgeAnimator = ObjectAnimator.ofInt(this, "scrollY", start, peek, start);
-			nudgeAnimator.setDuration(700).start();
-		};
-		postDelayed(nudgeTask, 700);
+	@Override
+	public boolean onScroll(MotionEvent first, MotionEvent second,
+			float distanceX, float distanceY) {
+		if (gestureAxis == NavRailLayoutPolicy.GestureAxis.VERTICAL) {
+			scrollViewport.scrollByDistance(distanceY);
+			return true;
+		}
+		if (gestureAxis == NavRailLayoutPolicy.GestureAxis.HORIZONTAL) {
+			return getMainActivity().getControlPanel().onScroll(first, second, distanceX, 0F);
+		}
+		return false;
 	}
 
 	@Override
 	protected void onDetachedFromWindow() {
 		removeCallbacks(refreshScrollStateTask);
-		if (nudgeTask != null) {
-			removeCallbacks(nudgeTask);
-			nudgeTask = null;
-		}
-		if (nudgeAnimator != null) {
-			nudgeAnimator.cancel();
-			nudgeAnimator = null;
-		}
 		super.onDetachedFromWindow();
 	}
 
-	private void drawScrollAffordance(Canvas canvas) {
-		int max = getMaxScrollY();
-		if (max <= 0) return;
-
-		int width = getWidth();
-		int height = getHeight();
-		if ((width <= 0) || (height <= 0)) return;
-
-		int scroll = getScrollY();
-		int save = canvas.save();
-		canvas.translate(0, scroll);
-		if (scroll > 0) drawIndicator(canvas, true, width, height);
-		if (scroll < max) drawIndicator(canvas, false, width, height);
-		canvas.restoreToCount(save);
+	private void refreshScrollState() {
+		if (!isAttachedToWindow()) return;
+		refreshFocusOrder();
+		forEachNavigationItem(this::applyVisualState);
+		ensureActiveItemVisible();
+		scrollViewport.refreshScrollState();
 	}
 
-	private void drawIndicator(Canvas canvas, boolean top, int width, int height) {
-		int extent = getIndicatorExtent();
-		if (extent <= 0) return;
+	private void ensureActiveItemVisible() {
+		if (getHeight() <= 0) return;
+		View active = findViewById(getMainActivity().getActiveNavItemId());
+		if (active != null) scrollViewport.ensureVisible(active, false);
+	}
 
-		int color = getIndicatorBaseColor();
-		int transparent = color & 0x00FFFFFF;
-		fadePaint.setShader(top ?
-				new LinearGradient(0, 0, 0, extent, color, transparent, Shader.TileMode.CLAMP) :
-				new LinearGradient(0, height - extent, 0, height, transparent, color,
-						Shader.TileMode.CLAMP));
-		canvas.drawRect(0, top ? 0 : height - extent, width, top ? extent : height, fadePaint);
-		fadePaint.setShader(null);
-
-		chevronPaint.setColor(getChevronColor());
-		float cx = width / 2f;
-		float cy = top ? extent * 0.38f : height - (extent * 0.38f);
-		float half = Math.max(4f, width * 0.16f);
-		float drop = Math.max(4f, extent * 0.18f);
-		chevronPath.reset();
-		if (top) {
-			chevronPath.moveTo(cx - half, cy + drop);
-			chevronPath.lineTo(cx, cy - drop);
-			chevronPath.lineTo(cx + half, cy + drop);
-		} else {
-			chevronPath.moveTo(cx - half, cy - drop);
-			chevronPath.lineTo(cx, cy + drop);
-			chevronPath.lineTo(cx + half, cy - drop);
+	private void refreshFocusOrder() {
+		List<View> visible = new ArrayList<>();
+		forEachNavigationItem(item -> {
+			if ((item.getVisibility() == VISIBLE) && item.isFocusable() && (item.getId() != NO_ID)) {
+				visible.add(item);
+			}
+		});
+		int count = visible.size();
+		for (int i = 0; i < count; i++) {
+			View item = visible.get(i);
+			item.setNextFocusUpId(visible.get((i + count - 1) % count).getId());
+			item.setNextFocusDownId(visible.get((i + 1) % count).getId());
 		}
-		canvas.drawPath(chevronPath, chevronPaint);
 	}
 
-	private int getIndicatorBaseColor() {
-		int color = getBgColor();
-		if (Color.alpha(color) == 0) return Color.rgb(8, 18, 32);
-		return Color.rgb(Color.red(color), Color.green(color), Color.blue(color));
-	}
-
-	private int getIndicatorExtent() {
-		return Math.min(fadeExtent, getHeight() / 3);
-	}
-
-	private int getChevronColor() {
-		int color = getTint();
-		if (Color.alpha(color) == 0) return Color.argb(210, 125, 160, 220);
-		return Color.argb(220, Color.red(color), Color.green(color), Color.blue(color));
-	}
-
-	private static int clamp(int value, int min, int max) {
-		return Math.max(min, Math.min(max, value));
-	}
-
-	static ChildClip childClip(int scrollY, int height, int maxScroll, int indicatorExtent) {
-		return new ChildClip(
-				NavRailScrollPolicy.visibleTop(scrollY, indicatorExtent),
-				NavRailScrollPolicy.visibleBottom(
-						scrollY, height, maxScroll, indicatorExtent));
-	}
-
-	record ChildClip(int top, int bottom) {
+	private void applyVisualState(View item) {
+		if (!(item instanceof NavButtonView button)) return;
+		button.getIcon().setAlpha(item.isSelected() || item.isFocused() ?
+				1F : INACTIVE_ICON_ALPHA);
 	}
 
 	private int getVerticalButtonExtent() {
-		int extent = getWidth();
-		if (extent <= 0) {
-			var lp = getLayoutParams();
-			if (lp != null) extent = lp.width;
-		}
-		return (extent <= 0) ? extent : getVerticalButtonExtent(extent);
+		return getVerticalButtonExtent(getHeight());
 	}
 
-	private void sizeVerticalNavButtons(int extent) {
-		extent = (extent <= 0) ? getVerticalButtonExtent() : getVerticalButtonExtent(extent);
-		if (extent <= 0) return;
-		for (int i = 0, n = getChildCount(); i < n; i++) {
-			sizeVerticalNavButton(getChildAt(i), extent);
-		}
+	private void sizeVerticalNavButtons(int height) {
+		int buttonExtent = getVerticalButtonExtent(height);
+		if (buttonExtent <= 0) return;
+		forEachNavigationItem(child -> sizeVerticalNavButton(child, buttonExtent));
 	}
 
-	private int getVerticalButtonExtent(int navBarWidth) {
-		return (navBarWidth * 7) / 8;
+	private int getVerticalButtonExtent(int navBarHeight) {
+		float density = getResources().getDisplayMetrics().density;
+		int heightDp = (navBarHeight > 0) ? Math.round(navBarHeight / density) :
+				getResources().getConfiguration().screenHeightDp;
+		boolean projection = getMainActivity().getRuntimeHostMode().isProjection();
+		return UiUtils.toIntPx(getContext(),
+				NavRailLayoutPolicy.touchTargetExtentDp(projection, heightDp));
 	}
 
 	private void sizeVerticalNavButton(View child, int extent) {
 		if (!(child instanceof NavButtonView button) || (extent <= 0)) return;
-
 		var lp = child.getLayoutParams();
 		if (lp == null) return;
 		boolean changed = (lp.width != extent) || (lp.height != extent);
 		lp.width = extent;
 		lp.height = extent;
 
-		int verticalMargin = UiUtils.toIntPx(getContext(), 4);
-		if (lp instanceof LinearLayoutCompat.LayoutParams llp) {
-			if (llp.weight != 0F) changed = true;
-			llp.weight = 0F;
-			llp.gravity = Gravity.CENTER_HORIZONTAL;
-			if ((llp.topMargin != verticalMargin) || (llp.bottomMargin != verticalMargin)) changed = true;
-			llp.setMargins(0, verticalMargin, 0, verticalMargin);
-		} else if (lp instanceof LinearLayout.LayoutParams llp) {
-			if (llp.weight != 0F) changed = true;
-			llp.weight = 0F;
-			llp.gravity = Gravity.CENTER_HORIZONTAL;
-			if ((llp.topMargin != verticalMargin) || (llp.bottomMargin != verticalMargin)) changed = true;
-			llp.setMargins(0, verticalMargin, 0, verticalMargin);
+		if (lp instanceof LinearLayoutCompat.LayoutParams layout) {
+			if (layout.weight != 0F) changed = true;
+			layout.weight = 0F;
+			layout.gravity = Gravity.CENTER_HORIZONTAL;
+			if ((layout.topMargin != 0) || (layout.bottomMargin != 0)) changed = true;
+			layout.setMargins(0, 0, 0, 0);
 		}
 
-		if (AUTO && getMainActivity().isCarActivity()) {
-			int iconPadding = Math.max(UiUtils.toIntPx(getContext(), 5), extent / 8);
-			button.setIconPadding(iconPadding);
-			button.setBackgroundResource(isRight() ? R.drawable.aa_nav_button_bg_right :
-					R.drawable.aa_nav_button_bg_left);
-		}
-
+		configureIcon(button);
+		button.setBackgroundResource((child.getId() == R.id.nav_voice) ?
+				R.drawable.aa_nav_voice_bg : isRight() ?
+				R.drawable.aa_projected_nav_button_bg_right :
+				R.drawable.aa_projected_nav_button_bg_left);
 		if (changed) child.setLayoutParams(lp);
+	}
+
+	private void configureIcon(NavButtonView button) {
+		int iconExtent = UiUtils.toIntPx(getContext(), NavRailLayoutPolicy.iconExtentDp());
+		var icon = button.getIcon();
+		var iconLp = icon.getLayoutParams();
+		if (iconLp instanceof LinearLayoutCompat.LayoutParams layout) {
+			layout.width = iconExtent;
+			layout.height = iconExtent;
+			layout.weight = 0F;
+			layout.gravity = Gravity.CENTER;
+			icon.setLayoutParams(layout);
+		}
+		button.setGravity(Gravity.CENTER);
+		button.setIconPadding(0);
+		icon.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+		ImageViewCompat.setImageTintList(icon,
+				AppCompatResources.getColorStateList(getContext(), R.color.aa_nav_icon_tint));
 	}
 
 	private MainActivityDelegate getMainActivity() {

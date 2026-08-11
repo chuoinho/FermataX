@@ -75,6 +75,7 @@ public class YoutubeWebView extends FermataWebView {
 	private float tapY;
 	private long tapTime;
 	private boolean pendingVoiceSearch;
+	private long pendingVoiceRequestId;
 	private boolean voiceSearchCollecting;
 	private int voiceSearchGeneration;
 	private boolean initialPlaybackNavigationClaimed;
@@ -218,9 +219,10 @@ public class YoutubeWebView extends FermataWebView {
 		loadUrl(HOME_URL);
 	}
 
-	void prepareVoiceSearch() {
+	void prepareVoiceSearch(long voiceRequestId) {
 		voiceSearchGeneration++;
 		pendingVoiceSearch = true;
+		pendingVoiceRequestId = voiceRequestId;
 		voiceSearchCollecting = false;
 	}
 
@@ -250,15 +252,21 @@ public class YoutubeWebView extends FermataWebView {
 							item.optString("channel", ""), "youtube"));
 				}
 				if (!options.isEmpty()) {
+					long requestId = pendingVoiceRequestId;
 					finishVoiceSearch(generation);
-					MainActivityDelegate.get(getContext()).beginVoiceSelectionOptions(options);
+					MainActivityDelegate.get(getContext()).beginVoiceSelectionOptions(
+							requestId, options);
 					return;
 				}
 			} catch (Exception err) {
 				Log.d(err, "Failed to parse YouTube voice results");
 			}
 			if (attempt + 1 >= VOICE_RESULTS_MAX_ATTEMPTS) {
+				long requestId = pendingVoiceRequestId;
 				finishVoiceSearch(generation);
+				if (requestId != 0L) {
+					MainActivityDelegate.get(getContext()).completeVoiceTransaction(requestId);
+				}
 			} else {
 				postDelayed(() -> collectVoiceSearchResults(generation, attempt + 1),
 						VOICE_RESULTS_RETRY_MS);
@@ -274,6 +282,7 @@ public class YoutubeWebView extends FermataWebView {
 	private void finishVoiceSearch(int generation) {
 		if (generation != voiceSearchGeneration) return;
 		pendingVoiceSearch = false;
+		pendingVoiceRequestId = 0L;
 		voiceSearchCollecting = false;
 	}
 
