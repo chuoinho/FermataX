@@ -49,14 +49,11 @@ public class ControlPanelContractTest {
 	}
 
 	@Test
-	public void videoUsesRuntimeOverlayConstraintsAndNonInteractiveScrim() throws Exception {
+	public void everyModeUsesStaticOverlayConstraintsAndVideoHasNonInteractiveScrim() throws Exception {
 		String panel = source("ui/view/ControlPanelView.java");
 		String presentation = source("ui/view/ControlPanelPresentationView.java");
-		assertTrue(presentation.contains("videoHostConstraints"));
-		assertTrue(presentation.contains("constraints.clear(R.id.control_panel, ConstraintSet.TOP)"));
-		assertTrue(presentation.contains("ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM"));
-		assertTrue(presentation.contains("body.bottomToTop = ConstraintLayout.LayoutParams.UNSET"));
-		assertTrue(presentation.contains("body.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID"));
+		assertFalse(presentation.contains("ConstraintSet"));
+		assertFalse(presentation.contains("body.bottomToTop"));
 		assertTrue(presentation.contains(
 				"panel.setBackgroundResource(R.drawable.control_panel_video_panel_bg)"));
 		assertTrue(resource("drawable/aa_play_button_bg_automotive.xml").contains(
@@ -65,6 +62,13 @@ public class ControlPanelContractTest {
 		assertTrue(panel.contains("presentationView.setVideoMode(false)"));
 		for (String name : new String[]{"main_activity_left.xml", "main_activity_right.xml"}) {
 			String layout = resource("layout/" + name);
+			String body = viewBlock(layout, "body_layout");
+			String controls = viewBlock(layout, "control_panel");
+			assertTrue(body.contains("app:layout_constraintBottom_toBottomOf=\"parent\""));
+			assertFalse(body.contains("layout_constraintBottom_toTopOf=\"@id/control_panel\""));
+			assertTrue(controls.contains("app:layout_constraintBottom_toBottomOf=\"parent\""));
+			assertFalse(controls.contains("layout_constraintTop_toBottomOf=\"@id/body_layout\""));
+			assertTrue(controls.contains("android:translationZ=\"4dp\""));
 			assertTrue(layout.contains("@+id/control_panel_scrim"));
 			assertTrue(layout.contains("android:clickable=\"false\""));
 			assertTrue(layout.contains("android:visibility=\"gone\""));
@@ -81,7 +85,7 @@ public class ControlPanelContractTest {
 	}
 
 	private static String viewBlock(String layout, String id) {
-		int from = layout.indexOf("@+id/" + id);
+		int from = layout.indexOf("@+id/" + id + "\"");
 		int to = layout.indexOf("/>", from);
 		assertTrue("Missing " + id, from >= 0);
 		assertTrue("Unterminated " + id, to > from);

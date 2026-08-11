@@ -2,14 +2,10 @@ package me.aap.fermata.ui.view;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
-import static me.aap.utils.ui.UiUtils.toIntPx;
 
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.TextView;
-
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.constraintlayout.widget.ConstraintSet;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -24,8 +20,6 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 final class ControlPanelPresentationView {
 	private final ControlPanelView panel;
 	private final Drawable audioBackground;
-	private final ConstraintSet audioHostConstraints = new ConstraintSet();
-	private final ConstraintSet videoHostConstraints = new ConstraintSet();
 	private boolean videoMode;
 
 	ControlPanelPresentationView(ControlPanelView panel) {
@@ -37,59 +31,13 @@ final class ControlPanelPresentationView {
 		this.videoMode = videoMode;
 		if (videoMode) panel.setBackgroundResource(R.drawable.control_panel_video_panel_bg);
 		else panel.setBackground(audioBackground);
-		if (!(panel.getParent() instanceof ConstraintLayout host)) {
-			panel.post(() -> {
-				if (panel.getParent() instanceof ConstraintLayout attachedHost) {
-					applyVideoMode(attachedHost);
-				}
-			});
-			return;
-		}
-		applyVideoMode(host);
-	}
-
-	private void applyVideoMode(ConstraintLayout host) {
-		ConstraintSet constraints = videoMode ? videoHostConstraints : audioHostConstraints;
-		constraints.clone(host);
-		if (videoMode) {
-			constraints.connect(R.id.body_layout, ConstraintSet.BOTTOM,
-					ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM);
-			constraints.clear(R.id.control_panel, ConstraintSet.TOP);
-			constraints.setTranslationZ(R.id.control_panel, toIntPx(panel.getContext(), 8));
-		} else {
-			constraints.connect(R.id.body_layout, ConstraintSet.BOTTOM,
-					R.id.control_panel, ConstraintSet.TOP);
-			constraints.connect(R.id.control_panel, ConstraintSet.TOP,
-					R.id.body_layout, ConstraintSet.BOTTOM);
-			constraints.setTranslationZ(R.id.control_panel, 0F);
-		}
-		constraints.applyTo(host);
-		enforceHostLayout(host);
 		onPanelVisibilityChanged(panel.getVisibility());
 	}
 
 	void onPanelVisibilityChanged(int visibility) {
 		if (!(panel.getParent() instanceof View parent)) return;
-		if (videoMode && (parent instanceof ConstraintLayout host)) enforceHostLayout(host);
 		View scrim = parent.findViewById(R.id.control_panel_scrim);
 		if (scrim != null) scrim.setVisibility(videoMode && (visibility == VISIBLE) ? VISIBLE : GONE);
-	}
-
-	private void enforceHostLayout(ConstraintLayout host) {
-		ConstraintLayout.LayoutParams body = (ConstraintLayout.LayoutParams)
-				host.findViewById(R.id.body_layout).getLayoutParams();
-		ConstraintLayout.LayoutParams controls = (ConstraintLayout.LayoutParams) panel.getLayoutParams();
-		if (videoMode) {
-			body.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
-			body.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-			controls.topToBottom = ConstraintLayout.LayoutParams.UNSET;
-		} else {
-			body.bottomToBottom = ConstraintLayout.LayoutParams.UNSET;
-			body.bottomToTop = R.id.control_panel;
-			controls.topToBottom = R.id.body_layout;
-		}
-		host.findViewById(R.id.body_layout).setLayoutParams(body);
-		panel.setLayoutParams(controls);
 	}
 
 	void updateVideoTitle(MainActivityDelegate activity) {
