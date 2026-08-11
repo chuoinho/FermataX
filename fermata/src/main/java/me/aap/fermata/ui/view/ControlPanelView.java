@@ -3,8 +3,6 @@ package me.aap.fermata.ui.view;
 import static android.media.AudioManager.ADJUST_LOWER;
 import static android.media.AudioManager.ADJUST_RAISE;
 import static android.util.TypedValue.COMPLEX_UNIT_PX;
-import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
-import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.UNSET;
 import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
 import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.UiUtils.toIntPx;
@@ -21,7 +19,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.DimenRes;
 import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
@@ -72,8 +69,6 @@ public class ControlPanelView extends ConstraintLayout
 	private final PlaybackTimerController playbackTimerController;
 	private final PlaybackPresentationCoordinator presentationCoordinator;
 	private final ControlPanelPresentationView presentationView;
-	@DimenRes
-	private final int size;
 	@StyleRes
 	private final int textAppearance;
 	private PlaybackControlPrefs prefs;
@@ -90,7 +85,6 @@ public class ControlPanelView extends ConstraintLayout
 
 		TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.ControlPanelView,
 				R.attr.appControlPanelStyle, R.style.AppTheme_ControlPanelStyle);
-		size = ta.getLayoutDimension(R.styleable.ControlPanelView_size, 0);
 		textAppearance = ta.getResourceId(R.styleable.ControlPanelView_textAppearance, 0);
 		setBackgroundColor(ta.getColor(R.styleable.ControlPanelView_android_colorBackground, 0));
 		ta.recycle();
@@ -156,7 +150,6 @@ public class ControlPanelView extends ConstraintLayout
 	}
 
 	public void bind(FermataServiceUiBinder b) {
-		applyDriverSideControls(true);
 		computeSize();
 		prefs = b.getMediaSessionCallback().getPlaybackControlPrefs();
 		b.addBroadcastListener(this);
@@ -178,69 +171,29 @@ public class ControlPanelView extends ConstraintLayout
 		setSize(a.getPrefs().getControlPanelSizePref(a));
 	}
 
-	void applyDriverSideControls(boolean seekEnabled) {
-		MainActivityDelegate a = getActivity();
-		if (!a.getNavBar().isRight()) return;
-
-		View back = findViewById(R.id.show_hide_bars);
-		View menu = findViewById(R.id.control_menu_button);
-		View seek = findViewById(R.id.seek_bar);
-		View favorite = findViewById(R.id.control_favorite);
-
-		setHorizontal(menu, PARENT_ID, UNSET, R.id.control_favorite, UNSET);
-		setHorizontal(favorite, UNSET, R.id.control_menu_button, R.id.seek_bar, UNSET);
-		setHorizontal(seek, UNSET, R.id.control_favorite, R.id.show_hide_bars, UNSET);
-		setHorizontal(back, UNSET, R.id.seek_bar, UNSET, PARENT_ID);
-	}
-
-	private void setHorizontal(View v, int startToStart, int startToEnd, int endToStart,
-														 int endToEnd) {
-		ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) v.getLayoutParams();
-		lp.startToStart = startToStart;
-		lp.startToEnd = startToEnd;
-		lp.endToStart = endToStart;
-		lp.endToEnd = endToEnd;
-		lp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
-		v.setLayoutParams(lp);
-	}
-
 	private void setSize(float scale) {
 		TextView seekTime = findViewById(R.id.seek_time);
 		TextView seekTotal = findViewById(R.id.seek_total);
-		float textSize = getTextAppearanceSize(getContext(), textAppearance) * scale;
-		int textPad = seekTime.getPaddingTop() + seekTime.getPaddingBottom();
-		int pad = 2 * toIntPx(getContext(), 4) + textPad;
-		int iconSize = (int) (textSize + pad);
-		int panelSize = (int) (size * scale);
-		int buttonSize = (int) (panelSize - textSize - pad);
+		float textSize = Math.min(getTextAppearanceSize(getContext(), textAppearance) * scale,
+				toIntPx(getContext(), 14));
+		int iconSize = Math.min(toIntPx(getContext(), 32),
+				Math.max(toIntPx(getContext(), 24), Math.round(toIntPx(getContext(), 28) * scale)));
+		int panelSize = getResources().getDimensionPixelSize(R.dimen.control_panel_height);
+		int buttonSize = getResources().getDimensionPixelSize(R.dimen.control_panel_transport_height);
 		ControlPanelSeekView seek = findViewById(R.id.seek_bar);
 		if (isAutoUi(getActivity())) {
-			buttonSize = Math.max(buttonSize, toIntPx(getContext(), 64));
 			findViewById(R.id.control_play_pause).setBackgroundResource(
 					R.drawable.aa_play_button_bg_automotive);
 		}
-
-		if (seek.isEnabled()) {
-			panelSize = iconSize + buttonSize;
-			setHeight(seek, iconSize);
-			setSize(R.id.show_hide_bars_icon, iconSize);
-			setSize(R.id.control_menu_button_icon, iconSize);
-			seTextAppearance(seekTime, textSize);
-			seTextAppearance(seekTotal, textSize);
-			setHeight(R.id.control_prev, buttonSize);
-			setHeight(R.id.control_rw, buttonSize);
-			setHeight(R.id.control_play_pause, buttonSize);
-			setHeight(R.id.control_ff, buttonSize);
-		} else {
-			panelSize = iconSize + buttonSize;
-			setSize(R.id.show_hide_bars_icon, iconSize);
-			setSize(R.id.control_menu_button_icon, iconSize);
-			setHeight(R.id.control_prev, buttonSize);
-			setHeight(R.id.control_play_pause, buttonSize);
-		}
-
+		setSize(R.id.show_hide_bars_icon, iconSize);
+		setSize(R.id.control_menu_button_icon, iconSize);
+		seTextAppearance(seekTime, textSize);
+		seTextAppearance(seekTotal, textSize);
+		setHeight(R.id.control_prev, buttonSize);
+		setHeight(R.id.control_rw, buttonSize);
+		setHeight(R.id.control_play_pause, buttonSize);
+		setHeight(R.id.control_ff, buttonSize);
 		setHeight(R.id.control_next, buttonSize);
-		setSize(R.id.control_favorite, iconSize);
 		getLayoutParams().height = panelSize;
 	}
 
@@ -258,12 +211,6 @@ public class ControlPanelView extends ConstraintLayout
 
 	private void setHeight(@IdRes int id, int h) {
 		View v = findViewById(id);
-		ViewGroup.LayoutParams lp = v.getLayoutParams();
-		lp.height = h;
-		v.setLayoutParams(lp);
-	}
-
-	private void setHeight(View v, int h) {
 		ViewGroup.LayoutParams lp = v.getLayoutParams();
 		lp.height = h;
 		v.setLayoutParams(lp);

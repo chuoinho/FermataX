@@ -22,22 +22,43 @@ public class ControlPanelContractTest {
 			for (String id : TRANSPORT) {
 				String block = viewBlock(layout, id);
 				assertTrue(layoutName + " " + id, block.contains("android:layout_width=\"0dp\""));
-				assertTrue(layoutName + " " + id, block.contains("android:layout_height=\"64dp\""));
+				assertTrue(layoutName + " " + id, block.contains(
+						"android:layout_height=\"@dimen/control_panel_transport_height\""));
 				assertTrue(layoutName + " " + id,
 						block.contains("app:layout_constraintHorizontal_weight=\"1\""));
-				assertTrue(layoutName + " " + id, block.contains("android:paddingTop=\"16dp\""));
-				assertTrue(layoutName + " " + id, block.contains("android:paddingBottom=\"16dp\""));
+				assertTrue(layoutName + " " + id, block.contains("android:padding=\"16dp\""));
 				int index = layout.indexOf("@+id/" + id);
 				assertTrue(index > previous);
 				previous = index;
 			}
 			assertTrue(viewBlock(layout, "control_prev").contains(
-					"app:layout_constraintStart_toStartOf=\"parent\""));
+					"app:layout_constraintStart_toStartOf=\"@id/control_panel_transport_start\""));
 			assertTrue(viewBlock(layout, "control_next").contains(
-					"app:layout_constraintEnd_toEndOf=\"parent\""));
-			assertTrue(viewBlock(layout, "control_favorite").contains(
-					"app:layout_constraintTop_toTopOf=\"parent\""));
+					"app:layout_constraintEnd_toEndOf=\"@id/control_panel_transport_end\""));
+			assertTrue(layout.contains("app:layout_constraintGuide_percent=\"0.19\""));
+			assertTrue(layout.contains("app:layout_constraintGuide_percent=\"0.81\""));
+			assertFalse(layout.contains("androidx.constraintlayout.widget.Barrier"));
 		}
+	}
+
+	@Test
+	public void panelGeometryIsOneFixed76DpLayoutInEveryState() throws Exception {
+		String dimensions = resource("values/dimens.xml");
+		assertTrue(dimensions.contains("name=\"control_panel_height\">76dp"));
+		assertTrue(dimensions.contains("name=\"control_panel_transport_height\">64dp"));
+		assertTrue(dimensions.contains("name=\"control_panel_seek_track_height\">3dp"));
+		for (String layoutName : new String[]{"control_panel_view.xml", "control_panel_view2.xml"}) {
+			String layout = resource("layout/" + layoutName);
+			assertTrue(layout.contains("android:layout_height=\"@dimen/control_panel_height\""));
+			assertTrue(layout.contains("android:maxHeight=\"@dimen/control_panel_seek_track_height\""));
+			assertTrue(viewBlock(layout, "show_hide_bars").contains(
+					"app:layout_constraintStart_toStartOf=\"parent\""));
+			assertTrue(viewBlock(layout, "control_menu_button").contains(
+					"app:layout_constraintEnd_toEndOf=\"parent\""));
+		}
+		String panel = source("ui/view/ControlPanelView.java");
+		assertFalse(panel.contains("applyDriverSideControls"));
+		assertTrue(panel.contains("R.dimen.control_panel_height"));
 	}
 
 	@Test
@@ -81,7 +102,8 @@ public class ControlPanelContractTest {
 		assertFalse(panel.contains("MASK_VIDEO_MODE"));
 		assertTrue(panel.contains("presentationCoordinator.getState().videoMode()"));
 		assertTrue(panel.contains("phoneVideoMode"));
-		assertTrue(panel.contains("Math.max(buttonSize, toIntPx(getContext(), 64))"));
+		assertTrue(panel.contains("R.dimen.control_panel_transport_height"));
+		assertFalse(panel.contains("Math.max(buttonSize"));
 	}
 
 	private static String viewBlock(String layout, String id) {

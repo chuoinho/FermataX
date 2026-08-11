@@ -57,7 +57,6 @@ public class ControlPanelSeekView extends AppCompatSeekBar {
 			menu.setNextFocusRightId(R.id.show_hide_bars);
 		}
 
-		p.applyDriverSideControls(enabled);
 		super.setEnabled(enabled);
 		p.computeSize();
 	}
