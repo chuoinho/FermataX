@@ -62,6 +62,43 @@ public class ControlPanelContractTest {
 	}
 
 	@Test
+	public void liveModeUsesAStableBadgeAndPreservesTransportGeometry() throws Exception {
+		String binder = source("media/service/FermataServiceUiBinder.java");
+		assertTrue(binder.contains("bindLiveBadge"));
+		assertTrue(binder.contains("liveBadge.setVisibility(VISIBLE)"));
+		assertFalse(binder.contains("progressTime.setText(R.string.playback_live)"));
+		assertTrue(binder.contains("rwButton.setVisibility(INVISIBLE)"));
+		assertTrue(binder.contains("ffButton.setVisibility(INVISIBLE)"));
+		for (String layoutName : new String[]{"control_panel_view.xml", "control_panel_view2.xml"}) {
+			String layout = resource("layout/" + layoutName);
+			String badge = viewBlock(layout, "live_badge");
+			assertTrue(badge.contains("android:visibility=\"gone\""));
+			assertTrue(layout.contains("android:letterSpacing=\"0.08\""));
+			assertTrue(layout.contains("android:textColor=\"#FF6B63\""));
+			assertFalse(layout.contains("android:animation"));
+		}
+		assertTrue(resource("drawable/control_panel_live_dot.xml").contains(
+				"android:color=\"#F4574F\""));
+	}
+
+	@Test
+	public void videoScrimIsOnly16DpTallerThanPanelAndFadesTo84PercentBlack()
+			throws Exception {
+		String dimensions = resource("values/dimens.xml");
+		assertTrue(dimensions.contains("name=\"control_panel_scrim_height\">92dp"));
+		String scrim = resource("drawable/control_panel_video_scrim.xml");
+		assertTrue(scrim.contains("<gradient"));
+		assertTrue(scrim.contains("android:startColor=\"#00000000\""));
+		assertTrue(scrim.contains("android:endColor=\"#D6000000\""));
+		for (String name : new String[]{"main_activity_left.xml", "main_activity_right.xml"}) {
+			assertTrue(resource("layout/" + name).contains(
+					"android:layout_height=\"@dimen/control_panel_scrim_height\""));
+		}
+		String presentation = source("ui/view/ControlPanelPresentationView.java");
+		assertTrue(presentation.contains("videoMode && (visibility == VISIBLE)"));
+	}
+
+	@Test
 	public void noSeekConstraintLayoutRemainsAnActiveDependency() throws Exception {
 		String seek = source("ui/view/ControlPanelSeekView.java");
 		assertTrue(seek.contains("load(R.layout.control_panel_view2)"));

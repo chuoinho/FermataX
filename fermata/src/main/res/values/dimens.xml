@@ -3,6 +3,7 @@
 	<dimen name="control_panel_height">76dp</dimen>
 	<dimen name="control_panel_transport_height">64dp</dimen>
 	<dimen name="control_panel_seek_track_height">3dp</dimen>
+	<dimen name="control_panel_scrim_height">92dp</dimen>
 
     <dimen name="dashboard_content_padding">6dp</dimen>
     <dimen name="dashboard_card_margin">4dp</dimen>

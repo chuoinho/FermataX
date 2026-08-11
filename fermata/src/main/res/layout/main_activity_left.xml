@@ -44,7 +44,7 @@
     <View
         android:id="@+id/control_panel_scrim"
         android:layout_width="0dp"
-        android:layout_height="128dp"
+        android:layout_height="@dimen/control_panel_scrim_height"
         android:background="@drawable/control_panel_video_scrim"
         android:clickable="false"
         android:translationZ="3dp"

@@ -72,6 +72,33 @@
             android:maxLines="1"
             android:paddingStart="2dp"
             android:paddingEnd="2dp" />
+
+        <LinearLayout
+            android:id="@+id/live_badge"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/control_panel_live_dot" />
+
+            <com.google.android.material.textview.MaterialTextView
+                style="?attr/appSeekBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.08"
+                android:maxLines="1"
+                android:text="@string/playback_live"
+                android:textColor="#FF6B63"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout

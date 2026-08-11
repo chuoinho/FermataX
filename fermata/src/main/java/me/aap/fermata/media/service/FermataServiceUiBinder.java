@@ -72,6 +72,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	@Nullable
 	private TextView progressTotal;
 	@Nullable
+	private View liveBadge;
+	@Nullable
 	private View controlPanel;
 	private long playPauseTime;
 
@@ -212,6 +214,10 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		v.setOnLongClickListener(this::onRwFfButtonLongClick);
 	}
 
+	public void bindLiveBadge(View v) {
+		liveBadge = v;
+	}
+
 	private void onPrevNextButtonClick(View v) {
 		onPrevNextButtonClick(v == nextButton);
 	}
@@ -312,6 +318,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		deliveredSnapshot = null;
 		playbackTimelineSnapshot = null;
 		if (progressBar != null) progressBar.setOnSeekBarChangeListener(null);
+		liveBadge = null;
 		unbindButtons(playPauseButton, prevButton, nextButton, rwButton, ffButton);
 		playPauseButton = prevButton = nextButton = rwButton = ffButton = null;
 		progressTime = progressTotal = null;
@@ -598,10 +605,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 				showSeekableTimeline(dur, pos);
 			} else {
 				hideTimeline();
-				if ((timeline == PlaybackTimelinePolicy.Mode.LIVE) && (progressTime != null)) {
-					progressTime.setVisibility(VISIBLE);
-					progressTime.setText(R.string.playback_live);
-				}
+				if ((timeline == PlaybackTimelinePolicy.Mode.LIVE) && (liveBadge != null))
+					liveBadge.setVisibility(VISIBLE);
 			}
 
 			if (st == STATE_PLAYING) {
@@ -684,15 +689,17 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		private void hideTimeline() {
 			if (progressBar != null) {
 				progressBar.setEnabled(false);
-				progressBar.setVisibility(GONE);
+				progressBar.setVisibility(INVISIBLE);
 			}
 			if (progressTime != null) progressTime.setVisibility(GONE);
 			if (progressTotal != null) progressTotal.setVisibility(GONE);
-			if (rwButton != null) rwButton.setVisibility(GONE);
-			if (ffButton != null) ffButton.setVisibility(GONE);
+			if (liveBadge != null) liveBadge.setVisibility(GONE);
+			if (rwButton != null) rwButton.setVisibility(INVISIBLE);
+			if (ffButton != null) ffButton.setVisibility(INVISIBLE);
 		}
 
 		private void showSeekableTimeline(int duration, int position) {
+			if (liveBadge != null) liveBadge.setVisibility(GONE);
 			if (progressBar != null) {
 				progressBar.setEnabled(true);
 				progressBar.setVisibility(VISIBLE);

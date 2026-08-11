@@ -162,6 +162,7 @@ public class ControlPanelView extends ConstraintLayout
 		b.bindProgressBar(findViewById(R.id.seek_bar));
 		b.bindProgressTime(findViewById(R.id.seek_time));
 		b.bindProgressTotal(findViewById(R.id.seek_total));
+		b.bindLiveBadge(findViewById(R.id.live_badge));
 		b.bound(getActivity().getRuntimeHostMode());
 		favoriteController.refresh();
 	}
