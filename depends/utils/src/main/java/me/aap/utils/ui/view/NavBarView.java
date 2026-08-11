@@ -65,7 +65,7 @@ public class NavBarView extends LinearLayoutCompat implements ActivityListener {
 		tint = ta.getColor(R.styleable.NavBarView_tint, Color.TRANSPARENT);
 		size = ta.getLayoutDimension(R.styleable.NavBarView_size, 0);
 		textAppearance = ta.getResourceId(R.styleable.NavBarView_textAppearance, 0);
-		position = ta.getInt(R.styleable.NavBarView_position, POSITION_BOTTOM);
+		position = ta.getInt(R.styleable.NavBarView_position, POSITION_LEFT);
 		bgColor = ta.getColor(R.styleable.NavBarView_android_colorBackground, Color.TRANSPARENT);
 		ta.recycle();
 		setBackgroundColor(bgColor);

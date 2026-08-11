@@ -145,9 +145,14 @@ public interface MainActivityPrefs
 	default int getNavBarPosPref(MainActivityDelegate a) {
 		Pref<IntSupplier> pref = (AUTO && a.isCarActivity()) ? NAV_BAR_POS_AA : NAV_BAR_POS;
 		int pos = getIntPref(pref);
-		if ((pos == NavBarView.POSITION_LEFT) || (pos == NavBarView.POSITION_RIGHT)) return pos;
-		applyIntPref(pref, NavBarView.POSITION_LEFT);
-		return NavBarView.POSITION_LEFT;
+		int normalized = normalizeNavBarPosition(pos);
+		if (normalized != pos) applyIntPref(pref, normalized);
+		return normalized;
+	}
+
+	static int normalizeNavBarPosition(int position) {
+		return (position == NavBarView.POSITION_RIGHT) ?
+				NavBarView.POSITION_RIGHT : NavBarView.POSITION_LEFT;
 	}
 
 	static boolean hasNavBarSizePref(MainActivityDelegate a, List<Pref<?>> prefs) {

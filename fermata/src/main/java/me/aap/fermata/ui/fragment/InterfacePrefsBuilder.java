@@ -84,7 +84,7 @@ final class InterfacePrefsBuilder {
 
 	private static void normalizeNavBarPosition(PreferenceStore store, Pref<IntSupplier> pref) {
 		int position = store.getIntPref(pref);
-		if ((position == NavBarView.POSITION_LEFT) || (position == NavBarView.POSITION_RIGHT)) return;
-		store.applyIntPref(pref, NavBarView.POSITION_LEFT);
+		int normalized = MainActivityPrefs.normalizeNavBarPosition(position);
+		if (normalized != position) store.applyIntPref(pref, normalized);
 	}
 }
