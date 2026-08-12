@@ -21,15 +21,17 @@ public final class ChromePolicy {
 	}
 
 	public static boolean isAutoTopBackVisible(MainActivityDelegate a,
-															 @Nullable ActivityFragment f) {
+														 @Nullable ActivityFragment f) {
 		return isAutoTopBackVisible(a.getRuntimeHostMode(), a.getBody().isFrameMode(),
-				f instanceof DashboardFragment, PlaybackUiPolicy.shouldShowAudioPlayerBar(a));
+				a.isVideoMode(), f instanceof DashboardFragment,
+				PlaybackUiPolicy.shouldShowAudioPlayerBar(a));
 	}
 
 	static boolean isAutoTopBackVisible(RuntimeHostMode hostMode, boolean frameMode,
-													 boolean dashboardFragment, boolean audioPlayerBarVisible) {
-		return (hostMode != null) && hostMode.usesAutomotivePresentation() && frameMode &&
-				!dashboardFragment && !audioPlayerBarVisible;
+											 boolean videoMode, boolean dashboardFragment,
+											 boolean audioPlayerBarVisible) {
+		return (hostMode != null) && hostMode.usesAutomotivePresentation() &&
+				(frameMode || videoMode) && !dashboardFragment && !audioPlayerBarVisible;
 	}
 
 	public static void refreshAutoTopBackButton(MainActivityDelegate a) {
