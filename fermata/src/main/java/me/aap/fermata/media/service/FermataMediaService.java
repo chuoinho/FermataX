@@ -24,6 +24,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.media.AudioManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -36,6 +37,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -43,6 +45,7 @@ import androidx.core.app.NotificationCompat.Action;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.media.MediaBrowserServiceCompat;
+import androidx.media.AudioFocusRequestCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
 import androidx.media.session.MediaButtonReceiver;
 
@@ -60,6 +63,7 @@ import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.app.App;
@@ -101,6 +105,29 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private MediaSessionCompat session;
 	MediaSessionCallback callback;
 	private final MediaServiceRuntimeGate runtimeGate = new MediaServiceRuntimeGate();
+	private final PlaybackForegroundCoordinator playbackForeground =
+			new PlaybackForegroundCoordinator(new PlaybackForegroundCoordinator.Host() {
+				@Override
+				public void promote() {
+					startForeground(NOTIF_ID,
+							createNotification(foregroundNotificationState, foregroundNotificationItem));
+				}
+
+				@Override
+				public void retainLifetime() {
+					retainPlaybackLifetime();
+				}
+
+				@Override
+				public void demote(boolean removeNotification) {
+					stopForeground(removeNotification);
+				}
+
+				@Override
+				public void failed(RuntimeException error) {
+					Log.e(error, "Failed to promote media service for playback");
+				}
+			});
 	private ScheduledFuture<?> cleanupTask;
 
 	private BroadcastReceiver intentReceiver;
@@ -116,6 +143,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private Action actionFavAdd;
 	private Action actionFavRm;
 	private volatile boolean hardShutdownRequested;
+	private int foregroundNotificationState = STATE_PLAYING;
+	private PlayableItem foregroundNotificationItem;
 	private Bitmap defaultAudioIcon;
 	private Bitmap defaultVideoIcon;
 
@@ -303,33 +332,64 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 			stopForeground(true);
 			return;
 		}
+		foregroundNotificationState = st;
+		foregroundNotificationItem = currentItem;
 		if ((st == STATE_NONE) || (st == STATE_STOPPED) || (st == STATE_ERROR)) {
 			if (runtimeGate.takePlaybackLifetimeStop()) stopSelf();
-		} else if (runtimeGate.takePlaybackLifetimeStart()) {
-			try {
-				startService(new Intent(this, getClass()).setAction(ACTION_PLAYBACK_KEEP_ALIVE));
-			} catch (RuntimeException ex) {
-				runtimeGate.playbackLifetimeStartFailed();
-				Log.e(ex, "Failed to retain media service for active playback");
-			}
+			playbackForeground.leaveForeground(true);
+			return;
 		}
 
-		switch (st) {
-			case STATE_NONE, STATE_STOPPED, STATE_ERROR -> stopForeground(true);
-			case STATE_PAUSED -> {
-				if (ActivityCompat.checkSelfPermission(this, POST_NOTIFICATIONS) != PERMISSION_GRANTED) {
-					return;
-				}
+		if (requiresForegroundPlayback(st)) {
+			playbackForeground.keepForeground();
+			return;
+		}
+
+		if (st == STATE_PAUSED) {
+			if (ActivityCompat.checkSelfPermission(this, POST_NOTIFICATIONS) == PERMISSION_GRANTED) {
 				NotificationManagerCompat.from(this).notify(NOTIF_ID, createNotification(st, currentItem));
-				stopForeground(false);
 			}
-			case STATE_PLAYING -> startForeground(NOTIF_ID, createNotification(st, currentItem));
-			default -> {
-			}
+			playbackForeground.leaveForeground(false);
 		}
 	}
 
-	private Notification createNotification(int st, PlayableItem i) {
+	@Nullable
+	PlaybackForegroundCoordinator.Lease acquirePlaybackForeground(int state,
+			@Nullable PlayableItem item) {
+		if (hardShutdownRequested || !AutomotiveRuntimeGate.allowsNewWork()) return null;
+		foregroundNotificationState = state;
+		foregroundNotificationItem = item;
+		return playbackForeground.acquire();
+	}
+
+	boolean requestPlaybackAudioFocus(MediaEngine engine, @Nullable AudioManager audioManager,
+			@Nullable AudioFocusRequestCompat request, int state, @Nullable PlayableItem item) {
+		PlaybackForegroundCoordinator.Lease lease = acquirePlaybackForeground(state, item);
+		if (lease == null) return false;
+		if (!engine.requestAudioFocus(audioManager, request)) {
+			lease.rollback();
+			return false;
+		}
+		lease.commit();
+		return true;
+	}
+
+	private void retainPlaybackLifetime() {
+		if (!runtimeGate.takePlaybackLifetimeStart()) return;
+		try {
+			startService(new Intent(this, getClass()).setAction(ACTION_PLAYBACK_KEEP_ALIVE));
+		} catch (RuntimeException error) {
+			runtimeGate.playbackLifetimeStartFailed();
+			throw error;
+		}
+	}
+
+	static boolean requiresForegroundPlayback(int state) {
+		return (state != STATE_NONE) && (state != STATE_STOPPED) &&
+				(state != STATE_ERROR) && (state != STATE_PAUSED);
+	}
+
+	private Notification createNotification(int st, @Nullable PlayableItem i) {
 		notificationInit();
 
 		Context ctx = this;
@@ -349,7 +409,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 					.setSubText(description.getDescription());
 
 			if (callback.isDefaultImage(largeIcon)) {
-				if (i.isVideo()) {
+				if ((i != null) && i.isVideo()) {
 					if (defaultVideoIcon == null) defaultVideoIcon = createLargeIcon(R.drawable.video);
 					largeIcon = defaultVideoIcon;
 				} else {

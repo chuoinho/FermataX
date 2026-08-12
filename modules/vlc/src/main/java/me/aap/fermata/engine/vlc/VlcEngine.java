@@ -1,6 +1,5 @@
 package me.aap.fermata.engine.vlc;
 
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static java.util.Collections.emptyList;
 import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_DECODING;
 import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_DISABLED;
@@ -692,8 +691,7 @@ public class VlcEngine extends MediaEngineBase
 		int sh = view.getHeight();
 		if ((sw == 0) || (sh == 0)) return;
 
-		int scaleType = view.usesAutomotivePresentation() ? SCALE_BEST :
-				src.getItem().getPrefs().getVideoScalePref();
+		int scaleType = src.getItem().getPrefs().getVideoScalePref();
 		player.getVLCVout().setWindowSize(sw, sh);
 
 		if ((src.videoWidth == 0) || (src.videoHeight == 0)) {
@@ -721,12 +719,12 @@ public class VlcEngine extends MediaEngineBase
 			return;
 		}
 
-		ViewGroup.LayoutParams lp = view.getVideoSurface().getLayoutParams();
-
-		if ((lp.width == MATCH_PARENT) && (lp.height == MATCH_PARENT)) {
-			player.setScale(0);
-			player.setAspectRatio(null);
-		}
+		// The Surface dimensions below own the requested fit/fill geometry. Always return VLC
+		// to automatic scaling once the real video layout is known; otherwise a scale applied
+		// by the fallback path (or a previous item) can survive after the Surface is resized and
+		// crop the decoded frame inside an otherwise correctly sized Surface.
+		player.setScale(0);
+		player.setAspectRatio(null);
 
 		double dw = sw;
 		double dh = sh;

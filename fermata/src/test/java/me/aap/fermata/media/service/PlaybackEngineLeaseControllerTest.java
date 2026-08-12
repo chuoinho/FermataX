@@ -172,11 +172,11 @@ public class PlaybackEngineLeaseControllerTest {
 
 	@Test
 	public void normalRealPlayPreparedItemPreservesGoldenSideEffectOrder() throws Exception {
-		assertEquals(List.of("select", "position:42", "video", "focus", "state:8", "prepare"),
+		assertEquals(List.of("select", "position:42", "video", "foreground", "focus", "state:8", "prepare"),
 				runNormalPlayPreparedItem(true));
-		assertEquals(List.of("select", "clear-surfaces", "video", "focus", "state:8",
+		assertEquals(List.of("select", "clear-surfaces", "video", "foreground", "focus", "state:8",
 					"prepare", "queue"), runNormalPlayPreparedItem(false));
-		assertEquals(List.of("select", "clear-surfaces", "video", "focus", "state:8",
+		assertEquals(List.of("select", "clear-surfaces", "video", "foreground", "focus", "state:8",
 					"prepare"), runNormalPlayPreparedItemKeepingQueue());
 	}
 
@@ -260,6 +260,7 @@ public class PlaybackEngineLeaseControllerTest {
 		FakeSession session = allocate(FakeSession.class);
 		session.events = events;
 		FakeService service = allocate(FakeService.class);
+		service.events = events;
 		MediaSessionCallback callback = allocate(MediaSessionCallback.class);
 		access.callback = callback;
 		set(callback, "listeners", new LinkedList<>());
@@ -459,8 +460,18 @@ public class PlaybackEngineLeaseControllerTest {
 	}
 
 	private static class FakeService extends FermataMediaService {
+		private List<String> events;
+
 		@Override
 		void updateNotification(int state, PlayableItem item) {
+		}
+
+		@Override
+		boolean requestPlaybackAudioFocus(MediaEngine engine,
+				android.media.AudioManager audioManager,
+				androidx.media.AudioFocusRequestCompat request, int state, PlayableItem item) {
+			events.add("foreground");
+			return engine.requestAudioFocus(audioManager, request);
 		}
 	}
 

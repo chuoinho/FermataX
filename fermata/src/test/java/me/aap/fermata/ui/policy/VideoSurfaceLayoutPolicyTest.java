@@ -1,8 +1,10 @@
 package me.aap.fermata.ui.policy;
 
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -40,8 +42,8 @@ public class VideoSurfaceLayoutPolicyTest {
 	}
 
 	@Test
-	public void fillKeepsRatioEvenWhenSurfaceIsPortrait() {
-		assertEquals(new VideoSurfaceLayoutPolicy.Size(1080, 608),
+	public void fillCoversViewportWithoutStretching() {
+		assertEquals(new VideoSurfaceLayoutPolicy.Size(3413, 1920),
 				VideoSurfaceLayoutPolicy.resolve(1080, 1920, 1920, 1080, SCALE_FILL, 1));
 	}
 
@@ -58,49 +60,34 @@ public class VideoSurfaceLayoutPolicyTest {
 	}
 
 	@Test
-	public void automotiveContainFitsCommonHeadUnitViewports() {
-		assertEquals(new VideoSurfaceLayoutPolicy.Size(711, 400),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						800, 400, 1920, 1080, 1));
-		assertEquals(new VideoSurfaceLayoutPolicy.Size(1024, 576),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						1024, 600, 1920, 1080, 1));
-		assertEquals(new VideoSurfaceLayoutPolicy.Size(1280, 720),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						1280, 720, 1920, 1080, 1));
-	}
-
-	@Test
-	public void automotiveContainIgnoresDuplicateWidescreenPixelCorrection() {
+	public void headUnitViewportHonorsEveryScaleMode() {
 		assertEquals(new VideoSurfaceLayoutPolicy.Size(770, 433),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						770, 700, 1920, 1080, 1.4222f));
-	}
-
-	@Test
-	public void automotiveContainRetainsGenuineAnamorphicPixelCorrection() {
-		assertEquals(new VideoSurfaceLayoutPolicy.Size(770, 433),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						770, 700, 720, 576, 1.4222f));
-	}
-
-	@Test
-	public void automotiveContainNeverCropsFourByThreeOrPortraitVideo() {
+				VideoSurfaceLayoutPolicy.resolve(770, 700, 1920, 1080, SCALE_BEST, 1));
+		assertEquals(new VideoSurfaceLayoutPolicy.Size(1244, 700),
+				VideoSurfaceLayoutPolicy.resolve(770, 700, 1920, 1080, SCALE_FILL, 1));
+		assertEquals(new VideoSurfaceLayoutPolicy.Size(1920, 1080),
+				VideoSurfaceLayoutPolicy.resolve(770, 700, 1920, 1080, SCALE_ORIGINAL, 1));
 		assertEquals(new VideoSurfaceLayoutPolicy.Size(770, 578),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						770, 700, 640, 480, 1));
-		assertEquals(new VideoSurfaceLayoutPolicy.Size(394, 700),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						770, 700, 1080, 1920, 1));
+				VideoSurfaceLayoutPolicy.resolve(770, 700, 1920, 1080, SCALE_4_3, 1));
+		assertEquals(new VideoSurfaceLayoutPolicy.Size(770, 433),
+				VideoSurfaceLayoutPolicy.resolve(770, 700, 1920, 1080, SCALE_16_9, 1));
 	}
 
 	@Test
-	public void automotiveContainStaysInsideExtremeViewportBounds() {
-		assertEquals(new VideoSurfaceLayoutPolicy.Size(800, 450),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						800, 800, 1920, 1080, 1));
+	public void commonAndExtremeViewportsUseTheirMeasuredBounds() {
+		assertEquals(new VideoSurfaceLayoutPolicy.Size(711, 400),
+				VideoSurfaceLayoutPolicy.resolve(800, 400, 1920, 1080, SCALE_BEST, 1));
+		assertEquals(new VideoSurfaceLayoutPolicy.Size(1024, 576),
+				VideoSurfaceLayoutPolicy.resolve(1024, 600, 1920, 1080, SCALE_BEST, 1));
+		assertEquals(new VideoSurfaceLayoutPolicy.Size(1280, 720),
+				VideoSurfaceLayoutPolicy.resolve(1280, 720, 1920, 1080, SCALE_BEST, 1));
 		assertEquals(new VideoSurfaceLayoutPolicy.Size(533, 300),
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(
-						1200, 300, 1920, 1080, 1));
+				VideoSurfaceLayoutPolicy.resolve(1200, 300, 1920, 1080, SCALE_BEST, 1));
+	}
+
+	@Test
+	public void genuineAnamorphicRatioIsNeverDiscardedByHostMode() {
+		assertEquals(new VideoSurfaceLayoutPolicy.Size(770, 433),
+				VideoSurfaceLayoutPolicy.resolve(770, 700, 720, 576, SCALE_BEST, 1.4222f));
 	}
 }

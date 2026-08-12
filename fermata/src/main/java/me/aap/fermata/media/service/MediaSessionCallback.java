@@ -439,7 +439,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			}
 		}
 
-		if (!engine.requestAudioFocus(audioManager, audioFocusReq)) {
+		if (!service.requestPlaybackAudioFocus(engine, audioManager, audioFocusReq,
+				STATE_PLAYING, source)) {
 			Log.i("Audio focus request failed");
 			onStop(false);
 			return false;
@@ -776,7 +777,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				MediaEngine eng = getEngine();
 				assert (eng != null);
 				assert (eng.getSource() != null);
-				if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
+				if (!service.requestPlaybackAudioFocus(eng, audioManager, audioFocusReq,
+						STATE_PLAYING, eng.getSource())) {
 					Log.i("Audio focus request failed");
 					return completedVoid();
 				}
@@ -2070,7 +2072,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		tryAnotherEngine = true;
 
 		if (!playbackEngineLease.isCurrent(accepted)) return;
-		if (!candidate.requestAudioFocus(audioManager, audioFocusReq)) {
+		if (!service.requestPlaybackAudioFocus(candidate, audioManager, audioFocusReq,
+				transitionState, accepted.target())) {
 			Log.i("Audio focus request failed");
 			PlaybackEngineLease.FailureClaim claim = playbackEngineLease.tryClaimFailure(accepted); if (claim == null) return;
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)

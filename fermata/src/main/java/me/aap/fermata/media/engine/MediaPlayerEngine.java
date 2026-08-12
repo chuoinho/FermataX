@@ -39,7 +39,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 	private final Context ctx;
 	private final MediaPlayer player;
 	private final AudioEffects audioEffects;
-	private final MediaPlayerPrepareWatchdog prepareWatchdog;
+	private final EnginePrepareWatchdog prepareWatchdog;
 	private PlayableItem source;
 
 	public MediaPlayerEngine(Context ctx, Listener listener) {
@@ -57,7 +57,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 		player.setOnVideoSizeChangedListener(this);
 		player.setOnInfoListener(this);
 		Handler handler = new Handler(Looper.getMainLooper());
-		prepareWatchdog = new MediaPlayerPrepareWatchdog(handler::postDelayed,
+		prepareWatchdog = new EnginePrepareWatchdog(handler::postDelayed,
 				this::onPrepareTimeout);
 	}
 

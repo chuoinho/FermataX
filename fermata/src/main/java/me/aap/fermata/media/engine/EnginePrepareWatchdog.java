@@ -1,22 +1,22 @@
 package me.aap.fermata.media.engine;
 
-/** Rejects a MediaPlayer prepare request that never produces a platform callback. */
-final class MediaPlayerPrepareWatchdog {
+/** Rejects an engine prepare request that never produces a ready or error callback. */
+public final class EnginePrepareWatchdog {
 	private final Scheduler scheduler;
 	private final Runnable timeout;
 	private Request active;
 
-	MediaPlayerPrepareWatchdog(Scheduler scheduler, Runnable timeout) {
+	public EnginePrepareWatchdog(Scheduler scheduler, Runnable timeout) {
 		this.scheduler = scheduler;
 		this.timeout = timeout;
 	}
 
-	void arm(long delayMillis) {
+	public void arm(long delayMillis) {
 		Request request = active = new Request();
 		scheduler.postDelayed(request, delayMillis);
 	}
 
-	void cancel() {
+	public void cancel() {
 		active = null;
 	}
 
@@ -30,7 +30,7 @@ final class MediaPlayerPrepareWatchdog {
 	}
 
 	@FunctionalInterface
-	interface Scheduler {
+	public interface Scheduler {
 		void postDelayed(Runnable task, long delayMillis);
 	}
 }

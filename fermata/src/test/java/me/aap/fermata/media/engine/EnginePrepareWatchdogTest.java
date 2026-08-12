@@ -8,13 +8,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
-public class MediaPlayerPrepareWatchdogTest {
+public class EnginePrepareWatchdogTest {
 	@Test
 	public void activeRequestTimesOutOnce() {
 		FakeScheduler scheduler = new FakeScheduler();
 		AtomicInteger timeouts = new AtomicInteger();
-		MediaPlayerPrepareWatchdog watchdog =
-				new MediaPlayerPrepareWatchdog(scheduler, timeouts::incrementAndGet);
+		EnginePrepareWatchdog watchdog =
+				new EnginePrepareWatchdog(scheduler, timeouts::incrementAndGet);
 
 		watchdog.arm(20_000L);
 		scheduler.tasks.get(0).task.run();
@@ -28,8 +28,8 @@ public class MediaPlayerPrepareWatchdogTest {
 	public void cancelRejectsScheduledTimeout() {
 		FakeScheduler scheduler = new FakeScheduler();
 		AtomicInteger timeouts = new AtomicInteger();
-		MediaPlayerPrepareWatchdog watchdog =
-				new MediaPlayerPrepareWatchdog(scheduler, timeouts::incrementAndGet);
+		EnginePrepareWatchdog watchdog =
+				new EnginePrepareWatchdog(scheduler, timeouts::incrementAndGet);
 
 		watchdog.arm(20_000L);
 		watchdog.cancel();
@@ -42,8 +42,8 @@ public class MediaPlayerPrepareWatchdogTest {
 	public void rearmRejectsOlderRequest() {
 		FakeScheduler scheduler = new FakeScheduler();
 		AtomicInteger timeouts = new AtomicInteger();
-		MediaPlayerPrepareWatchdog watchdog =
-				new MediaPlayerPrepareWatchdog(scheduler, timeouts::incrementAndGet);
+		EnginePrepareWatchdog watchdog =
+				new EnginePrepareWatchdog(scheduler, timeouts::incrementAndGet);
 
 		watchdog.arm(20_000L);
 		watchdog.arm(20_000L);
@@ -53,7 +53,7 @@ public class MediaPlayerPrepareWatchdogTest {
 		assertEquals(1, timeouts.get());
 	}
 
-	private static final class FakeScheduler implements MediaPlayerPrepareWatchdog.Scheduler {
+	private static final class FakeScheduler implements EnginePrepareWatchdog.Scheduler {
 		private final List<ScheduledTask> tasks = new ArrayList<>();
 
 		@Override

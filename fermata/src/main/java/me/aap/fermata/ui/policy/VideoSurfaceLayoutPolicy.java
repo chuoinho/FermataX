@@ -36,16 +36,16 @@ public final class VideoSurfaceLayoutPolicy {
 
 		float width;
 		float height;
+		float screenRatio = (float) screenWidth / screenHeight;
 		if (scale == SCALE_FILL) {
-			if (videoRatio > 1f) {
-				width = screenWidth;
-				height = screenWidth / videoRatio;
-			} else {
+			if (videoRatio > screenRatio) {
 				width = screenHeight * videoRatio;
 				height = screenHeight;
+			} else {
+				width = screenWidth;
+				height = screenWidth / videoRatio;
 			}
 		} else {
-			float screenRatio = (float) screenWidth / screenHeight;
 			if (videoRatio > screenRatio) {
 				width = screenWidth;
 				height = screenWidth / videoRatio;
@@ -55,30 +55,6 @@ public final class VideoSurfaceLayoutPolicy {
 			}
 		}
 		return new Size(positiveRound(width), positiveRound(height));
-	}
-
-	/**
-	 * Fits the complete video inside an automotive viewport. Some live streams expose an
-	 * already display-corrected widescreen size together with a legacy anamorphic pixel ratio.
-	 * Applying both produces an artificial ultra-wide surface, so discard only that duplicate
-	 * correction while retaining genuine anamorphic correction for raw 4:3-ish dimensions.
-	 */
-	public static Size resolveAutomotiveContain(int screenWidth, int screenHeight,
-			float videoWidth, float videoHeight, float pixelWidthHeightRatio) {
-		float pixelRatio = normalizeAutomotivePixelRatio(
-				videoWidth, videoHeight, pixelWidthHeightRatio);
-		return resolve(screenWidth, screenHeight, videoWidth, videoHeight,
-				SCALE_BEST, pixelRatio);
-	}
-
-	static float normalizeAutomotivePixelRatio(float videoWidth, float videoHeight,
-			float pixelWidthHeightRatio) {
-		if (!hasValidVideoSize(videoWidth, videoHeight) || !finite(pixelWidthHeightRatio) ||
-				(pixelWidthHeightRatio <= 0f)) return 1f;
-		float rawRatio = videoWidth / videoHeight;
-		float correctedRatio = rawRatio * pixelWidthHeightRatio;
-		return ((rawRatio >= 1.6f) && (rawRatio <= 1.9f) && (correctedRatio > 2.1f)) ?
-				1f : pixelWidthHeightRatio;
 	}
 
 	public static boolean hasValidVideoSize(float width, float height) {

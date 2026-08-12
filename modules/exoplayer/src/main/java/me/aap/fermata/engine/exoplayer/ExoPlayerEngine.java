@@ -5,6 +5,8 @@ import static me.aap.utils.async.Completed.completed;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -49,8 +51,10 @@ import me.aap.fermata.diagnostics.DiagnosticPriority;
 import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.AudioStreamInfo;
+import me.aap.fermata.media.engine.EnginePrepareWatchdog;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineBase;
+import me.aap.fermata.media.engine.MediaEngineException;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.net.PlaybackRequestProfile;
 import me.aap.fermata.media.net.ResolvedRemotePlaybackRequest;
@@ -66,6 +70,7 @@ import me.aap.utils.log.Log;
  */
 @UnstableApi
 public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener {
+	static final long EXO_PREPARE_TIMEOUT_MS = 30_000L;
 	private static final DataSource.Factory httpDsFactory;
 
 	static {
@@ -93,10 +98,12 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	private final Timeline.Period period = new Timeline.Period();
 	private final ExoPlayer player;
 	private final AudioEffects audioEffects;
+	private final EnginePrepareWatchdog prepareWatchdog;
 	private volatile PlayableItem source;
 	private FutureSupplier<RemotePlaybackRequest> remotePrepare;
 	private RemotePlaybackRequest remoteRequest;
 	private long prepareGeneration;
+	private long errorGeneration = -1L;
 	private boolean preparing;
 	private boolean buffering;
 	private boolean isHls;
@@ -147,6 +154,9 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		}).setMediaSourceFactory(msFactory).build();
 		player.addListener(this);
 		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
+		Handler handler = new Handler(Looper.getMainLooper());
+		prepareWatchdog = new EnginePrepareWatchdog(handler::postDelayed,
+				this::onPrepareTimeout);
 	}
 
 	@Override
@@ -157,6 +167,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	@SuppressLint("SwitchIntDef")
 	@Override
 	public void prepare(PlayableItem source) {
+		prepareWatchdog.cancel();
 		if (this.source == null) stopped(false);
 		else stop();
 		this.source = source;
@@ -238,6 +249,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 			player.setMediaSource(mediaSource);
 		}
 		player.prepare();
+		prepareWatchdog.arm(EXO_PREPARE_TIMEOUT_MS);
 	}
 
 	private void playbackRequestFailed(PlayableItem source, long generation, Throwable error) {
@@ -246,7 +258,9 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 					DiagnosticPriority.DETAIL, source, generation, "stale_generation", null);
 			return;
 		}
+		if (!claimEngineError(generation)) return;
 		releaseRemoteRequest();
+		prepareWatchdog.cancel();
 		preparing = false;
 		recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL, DiagnosticPriority.ERROR, source,
 				generation, null, (error == null) ? "unknown" : error.getClass().getSimpleName());
@@ -264,6 +278,9 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	@Override
 	public void stop() {
+		prepareWatchdog.cancel();
+		preparing = false;
+		buffering = false;
 		PlayableItem previous = source;
 		prepareGeneration++;
 		releaseRemoteRequest();
@@ -432,6 +449,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	@Override
 	public void close() {
+		prepareWatchdog.cancel();
 		stop();
 		super.close();
 		player.removeListener(this);
@@ -456,6 +474,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 			buffering = true;
 			listener.onEngineBuffering(this, player.getBufferedPercentage());
 		} else if (playbackState == Player.STATE_READY) {
+			prepareWatchdog.cancel();
 			if (buffering) {
 				buffering = false;
 				listener.onEngineBufferingCompleted(this);
@@ -492,9 +511,33 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	@Override
 	public void onPlayerError(@NonNull PlaybackException error) {
+		prepareWatchdog.cancel();
+		PlayableItem item = source;
+		if ((item == null) || !claimEngineError(prepareGeneration)) return;
+		preparing = false;
+		buffering = false;
 		recordDiagnostic("engine_error", DiagnosticScope.ESSENTIAL, DiagnosticPriority.ERROR, source,
 				prepareGeneration, null, error.getClass().getSimpleName());
 		listener.onEngineError(this, error);
+	}
+
+	private void onPrepareTimeout() {
+		PlayableItem item = source;
+		long generation = prepareGeneration;
+		if (!preparing || (item == null) || !claimEngineError(generation)) return;
+		preparing = false;
+		buffering = false;
+		player.stop();
+		MediaEngineException error = new MediaEngineException("EXO_PREPARE_TIMEOUT");
+		recordDiagnostic("prepare_timeout", DiagnosticScope.ESSENTIAL, DiagnosticPriority.ERROR,
+				item, generation, "deadline_exceeded", error.getClass().getSimpleName());
+		listener.onEngineError(this, error);
+	}
+
+	private boolean claimEngineError(long generation) {
+		if (errorGeneration == generation) return false;
+		errorGeneration = generation;
+		return true;
 	}
 
 }

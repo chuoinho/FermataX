@@ -149,12 +149,6 @@ public class VideoView extends FrameLayout
 		return (SurfaceView) getChildAt(0);
 	}
 
-	public boolean usesAutomotivePresentation() {
-		MainActivityDelegate activity = getActivity().peek();
-		return (activity != null) &&
-				activity.getRuntimeHostMode().usesAutomotivePresentation();
-	}
-
 	@Nullable
 	public SurfaceView getSubtitleSurface() {
 		return (SurfaceView) getChildAt(1);
@@ -313,8 +307,7 @@ public class VideoView extends FrameLayout
 	}
 
 	private boolean applySurfaceSize(MediaEngine eng, float videoWidth, float videoHeight) {
-		boolean automotive = usesAutomotivePresentation();
-		if (!automotive && eng.setSurfaceSize(this)) {
+		if (eng.setSurfaceSize(this)) {
 			return VideoSurfaceLayoutPolicy.hasValidVideoSize(
 					eng.getVideoWidth(), eng.getVideoHeight());
 		}
@@ -325,11 +318,9 @@ public class VideoView extends FrameLayout
 		SurfaceView surface = getVideoSurface();
 		ViewGroup.LayoutParams lp = surface.getLayoutParams();
 
-		VideoSurfaceLayoutPolicy.Size size = automotive ?
-				VideoSurfaceLayoutPolicy.resolveAutomotiveContain(getWidth(), getHeight(),
-						videoWidth, videoHeight, eng.getVideoPixelWidthHeightRatio()) :
-				VideoSurfaceLayoutPolicy.resolve(getWidth(), getHeight(), videoWidth, videoHeight,
-						item.getPrefs().getVideoScalePref(), eng.getVideoPixelWidthHeightRatio());
+		VideoSurfaceLayoutPolicy.Size size = VideoSurfaceLayoutPolicy.resolve(
+				getWidth(), getHeight(), videoWidth, videoHeight,
+				item.getPrefs().getVideoScalePref(), eng.getVideoPixelWidthHeightRatio());
 		int width = size.width();
 		int height = size.height();
 
