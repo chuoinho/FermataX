@@ -131,7 +131,7 @@ public class ControlPanelContractTest {
 		assertTrue(presentation.contains(
 				"panel.setBackgroundResource(R.drawable.control_panel_video_panel_bg)"));
 		assertTrue(resource("drawable/aa_play_button_bg_automotive.xml").contains(
-				"android:insetLeft=\"56dp\""));
+				"android:insetLeft=\"8dp\""));
 		assertTrue(panel.contains("presentationView.setVideoMode(true)"));
 		assertTrue(panel.contains("presentationView.setVideoMode(false)"));
 		for (String name : new String[]{"main_activity_left.xml", "main_activity_right.xml"}) {
