@@ -692,7 +692,8 @@ public class VlcEngine extends MediaEngineBase
 		int sh = view.getHeight();
 		if ((sw == 0) || (sh == 0)) return;
 
-		int scaleType = src.getItem().getPrefs().getVideoScalePref();
+		int scaleType = view.usesAutomotivePresentation() ? SCALE_BEST :
+				src.getItem().getPrefs().getVideoScalePref();
 		player.getVLCVout().setWindowSize(sw, sh);
 
 		if ((src.videoWidth == 0) || (src.videoHeight == 0)) {
