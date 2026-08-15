@@ -26,9 +26,7 @@ public final class BackNavigationPolicy {
 
 		switch (resolvePlayerBack(bothMode, fragmentEligible, fragmentHandled,
 				!bothMode && b.isVideoMode())) {
-			case REFRESH_CHROME -> {
-				ChromePolicy.refreshTopBackButton(a);
-			}
+			case REFRESH_CHROME -> ChromePolicy.refreshTopBackButton(a);
 			case SHOW_DASHBOARD -> a.showDashboard();
 			case LEAVE_VIDEO_MODE -> leaveVideoMode(a);
 			case TRY_AUDIO_SOURCE -> {
@@ -44,7 +42,7 @@ public final class BackNavigationPolicy {
 	}
 
 	static PlayerBackAction resolvePlayerBack(boolean bothMode, boolean fragmentEligible,
-															 boolean fragmentHandled, boolean videoMode) {
+			boolean fragmentHandled, boolean videoMode) {
 		if (bothMode) return fragmentHandled ? PlayerBackAction.REFRESH_CHROME :
 				PlayerBackAction.SHOW_DASHBOARD;
 		if (fragmentEligible && fragmentHandled) return PlayerBackAction.HANDLED;
@@ -81,12 +79,23 @@ public final class BackNavigationPolicy {
 	 * The nav bar only emits the intent; video-exit/navigation semantics stay centralized here.
 	 */
 	public static boolean handleNavReselection(MainActivityDelegate a, int navId) {
-		if (leaveVideoMode(a)) return true;
-		if (navId == R.id.dashboard_fragment) {
-			a.showDashboard();
-			return true;
-		}
-		return false;
+		NavReselectionAction action = resolveNavReselection(a.getBody().isVideoMode(),
+				navId == R.id.dashboard_fragment);
+		return switch (action) {
+			case LEAVE_VIDEO_MODE -> leaveVideoMode(a);
+			case SHOW_DASHBOARD -> {
+				a.showDashboard();
+				yield true;
+			}
+			case UNHANDLED -> false;
+		};
+	}
+
+	static NavReselectionAction resolveNavReselection(boolean videoMode,
+			boolean dashboardDestination) {
+		if (videoMode) return NavReselectionAction.LEAVE_VIDEO_MODE;
+		if (dashboardDestination) return NavReselectionAction.SHOW_DASHBOARD;
+		return NavReselectionAction.UNHANDLED;
 	}
 
 	public static void handleActivityBack(MainActivityDelegate a) {
@@ -117,8 +126,7 @@ public final class BackNavigationPolicy {
 	}
 
 	static ActivityBackAction resolveActivityBack(boolean hasFragment, boolean fragmentHandled,
-																 boolean hasNavFragment, boolean fragmentMatchesNav,
-																 boolean dashboardRoot) {
+			boolean hasNavFragment, boolean fragmentMatchesNav, boolean dashboardRoot) {
 		if (fragmentHandled) return ActivityBackAction.HANDLED;
 		if (hasFragment && hasNavFragment && !fragmentMatchesNav)
 			return ActivityBackAction.SHOW_NAV_FRAGMENT;
@@ -128,6 +136,10 @@ public final class BackNavigationPolicy {
 
 	enum PlayerBackAction {
 		REFRESH_CHROME, SHOW_DASHBOARD, LEAVE_VIDEO_MODE, TRY_AUDIO_SOURCE, HANDLED
+	}
+
+	enum NavReselectionAction {
+		LEAVE_VIDEO_MODE, SHOW_DASHBOARD, UNHANDLED
 	}
 
 	enum ActivityBackAction {
