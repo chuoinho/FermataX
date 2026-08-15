@@ -306,11 +306,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	}
 
 	private static void addSortItem(OverlayMenu.Builder b, @IdRes int id, @StringRes int title, int type, int cur, int m) {
-		if ((m & (1 << type)) != 0) b.addItem(id, title).setChecked(sortChecked(type, cur), true);
-	}
-
-	private static boolean sortChecked(int type, int current) {
-		return type == current;
+		if ((m & (1 << type)) != 0) b.addItem(id, title).setChecked(type == cur, true);
 	}
 
 	private static boolean sortMenuHandler(OverlayMenuItem item) {
