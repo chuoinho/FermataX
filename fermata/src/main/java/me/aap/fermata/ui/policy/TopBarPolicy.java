@@ -12,14 +12,11 @@ public final class TopBarPolicy {
 	}
 
 	@NonNull
-	public static State resolve(@Nullable RuntimeHostMode hostMode,
-			boolean frameMode, boolean videoMode, boolean dashboardFragment,
-			boolean audioPlayerBarVisible, boolean playerBackOwned,
+	public static State resolve(@Nullable RuntimeHostMode hostMode, boolean dashboardFragment,
 			int activeFragmentId, int playbackOwnerFragmentId,
 			@NonNull CharSequence fragmentTitle, @NonNull CharSequence playbackTitle,
 			@NonNull CharSequence preparationStatus) {
-		int backVisibility = isTopBackVisible(hostMode, frameMode, videoMode,
-				dashboardFragment, audioPlayerBarVisible, playerBackOwned) ? VISIBLE : GONE;
+		int backVisibility = isTopBackVisible(hostMode, dashboardFragment) ? VISIBLE : GONE;
 		CharSequence title = ToolBarTitlePolicy.resolve(activeFragmentId,
 				playbackOwnerFragmentId, fragmentTitle, playbackTitle, preparationStatus);
 		return new State(backVisibility, title);
@@ -27,12 +24,10 @@ public final class TopBarPolicy {
 
 	/**
 	 * Back is route chrome, not playback chrome. Whenever a non-Dashboard top bar is rendered it has
-	 * the same Back semantics on PHONE, AA projection and mirror/DHU hosts. Player-bar ownership and
-	 * audio/video presentation affect whether chrome is on-screen, never the Back meaning inside it.
+	 * the same Back semantics on PHONE, AA projection and mirror/DHU hosts.
 	 */
 	public static boolean isTopBackVisible(@Nullable RuntimeHostMode hostMode,
-			boolean frameMode, boolean videoMode, boolean dashboardFragment,
-			boolean audioPlayerBarVisible, boolean playerBackOwned) {
+			boolean dashboardFragment) {
 		return (hostMode != null) && !dashboardFragment;
 	}
 
