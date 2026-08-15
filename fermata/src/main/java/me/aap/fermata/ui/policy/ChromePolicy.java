@@ -34,8 +34,9 @@ public final class ChromePolicy {
 	static boolean isTopBackVisible(RuntimeHostMode hostMode, boolean frameMode,
 											 boolean videoMode, boolean dashboardFragment,
 											 boolean audioPlayerBarVisible, boolean playerBackOwned) {
-		if ((hostMode == null) || dashboardFragment || playerBackOwned) return false;
-		return !hostMode.usesAutomotivePresentation() || !audioPlayerBarVisible;
+		if ((hostMode == null) || dashboardFragment) return false;
+		if (!hostMode.usesAutomotivePresentation()) return true;
+		return (frameMode || videoMode) && !playerBackOwned && !audioPlayerBarVisible;
 	}
 
 	public static void refreshTopBackButton(MainActivityDelegate a) {
