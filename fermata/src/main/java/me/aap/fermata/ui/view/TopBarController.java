@@ -9,9 +9,11 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.policy.ChromePolicy;
+import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.policy.ItemRoutePolicy;
-import me.aap.fermata.ui.policy.ToolBarTitlePolicy;
+import me.aap.fermata.ui.policy.PlaybackUiPolicy;
+import me.aap.fermata.ui.policy.TopBarPolicy;
+import me.aap.fermata.ui.policy.TopBarPolicy.State;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.ToolBarView;
 
@@ -19,7 +21,7 @@ import me.aap.utils.ui.view.ToolBarView;
  * Single Fermata authority for common top-bar state.
  *
  * <p>Fragment/tool mediators may contribute actions and geometry, but Back visibility and the
- * canonical title are resolved here for every runtime host.</p>
+ * canonical title are resolved and rendered here for every runtime host.</p>
  */
 public final class TopBarController {
 	private TopBarController() {
@@ -35,21 +37,37 @@ public final class TopBarController {
 		ToolBarView toolBar = activity.getToolBar();
 		if (toolBar == null) return;
 
+		State state = resolveState(activity, fragment);
 		View back = toolBar.findViewById(me.aap.utils.R.id.tool_bar_back_button);
-		if (back != null) back.setVisibility(ChromePolicy.getTopBackVisibility(activity, fragment));
-
+		if (back != null) back.setVisibility(state.backVisibility());
 		TextView title = toolBar.findViewById(me.aap.utils.R.id.tool_bar_title);
-		if (title != null) title.setText(resolveTitle(activity, fragment));
+		if (title != null) title.setText(state.title());
+	}
+
+	@NonNull
+	public static State resolveState(MainActivityDelegate activity, ActivityFragment fragment) {
+		PlaybackSnapshot snapshot = activity.getMediaSessionCallback().getPlaybackSnapshot();
+		PlayableItem item = snapshot.getItem();
+		int playbackOwnerFragmentId = (item == null) ? 0 :
+				ItemRoutePolicy.getPlaybackOwnerFragmentId(item);
+		ControlPanelView panel = activity.getControlPanel();
+		boolean playerBackOwned = activity.isVideoMode() && (panel != null) &&
+				panel.isVideoControlsVisible();
+		return TopBarPolicy.resolve(activity.getRuntimeHostMode(), activity.getBody().isFrameMode(),
+				activity.isVideoMode(), fragment instanceof DashboardFragment,
+				PlaybackUiPolicy.shouldShowAudioPlayerBar(activity), playerBackOwned,
+				fragment.getFragmentId(), playbackOwnerFragmentId, fragment.getTitle(),
+				snapshot.getDisplayTitle(), snapshot.getPreparationStatus());
 	}
 
 	@NonNull
 	public static CharSequence resolveTitle(MainActivityDelegate activity,
 															 ActivityFragment fragment) {
-		PlaybackSnapshot snapshot = activity.getMediaSessionCallback().getPlaybackSnapshot();
-		PlayableItem item = snapshot.getItem();
-		int playbackOwnerFragmentId = (item == null) ? 0 :
-				ItemRoutePolicy.getPlaybackOwnerFragmentId(item);
-		return ToolBarTitlePolicy.resolve(fragment.getFragmentId(), playbackOwnerFragmentId,
-				fragment.getTitle(), snapshot.getDisplayTitle(), snapshot.getPreparationStatus());
+		return resolveState(activity, fragment).title();
+	}
+
+	public static int resolveBackVisibility(MainActivityDelegate activity,
+														 ActivityFragment fragment) {
+		return resolveState(activity, fragment).backVisibility();
 	}
 }
