@@ -17,6 +17,15 @@ public final class BackNavigationPolicy {
 	}
 
 	/**
+	 * Top-bar visibility and its click semantics are derived from the same target. Fragment-specific
+	 * fullscreen/history/parent behavior remains resolved at execution time by handleActivityBack().
+	 */
+	public static BackTarget resolveTopBarBackTarget(boolean hasRuntimeHost,
+			boolean dashboardFragment) {
+		return hasRuntimeHost && !dashboardFragment ? BackTarget.ACTIVITY_BACK : BackTarget.NONE;
+	}
+
+	/**
 	 * Automotive/player-bar Back is a secondary rendering of the same Back intent used by the
 	 * toolbar, hardware/system Back and every other host. It must not own a second navigation state
 	 * machine.
@@ -107,6 +116,10 @@ public final class BackNavigationPolicy {
 			return ActivityBackAction.SHOW_NAV_FRAGMENT;
 		if (hasFragment && !dashboardRoot) return ActivityBackAction.SHOW_DASHBOARD;
 		return ActivityBackAction.FINISH;
+	}
+
+	public enum BackTarget {
+		NONE, ACTIVITY_BACK
 	}
 
 	enum NavReselectionAction {
