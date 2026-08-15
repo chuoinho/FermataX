@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Невозможно продолжить</string>
     <string name="dashboard_smart_recovery_title">Источник прерван</string>
     <string name="dashboard_smart_recovery_subtitle">Повторите попытку или откройте дополнение</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Осталось %1$d ч %2$d мин</string>
+    <string name="dashboard_smart_remaining_minutes">Осталось %1$d мин</string>
+    <string name="dashboard_smart_almost_done">Почти готово</string>
     <string name="dashboard_home_sub">Стартовый экран и быстрый доступ</string>
     <string name="dashboard_folders_sub">Локальные файлы и папки</string>
     <string name="dashboard_favorites_sub">Закрепленные каналы и медиа</string>

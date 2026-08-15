@@ -12,6 +12,7 @@ import android.media.PlaybackParams;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.fermata.ui.policy.VideoFormatSnapshot;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
@@ -187,7 +189,8 @@ public class MediaPlayerEngine extends MediaEngineBase
 	public void setVideoView(VideoView view) {
 		try {
 			super.setVideoView(view);
-			player.setDisplay((view == null) ? null : view.getVideoSurface().getHolder());
+			SurfaceView surface = (view == null) ? null : view.getVideoSurface();
+			player.setDisplay((surface == null) ? null : surface.getHolder());
 		} catch (IllegalStateException | IllegalArgumentException ex) {
 			Log.e(ex, "Failed to set display");
 		}
@@ -201,6 +204,15 @@ public class MediaPlayerEngine extends MediaEngineBase
 	@Override
 	public float getVideoHeight() {
 		return player.getVideoHeight();
+	}
+
+	@Override
+	public VideoFormatSnapshot getVideoFormatSnapshot() {
+		return videoFormatSnapshot(player.getVideoWidth(), player.getVideoHeight());
+	}
+
+	static VideoFormatSnapshot videoFormatSnapshot(int width, int height) {
+		return new VideoFormatSnapshot(width, height, width, height, 1f);
 	}
 
 	@NonNull

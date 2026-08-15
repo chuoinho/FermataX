@@ -12,19 +12,23 @@ import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 
-import java.lang.reflect.Constructor;
+import androidx.annotation.Nullable;
+
+import me.aap.fermata.R;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 
 import me.aap.fermata.media.engine.EngineSelection;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -36,6 +40,7 @@ import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.ProgressiveResultConsumer;
 
+@RunWith(RobolectricTestRunner.class)
 public class PlaybackEngineLeaseControllerTest {
 	@Test
 	public void mapsEveryEngineSelectionOwnership() {
@@ -132,7 +137,8 @@ public class PlaybackEngineLeaseControllerTest {
 	public void sameGenerationHandoffDuringRealPlayPreparedItemPreservesWinner() throws Exception {
 		PlaybackOwnership ownership = new PlaybackOwnership();
 		PlayableItem target = item("target");
-		MediaEngine initial = engine("initial", new Counters(null, null, null, null, null));
+		AtomicInteger oldCloses = new AtomicInteger();
+		MediaEngine initial = engine("initial", new Counters(oldCloses, null, null, null, null));
 		MediaEngine winner = engine("winner", new Counters(null, null, null, null, null));
 		AtomicInteger closes = new AtomicInteger();
 		MediaEngine outerCandidate = engine("outer", new Counters(closes, null, null, null, null));
@@ -147,7 +153,8 @@ public class PlaybackEngineLeaseControllerTest {
 		set(callback, "engine", initial);
 
 		SelectionManager manager = allocate(SelectionManager.class);
-		manager.selection = new EngineSelection(outerCandidate, EngineSelection.Ownership.OWNED_NEW);
+		manager.selection = new EngineSelection(outerCandidate, EngineSelection.Ownership.OWNED_NEW,
+				EngineSelection.Retirement.RETIRE_AFTER_RESOLUTION);
 		manager.onSelect = () -> {
 			assertTrue(ownership.replaceEngine(initial, winner));
 			access.slot = winner;
@@ -167,12 +174,84 @@ public class PlaybackEngineLeaseControllerTest {
 		assertSame(winner, ownership.getActive().engineIdentity());
 		assertSame(winner, access.slot);
 		assertSame(winner, callback.getEngine());
+		assertEquals("A stale/reentrant selection must retain the old owner", 0, oldCloses.get());
 		assertEquals(1, closes.get());
 	}
 
 	@Test
+	public void acceptedReplacementDetachesThenRetiresThePreviousOutputOwner() throws Exception {
+		List<String> events = runDeferredRetirementPlayPreparedItem();
+
+		assertOrdered(events, "select", "initial:detach", "initial:close", "video");
+		assertEquals(1, occurrences(events, "initial:detach"));
+		assertEquals(1, occurrences(events, "initial:close"));
+	}
+
+	@Test
+	public void acceptedRetainedReplacementDoesNotCloseThePreviousOutputOwner() throws Exception {
+		List<String> events = runNormalPlayPreparedItem(false, false, true,
+				EngineSelection.Retirement.RETAIN, false, null, true);
+
+		assertOrdered(events, "select", "initial:detach", "video");
+		assertEquals(1, occurrences(events, "initial:detach"));
+		assertEquals(0, occurrences(events, "initial:close"));
+	}
+
+	@Test
+	public void unsupportedReplacementDetachesThenRetiresThePreviousOutputOwner() throws Exception {
+		UnsupportedFixture fixture = unsupportedFixture(
+				EngineSelection.Retirement.RETIRE_AFTER_RESOLUTION);
+
+		playPreparedItem(fixture.callback, fixture.initial, fixture.target, fixture.revision);
+
+		assertOrdered(fixture.events, "select", "initial:detach", "initial:close");
+		assertEquals(1, occurrences(fixture.events, "initial:detach"));
+		assertEquals(1, occurrences(fixture.events, "initial:close"));
+		assertFalse(fixture.videoOutput.isBound(fixture.initial));
+		assertNull(fixture.access.slot);
+		assertNull(fixture.callback.getEngine());
+		assertEquals(PlaybackStateCompat.STATE_ERROR, fixture.session.state.getState());
+	}
+
+	@Test
+	public void retainedUnsupportedReplacementDetachesWithoutClosingThePreviousOutputOwner()
+			throws Exception {
+		UnsupportedFixture fixture = unsupportedFixture(EngineSelection.Retirement.RETAIN);
+
+		playPreparedItem(fixture.callback, fixture.initial, fixture.target, fixture.revision);
+
+		assertOrdered(fixture.events, "select", "initial:detach");
+		assertEquals(1, occurrences(fixture.events, "initial:detach"));
+		assertEquals(0, occurrences(fixture.events, "initial:close"));
+		assertFalse(fixture.videoOutput.isBound(fixture.initial));
+		assertNull(fixture.access.slot);
+		assertNull(fixture.callback.getEngine());
+		assertEquals(PlaybackStateCompat.STATE_ERROR, fixture.session.state.getState());
+	}
+
+	@Test
+	public void staleUnsupportedReplacementRetainsThePreviousOutputOwner() throws Exception {
+		UnsupportedFixture fixture = unsupportedFixture(
+				EngineSelection.Retirement.RETIRE_AFTER_RESOLUTION);
+		MediaEngine winner = engine("winner", new Counters(null, null, null, null, null));
+		fixture.manager.onSelect = () -> {
+			fixture.events.add("select");
+			assertTrue(fixture.ownership.replaceEngine(fixture.initial, winner));
+			fixture.access.engineSlot(winner);
+		};
+
+		playPreparedItem(fixture.callback, fixture.initial, fixture.target, fixture.revision);
+
+		assertSame(winner, fixture.access.slot);
+		assertSame(winner, fixture.callback.getEngine());
+		assertTrue(fixture.videoOutput.isBound(fixture.initial));
+		assertEquals(0, occurrences(fixture.events, "initial:detach"));
+		assertEquals(0, occurrences(fixture.events, "initial:close"));
+	}
+
+	@Test
 	public void normalRealPlayPreparedItemPreservesGoldenSideEffectOrder() throws Exception {
-		assertEquals(List.of("select", "position:42", "video", "foreground", "focus", "state:8", "prepare"),
+		assertEquals(List.of("select", "position:42", "stage-source", "video", "foreground", "focus", "state:8", "prepare"),
 				runNormalPlayPreparedItem(true));
 		assertEquals(List.of("select", "clear-surfaces", "video", "foreground", "focus", "state:8",
 					"prepare", "queue"), runNormalPlayPreparedItem(false));
@@ -180,18 +259,113 @@ public class PlaybackEngineLeaseControllerTest {
 					"prepare"), runNormalPlayPreparedItemKeepingQueue());
 	}
 
+	@Test
+	public void audioFocusFailureClosesOnlyLeaseOwnedCandidate() throws Exception {
+		List<String> borrowed = runAudioFocusFailurePlayPreparedItem(
+				EngineSelection.Ownership.BORROWED);
+		assertTrue(borrowed.contains("candidate:detach"));
+		assertEquals(0, occurrences(borrowed, "candidate:close"));
+
+		List<String> owned = runAudioFocusFailurePlayPreparedItem(
+				EngineSelection.Ownership.OWNED_NEW);
+		assertOrdered(owned, "candidate:detach", "candidate:close");
+		assertEquals(1, occurrences(owned, "candidate:close"));
+	}
+
 	private static List<String> runNormalPlayPreparedItem(boolean sameItem) throws Exception {
-		return runNormalPlayPreparedItem(sameItem, false);
+		return runNormalPlayPreparedItem(sameItem, false, false,
+				EngineSelection.Retirement.RETAIN, false, null, true);
 	}
 
 	private static List<String> runNormalPlayPreparedItemKeepingQueue() throws Exception {
-		return runNormalPlayPreparedItem(false, true);
+		return runNormalPlayPreparedItem(false, true, false,
+				EngineSelection.Retirement.RETAIN, false, null, true);
 	}
 
-	private static List<String> runNormalPlayPreparedItem(boolean sameItem, boolean keepQueue)
+	private static List<String> runDeferredRetirementPlayPreparedItem() throws Exception {
+		return runNormalPlayPreparedItem(false, false, true,
+				EngineSelection.Retirement.RETIRE_AFTER_RESOLUTION, true, null, true);
+	}
+
+	private static List<String> runAudioFocusFailurePlayPreparedItem(
+			EngineSelection.Ownership candidateOwnership) throws Exception {
+		return runNormalPlayPreparedItem(false, false, true,
+				EngineSelection.Retirement.RETAIN, false, candidateOwnership, false);
+	}
+
+	private static UnsupportedFixture unsupportedFixture(EngineSelection.Retirement retirement)
+			throws Exception {
+		List<String> events = new ArrayList<>();
+		AtomicReference<PlayableItem> source = new AtomicReference<>();
+		PlayableItem target = item("target");
+		FakeVideoView view = allocate(FakeVideoView.class);
+		view.events = events;
+		MediaEngine initial = observableEngine("initial", events, source, view);
+		PlaybackOwnership ownership = new PlaybackOwnership();
+		PlaybackOwnership.Token pending = ownership.begin("addon", target, initial);
+		MutableAccess access = new MutableAccess(pending.generation(), initial);
+		PlaybackEngineLeaseController controller = new PlaybackEngineLeaseController(ownership, access);
+		SelectionManager manager = allocate(SelectionManager.class);
+		manager.selection = new EngineSelection(null, EngineSelection.Ownership.NO_CANDIDATE,
+				retirement);
+		manager.onSelect = () -> events.add("select");
+		MediaLib lib = (MediaLib) Proxy.newProxyInstance(MediaLib.class.getClassLoader(),
+				new Class<?>[]{MediaLib.class}, (proxy, method, args) -> switch (method.getName()) {
+					case "getMediaEngineManager" -> manager;
+					case "getContext" -> new TestContext();
+					default -> defaultValue(method.getReturnType());
+				});
+		FakeSession session = allocate(FakeSession.class);
+		session.events = events;
+		FakeService service = allocate(FakeService.class);
+		service.events = events;
+		MediaSessionCallback callback = allocate(MediaSessionCallback.class);
+		access.callback = callback;
+		set(callback, "listeners", new LinkedList<>());
+		set(callback, "lib", lib);
+		set(callback, "service", service);
+		set(callback, "session", session);
+		set(callback, "playbackOwnership", ownership);
+		set(callback, "playbackEngineLease", controller);
+		set(callback, "playbackTransition", new PlaybackTransition());
+		PlaybackProgressPolicy progressPolicy = new PlaybackProgressPolicy(() -> 0L);
+		set(callback, "progressPolicy", progressPolicy);
+		set(callback, "progressCoordinator", new PlaybackProgressCoordinator(callback, progressPolicy,
+				(task, delay) -> {}, item -> completed(0L), item -> false, lib));
+		set(callback, "playbackAdvanceWatchdog",
+				new PlaybackAdvanceWatchdog((task, delay) -> {}, () -> {}));
+		set(callback, "playbackRequestRevision", pending.generation());
+		set(callback, "engine", initial);
+		set(callback, "playbackSnapshot", new PlaybackSnapshot(1L, null,
+				new PlaybackStateCompat.Builder().setState(PlaybackStateCompat.STATE_PAUSED,
+						0L, 1F).build(), null));
+		VideoOutputCoordinator videoOutput = new VideoOutputCoordinator();
+		videoOutput.add(view, 0);
+		videoOutput.bind(initial, true);
+		events.clear();
+		set(callback, "videoOutput", videoOutput);
+		return new UnsupportedFixture(events, target, initial, ownership, access, manager, callback,
+				session, videoOutput, pending.generation());
+	}
+
+	private static void playPreparedItem(MediaSessionCallback callback, MediaEngine engine,
+			PlayableItem target, long requestRevision) throws Exception {
+		Method play = MediaSessionCallback.class.getDeclaredMethod("playPreparedItem", MediaEngine.class,
+				PlayableItem.class, long.class, PlayableItem.class, long.class, int.class, long.class);
+		play.setAccessible(true);
+		play.invoke(callback, engine, target, 0L, null, -1L,
+				PlaybackStateCompat.STATE_CONNECTING, requestRevision);
+	}
+
+	private static List<String> runNormalPlayPreparedItem(boolean sameItem, boolean keepQueue,
+			boolean bindInitialOutput, EngineSelection.Retirement retirement,
+			boolean assertAcceptedBeforeRetirement,
+			@Nullable EngineSelection.Ownership candidateOwnership, boolean grantAudioFocus)
 			throws Exception {
 		List<String> events = new ArrayList<>();
 		AtomicReference<PlayableItem> candidateSource = new AtomicReference<>();
+		AtomicReference<MediaEngine> selectedEngine = new AtomicReference<>();
+		AtomicReference<MediaEngine> candidateReference = new AtomicReference<>();
 		FutureSupplier<List<MediaSessionCompat.QueueItem>> queue = immediateFuture(List.of());
 		BrowsableItem parent = (BrowsableItem) Proxy.newProxyInstance(
 				BrowsableItem.class.getClassLoader(), new Class<?>[]{BrowsableItem.class},
@@ -240,17 +414,23 @@ public class PlaybackEngineLeaseControllerTest {
 
 		FakeVideoView view = allocate(FakeVideoView.class);
 		view.events = events;
-		MediaEngine initial = observableEngine("initial", events, candidateSource, view);
+		MediaEngine initial = observableEngine("initial", events, candidateSource, view, () -> {
+			if (assertAcceptedBeforeRetirement)
+				assertSame(candidateReference.get(), selectedEngine.get());
+		});
 		MediaEngine candidate = sameItem ? initial :
 				observableEngine("candidate", events, candidateSource, view);
+		candidateReference.set(candidate);
 		PlaybackOwnership ownership = new PlaybackOwnership();
 		PlaybackOwnership.Token pending = ownership.begin("addon", target, initial);
-		MutableAccess access = new MutableAccess(pending.generation(), initial);
+		MutableAccess access = new MutableAccess(pending.generation(), initial, selectedEngine);
 		PlaybackEngineLeaseController controller = new PlaybackEngineLeaseController(ownership, access);
 
 		SelectionManager manager = allocate(SelectionManager.class);
-		manager.selection = new EngineSelection(candidate, sameItem ?
-				EngineSelection.Ownership.PREEXISTING : EngineSelection.Ownership.OWNED_NEW);
+		manager.selection = new EngineSelection(candidate, (candidateOwnership != null) ?
+				candidateOwnership : sameItem ?
+				EngineSelection.Ownership.PREEXISTING : EngineSelection.Ownership.OWNED_NEW,
+				retirement);
 		manager.onSelect = () -> events.add("select");
 		MediaLib lib = (MediaLib) Proxy.newProxyInstance(MediaLib.class.getClassLoader(),
 				new Class<?>[]{MediaLib.class}, (proxy, method, args) ->
@@ -261,6 +441,7 @@ public class PlaybackEngineLeaseControllerTest {
 		session.events = events;
 		FakeService service = allocate(FakeService.class);
 		service.events = events;
+		service.grantAudioFocus = grantAudioFocus;
 		MediaSessionCallback callback = allocate(MediaSessionCallback.class);
 		access.callback = callback;
 		set(callback, "listeners", new LinkedList<>());
@@ -282,7 +463,13 @@ public class PlaybackEngineLeaseControllerTest {
 		set(callback, "playbackSnapshot", new PlaybackSnapshot(1L, current,
 				new PlaybackStateCompat.Builder().setState(PlaybackStateCompat.STATE_PAUSED,
 						7L, 1F).build(), null));
-		set(callback, "videoView", videoQueue(view));
+		VideoOutputCoordinator videoOutput = new VideoOutputCoordinator();
+		videoOutput.add(view, 0);
+		if (bindInitialOutput) {
+			videoOutput.bind(initial, true);
+			events.clear();
+		}
+		set(callback, "videoOutput", videoOutput);
 
 		Method play = MediaSessionCallback.class.getDeclaredMethod("playPreparedItem", MediaEngine.class,
 				PlayableItem.class, long.class, PlayableItem.class, long.class, int.class, long.class);
@@ -291,13 +478,19 @@ public class PlaybackEngineLeaseControllerTest {
 				(current == null) ? -1L : 7L, PlaybackStateCompat.STATE_CONNECTING,
 				pending.generation());
 
-		assertSame(candidate, callback.getEngine());
-		assertSame(candidate, ownership.getPending().engineIdentity());
-		assertEquals(PlaybackStateCompat.STATE_CONNECTING, session.state.getState());
-		assertEquals(!sameItem && !keepQueue, session.queuePublished);
-		if (keepQueue) {
-			assertFalse(session.queuePublished);
-			assertFalse(events.contains("queue"));
+		if (grantAudioFocus) {
+			assertSame(candidate, callback.getEngine());
+			assertSame(candidate, ownership.getPending().engineIdentity());
+			assertEquals(PlaybackStateCompat.STATE_CONNECTING, session.state.getState());
+			assertEquals(!sameItem && !keepQueue, session.queuePublished);
+			if (keepQueue) {
+				assertFalse(session.queuePublished);
+				assertFalse(events.contains("queue"));
+			}
+		} else {
+			assertNull(callback.getEngine());
+			assertNull(ownership.getPending());
+			assertEquals(PlaybackStateCompat.STATE_ERROR, session.state.getState());
 		}
 		return events;
 	}
@@ -322,24 +515,30 @@ public class PlaybackEngineLeaseControllerTest {
 		return result[0];
 	}
 
-	private static Queue<?> videoQueue(VideoView view) throws Exception {
-		Class<?> type = Class.forName(MediaSessionCallback.class.getName() + "$Prioritized");
-		Constructor<?> constructor = type.getDeclaredConstructor(Object.class, int.class);
-		constructor.setAccessible(true);
-		Queue<Object> queue = new PriorityQueue<>();
-		queue.add(constructor.newInstance(view, 0));
-		return queue;
+	private static MediaEngine observableEngine(String name, List<String> events,
+			AtomicReference<PlayableItem> source, VideoView expectedView) {
+		return observableEngine(name, events, source, expectedView, () -> {
+		});
 	}
 
 	private static MediaEngine observableEngine(String name, List<String> events,
-			AtomicReference<PlayableItem> source, VideoView expectedView) {
+			AtomicReference<PlayableItem> source, VideoView expectedView, Runnable onClose) {
 		return (MediaEngine) Proxy.newProxyInstance(MediaEngine.class.getClassLoader(),
 				new Class<?>[]{MediaEngine.class}, (proxy, method, args) -> switch (method.getName()) {
 					case "getSource" -> source.get();
 					case "setPosition" -> { events.add("position:" + args[0]); yield null; }
 					case "setVideoView" -> {
-						assertSame(expectedView, args[0]);
-						events.add("video");
+						if (args[0] == null) {
+							events.add(name + ":detach");
+						} else {
+							assertSame(expectedView, args[0]);
+							events.add("video");
+						}
+						yield null;
+					}
+					case "close" -> {
+						events.add(name + ":close");
+						onClose.run();
 						yield null;
 					}
 					case "requestAudioFocus" -> { events.add("focus"); yield true; }
@@ -415,6 +614,21 @@ public class PlaybackEngineLeaseControllerTest {
 		return null;
 	}
 
+	private static void assertOrdered(List<String> events, String... ordered) {
+		int index = -1;
+		for (String event : ordered) {
+			int relative = events.subList(index + 1, events.size()).indexOf(event);
+			if (relative < 0) throw new AssertionError("Missing event " + event + " in " + events);
+			index += relative + 1;
+		}
+	}
+
+	private static int occurrences(List<String> events, String expected) {
+		int count = 0;
+		for (String event : events) if (expected.equals(event)) count++;
+		return count;
+	}
+
 	private static <T> T allocate(Class<T> type) throws Exception {
 		Class<?> unsafeType = Class.forName("sun.misc.Unsafe");
 		Field field = unsafeType.getDeclaredField("theUnsafe");
@@ -459,8 +673,24 @@ public class PlaybackEngineLeaseControllerTest {
 		}
 	}
 
+	private static class TestContext extends android.content.ContextWrapper {
+		private TestContext() { super(RuntimeEnvironment.getApplication()); }
+
+		@Override public android.content.res.Resources getResources() {
+			return new android.content.res.Resources(super.getResources().getAssets(),
+					super.getResources().getDisplayMetrics(), super.getResources().getConfiguration()) {
+				@Override public String getString(int id, Object... args) {
+					return (id == R.string.err_unsupported_source_type) ? "unsupported" :
+							super.getString(id, args);
+				}
+			};
+		}
+
+	}
+
 	private static class FakeService extends FermataMediaService {
 		private List<String> events;
+		private boolean grantAudioFocus = true;
 
 		@Override
 		void updateNotification(int state, PlayableItem item) {
@@ -471,7 +701,7 @@ public class PlaybackEngineLeaseControllerTest {
 				android.media.AudioManager audioManager,
 				androidx.media.AudioFocusRequestCompat request, int state, PlayableItem item) {
 			events.add("foreground");
-			return engine.requestAudioFocus(audioManager, request);
+			return grantAudioFocus && engine.requestAudioFocus(audioManager, request);
 		}
 	}
 
@@ -484,16 +714,34 @@ public class PlaybackEngineLeaseControllerTest {
 		public void clearPlaybackSurfaces() {
 			events.add("clear-surfaces");
 		}
+
+		@Override
+		public void clearPlaybackSurfaces(MediaEngine expectedEngine) {
+			events.add("clear-surfaces");
+		}
+
+		@Override
+		public void beginVideoSource(MediaEngine expectedEngine) {
+			events.add("stage-source");
+		}
 	}
 
 	private static final class MutableAccess implements PlaybackEngineLeaseController.Access {
 		private long revision;
 		private MediaEngine slot;
 		private MediaSessionCallback callback;
+		private final AtomicReference<MediaEngine> observedSlot;
 
 		private MutableAccess(long revision, MediaEngine slot) {
+			this(revision, slot, null);
+		}
+
+		private MutableAccess(long revision, MediaEngine slot,
+				AtomicReference<MediaEngine> observedSlot) {
 			this.revision = revision;
 			this.slot = slot;
+			this.observedSlot = observedSlot;
+			if (observedSlot != null) observedSlot.set(slot);
 		}
 
 		@Override public boolean terminal() { return false; }
@@ -502,6 +750,7 @@ public class PlaybackEngineLeaseControllerTest {
 		@Override public MediaEngine engineSlot() { return slot; }
 		@Override public void engineSlot(MediaEngine engine) {
 			slot = engine;
+			if (observedSlot != null) observedSlot.set(engine);
 			if (callback != null) {
 				try {
 					set(callback, "engine", engine);
@@ -532,4 +781,9 @@ public class PlaybackEngineLeaseControllerTest {
 	private record Fixture(PlaybackOwnership ownership, PlaybackEngineLeaseController controller,
 			MutableAccess access, PlayableItem target, MediaEngine slot, long revision,
 			PlaybackOwnership.Token committed) {}
+
+	private record UnsupportedFixture(List<String> events, PlayableItem target, MediaEngine initial,
+			PlaybackOwnership ownership, MutableAccess access, SelectionManager manager,
+			MediaSessionCallback callback, FakeSession session, VideoOutputCoordinator videoOutput,
+			long revision) {}
 }

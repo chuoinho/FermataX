@@ -31,7 +31,6 @@ final class YoutubeDeferredMediaEngine implements MediaEngine {
 	private final MediaSessionCallback callback;
 	private PlayableItem source;
 	private YoutubeMediaEngine delegate;
-	private VideoView videoView;
 	private long position;
 	private float speed = 1f;
 	private boolean positionSet;
@@ -79,7 +78,6 @@ final class YoutubeDeferredMediaEngine implements MediaEngine {
 		}
 		delegate = engine;
 		closed = true;
-		if (videoView != null) engine.setVideoView(videoView);
 		engine.prepare(source);
 		if (positionSet) engine.setPosition(position);
 		if (speedSet) engine.setSpeed(speed);
@@ -170,8 +168,6 @@ final class YoutubeDeferredMediaEngine implements MediaEngine {
 
 	@Override
 	public void setVideoView(@Nullable VideoView view) {
-		videoView = view;
-		if (delegate != null) delegate.setVideoView(view);
 	}
 
 	@Override

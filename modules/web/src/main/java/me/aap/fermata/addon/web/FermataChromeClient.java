@@ -11,6 +11,7 @@ import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED
 import android.Manifest;
 import android.content.Context;
 import android.view.MotionEvent;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
@@ -388,12 +389,10 @@ public class FermataChromeClient extends WebChromeClient {
 			boolean webAttached = (web != null) && web.isAttachedToWindow();
 			int webWidth = (web == null) ? 0 : web.getWidth();
 			int webHeight = (web == null) ? 0 : web.getHeight();
-			boolean surfaceKnown = fullScreenView instanceof VideoView;
-			boolean surfaceValid = false;
-			if (surfaceKnown) {
-				VideoView video = (VideoView) fullScreenView;
-				surfaceValid = video.getVideoSurface().getHolder().getSurface().isValid();
-			}
+			SurfaceView surface = (fullScreenView instanceof VideoView video) ?
+					video.getVideoSurface() : null;
+			boolean surfaceKnown = surface != null;
+			boolean surfaceValid = surfaceKnown && isCustomViewSurfaceReady(surface);
 			return DiagnosticsSnapshot.builder()
 					.view((view != null) && (view.getVisibility() == VISIBLE),
 							(view != null) && view.isAttachedToWindow(),
@@ -412,10 +411,16 @@ public class FermataChromeClient extends WebChromeClient {
 		try {
 			if ((view == null) || !view.isShown() || !view.isAttachedToWindow() ||
 					(view.getWidth() <= 0) || (view.getHeight() <= 0)) return false;
-			if (!(fullScreenView instanceof VideoView video)) return true;
-			return video.getVideoSurface().getHolder().getSurface().isValid();
+			SurfaceView surface = (fullScreenView instanceof VideoView video) ?
+					video.getVideoSurface() : null;
+			return isCustomViewSurfaceReady(surface);
 		} catch (RuntimeException ignored) {
 			return false;
 		}
+	}
+
+	/** A browser-backed fullscreen host has no native decoder Surface to wait for. */
+	static boolean isCustomViewSurfaceReady(@Nullable SurfaceView surface) {
+		return (surface == null) || surface.getHolder().getSurface().isValid();
 	}
 }

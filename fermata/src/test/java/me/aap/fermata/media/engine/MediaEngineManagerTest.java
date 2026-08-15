@@ -4,6 +4,8 @@ import static me.aap.fermata.media.engine.EngineSelection.Ownership.BORROWED;
 import static me.aap.fermata.media.engine.EngineSelection.Ownership.NO_CANDIDATE;
 import static me.aap.fermata.media.engine.EngineSelection.Ownership.OWNED_NEW;
 import static me.aap.fermata.media.engine.EngineSelection.Ownership.PREEXISTING;
+import static me.aap.fermata.media.engine.EngineSelection.Retirement.RETAIN;
+import static me.aap.fermata.media.engine.EngineSelection.Retirement.RETIRE_AFTER_RESOLUTION;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
@@ -105,22 +107,22 @@ public class MediaEngineManagerTest {
 
 		EngineSelection reused = manager.createEngineSelection(current.engine,
 				item(current.engine, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY);
-		assertSelection(reused, current.engine, PREEXISTING);
+		assertSelection(reused, current.engine, PREEXISTING, RETAIN);
 		assertEquals(0, current.closeCount);
 		assertEquals(0, mediaPlayer.createCount);
 
 		TestEngine supplied = new TestEngine(MEDIA_ENG_EXO, null);
 		EngineSelection borrowed = manager.createEngineSelection(current.engine,
 				item(supplied.engine, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY);
-		assertSelection(borrowed, supplied.engine, BORROWED);
-		assertEquals(1, current.closeCount);
+		assertSelection(borrowed, supplied.engine, BORROWED, RETIRE_AFTER_RESOLUTION);
+		assertEquals(0, current.closeCount);
 		assertEquals(0, mediaPlayer.createCount);
 
 		TestEngine withoutCurrent = new TestEngine(MEDIA_ENG_EXO, null);
 		EngineSelection newBorrowed = manager.createEngineSelection(null,
 				item(withoutCurrent.engine, false, true, false, MEDIA_ENG_MP),
 				MediaEngine.Listener.DUMMY);
-		assertSelection(newBorrowed, withoutCurrent.engine, BORROWED);
+		assertSelection(newBorrowed, withoutCurrent.engine, BORROWED, RETAIN);
 	}
 
 	@Test
@@ -134,24 +136,24 @@ public class MediaEngineManagerTest {
 
 		EngineSelection borrowed = manager.createEngineSelection(current.engine,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY);
-		assertSelection(borrowed, cached.engine, BORROWED);
+		assertSelection(borrowed, cached.engine, BORROWED, RETAIN);
 		assertEquals(0, current.closeCount);
 
 		EngineSelection reused = manager.createEngineSelection(cached.engine,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY);
-		assertSelection(reused, cached.engine, PREEXISTING);
+		assertSelection(reused, cached.engine, PREEXISTING, RETAIN);
 		assertEquals(0, cached.closeCount);
 
 		custom.factory = () -> null;
 		assertSelection(manager.createEngineSelection(current.engine,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY),
-				null, NO_CANDIDATE);
+				null, NO_CANDIDATE, RETAIN);
 		assertEquals(0, current.closeCount);
 
 		custom.failure = new IllegalStateException("failed");
 		assertSelection(manager.createEngineSelection(current.engine,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY),
-				null, NO_CANDIDATE);
+				null, NO_CANDIDATE, RETAIN);
 		assertEquals(0, current.closeCount);
 	}
 
@@ -167,27 +169,27 @@ public class MediaEngineManagerTest {
 
 		EngineSelection selection = manager.createEngineSelection(null,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY);
-		assertSelection(selection, created.engine, OWNED_NEW);
+		assertSelection(selection, created.engine, OWNED_NEW, RETAIN);
 		assertEquals(0, custom.createCount);
 		assertEquals(1, mediaPlayer.createCount);
 	}
 
 	@Test
-	public void noAdditionalPlayerBranchesPreserveCloseReuseAndCreation() {
+	public void noAdditionalPlayerBranchesDeferRetirementReuseAndCreation() {
 		TestMediaPlayerProvider unsupported = new TestMediaPlayerProvider(false, () -> null);
 		MediaEngineManager unsupportedManager = manager(unsupported);
 		TestEngine unsupportedCurrent = new TestEngine(MEDIA_ENG_EXO, null);
 		assertSelection(unsupportedManager.createEngineSelection(unsupportedCurrent.engine,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY),
-				null, NO_CANDIDATE);
-		assertEquals(1, unsupportedCurrent.closeCount);
+				null, NO_CANDIDATE, RETIRE_AFTER_RESOLUTION);
+		assertEquals(0, unsupportedCurrent.closeCount);
 
 		TestMediaPlayerProvider reusableProvider = new TestMediaPlayerProvider();
 		MediaEngineManager reusableManager = manager(reusableProvider);
 		TestEngine reusable = new TestEngine(MEDIA_ENG_MP, null);
 		assertSelection(reusableManager.createEngineSelection(reusable.engine,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY),
-				reusable.engine, PREEXISTING);
+				reusable.engine, PREEXISTING, RETAIN);
 		assertEquals(0, reusable.closeCount);
 		assertEquals(0, reusableProvider.createCount);
 
@@ -198,14 +200,14 @@ public class MediaEngineManagerTest {
 		TestEngine incompatible = new TestEngine(MEDIA_ENG_EXO, null);
 		assertSelection(replacingManager.createEngineSelection(incompatible.engine,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY),
-				replacement.engine, OWNED_NEW);
-		assertEquals(1, incompatible.closeCount);
+				replacement.engine, OWNED_NEW, RETIRE_AFTER_RESOLUTION);
+		assertEquals(0, incompatible.closeCount);
 
 		TestEngine first = new TestEngine(MEDIA_ENG_MP, null);
 		TestMediaPlayerProvider firstProvider = new TestMediaPlayerProvider(true, () -> first.engine);
 		assertSelection(manager(firstProvider).createEngineSelection(null,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY),
-				first.engine, OWNED_NEW);
+				first.engine, OWNED_NEW, RETAIN);
 	}
 
 	@Test
@@ -216,8 +218,8 @@ public class MediaEngineManagerTest {
 		TestEngine unsupportedCurrent = new TestEngine(MEDIA_ENG_EXO, null);
 		assertSelection(noProvider.createEngineSelection(unsupportedCurrent.engine,
 				item(null, false, true, false, MEDIA_ENG_EXO), MediaEngine.Listener.DUMMY),
-				null, NO_CANDIDATE);
-		assertEquals(1, unsupportedCurrent.closeCount);
+				null, NO_CANDIDATE, RETIRE_AFTER_RESOLUTION);
+		assertEquals(0, unsupportedCurrent.closeCount);
 
 		TestProvider reusableProvider = new TestProvider(true, () -> {
 			throw new AssertionError("Reusable engine must not invoke its provider");
@@ -227,7 +229,7 @@ public class MediaEngineManagerTest {
 		TestEngine reusable = new TestEngine(MEDIA_ENG_EXO, null);
 		assertSelection(reusableManager.createEngineSelection(reusable.engine,
 				item(null, false, true, false, MEDIA_ENG_EXO), MediaEngine.Listener.DUMMY),
-				reusable.engine, PREEXISTING);
+				reusable.engine, PREEXISTING, RETAIN);
 		assertEquals(0, reusable.closeCount);
 		assertEquals(0, reusableProvider.createCount);
 
@@ -238,8 +240,8 @@ public class MediaEngineManagerTest {
 		TestEngine incompatible = new TestEngine(MEDIA_ENG_VLC, null);
 		assertSelection(replacingManager.createEngineSelection(incompatible.engine,
 				item(null, false, true, false, MEDIA_ENG_EXO), MediaEngine.Listener.DUMMY),
-				replacement.engine, OWNED_NEW);
-		assertEquals(1, incompatible.closeCount);
+				replacement.engine, OWNED_NEW, RETIRE_AFTER_RESOLUTION);
+		assertEquals(0, incompatible.closeCount);
 
 		TestEngine first = new TestEngine(MEDIA_ENG_EXO, null);
 		TestProvider firstProvider = new TestProvider(true, () -> first.engine);
@@ -247,7 +249,7 @@ public class MediaEngineManagerTest {
 		firstManager.exoPlayer = firstProvider;
 		assertSelection(firstManager.createEngineSelection(null,
 				item(null, false, true, false, MEDIA_ENG_EXO), MediaEngine.Listener.DUMMY),
-				first.engine, OWNED_NEW);
+				first.engine, OWNED_NEW, RETAIN);
 
 		TestProvider preferred = new TestProvider(false, () -> {
 			throw new AssertionError("Unsupported preferred provider must not be called");
@@ -259,7 +261,7 @@ public class MediaEngineManagerTest {
 		fallbackManager.vlcPlayer = fallback;
 		assertSelection(fallbackManager.createEngineSelection(null,
 				item(null, false, true, false, MEDIA_ENG_EXO), MediaEngine.Listener.DUMMY),
-				fallbackEngine.engine, OWNED_NEW);
+				fallbackEngine.engine, OWNED_NEW, RETAIN);
 		assertEquals(0, preferred.createCount);
 		assertEquals(1, fallback.createCount);
 	}
@@ -285,8 +287,8 @@ public class MediaEngineManagerTest {
 
 		EngineSelection selection = manager.createEngineSelection(
 				current.engine, target, MediaEngine.Listener.DUMMY);
-		assertSelection(selection, selected.engine, OWNED_NEW);
-		assertEquals(1, current.closeCount);
+		assertSelection(selection, selected.engine, OWNED_NEW, RETIRE_AFTER_RESOLUTION);
+		assertEquals(0, current.closeCount);
 		assertEquals(0, exo.createCount);
 		assertEquals(1, vlc.createCount);
 	}
@@ -301,7 +303,7 @@ public class MediaEngineManagerTest {
 		TestEngine untouched = new TestEngine(MEDIA_ENG_MP, null);
 		assertSelection(manager(unsupported).createEngineSelection(
 				untouched.engine, regular, MediaEngine.Listener.DUMMY),
-				null, NO_CANDIDATE);
+				null, NO_CANDIDATE, RETAIN);
 		assertEquals(0, untouched.closeCount);
 
 		TestEngine existingStreamDelegate = new TestEngine(MEDIA_ENG_MP, null);
@@ -311,7 +313,7 @@ public class MediaEngineManagerTest {
 				new StreamEngine(existingStreamProvider, MediaEngine.Listener.DUMMY);
 		assertSelection(manager(existingStreamProvider).createEngineSelection(
 				existingStream, stream, MediaEngine.Listener.DUMMY),
-				existingStream, PREEXISTING);
+				existingStream, PREEXISTING, RETAIN);
 		assertEquals(1, existingStreamProvider.createCount);
 
 		TestEngine rawStreamCurrent = new TestEngine(MEDIA_ENG_MP, null);
@@ -322,7 +324,8 @@ public class MediaEngineManagerTest {
 				rawStreamCurrent.engine, stream, MediaEngine.Listener.DUMMY);
 		assertTrue(wrapped.candidate() instanceof StreamEngine);
 		assertEquals(OWNED_NEW, wrapped.ownership());
-		assertEquals(1, rawStreamCurrent.closeCount);
+		assertEquals(RETIRE_AFTER_RESOLUTION, wrapped.retirement());
+		assertEquals(0, rawStreamCurrent.closeCount);
 
 		TestEngine convertedDelegate = new TestEngine(MEDIA_ENG_MP, null);
 		TestMediaPlayerProvider convertedStreamProvider =
@@ -333,8 +336,8 @@ public class MediaEngineManagerTest {
 		convertedStreamProvider.factory = () -> convertedRaw.engine;
 		assertSelection(manager(convertedStreamProvider).createEngineSelection(
 				convertedStream, regular, MediaEngine.Listener.DUMMY),
-				convertedRaw.engine, OWNED_NEW);
-		assertEquals(1, convertedDelegate.closeCount);
+				convertedRaw.engine, OWNED_NEW, RETIRE_AFTER_RESOLUTION);
+		assertEquals(0, convertedDelegate.closeCount);
 
 		TestEngine rawRegular = new TestEngine(MEDIA_ENG_MP, null);
 		TestMediaPlayerProvider unused = new TestMediaPlayerProvider(true, () -> {
@@ -342,7 +345,7 @@ public class MediaEngineManagerTest {
 		});
 		assertSelection(manager(unused).createEngineSelection(
 				rawRegular.engine, regular, MediaEngine.Listener.DUMMY),
-				rawRegular.engine, PREEXISTING);
+				rawRegular.engine, PREEXISTING, RETAIN);
 		assertEquals(0, unused.createCount);
 
 		TestEngine newStreamDelegate = new TestEngine(MEDIA_ENG_MP, null);
@@ -352,13 +355,14 @@ public class MediaEngineManagerTest {
 				null, stream, MediaEngine.Listener.DUMMY);
 		assertTrue(newStream.candidate() instanceof StreamEngine);
 		assertEquals(OWNED_NEW, newStream.ownership());
+		assertEquals(RETAIN, newStream.retirement());
 
 		TestEngine newRaw = new TestEngine(MEDIA_ENG_MP, null);
 		TestMediaPlayerProvider newRawProvider =
 				new TestMediaPlayerProvider(true, () -> newRaw.engine);
 		assertSelection(manager(newRawProvider).createEngineSelection(
 				null, regular, MediaEngine.Listener.DUMMY),
-				newRaw.engine, OWNED_NEW);
+				newRaw.engine, OWNED_NEW, RETAIN);
 	}
 
 	@Test
@@ -369,10 +373,10 @@ public class MediaEngineManagerTest {
 
 		assertSelection(manager.createEngineSelection(null,
 				item(null, false, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY),
-				null, NO_CANDIDATE);
+				null, NO_CANDIDATE, RETAIN);
 		assertSelection(manager.createEngineSelection(null,
 				item(null, true, true, false, MEDIA_ENG_MP), MediaEngine.Listener.DUMMY),
-				null, NO_CANDIDATE);
+				null, NO_CANDIDATE, RETAIN);
 	}
 
 	@Test
@@ -488,8 +492,14 @@ public class MediaEngineManagerTest {
 
 	private static void assertSelection(EngineSelection selection, MediaEngine candidate,
 			EngineSelection.Ownership ownership) {
+		assertSelection(selection, candidate, ownership, RETAIN);
+	}
+
+	private static void assertSelection(EngineSelection selection, MediaEngine candidate,
+			EngineSelection.Ownership ownership, EngineSelection.Retirement retirement) {
 		assertSame(candidate, selection.candidate());
 		assertEquals(ownership, selection.ownership());
+		assertEquals(retirement, selection.retirement());
 	}
 
 	private static Object defaultValue(Class<?> type) {

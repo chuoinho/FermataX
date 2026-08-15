@@ -34,7 +34,8 @@ import me.aap.utils.ui.view.NavButtonView;
 public class FermataNavBarView extends NavBarView implements GestureListener {
 	private static final float INACTIVE_ICON_ALPHA = 0.74F;
 	private final GestureDetectorCompat gestureDetector;
-	private final Runnable refreshScrollStateTask = this::refreshScrollState;
+	private final Runnable refreshScrollStateTask = () -> refreshScrollState(true);
+	private final Runnable refreshContentScrollStateTask = () -> refreshScrollState(false);
 	private int platformTouchSlop;
 	private float touchDownX;
 	private float touchDownY;
@@ -209,8 +210,12 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 
 	public void setVoiceVisible(boolean visible) {
 		View voice = findViewById(R.id.nav_voice);
-		if (voice != null) voice.setVisibility(visible ? VISIBLE : GONE);
-		post(refreshScrollStateTask);
+		int visibility = visible ? VISIBLE : GONE;
+		if ((voice == null) || (voice.getVisibility() == visibility)) return;
+		voice.setVisibility(visibility);
+		// Voice availability follows addon-content updates. Recalculate the viewport without
+		// revealing the selected addon again, otherwise every update undoes user scrolling.
+		post(refreshContentScrollStateTask);
 	}
 
 	private void ensureRailStructure() {
@@ -276,15 +281,17 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 		sizeVerticalNavButtons(bottom - top);
 		super.onLayout(changed, left, top, right, bottom);
-		refreshScrollState();
+		// Relayouts are also triggered by addon content/playback updates. Preserve the user's
+		// scroll position; fragment and size changes explicitly schedule active-item reveal.
+		refreshScrollState(false);
 	}
 
 	@Override
 	public void onActivityEvent(ActivityDelegate activity, long event) {
 		super.onActivityEvent(activity, event);
-		if ((event == FRAGMENT_CHANGED) || (event == FRAGMENT_CONTENT_CHANGED)) {
-			post(refreshScrollStateTask);
-		}
+		// Content/playback updates must not snap the viewport back to the selected addon.
+		if (event == FRAGMENT_CHANGED) post(refreshScrollStateTask);
+		else if (event == FRAGMENT_CONTENT_CHANGED) post(refreshContentScrollStateTask);
 	}
 
 	@Override
@@ -315,14 +322,15 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 	@Override
 	protected void onDetachedFromWindow() {
 		removeCallbacks(refreshScrollStateTask);
+		removeCallbacks(refreshContentScrollStateTask);
 		super.onDetachedFromWindow();
 	}
 
-	private void refreshScrollState() {
+	private void refreshScrollState(boolean revealActiveItem) {
 		if (!isAttachedToWindow()) return;
 		refreshFocusOrder();
 		forEachNavigationItem(this::applyVisualState);
-		ensureActiveItemVisible();
+		if (revealActiveItem) ensureActiveItemVisible();
 		scrollViewport.refreshScrollState();
 	}
 

@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">続行できません</string>
     <string name="dashboard_smart_recovery_title">ソースが中断されました</string>
     <string name="dashboard_smart_recovery_subtitle">再試行するかアドオンを開いてください</string>
+    <string name="dashboard_smart_remaining_hours_minutes">残り%1$d時間%2$d分</string>
+    <string name="dashboard_smart_remaining_minutes">残り%1$d分</string>
+    <string name="dashboard_smart_almost_done">まもなく終了</string>
     <string name="dashboard_home_sub">開始画面とクイックアクセス</string>
     <string name="dashboard_folders_sub">ローカルファイルとフォルダー</string>
     <string name="dashboard_favorites_sub">ピン留めしたチャンネルとメディア</string>

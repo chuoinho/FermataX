@@ -159,10 +159,13 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	}
 
 	/**
-	 * Selects an engine and reports whether a rejected candidate may be disposed by the caller.
+	 * Selects an engine without closing {@code current}, and reports the deferred prior-engine
+	 * retirement that a successful transaction may perform.
 	 *
 	 * <p>Item-supplied and custom-provider candidates are borrowed by default. Providers selected
-	 * from the manager's built-in MediaPlayer/ExoPlayer/VLC slots create caller-owned candidates.</p>
+	 * from the manager's built-in MediaPlayer/ExoPlayer/VLC slots create caller-owned candidates.
+	 * Unlike {@link #createEngine(MediaEngine, PlayableItem, Listener)}, this method must not retire
+	 * the current engine while selection is still vulnerable to a stale or reentrant handoff.</p>
 	 */
 	public EngineSelection createEngineSelection(
 			MediaEngine current, PlayableItem i, Listener listener) {
@@ -170,30 +173,30 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				null, null);
 		var newEng = i.getMediaEngine(current, listener);
 		if (newEng != null) {
-			if ((current != null) && (current != newEng)) current.close();
 			recordEngineDiagnostic("engine_selected", DiagnosticPriority.STATE, i, current, newEng,
 					null, null);
-			return selection(current, newEng, EngineSelection.Ownership.BORROWED);
+			return selection(current, newEng, EngineSelection.Ownership.BORROWED,
+					retirementForReplacement(current, newEng));
 		}
 
 		if ((engineProvider != null) && engineProvider.supportsPlayback(i)) {
 			recordEngineDiagnostic("engine_provider_selected", DiagnosticPriority.STATE, i, current,
 					null, engineProvider, null);
 			return selection(current, createSafely(engineProvider, listener, false),
-					EngineSelection.Ownership.BORROWED);
+					EngineSelection.Ownership.BORROWED, EngineSelection.Retirement.RETAIN);
 		}
 		if (!isAdditionalPlayerSupported()) {
 			if (!mediaPlayer.supportsPlayback(i)) {
-				if (current != null) current.close();
-				return selection(current, null, EngineSelection.Ownership.OWNED_NEW);
+				return selection(current, null, EngineSelection.Ownership.OWNED_NEW,
+						retirementForReplacement(current, null));
 			}
 			if (current != null) {
 				if (current.getId() == MEDIA_ENG_MP)
-					return createBuiltInSelection(mediaPlayer, current, i, listener);
-				current.close();
+					return createBuiltInSelection(current, current, mediaPlayer, i, listener, false);
+				return createBuiltInSelection(current, null, mediaPlayer, i, listener, true);
 			}
 
-			return createBuiltInSelection(mediaPlayer, null, i, listener);
+			return createBuiltInSelection(null, null, mediaPlayer, i, listener, false);
 		}
 
 		PlayableItemPrefs pref = i.getPrefs();
@@ -208,33 +211,81 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 
 		MediaEngineProvider provider = getSupportingProvider(getProvider(id), i);
 		if (provider == null) {
-			if (current != null) current.close();
-			return selection(current, null, EngineSelection.Ownership.OWNED_NEW);
+			return selection(current, null, EngineSelection.Ownership.OWNED_NEW,
+					retirementForReplacement(current, null));
 		}
 
 		if (current != null) {
 			if (!requiresFreshP2pEngine(current, i) && (current.getId() == id) &&
 					getProvider(id).supportsPlayback(i)) {
-				return createBuiltInSelection(null, current, i, listener);
+				return createBuiltInSelection(current, current, null, i, listener, false);
 			}
-			current.close();
+			return createBuiltInSelection(current, null, provider, i, listener, true);
 		}
 
-		return createBuiltInSelection(provider, null, i, listener);
+		return createBuiltInSelection(null, null, provider, i, listener, false);
 	}
 
 	private EngineSelection createBuiltInSelection(
-			MediaEngineProvider provider, MediaEngine current, PlayableItem item, Listener listener) {
-		return selection(current, create(provider, current, item, listener),
-				EngineSelection.Ownership.OWNED_NEW);
+			@Nullable MediaEngine current, @Nullable MediaEngine reusableCurrent,
+			@Nullable MediaEngineProvider provider, PlayableItem item, Listener listener,
+			boolean retiresCurrentBeforeCreation) {
+		BuiltInCandidate selected = selectBuiltInCandidate(provider, reusableCurrent, item, listener);
+		boolean retiresCurrent = retiresCurrentBeforeCreation ||
+				((current == reusableCurrent) && selected.retiresReusableCurrent());
+		return selection(current, selected.candidate(), EngineSelection.Ownership.OWNED_NEW,
+				retiresCurrent ? EngineSelection.Retirement.RETIRE_AFTER_RESOLUTION :
+					EngineSelection.Retirement.RETAIN);
+	}
+
+	/** Mirrors {@link #create} without giving selection authority to close the reusable engine. */
+	private BuiltInCandidate selectBuiltInCandidate(@Nullable MediaEngineProvider provider,
+			@Nullable MediaEngine reusableCurrent, PlayableItem item, Listener listener) {
+		recordEngineDiagnostic("engine_create_requested", DiagnosticPriority.STATE, item,
+				reusableCurrent, null, provider, null);
+		if ((provider != null) && !provider.supportsPlayback(item)) {
+			recordEngineDiagnostic("engine_create_rejected", DiagnosticPriority.WARN, item,
+					reusableCurrent, null, provider, "unsupported_item");
+			return new BuiltInCandidate(null, false);
+		}
+		if (reusableCurrent != null) {
+			if (isStream(item)) {
+				if (reusableCurrent instanceof StreamEngine) {
+					return new BuiltInCandidate(reusableCurrent, false);
+				}
+				return new BuiltInCandidate(createSafely(
+						(provider != null) ? provider : getProvider(reusableCurrent.getId()), listener, true),
+						true);
+			} else if (reusableCurrent instanceof StreamEngine) {
+				return new BuiltInCandidate(createSafely(
+						(provider != null) ? provider : getProvider(reusableCurrent.getId()), listener, false),
+						true);
+			} else {
+				return new BuiltInCandidate(reusableCurrent, false);
+			}
+		}
+		return new BuiltInCandidate(createSafely(provider, listener, isStream(item)), false);
+	}
+
+	private record BuiltInCandidate(@Nullable MediaEngine candidate, boolean retiresReusableCurrent) {
 	}
 
 	private static EngineSelection selection(MediaEngine current, MediaEngine candidate,
-			EngineSelection.Ownership createdOwnership) {
+			EngineSelection.Ownership createdOwnership, EngineSelection.Retirement retirement) {
 		EngineSelection.Ownership ownership = (candidate == null) ?
 				EngineSelection.Ownership.NO_CANDIDATE : ((candidate == current) ?
 				EngineSelection.Ownership.PREEXISTING : createdOwnership);
-		return new EngineSelection(candidate, ownership);
+		if (ownership == EngineSelection.Ownership.PREEXISTING) {
+			retirement = EngineSelection.Retirement.RETAIN;
+		}
+		return new EngineSelection(candidate, ownership, retirement);
+	}
+
+	private static EngineSelection.Retirement retirementForReplacement(
+			@Nullable MediaEngine current, @Nullable MediaEngine candidate) {
+		return ((current != null) && (current != candidate)) ?
+				EngineSelection.Retirement.RETIRE_AFTER_RESOLUTION :
+				EngineSelection.Retirement.RETAIN;
 	}
 
 	static boolean requiresP2p(PlayableItem item) {

@@ -43,7 +43,7 @@
         android:textColor="?attr/colorOnSecondary"
         android:textSize="13sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_item_actions"
         app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -58,7 +58,7 @@
         android:textAppearance="?attr/textAppearanceListItem"
         android:textSize="21sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_item_actions"
         app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
         app:layout_constraintTop_toBottomOf="@id/dashboard_item_eyebrow" />
 
@@ -72,19 +72,18 @@
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:textColor="?android:attr/textColorSecondary"
         android:textSize="14sp"
-        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_item_actions"
         app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
         app:layout_constraintTop_toBottomOf="@id/dashboard_item_title" />
 
     <LinearLayout
         android:id="@+id/dashboard_item_actions"
-        android:layout_width="0dp"
+		android:layout_width="wrap_content"
         android:layout_height="@dimen/dashboard_smart_v2_control_size"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
-        app:layout_constraintStart_toStartOf="parent">
+		app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/dashboard_action_label"
@@ -113,13 +112,13 @@
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_prev"
             style="@style/Widget.AppCompat.ImageButton"
-            android:layout_width="@dimen/dashboard_smart_v2_control_size"
+			android:layout_width="0dp"
             android:layout_height="@dimen/dashboard_smart_v2_control_size"
-            android:layout_marginEnd="4dp"
-            android:background="@drawable/dashboard_smart_action_v2_bg"
+			android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
-            app:tint="@color/dashboard_smart_action_v2_tint" />
+			android:visibility="gone"
+			app:tint="@color/dashboard_smart_action_v2_tint" />
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_play_pause"
@@ -135,13 +134,13 @@
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_next"
             style="@style/Widget.AppCompat.ImageButton"
-            android:layout_width="@dimen/dashboard_smart_v2_control_size"
+			android:layout_width="0dp"
             android:layout_height="@dimen/dashboard_smart_v2_control_size"
-            android:layout_marginEnd="4dp"
-            android:background="@drawable/dashboard_smart_action_v2_bg"
+			android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
-            app:tint="@color/dashboard_smart_action_v2_tint" />
+			android:visibility="gone"
+			app:tint="@color/dashboard_smart_action_v2_tint" />
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_favorite"
@@ -149,7 +148,7 @@
             android:layout_width="@dimen/dashboard_smart_v2_control_size"
             android:layout_height="@dimen/dashboard_smart_v2_control_size"
             android:layout_marginEnd="4dp"
-            android:background="@drawable/dashboard_smart_action_v2_bg"
+			android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
             app:tint="@color/dashboard_smart_action_v2_tint" />
@@ -159,7 +158,7 @@
             style="@style/Widget.AppCompat.ImageButton"
             android:layout_width="@dimen/dashboard_smart_v2_control_size"
             android:layout_height="@dimen/dashboard_smart_v2_control_size"
-            android:background="@drawable/dashboard_smart_action_v2_bg"
+			android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
             app:tint="@color/dashboard_smart_action_v2_tint" />
@@ -171,22 +170,21 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="4dp"
+		android:layout_marginTop="4dp"
         android:orientation="vertical"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/dashboard_item_actions"
-        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
-        app:layout_constraintStart_toEndOf="@id/dashboard_item_icon">
+		android:visibility="invisible"
+		app:layout_constraintEnd_toStartOf="@id/dashboard_item_actions"
+		app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
+		app:layout_constraintTop_toBottomOf="@id/dashboard_item_subtitle">
 
         <ProgressBar
             android:id="@+id/dashboard_smart_progress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:max="1000"
-            android:progress="0"
-            android:progressBackgroundTint="?attr/colorSecondaryVariant"
-            android:progressTint="?attr/colorOnSecondary" />
+			android:layout_height="5dp"
+			android:max="1000"
+			android:progress="0"
+			android:progressDrawable="@drawable/dashboard_smart_progress" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -233,8 +231,10 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/recent"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textSize="11sp" />
+            android:textAllCaps="true"
+            android:textColor="?attr/colorOnSecondary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:id="@+id/dashboard_recent_items"

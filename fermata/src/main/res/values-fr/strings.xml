@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Impossible de continuer</string>
     <string name="dashboard_smart_recovery_title">Source interrompue</string>
     <string name="dashboard_smart_recovery_subtitle">Réessayez ou ouvrez l’extension</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Reste %1$d h %2$d min</string>
+    <string name="dashboard_smart_remaining_minutes">Reste %1$d min</string>
+    <string name="dashboard_smart_almost_done">Presque terminé</string>
     <string name="dashboard_home_sub">Écran d\'accueil et accès rapide</string>
     <string name="dashboard_folders_sub">Fichiers et dossiers locaux</string>
     <string name="dashboard_favorites_sub">Chaînes et médias épinglés</string>

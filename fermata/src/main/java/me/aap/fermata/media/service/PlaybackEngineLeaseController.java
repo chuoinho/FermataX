@@ -126,6 +126,15 @@ final class PlaybackEngineLeaseController {
 		return result;
 	}
 
+	/**
+	 * Releases a failed candidate only after its failure claim has rolled it back out of live
+	 * ownership. Item/custom-provider engines are borrowed and must stay available to their owner.
+	 */
+	void disposeFailed(@NonNull PlaybackEngineLease.Accepted accepted) {
+		PlaybackEngineLease.Selected selected = accepted.selected();
+		if (PlaybackEngineLease.canDisposeRejected(selected, live)) accepted.candidate().close();
+	}
+
 	private void disposeRejected(PlaybackEngineLease.Selected selected) {
 		MediaEngine candidate = selected.candidate();
 		if ((candidate != null) && PlaybackEngineLease.canDisposeRejected(selected, live)) {

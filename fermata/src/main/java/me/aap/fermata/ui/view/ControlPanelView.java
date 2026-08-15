@@ -264,9 +264,9 @@ public class ControlPanelView extends ConstraintLayout
 		hideTimer = null;
 
 		View info = (v != null) ? v.getVideoInfoView() : null;
+		if (info != null) info.setVisibility(GONE);
 
 		if (isAutoUi(a)) {
-			if (info != null) info.setVisibility(GONE);
 			boolean split = a.getBody().isBothMode() && isSplitModeSupported(a);
 			presentationView.setVideoMode(true);
 			presentationCoordinator.enterVideo(presentationView.currentIdentity(a), split,
@@ -283,11 +283,9 @@ public class ControlPanelView extends ConstraintLayout
 
 		if (delay == 0) {
 			fb.setVisibility(GONE);
-			if (info != null) info.setVisibility(GONE);
 			setPanelVisibility(GONE);
 		} else {
 			fb.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
-			if (info != null) info.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
 			presentationView.updateVideoTitle(a);
 			setPanelVisibility(VISIBLE);
 			hideTimer = isAutoUi(a) ? new HideTimer(a, delay, false, info) :
@@ -440,6 +438,8 @@ public class ControlPanelView extends ConstraintLayout
 	public boolean onTouch(@Nullable VideoView video) {
 		MainActivityDelegate a = getActivity();
 		BodyLayout b = a.getBody();
+		View info = (video != null) ? video.getVideoInfoView() : null;
+		if (info != null) info.setVisibility(GONE);
 
 		if (b.getMode() == BodyLayout.Mode.BOTH) {
 			b.setMode(BodyLayout.Mode.VIDEO);
@@ -449,9 +449,7 @@ public class ControlPanelView extends ConstraintLayout
 		int delay = getTouchDelay();
 		if (delay == 0) return false;
 
-		View info = (video != null) ? video.getVideoInfoView() : null;
 		if (isAutoUi(a)) {
-			if (info != null) info.setVisibility(GONE);
 			presentationCoordinator.toggleControls(delay, a.getMediaServiceBinder().isPlaying());
 			return true;
 		}
@@ -463,13 +461,11 @@ public class ControlPanelView extends ConstraintLayout
 			fb.setVisibility(GONE);
 			if (isAutoUi(a)) a.setBarsHidden(true);
 			if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(true);
-			if (info != null) info.setVisibility(GONE);
 		} else {
 			setPanelVisibility(VISIBLE);
 			fb.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
 			if (isAutoUi(a)) a.setBarsHidden(false);
 			if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(false);
-			if (info != null) info.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
 			presentationView.updateVideoTitle(a);
 			clearFocus();
 			hideTimer = isAutoUi(a) ? new HideTimer(a, delay, false, info) :
@@ -496,9 +492,9 @@ public class ControlPanelView extends ConstraintLayout
 		}
 
 		View info = vv.getVideoInfoView();
+		if (info != null) info.setVisibility(GONE);
 		int delay = getSeekDelay();
 		if (isAutoUi(a)) {
-			if (info != null) info.setVisibility(GONE);
 			presentationView.updateVideoTitle(a);
 			clearFocus();
 			presentationCoordinator.showSeekControls(
@@ -510,8 +506,7 @@ public class ControlPanelView extends ConstraintLayout
 		setPanelVisibility(VISIBLE);
 		fb.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
 		if (isAutoUi(a)) a.setBarsHidden(false);
-		if (info != null) info.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
-			presentationView.updateVideoTitle(a);
+		presentationView.updateVideoTitle(a);
 		clearFocus();
 		hideTimer = isAutoUi(a) ? new HideTimer(a, delay, true, info) :
 				new HideTimer(a, delay, true, info, fb);

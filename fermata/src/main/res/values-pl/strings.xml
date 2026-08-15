@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Nie można kontynuować</string>
     <string name="dashboard_smart_recovery_title">Źródło przerwane</string>
     <string name="dashboard_smart_recovery_subtitle">Spróbuj ponownie lub otwórz dodatek</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Pozostało %1$d godz. %2$d min</string>
+    <string name="dashboard_smart_remaining_minutes">Pozostało %1$d min</string>
+    <string name="dashboard_smart_almost_done">Prawie koniec</string>
     <string name="dashboard_home_sub">Ekran startowy i szybki dostęp</string>
     <string name="dashboard_folders_sub">Lokalne pliki i foldery</string>
     <string name="dashboard_favorites_sub">Przypięte kanały i multimedia</string>

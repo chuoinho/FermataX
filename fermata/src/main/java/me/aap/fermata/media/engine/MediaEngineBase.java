@@ -168,6 +168,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 	@Override
 	public void close() {
 		stopped(false);
+		if (videoView != null) setVideoView(null);
 	}
 
 	protected void started() {
@@ -193,8 +194,8 @@ public abstract class MediaEngineBase implements MediaEngine {
 			if (subMgr != null) subMgr.stop(true);
 		} else {
 			state = STATE_STOPPED;
-			videoView = null;
 			if (subMgr != null) {
+				if (videoView != null) subMgr.removeSubtitleConsumer(videoView);
 				subMgr.stop(false);
 				subMgr = null;
 			}

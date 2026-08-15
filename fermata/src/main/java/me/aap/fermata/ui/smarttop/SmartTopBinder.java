@@ -1,6 +1,8 @@
 package me.aap.fermata.ui.smarttop;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.net.Uri;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -16,14 +18,13 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.policy.PlaybackTimelinePolicy;
-import me.aap.utils.text.TextUtils;
 
 /** Binds a complete immutable V2 state and clears every recycled callback before reuse. */
 public final class SmartTopBinder {
 	public interface Handler {
 		void onCard(SmartTopViewState state);
 
-		void onAction(SmartTopAction action, SmartTopViewState state);
+		void onAction(SmartTopAction action, long generation, PlayableItem item);
 
 		void onAllRecent();
 
@@ -77,12 +78,12 @@ public final class SmartTopBinder {
 		views.root().setTag(R.id.dashboard_smart_state_tag, state);
 		views.root().setTag(R.id.dashboard_smart_bind_token,
 				new BindToken(state.generation(), itemId(state.presentedItem())));
-		views.artwork().setImageResource(state.icon());
+		bindArtwork(views, state);
 		views.eyebrow().setVisibility(View.VISIBLE);
 		views.eyebrow().setText(state.eyebrow());
 		views.title().setText(state.title());
 		views.subtitle().setText(state.subtitle());
-		views.subtitle().setVisibility(state.subtitle().length() == 0 ? View.GONE : View.VISIBLE);
+		views.subtitle().setVisibility(state.subtitle().length() == 0 ? View.INVISIBLE : View.VISIBLE);
 		views.root().setOnClickListener(editMode ? null : ignored -> {
 			SmartTopViewState current = boundState(views.root());
 			if (current != null) handler.onCard(current);
@@ -105,23 +106,31 @@ public final class SmartTopBinder {
 		clearLabeledAction(views.labeledAction());
 		for (ImageButton button : buttons) clearAction(button);
 		List<SmartTopAction> actions = editMode ? List.of() : state.actions();
-		int actionIndex = 0;
-		if (!actions.isEmpty() && isLabeled(actions.get(0))) {
-			bindLabeledAction(views.labeledAction(), views.root(), actions.get(0), state);
-			actionIndex = 1;
-		}
-		int count = Math.min(actions.size() - actionIndex, buttons.size());
-		for (int i = 0; i < count; i++) {
-			SmartTopAction action = actions.get(actionIndex + i);
-			ImageButton button = buttons.get(i);
-			button.setVisibility(View.VISIBLE);
-			button.setImageResource(icon(action, state));
-			button.setContentDescription(description(action, state));
-			button.setActivated(isPrimary(action));
-			button.setTag(R.id.dashboard_smart_action_tag, action);
-			button.setOnClickListener(ignored -> dispatchAction(button, views.root()));
+		for (SmartTopAction action : actions) {
+			ImageButton button = actionSlot(buttons, action);
+			if (button != null) bindAction(button, views.root(), action, state);
 		}
 		views.actions().setVisibility(actions.isEmpty() ? View.INVISIBLE : View.VISIBLE);
+	}
+
+	private static ImageButton actionSlot(List<ImageButton> buttons, SmartTopAction action) {
+		if (buttons.size() < 5) return null;
+		return switch (action) {
+			case PLAY, PLAY_PAUSE, OPEN_ADDONS, RETRY -> buttons.get(1);
+			case OPEN_CONTEXT, HISTORY -> buttons.get(3);
+			case FAVORITE -> buttons.get(4);
+			default -> null;
+		};
+	}
+
+	private void bindAction(ImageButton button, View root, SmartTopAction action,
+			SmartTopViewState state) {
+		button.setVisibility(View.VISIBLE);
+		button.setImageResource(icon(action, state));
+		button.setContentDescription(description(action, state));
+		button.setActivated(isPrimary(action));
+		button.setTag(R.id.dashboard_smart_action_tag, action);
+		button.setOnClickListener(ignored -> dispatchAction(button, root));
 	}
 
 	private void bindLabeledAction(MaterialButton button, View root, SmartTopAction action,
@@ -155,7 +164,32 @@ public final class SmartTopBinder {
 	private void dispatchAction(View button, View root) {
 		Object tag = button.getTag(R.id.dashboard_smart_action_tag);
 		SmartTopViewState state = boundState(root);
-		if ((tag instanceof SmartTopAction action) && (state != null)) handler.onAction(action, state);
+		if ((tag instanceof SmartTopAction action) && (state != null)) {
+			handler.onAction(action, state.generation(), state.presentedItem());
+		}
+	}
+
+	private void bindArtwork(Views views, SmartTopViewState state) {
+		ImageView artwork = views.artwork();
+		ColorStateList tint = context.getColorStateList(R.color.dashboard_smart_action_v2_tint);
+		artwork.setImageTintList(tint);
+		artwork.setImageResource(state.icon());
+		artwork.setTag(R.id.dashboard_smart_bind_token, null);
+		PlayableItem item = state.presentedItem();
+		if (item == null) return;
+		BindToken token = new BindToken(state.generation(), itemId(item));
+		artwork.setTag(R.id.dashboard_smart_bind_token, token);
+		item.getIconUri().main().onSuccess(uri -> loadArtwork(artwork, item, token, uri));
+	}
+
+	private void loadArtwork(ImageView artwork, PlayableItem item, BindToken token, Uri uri) {
+		if ((uri == null) || !token.equals(artwork.getTag(R.id.dashboard_smart_bind_token))) return;
+		item.getLib().getBitmap(uri.toString(), true, true).main().onSuccess(bitmap -> {
+			if ((bitmap == null) || !token.equals(
+					artwork.getTag(R.id.dashboard_smart_bind_token))) return;
+			artwork.setImageTintList(null);
+			artwork.setImageBitmap(bitmap);
+		});
 	}
 
 	private void bindTimeline(Views views, SmartTopTimeline timeline) {
@@ -182,14 +216,16 @@ public final class SmartTopBinder {
 		views.progress().setVisibility(View.VISIBLE);
 		views.progress().setProgress(progress(timeline.positionMillis(), timeline.durationMillis()));
 		views.progressCurrent().setVisibility(View.VISIBLE);
-		views.progressCurrent().setText(formatTime(timeline.positionMillis()));
+		views.progressCurrent().setText("");
 		views.progressTotal().setVisibility(View.VISIBLE);
-		views.progressTotal().setText(formatRemainingTime(
+		views.progressTotal().setText(formatRemainingTime(context,
 				timeline.positionMillis(), timeline.durationMillis()));
 	}
 
 	private void bindRecent(Views views, SmartTopViewState state, boolean editMode) {
-		boolean showPanel = !editMode && (state.layout() != SmartTopLayoutMode.COMPACT);
+		boolean hasContent = !state.quickRecent().isEmpty() && !views.recentItems().isEmpty();
+		boolean showPanel = !editMode && (state.layout() != SmartTopLayoutMode.COMPACT) &&
+				hasContent;
 		views.recentPanel().setVisibility(showPanel ? View.VISIBLE : View.GONE);
 		views.recentPanel().setOnClickListener(showPanel ? ignored -> handler.onAllRecent() : null);
 		views.recentPanel().setClickable(showPanel);
@@ -215,7 +251,7 @@ public final class SmartTopBinder {
 	}
 
 	private static void clearAction(ImageButton button) {
-		button.setVisibility(View.GONE);
+		button.setVisibility(View.INVISIBLE);
 		button.setOnClickListener(null);
 		button.setTag(R.id.dashboard_smart_action_tag, null);
 		button.setContentDescription(null);
@@ -286,13 +322,25 @@ public final class SmartTopBinder {
 				Math.round((positionMillis * 1000D) / durationMillis)));
 	}
 
-	private static CharSequence formatTime(long millis) {
-		long seconds = Math.max(0L, millis / 1000L);
-		return TextUtils.timeToString((int) Math.min(Integer.MAX_VALUE, seconds));
+	static RemainingTime remainingTime(long remainingMillis) {
+		long seconds = Math.max(0L, remainingMillis / 1000L);
+		if (seconds < 60L) return RemainingTime.ALMOST_DONE;
+		long minutes = seconds / 60L;
+		return new RemainingTime((int) Math.min(Integer.MAX_VALUE, minutes / 60L),
+				(int) (minutes % 60L));
 	}
 
-	static CharSequence formatRemainingTime(long positionMillis, long durationMillis) {
-		return "-" + formatTime(Math.max(0L, durationMillis - positionMillis));
+	static CharSequence formatRemainingTime(Context context, long positionMillis,
+			long durationMillis) {
+		RemainingTime time = remainingTime(Math.max(0L, durationMillis - positionMillis));
+		if (time == RemainingTime.ALMOST_DONE) {
+			return context.getString(R.string.dashboard_smart_almost_done);
+		}
+		if (time.hours() == 0) {
+			return context.getString(R.string.dashboard_smart_remaining_minutes, time.minutes());
+		}
+		return context.getString(R.string.dashboard_smart_remaining_hours_minutes,
+				time.hours(), time.minutes());
 	}
 
 	private static boolean isLabeled(SmartTopAction action) {
@@ -307,5 +355,9 @@ public final class SmartTopBinder {
 	}
 
 	public record BindToken(long generation, String itemId) {
+	}
+
+	public record RemainingTime(int hours, int minutes) {
+		static final RemainingTime ALMOST_DONE = new RemainingTime(0, 0);
 	}
 }

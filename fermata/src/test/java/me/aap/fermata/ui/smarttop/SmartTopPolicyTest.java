@@ -27,12 +27,12 @@ public class SmartTopPolicyTest {
 
 	@Test
 	public void currentActionsAreCapabilityDrivenAndOrdered() {
-		assertEquals(List.of(SmartTopAction.PREVIOUS, SmartTopAction.PLAY_PAUSE,
-				SmartTopAction.NEXT, SmartTopAction.FAVORITE, SmartTopAction.OPEN_CONTEXT),
+		assertEquals(List.of(SmartTopAction.PLAY_PAUSE, SmartTopAction.OPEN_CONTEXT,
+				SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, SmartTopLayoutMode.STANDARD,
 						SmartTopCapabilities.current(true, true)));
-		assertEquals(List.of(SmartTopAction.PLAY_PAUSE, SmartTopAction.NEXT,
-				SmartTopAction.HISTORY),
+		assertEquals(List.of(SmartTopAction.PLAY_PAUSE, SmartTopAction.OPEN_CONTEXT,
+				SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, SmartTopLayoutMode.COMPACT,
 						SmartTopCapabilities.current(true, true)));
 	}
@@ -44,8 +44,7 @@ public class SmartTopPolicyTest {
 				SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.RESUME,
 						SmartTopLayoutMode.STANDARD, suggestion));
-		assertEquals(List.of(SmartTopAction.PLAY, SmartTopAction.OPEN_CONTEXT,
-				SmartTopAction.HISTORY),
+		assertEquals(List.of(SmartTopAction.PLAY, SmartTopAction.OPEN_CONTEXT),
 				SmartTopActionPolicy.resolve(SmartTopMode.RECOMMENDED,
 						SmartTopLayoutMode.COMPACT, suggestion));
 		assertEquals(List.of(SmartTopAction.OPEN_ADDONS),
@@ -66,6 +65,22 @@ public class SmartTopPolicyTest {
 	}
 
 	@Test
+	public void autoHeadUnitWidthsNeverResolveCompact() {
+		for (float width : new float[]{700F, 780F, 800F, 900F}) {
+			assertEquals(SmartTopLayoutMode.STANDARD,
+					SmartTopLayoutPolicy.resolve(width, 1F));
+		}
+	}
+
+	@Test
+	public void estimatedTypicalHeadUnitContentResolvesStandard() {
+		float estimate = SmartTopCoordinator.estimateContentWidthDp(800, 76, 24);
+		assertEquals(700F, estimate, 0F);
+		assertEquals(SmartTopLayoutMode.STANDARD,
+				SmartTopLayoutPolicy.resolve(estimate, 1F));
+	}
+
+	@Test
 	public void rendererGeometryMatchesMobileAndAutomotiveContracts() {
 		assertEquals(56, SmartTopLayoutController.artworkSizeDp(
 				SmartTopLayoutMode.COMPACT, false));
@@ -82,6 +97,10 @@ public class SmartTopPolicyTest {
 		assertEquals(160, SmartTopLayoutController.contextPanelWidthDp(
 				SmartTopLayoutMode.STANDARD));
 		assertEquals(196, SmartTopLayoutController.contextPanelWidthDp(
+				SmartTopLayoutMode.EXPANDED));
+		assertEquals(140, SmartTopLayoutController.timelineWidthDp(
+				SmartTopLayoutMode.STANDARD));
+		assertEquals(176, SmartTopLayoutController.timelineWidthDp(
 				SmartTopLayoutMode.EXPANDED));
 		assertEquals(10, SmartTopLayoutController.cardPaddingDp(
 				SmartTopLayoutMode.COMPACT, true));
@@ -129,9 +148,19 @@ public class SmartTopPolicyTest {
 	}
 
 	@Test
-	public void finiteTimelineDisplaysRemainingTime() {
-		assertEquals("-01:30", SmartTopBinder.formatRemainingTime(30_000L, 120_000L));
-		assertEquals("-00:00", SmartTopBinder.formatRemainingTime(130_000L, 120_000L));
+	public void finiteTimelineDisplaysReadableRemainingTime() {
+		assertEquals(SmartTopBinder.RemainingTime.ALMOST_DONE,
+				SmartTopBinder.remainingTime(0L));
+		assertEquals(SmartTopBinder.RemainingTime.ALMOST_DONE,
+				SmartTopBinder.remainingTime(59_000L));
+		assertEquals(new SmartTopBinder.RemainingTime(0, 1),
+				SmartTopBinder.remainingTime(60_000L));
+		assertEquals(new SmartTopBinder.RemainingTime(0, 59),
+				SmartTopBinder.remainingTime(3_599_000L));
+		assertEquals(new SmartTopBinder.RemainingTime(1, 0),
+				SmartTopBinder.remainingTime(3_600_000L));
+		assertEquals(new SmartTopBinder.RemainingTime(2, 37),
+				SmartTopBinder.remainingTime(9_450_000L));
 	}
 
 	@Test

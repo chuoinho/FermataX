@@ -165,6 +165,30 @@ public class NavRailContractTest {
 				"public boolean onScroll").contains("GestureAxis.HORIZONTAL"));
 	}
 
+	@Test
+	public void addonContentUpdatesCannotSnapTheRailBackToItsActiveIcon() throws Exception {
+		String rail = source("ui/view/FermataNavBarView.java");
+		String activityEvent = method(rail, "public void onActivityEvent",
+				"public boolean onSwipeLeft");
+		String layout = method(rail, "protected void onLayout",
+				"public void onActivityEvent");
+		String voiceVisibility = method(rail, "public void setVoiceVisible",
+				"private void ensureRailStructure");
+		String refresh = method(rail, "private void refreshScrollState",
+				"private void ensureActiveItemVisible");
+
+		assertTrue(activityEvent.contains("event == FRAGMENT_CHANGED"));
+		assertTrue(activityEvent.contains("post(refreshScrollStateTask)"));
+		assertTrue(activityEvent.contains("event == FRAGMENT_CONTENT_CHANGED"));
+		assertTrue(activityEvent.contains("post(refreshContentScrollStateTask)"));
+		assertTrue(layout.contains("refreshScrollState(false)"));
+		assertFalse(layout.contains("refreshScrollState(true)"));
+		assertTrue(voiceVisibility.contains("voice.getVisibility() == visibility"));
+		assertTrue(voiceVisibility.contains("post(refreshContentScrollStateTask)"));
+		assertFalse(voiceVisibility.contains("post(refreshScrollStateTask)"));
+		assertTrue(refresh.contains("if (revealActiveItem) ensureActiveItemVisible()"));
+	}
+
 	private static String method(String source, String start, String end) {
 		int from = source.indexOf(start);
 		int to = source.indexOf(end, from + start.length());

@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Impossibile continuare</string>
     <string name="dashboard_smart_recovery_title">Sorgente interrotta</string>
     <string name="dashboard_smart_recovery_subtitle">Riprova o apri il componente aggiuntivo</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Restano %1$d h %2$d min</string>
+    <string name="dashboard_smart_remaining_minutes">Restano %1$d min</string>
+    <string name="dashboard_smart_almost_done">Quasi finito</string>
     <string name="dashboard_home_sub">Schermata iniziale e accesso rapido</string>
     <string name="dashboard_folders_sub">File e cartelle locali</string>
     <string name="dashboard_favorites_sub">Canali e media fissati</string>

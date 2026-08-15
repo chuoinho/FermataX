@@ -136,7 +136,6 @@ public class DashboardFragment extends MainActivityFragment
 			dashboardAdapter.refreshSmartTopCard();
 		} else {
 			list.post(dashboardAdapter::reload);
-			list.postDelayed(dashboardAdapter::reload, 1200);
 		}
 		requestStableViewport(viewportState.consumeScrollTopRequest(true));
 	}
@@ -544,7 +543,7 @@ public class DashboardFragment extends MainActivityFragment
 			}
 			holder.title.setText(card.title);
 			holder.subtitle.setText(card.subtitle);
-			holder.subtitle.setVisibility(TextUtils.isEmpty(card.subtitle) ? View.GONE : View.VISIBLE);
+			holder.subtitle.setVisibility(View.GONE);
 			boolean favoriteSupported = (card.playable != null) && !card.playable.isExternal();
 			boolean favorite = favoriteSupported && card.playable.isFavoriteItem();
 			holder.actions.setVisibility(!editMode && (card.playable != null) && card.wide ?
@@ -783,9 +782,9 @@ public class DashboardFragment extends MainActivityFragment
 		}
 
 		@Override
-		public void onAction(SmartTopAction action, SmartTopViewState state) {
-			if (editMode || !acceptSmartTop(state)) return;
-			PlayableItem item = state.presentedItem();
+		public void onAction(SmartTopAction action, long generation, PlayableItem item) {
+			SmartTopViewState state = currentSmartTopState(generation, item);
+			if (editMode || (state == null) || !acceptClick()) return;
 			switch (action) {
 				case PREVIOUS -> {
 					activity.getMediaServiceBinder().skipToPrevious();
@@ -846,6 +845,20 @@ public class DashboardFragment extends MainActivityFragment
 			if (position == -1) return false;
 			DashboardCard current = cards.get(position);
 			return (current.smartTopState == state) && acceptClick();
+		}
+
+		@Nullable
+		private SmartTopViewState currentSmartTopState(long generation,
+				@Nullable PlayableItem requestedItem) {
+			int position = findSmartTopCardPosition();
+			if (position == -1) return null;
+			SmartTopViewState current = cards.get(position).smartTopState;
+			if ((current == null) || (current.generation() != generation)) return null;
+			PlayableItem currentItem = current.presentedItem();
+			if (currentItem == requestedItem) return current;
+			if ((currentItem == null) || (requestedItem == null)) return null;
+			return DashboardPlayableNavigator.isSamePlayable(currentItem, requestedItem) ?
+					current : null;
 		}
 
 		private void openAllRecent() {

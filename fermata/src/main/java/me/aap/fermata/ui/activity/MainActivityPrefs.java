@@ -67,6 +67,12 @@ public interface MainActivityPrefs
 	Pref<IntSupplier> VOICE_TRIGGER_KEY_CODE =
 			Pref.i("VOICE_TRIGGER_KEY_CODE", KEYCODE_UNKNOWN);
 	Pref<BooleanSupplier> SMART_TOP_V2_ENABLED = Pref.b("smart_top/v2_enabled", true);
+	Pref<Supplier<String>> SMART_TOP_RECENT_TITLE =
+			Pref.s("smart_top/recent_title", (String) null);
+	Pref<Supplier<String>> SMART_TOP_RECENT_SUBTITLE =
+			Pref.s("smart_top/recent_subtitle", "");
+	Pref<BooleanSupplier> SMART_TOP_RECENT_VIDEO =
+			Pref.b("smart_top/recent_video", false);
 	Pref<IntSupplier> CLOCK_POS = Pref.i("CLOCK_POS", CLOCK_POS_NONE);
 	Pref<IntSupplier> LOCALE = Pref.i("LOCALE", Lang.EN.ordinal());
 	int INITIAL_SETUP_CURRENT_VERSION = 1;

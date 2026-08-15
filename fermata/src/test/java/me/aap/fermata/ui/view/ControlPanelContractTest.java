@@ -159,6 +159,16 @@ public class ControlPanelContractTest {
 		assertFalse(panel.contains("Math.max(buttonSize"));
 	}
 
+	@Test
+	public void videoInfoBarRemainsAbsentOnEveryHost() throws Exception {
+		String info = source("ui/view/VideoInfoView.java");
+		String video = source("ui/view/VideoView.java");
+		String panel = source("ui/view/ControlPanelView.java");
+		assertTrue(info.contains("super.setVisibility(GONE);"));
+		assertTrue(video.contains("new FrameLayout.LayoutParams(MATCH_PARENT, 0)"));
+		assertTrue(panel.contains("if (info != null) info.setVisibility(GONE);"));
+	}
+
 	private static String viewBlock(String layout, String id) {
 		int from = layout.indexOf("@+id/" + id + "\"");
 		int to = layout.indexOf("/>", from);

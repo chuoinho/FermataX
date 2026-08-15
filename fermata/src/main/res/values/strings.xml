@@ -43,6 +43,9 @@
     <string name="dashboard_smart_recovery">Unable to continue</string>
     <string name="dashboard_smart_recovery_title">Source interrupted</string>
     <string name="dashboard_smart_recovery_subtitle">Try again or open the add-on</string>
+    <string name="dashboard_smart_remaining_hours_minutes">%1$d hr %2$d min left</string>
+    <string name="dashboard_smart_remaining_minutes">%1$d min left</string>
+    <string name="dashboard_smart_almost_done">Almost done</string>
     <string name="dashboard_home_sub">Start screen and quick access</string>
     <string name="dashboard_folders_sub">Local files and folders</string>
     <string name="dashboard_favorites_sub">Pinned channels and media</string>

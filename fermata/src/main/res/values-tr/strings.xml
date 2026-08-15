@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Devam edilemiyor</string>
     <string name="dashboard_smart_recovery_title">Kaynak kesintiye uğradı</string>
     <string name="dashboard_smart_recovery_subtitle">Tekrar deneyin veya eklentiyi açın</string>
+    <string name="dashboard_smart_remaining_hours_minutes">%1$d sa %2$d dk kaldı</string>
+    <string name="dashboard_smart_remaining_minutes">%1$d dk kaldı</string>
+    <string name="dashboard_smart_almost_done">Neredeyse bitti</string>
     <string name="dashboard_home_sub">Başlangıç ekranı ve hızlı erişim</string>
     <string name="dashboard_folders_sub">Yerel dosyalar ve klasörler</string>
     <string name="dashboard_favorites_sub">Sabitlenmiş kanallar ve medya</string>

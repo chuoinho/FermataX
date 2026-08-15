@@ -21,8 +21,10 @@ public final class SmartTopLayoutController {
 
 	public static void apply(View root, SmartTopViewState state, boolean automotive) {
 		SmartTopLayoutMode mode = state.layout();
-		LayoutToken token = new LayoutToken(mode, state.mode(), automotive,
-				root.getResources().getConfiguration().fontScale);
+		boolean showContext = (mode != SmartTopLayoutMode.COMPACT) &&
+				!state.quickRecent().isEmpty();
+		LayoutToken token = new LayoutToken(mode, automotive,
+				root.getResources().getConfiguration().fontScale, state.actions().size(), showContext);
 		if (token.equals(root.getTag(R.id.dashboard_smart_layout_token))) return;
 		int padding = px(root, cardPaddingDp(mode, automotive));
 		root.setPadding(padding, padding, padding, padding);
@@ -54,14 +56,13 @@ public final class SmartTopLayoutController {
 		View guide = root.findViewById(R.id.dashboard_smart_context_guide);
 		ConstraintLayout.LayoutParams guideParams =
 				(ConstraintLayout.LayoutParams) guide.getLayoutParams();
-		guideParams.guidePercent = compact ? 1F : -1F;
-		guideParams.guideEnd = compact ? ConstraintLayout.LayoutParams.UNSET :
-				px(root, contextPanelWidthDp(mode));
+		guideParams.guidePercent = showContext ? -1F : 1F;
+		guideParams.guideEnd = showContext ? px(root, contextPanelWidthDp(mode)) :
+				ConstraintLayout.LayoutParams.UNSET;
 		guide.setLayoutParams(guideParams);
 
 		TextView title = root.findViewById(R.id.dashboard_item_title);
-		title.setMaxLines((!automotive && (mode == SmartTopLayoutMode.COMPACT) &&
-				(state.mode() == SmartTopMode.RECOMMENDED)) ? 2 : 1);
+		title.setMaxLines(1);
 		title.setTextSize(TypedValue.COMPLEX_UNIT_SP, titleSizeSp(mode));
 		TextView eyebrow = root.findViewById(R.id.dashboard_item_eyebrow);
 		eyebrow.setTextSize(TypedValue.COMPLEX_UNIT_SP,
@@ -73,31 +74,27 @@ public final class SmartTopLayoutController {
 		View actions = root.findViewById(R.id.dashboard_item_actions);
 		ConstraintLayout.LayoutParams actionParams =
 				(ConstraintLayout.LayoutParams) actions.getLayoutParams();
-		actionParams.startToStart = compact ? ConstraintLayout.LayoutParams.PARENT_ID :
-				ConstraintLayout.LayoutParams.UNSET;
-		actionParams.startToEnd = compact ? ConstraintLayout.LayoutParams.UNSET :
-				R.id.dashboard_item_icon;
-		actionParams.setMarginStart(compact ? 0 : px(root, 10));
+		actionParams.startToStart = ConstraintLayout.LayoutParams.UNSET;
+		actionParams.startToEnd = ConstraintLayout.LayoutParams.UNSET;
+		actionParams.endToStart = R.id.dashboard_smart_context_guide;
+		actionParams.setMarginStart(0);
 		actions.setLayoutParams(actionParams);
 
 		View progress = root.findViewById(R.id.dashboard_smart_progress_group);
 		ConstraintLayout.LayoutParams progressParams =
 				(ConstraintLayout.LayoutParams) progress.getLayoutParams();
-		progressParams.startToEnd = compact ? R.id.dashboard_item_icon :
-				ConstraintLayout.LayoutParams.UNSET;
-		progressParams.startToStart = compact ? ConstraintLayout.LayoutParams.UNSET :
-				R.id.dashboard_smart_context_guide;
-		progressParams.endToStart = compact ? R.id.dashboard_smart_context_guide :
-				ConstraintLayout.LayoutParams.UNSET;
-		progressParams.endToEnd = compact ? ConstraintLayout.LayoutParams.UNSET :
-				ConstraintLayout.LayoutParams.PARENT_ID;
-		progressParams.bottomToTop = compact ? R.id.dashboard_item_actions :
-				ConstraintLayout.LayoutParams.UNSET;
-		progressParams.bottomToBottom = compact ? ConstraintLayout.LayoutParams.UNSET :
-				ConstraintLayout.LayoutParams.PARENT_ID;
+		// Timeline belongs to the primary item, never to the Quick Recent context panel.
+		progressParams.width = 0;
+		progressParams.startToEnd = R.id.dashboard_item_icon;
+		progressParams.startToStart = ConstraintLayout.LayoutParams.UNSET;
+		progressParams.endToStart = R.id.dashboard_item_actions;
+		progressParams.endToEnd = ConstraintLayout.LayoutParams.UNSET;
+		progressParams.topToBottom = R.id.dashboard_item_subtitle;
+		progressParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
+		progressParams.bottomToBottom = ConstraintLayout.LayoutParams.UNSET;
 		progressParams.setMarginStart(px(root, 10));
-		progressParams.setMarginEnd(px(root, compact ? 8 : 4));
-		progressParams.bottomMargin = px(root, 4);
+		progressParams.setMarginEnd(px(root, 8));
+		progressParams.bottomMargin = 0;
 		progress.setLayoutParams(progressParams);
 
 		MaterialButton label = root.findViewById(R.id.dashboard_action_label);
@@ -135,6 +132,14 @@ public final class SmartTopLayoutController {
 		};
 	}
 
+	static int timelineWidthDp(SmartTopLayoutMode mode) {
+		return switch (mode) {
+			case COMPACT -> 0;
+			case STANDARD -> 140;
+			case EXPANDED -> 176;
+		};
+	}
+
 	static int cardPaddingDp(SmartTopLayoutMode mode, boolean automotive) {
 		return switch (mode) {
 			case COMPACT -> automotive ? 10 : 12;
@@ -163,7 +168,7 @@ public final class SmartTopLayoutController {
 		return UiUtils.toIntPx(view.getContext(), dp);
 	}
 
-	private record LayoutToken(SmartTopLayoutMode layout, SmartTopMode mode,
-			boolean automotive, float fontScale) {
+	private record LayoutToken(SmartTopLayoutMode layout, boolean automotive,
+			float fontScale, int actionCount, boolean showContext) {
 	}
 }

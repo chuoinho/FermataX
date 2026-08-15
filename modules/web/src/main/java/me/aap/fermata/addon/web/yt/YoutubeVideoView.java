@@ -19,6 +19,8 @@ import me.aap.fermata.ui.view.VideoView;
  * @author Andrey Pavlenko
  */
 public class YoutubeVideoView extends VideoView {
+	private FrameLayout content;
+	private VideoInfoView videoInfo;
 
 	public YoutubeVideoView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -26,7 +28,8 @@ public class YoutubeVideoView extends VideoView {
 
 	@Override
 	protected void init(Context context) {
-		addView(new FrameLayout(context), new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+		content = new FrameLayout(context);
+		addView(content, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 		addInfoView(context);
 	}
 
@@ -36,13 +39,25 @@ public class YoutubeVideoView extends VideoView {
 		FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
 		lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.TOP;
 		info.setLayoutParams(lp);
+		videoInfo = info;
 		addView(info);
 	}
 
 	@NonNull
 	@Override
 	public VideoInfoView getVideoInfoView() {
-		return (VideoInfoView) getChildAt(1);
+		return videoInfo;
+	}
+
+	public FrameLayout getContentView() {
+		return content;
+	}
+
+	/** The browser custom view owns rendering; no MediaCodec/VLC decoder Surface is attached. */
+	@Nullable
+	@Override
+	public SurfaceView getVideoSurface() {
+		return null;
 	}
 
 	@Nullable

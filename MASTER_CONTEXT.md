@@ -673,6 +673,46 @@ Current large/high-risk classes:
 - `MediaLibFragment`: async loading and list lifecycle
 - `VideoView`: fullscreen/video surface and control interaction
 
+Video rendering ownership (current contract):
+
+- `BodyLayout` owns only FRAME/VIDEO/BOTH layout and commits its guideline before asking the
+  active output to replan.
+- `VideoOutputCoordinator` is the single owner of priority selection and decoder attachment.
+  Adding/removing a non-winning phone/AA surface must not detach/re-attach a decoder; only a real
+  selected-target or engine change may bind it. Its output/source generations reject stale first
+  frame reveals.
+- Value-based render-plan dedupe is safe only while the receiver identity is unchanged. A newly
+  selected output or engine must receive the current plan even when its values equal the last plan
+  delivered to the previous receiver.
+- Engine playback reset and video-output ownership are separate lifecycles. `prepare()`, `stop()`,
+  pause, completion, and recoverable engine fallback must not clear the bound `VideoView`.
+  An engine may clear it only through `setVideoView(null)` when requested by
+  `VideoOutputCoordinator`, or while the engine is permanently closed. Coordinator binding state
+  and the engine's bound view must remain consistent.
+- `VideoView` is a passive surface host: it applies the one pure `VideoRenderPlan` to video and
+  subtitle surfaces only when it is the selected target. It does not delegate geometry ownership
+  back to an engine. A shutter overlays decoder output during handoff instead of changing decoder
+  Surface alpha or locking its canvas.
+- `VideoRenderPlanner` is host-independent and preserves all five scale preferences from actual
+  viewport + format data. `VideoFormatSnapshot` distinguishes coded and visible frame dimensions
+  and pixel aspect ratio, so live/anamorphic VLC sources are not accidentally treated as 16:9.
+  Before decoder metadata arrives it deliberately retains the measured viewport rather than
+  guessing a 16:9 Surface; only a final plan may resize decoder output.
+- `VideoRenderPlanner` is the sole owner of video geometry. A plan's `contentWidth/contentHeight`
+  is the visible content box for subtitles and overlays; `surfaceWidth/surfaceHeight` is for the
+  decoder Surface only and may retain coded-frame padding.
+- Engine implementations own only decoder-native work after a plan is applied. They are pure
+  plan-to-native mappings: they must not read a View, configuration, or preference, recalculate
+  geometry, or ignore `plan.scale()`. VLC resets native scale/aspect deterministically and passes
+  only `plan.surfaceWidth/surfaceHeight` to its vout window. Web/YouTube/Cast remain no-local-
+  decoder output paths.
+- The VLC fullscreen-to-split crop investigation ruled out source video classification
+  (`pi.isVideo()`/`VideoSource`), buffer-versus-plan geometry mismatch, surface callbacks, stale
+  coordinator cleanup/generation, and mismatched VLC instances.
+  The measured cause was `prepare()` calling `MediaEngineBase.stopped(false)` after coordinator
+  attachment and directly clearing the engine view. Do not reintroduce compensating rebinds or
+  extra delayed retries for this lifecycle error.
+
 Do not perform a broad rewrite of these classes without characterization tests and a staged
 DHU regression plan. Prefer extracting one responsibility at a time.
 
@@ -941,6 +981,15 @@ when a new artifact is intentionally designated as the verified snapshot.
 
 - Complete manual regression of TV fullscreen/split-view and YouTube handoff after every
   shared navigation/player change.
+- VLC render plans may use Android layout sentinels while provisional. Native engine APIs must
+  only receive positive final Surface pixels, or the measured viewport as the provisional
+  fallback. A zero-sized libVLC layout callback during `detachViews()` is a lifecycle reset and
+  must not erase the last known format for the current source; a newly prepared source owns fresh
+  empty format state.
+- Do not reopen the IPTV `pi.isVideo()`/`VideoSource` hypothesis for the fullscreen geometry issue.
+  Runtime verification reached a final `1920x1088` VLC layout after the sentinel fix, proving the
+  source passed `VideoSource` classification. The earlier persistent unknown format was caused by
+  the invalid `setWindowSize(-1, -1)` lifecycle.
 - Keep addon activation marker behavior distinct for update versus fresh install.
 - Prevent multiple competing fullscreen/bar visibility controllers.
 - Preserve media-engine ownership and accepted-lease liveness when switching addons.

@@ -29,6 +29,8 @@ import me.aap.fermata.media.net.RemotePlaybackProgress;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.fermata.ui.policy.VideoFormatSnapshot;
+import me.aap.fermata.ui.policy.VideoRenderPlan;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Consumer;
@@ -86,6 +88,21 @@ public interface MediaEngine extends Closeable {
 	/** Pixel aspect ratio used to preserve non-square video pixels. */
 	default float getVideoPixelWidthHeightRatio() {
 		return 1f;
+	}
+
+	/**
+	 * Immutable decoder geometry for the current frame. Engines without a local decoder Surface
+	 * keep the unknown default; the output coordinator then has no local render plan to apply.
+	 */
+	default VideoFormatSnapshot getVideoFormatSnapshot() {
+		float width = getVideoWidth();
+		float height = getVideoHeight();
+		return new VideoFormatSnapshot(width, height, width, height,
+				getVideoPixelWidthHeightRatio());
+	}
+
+	/** Applies decoder-specific output work after core has calculated the sole render plan. */
+	default void applyVideoRenderPlan(VideoView view, VideoRenderPlan plan) {
 	}
 
 	@Override

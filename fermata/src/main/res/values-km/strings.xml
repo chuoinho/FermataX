@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">មិនអាចបន្តបានទេ</string>
     <string name="dashboard_smart_recovery_title">ប្រភពត្រូវបានផ្អាក</string>
     <string name="dashboard_smart_recovery_subtitle">សាកល្បងម្តងទៀត ឬបើកកម្មវិធីបន្ថែម</string>
+    <string name="dashboard_smart_remaining_hours_minutes">នៅសល់ %1$d ម៉ោង %2$d នាទី</string>
+    <string name="dashboard_smart_remaining_minutes">នៅសល់ %1$d នាទី</string>
+    <string name="dashboard_smart_almost_done">ជិតចប់ហើយ</string>
     <string name="dashboard_home_sub">អេក្រង់ចាប់ផ្ដើម និងចូលប្រើរហ័ស</string>
     <string name="dashboard_folders_sub">ឯកសារ និងថតក្នុងម៉ាស៊ីន</string>
     <string name="dashboard_favorites_sub">ឆានែល និងមេឌៀដែលបានដោត</string>

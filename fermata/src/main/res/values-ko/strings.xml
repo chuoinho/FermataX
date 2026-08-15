@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">계속할 수 없음</string>
     <string name="dashboard_smart_recovery_title">소스 연결 끊김</string>
     <string name="dashboard_smart_recovery_subtitle">다시 시도하거나 애드온을 여세요</string>
+    <string name="dashboard_smart_remaining_hours_minutes">%1$d시간 %2$d분 남음</string>
+    <string name="dashboard_smart_remaining_minutes">%1$d분 남음</string>
+    <string name="dashboard_smart_almost_done">거의 완료</string>
     <string name="dashboard_home_sub">시작 화면 및 빠른 접근</string>
     <string name="dashboard_folders_sub">로컬 파일과 폴더</string>
     <string name="dashboard_favorites_sub">고정된 채널과 미디어</string>

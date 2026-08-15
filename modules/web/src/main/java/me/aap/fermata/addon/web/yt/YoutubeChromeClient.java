@@ -48,13 +48,13 @@ public class YoutubeChromeClient extends FermataChromeClient {
 
 	protected void addCustomView(View view) {
 		VideoView vv = getFullScreenView();
-		((ViewGroup) vv.getChildAt(0)).addView(view, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+		vv.getContentView().addView(view, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 		vv.setVisibility(VISIBLE);
 	}
 
 	protected void removeCustomView(View view) {
 		VideoView vv = getFullScreenView();
-		((ViewGroup) vv.getChildAt(0)).removeView(view);
+		vv.getContentView().removeView(view);
 		vv.setVisibility(GONE);
 	}
 

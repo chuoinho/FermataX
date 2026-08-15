@@ -18,10 +18,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import com.google.android.material.textview.MaterialTextView;
 
 import me.aap.fermata.R;
-import me.aap.fermata.media.engine.MediaEngine;
-import me.aap.fermata.media.engine.StreamEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
@@ -51,16 +48,7 @@ public class VideoInfoView extends ConstraintLayout
 
 	@Override
 	public void setVisibility(int visibility) {
-		if (visibility == VISIBLE) {
-			getActivity().onSuccess(a -> {
-				MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
-				if (eng == null) return;
-				PlayableItem i = eng.getSource();
-				if ((i instanceof StreamItem) && !(eng instanceof StreamEngine)) onPlayableChanged(i, i);
-			});
-		}
-
-		super.setVisibility(visibility);
+		super.setVisibility(GONE);
 	}
 
 	@Override

@@ -18,32 +18,21 @@ public final class SmartTopActionPolicy {
 		}
 
 		boolean compact = layout == SmartTopLayoutMode.COMPACT;
-		if (mode == SmartTopMode.CURRENT) return current(compact, capabilities);
+		if (mode == SmartTopMode.CURRENT) return current(capabilities);
 
 		List<SmartTopAction> actions = new ArrayList<>(4);
 		actions.add(SmartTopAction.PLAY);
 		if (capabilities.canOpenContext()) actions.add(SmartTopAction.OPEN_CONTEXT);
 		if (!compact && capabilities.canFavorite()) actions.add(SmartTopAction.FAVORITE);
-		if (compact) actions.add(SmartTopAction.HISTORY);
+		if (compact && !capabilities.canOpenContext()) actions.add(SmartTopAction.HISTORY);
 		return List.copyOf(actions);
 	}
 
-	private static List<SmartTopAction> current(boolean compact,
-			SmartTopCapabilities capabilities) {
-		List<SmartTopAction> actions = new ArrayList<>(5);
-		if (compact) {
-			actions.add(SmartTopAction.PLAY_PAUSE);
-			if (capabilities.canSkipNext()) actions.add(SmartTopAction.NEXT);
-			else if (capabilities.canOpenContext()) actions.add(SmartTopAction.OPEN_CONTEXT);
-			actions.add(SmartTopAction.HISTORY);
-			return List.copyOf(actions);
-		}
-
-		if (capabilities.canSkipPrevious()) actions.add(SmartTopAction.PREVIOUS);
+	private static List<SmartTopAction> current(SmartTopCapabilities capabilities) {
+		List<SmartTopAction> actions = new ArrayList<>(3);
 		actions.add(SmartTopAction.PLAY_PAUSE);
-		if (capabilities.canSkipNext()) actions.add(SmartTopAction.NEXT);
-		if (capabilities.canFavorite()) actions.add(SmartTopAction.FAVORITE);
 		if (capabilities.canOpenContext()) actions.add(SmartTopAction.OPEN_CONTEXT);
+		if (capabilities.canFavorite()) actions.add(SmartTopAction.FAVORITE);
 		return List.copyOf(actions);
 	}
 }

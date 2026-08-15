@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">No se puede continuar</string>
     <string name="dashboard_smart_recovery_title">Fuente interrumpida</string>
     <string name="dashboard_smart_recovery_subtitle">Reintenta o abre el complemento</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Quedan %1$d h %2$d min</string>
+    <string name="dashboard_smart_remaining_minutes">Quedan %1$d min</string>
+    <string name="dashboard_smart_almost_done">Casi terminado</string>
     <string name="dashboard_home_sub">Pantalla inicial y acceso rápido</string>
     <string name="dashboard_folders_sub">Archivos y carpetas locales</string>
     <string name="dashboard_favorites_sub">Canales y medios fijados</string>

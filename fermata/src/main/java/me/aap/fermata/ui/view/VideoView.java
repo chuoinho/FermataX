@@ -58,12 +58,16 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
+import me.aap.fermata.media.service.VideoOutputCoordinator;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.fermata.ui.policy.VideoSurfaceLayoutPolicy;
+import me.aap.fermata.ui.policy.VideoFormatSnapshot;
+import me.aap.fermata.ui.policy.VideoRenderPlan;
+import me.aap.fermata.ui.policy.VideoRenderPlanner;
+import me.aap.fermata.ui.policy.VideoViewport;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.function.BiConsumer;
@@ -77,13 +81,29 @@ import me.aap.utils.ui.view.NavBarView;
 public class VideoView extends FrameLayout
 		implements SurfaceHolder.Callback, View.OnLayoutChangeListener, PreferenceStore.Listener,
 		MainActivityListener, BiConsumer<SubGrid.Position, Subtitles.Text> {
+	private static final long[] SURFACE_SIZE_RETRY_DELAYS = {150L, 500L, 1500L};
 	private final Set<PreferenceStore.Pref<?>> prefChange = new HashSet<>(
 			Arrays.asList(MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.AUDIO_DELAY_AA,
 					MediaPrefs.SUB_DELAY, SUB_SIZE));
-	private static final long[] SURFACE_SIZE_RETRY_DELAYS = {150L, 500L, 1500L};
+	@Nullable
+	private SurfaceView videoSurface;
+	@Nullable
+	private SurfaceView subtitleSurface;
+	@Nullable
+	private VideoInfoView videoInfoView;
+	@Nullable
+	private View videoShutter;
+	@Nullable
+	private VideoOutputCoordinator.SourceLease visibleSource;
+	@Nullable
+	private MediaEngine callbackFormatEngine;
+	@Nullable
+	private VideoFormatSnapshot callbackFormat;
 	private SubDrawer subDrawer;
 	private FutureSupplier<?> createSurface = new Promise<>();
 	private long surfaceSizeGeneration;
+	private int renderedViewportWidth = Integer.MIN_VALUE;
+	private int renderedViewportHeight = Integer.MIN_VALUE;
 
 	public VideoView(Context context) {
 		this(context, null);
@@ -101,7 +121,7 @@ public class VideoView extends FrameLayout
 
 	protected void init(Context context) {
 		setBackgroundColor(Color.BLACK);
-		addView(new SurfaceView(getContext()) {
+		videoSurface = new SurfaceView(getContext()) {
 			{
 				FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
 				lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL;
@@ -109,8 +129,14 @@ public class VideoView extends FrameLayout
 				setOnTouchListener((v, e) -> VideoView.this.onTouchEvent(e));
 				getHolder().addCallback(VideoView.this);
 			}
-		});
-		addView(new SurfaceView(getContext()) {
+		};
+		addView(videoSurface);
+		videoShutter = new View(getContext());
+		videoShutter.setBackgroundColor(Color.BLACK);
+		videoShutter.setVisibility(GONE);
+		videoShutter.setLayoutParams(new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+		addView(videoShutter);
+		subtitleSurface = new SurfaceView(getContext()) {
 			{
 				FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
 				lp.gravity = Gravity.FILL;
@@ -121,7 +147,8 @@ public class VideoView extends FrameLayout
 				getHolder().setFormat(PixelFormat.TRANSLUCENT);
 				getHolder().addCallback(VideoView.this);
 			}
-		});
+		};
+		addView(subtitleSurface);
 
 		addInfoView(context);
 		addOnLayoutChangeListener(this);
@@ -131,9 +158,11 @@ public class VideoView extends FrameLayout
 
 	protected void addInfoView(Context context) {
 		VideoInfoView d = new VideoInfoView(context, null);
-		FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+		d.setVisibility(GONE);
+		FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, 0);
 		lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.TOP;
 		d.setLayoutParams(lp);
+		videoInfoView = d;
 		addView(d);
 	}
 
@@ -145,13 +174,27 @@ public class VideoView extends FrameLayout
 		if (a != null) a.post(this::drawSubtitles);
 	}
 
+	/**
+	 * Returns the native decoder output Surface, when this host owns one.
+	 * Browser-backed video hosts deliberately have no decoder Surface and return {@code null}.
+	 */
+	@Nullable
 	public SurfaceView getVideoSurface() {
-		return (SurfaceView) getChildAt(0);
+		return videoSurface;
 	}
 
 	@Nullable
 	public SurfaceView getSubtitleSurface() {
-		return (SurfaceView) getChildAt(1);
+		return subtitleSurface;
+	}
+
+	/**
+	 * Container for browser custom video views. Native video hosts can use this view itself;
+	 * specialized hosts may provide a child container without relying on child indexes.
+	 */
+	@NonNull
+	public ViewGroup getContentView() {
+		return this;
 	}
 
 
@@ -189,7 +232,7 @@ public class VideoView extends FrameLayout
 
 	@Nullable
 	public VideoInfoView getVideoInfoView() {
-		return (VideoInfoView) getChildAt(2);
+		return videoInfoView;
 	}
 
 	public void showVideo(boolean hideTitle) {
@@ -197,8 +240,9 @@ public class VideoView extends FrameLayout
 			MainActivityDelegate a = getActivity().peek();
 			if (a == null) return;
 			MediaSessionCallback cb = a.getMediaSessionCallback();
+			if (!videoOutput(cb).isSelected(this)) return;
 			MediaEngine eng = cb.getEngine();
-			if (eng != null) setSurfaceSize(eng);
+			if ((eng != null) && videoOutput(cb).isBound(eng)) setSurfaceSize(eng);
 			VideoInfoView info = getVideoInfoView();
 			if (hideTitle && (info != null)) info.setVisibility(GONE);
 		});
@@ -231,33 +275,104 @@ public class VideoView extends FrameLayout
 	}
 
 	public void clearVideoSurface() {
-		createSurface.onSuccess(v -> {
-			SurfaceView sv = getVideoSurface();
-			if (sv == null) return;
-			// The decoder owns this Surface. Locking its canvas while VLC/MediaCodec is
-			// attached can force-disconnect the producer and crash vendor codecs.
-			sv.setAlpha(0f);
+		MainActivityDelegate activity = getActivity().peek();
+		clearVideoSurface((activity == null) ? null : activity.getMediaSessionCallback().getEngine());
+	}
+
+	/** Starts a new output source generation for the engine that is about to render. */
+	public void clearVideoSurface(@Nullable MediaEngine expectedEngine) {
+		beginVideoSource(expectedEngine);
+		VideoOutputCoordinator.SourceLease source = visibleSource;
+		FutureSupplier<?> surface = createSurface;
+		if (surface == null) return;
+		surface.onSuccess(v -> {
+			if (!isCurrentSource(expectedEngine, source)) return;
+			setShutterVisible(true);
 		});
+	}
+
+	/**
+	 * Associates the next first-frame event with this output without changing the currently visible
+	 * frame. Same-item seeks/re-prepares use this path, while item changes also close the shutter.
+	 */
+	public void beginVideoSource(@Nullable MediaEngine expectedEngine) {
+		MainActivityDelegate activity = getActivity().peek();
+		if (activity != null) {
+			MediaSessionCallback callback = activity.getMediaSessionCallback();
+			VideoOutputCoordinator output = videoOutput(callback);
+			VideoOutputCoordinator.SourceLease source =
+					(expectedEngine == null) ? null : output.beginSource(expectedEngine);
+			setVideoSourceLease(source);
+			return;
+		}
+		setVideoSourceLease(null);
+	}
+
+	/** Internal coordinator handoff: stage a first-frame lease before this selected output attaches. */
+	public void setVideoSourceLease(@Nullable VideoOutputCoordinator.SourceLease source) {
+		visibleSource = source;
 	}
 
 	/** Reveals decoder output after the new item has rendered its first frame. */
 	public void revealVideoSurface() {
-		createSurface.onSuccess(v -> {
-			SurfaceView sv = getVideoSurface();
-			if (sv != null) sv.setAlpha(1f);
+		MainActivityDelegate activity = getActivity().peek();
+		revealVideoSurface((activity == null) ? null : activity.getMediaSessionCallback().getEngine());
+	}
+
+	/** Reveals only when the event belongs to the source generation currently covering the view. */
+	public void revealVideoSurface(@Nullable MediaEngine eventEngine) {
+		FutureSupplier<?> surface = createSurface;
+		if (surface == null) return;
+		surface.onSuccess(v -> {
+			MainActivityDelegate activity = getActivity().peek();
+			if (activity == null) return;
+			MediaSessionCallback callback = activity.getMediaSessionCallback();
+			VideoOutputCoordinator.SourceLease source = visibleSource;
+			if ((eventEngine == null) || (source == null) ||
+					!videoOutput(callback).isCurrent(eventEngine, source)) return;
+			setShutterVisible(false);
 		});
+	}
+
+	private void setShutterVisible(boolean visible) {
+		if (videoShutter != null) videoShutter.setVisibility(visible ? VISIBLE : GONE);
+	}
+
+	private boolean isCurrentSource(@Nullable MediaEngine engine,
+			@Nullable VideoOutputCoordinator.SourceLease source) {
+		if ((engine == null) || (source == null)) return false;
+		MainActivityDelegate activity = getActivity().peek();
+		if (activity == null) return false;
+		return videoOutput(activity.getMediaSessionCallback()).isSourceCurrent(engine, source);
 	}
 
 	/** Clears decoder and sidecar output before a different video owns these surfaces. */
 	public void clearPlaybackSurfaces() {
-		surfaceSizeGeneration++;
+		invalidateRenderMetadata();
 		clearVideoSurface();
 		clearSubtitleSurface();
 		releaseSubDrawer();
 	}
 
+	/** Clears decoder and sidecar output for the exact engine selected by the playback lease. */
+	public void clearPlaybackSurfaces(@Nullable MediaEngine expectedEngine) {
+		invalidateRenderMetadata();
+		clearVideoSurface(expectedEngine);
+		clearSubtitleSurface();
+		releaseSubDrawer();
+	}
+
+	/** Makes delayed format retries and callbacks from the previous source inert. */
+	private void invalidateRenderMetadata() {
+		surfaceSizeGeneration++;
+		callbackFormatEngine = null;
+		callbackFormat = null;
+	}
+
 	public void clearSubtitleSurface() {
-		createSurface.onSuccess(v -> {
+		FutureSupplier<?> surface = createSurface;
+		if (surface == null) return;
+		surface.onSuccess(v -> {
 			SurfaceView sv = getSubtitleSurface();
 			if (sv == null) return;
 			// VLC can own the subtitle Surface as a second native output. Hide it without
@@ -293,58 +408,75 @@ public class VideoView extends FrameLayout
 	}
 
 	public void setSurfaceSize(MediaEngine eng) {
-		long generation = ++surfaceSizeGeneration;
-		if (!applySurfaceSize(eng, eng.getVideoWidth(), eng.getVideoHeight())) {
-			retrySurfaceSize(eng, generation, 0);
-		}
+		if (!isActiveOutput(eng)) return;
+		applySurfaceSize(eng, null, ++surfaceSizeGeneration, 0);
 	}
 
 	public void setSurfaceSize(MediaEngine eng, float videoWidth, float videoHeight) {
-		long generation = ++surfaceSizeGeneration;
-		if (!applySurfaceSize(eng, videoWidth, videoHeight)) {
-			retrySurfaceSize(eng, generation, 0);
-		}
+		// A delayed callback from the engine we just replaced must not overwrite the format
+		// fallback (or cancel the retry) belonging to the newly selected decoder output.
+		if (!isActiveOutput(eng)) return;
+		VideoFormatSnapshot fallback = new VideoFormatSnapshot(videoWidth, videoHeight,
+				videoWidth, videoHeight, eng.getVideoPixelWidthHeightRatio());
+		callbackFormatEngine = fallback.hasKnownGeometry() ? eng : null;
+		callbackFormat = fallback.hasKnownGeometry() ? fallback : null;
+		applySurfaceSize(eng, fallback, ++surfaceSizeGeneration, 0);
 	}
 
-	private boolean applySurfaceSize(MediaEngine eng, float videoWidth, float videoHeight) {
-		if (eng.setSurfaceSize(this)) {
-			return VideoSurfaceLayoutPolicy.hasValidVideoSize(
-					eng.getVideoWidth(), eng.getVideoHeight());
-		}
-
+	private void applySurfaceSize(MediaEngine eng, @Nullable VideoFormatSnapshot fallback,
+			long generation, int attempt) {
+		if (!isActiveOutput(eng)) return;
 		PlayableItem item = eng.getSource();
-		if (item == null) return false;
+		if (item == null) return;
 
 		SurfaceView surface = getVideoSurface();
-		ViewGroup.LayoutParams lp = surface.getLayoutParams();
-
-		VideoSurfaceLayoutPolicy.Size size = VideoSurfaceLayoutPolicy.resolve(
-				getWidth(), getHeight(), videoWidth, videoHeight,
-				item.getPrefs().getVideoScalePref(), eng.getVideoPixelWidthHeightRatio());
-		int width = size.width();
-		int height = size.height();
-
-		if ((lp.width != width) || (lp.height != height)) {
-			lp.width = width;
-			lp.height = height;
-			surface.setLayoutParams(lp);
+		if (surface == null) return;
+		VideoFormatSnapshot format = eng.getVideoFormatSnapshot();
+		if (fallback != null) format = format.withFallback(fallback);
+		if (!format.hasKnownGeometry() && (callbackFormatEngine == eng) &&
+				(callbackFormat != null)) format = callbackFormat;
+		else if (format.hasKnownGeometry() && (callbackFormatEngine == eng)) {
+			callbackFormatEngine = null;
+			callbackFormat = null;
 		}
-		return VideoSurfaceLayoutPolicy.hasValidVideoSize(videoWidth, videoHeight);
+		VideoRenderPlan plan = VideoRenderPlanner.plan(new VideoViewport(getWidth(), getHeight()),
+				format, item.getPrefs().getVideoScalePref());
+		boolean viewportChanged = (renderedViewportWidth != plan.viewportWidth()) ||
+				(renderedViewportHeight != plan.viewportHeight());
+		renderedViewportWidth = plan.viewportWidth();
+		renderedViewportHeight = plan.viewportHeight();
+		applySurfaceLayout(surface, plan.surfaceWidth(), plan.surfaceHeight(), viewportChanged);
+		SurfaceView subtitleSurface = getSubtitleSurface();
+		if (subtitleSurface != null) {
+			applySurfaceLayout(subtitleSurface, plan.contentWidth(), plan.contentHeight(),
+					viewportChanged);
+		}
+		eng.applyVideoRenderPlan(this, plan);
+		if (!format.hasKnownGeometry() && (attempt < SURFACE_SIZE_RETRY_DELAYS.length)) {
+			postDelayed(() -> {
+				if ((generation != surfaceSizeGeneration) || !isActiveOutput(eng)) return;
+				applySurfaceSize(eng, null, generation, attempt + 1);
+			}, SURFACE_SIZE_RETRY_DELAYS[attempt]);
+		}
 	}
 
-	private void retrySurfaceSize(MediaEngine eng, long generation, int attempt) {
-		if (attempt >= SURFACE_SIZE_RETRY_DELAYS.length) return;
-		postDelayed(() -> {
-			if (generation != surfaceSizeGeneration) return;
-			MainActivityDelegate activity = getActivity().peek();
-			if ((activity == null) ||
-					(activity.getMediaServiceBinder().getCurrentEngine() != eng)) return;
-			if (applySurfaceSize(eng, eng.getVideoWidth(), eng.getVideoHeight())) {
-				surfaceSizeGeneration++;
-				return;
-			}
-			retrySurfaceSize(eng, generation, attempt + 1);
-		}, SURFACE_SIZE_RETRY_DELAYS[attempt]);
+	static void applySurfaceLayout(SurfaceView surface, int width, int height,
+			boolean viewportChanged) {
+		ViewGroup.LayoutParams lp = surface.getLayoutParams();
+		boolean changed = (lp.width != width) || (lp.height != height);
+		FrameLayout.LayoutParams frame = (lp instanceof FrameLayout.LayoutParams value) ? value : null;
+		int gravity = Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL;
+		if ((frame != null) && (frame.gravity != gravity)) {
+			frame.gravity = gravity;
+			changed = true;
+		}
+		// MATCH_PARENT stays -1 across a fullscreen-to-split transition. SurfaceView's native
+		// buffer does not reliably notice that parent-bounds change unless its LayoutParams are
+		// reapplied, leaving BLAST with the old fullscreen buffer and clipping the new viewport.
+		if (!changed && !viewportChanged) return;
+		lp.width = width;
+		lp.height = height;
+		surface.setLayoutParams(lp);
 	}
 
 	@Override
@@ -353,17 +485,31 @@ public class VideoView extends FrameLayout
 		FermataApplication.get().getHandler().post(() -> createSurface.onSuccess(s -> {
 			MainActivityDelegate a = getActivity().peek();
 			if (a == null) return;
-			MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
+			MediaSessionCallback callback = a.getMediaSessionCallback();
+			if (!videoOutput(callback).isSelected(this)) return;
+			MediaEngine eng = callback.getEngine();
 			if (eng == null) return;
 
 			PlayableItem i = eng.getSource();
-			if ((i != null) && i.isVideo()) setSurfaceSize(eng);
+			if ((i != null) && i.isVideo() && videoOutput(callback).isBound(eng)) setSurfaceSize(eng);
 		}));
+	}
+
+	private boolean isActiveOutput(MediaEngine eng) {
+		MainActivityDelegate activity = getActivity().peek();
+		if (activity == null) return false;
+		MediaSessionCallback callback = activity.getMediaSessionCallback();
+		return videoOutput(callback).isSelected(this) && videoOutput(callback).isBound(eng);
+	}
+
+	private static VideoOutputCoordinator videoOutput(MediaSessionCallback callback) {
+		return callback.getVideoOutputCoordinator();
 	}
 
 	@Override
 	public void surfaceCreated(@NonNull SurfaceHolder holder) {
-		if (!getVideoSurface().getHolder().getSurface().isValid()) return;
+		SurfaceView video = getVideoSurface();
+		if ((video == null) || !video.getHolder().getSurface().isValid()) return;
 		SurfaceView s = getSubtitleSurface();
 		if ((s != null) && !s.getHolder().getSurface().isValid()) return;
 		getActivity().onSuccess(
@@ -376,6 +522,8 @@ public class VideoView extends FrameLayout
 
 	@Override
 	public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+		invalidateRenderMetadata();
+		setVideoSourceLease(null);
 		createSurface = new Promise<>();
 		getActivity().onSuccess(a -> a.getMediaSessionCallback().removeVideoView(this));
 	}
@@ -468,10 +616,13 @@ public class VideoView extends FrameLayout
 		if (createSurface.isDone() && !Collections.disjoint(prefChange, prefs)) {
 			MainActivityDelegate a = getActivity().peek();
 			if (a == null) return;
-			MediaEngine eng = a.getMediaSessionCallback().getEngine();
+			MediaSessionCallback callback = a.getMediaSessionCallback();
+			if (!videoOutput(callback).isSelected(this)) return;
+			MediaEngine eng = callback.getEngine();
 			if (eng == null) return;
 			PlayableItem i = eng.getSource();
 			if ((i == null) || !i.isVideo()) return;
+			if (!videoOutput(callback).isBound(eng)) return;
 
 			if (prefs.contains(MediaPrefs.VIDEO_SCALE)) {
 				setSurfaceSize(eng);

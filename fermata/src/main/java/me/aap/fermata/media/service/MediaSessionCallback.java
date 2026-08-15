@@ -178,7 +178,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private boolean playOnAudioFocus;
 	private boolean isMuted;
 	private boolean tryAnotherEngine;
-	private Queue<Prioritized<VideoView>> videoView;
+	private final VideoOutputCoordinator videoOutput = new VideoOutputCoordinator();
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
 	private MediaMetadataCompat metadata;
@@ -347,14 +347,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 	}
 
-	/**
-	 * Replaces a provisional engine without running the normal stop/close transition.
-	 *
-	 * <p>This is intentionally narrower than {@link #setEngine(MediaEngine)}. A deferred engine
-	 * may already own a pending prepare/play transition while it waits for an Activity-backed
-	 * engine. Stopping it here would clear that transition and make the eventual WebView engine
-	 * appear prepared but never start.</p>
-	 */
+	/** Replaces a provisional engine without stopping its pending prepare/play transition. */
 	public boolean replaceEngine(@NonNull MediaEngine expected, @NonNull MediaEngine replacement) {
 		if (rejectsEngineReplacement(engine, expected, replacement)) {
 			recordPlaybackDiagnostic("engine_handoff_rejected", DiagnosticScope.DETAILED,
@@ -369,6 +362,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			return false;
 		}
 		engine = replacement;
+		bindVideoOutput(replacement);
 		session.setActive(true);
 		recordPlaybackDiagnostic("engine_handoff", DiagnosticScope.ESSENTIAL,
 				DiagnosticPriority.STATE, replacement, replacement.getSource(), playbackRequestRevision,
@@ -376,10 +370,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return true;
 	}
 
-	/**
-	 * Completes an Activity-backed engine handoff only while the requested item is still pending.
-	 * This prevents a late WebView callback from replacing a newer playback request.
-	 */
+	/** Completes an Activity-backed handoff only while its requested item remains pending. */
 	public long capturePendingEngineHandoff(@NonNull MediaEngine expected,
 			@NonNull PlayableItem target) {
 		target = PlayableItemResolver.unwrap(target);
@@ -404,7 +395,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 					"ownership_mismatch", null);
 			return false;
 		}
-		if (engine == expected) engine = replacement;
+		if (engine == expected) {
+			engine = replacement;
+			bindVideoOutput(replacement);
+		}
 		session.setActive(true);
 		recordPlaybackDiagnostic("engine_handoff", DiagnosticScope.ESSENTIAL,
 				DiagnosticPriority.STATE, replacement, replacement.getSource(), requestRevision,
@@ -458,11 +452,21 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask.cancel();
 		onStop(false);
 		this.engine = engine;
-		PlayableItem source = engine.getSource();
+		PlayableItem source = engine.getSource(); bindVideoOutput(engine);
 		if (source != null) adoptPlaybackOwner(PlayableItemResolver.unwrap(source), engine);
 		session.setActive(true);
 		recordPlaybackDiagnostic("engine_selected", DiagnosticScope.ESSENTIAL,
 				DiagnosticPriority.STATE, engine, source, playbackRequestRevision, "active", null);
+	}
+
+	private void bindVideoOutput(@NonNull MediaEngine candidate) {
+		PlayableItem source = candidate.getSource();
+		bindVideoOutput(candidate, (source != null) && source.isVideo());
+	}
+
+	private void bindVideoOutput(@NonNull MediaEngine candidate, boolean video) {
+		if (video) { VideoView view = getVideoView(); if (view != null) view.beginVideoSource(candidate); }
+		videoOutput.bind(candidate, video);
 	}
 
 	private long beginPlaybackRequest(@NonNull PlayableItem item,
@@ -567,42 +571,17 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return listeners;
 	}
 
-	public void addVideoView(VideoView view, int priority) {
-		if (this.videoView == null) {
-			videoView = new PriorityQueue<>(2);
-		} else {
-			for (Prioritized<VideoView> s : videoView) {
-				if (s.obj == view) return;
-			}
-		}
+	public void addVideoView(VideoView view, int priority) { videoOutput.add(view, priority); }
 
-		videoView.add(new Prioritized<>(view, priority));
-		MediaEngine eng = getEngine();
-
-		if (eng != null) {
-			PlayableItem i = eng.getSource();
-			if (i.isVideo()) eng.setVideoView(getVideoView());
-		}
-	}
-
-	public void removeVideoView(VideoView view) {
-		MediaEngine eng = getEngine();
-
-		if (removeFromQueue(videoView, view)) {
-			if (videoView.isEmpty()) {
-				videoView = null;
-				if (eng != null) eng.setVideoView(null);
-			} else if (eng != null) {
-				eng.setVideoView(getVideoView());
-			}
-		}
-	}
+	public void removeVideoView(VideoView view) { videoOutput.remove(view); }
 
 	@Nullable
 	public VideoView getVideoView() {
-		if (videoView == null) return null;
-		Prioritized<VideoView> w = videoView.peek();
-		return (w == null) ? null : w.obj;
+		return videoOutput.getSelected();
+	}
+
+	public VideoOutputCoordinator getVideoOutputCoordinator() {
+		return videoOutput;
 	}
 
 	public void addAssistant(MediaSessionCallbackAssistant a, int priority) {
@@ -741,13 +720,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				return i.getMediaData().onSuccess(this::setMetadata).cast();
 			}
 
-			engine = getEngineManager().createEngine(engine, i, this);
+			MediaEngine previous = engine;
+			// The legacy factory closes its input; detach native output first.
+			if (previous != null) videoOutput.clearIfBound(previous);
+			engine = getEngineManager().createEngine(previous, i, this);
 			Log.d("MediaEngine ", engine + " created for ", i);
 			if (engine == null) return completedVoid();
 			adoptPlaybackOwner(i, engine);
 
 			playOnPrepared = false;
-			if (i.isVideo() && (videoView != null)) engine.setVideoView(getVideoView());
+			bindVideoOutput(engine);
 			tryAnotherEngine = true;
 			engine.prepare(i);
 			return completedVoid();
@@ -923,7 +905,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private FutureSupplier<?> onStop(MediaEngine eng, long pos) {
 		boolean current = eng == engine;
 		PlayableItem source = MediaEngineShutdown.source(eng);
-		if (current) engine = null;
+		if (current) {
+			videoOutput.clear();
+			engine = null;
+		}
 		if (current || (eng == null)) {
 			MediaEngineShutdown.run("remote_lifecycle", this::cancelPlaybackLifecycle);
 			MediaEngineShutdown.run("deferred_seek", deferredInitialSeek::clear);
@@ -1576,7 +1561,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		VideoView video = getVideoView();
 		if (video != null) {
 			video.setSurfaceSize(engine);
-			video.revealVideoSurface();
+			video.revealVideoSurface(engine);
 		}
 		PlayableItem item = engine.getSource();
 		recordPlaybackDiagnostic("engine_first_frame", DiagnosticScope.ESSENTIAL,
@@ -1660,20 +1645,25 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 
 		boolean transportFailure = (safeFailure != null) && safeFailure.preventsEngineFallback();
+		MediaEngine failedEngine = engine;
 		boolean fallbackCandidate = tryAnotherEngine && !transportFailure &&
-				(engine.getSource() != null);
+				(failedEngine.getSource() != null);
 		boolean lifecycleAllowsFallback = !fallbackCandidate || playbackLifecycle.allowsFallback();
 		if (fallbackCandidate && lifecycleAllowsFallback) {
-			MediaEngine replacement = getEngineManager().createAnotherEngine(engine, this);
+			// createAnotherEngine() closes its input; detach native output first.
+			videoOutput.clearIfBound(failedEngine);
+			MediaEngine replacement = getEngineManager().createAnotherEngine(failedEngine, this);
 
 			if (replacement != null) {
-				if (!playbackOwnership.replaceEngine(engine, replacement)) {
+				if ((engine != failedEngine) ||
+						!playbackOwnership.replaceEngine(failedEngine, replacement)) {
 					replacement.close();
+					if (engine != failedEngine) return;
 				} else {
 					this.engine = replacement;
 					Log.i("Trying another engine: ", this.engine);
 					tryAnotherEngine = false;
-					if (i.isVideo() && (videoView != null)) this.engine.setVideoView(getVideoView());
+					bindVideoOutput(replacement, i.isVideo());
 					this.engine.prepare(i);
 					return;
 				}
@@ -2036,6 +2026,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (selected.candidate() == null) {
 			PlaybackEngineLease.FailureClaim claim = playbackEngineLease.tryClaimUnsupported(selected); if (claim == null) return;
+			videoOutput.clearIfBound(eng); retireResolvedEngine(eng, engineSelection);
 			String msg = lib.getContext().getResources().getString(R.string.err_unsupported_source_type, i);
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 					.setState(STATE_ERROR, 0, 1.0f)
@@ -2045,6 +2036,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		PlaybackEngineLease.Accepted accepted = playbackEngineLease.tryAccept(selected); if (accepted == null) return;
 		MediaEngine candidate = accepted.candidate();
+		if ((candidate != eng) && retireResolvedEngine(eng, engineSelection) &&
+				!playbackEngineLease.isCurrent(accepted)) return;
 
 		BrowsableItem p = i.getParent(); boolean updateQueue = false;
 
@@ -2060,13 +2053,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			case KEEP_QUEUE -> { }
 			case REFRESH_QUEUE -> updateQueue = true;
 		}
-
-		if (i.isVideo() && (videoView != null)) {
-			if (!playbackEngineLease.isCurrent(accepted)) return; VideoView view = getVideoView();
-			if (!playbackEngineLease.isCurrent(accepted)) return; if (clearPlaybackSurfaces) view.clearPlaybackSurfaces();
-			if (!playbackEngineLease.isCurrent(accepted)) return; candidate.setVideoView(view);
-			if (!playbackEngineLease.isCurrent(accepted)) return;
+		if (i.isVideo() && playbackEngineLease.isCurrent(accepted)) {
+			VideoView view = getVideoView(); if (view != null) {
+				if (clearPlaybackSurfaces) view.clearPlaybackSurfaces(candidate); else view.beginVideoSource(candidate); }
 		}
+		if (!playbackEngineLease.isCurrent(accepted)) return;
+		videoOutput.bind(candidate, i.isVideo());
+		if (!playbackEngineLease.isCurrent(accepted)) return;
 
 		playOnPrepared = true;
 		tryAnotherEngine = true;
@@ -2076,11 +2069,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				transitionState, accepted.target())) {
 			Log.i("Audio focus request failed");
 			PlaybackEngineLease.FailureClaim claim = playbackEngineLease.tryClaimFailure(accepted); if (claim == null) return;
+			videoOutput.clearIfBound(candidate);
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 					.setState(STATE_ERROR, 0, 1.0f)
 					.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR,
 							"Audio focus request failed").build();
-			if (publishPlaybackFailure(claim, state)) candidate.close();
+			if (publishPlaybackFailure(claim, state)) playbackEngineLease.disposeFailed(accepted);
 			return;
 		}
 		if (!playbackEngineLease.isCurrent(accepted)) return;
@@ -2096,6 +2090,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 						isPlaybackRequestCurrent(requestRevision, queueItem), source, queueItem)) session.setQueue(q);
 			});
 		}
+	}
+
+	private boolean retireResolvedEngine(@Nullable MediaEngine previous, EngineSelection selection) {
+		if ((previous == null) || (selection.retirement() != EngineSelection.Retirement.RETIRE_AFTER_RESOLUTION)) return false;
+		videoOutput.clearIfBound(previous); MediaEngineShutdown.run("engine_close", previous::close);
+		return true;
 	}
 
 	private void persistCommittedOutgoing(@Nullable MediaEngine outgoingEngine,

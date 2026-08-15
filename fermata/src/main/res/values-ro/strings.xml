@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Nu se poate continua</string>
     <string name="dashboard_smart_recovery_title">Sursă întreruptă</string>
     <string name="dashboard_smart_recovery_subtitle">Încearcă din nou sau deschide suplimentul</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Au rămas %1$d h %2$d min</string>
+    <string name="dashboard_smart_remaining_minutes">Au rămas %1$d min</string>
+    <string name="dashboard_smart_almost_done">Aproape gata</string>
     <string name="dashboard_home_sub">Ecran de start și acces rapid</string>
     <string name="dashboard_folders_sub">Fișiere și foldere locale</string>
     <string name="dashboard_favorites_sub">Canale și media fixate</string>

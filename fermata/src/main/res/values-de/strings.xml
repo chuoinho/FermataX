@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Fortsetzen nicht möglich</string>
     <string name="dashboard_smart_recovery_title">Quelle unterbrochen</string>
     <string name="dashboard_smart_recovery_subtitle">Erneut versuchen oder Add-on öffnen</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Noch %1$d Std. %2$d Min.</string>
+    <string name="dashboard_smart_remaining_minutes">Noch %1$d Min.</string>
+    <string name="dashboard_smart_almost_done">Fast fertig</string>
     <string name="dashboard_home_sub">Startbildschirm und Schnellzugriff</string>
     <string name="dashboard_folders_sub">Lokale Dateien und Ordner</string>
     <string name="dashboard_favorites_sub">Angeheftete Sender und Medien</string>

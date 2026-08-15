@@ -7,6 +7,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -62,6 +63,7 @@ import me.aap.fermata.media.net.RemotePlaybackItem;
 import me.aap.fermata.media.net.RemotePlaybackRequest;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.fermata.ui.policy.VideoFormatSnapshot;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 
@@ -373,7 +375,8 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	@Override
 	public void setVideoView(VideoView view) {
 		super.setVideoView(view);
-		player.setVideoSurfaceHolder((view == null) ? null : view.getVideoSurface().getHolder());
+		SurfaceView surface = (view == null) ? null : view.getVideoSurface();
+		player.setVideoSurfaceHolder((surface == null) ? null : surface.getHolder());
 	}
 
 	@Override
@@ -390,6 +393,36 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	public float getVideoPixelWidthHeightRatio() {
 		VideoSize size = player.getVideoSize();
 		return (size == null) ? 1f : size.pixelWidthHeightRatio;
+	}
+
+	@Override
+	public VideoFormatSnapshot getVideoFormatSnapshot() {
+		VideoSize size = player.getVideoSize();
+		return videoFormatSnapshot(size, size.unappliedRotationDegrees);
+	}
+
+	static VideoFormatSnapshot videoFormatSnapshot(@Nullable VideoSize size) {
+		return videoFormatSnapshot(size, 0);
+	}
+
+	static VideoFormatSnapshot videoFormatSnapshot(@Nullable VideoSize size, int rotationDegrees) {
+		if (size == null) return VideoFormatSnapshot.unknown();
+		int width = size.width;
+		int height = size.height;
+		float pixelWidthHeightRatio = size.pixelWidthHeightRatio;
+		if (isQuarterTurn(rotationDegrees)) {
+			int value = width;
+			width = height;
+			height = value;
+			if (Float.isFinite(pixelWidthHeightRatio) && (pixelWidthHeightRatio > 0f)) {
+				pixelWidthHeightRatio = 1f / pixelWidthHeightRatio;
+			}
+		}
+		return new VideoFormatSnapshot(width, height, width, height, pixelWidthHeightRatio);
+	}
+
+	static boolean isQuarterTurn(int rotationDegrees) {
+		return (Math.abs(rotationDegrees) % 180) != 0;
 	}
 
 	@Override

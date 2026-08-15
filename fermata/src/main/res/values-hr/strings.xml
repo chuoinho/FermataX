@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Nije moguće nastaviti</string>
     <string name="dashboard_smart_recovery_title">Izvor je prekinut</string>
     <string name="dashboard_smart_recovery_subtitle">Pokušajte ponovno ili otvorite dodatak</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Preostalo %1$d h %2$d min</string>
+    <string name="dashboard_smart_remaining_minutes">Preostalo %1$d min</string>
+    <string name="dashboard_smart_almost_done">Skoro gotovo</string>
     <string name="dashboard_home_sub">Početni zaslon i brzi pristup</string>
     <string name="dashboard_folders_sub">Lokalne datoteke i mape</string>
     <string name="dashboard_favorites_sub">Prikvačeni kanali i mediji</string>

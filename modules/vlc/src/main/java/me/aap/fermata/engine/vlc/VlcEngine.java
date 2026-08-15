@@ -18,7 +18,6 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.view.SurfaceView;
-import android.view.ViewGroup;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
@@ -60,9 +59,11 @@ import me.aap.fermata.media.net.ResolvedRemotePlaybackRequest;
 import me.aap.fermata.media.net.PlaybackRequestProfile.EngineCapability;
 import me.aap.fermata.media.net.UnsupportedPlaybackRequestException;
 import me.aap.fermata.media.pref.MediaPrefs;
-import me.aap.fermata.ui.policy.VideoSurfaceLayoutPolicy;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.policy.VideoFormatSnapshot;
+import me.aap.fermata.ui.policy.VideoRenderPlan;
+import me.aap.fermata.ui.policy.VideoViewport;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
@@ -87,6 +88,8 @@ public class VlcEngine extends MediaEngineBase
 	private long prepareGeneration;
 	private boolean nativeSubtitleSurface = true;
 	private boolean firstVideoOutputReported;
+	private int lastWindowW = -1;
+	private int lastWindowH = -1;
 
 	private void recordDiagnostic(String name, DiagnosticScope scope, DiagnosticPriority priority,
 			@Nullable PlayableItem item, long generation, @Nullable String reason,
@@ -126,6 +129,7 @@ public class VlcEngine extends MediaEngineBase
 
 	@Override
 	public void prepare(PlayableItem source) {
+		resetWindowSizeMemo();
 		firstVideoOutputReported = false;
 		stopped(false);
 		this.source.close();
@@ -390,6 +394,7 @@ public class VlcEngine extends MediaEngineBase
 
 	@Override
 	public void setVideoView(@Nullable VideoView view) {
+		resetWindowSizeMemo();
 		super.setVideoView(view);
 		attachVideoViews(view, nativeSubtitleSurface);
 	}
@@ -399,19 +404,27 @@ public class VlcEngine extends MediaEngineBase
 		out.detachViews();
 
 		if (view != null) {
-			out.setVideoView(view.getVideoSurface());
+			SurfaceView videoSurface = view.getVideoSurface();
+			if (videoSurface == null) {
+				nativeSubtitleSurface = nativeSubtitles;
+				return;
+			}
+			out.setVideoView(videoSurface);
 			SurfaceView subtitleSurface = view.getSubtitleSurface();
 			if (nativeSubtitles && (subtitleSurface != null)) {
 				out.setSubtitlesView(subtitleSurface);
 			}
 			out.attachViews(this);
-			setSurfaceSize(view);
+			view.post(() -> {
+				if (videoView == view) view.setSurfaceSize(this);
+			});
 		}
 		nativeSubtitleSurface = nativeSubtitles;
 	}
 
 	private void useNativeSubtitleSurface(boolean nativeSubtitles) {
 		if (nativeSubtitleSurface == nativeSubtitles) return;
+		resetWindowSizeMemo();
 		attachVideoViews(videoView, nativeSubtitles);
 	}
 
@@ -433,6 +446,41 @@ public class VlcEngine extends MediaEngineBase
 			if (t != null) return t.height;
 		}
 		return h;
+	}
+
+	@Override
+	public float getVideoPixelWidthHeightRatio() {
+		if (!(source instanceof VideoSource src)) return 1f;
+		return src.videoLayout.snapshot().normalizedPixelWidthHeightRatio();
+	}
+
+	@Override
+	public VideoFormatSnapshot getVideoFormatSnapshot() {
+		if (!(source instanceof VideoSource src)) return VideoFormatSnapshot.unknown();
+		VideoFormatSnapshot layout = src.videoLayout.snapshot();
+		if (layout.hasKnownGeometry()) return layout;
+		VideoTrack track = player.getCurrentVideoTrack();
+		if (track == null) return VideoFormatSnapshot.unknown();
+		int width = track.width;
+		int height = track.height;
+		if (isRotated(track)) {
+			int size = width;
+			width = height;
+			height = size;
+		}
+		return videoFormatSnapshot(width, height, width, height, track.sarNum, track.sarDen);
+	}
+
+	private static boolean isRotated(VideoTrack track) {
+		return (track.orientation == VideoTrack.Orientation.LeftBottom) ||
+				(track.orientation == VideoTrack.Orientation.RightTop);
+	}
+
+	static VideoFormatSnapshot videoFormatSnapshot(int codedWidth, int codedHeight,
+			int visibleWidth, int visibleHeight, int sarNum, int sarDen) {
+		float pixelRatio = ((sarNum > 0) && (sarDen > 0)) ? (float) sarNum / sarDen : 1f;
+		return new VideoFormatSnapshot(codedWidth, codedHeight, visibleWidth, visibleHeight,
+				pixelRatio);
 	}
 
 	@Override
@@ -663,180 +711,69 @@ public class VlcEngine extends MediaEngineBase
 
 	@Override
 	public void onNewVideoLayout(IVLCVout vlcVout, int width, int height, int visibleWidth,
-															 int visibleHeight, int sarNum, int sarDen) {
-		if ((videoView == null) || !(source instanceof VideoSource src)) return;
+										 int visibleHeight, int sarNum, int sarDen) {
+		if (!VideoLayoutState.isValid(width, height, visibleWidth, visibleHeight)) return;
+		if (!(source instanceof VideoSource src)) return;
+		if (!src.videoLayout.update(width, height, visibleWidth, visibleHeight, sarNum, sarDen)) return;
+		if (videoView == null) return;
+		listener.onVideoSizeChanged(this, width, height);
 		if (!firstVideoOutputReported && (visibleWidth > 0) && (visibleHeight > 0)) {
 			firstVideoOutputReported = true;
 			recordDiagnostic("video_layout_ready", DiagnosticScope.ESSENTIAL,
 					DiagnosticPriority.STATE, getSource(), prepareGeneration, "layout_callback", null);
 			listener.onVideoFirstFrame(this);
 		}
-		src.videoWidth = width;
-		src.videoHeight = height;
-		src.visibleVideoWidth = visibleWidth;
-		src.visibleVideoHeight = visibleHeight;
-		src.videoSarNum = sarNum;
-		src.videoSarDen = sarDen;
-		setSurfaceSize(videoView, src);
 	}
 
 	@Override
 	public boolean setSurfaceSize(VideoView view) {
-		if (source instanceof VideoSource) setSurfaceSize(view, (VideoSource) source);
+		view.setSurfaceSize(this);
 		return true;
 	}
 
-	private void setSurfaceSize(VideoView view, VideoSource src) {
-		int sw = view.getWidth();
-		int sh = view.getHeight();
-		if ((sw == 0) || (sh == 0)) return;
-
-		int scaleType = src.getItem().getPrefs().getVideoScalePref();
-		player.getVLCVout().setWindowSize(sw, sh);
-
-		if ((src.videoWidth == 0) || (src.videoHeight == 0)) {
-			setPlayerLayout(sw, sh, scaleType);
-			float videoWidth = 0f;
-			float videoHeight = 0f;
-			float pixelRatio = 1f;
-			VideoTrack track = player.getCurrentVideoTrack();
-			if (track != null) {
-				videoWidth = track.width;
-				videoHeight = track.height;
-				boolean swap = track.orientation == VideoTrack.Orientation.LeftBottom ||
-						track.orientation == VideoTrack.Orientation.RightTop;
-				if (swap) {
-					float width = videoWidth;
-					videoWidth = videoHeight;
-					videoHeight = width;
-				}
-				if ((track.sarNum > 0) && (track.sarDen > 0))
-					pixelRatio = (float) track.sarNum / track.sarDen;
+	@Override
+	public void applyVideoRenderPlan(VideoView view, VideoRenderPlan plan) {
+		if (videoView != view) {
+			if (videoView == null) {
+				recordDiagnostic("video_render_plan_dropped", DiagnosticScope.DETAILED,
+						DiagnosticPriority.WARN, getSource(), prepareGeneration,
+						"missing_video_view", null);
+				android.util.Log.w("FermataVideo",
+						"applyVideoRenderPlan dropped: engine has no video view");
 			}
-			VideoSurfaceLayoutPolicy.Size fallback = VideoSurfaceLayoutPolicy.resolve(
-					sw, sh, videoWidth, videoHeight, scaleType, pixelRatio);
-			setSurfaceLayout(view, fallback.width(), fallback.height());
 			return;
 		}
-
-		// The Surface dimensions below own the requested fit/fill geometry. Always return VLC
-		// to automatic scaling once the real video layout is known; otherwise a scale applied
-		// by the fallback path (or a previous item) can survive after the Surface is resized and
-		// crop the decoded frame inside an otherwise correctly sized Surface.
 		player.setScale(0);
 		player.setAspectRatio(null);
-
-		double dw = sw;
-		double dh = sh;
-		double ar;
-		double vw;
-
-		if (src.videoSarDen == src.videoSarNum) {
-			vw = src.visibleVideoWidth;
-			ar = (double) src.visibleVideoWidth / (double) src.visibleVideoHeight;
-		} else {
-			vw = src.visibleVideoWidth * ((double) src.videoSarNum / (double) src.videoSarDen);
-			ar = vw / src.visibleVideoHeight;
-		}
-
-		double dar = dw / dh;
-
-		switch (scaleType) {
-			default:
-			case SCALE_BEST:
-				if (dar < ar) dh = dw / ar;
-				else dw = dh * ar;
-				break;
-			case SCALE_FILL:
-				if (dar >= ar) dh = dw / ar;
-				else dw = dh * ar;
-				break;
-			case SCALE_ORIGINAL:
-				dh = src.videoHeight;
-				dw = vw;
-				break;
-			case SCALE_4_3:
-				ar = 4.0 / 3.0;
-				if (dar < ar) dh = dw / ar;
-				else dw = dh * ar;
-				break;
-			case SCALE_16_9:
-				ar = 16.0 / 9.0;
-				if (dar < ar) dh = dw / ar;
-				else dw = dh * ar;
-				break;
-		}
-
-		sw = (int) Math.ceil(dw * src.videoWidth / src.visibleVideoWidth);
-		sh = (int) Math.ceil(dh * src.videoHeight / src.visibleVideoHeight);
-		setSurfaceLayout(view, sw, sh);
-	}
-
-	private void setPlayerLayout(int surfaceW, int surfaceH, int scaleType) {
-		switch (scaleType) {
-			case SCALE_BEST -> {
-				player.setScale(0);
-				player.setAspectRatio(null);
-			}
-			case SCALE_FILL -> {
-				VideoTrack t = player.getCurrentVideoTrack();
-				if (t == null) {
-					player.setScale(0);
-					player.setAspectRatio(null);
-					break;
-				}
-				float videoW = t.width;
-				float videoH = t.height;
-				boolean swap = t.orientation == VideoTrack.Orientation.LeftBottom ||
-						t.orientation == VideoTrack.Orientation.RightTop;
-				if (swap) {
-					float w = videoW;
-					videoW = videoH;
-					videoH = w;
-				}
-				if (t.sarNum != t.sarDen) videoW = videoW * t.sarNum / t.sarDen;
-				float ar = videoW / videoH;
-				float dar = (float) surfaceW / surfaceH;
-				float scale;
-				if (dar >= ar) scale = surfaceW / videoW;
-				else scale = surfaceH / videoH;
-				player.setScale(scale);
-				player.setAspectRatio(null);
-			}
-			case SCALE_ORIGINAL -> {
-				player.setScale(1);
-				player.setAspectRatio(null);
-			}
-			case SCALE_4_3 -> {
-				player.setScale(0);
-				player.setAspectRatio("4:3");
-			}
-			case SCALE_16_9 -> {
-				player.setScale(0);
-				player.setAspectRatio("16:9");
-			}
+		VideoViewport size = voutWindowSize(plan);
+		if (size != null) {
+			if (!rememberWindowSize(size.width(), size.height())) return;
+			player.getVLCVout().setWindowSize(size.width(), size.height());
 		}
 	}
 
-	private void setSurfaceLayout(VideoView view, int width, int height) {
-		SurfaceView surface = view.getVideoSurface();
-		ViewGroup.LayoutParams lp = surface.getLayoutParams();
+	boolean rememberWindowSize(int width, int height) {
+		if ((width == lastWindowW) && (height == lastWindowH)) return false;
+		lastWindowW = width;
+		lastWindowH = height;
+		return true;
+	}
 
-		if ((lp.width != width) || (lp.height != height)) {
-			lp.width = width;
-			lp.height = height;
-			surface.setLayoutParams(lp);
-		}
+	void resetWindowSizeMemo() {
+		lastWindowW = -1;
+		lastWindowH = -1;
+	}
 
-		if ((surface = view.getSubtitleSurface()) != null) {
-			lp = surface.getLayoutParams();
+	static boolean usesAutomaticNativeTransform(VideoRenderPlan plan) {
+		return true;
+	}
 
-			if ((lp.width != width) || (lp.height != height)) {
-				lp.width = width;
-				lp.height = height;
-				surface.setLayoutParams(lp);
-			}
-		}
+	/** The native vout follows final Surface pixels, or the measured viewport while layout is provisional. */
+	@Nullable
+	static VideoViewport voutWindowSize(VideoRenderPlan plan) {
+		int width = plan.hasFinalSurfaceSize() ? plan.surfaceWidth() : plan.viewportWidth();
+		int height = plan.hasFinalSurfaceSize() ? plan.surfaceHeight() : plan.viewportHeight();
+		return ((width <= 0) || (height <= 0)) ? null : new VideoViewport(width, height);
 	}
 
 	@Override
@@ -966,13 +903,40 @@ public class VlcEngine extends MediaEngineBase
 		}
 	}
 
+	static final class VideoLayoutState {
+		private int width;
+		private int height;
+		private int visibleWidth;
+		private int visibleHeight;
+		private int sarNum;
+		private int sarDen;
+
+		static boolean isValid(int width, int height, int visibleWidth, int visibleHeight) {
+			return (width > 0) && (height > 0) && (visibleWidth > 0) && (visibleHeight > 0);
+		}
+
+		boolean update(int width, int height, int visibleWidth, int visibleHeight,
+				int sarNum, int sarDen) {
+			if (!isValid(width, height, visibleWidth, visibleHeight)) return false;
+			if ((this.width == width) && (this.height == height)
+					&& (this.visibleWidth == visibleWidth) && (this.visibleHeight == visibleHeight)
+					&& (this.sarNum == sarNum) && (this.sarDen == sarDen)) return false;
+			this.width = width;
+			this.height = height;
+			this.visibleWidth = visibleWidth;
+			this.visibleHeight = visibleHeight;
+			this.sarNum = sarNum;
+			this.sarDen = sarDen;
+			return true;
+		}
+
+		VideoFormatSnapshot snapshot() {
+			return videoFormatSnapshot(width, height, visibleWidth, visibleHeight, sarNum, sarDen);
+		}
+	}
+
 	private static final class VideoSource extends PreparedSource {
-		int videoWidth;
-		int videoHeight;
-		int visibleVideoWidth;
-		int visibleVideoHeight;
-		int videoSarNum;
-		int videoSarDen;
+		final VideoLayoutState videoLayout = new VideoLayoutState();
 
 		VideoSource(PlayableItem item, ParcelFileDescriptor fd, long duration, boolean seekable) {
 			super(item, fd, duration, seekable);
@@ -980,12 +944,12 @@ public class VlcEngine extends MediaEngineBase
 
 		@Override
 		int getVideoWidth() {
-			return videoWidth;
+			return (int) videoLayout.snapshot().codedWidth();
 		}
 
 		@Override
 		int getVideoHeight() {
-			return videoHeight;
+			return (int) videoLayout.snapshot().codedHeight();
 		}
 	}
 }

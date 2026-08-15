@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">無法繼續</string>
     <string name="dashboard_smart_recovery_title">來源已中斷</string>
     <string name="dashboard_smart_recovery_subtitle">請重試或開啟附加元件</string>
+    <string name="dashboard_smart_remaining_hours_minutes">剩餘 %1$d 小時 %2$d 分鐘</string>
+    <string name="dashboard_smart_remaining_minutes">剩餘 %1$d 分鐘</string>
+    <string name="dashboard_smart_almost_done">即將結束</string>
     <string name="dashboard_home_sub">啟動畫面與快速存取</string>
     <string name="dashboard_folders_sub">本機檔案與資料夾</string>
     <string name="dashboard_favorites_sub">已釘選的頻道與媒體</string>

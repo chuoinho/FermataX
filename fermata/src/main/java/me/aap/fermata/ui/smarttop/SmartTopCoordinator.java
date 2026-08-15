@@ -2,6 +2,8 @@ package me.aap.fermata.ui.smarttop;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.Nullable;
 
@@ -42,7 +44,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	private final Listener listener;
 	private final SmartTopProviderCoordinator providers;
 	private int refreshGeneration;
-	private SmartTopLayoutMode layout = SmartTopLayoutMode.COMPACT;
+	private SmartTopLayoutMode layout;
 	@Nullable
 	private SmartTopViewState state;
 	private boolean closed;
@@ -51,7 +53,32 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		this.activity = Objects.requireNonNull(activity, "activity");
 		this.context = Objects.requireNonNull(context, "context");
 		this.listener = Objects.requireNonNull(listener, "listener");
+		layout = SmartTopLayoutPolicy.resolve(estimateContentWidthDp(context, activity),
+				context.getResources().getConfiguration().fontScale);
 		providers = new SmartTopProviderCoordinator(AddonManager.get());
+	}
+
+	/** Estimates Dashboard content before RecyclerView's first measured layout. */
+	static float estimateContentWidthDp(int screenWidthDp, int navRailWidthDp,
+			int horizontalPaddingDp) {
+		return Math.max(0F, screenWidthDp - navRailWidthDp - horizontalPaddingDp);
+	}
+
+	private static float estimateContentWidthDp(Context context, MainActivityDelegate activity) {
+		float density = Math.max(0.1F, context.getResources().getDisplayMetrics().density);
+		View nav = activity.getNavBar();
+		int railWidthPx = nav.getWidth();
+		if (railWidthPx <= 0) {
+			ViewGroup.LayoutParams params = nav.getLayoutParams();
+			if ((params != null) && (params.width > 0)) railWidthPx = params.width;
+		}
+		int railWidthDp = Math.round(Math.max(0, railWidthPx) / density);
+		int paddingPx = context.getResources().getDimensionPixelSize(
+				R.dimen.dashboard_content_padding) * 2;
+		int horizontalPaddingDp = Math.round(paddingPx / density);
+		return estimateContentWidthDp(
+				context.getResources().getConfiguration().screenWidthDp,
+				railWidthDp, horizontalPaddingDp);
 	}
 
 	public void setLayout(SmartTopLayoutMode nextLayout) {
@@ -109,6 +136,11 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	}
 
 	private void loadProviderCandidates(int generation) {
+		// Recent is local fallback data and is usually available before addon providers finish.
+		// Publish it as soon as it resolves so a cold AA launch does not show an empty card while
+		// providers are still inside their bounded load window. A later Resume candidate retains
+		// its higher selection priority and replaces this provisional state.
+		loadRecentPreview(generation);
 		providers.loadCandidates().main().onCompletion((candidates, failure) -> {
 			if (!owns(generation)) return;
 			if (activity.getCurrentPlayable() != null) {
@@ -124,6 +156,18 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			}
 			loadRecent(generation,
 					firstProvider(available, SmartTopCandidate.Kind.RECOMMENDED));
+		});
+	}
+
+	private void loadRecentPreview(int generation) {
+		activity.getLib().getRecent().getUnsortedChildren().main().onSuccess(items -> {
+			if (!owns(generation) || (activity.getCurrentPlayable() != null)) return;
+			PlayableItem recent = firstPlayable(items);
+			if (recent == null) return;
+			SmartTopViewState current = state;
+			if ((current != null) && (current.generation() == generation) &&
+					(current.mode() != SmartTopMode.EMPTY)) return;
+			publishItem(generation, SmartTopMode.RECENT, recent, SmartTopTimeline.HIDDEN);
 		});
 	}
 
@@ -172,9 +216,10 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		boolean favoriteSupported = !item.isExternal();
 		SmartTopCapabilities capabilities =
 				SmartTopCapabilities.suggestion(favoriteSupported, true);
+		CharSequence subtitle = subtitle(item);
 		SmartTopViewState viewState = new SmartTopViewState(generation, mode, layout,
 				item, PlayableItemResolver.unwrap(item), item.getIcon(), eyebrow(mode), item.getName(),
-				subtitle(item), timeline, capabilities,
+				subtitle, timeline, capabilities,
 				SmartTopActionPolicy.resolve(mode, layout, capabilities),
 				favoriteSupported && item.isFavoriteItem(), List.of(), null);
 		publish(viewState);
@@ -183,7 +228,8 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			SmartTopViewState current = state;
 			if ((current == null) || (current.generation() != generation) ||
 					(current.presentedItem() != item)) return;
-			publish(current.withTitle(PlaybackSnapshot.resolveDisplayTitle(item, metadata)));
+			CharSequence title = PlaybackSnapshot.resolveDisplayTitle(item, metadata);
+			publish(current.withTitle(title));
 		});
 	}
 

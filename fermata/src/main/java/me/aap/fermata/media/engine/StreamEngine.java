@@ -27,6 +27,8 @@ import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.lib.PlayableItemWrapper;
 import me.aap.fermata.ui.view.VideoInfoView;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.fermata.ui.policy.VideoFormatSnapshot;
+import me.aap.fermata.ui.policy.VideoRenderPlan;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.Cancellable;
@@ -349,6 +351,16 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	@Override
 	public float getVideoPixelWidthHeightRatio() {
 		return eng.getVideoPixelWidthHeightRatio();
+	}
+
+	@Override
+	public VideoFormatSnapshot getVideoFormatSnapshot() {
+		return eng.getVideoFormatSnapshot();
+	}
+
+	@Override
+	public void applyVideoRenderPlan(VideoView view, VideoRenderPlan plan) {
+		eng.applyVideoRenderPlan(view, plan);
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -47,6 +48,7 @@ public class BodyLayout extends SplitLayout
 	private Mode mode;
 	private FutureSupplier<?> startingPlayback = completedVoid();
 	private FutureSupplier<?> playbackLoading = completedVoid();
+	private final PostLayoutVideoShowGate videoShowAfterLayout = new PostLayoutVideoShowGate();
 
 	public BodyLayout(@NonNull Context ctx, @Nullable AttributeSet attrs) {
 		super(ctx, attrs);
@@ -94,10 +96,12 @@ public class BodyLayout extends SplitLayout
 
 	public void setMode(Mode mode) {
 		this.mode = mode;
+		if (mode == Mode.FRAME) videoShowAfterLayout.cancel();
 		Guideline gl = getGuideline();
 		ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) gl.getLayoutParams();
 		MainActivityDelegate a = getActivity();
 		VideoView vv = getVideoView();
+		boolean showVideo = false;
 
 		switch (mode) {
 			case FRAME -> {
@@ -118,7 +122,7 @@ public class BodyLayout extends SplitLayout
 				getSplitHandle().setVisibility(GONE);
 				getSwipeRefresh().setVisibility(GONE);
 				lp.guidePercent = isPortrait() ? 1f : 0f;
-				vv.showVideo(true);
+				showVideo = true;
 				a.setVideoMode(true, vv);
 				App.get().getHandler().post(vv::requestFocus);
 			}
@@ -128,7 +132,7 @@ public class BodyLayout extends SplitLayout
 				getSplitHandle().setVisibility(VISIBLE);
 				getSwipeRefresh().setVisibility(VISIBLE);
 				lp.guidePercent = a.getPrefs().getFloatPref(getSplitPercentPref(isPortrait()));
-				vv.showVideo(true);
+				showVideo = true;
 				a.setVideoMode(true, vv);
 				if (a.isBarsHidden()) a.setBarsHidden(false);
 				MediaItemListView.focusActive(getContext(), a.isCarActivity() ? null : vv);
@@ -136,7 +140,47 @@ public class BodyLayout extends SplitLayout
 		}
 
 		gl.setLayoutParams(lp);
+		if (showVideo) showVideoAfterLayout(vv);
 		a.fireBroadcastEvent(MODE_CHANGED);
+	}
+
+	private void showVideoAfterLayout(VideoView video) {
+		long request = videoShowAfterLayout.schedule();
+		if (request == PostLayoutVideoShowGate.NO_REQUEST) return;
+		video.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+			@Override
+			public boolean onPreDraw() {
+				ViewTreeObserver observer = video.getViewTreeObserver();
+				if (observer.isAlive()) observer.removeOnPreDrawListener(this);
+				if (videoShowAfterLayout.complete(request)) video.showVideo(true);
+				return true;
+			}
+		});
+	}
+
+	/** Coalesces repeated mode changes until the layout pass that gives video its real viewport. */
+	static final class PostLayoutVideoShowGate {
+		static final long NO_REQUEST = 0L;
+		private long generation;
+		private boolean pending;
+
+		long schedule() {
+			if (pending) return NO_REQUEST;
+			pending = true;
+			return ++generation;
+		}
+
+		boolean complete(long request) {
+			if (!pending || (request != generation)) return false;
+			pending = false;
+			return true;
+		}
+
+		void cancel() {
+			if (!pending) return;
+			pending = false;
+			generation++;
+		}
 	}
 
 	private boolean shouldKeepExternalVideoMode(MainActivityDelegate a) {

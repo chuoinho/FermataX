@@ -11,12 +11,11 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.PlayableItemResolver;
 
 /**
- * Inert, single-use lease scaffolding for a future atomic engine-selection cutover.
+ * Single-use ownership lease for an atomic engine-selection transaction.
  *
- * <p>The active playback path does not use this class yet. It deliberately separates the
- * pre-creation, selected, accepted and failure-claimed phases so a future caller cannot replace
- * the shared engine slot before checking the request and exact ownership token captured before
- * engine creation.</p>
+ * <p>It separates the pre-creation, selected, accepted and failure-claimed phases so a stale or
+ * reentrant selection cannot replace the shared engine slot, retire its predecessor, or dispose
+ * an addon-owned candidate without proving that the captured request is still current.</p>
  */
 final class PlaybackEngineLease {
 	private PlaybackEngineLease() {

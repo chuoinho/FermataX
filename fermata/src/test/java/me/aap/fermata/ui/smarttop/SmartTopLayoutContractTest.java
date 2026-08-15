@@ -95,7 +95,7 @@ public class SmartTopLayoutContractTest {
 		assertTrue(dashboard.contains("bindTimelineUpdate(holder.smartTopViews(), card.smartTopState)"));
 		assertTrue(binder.contains("setTag(R.id.dashboard_smart_state_tag, state)"));
 		assertTrue(binder.contains("SmartTopViewState current = boundState(views.root())"));
-		assertTrue(binder.contains("dispatchAction(button, views.root())"));
+		assertTrue(binder.contains("dispatchAction(button, root)"));
 	}
 
 	@Test
@@ -108,6 +108,54 @@ public class SmartTopLayoutContractTest {
 		assertTrue(binder.contains("actions().setVisibility(actions.isEmpty() ? View.INVISIBLE"));
 		assertTrue(controller.contains("dashboard_smart_layout_token"));
 		assertTrue(controller.contains("if (token.equals(root.getTag("));
+		assertTrue(controller.contains("boolean showContext"));
+	}
+
+	@Test
+	public void timelineStaysWithPrimaryContentAndRecentHeaderMatchesTheEyebrow() throws Exception {
+		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
+		String controller = source("ui/smarttop/SmartTopLayoutController.java");
+		assertTrue(controller.contains("progressParams.width = 0"));
+		assertTrue(controller.contains("progressParams.topToBottom = R.id.dashboard_item_subtitle"));
+		assertTrue(controller.contains("progressParams.endToStart = R.id.dashboard_item_actions"));
+		assertTrue(layout.contains("android:layout_height=\"5dp\""));
+		assertTrue(layout.contains("android:progressDrawable=\"@drawable/dashboard_smart_progress\""));
+		String recent = element(layout, "@+id/dashboard_recent_title");
+		assertTrue(recent.contains("android:textAllCaps=\"true\""));
+		assertTrue(recent.contains("android:textColor=\"?attr/colorOnSecondary\""));
+		assertTrue(recent.contains("android:textSize=\"13sp\""));
+		assertTrue(recent.contains("android:textStyle=\"bold\""));
+	}
+
+	@Test
+	public void actionRailUsesStableSemanticSlotsAndEmptyRecentIsStructural() throws Exception {
+		String binder = source("ui/smarttop/SmartTopBinder.java");
+		assertTrue(binder.contains("case PLAY, PLAY_PAUSE, OPEN_ADDONS, RETRY -> buttons.get(1)"));
+		assertTrue(binder.contains("case OPEN_CONTEXT, HISTORY -> buttons.get(3)"));
+		assertTrue(binder.contains("case FAVORITE -> buttons.get(4)"));
+		assertTrue(binder.contains("button.setVisibility(View.INVISIBLE)"));
+		assertTrue(binder.contains("&&\n\t\t\t\thasContent"));
+		assertTrue(binder.contains("recentPanel().setVisibility(showPanel ? View.VISIBLE : View.GONE)"));
+	}
+
+	@Test
+	public void coldLaunchStartsRecentAlongsideProviderDiscovery() throws Exception {
+		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
+		int method = coordinator.indexOf("private void loadProviderCandidates");
+		int preview = coordinator.indexOf("loadRecentPreview(generation);", method);
+		int providers = coordinator.indexOf("providers.loadCandidates()", method);
+		assertTrue(preview > method);
+		assertTrue(preview < providers);
+		assertTrue(coordinator.contains("getRecent().getUnsortedChildren()"));
+		assertTrue(coordinator.contains("return empty(refreshGeneration, layout)"));
+		assertTrue(coordinator.contains("current.mode() != SmartTopMode.EMPTY"));
+	}
+
+	private static String element(String xml, String id) {
+		int at = xml.indexOf(id);
+		int start = xml.lastIndexOf('<', at);
+		int end = xml.indexOf("/>", at);
+		return xml.substring(start, end + 2);
 	}
 
 	private static String source(String relativePath) throws Exception {

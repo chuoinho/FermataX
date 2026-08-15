@@ -15,6 +15,9 @@
     <string name="dashboard_smart_recovery">Không thể tiếp tục</string>
     <string name="dashboard_smart_recovery_title">Nguồn gián đoạn</string>
     <string name="dashboard_smart_recovery_subtitle">Thử lại hoặc mở addon</string>
+    <string name="dashboard_smart_remaining_hours_minutes">Còn %1$d giờ %2$d phút</string>
+    <string name="dashboard_smart_remaining_minutes">Còn %1$d phút</string>
+    <string name="dashboard_smart_almost_done">Sắp xong</string>
     <string name="dashboard_home_sub">Màn hình bắt đầu và truy cập nhanh</string>
     <string name="dashboard_folders_sub">Tệp và thư mục cục bộ</string>
     <string name="dashboard_favorites_sub">Kênh và media đã ghim</string>
