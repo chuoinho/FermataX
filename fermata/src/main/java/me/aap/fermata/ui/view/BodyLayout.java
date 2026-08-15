@@ -239,10 +239,13 @@ public class BodyLayout extends SplitLayout
 	public void playItem(MediaLib.PlayableItem i) {
 		finishPlaybackLoading();
 		MainActivityDelegate a = getActivity();
+		MediaSessionCallback cb = a.getMediaSessionCallback();
+		boolean customEngineProvider = cb.hasCustomEngineProvider();
+		Mode requestedMode = PlaybackLayoutPolicy.getModeOnPlayRequest(
+				getMode(), i, customEngineProvider);
+		if (requestedMode != getMode()) setMode(requestedMode);
 
-		if (i.isVideo() && !getVideoView().isSurfaceCreated() &&
-				!a.getMediaSessionCallback().hasCustomEngineProvider()) {
-			setMode(BodyLayout.Mode.VIDEO);
+		if (i.isVideo() && !customEngineProvider && !getVideoView().isSurfaceCreated()) {
 			getVideoView().onSurfaceCreated(() -> playItem(i));
 			return;
 		}
