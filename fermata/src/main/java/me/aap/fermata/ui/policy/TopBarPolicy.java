@@ -25,12 +25,15 @@ public final class TopBarPolicy {
 		return new State(backVisibility, title);
 	}
 
+	/**
+	 * Back is route chrome, not playback chrome. Whenever a non-Dashboard top bar is rendered it has
+	 * the same Back semantics on PHONE, AA projection and mirror/DHU hosts. Player-bar ownership and
+	 * audio/video presentation affect whether chrome is on-screen, never the Back meaning inside it.
+	 */
 	public static boolean isTopBackVisible(@Nullable RuntimeHostMode hostMode,
 			boolean frameMode, boolean videoMode, boolean dashboardFragment,
 			boolean audioPlayerBarVisible, boolean playerBackOwned) {
-		if ((hostMode == null) || dashboardFragment) return false;
-		if (!hostMode.usesAutomotivePresentation()) return true;
-		return (frameMode || videoMode) && !playerBackOwned && !audioPlayerBarVisible;
+		return (hostMode != null) && !dashboardFragment;
 	}
 
 	public record State(int backVisibility, @NonNull CharSequence title) {
