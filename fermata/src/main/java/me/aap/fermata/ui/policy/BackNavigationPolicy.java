@@ -76,6 +76,19 @@ public final class BackNavigationPolicy {
 		return splitViewSupported ? BodyLayout.Mode.BOTH : BodyLayout.Mode.FRAME;
 	}
 
+	/**
+	 * Resolves the navigation meaning of selecting the already-active top-level destination.
+	 * The nav bar only emits the intent; video-exit/navigation semantics stay centralized here.
+	 */
+	public static boolean handleNavReselection(MainActivityDelegate a, int navId) {
+		if (leaveVideoMode(a)) return true;
+		if (navId == R.id.dashboard_fragment) {
+			a.showDashboard();
+			return true;
+		}
+		return false;
+	}
+
 	public static void handleActivityBack(MainActivityDelegate a) {
 		OverlayMenu menu = a.getActiveMenu();
 		if (menu != null) {
