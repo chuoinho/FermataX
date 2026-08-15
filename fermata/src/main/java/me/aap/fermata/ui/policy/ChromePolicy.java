@@ -7,7 +7,6 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.DashboardFragment;
-import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.TopBarController;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
@@ -22,25 +21,23 @@ public final class ChromePolicy {
 	}
 
 	public static int getTopBackVisibility(MainActivityDelegate a,
-														 @Nullable ActivityFragment f) {
+			@Nullable ActivityFragment f) {
 		return isTopBackVisible(a, f) ? VISIBLE : GONE;
 	}
 
 	public static boolean isTopBackVisible(MainActivityDelegate a,
-												 @Nullable ActivityFragment f) {
-		ControlPanelView panel = a.getControlPanel();
-		boolean playerBackOwned = a.isVideoMode() && (panel != null) &&
-				panel.isVideoControlsVisible();
-		return TopBarPolicy.isTopBackVisible(a.getRuntimeHostMode(), a.getBody().isFrameMode(),
-				a.isVideoMode(), f instanceof DashboardFragment,
-				PlaybackUiPolicy.shouldShowAudioPlayerBar(a), playerBackOwned);
+			@Nullable ActivityFragment f) {
+		return TopBarPolicy.isTopBackVisible(a.getRuntimeHostMode(), f instanceof DashboardFragment);
 	}
 
+	/**
+	 * Legacy primitive signature retained while callers/tests migrate. Playback and layout inputs no
+	 * longer affect route Back semantics.
+	 */
 	static boolean isTopBackVisible(RuntimeHostMode hostMode, boolean frameMode,
-											 boolean videoMode, boolean dashboardFragment,
-											 boolean audioPlayerBarVisible, boolean playerBackOwned) {
-		return TopBarPolicy.isTopBackVisible(hostMode, frameMode, videoMode, dashboardFragment,
-				audioPlayerBarVisible, playerBackOwned);
+			boolean videoMode, boolean dashboardFragment,
+			boolean audioPlayerBarVisible, boolean playerBackOwned) {
+		return TopBarPolicy.isTopBackVisible(hostMode, dashboardFragment);
 	}
 
 	public static void refreshTopBackButton(MainActivityDelegate a) {
