@@ -978,12 +978,7 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	public void onBackPressed() {
-		if (!getRuntimeHostMode().usesAutomotivePresentation()) {
-			super.onBackPressed();
-			return;
-		}
-
-		BackNavigationPolicy.handleAutoActivityBack(this);
+		BackNavigationPolicy.handleActivityBack(this);
 	}
 
 	@Override

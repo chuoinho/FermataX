@@ -9,35 +9,38 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.DashboardFragment;
+import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
 public final class ChromePolicy {
 	private ChromePolicy() {
 	}
 
-	public static int getAutoTopBackVisibility(MainActivityDelegate a,
-																						 @Nullable ActivityFragment f) {
-		return isAutoTopBackVisible(a, f) ? VISIBLE : GONE;
-	}
-
-	public static boolean isAutoTopBackVisible(MainActivityDelegate a,
+	public static int getTopBackVisibility(MainActivityDelegate a,
 														 @Nullable ActivityFragment f) {
-		return isAutoTopBackVisible(a.getRuntimeHostMode(), a.getBody().isFrameMode(),
+		return isTopBackVisible(a, f) ? VISIBLE : GONE;
+	}
+
+	public static boolean isTopBackVisible(MainActivityDelegate a,
+												 @Nullable ActivityFragment f) {
+		ControlPanelView panel = a.getControlPanel();
+		boolean playerBackOwned = a.isVideoMode() && (panel != null) &&
+				panel.isVideoControlsVisible();
+		return isTopBackVisible(a.getRuntimeHostMode(), a.getBody().isFrameMode(),
 				a.isVideoMode(), f instanceof DashboardFragment,
-				PlaybackUiPolicy.shouldShowAudioPlayerBar(a));
+				PlaybackUiPolicy.shouldShowAudioPlayerBar(a), playerBackOwned);
 	}
 
-	static boolean isAutoTopBackVisible(RuntimeHostMode hostMode, boolean frameMode,
+	static boolean isTopBackVisible(RuntimeHostMode hostMode, boolean frameMode,
 											 boolean videoMode, boolean dashboardFragment,
-											 boolean audioPlayerBarVisible) {
-		return (hostMode != null) && hostMode.usesAutomotivePresentation() &&
-				(frameMode || videoMode) && !dashboardFragment && !audioPlayerBarVisible;
+											 boolean audioPlayerBarVisible, boolean playerBackOwned) {
+		if ((hostMode == null) || dashboardFragment || playerBackOwned) return false;
+		return !hostMode.usesAutomotivePresentation() || !audioPlayerBarVisible;
 	}
 
-	public static void refreshAutoTopBackButton(MainActivityDelegate a) {
-		if (!a.getRuntimeHostMode().usesAutomotivePresentation()) return;
+	public static void refreshTopBackButton(MainActivityDelegate a) {
 		View back = a.getToolBar().findViewById(me.aap.utils.R.id.tool_bar_back_button);
 		if (back == null) return;
-		back.setVisibility(getAutoTopBackVisibility(a, a.getActiveFragment()));
+		back.setVisibility(getTopBackVisibility(a, a.getActiveFragment()));
 	}
 }

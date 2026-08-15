@@ -51,4 +51,12 @@ public class BackNavigationPolicyTest {
 		assertEquals(FINISH,
 				BackNavigationPolicy.resolveActivityBack(false, false, false, false, false));
 	}
+
+	@Test
+	public void addonRootReturnsToDashboardAndDashboardRootExitsOnEveryHost() {
+		assertEquals(BackNavigationPolicy.ActivityBackAction.SHOW_DASHBOARD,
+				BackNavigationPolicy.resolveActivityBack(true, false, true, true, false));
+		assertEquals(FINISH,
+				BackNavigationPolicy.resolveActivityBack(true, false, true, true, true));
+	}
 }

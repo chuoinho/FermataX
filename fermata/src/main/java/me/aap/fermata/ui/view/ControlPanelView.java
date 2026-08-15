@@ -631,7 +631,7 @@ public class ControlPanelView extends ConstraintLayout
 		if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(state.barsHidden());
 		if (!state.barsHidden()) {
 			presentationView.updateVideoTitle(a);
-			ChromePolicy.refreshAutoTopBackButton(a);
+			ChromePolicy.refreshTopBackButton(a);
 			a.post(() -> presentationView.updateVideoTitle(a));
 		}
 		setShowHideBarsIcon(a);

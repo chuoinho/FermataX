@@ -347,12 +347,8 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 
 	@Override
 	public int getBackButtonVisibility(ActivityFragment f) {
-		if (!BuildConfig.AUTO) {
-			return ToolBarView.Mediator.BackTitleFilter.super.getBackButtonVisibility(f);
-		}
-
 		MainActivityDelegate a = MainActivityDelegate.get(f.requireContext());
-		return ChromePolicy.getAutoTopBackVisibility(a, f);
+		return ChromePolicy.getTopBackVisibility(a, f);
 	}
 
 	@Override

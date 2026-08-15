@@ -27,7 +27,7 @@ public final class BackNavigationPolicy {
 		switch (resolvePlayerBack(bothMode, fragmentEligible, fragmentHandled,
 				!bothMode && b.isVideoMode())) {
 			case REFRESH_CHROME -> {
-				ChromePolicy.refreshAutoTopBackButton(a);
+				ChromePolicy.refreshTopBackButton(a);
 			}
 			case SHOW_DASHBOARD -> a.showDashboard();
 			case LEAVE_VIDEO_MODE -> leaveVideoMode(a);
@@ -64,10 +64,10 @@ public final class BackNavigationPolicy {
 		if (a.isCarActivity()) {
 			a.post(() -> {
 				MediaItemListView.focusActive(a.getContext(), null);
-				ChromePolicy.refreshAutoTopBackButton(a);
+				ChromePolicy.refreshTopBackButton(a);
 			});
 		} else {
-			ChromePolicy.refreshAutoTopBackButton(a);
+			ChromePolicy.refreshTopBackButton(a);
 		}
 		return true;
 	}
@@ -76,7 +76,7 @@ public final class BackNavigationPolicy {
 		return splitViewSupported ? BodyLayout.Mode.BOTH : BodyLayout.Mode.FRAME;
 	}
 
-	public static void handleAutoActivityBack(MainActivityDelegate a) {
+	public static void handleActivityBack(MainActivityDelegate a) {
 		OverlayMenu menu = a.getActiveMenu();
 		if (menu != null) {
 			if (menu.back()) return;
