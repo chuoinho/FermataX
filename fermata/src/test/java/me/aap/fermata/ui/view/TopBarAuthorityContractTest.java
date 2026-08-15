@@ -31,12 +31,16 @@ public class TopBarAuthorityContractTest {
 	}
 
 	@Test
-	public void playerPresentationInvalidatesTopBarWithoutWritingItsViews() throws Exception {
+	public void playerPresentationInvalidatesShellWithoutWritingTopBarViews() throws Exception {
 		String presentation = coreSource("ui/view/ControlPanelPresentationView.java");
-		assertTrue(presentation.contains("TopBarController.refresh(activity);"));
+		assertTrue(presentation.contains("UiShellController.onPlaybackPresentationChanged(activity);"));
+		assertFalse(presentation.contains("TopBarController"));
 		assertFalse(presentation.contains("tool_bar_title"));
 		assertFalse(presentation.contains("title.setText"));
 		assertFalse(presentation.contains("usesAutomotivePresentation()) return"));
+
+		String shell = coreSource("ui/view/UiShellController.java");
+		assertTrue(shell.contains("TopBarController.refresh(activity);"));
 	}
 
 	@Test
