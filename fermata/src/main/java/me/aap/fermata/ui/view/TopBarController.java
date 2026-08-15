@@ -11,7 +11,6 @@ import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.policy.ItemRoutePolicy;
-import me.aap.fermata.ui.policy.PlaybackUiPolicy;
 import me.aap.fermata.ui.policy.TopBarPolicy;
 import me.aap.fermata.ui.policy.TopBarPolicy.State;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -32,7 +31,7 @@ public final class TopBarController {
 	}
 
 	public static void refresh(MainActivityDelegate activity,
-											 @Nullable ActivityFragment fragment) {
+			@Nullable ActivityFragment fragment) {
 		if (fragment == null) return;
 		ToolBarView toolBar = activity.getToolBar();
 		if (toolBar == null) return;
@@ -50,24 +49,20 @@ public final class TopBarController {
 		PlayableItem item = snapshot.getItem();
 		int playbackOwnerFragmentId = (item == null) ? 0 :
 				ItemRoutePolicy.getPlaybackOwnerFragmentId(item);
-		ControlPanelView panel = activity.getControlPanel();
-		boolean playerBackOwned = activity.isVideoMode() && (panel != null) &&
-				panel.isVideoControlsVisible();
-		return TopBarPolicy.resolve(activity.getRuntimeHostMode(), activity.getBody().isFrameMode(),
-				activity.isVideoMode(), fragment instanceof DashboardFragment,
-				PlaybackUiPolicy.shouldShowAudioPlayerBar(activity), playerBackOwned,
-				fragment.getFragmentId(), playbackOwnerFragmentId, fragment.getTitle(),
-				snapshot.getDisplayTitle(), snapshot.getPreparationStatus());
+		return TopBarPolicy.resolve(activity.getRuntimeHostMode(),
+				fragment instanceof DashboardFragment, fragment.getFragmentId(),
+				playbackOwnerFragmentId, fragment.getTitle(), snapshot.getDisplayTitle(),
+				snapshot.getPreparationStatus());
 	}
 
 	@NonNull
 	public static CharSequence resolveTitle(MainActivityDelegate activity,
-															 ActivityFragment fragment) {
+			ActivityFragment fragment) {
 		return resolveState(activity, fragment).title();
 	}
 
 	public static int resolveBackVisibility(MainActivityDelegate activity,
-														 ActivityFragment fragment) {
+			ActivityFragment fragment) {
 		return resolveState(activity, fragment).backVisibility();
 	}
 }
