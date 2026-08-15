@@ -28,6 +28,23 @@ public final class PlaybackLayoutPolicy {
 				usesBodyVideoView && sameRoot;
 	}
 
+	/**
+	 * Resolves the body mode before a local playback request is handed to the engine. Entering VIDEO
+	 * while still in FRAME prevents the first decoded frame from being rendered in the old list
+	 * viewport. Existing split/fullscreen intent is preserved. Custom engine providers own their
+	 * presentation lifecycle (for example Web/YouTube) and are never preflighted here.
+	 */
+	public static BodyLayout.Mode getModeOnPlayRequest(BodyLayout.Mode currentMode,
+			MediaLib.PlayableItem item, boolean customEngineProvider) {
+		return getModeOnPlayRequest(currentMode, item != null && item.isVideo(), customEngineProvider);
+	}
+
+	static BodyLayout.Mode getModeOnPlayRequest(BodyLayout.Mode currentMode, boolean videoItem,
+			boolean customEngineProvider) {
+		if (!videoItem || customEngineProvider) return currentMode;
+		return currentMode == BodyLayout.Mode.FRAME ? BodyLayout.Mode.VIDEO : currentMode;
+	}
+
 	public static BodyLayout.Mode getModeOnPlayableChanged(BodyLayout.Mode currentMode,
 																				 MediaLib.PlayableItem newItem,
 																				 MediaEngine eng) {
