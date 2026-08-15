@@ -32,6 +32,20 @@ public class PlaybackLayoutPolicyTest {
 	}
 
 	@Test
+	public void localVideoRequestEntersFinalViewportBeforePlayback() {
+		assertEquals(VIDEO, PlaybackLayoutPolicy.getModeOnPlayRequest(FRAME, true, false));
+		assertEquals(BOTH, PlaybackLayoutPolicy.getModeOnPlayRequest(BOTH, true, false));
+		assertEquals(VIDEO, PlaybackLayoutPolicy.getModeOnPlayRequest(VIDEO, true, false));
+		assertEquals(FRAME, PlaybackLayoutPolicy.getModeOnPlayRequest(FRAME, false, false));
+	}
+
+	@Test
+	public void customEngineProviderKeepsItsOwnPresentationLifecycle() {
+		assertEquals(FRAME, PlaybackLayoutPolicy.getModeOnPlayRequest(FRAME, true, true));
+		assertEquals(BOTH, PlaybackLayoutPolicy.getModeOnPlayRequest(BOTH, true, true));
+	}
+
+	@Test
 	public void playableChangesPreserveAcceptedFrameVideoAndSplitModes() {
 		assertEquals(FRAME, PlaybackLayoutPolicy.getModeOnPlayableChanged(
 				VIDEO, false, false, false, false, false));
