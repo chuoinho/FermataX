@@ -46,7 +46,7 @@ final class ControlPanelPresentationView {
 	}
 
 	void updateVideoTitle(MainActivityDelegate activity) {
-		TopBarController.refresh(activity);
+		UiShellController.onPlaybackPresentationChanged(activity);
 	}
 
 	Identity currentIdentity(MainActivityDelegate activity) {
