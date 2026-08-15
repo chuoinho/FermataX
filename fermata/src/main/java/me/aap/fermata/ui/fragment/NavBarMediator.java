@@ -25,9 +25,10 @@ import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.policy.BackNavigationPolicy;
+import me.aap.fermata.ui.activity.NavigationCoordinator;
 import me.aap.fermata.ui.view.FermataNavBarView;
 import me.aap.fermata.ui.view.MediaItemListView;
+import me.aap.fermata.ui.view.NavBarController;
 import me.aap.fermata.ui.voice.VoiceUiPolicy;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.function.Supplier;
@@ -94,6 +95,7 @@ public class NavBarMediator extends PrefNavBarMediator
 		super.enable(nb, f);
 		addVoiceButton(nb);
 		FermataApplication.get().getAddonManager().addBroadcastListener(this);
+		NavBarController.refresh(MainActivityDelegate.get(nb.getContext()));
 	}
 
 	private void addVoiceButton(NavBarView nb) {
@@ -128,6 +130,7 @@ public class NavBarMediator extends PrefNavBarMediator
 	public void reload(NavBarView nb) {
 		super.reload(nb);
 		addVoiceButton(nb);
+		NavBarController.refresh(MainActivityDelegate.get(nb.getContext()));
 	}
 
 	@Override
@@ -150,37 +153,15 @@ public class NavBarMediator extends PrefNavBarMediator
 
 	@Override
 	public void itemSelected(View item, int id, ActivityDelegate a) {
-		if (id == R.id.menu) {
-			showMenu(MainActivityDelegate.get(item.getContext()));
-		} else if (id == R.id.dashboard_fragment) {
-			MainActivityDelegate.get(item.getContext()).showDashboard();
-		} else {
-			MainActivityDelegate ma = MainActivityDelegate.get(item.getContext());
-			if (ma.showFragmentWhenReady(id)) {
-				selectOnly(ma.getNavBar(), item);
-				ma.setActiveNavItemId(id);
-			}
-		}
+		MainActivityDelegate activity = (MainActivityDelegate) a;
+		if (id == R.id.menu) showMenu(activity);
+		else NavigationCoordinator.select(activity, id);
 	}
 
 	@Override
 	public void fragmentChanged(NavBarView nb, ActivityDelegate a, ActivityFragment f) {
 		super.fragmentChanged(nb, a, f);
-		View active = nb.findViewById(a.getActiveNavItemId());
-		if (active != null) selectOnly(nb, active);
-	}
-
-	private static void selectOnly(NavBarView nb, View selected) {
-		if (nb instanceof FermataNavBarView rail) {
-			rail.forEachNavigationItem(child ->
-					child.setSelected((child != null) && (child.getId() != R.id.nav_voice) &&
-							(child == selected)));
-		} else {
-			for (int i = 0, count = nb.getChildCount(); i < count; i++) {
-				View child = nb.getChildAt(i);
-				child.setSelected(child == selected);
-			}
-		}
+		NavBarController.refresh((MainActivityDelegate) a);
 	}
 
 	@Override
@@ -202,12 +183,8 @@ public class NavBarMediator extends PrefNavBarMediator
 
 	@Override
 	public void itemReselected(View item, int id, ActivityDelegate a) {
-		MainActivityDelegate ma = (MainActivityDelegate) a;
-		if (BackNavigationPolicy.leaveVideoMode(ma)) return;
-		if (id == R.id.dashboard_fragment) {
-			ma.showDashboard();
-			return;
-		}
+		MainActivityDelegate activity = (MainActivityDelegate) a;
+		if (NavigationCoordinator.reselect(activity, id)) return;
 		super.itemReselected(item, id, a);
 	}
 
