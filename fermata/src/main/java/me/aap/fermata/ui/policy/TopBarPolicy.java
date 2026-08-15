@@ -6,6 +6,8 @@ import static android.view.View.VISIBLE;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.ui.policy.BackNavigationPolicy.BackTarget;
+
 /** Pure semantic reducer for the common Fermata top bar. */
 public final class TopBarPolicy {
 	private TopBarPolicy() {
@@ -16,21 +18,21 @@ public final class TopBarPolicy {
 			int activeFragmentId, int playbackOwnerFragmentId,
 			@NonNull CharSequence fragmentTitle, @NonNull CharSequence playbackTitle,
 			@NonNull CharSequence preparationStatus) {
-		int backVisibility = isTopBackVisible(hostMode, dashboardFragment) ? VISIBLE : GONE;
+		BackTarget backTarget = BackNavigationPolicy.resolveTopBarBackTarget(
+				hostMode != null, dashboardFragment);
+		int backVisibility = backTarget == BackTarget.NONE ? GONE : VISIBLE;
 		CharSequence title = ToolBarTitlePolicy.resolve(activeFragmentId,
 				playbackOwnerFragmentId, fragmentTitle, playbackTitle, preparationStatus);
-		return new State(backVisibility, title);
+		return new State(backVisibility, title, backTarget);
 	}
 
-	/**
-	 * Back is route chrome, not playback chrome. Whenever a non-Dashboard top bar is rendered it has
-	 * the same Back semantics on PHONE, AA projection and mirror/DHU hosts.
-	 */
 	public static boolean isTopBackVisible(@Nullable RuntimeHostMode hostMode,
 			boolean dashboardFragment) {
-		return (hostMode != null) && !dashboardFragment;
+		return BackNavigationPolicy.resolveTopBarBackTarget(hostMode != null,
+				dashboardFragment) != BackTarget.NONE;
 	}
 
-	public record State(int backVisibility, @NonNull CharSequence title) {
+	public record State(int backVisibility, @NonNull CharSequence title,
+			@NonNull BackTarget backTarget) {
 	}
 }
