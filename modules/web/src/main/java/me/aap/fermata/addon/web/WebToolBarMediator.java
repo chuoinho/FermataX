@@ -18,6 +18,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.view.TopBarController;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.ToolBarView;
@@ -44,13 +45,15 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		addButton(tb, R.drawable.forward, v ->
 				requireNonNull(b.getWebView()).goForward(), R.id.browser_forward, backSide);
 		addButton(tb, me.aap.utils.R.drawable.back, v ->
-				requireNonNull(b.getWebView()).goBack(), me.aap.utils.R.id.tool_bar_back_button, backSide);
+				MainActivityDelegate.get(v.getContext()).onBackPressed(),
+				me.aap.utils.R.id.tool_bar_back_button, backSide);
 		addButton(tb, R.drawable.clear, v -> t.setText(""), R.id.browser_addr_clear);
 		addButton(tb, me.aap.fermata.R.drawable.bookmark_filled, v ->
 				onBookmarksButtonClick(b), me.aap.fermata.R.id.bookmarks);
 		FermataWebView wv = b.getWebView();
 		setButtonsVisibility(tb, (wv != null) && wv.canGoBack(), (wv != null) && wv.canGoForward());
 		ToolBarView.Mediator.super.enable(tb, f);
+		TopBarController.refresh(MainActivityDelegate.get(tb.getContext()), f);
 	}
 
 	private int getBackButtonSide(ToolBarView tb) {
@@ -67,9 +70,14 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		if (et != null) et.setText(addr);
 	}
 
+	/**
+	 * Web history controls remain web-specific actions, while the canonical Back button is owned by
+	 * the common top-bar controller. The legacy back argument is intentionally ignored so existing
+	 * web-view callbacks can migrate without retaining a second Back visibility authority.
+	 */
 	public void setButtonsVisibility(ToolBarView tb, boolean back, boolean forward) {
-		tb.findViewById(me.aap.utils.R.id.tool_bar_back_button).setVisibility(back ? VISIBLE : GONE);
 		tb.findViewById(R.id.browser_forward).setVisibility(forward ? VISIBLE : GONE);
+		TopBarController.refresh(MainActivityDelegate.get(tb.getContext()));
 	}
 
 	private EditText createAddress(ToolBarView tb, WebBrowserFragment f) {
