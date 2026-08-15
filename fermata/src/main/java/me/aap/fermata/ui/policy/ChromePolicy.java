@@ -24,7 +24,7 @@ public final class ChromePolicy {
 	public static boolean isTopBackVisible(MainActivityDelegate a,
 												 @Nullable ActivityFragment f) {
 		ControlPanelView panel = a.getControlPanel();
-		boolean playerBackOwned = isPlayerBackPresentation(a) && (panel != null) &&
+		boolean playerBackOwned = a.isVideoMode() && (panel != null) &&
 				panel.isVideoControlsVisible();
 		return isTopBackVisible(a.getRuntimeHostMode(), a.getBody().isFrameMode(),
 				a.isVideoMode(), f instanceof DashboardFragment,
@@ -35,19 +35,8 @@ public final class ChromePolicy {
 											 boolean videoMode, boolean dashboardFragment,
 											 boolean audioPlayerBarVisible, boolean playerBackOwned) {
 		if ((hostMode == null) || dashboardFragment) return false;
-		if (!hostMode.usesAutomotivePresentation()) return !playerBackOwned;
+		if (!hostMode.usesAutomotivePresentation()) return true;
 		return (frameMode || videoMode) && !playerBackOwned && !audioPlayerBarVisible;
-	}
-
-	public static boolean isPlayerBackPresentation(MainActivityDelegate a) {
-		return isPlayerBackPresentation(a.getRuntimeHostMode(), a.getBody().isVideoMode(),
-				a.isVideoMode());
-	}
-
-	static boolean isPlayerBackPresentation(RuntimeHostMode hostMode, boolean bodyVideoMode,
-														 boolean appVideoMode) {
-		if (hostMode == null) return false;
-		return hostMode.usesAutomotivePresentation() ? appVideoMode : bodyVideoMode;
 	}
 
 	public static void refreshTopBackButton(MainActivityDelegate a) {

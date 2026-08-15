@@ -18,23 +18,8 @@ public class ChromePolicyTest {
 				RuntimeHostMode.PHONE, true, false, false, true, false));
 		assertTrue(ChromePolicy.isTopBackVisible(
 				RuntimeHostMode.PHONE, false, true, false, false, false));
-		assertFalse(ChromePolicy.isTopBackVisible(
+		assertTrue(ChromePolicy.isTopBackVisible(
 				RuntimeHostMode.PHONE, false, true, false, false, true));
-	}
-
-	@Test
-	public void playerBackOwnershipUsesBodyVideoOnlyOnPhone() {
-		assertTrue(ChromePolicy.isPlayerBackPresentation(
-				RuntimeHostMode.PHONE, true, true));
-		assertFalse(ChromePolicy.isPlayerBackPresentation(
-				RuntimeHostMode.PHONE, false, true));
-		assertFalse(ChromePolicy.isPlayerBackPresentation(
-				RuntimeHostMode.PHONE, false, false));
-		assertTrue(ChromePolicy.isPlayerBackPresentation(
-				RuntimeHostMode.AA_PROJECTION, false, true));
-		assertFalse(ChromePolicy.isPlayerBackPresentation(
-				RuntimeHostMode.AA_PROJECTION, true, false));
-		assertFalse(ChromePolicy.isPlayerBackPresentation(null, true, true));
 	}
 
 	@Test

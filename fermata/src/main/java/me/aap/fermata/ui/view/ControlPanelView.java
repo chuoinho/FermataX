@@ -535,13 +535,12 @@ public class ControlPanelView extends ConstraintLayout
 
 	private void backOrShowHideBars(View v) {
 		MainActivityDelegate a = getActivity();
-		if (ChromePolicy.isPlayerBackPresentation(a)) {
-			performPlayerBack(a);
-			return;
+		if (isAutoUi(a)) {
+			performAutoPlayerBack(a);
+		} else {
+			a.setBarsHidden(!a.isBarsHidden());
+			setShowHideBarsIcon(a);
 		}
-
-		a.setBarsHidden(!a.isBarsHidden());
-		setShowHideBarsIcon(a);
 	}
 
 	private boolean backOrShowHideBarsTouch(View v, MotionEvent e) {
@@ -555,7 +554,7 @@ public class ControlPanelView extends ConstraintLayout
 			}
 			case MotionEvent.ACTION_UP -> {
 				v.setPressed(false);
-				performPlayerBack(a);
+				performAutoPlayerBack(a);
 				return true;
 			}
 			case MotionEvent.ACTION_CANCEL -> {
@@ -579,7 +578,7 @@ public class ControlPanelView extends ConstraintLayout
 			}
 			case MotionEvent.ACTION_UP -> {
 				back.setPressed(false);
-				performPlayerBack(getActivity());
+				performAutoPlayerBack(getActivity());
 				return true;
 			}
 			case MotionEvent.ACTION_CANCEL -> {
@@ -619,7 +618,7 @@ public class ControlPanelView extends ConstraintLayout
 		return (x >= left) && (x <= right) && (y >= top) && (y <= bottom);
 	}
 
-	private void performPlayerBack(MainActivityDelegate a) {
+	private void performAutoPlayerBack(MainActivityDelegate a) {
 		presentationCoordinator.showControlsPersistent();
 		a.onPlayerBackPressed();
 	}
@@ -656,7 +655,7 @@ public class ControlPanelView extends ConstraintLayout
 
 	private void setShowHideBarsIcon(MainActivityDelegate a) {
 		a.post(() -> showHideBars.setImageResource(
-				ChromePolicy.isPlayerBackPresentation(a) ? me.aap.utils.R.drawable.back :
+				isAutoUi(a) ? me.aap.utils.R.drawable.back :
 						a.isBarsHidden() ? R.drawable.expand : me.aap.utils.R.drawable.collapse));
 	}
 

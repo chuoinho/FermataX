@@ -188,15 +188,15 @@ public class ControlPanelContractTest {
 	}
 
 	@Test
-	public void playerBackClickAndIconSharePolicyWhileEdgeTouchStaysAutomotive() throws Exception {
+	public void phonePlayerActionStaysCollapseWhileAutomotiveOwnsPlayerBack() throws Exception {
 		String panel = source("ui/view/ControlPanelView.java");
-		assertTrue(panel.contains("if (ChromePolicy.isPlayerBackPresentation(a))"));
-		assertTrue(panel.contains(
-				"ChromePolicy.isPlayerBackPresentation(a) ? me.aap.utils.R.drawable.back"));
-		assertTrue(panel.contains("private void performPlayerBack(MainActivityDelegate a)"));
-		assertFalse(panel.contains("performAutoPlayerBack"));
+		assertTrue(panel.contains("if (isAutoUi(a))"));
+		assertTrue(panel.contains("performAutoPlayerBack(a)"));
+		assertTrue(panel.contains("a.setBarsHidden(!a.isBarsHidden())"));
+		assertTrue(panel.contains("isAutoUi(a) ? me.aap.utils.R.drawable.back"));
 		assertTrue(panel.contains("private boolean isAutoBackTouch(MotionEvent e)"));
 		assertTrue(panel.contains("if (!isAutoUi(a)) return false;"));
+		assertFalse(panel.contains("isPlayerBackPresentation"));
 	}
 
 	@Test
