@@ -6,7 +6,6 @@ import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
-import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -17,37 +16,13 @@ public final class BackNavigationPolicy {
 	private BackNavigationPolicy() {
 	}
 
+	/**
+	 * Automotive/player-bar Back is a secondary rendering of the same Back intent used by the
+	 * toolbar, hardware/system Back and every other host. It must not own a second navigation state
+	 * machine.
+	 */
 	public static void handlePlayerBack(MainActivityDelegate a) {
-		ActivityFragment f = a.getActiveFragment();
-		BodyLayout b = a.getBody();
-		boolean bothMode = b.isBothMode();
-		boolean fragmentEligible = (f != null) && (bothMode || !(f instanceof MediaLibFragment));
-		boolean fragmentHandled = fragmentEligible && f.onBackPressed();
-
-		switch (resolvePlayerBack(bothMode, fragmentEligible, fragmentHandled,
-				!bothMode && b.isVideoMode())) {
-			case REFRESH_CHROME -> ChromePolicy.refreshTopBackButton(a);
-			case SHOW_DASHBOARD -> a.showDashboard();
-			case LEAVE_VIDEO_MODE -> leaveVideoMode(a);
-			case TRY_AUDIO_SOURCE -> {
-				if (PlaybackUiPolicy.isActiveListOnCurrentAudioPath(a)) {
-					if ((f == null) || !f.onBackPressed()) a.showDashboard();
-				} else if (!PlaybackUiPolicy.goToCurrentAudioSource(a)) {
-					a.showDashboard();
-				}
-			}
-			case HANDLED -> {
-			}
-		}
-	}
-
-	static PlayerBackAction resolvePlayerBack(boolean bothMode, boolean fragmentEligible,
-			boolean fragmentHandled, boolean videoMode) {
-		if (bothMode) return fragmentHandled ? PlayerBackAction.REFRESH_CHROME :
-				PlayerBackAction.SHOW_DASHBOARD;
-		if (fragmentEligible && fragmentHandled) return PlayerBackAction.HANDLED;
-		if (videoMode) return PlayerBackAction.LEAVE_VIDEO_MODE;
-		return PlayerBackAction.TRY_AUDIO_SOURCE;
+		handleActivityBack(a);
 	}
 
 	public static boolean leaveVideoMode(MainActivityDelegate a) {
@@ -132,10 +107,6 @@ public final class BackNavigationPolicy {
 			return ActivityBackAction.SHOW_NAV_FRAGMENT;
 		if (hasFragment && !dashboardRoot) return ActivityBackAction.SHOW_DASHBOARD;
 		return ActivityBackAction.FINISH;
-	}
-
-	enum PlayerBackAction {
-		REFRESH_CHROME, SHOW_DASHBOARD, LEAVE_VIDEO_MODE, TRY_AUDIO_SOURCE, HANDLED
 	}
 
 	enum NavReselectionAction {
