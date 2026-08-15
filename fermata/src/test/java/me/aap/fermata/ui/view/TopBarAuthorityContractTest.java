@@ -14,10 +14,11 @@ public class TopBarAuthorityContractTest {
 	@Test
 	public void commonControllerOwnsBackAndPlaybackAwareTitle() throws Exception {
 		String controller = coreSource("ui/view/TopBarController.java");
-		assertTrue(controller.contains("ChromePolicy.getTopBackVisibility(activity, fragment)"));
-		assertTrue(controller.contains("ToolBarTitlePolicy.resolve("));
+		assertTrue(controller.contains("TopBarPolicy.resolve("));
 		assertTrue(controller.contains("snapshot.getDisplayTitle()"));
 		assertTrue(controller.contains("ItemRoutePolicy.getPlaybackOwnerFragmentId(item)"));
+		assertTrue(controller.contains("back.setVisibility(state.backVisibility())"));
+		assertTrue(controller.contains("title.setText(state.title())"));
 	}
 
 	@Test
@@ -36,6 +37,15 @@ public class TopBarAuthorityContractTest {
 		assertFalse(presentation.contains("tool_bar_title"));
 		assertFalse(presentation.contains("title.setText"));
 		assertFalse(presentation.contains("usesAutomotivePresentation()) return"));
+	}
+
+	@Test
+	public void compatibilityChromeFacadeDoesNotWriteTopBarViews() throws Exception {
+		String chrome = coreSource("ui/policy/ChromePolicy.java");
+		assertTrue(chrome.contains("TopBarPolicy.isTopBackVisible"));
+		assertTrue(chrome.contains("TopBarController.refresh(a);"));
+		assertFalse(chrome.contains("findViewById"));
+		assertFalse(chrome.contains("setVisibility("));
 	}
 
 	@Test
