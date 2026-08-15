@@ -173,8 +173,10 @@ public class ControlPanelView extends ConstraintLayout
 		TextView seekTotal = findViewById(R.id.seek_total);
 		float textSize = Math.min(getTextAppearanceSize(getContext(), textAppearance) * scale,
 				toIntPx(getContext(), 14));
-		int iconSize = Math.min(toIntPx(getContext(), 32),
-				Math.max(toIntPx(getContext(), 24), Math.round(toIntPx(getContext(), 28) * scale)));
+		int edgeActionSize = getResources().getDimensionPixelSize(
+				R.dimen.control_panel_edge_action_size);
+		int edgeActionPadding = getResources().getDimensionPixelSize(
+				R.dimen.control_panel_edge_action_padding);
 		int panelSize = getResources().getDimensionPixelSize(R.dimen.control_panel_height);
 		int buttonSize = getResources().getDimensionPixelSize(R.dimen.control_panel_transport_height);
 		ControlPanelSeekView seek = findViewById(R.id.seek_bar);
@@ -182,8 +184,8 @@ public class ControlPanelView extends ConstraintLayout
 			findViewById(R.id.control_play_pause).setBackgroundResource(
 					R.drawable.aa_play_button_bg_automotive);
 		}
-		setSize(R.id.show_hide_bars_icon, iconSize);
-		setSize(R.id.control_menu_button_icon, iconSize);
+		setEdgeActionSize(R.id.show_hide_bars_icon, edgeActionSize, edgeActionPadding);
+		setEdgeActionSize(R.id.control_menu_button_icon, edgeActionSize, edgeActionPadding);
 		seTextAppearance(seekTime, textSize);
 		seTextAppearance(seekTotal, textSize);
 		setHeight(R.id.control_prev, buttonSize);
@@ -204,6 +206,12 @@ public class ControlPanelView extends ConstraintLayout
 		ViewGroup.LayoutParams lp = v.getLayoutParams();
 		lp.width = lp.height = size;
 		v.setLayoutParams(lp);
+	}
+
+	private void setEdgeActionSize(@IdRes int id, int size, int padding) {
+		View v = findViewById(id);
+		setSize(id, size);
+		v.setPadding(padding, padding, padding, padding);
 	}
 
 	private void setHeight(@IdRes int id, int h) {

@@ -62,6 +62,27 @@ public class ControlPanelContractTest {
 	}
 
 	@Test
+	public void edgeActionsScaleVisuallyWithoutChangingPanelOrTouchGeometry() throws Exception {
+		String dimensions = resource("values/dimens.xml");
+		String wideDimensions = resource("values-w840dp/dimens.xml");
+		String panel = source("ui/view/ControlPanelView.java");
+		assertTrue(dimensions.contains("name=\"control_panel_edge_action_size\">44dp"));
+		assertTrue(dimensions.contains("name=\"control_panel_edge_action_padding\">8dp"));
+		assertTrue(wideDimensions.contains("name=\"control_panel_edge_action_size\">48dp"));
+		assertTrue(panel.contains("R.dimen.control_panel_edge_action_size"));
+		assertTrue(panel.contains("setEdgeActionSize(R.id.show_hide_bars_icon"));
+		assertTrue(panel.contains("setEdgeActionSize(R.id.control_menu_button_icon"));
+		assertFalse(panel.contains("Math.min(toIntPx(getContext(), 32)"));
+		for (String layoutName : new String[]{"control_panel_view.xml", "control_panel_view2.xml"}) {
+			String layout = resource("layout/" + layoutName);
+			assertTrue(viewBlock(layout, "show_hide_bars").contains(
+					"android:layout_height=\"@dimen/control_panel_transport_height\""));
+			assertTrue(viewBlock(layout, "control_menu_button").contains(
+					"android:layout_height=\"@dimen/control_panel_transport_height\""));
+		}
+	}
+
+	@Test
 	public void liveModeUsesAStableBadgeAndPreservesTransportGeometry() throws Exception {
 		String binder = source("media/service/FermataServiceUiBinder.java");
 		assertTrue(binder.contains("bindLiveBadge"));
