@@ -72,11 +72,10 @@ public class ControlPanelView extends ConstraintLayout
 	@StyleRes
 	private final int textAppearance;
 	private PlaybackControlPrefs prefs;
-	private HideTimer hideTimer;
 	private byte mask;
 	private View gestureSource;
 	private long scrollStamp;
-	private boolean preparationControlsVisible, phoneVideoMode;
+	private boolean preparationControlsVisible;
 
 	public ControlPanelView(Context context, AttributeSet attrs) {
 		super(context, attrs, R.attr.appControlPanelStyle);
@@ -96,7 +95,7 @@ public class ControlPanelView extends ConstraintLayout
 				new PlaybackPresentationCoordinator.Host() {
 					@Override
 					public void apply(State state) {
-						applyAutoPresentation(state);
+						applyPresentation(state);
 					}
 
 					@Override
@@ -133,7 +132,6 @@ public class ControlPanelView extends ConstraintLayout
 		Parcelable parentState = super.onSaveInstanceState();
 		Bundle b = new Bundle();
 		b.putByte("MASK", mask);
-		b.putBoolean("PHONE_VIDEO_MODE", phoneVideoMode);
 		b.putParcelable("PARENT", parentState);
 		return b;
 	}
@@ -143,9 +141,7 @@ public class ControlPanelView extends ConstraintLayout
 		if (st instanceof Bundle b) {
 			super.onRestoreInstanceState(b.getParcelable("PARENT"));
 			mask = b.getByte("MASK");
-			phoneVideoMode = b.getBoolean("PHONE_VIDEO_MODE");
-			if (((mask & MASK_VISIBLE) == 0) || phoneVideoMode) setPanelVisibility(GONE);
-			if (phoneVideoMode) post(() -> presentationView.setVideoMode(true));
+			if ((mask & MASK_VISIBLE) == 0) setPanelVisibility(GONE);
 		}
 	}
 
@@ -229,12 +225,7 @@ public class ControlPanelView extends ConstraintLayout
 			mask |= MASK_VISIBLE;
 			if (isVideoModeActive(a)) return;
 			boolean showAudio = isAudioPanelSupported(a);
-			if (isAutoUi(a)) {
-				presentationCoordinator.leaveVideo(showAudio);
-				return;
-			}
-
-			setPanelVisibility(showAudio ? VISIBLE : GONE);
+			presentationCoordinator.leaveVideo(showAudio);
 			if (!showAudio) return;
 
 			if (a.getPrefs().getHideBarsPref(a)) {
@@ -243,16 +234,9 @@ public class ControlPanelView extends ConstraintLayout
 			}
 		} else {
 			mask &= ~MASK_VISIBLE;
-			if (isAutoUi(a) && !presentationCoordinator.getState().videoMode()) {
+			if (!presentationCoordinator.getState().videoMode()) {
 				presentationCoordinator.leaveVideo(false);
 				return;
-			}
-			setPanelVisibility(GONE);
-			a.getFloatingButton().setVisibility(isAutoUi(a) ? GONE : VISIBLE);
-
-			if (a.isBarsHidden()) {
-				a.setBarsHidden(false);
-				setShowHideBarsIcon(a);
 			}
 		}
 
@@ -261,39 +245,13 @@ public class ControlPanelView extends ConstraintLayout
 
 	public void enableVideoMode(@Nullable VideoView v) {
 		MainActivityDelegate a = getActivity();
-		hideTimer = null;
 
 		View info = (v != null) ? v.getVideoInfoView() : null;
 		if (info != null) info.setVisibility(GONE);
-
-		if (isAutoUi(a)) {
-			boolean split = a.getBody().isBothMode() && isSplitModeSupported(a);
-			presentationView.setVideoMode(true);
-			presentationCoordinator.enterVideo(presentationView.currentIdentity(a), split,
-					a.getMediaServiceBinder().isPlaying());
-			return;
-		}
-		phoneVideoMode = true;
 		presentationView.setVideoMode(true);
-
-		View fb = a.getFloatingButton();
-		int delay = getStartDelay();
-		a.setBarsHidden(!isAutoUi(a) || (delay == 0));
-		setShowHideBarsIcon(a);
-
-		if (delay == 0) {
-			fb.setVisibility(GONE);
-			setPanelVisibility(GONE);
-		} else {
-			fb.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
-			presentationView.updateVideoTitle(a);
-			setPanelVisibility(VISIBLE);
-			hideTimer = isAutoUi(a) ? new HideTimer(a, delay, false, info) :
-					new HideTimer(a, delay, false, info, fb);
-			a.postDelayed(hideTimer, delay);
-		}
-
-		playbackTimerController.refresh(a);
+		boolean split = a.getBody().isBothMode() && isSplitModeSupported(a);
+		presentationCoordinator.enterVideo(presentationView.currentIdentity(a), split,
+				a.getMediaServiceBinder().isPlaying());
 	}
 
 	private boolean isAudioPanelSupported(MainActivityDelegate a) {
@@ -307,28 +265,10 @@ public class ControlPanelView extends ConstraintLayout
 
 	public void disableVideoMode() {
 		MainActivityDelegate a = getActivity();
-		hideTimer = null;
 		preparationControlsVisible = false;
-		a.getFloatingButton().setVisibility(isAutoUi(a) ? GONE : VISIBLE);
-
-		if (isAutoUi(a)) {
-			boolean showAudio = ((mask & MASK_VISIBLE) != 0) && isAudioPanelSupported(a);
-			presentationCoordinator.leaveVideo(showAudio);
-			presentationView.setVideoMode(false);
-			return;
-		}
-		phoneVideoMode = false;
+		boolean showAudio = ((mask & MASK_VISIBLE) != 0) && isAudioPanelSupported(a);
+		presentationCoordinator.leaveVideo(showAudio);
 		presentationView.setVideoMode(false);
-
-		if ((mask & MASK_VISIBLE) == 0) {
-			setPanelVisibility(GONE);
-			a.setBarsHidden(false);
-		} else {
-			setPanelVisibility(VISIBLE);
-			a.setBarsHidden(a.getPrefs().getHideBarsPref(a));
-		}
-
-		setShowHideBarsIcon(a);
 	}
 
 	@Override
@@ -336,13 +276,7 @@ public class ControlPanelView extends ConstraintLayout
 		if (isAutoBackTouch(e)) return true;
 
 		MainActivityDelegate a = getActivity();
-		if (isAutoUi(a)) {
-			presentationCoordinator.refreshTimeout(getTouchDelay());
-		} else if (hideTimer != null) {
-			int delay = getTouchDelay();
-			hideTimer = new HideTimer(a, delay, false, hideTimer.views);
-			a.postDelayed(hideTimer, delay);
-		}
+		presentationCoordinator.refreshTimeout(getTouchDelay());
 		return a.interceptTouchEvent(e, me -> {
 			gestureSource = this;
 			gestureDetector.onTouchEvent(me);
@@ -449,31 +383,7 @@ public class ControlPanelView extends ConstraintLayout
 		int delay = getTouchDelay();
 		if (delay == 0) return false;
 
-		if (isAutoUi(a)) {
-			presentationCoordinator.toggleControls(delay, a.getMediaServiceBinder().isPlaying());
-			return true;
-		}
-
-		View fb = a.getFloatingButton();
-
-		if (getVisibility() == VISIBLE) {
-			setPanelVisibility(GONE);
-			fb.setVisibility(GONE);
-			if (isAutoUi(a)) a.setBarsHidden(true);
-			if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(true);
-		} else {
-			setPanelVisibility(VISIBLE);
-			fb.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
-			if (isAutoUi(a)) a.setBarsHidden(false);
-			if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(false);
-			presentationView.updateVideoTitle(a);
-			clearFocus();
-			hideTimer = isAutoUi(a) ? new HideTimer(a, delay, false, info) :
-					new HideTimer(a, delay, false, info, fb);
-			a.postDelayed(hideTimer, delay);
-		}
-
-		playbackTimerController.refresh(a);
+		presentationCoordinator.toggleControls(delay, a.getMediaServiceBinder().isPlaying());
 		return true;
 	}
 
@@ -494,30 +404,13 @@ public class ControlPanelView extends ConstraintLayout
 		View info = vv.getVideoInfoView();
 		if (info != null) info.setVisibility(GONE);
 		int delay = getSeekDelay();
-		if (isAutoUi(a)) {
-			presentationView.updateVideoTitle(a);
-			clearFocus();
-			presentationCoordinator.showSeekControls(
-					delay, a.getMediaServiceBinder().isPlaying());
-			return;
-		}
-
-		View fb = a.getFloatingButton();
-		setPanelVisibility(VISIBLE);
-		fb.setVisibility(isAutoUi(a) ? GONE : VISIBLE);
-		if (isAutoUi(a)) a.setBarsHidden(false);
 		presentationView.updateVideoTitle(a);
 		clearFocus();
-		hideTimer = isAutoUi(a) ? new HideTimer(a, delay, true, info) :
-				new HideTimer(a, delay, true, info, fb);
-		a.postDelayed(hideTimer, delay);
-		playbackTimerController.refresh(a);
+		presentationCoordinator.showSeekControls(delay, a.getMediaServiceBinder().isPlaying());
 	}
 
 	public boolean isVideoSeekMode() {
-		if (isAutoUi(getActivity())) return presentationCoordinator.getState().seekMode();
-		HideTimer t = hideTimer;
-		return (t != null) && t.seekMode;
+		return presentationCoordinator.getState().seekMode();
 	}
 
 	public boolean isVideoControlsVisible() {
@@ -548,7 +441,7 @@ public class ControlPanelView extends ConstraintLayout
 		favoriteController.refresh();
 		MainActivityDelegate activity = getActivity();
 		presentationView.updateVideoTitle(activity);
-		if (isAutoUi(activity) && presentationCoordinator.getState().videoMode() &&
+		if (presentationCoordinator.getState().videoMode() &&
 				!preparationControlsVisible) {
 			presentationCoordinator.playingChanged(
 					activity.getMediaServiceBinder().isPlaying(), getTouchDelay());
@@ -580,23 +473,9 @@ public class ControlPanelView extends ConstraintLayout
 		if (preparing == preparationControlsVisible) return;
 		preparationControlsVisible = preparing;
 		MainActivityDelegate activity = getActivity();
-		if (isAutoUi(activity)) {
-			if (preparing) presentationCoordinator.showControlsPersistent();
-			else presentationCoordinator.showControls(getTouchDelay(),
-					activity.getMediaServiceBinder().isPlaying());
-			return;
-		}
-		if (preparing) {
-			hideTimer = null;
-			activity.setBarsHidden(false);
-			activity.getFloatingButton().setVisibility(VISIBLE);
-			setPanelVisibility(VISIBLE);
-		} else {
-			int delay = getTouchDelay();
-			View floating = activity.getFloatingButton();
-			hideTimer = new HideTimer(activity, delay, false, floating);
-			activity.postDelayed(hideTimer, delay);
-		}
+		if (preparing) presentationCoordinator.showControlsPersistent();
+		else presentationCoordinator.showControls(getTouchDelay(),
+				activity.getMediaServiceBinder().isPlaying());
 	}
 
 	@Override
@@ -732,16 +611,16 @@ public class ControlPanelView extends ConstraintLayout
 	}
 
 	private void performAutoPlayerBack(MainActivityDelegate a) {
-		hideTimer = null;
 		presentationCoordinator.showControlsPersistent();
 		a.onPlayerBackPressed();
 	}
 
-	private void applyAutoPresentation(State state) {
+	private void applyPresentation(State state) {
 		MainActivityDelegate a = getActivity();
 		setPanelVisibility(state.controlsVisible() ? VISIBLE : GONE);
-		a.getFloatingButton().setVisibility(GONE);
+		a.getFloatingButton().setVisibility(state.videoMode() || isAutoUi(a) ? GONE : VISIBLE);
 		a.setBarsHidden(state.barsHidden());
+		if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(state.barsHidden());
 		if (!state.barsHidden()) {
 			presentationView.updateVideoTitle(a);
 			ChromePolicy.refreshAutoTopBackButton(a);
@@ -777,7 +656,7 @@ public class ControlPanelView extends ConstraintLayout
 	}
 
 	private boolean isVideoModeActive(MainActivityDelegate activity) {
-		return isAutoUi(activity) ? presentationCoordinator.getState().videoMode() : phoneVideoMode;
+		return presentationCoordinator.getState().videoMode();
 	}
 
 	private void setPanelVisibility(int visibility) {
@@ -989,54 +868,13 @@ public class ControlPanelView extends ConstraintLayout
 		}
 	}
 
-	private int getStartDelay() {
-		return (prefs == null) ? 0 : prefs.getVideoControlStartDelayPref() * 1000;
-	}
-
 	private int getTouchDelay() {
 		int delay = (prefs == null) ? 8000 : prefs.getVideoControlTouchDelayPref() * 1000;
-		return (isAutoUi(getActivity()) && (delay == 0)) ? 8000 : delay;
+		return (delay == 0) ? 8000 : delay;
 	}
 
 	private int getSeekDelay() {
 		return (prefs == null) ? 3000 : prefs.getVideoControlSeekDelayPref() * 1000;
 	}
 
-	private final class HideTimer implements Runnable {
-		final MainActivityDelegate activity;
-		final int delay;
-		final boolean seekMode;
-		final View[] views;
-
-		HideTimer(MainActivityDelegate activity, int delay, boolean seekMode, View... views) {
-			this.activity = activity;
-			this.delay = delay;
-			this.seekMode = seekMode;
-			this.views = views;
-		}
-
-		@Override
-		public void run() {
-			if ((hideTimer != this) || !isVideoModeActive(activity)) return;
-			if (isAutoUi(activity) && activity.getBody().isBothMode() && isSplitModeSupported(activity)) {
-				hideTimer = null;
-				activity.setBarsHidden(false);
-				return;
-			}
-
-			if (!isAutoUi(activity) && ControlPanelView.this.hasFocus()) {
-				hideTimer = new HideTimer(activity, delay, seekMode, views);
-				activity.postDelayed(hideTimer, delay);
-				return;
-			}
-
-			if (activity.getPrefs().getSysBarsOnVideoTouchPref()) activity.setFullScreen(true);
-			setPanelVisibility(GONE);
-			if (isAutoUi(activity)) activity.setBarsHidden(true);
-
-			for (View v : views) {
-				if (v != null) v.setVisibility(GONE);
-			}
-		}
-	}
 }

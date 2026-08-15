@@ -150,11 +150,18 @@ public class ControlPanelContractTest {
 	}
 
 	@Test
-	public void autoVideoModeUsesReducerStateWhilePhoneKeepsItsLegacyState() throws Exception {
+	public void everyVideoHostUsesReducerOwnedPresentationState() throws Exception {
 		String panel = source("ui/view/ControlPanelView.java");
 		assertFalse(panel.contains("MASK_VIDEO_MODE"));
 		assertTrue(panel.contains("presentationCoordinator.getState().videoMode()"));
-		assertTrue(panel.contains("phoneVideoMode"));
+		assertFalse(panel.contains("phoneVideoMode"));
+		assertFalse(panel.contains("PHONE_VIDEO_MODE"));
+		assertFalse(panel.contains("class HideTimer"));
+		assertTrue(panel.contains("presentationCoordinator.enterVideo"));
+		assertTrue(panel.contains("presentationCoordinator.leaveVideo"));
+		assertTrue(panel.contains("presentationCoordinator.toggleControls"));
+		assertTrue(panel.contains("presentationCoordinator.refreshTimeout"));
+		assertTrue(panel.contains("private void applyPresentation(State state)"));
 		assertTrue(panel.contains("R.dimen.control_panel_transport_height"));
 		assertFalse(panel.contains("Math.max(buttonSize"));
 	}
