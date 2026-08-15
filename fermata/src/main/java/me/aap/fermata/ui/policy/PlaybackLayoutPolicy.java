@@ -70,11 +70,11 @@ public final class PlaybackLayoutPolicy {
 	}
 
 	public static boolean shouldKeepExternalVideoMode(RuntimeHostMode hostMode,
-														 boolean hasEngine, boolean videoModeRequired,
-														 boolean splitModeSupported, boolean mainFragment,
-														 int fragmentId) {
-		if ((hostMode == null) || !hostMode.usesAutomotivePresentation()) return false;
-		if (!hasEngine || !videoModeRequired || splitModeSupported || !mainFragment) return false;
+												 boolean presentationActive, boolean hasEngine, boolean videoModeRequired,
+												 boolean splitModeSupported, boolean mainFragment,
+												 int fragmentId) {
+		if ((hostMode == null) || !presentationActive || !hasEngine || !videoModeRequired ||
+				splitModeSupported || !mainFragment) return false;
 		return (fragmentId == R.id.youtube_fragment) || (fragmentId == R.id.web_browser_fragment);
 	}
 

@@ -185,12 +185,11 @@ public class BodyLayout extends SplitLayout
 
 	private boolean shouldKeepExternalVideoMode(MainActivityDelegate a) {
 		var hostMode = a.getRuntimeHostMode();
-		if (!hostMode.usesAutomotivePresentation()) return false;
 		MediaEngine eng = a.getMediaSessionCallback().getEngine();
 		if ((eng == null) || !eng.isVideoModeRequired() || eng.isSplitModeSupported()) return false;
 		ActivityFragment f = a.getActiveFragment();
 		return PlaybackLayoutPolicy.shouldKeepExternalVideoMode(hostMode,
-				true, true, false, f instanceof MainActivityFragment,
+				a.isVideoMode(), true, true, false, f instanceof MainActivityFragment,
 				(f instanceof MainActivityFragment) ? ((MainActivityFragment) f).getFragmentId() : 0);
 	}
 
