@@ -51,14 +51,13 @@ public class ControlPanelSeekView extends AppCompatSeekBar {
 	@Override
 	protected void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
-		// ConstraintSets are inflated from resources and must not survive an in-place configuration
-		// change. Recreate the active set, then size the five transport controls for the new width.
+		// Do not re-apply a full ConstraintSet here: it also carries default visibility and can
+		// overwrite live playback state. Drop resource-derived caches for the next seek-state change
+		// and only reconcile geometry for the current configuration.
 		constraints = null;
 		constraintsNoSeek = null;
 		post(() -> {
-			if (!(getParent() instanceof ControlPanelView panel)) return;
-			applyConstraints(isEnabled());
-			reflowAfterConfigurationChange(panel);
+			if (getParent() instanceof ControlPanelView panel) reflowAfterConfigurationChange(panel);
 		});
 	}
 
