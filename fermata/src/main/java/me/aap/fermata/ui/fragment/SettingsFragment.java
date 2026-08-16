@@ -48,12 +48,16 @@ import me.aap.utils.pref.PreferenceViewAdapter;
  */
 public class SettingsFragment extends MainActivityFragment
 		implements MainActivityListener, PreferenceStore.Listener {
+	public enum Destination { ADDONS }
+
 	private PreferenceViewAdapter adapter;
 	private final List<AddonPrefsBuilder> addonPrefsBuilders = new ArrayList<>();
 	private MainActivityDelegate activityDelegate;
 	private boolean viewActive;
 	private long viewGeneration;
 	private DiagnosticsPreferences diagnosticsPreferences;
+	private PreferenceSet addonsPreferenceSet;
+	private Destination pendingDestination;
 
 	@Override
 	public int getFragmentId() {
@@ -85,6 +89,12 @@ public class SettingsFragment extends MainActivityFragment
 	}
 
 	@Override
+	public void setInput(Object input) {
+		pendingDestination = (input instanceof Destination destination) ? destination : null;
+		applyPendingDestination();
+	}
+
+	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
 		super.onViewCreated(view, state);
 		viewActive = true;
@@ -106,6 +116,7 @@ public class SettingsFragment extends MainActivityFragment
 				PreferenceSet p = adapter.getPreferenceSet().find(state.getInt("id", ID_NULL));
 				if (p != null) adapter.setPreferenceSet(p);
 			}
+			applyPendingDestination();
 		});
 	}
 
@@ -128,6 +139,7 @@ public class SettingsFragment extends MainActivityFragment
 		addonPrefsBuilders.clear();
 		if (adapter != null) adapter.onDestroy();
 		adapter = null;
+		addonsPreferenceSet = null;
 		diagnosticsPreferences = null;
 	}
 
@@ -368,6 +380,7 @@ public class SettingsFragment extends MainActivityFragment
 	private void addAddons(PreferenceSet set) {
 		AddonManager amgr = FermataApplication.get().getAddonManager();
 		PreferenceSet sub = set.subSet(o -> o.title = R.string.addons);
+		addonsPreferenceSet = sub;
 		PreferenceStore store = FermataApplication.get().getPreferenceStore();
 
 		for (AddonInfo addon : AddonRegistry.get().getAll()) {
@@ -377,5 +390,12 @@ public class SettingsFragment extends MainActivityFragment
 			PreferenceSet sub1 = sub.subSet(b);
 			sub1.configure(b::configure);
 		}
+	}
+
+	private void applyPendingDestination() {
+		if ((pendingDestination != Destination.ADDONS) || (adapter == null) ||
+				(addonsPreferenceSet == null)) return;
+		pendingDestination = null;
+		adapter.setPreferenceSet(addonsPreferenceSet);
 	}
 }
