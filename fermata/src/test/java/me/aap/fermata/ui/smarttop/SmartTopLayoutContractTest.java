@@ -143,6 +143,23 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
+	public void addOnsCtaDeepLinksWhileEmptyCardKeepsRootSettingsRoute() throws Exception {
+		String dashboard = source("ui/fragment/DashboardFragment.java");
+		String settings = source("ui/fragment/SettingsFragment.java");
+		int emptyCard = dashboard.indexOf("SmartTopMode.EMPTY");
+		int openAddons = dashboard.indexOf("case OPEN_ADDONS");
+		assertTrue(emptyCard >= 0);
+		assertTrue(openAddons > emptyCard);
+		assertTrue(dashboard.substring(emptyCard, openAddons)
+				.contains("showFragmentWhenReady(R.id.settings_fragment);"));
+		assertTrue(dashboard.indexOf("SettingsFragment.Destination.ADDONS", openAddons) > openAddons);
+		assertTrue(settings.contains("public enum Destination { ADDONS }"));
+		assertTrue(settings.contains("pendingDestination = (input instanceof Destination destination)"));
+		assertTrue(settings.contains("addonsPreferenceSet = sub;"));
+		assertTrue(settings.contains("adapter.setPreferenceSet(addonsPreferenceSet);"));
+	}
+
+	@Test
 	public void coldLaunchStartsRecentAlongsideProviderDiscovery() throws Exception {
 		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
 		int method = coordinator.indexOf("private void loadProviderCandidates");
