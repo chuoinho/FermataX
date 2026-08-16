@@ -820,7 +820,8 @@ public class DashboardFragment extends MainActivityFragment
 				case HISTORY -> openAllRecent();
 				case OPEN_ADDONS -> {
 					activity.setActiveNavItemId(R.id.dashboard_fragment);
-					activity.showFragmentWhenReady(R.id.settings_fragment);
+					activity.showFragmentWhenReady(R.id.settings_fragment,
+							SettingsFragment.Destination.ADDONS);
 				}
 				case RETRY -> {
 					if (smartTopCoordinator != null) smartTopCoordinator.refresh();
