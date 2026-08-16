@@ -69,6 +69,11 @@ public class TopBarAuthorityContractTest {
 		assertFalse(youtube.contains("findViewById(getBackButtonId())"));
 		assertFalse(youtube.contains("title.setText("));
 		assertFalse(youtube.contains("getBackButtonVisibility(ActivityFragment f)"));
+
+		String policy = repositorySource(
+				"modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeToolbarPolicy.java");
+		assertTrue(policy.contains("usePlaybackTitle("));
+		assertFalse(policy.contains("showBack("));
 	}
 
 	@Test
