@@ -7,7 +7,7 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.view.BodyLayout;
-import me.aap.fermata.ui.view.MediaItemListView;
+import me.aap.fermata.ui.view.VideoPresentationController;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.view.ToolBarView;
@@ -35,23 +35,11 @@ public final class BackNavigationPolicy {
 	}
 
 	public static boolean leaveVideoMode(MainActivityDelegate a) {
-		BodyLayout b = a.getBody();
-		if (!b.isVideoMode()) return false;
-
 		ActivityFragment fragment = a.getActiveFragment();
 		boolean splitViewSupported = !(fragment instanceof MainActivityFragment main) ||
 				main.isSplitViewSupported();
-		b.setMode(resolveVideoExitMode(splitViewSupported));
-		if (a.getRuntimeHostMode().usesAutomotivePresentation()) a.setBarsHidden(false);
-		if (a.isCarActivity()) {
-			a.post(() -> {
-				MediaItemListView.focusActive(a.getContext(), null);
-				ChromePolicy.refreshTopBackButton(a);
-			});
-		} else {
-			ChromePolicy.refreshTopBackButton(a);
-		}
-		return true;
+		return VideoPresentationController.leaveFullscreen(a,
+				resolveVideoExitMode(splitViewSupported));
 	}
 
 	static BodyLayout.Mode resolveVideoExitMode(boolean splitViewSupported) {
