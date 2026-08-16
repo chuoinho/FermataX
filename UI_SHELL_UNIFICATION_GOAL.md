@@ -54,21 +54,20 @@ For every phase:
 7. Repeat audit/fix/validation until the phase acceptance criteria pass.
 8. Commit the phase separately.
 
-## Pre-device closure status
+## Completion status
 
-The source/architecture phase has completed its automated closure loop. The validated source checkpoint is:
+**COMPLETE.** All acceptance criteria and scenario-matrix rows have passed automated and real-device validation.
+
+Runtime-tested implementation checkpoint:
 
 - Branch: `agent/unify-ui-shell`
-- Source HEAD: `0d8300d00bcc8f852315dd78378be593c5491fd2`
-- GitHub Actions: CI #125 / run `31935440098`
-- Job: `95136479944`
+- Source HEAD: `8c9ba6c7c07c9dccb8d374ca0731f82856669bfb`
+- GitHub Actions: CI #152 / run `31946865623`
+- Job: `95164168055`
 - Result: `success`
 - Gates passed: Mobile unit suite, Auto unit suite, Web addon UI-shell guard, TV addon UI-shell guard, UI-shell single-writer guard, architecture boundary guards, Mobile/Auto lint and PR whitespace check.
+- Real-device matrix: user-confirmed `PASS` for every checklist row on the tested PHONE and AA/DHU/mirror paths.
 
-The final production diff was audited for topbar, playerbar, navbar, video presentation and Web/YouTube/TV/Chat integration boundaries. `UI_SHELL_READINESS.md` records the detailed source/CI checklist and the remaining real-device matrix.
+The device cycle also closed the discovered runtime regressions: rotation/fullscreen reflow, responsive playerbar geometry, removal of the legacy PHONE round Back overlay, removal of the PHONE far-left hide-playerbar action, and shared video-scaling persistence/application across the tested video/addon paths.
 
-A documentation-only closure commit containing this status must also pass the full CI workflow before device testing begins. Its exact final HEAD/run is recorded in PR #12 after that run completes; embedding a commit's own final SHA inside that same commit would necessarily create a different SHA.
-
-The overall goal is **not** complete until the real-device PHONE and AA/DHU/mirror matrix in `UI_SHELL_READINESS.md` passes. PR #12 must remain draft and unmerged until then.
-
-The overall goal is complete only when all acceptance criteria and scenario-matrix rows are covered, no legacy competing state writer remains, and the pending real-device matrix is confirmed.
+`UI_SHELL_READINESS.md` is the final acceptance record. A documentation-only closing commit must pass full CI before PR #12 leaves draft. Merge remains a separate explicit action.
