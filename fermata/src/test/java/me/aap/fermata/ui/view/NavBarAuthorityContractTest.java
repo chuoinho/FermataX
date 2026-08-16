@@ -19,6 +19,7 @@ public class NavBarAuthorityContractTest {
 		assertTrue(mediator.contains("NavBarController.refresh((MainActivityDelegate) a)"));
 		assertFalse(mediator.contains("BackNavigationPolicy.leaveVideoMode"));
 		assertFalse(mediator.contains("private static void selectOnly"));
+		assertFalse(mediator.contains("super.fragmentChanged(nb, a, f)"));
 	}
 
 	@Test
