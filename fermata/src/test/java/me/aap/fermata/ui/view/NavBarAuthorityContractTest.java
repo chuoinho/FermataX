@@ -40,6 +40,20 @@ public class NavBarAuthorityContractTest {
 		assertTrue(coordinator.contains("BackNavigationPolicy.handleNavReselection"));
 	}
 
+	@Test
+	public void dashboardNavigationUpdatesStateWithoutRenderingNavItems() throws Exception {
+		String activity = coreSource("ui/activity/MainActivityDelegate.java");
+		int start = activity.indexOf("public void showDashboard()");
+		int end = activity.indexOf("\n\t@Override", start);
+		assertTrue(start >= 0);
+		assertTrue(end > start);
+		String showDashboard = activity.substring(start, end);
+		assertTrue(showDashboard.contains("setActiveNavItemId(R.id.dashboard_fragment)"));
+		assertTrue(showDashboard.contains("setActiveNavItemId(previous)"));
+		assertFalse(showDashboard.contains("setSelected("));
+		assertFalse(showDashboard.contains("getNavBar().findViewById"));
+	}
+
 	private static String coreSource(String relativePath) throws Exception {
 		return new String(Files.readAllBytes(repositoryRoot().resolve(
 				"fermata/src/main/java/me/aap/fermata").resolve(relativePath)), UTF_8);
