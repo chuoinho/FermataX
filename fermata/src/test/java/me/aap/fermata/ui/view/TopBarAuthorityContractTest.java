@@ -47,6 +47,31 @@ public class TopBarAuthorityContractTest {
 	}
 
 	@Test
+	public void dashboardToolbarUsesTheCommonRenderer() throws Exception {
+		String dashboard = coreSource("ui/fragment/DashboardFragment.java");
+		assertTrue(dashboard.contains("TopBarMediatorSupport.installBackTitle(tb, f, this)"));
+		assertTrue(dashboard.contains("TopBarController.refresh(activity, f)"));
+		assertFalse(dashboard.contains("BackTitle.super.enable(tb, f)"));
+		assertFalse(dashboard.contains("BackTitle.super.onActivityEvent"));
+		assertFalse(dashboard.contains("getBackButtonVisibility(ActivityFragment f)"));
+	}
+
+	@Test
+	public void youtubeContributesContextWithoutRenderingBackOrTitle() throws Exception {
+		String youtube = repositorySource(
+				"modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeFragment.java");
+		assertTrue(youtube.contains("implements FermataServiceUiBinder.Listener, TopBarPlaybackContext"));
+		assertTrue(youtube.contains("YoutubeToolbarPolicy.usePlaybackTitle("));
+		assertTrue(youtube.contains("TopBarMediatorSupport.installBackTitle(tb, f, this)"));
+		assertTrue(youtube.contains("TopBarController.refresh(a, f)"));
+		assertFalse(youtube.contains("BackTitle.super.enable(tb, f)"));
+		assertFalse(youtube.contains("BackTitle.super.onActivityEvent"));
+		assertFalse(youtube.contains("findViewById(getBackButtonId())"));
+		assertFalse(youtube.contains("title.setText("));
+		assertFalse(youtube.contains("getBackButtonVisibility(ActivityFragment f)"));
+	}
+
+	@Test
 	public void playerPresentationInvalidatesShellWithoutWritingTopBarViews() throws Exception {
 		String presentation = coreSource("ui/view/ControlPanelPresentationView.java");
 		assertTrue(presentation.contains("UiShellController.onPlaybackPresentationChanged(activity);"));
