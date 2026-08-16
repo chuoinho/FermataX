@@ -160,7 +160,6 @@ public class NavBarMediator extends PrefNavBarMediator
 
 	@Override
 	public void fragmentChanged(NavBarView nb, ActivityDelegate a, ActivityFragment f) {
-		super.fragmentChanged(nb, a, f);
 		NavBarController.refresh((MainActivityDelegate) a);
 	}
 
