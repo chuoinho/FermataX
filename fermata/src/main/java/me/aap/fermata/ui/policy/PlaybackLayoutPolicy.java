@@ -93,8 +93,12 @@ public final class PlaybackLayoutPolicy {
 				splitSupported && videoModeRequired;
 	}
 
-	public static BodyLayout.Mode getModeAfterLeavingVideo(boolean carActivity) {
-		return carActivity ? BodyLayout.Mode.FRAME : BodyLayout.Mode.BOTH;
+	/**
+	 * Navigating to another route always leaves fullscreen in FRAME on every host. PHONE/AA may
+	 * render FRAME differently, but route semantics must not fork by host type.
+	 */
+	public static BodyLayout.Mode getModeAfterLeavingVideo(boolean ignoredCarActivity) {
+		return BodyLayout.Mode.FRAME;
 	}
 
 	public static boolean shouldKeepExternalVideoMode(RuntimeHostMode hostMode,
