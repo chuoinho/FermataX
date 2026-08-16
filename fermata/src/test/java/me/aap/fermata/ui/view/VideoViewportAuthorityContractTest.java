@@ -12,10 +12,20 @@ import org.junit.Test;
 
 public class VideoViewportAuthorityContractTest {
 	@Test
+	public void changedViewportCommitsLayoutBeforeThePlayRequest() throws Exception {
+		String body = coreSource("ui/view/BodyLayout.java");
+		assertTrue(body.contains("awaitPlaybackViewport(i, originalMode, requestedMode,"));
+		assertTrue(body.contains("if (requestedMode != originalMode)"));
+		assertTrue(body.contains("observer.addOnPreDrawListener"));
+		assertTrue(body.contains("awaitPlaybackSurface(i, originalMode, requestedMode,"));
+		assertTrue(body.contains("startPlaybackRequest(i, originalMode, requestedMode, request)"));
+	}
+
+	@Test
 	public void surfaceWaitPreservesTheOriginalPreflightTransaction() throws Exception {
 		String body = coreSource("ui/view/BodyLayout.java");
-		assertTrue(body.contains("startPlaybackRequest(i, originalMode, requestedMode)"));
 		assertTrue(body.contains("PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest("));
+		assertTrue(body.contains("request != playbackStartGeneration"));
 		assertFalse(body.contains("onSurfaceCreated(() -> playItem(i))"));
 	}
 
