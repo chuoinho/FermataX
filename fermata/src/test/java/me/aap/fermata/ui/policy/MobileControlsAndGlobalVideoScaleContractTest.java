@@ -9,36 +9,34 @@ import java.nio.file.Path;
 
 import org.junit.Test;
 
+/** Integration contracts for the device-tested PHONE controls and global video-scale behavior. */
 public class MobileControlsAndGlobalVideoScaleContractTest {
 	@Test
-	public void phoneFullscreenNeverRevealsTheFloatingBackOverlay() throws Exception {
-		String chrome = repositorySource(
-				"modules/web/src/main/java/me/aap/fermata/addon/web/FermataChromeClient.java");
-		int fullScreen = chrome.indexOf("protected void setFullScreen(MainActivityDelegate a, boolean fullScreen)");
-		int touch = chrome.indexOf("protected boolean onTouchEvent(View v, MotionEvent event)");
-		int autoGuard = chrome.indexOf(
-				"if (!a.getRuntimeHostMode().usesAutomotivePresentation())", touch);
-		int phoneGone = chrome.indexOf("fb.setVisibility(GONE);", autoGuard);
-		int autoVisible = chrome.indexOf("fb.setVisibility(VISIBLE);", phoneGone);
-		assertTrue(fullScreen >= 0);
-		assertTrue(chrome.substring(fullScreen, touch)
-				.contains("a.getFloatingButton().setVisibility(GONE);"));
-		assertFalse(chrome.substring(fullScreen, touch)
-				.contains("fullScreen ? GONE : VISIBLE"));
-		assertTrue(touch >= 0);
-		assertTrue(autoGuard > touch);
-		assertTrue(phoneGone > autoGuard);
-		assertTrue(autoVisible > phoneGone);
-	}
+	public void phoneBackOverlayIsSuppressedByCommonFloatingButtonBoundary() throws Exception {
+		String button = fermataSource("ui/view/FermataFloatingButton.java");
+		assertTrue(button.contains("!activity.getRuntimeHostMode().usesAutomotivePresentation()"));
+		assertTrue(button.contains("activity.isVideoMode() || !activity.isRootPage()"));
+		assertTrue(button.contains("super.setVisibility((visibility == VISIBLE)"));
 
-	@Test
-	public void phoneWebAndYoutubeNeverOwnTheFloatingBackButton() throws Exception {
 		String mediator = fermataSource("ui/fragment/FloatingButtonMediator.java");
 		assertTrue(mediator.contains("updateVisibility(fb, MainActivityDelegate.get(fb.getContext()), f)"));
 		assertTrue(mediator.contains("if (BuildConfig.AUTO || a.isVideoMode()) return true;"));
 		assertTrue(mediator.contains("id == R.id.youtube_fragment"));
 		assertTrue(mediator.contains("id == R.id.web_browser_fragment"));
-		assertTrue(mediator.contains("fb.setVisibility(shouldHide(a, f) ? View.GONE : View.VISIBLE)"));
+	}
+
+	@Test
+	public void phonePlayerbarEdgeIsPassiveWhileAutomotiveKeepsItsBackTarget() throws Exception {
+		for (String layout : new String[]{"control_panel_view.xml", "control_panel_view2.xml"}) {
+			String xml = repositorySource("fermata/src/main/res/layout/" + layout);
+			assertTrue(xml.contains("me.aap.fermata.ui.view.ControlPanelLeadingActionView"));
+		}
+		String leading = fermataSource("ui/view/ControlPanelLeadingActionView.java");
+		assertTrue(leading.contains("if (usesAutomotivePresentation()) return;"));
+		assertTrue(leading.contains("icon.setVisibility(GONE)"));
+		assertTrue(leading.contains("setOnClickListener(null)"));
+		assertTrue(leading.contains("setOnTouchListener(null)"));
+		assertTrue(leading.contains("time.setClickable(false)"));
 	}
 
 	@Test
@@ -58,16 +56,23 @@ public class MobileControlsAndGlobalVideoScaleContractTest {
 	}
 
 	@Test
-	public void videoScaleUsesOneLibraryPreferenceKeyAcrossPlayableItems() throws Exception {
+	public void videoScaleUsesOneLibraryPreferenceAcrossItemsAndWebVideoReplacement() throws Exception {
 		String itemBase = fermataSource("media/lib/ItemBase.java");
-		String settings = fermataSource("ui/fragment/MediaEnginePrefsBuilder.java");
 		String video = fermataSource("ui/view/VideoView.java");
 		assertTrue(itemBase.contains(
 				"if (MediaPrefs.VIDEO_SCALE.getName().equals(key.getName())) return key.getName();"));
-		assertTrue(settings.contains("o.store = mediaPrefs;"));
-		assertTrue(settings.contains("o.pref = MediaLibPrefs.VIDEO_SCALE;"));
 		assertTrue(video.contains("item.getPrefs().getVideoScalePref()"));
 		assertFalse(itemBase.contains("getId() + \"#\" + MediaPrefs.VIDEO_SCALE.getName()"));
+
+		String chrome = repositorySource(
+				"modules/web/src/main/java/me/aap/fermata/addon/web/FermataChromeClient.java");
+		String bridge = repositorySource(
+				"modules/web/src/main/java/me/aap/fermata/addon/web/WebVideoScaleController.java");
+		assertTrue(chrome.contains("videoScale.attach()"));
+		assertTrue(chrome.contains("videoScale.detach()"));
+		assertTrue(bridge.contains("mediaPrefs.getIntPref(VIDEO_SCALE)"));
+		assertTrue(bridge.contains("new MutationObserver"));
+		assertTrue(bridge.contains("setProperty(p, value, 'important')"));
 	}
 
 	private static String element(String xml, String id) {
