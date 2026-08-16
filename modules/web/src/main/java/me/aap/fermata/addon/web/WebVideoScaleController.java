@@ -19,8 +19,8 @@ import me.aap.utils.pref.PreferenceStore;
  *
  * <p>Native decoders are laid out by {@code VideoView}; Web/YouTube render inside a WebChromeClient
  * custom view and therefore need a DOM bridge. The bridge uses inline {@code !important} styles so
- * site/YouTube fullscreen CSS cannot silently reset the selected scale, and a MutationObserver
- * reapplies the scale when a SPA replaces the video element while switching channels/items.</p>
+ * site/YouTube fullscreen CSS cannot silently reset the selected scale, and observers reapply the
+ * scale when a SPA replaces the video element or the fullscreen viewport changes.</p>
  */
 final class WebVideoScaleController implements PreferenceStore.Listener {
 	private static final PreferenceStore.Pref<Supplier<String>> LEGACY_WEB_SCALE =
@@ -93,8 +93,7 @@ final class WebVideoScaleController implements PreferenceStore.Listener {
 	private void cleanup() {
 		try {
 			web.evaluateJavascript("(function(){var s=window." + STATE + ";if(!s)return;" +
-					"try{if(s.observer)s.observer.disconnect();" +
-					"(s.tracked||[]).forEach(function(v){try{s.restore(v);}catch(e){}});}catch(e){}" +
+					"try{if(s.dispose)s.dispose();}catch(e){}" +
 					"try{delete window." + STATE + ";}catch(e){window." + STATE + "=null;}})()", null);
 		} catch (RuntimeException ignored) {
 		}
@@ -125,13 +124,15 @@ final class WebVideoScaleController implements PreferenceStore.Listener {
 				    'max-width','max-height','transform','object-fit','margin'];
 				  var s = window[KEY];
 				  if (!s) {
-				    s = { originals: new WeakMap(), tracked: [], observer: null, mode: mode };
+				    s = { originals: new WeakMap(), tracked: [], observer: null, resize: null, mode: mode };
 				    s.capture = function(v) {
 				      if (!v || s.originals.has(v)) return;
 				      var o = {};
 				      props.forEach(function(p) {
 				        o[p] = [v.style.getPropertyValue(p), v.style.getPropertyPriority(p)];
 				      });
+				      o.metadata = function() { if (window[KEY] === s) s.apply(v); };
+				      try { v.addEventListener('loadedmetadata', o.metadata); } catch (e) {}
 				      s.originals.set(v, o);
 				      s.tracked.push(v);
 				    };
@@ -152,11 +153,11 @@ final class WebVideoScaleController implements PreferenceStore.Listener {
 				      var vw = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
 				      var vh = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
 				      s.set(v, 'position', 'fixed');
+				      s.set(v, 'inset', 'auto');
 				      s.set(v, 'left', '50%%');
 				      s.set(v, 'top', '50%%');
 				      s.set(v, 'right', 'auto');
 				      s.set(v, 'bottom', 'auto');
-				      s.set(v, 'inset', 'auto');
 				      s.set(v, 'transform', 'translate(-50%%,-50%%)');
 				      s.set(v, 'max-width', 'none');
 				      s.set(v, 'max-height', 'none');
@@ -183,9 +184,24 @@ final class WebVideoScaleController implements PreferenceStore.Listener {
 				    s.scan = function() {
 				      try { document.querySelectorAll('video').forEach(s.apply); } catch (e) {}
 				    };
-				    s.observer = new MutationObserver(function() { s.scan(); });
-				    try { s.observer.observe(document.documentElement,
-				      { childList: true, subtree: true }); } catch (e) {}
+				    if (typeof MutationObserver === 'function') {
+				      s.observer = new MutationObserver(function() { s.scan(); });
+				      try { s.observer.observe(document.documentElement,
+				        { childList: true, subtree: true }); } catch (e) {}
+				    }
+				    s.resize = function() { s.scan(); };
+				    try { window.addEventListener('resize', s.resize); } catch (e) {}
+				    s.dispose = function() {
+				      try { if (s.observer) s.observer.disconnect(); } catch (e) {}
+				      try { if (s.resize) window.removeEventListener('resize', s.resize); } catch (e) {}
+				      (s.tracked || []).forEach(function(v) {
+				        try {
+				          var o = s.originals.get(v);
+				          s.restore(v);
+				          if (o && o.metadata) v.removeEventListener('loadedmetadata', o.metadata);
+				        } catch (e) {}
+				      });
+				    };
 				    window[KEY] = s;
 				  }
 				  s.mode = mode;
