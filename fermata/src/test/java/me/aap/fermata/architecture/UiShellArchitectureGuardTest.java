@@ -47,6 +47,20 @@ public class UiShellArchitectureGuardTest {
 	}
 
 	@Test
+	public void defaultFermataToolbarNeverUsesGenericBackTitleWriter() throws IOException {
+		String fragment = source("fermata/src/main/java/me/aap/fermata/ui/fragment/MainActivityFragment.java");
+		assertTrue(fragment.contains("return TopBarMediator.instance;"));
+
+		String mediator = source("fermata/src/main/java/me/aap/fermata/ui/view/TopBarMediator.java");
+		assertTrue(mediator.contains("TopBarMediatorSupport.installBackTitle(toolBar, fragment, this)"));
+		assertTrue(mediator.contains("TopBarController.refresh(MainActivityDelegate.get(toolBar.getContext()), fragment)"));
+		assertFalse(mediator.contains("BackTitle.super.enable"));
+		assertFalse(mediator.contains("BackTitle.super.onActivityEvent"));
+		assertFalse(mediator.contains("title.setText("));
+		assertFalse(mediator.contains("back.setVisibility("));
+	}
+
+	@Test
 	public void everyFermataToolbarGetsCanonicalBackAfterMediatorBuild() throws IOException {
 		String toolbar = source("fermata/src/main/java/me/aap/fermata/ui/view/FermataToolBarView.java");
 		assertTrue(toolbar.contains("findViewById(me.aap.utils.R.id.tool_bar_back_button) == null"));
