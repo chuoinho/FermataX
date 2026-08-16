@@ -48,6 +48,14 @@ public class ArchitectureBoundaryTest {
 	}
 
 	@Test
+	public void coreUiDoesNotReferenceConcreteAddonFragmentTypes() throws IOException {
+		Path root = projectRoot();
+		List<String> forbidden = List.of("TvFragment", "YoutubeFragment", "WebBrowserFragment");
+		assertNoSourceReferences(root, root.resolve("fermata/src/main/java/me/aap/fermata/ui"), forbidden);
+		assertNoSourceReferences(root, root.resolve("fermata/src/auto/java/me/aap/fermata/ui"), forbidden);
+	}
+
+	@Test
 	public void addonModulesDoNotImportSiblingImplementations() throws IOException {
 		Path root = projectRoot();
 		Path modules = root.resolve("modules");
@@ -129,6 +137,30 @@ public class ArchitectureBoundaryTest {
 		assertTrue("Missing method marker: " + method, methodIndex >= 0);
 		assertTrue("Snapshot publication must precede callback in " + method,
 				(publicationIndex > methodIndex) && (callbackIndex > publicationIndex));
+	}
+
+	private static void assertNoSourceReferences(Path root, Path source, List<String> forbidden)
+			throws IOException {
+		if (!Files.isDirectory(source)) return;
+		List<String> violations = new ArrayList<>();
+		try (var files = Files.walk(source)) {
+			List<Path> sourceFiles = files.filter(Files::isRegularFile)
+					.filter(path -> path.toString().endsWith(".java") ||
+							path.toString().endsWith(".kt")).toList();
+			for (Path file : sourceFiles) {
+				List<String> lines = Files.readAllLines(file);
+				for (int i = 0; i < lines.size(); i++) {
+					String line = lines.get(i);
+					for (String type : forbidden) {
+						if (line.contains(type)) {
+							violations.add(root.relativize(file) + ":" + (i + 1) +
+									" [core UI -> concrete addon fragment] " + type);
+						}
+					}
+				}
+			}
+		}
+		if (!violations.isEmpty()) fail(String.join("\n", violations));
 	}
 
 	private static void assertNoForbiddenImports(Path source, String allowedPrefix)
