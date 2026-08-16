@@ -152,6 +152,7 @@ public class UiShellArchitectureGuardTest {
 					if (line.contains("BodyLayout") && (line.contains("setMode(") || line.contains(".Mode."))) {
 						violations.add(root.relativize(file) + ":" + (i + 1) + " " + line.trim());
 					}
+				}
 			}
 		}
 		if (!violations.isEmpty()) {
