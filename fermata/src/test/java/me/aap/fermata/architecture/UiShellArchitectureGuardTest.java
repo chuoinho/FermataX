@@ -5,8 +5,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -177,11 +179,11 @@ public class UiShellArchitectureGuardTest {
 	}
 
 	private static String source(String relativePath) throws IOException {
-		return Files.readString(projectRoot().resolve(relativePath));
+		return new String(Files.readAllBytes(projectRoot().resolve(relativePath)), StandardCharsets.UTF_8);
 	}
 
 	private static Path projectRoot() {
-		Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath();
+		Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
 		while (current != null) {
 			if (Files.isRegularFile(current.resolve("settings.gradle")) &&
 					Files.isDirectory(current.resolve("fermata"))) return current;
