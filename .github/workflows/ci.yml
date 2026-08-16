@@ -73,6 +73,13 @@ jobs:
           --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.tvAddonUsesCommonUiShellAuthorities
           --no-daemon --no-parallel --stacktrace
 
+      - name: UI shell single-writer guard
+        if: ${{ !cancelled() }}
+        run: >-
+          ./gradlew :fermata:testMobileDebugUnitTest
+          --tests me.aap.fermata.architecture.UiShellArchitectureGuardTest
+          --no-daemon --no-parallel --stacktrace
+
       - name: Architecture boundary guards
         if: ${{ !cancelled() }}
         run: >-
