@@ -80,6 +80,12 @@ public class TopBarAuthorityContractTest {
 		assertFalse(presentation.contains("title.setText"));
 		assertFalse(presentation.contains("usesAutomotivePresentation()) return"));
 
+		String panel = coreSource("ui/view/ControlPanelView.java");
+		assertTrue(panel.contains(
+				"if (!state.barsHidden()) presentationView.updateVideoTitle(a);"));
+		assertFalse(panel.contains("ChromePolicy.refreshTopBackButton"));
+		assertFalse(panel.contains("a.post(() -> presentationView.updateVideoTitle(a))"));
+
 		String shell = coreSource("ui/view/UiShellController.java");
 		assertTrue(shell.contains("TopBarController.refresh(activity);"));
 	}
