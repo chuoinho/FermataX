@@ -59,20 +59,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./gradlew testAutoDebugUnitTest --no-daemon --no-parallel --stacktrace
 
-      - name: Web UI shell integration guard
-        if: ${{ !cancelled() }}
-        run: >-
-          ./gradlew :web:testMobileDebugUnitTest
-          --tests me.aap.fermata.addon.web.WebUiShellIntegrationContractTest
-          --no-daemon --no-parallel --stacktrace
-
-      - name: TV UI shell integration guard
-        if: ${{ !cancelled() }}
-        run: >-
-          ./gradlew :tv:testMobileDebugUnitTest
-          --tests me.aap.fermata.addon.tv.TvUiShellIntegrationContractTest
-          --no-daemon --no-parallel --stacktrace
-
       - name: Architecture boundary guards
         if: ${{ !cancelled() }}
         run: >-
@@ -80,6 +66,8 @@ jobs:
           --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.hotspotClassesCannotGrowPastTheRecordedBaseline
           --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.coreDoesNotImportConcreteAddonImplementations
           --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.coreUiDoesNotReferenceConcreteAddonFragmentTypes
+          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.webAddonUsesCommonUiShellAuthorities
+          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.tvAddonUsesCommonUiShellAuthorities
           --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.addonModulesDoNotImportSiblingImplementations
           --no-daemon --no-parallel --stacktrace
 
