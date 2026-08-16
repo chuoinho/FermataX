@@ -65,7 +65,8 @@ public class ArchitectureBoundaryTest {
 		assertTrue(fragment.contains("WebBackNavigationPolicy.resolve(fullScreen, v.canGoBack())"));
 		assertTrue(fragment.contains("case EXIT_FULLSCREEN -> v.exitFullScreenForBack()"));
 		assertTrue(fragment.contains("case WEB_HISTORY ->"));
-		assertTrue(toolbar.contains("MainActivityDelegate.get(v.getContext()).onBackPressed()"));
+		assertTrue(toolbar.contains("TopBarMediatorSupport.installBackButton(tb, this)"));
+		assertFalse(toolbar.contains("addButton(tb, me.aap.utils.R.drawable.back"));
 		assertTrue(toolbar.contains("TopBarController.refresh(MainActivityDelegate.get(tb.getContext()), f)"));
 		assertTrue(toolbar.contains("TopBarController.refresh(MainActivityDelegate.get(tb.getContext()))"));
 		assertFalse(toolbar.contains("tool_bar_back_button).setVisibility"));
