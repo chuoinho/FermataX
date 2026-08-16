@@ -58,8 +58,7 @@ public class ControlPanelSeekView extends AppCompatSeekBar {
 		post(() -> {
 			if (!(getParent() instanceof ControlPanelView panel)) return;
 			applyConstraints(isEnabled());
-			panel.computeSize();
-			reflowTransportGeometry();
+			reflowAfterConfigurationChange(panel);
 		});
 	}
 
@@ -67,6 +66,12 @@ public class ControlPanelSeekView extends AppCompatSeekBar {
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
 		if (w != oldw) post(this::reflowTransportGeometry);
+	}
+
+	static void reflowAfterConfigurationChange(ControlPanelView panel) {
+		panel.computeSize();
+		ControlPanelSeekView seek = panel.findViewById(R.id.seek_bar);
+		if (seek != null) seek.reflowTransportGeometry();
 	}
 
 	void reflowTransportGeometry() {
