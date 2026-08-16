@@ -32,9 +32,14 @@ public final class NavigationCoordinator {
 	 */
 	public static void routeChanged(MainActivityDelegate activity, int routeId,
 			boolean topLevelDestination) {
-		if (topLevelDestination && (activity.getActiveNavItemId() != routeId)) {
-			activity.setActiveNavItemId(routeId);
-		}
+		int current = activity.getActiveNavItemId();
+		int selected = resolveRouteSelection(current, routeId, topLevelDestination);
+		if (selected != current) activity.setActiveNavItemId(selected);
+	}
+
+	static int resolveRouteSelection(int currentSelection, int routeId,
+			boolean topLevelDestination) {
+		return topLevelDestination ? routeId : currentSelection;
 	}
 
 	/** Returns true when the common navigation policy consumed a destination reselection. */
