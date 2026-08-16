@@ -46,6 +46,24 @@ public class PlaybackLayoutPolicyTest {
 	}
 
 	@Test
+	public void rejectedVideoPreflightRestoresThePreviousViewport() {
+		assertEquals(FRAME,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(FRAME, VIDEO, false));
+		assertEquals(BOTH,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(BOTH, BOTH, false));
+		assertEquals(VIDEO,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(VIDEO, VIDEO, false));
+	}
+
+	@Test
+	public void rejectedReplayKeepsExistingRequiredVideoPresentation() {
+		assertEquals(VIDEO,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(FRAME, VIDEO, true));
+		assertEquals(VIDEO,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(BOTH, BOTH, true));
+	}
+
+	@Test
 	public void playableChangesPreserveAcceptedFrameVideoAndSplitModes() {
 		assertEquals(FRAME, PlaybackLayoutPolicy.getModeOnPlayableChanged(
 				VIDEO, false, false, false, false, false));
