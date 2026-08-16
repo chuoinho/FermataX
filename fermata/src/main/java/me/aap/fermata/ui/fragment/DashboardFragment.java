@@ -49,6 +49,8 @@ import me.aap.fermata.ui.smarttop.SmartTopLayoutMode;
 import me.aap.fermata.ui.smarttop.SmartTopLayoutPolicy;
 import me.aap.fermata.ui.smarttop.SmartTopViewState;
 import me.aap.fermata.ui.view.MinimumTouchTargetDelegate;
+import me.aap.fermata.ui.view.TopBarController;
+import me.aap.fermata.ui.view.TopBarMediatorSupport;
 import me.aap.fermata.ui.voice.VoiceUiPolicy;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityDelegate;
@@ -739,7 +741,6 @@ public class DashboardFragment extends MainActivityFragment
 					} else {
 						refreshLastPlayedTopCard(generation);
 					}
-				}
 			}).onFailure(err -> refreshLastPlayedTopCard(generation));
 		}
 
@@ -1134,7 +1135,8 @@ public class DashboardFragment extends MainActivityFragment
 
 		@Override
 		public void enable(ToolBarView tb, ActivityFragment f) {
-			ToolBarView.Mediator.BackTitle.super.enable(tb, f);
+			TopBarMediatorSupport.installBackTitle(tb, f, this);
+			MainActivityDelegate activity = MainActivityDelegate.get(tb.getContext());
 			DashboardFragment dashboard = (DashboardFragment) f;
 			ImageButton voice = addButton(tb, R.drawable.voice_microphone,
 					DashboardToolBarMediator::onVoiceClick, R.id.tool_voice);
@@ -1148,12 +1150,15 @@ public class DashboardFragment extends MainActivityFragment
 					R.id.dashboard_settings);
 			settings.setBackgroundResource(R.drawable.aa_toolbar_primary_button_bg);
 			settings.setContentDescription(tb.getContext().getString(R.string.settings));
+			TopBarController.refresh(activity, f);
 		}
 
 		@Override
 		public void onActivityEvent(ToolBarView tb, ActivityDelegate activity, long event) {
-			ToolBarView.Mediator.BackTitle.super.onActivityEvent(tb, activity, event);
-			if (event == FRAGMENT_CONTENT_CHANGED) updateVoiceVisibility(tb);
+			if (event != FRAGMENT_CONTENT_CHANGED) return;
+			updateVoiceVisibility(tb);
+			ActivityFragment fragment = activity.getActiveFragment();
+			if (fragment != null) TopBarController.refresh((MainActivityDelegate) activity, fragment);
 		}
 
 		private static void onEditClick(View v) {
@@ -1194,16 +1199,6 @@ public class DashboardFragment extends MainActivityFragment
 			ActivityDelegate a = ActivityDelegate.get(tb.getContext());
 			View root = a.getActiveFragment() == null ? null : a.getActiveFragment().getView();
 			return root instanceof RecyclerView ? ((RecyclerView) root).getChildAt(0) : null;
-		}
-
-		@Override
-		public int getBackButtonVisibility(ActivityFragment f) {
-			return View.GONE;
-		}
-
-		@Override
-		public int getBackButtonId() {
-			return me.aap.utils.R.id.tool_bar_back_button;
 		}
 	}
 
