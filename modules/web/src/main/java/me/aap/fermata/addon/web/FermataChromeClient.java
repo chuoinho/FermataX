@@ -280,6 +280,11 @@ public class FermataChromeClient extends WebChromeClient {
 
 		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
 		FloatingButton fb = a.getFloatingButton();
+		if (!a.getRuntimeHostMode().usesAutomotivePresentation()) {
+			touchStamp = 0L;
+			fb.setVisibility(GONE);
+			return false;
+		}
 		long st = touchStamp = System.currentTimeMillis();
 
 		fb.setVisibility(VISIBLE);
