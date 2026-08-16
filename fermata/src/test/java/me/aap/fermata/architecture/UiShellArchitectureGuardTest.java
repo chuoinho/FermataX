@@ -41,7 +41,7 @@ public class UiShellArchitectureGuardTest {
 		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/view/NavBarController.java",
 				"getToolBar()", "getControlPanel()", "setVideoMode(", "BodyLayout");
 		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/fragment/NavBarMediator.java",
-				".setSelected(", "BackNavigationPolicy.leaveVideoMode", "setVideoMode(", "BodyLayout");
+				"setActiveNavItemId(", "BackNavigationPolicy.leaveVideoMode", "setVideoMode(", "BodyLayout");
 		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/fragment/ToolBarMediator.java",
 				"setVideoMode(", "BodyLayout", "getNavBar().findViewById");
 	}
