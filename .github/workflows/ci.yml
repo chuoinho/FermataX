@@ -59,6 +59,20 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./gradlew testAutoDebugUnitTest --no-daemon --no-parallel --stacktrace
 
+      - name: Web UI shell integration guard
+        if: ${{ !cancelled() }}
+        run: >-
+          ./gradlew :web:testMobileDebugUnitTest
+          --tests me.aap.fermata.addon.web.WebUiShellIntegrationContractTest
+          --no-daemon --no-parallel --stacktrace
+
+      - name: TV UI shell integration guard
+        if: ${{ !cancelled() }}
+        run: >-
+          ./gradlew :tv:testMobileDebugUnitTest
+          --tests me.aap.fermata.addon.tv.TvUiShellIntegrationContractTest
+          --no-daemon --no-parallel --stacktrace
+
       - name: Architecture boundary guards
         if: ${{ !cancelled() }}
         run: >-
