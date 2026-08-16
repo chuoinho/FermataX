@@ -22,9 +22,11 @@ public final class TopBarMediatorSupport {
 
 	/** Installs the canonical Back affordance for custom top bars that do not render a title. */
 	public static void installBackButton(ToolBarView toolBar, ToolBarView.Mediator mediator) {
-		mediator.addButton(toolBar, me.aap.utils.R.drawable.back,
+		var back = mediator.addButton(toolBar, me.aap.utils.R.drawable.back,
 				v -> MainActivityDelegate.get(v.getContext()).onBackPressed(),
 				me.aap.utils.R.id.tool_bar_back_button, getBackButtonSide(toolBar));
+		// Route visibility is rendered only by TopBarController. Avoid a one-frame visible default.
+		back.setVisibility(GONE);
 	}
 
 	/** PHONE and automotive hosts share Back semantics; only physical placement may differ. */
