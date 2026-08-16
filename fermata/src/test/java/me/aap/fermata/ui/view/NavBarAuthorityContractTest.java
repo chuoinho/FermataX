@@ -16,7 +16,8 @@ public class NavBarAuthorityContractTest {
 		String mediator = coreSource("ui/fragment/NavBarMediator.java");
 		assertTrue(mediator.contains("NavigationCoordinator.select(activity, id)"));
 		assertTrue(mediator.contains("NavigationCoordinator.reselect(activity, id)"));
-		assertTrue(mediator.contains("NavBarController.refresh((MainActivityDelegate) a)"));
+		assertTrue(mediator.contains("NavigationCoordinator.routeChanged(activity, f.getFragmentId(),"));
+		assertTrue(mediator.contains("NavBarController.refresh(activity)"));
 		assertFalse(mediator.contains("BackNavigationPolicy.leaveVideoMode"));
 		assertFalse(mediator.contains("private static void selectOnly"));
 		assertFalse(mediator.contains("super.fragmentChanged(nb, a, f)"));
@@ -34,6 +35,8 @@ public class NavBarAuthorityContractTest {
 		String coordinator = coreSource("ui/activity/NavigationCoordinator.java");
 		assertTrue(coordinator.contains("activity.setActiveNavItemId(destinationId)"));
 		assertTrue(coordinator.contains("activity.showFragmentWhenReady(destinationId)"));
+		assertTrue(coordinator.contains("activity.setActiveNavItemId(routeId)"));
+		assertTrue(coordinator.contains("topLevelDestination"));
 		assertTrue(coordinator.contains("BackNavigationPolicy.handleNavReselection"));
 	}
 
