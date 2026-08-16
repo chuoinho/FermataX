@@ -11,7 +11,7 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.view.BodyLayout;
+import me.aap.fermata.ui.view.VideoPresentationController;
 
 final class DashboardPlayableNavigator {
 	private DashboardPlayableNavigator() {
@@ -85,7 +85,7 @@ final class DashboardPlayableNavigator {
 			if ((current != null) && isSamePlayable(current, item) && (engine != null)) {
 				// Web-based engines own their fullscreen surface and restore it from their fragment.
 				if (engine.isSplitModeSupported() && engine.isVideoModeRequired())
-					activity.getBody().setMode(BodyLayout.Mode.VIDEO);
+					VideoPresentationController.enterFullscreen(activity);
 				return;
 			}
 
