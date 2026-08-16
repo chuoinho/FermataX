@@ -188,12 +188,18 @@ public class ControlPanelContractTest {
 	}
 
 	@Test
-	public void phonePlayerActionStaysCollapseWhileAutomotiveOwnsPlayerBack() throws Exception {
+	public void phonePlayerHasNoEdgeHideActionWhileAutomotiveOwnsPlayerBack() throws Exception {
 		String panel = source("ui/view/ControlPanelView.java");
-		assertTrue(panel.contains("if (isAutoUi(a))"));
+		assertTrue(panel.contains("if (isAutoUi(a)) {"));
+		assertTrue(panel.contains("bindBackControl(g);"));
+		assertTrue(panel.contains("bindBackControl(seekTime);"));
+		assertTrue(panel.contains("disableBackControl(g);"));
+		assertTrue(panel.contains("disableBackControl(seekTime);"));
+		assertTrue(panel.contains("showHideBars.setVisibility(GONE);"));
 		assertTrue(panel.contains("performAutoPlayerBack(a)"));
-		assertTrue(panel.contains("a.setBarsHidden(!a.isBarsHidden())"));
-		assertTrue(panel.contains("isAutoUi(a) ? me.aap.utils.R.drawable.back"));
+		assertFalse(panel.contains("a.setBarsHidden(!a.isBarsHidden())"));
+		assertFalse(panel.contains("R.drawable.expand"));
+		assertTrue(panel.contains("showHideBars.setImageResource(me.aap.utils.R.drawable.back)"));
 		assertTrue(panel.contains("private boolean isAutoBackTouch(MotionEvent e)"));
 		assertTrue(panel.contains("if (!isAutoUi(a)) return false;"));
 		assertFalse(panel.contains("isPlayerBackPresentation"));
