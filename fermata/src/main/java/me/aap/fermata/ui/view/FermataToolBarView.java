@@ -2,6 +2,7 @@ package me.aap.fermata.ui.view;
 
 import static android.util.TypedValue.COMPLEX_UNIT_SP;
 import static me.aap.fermata.BuildConfig.AUTO;
+import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -16,6 +17,8 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.UiUtils;
+import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.ToolBarView;
 
 public class FermataToolBarView extends ToolBarView {
@@ -25,6 +28,29 @@ public class FermataToolBarView extends ToolBarView {
 
 	public FermataToolBarView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
+	}
+
+	@Override
+	protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		// Base construction may attach a fragment mediator before MainActivityDelegate stores this view.
+		// Reconcile canonical Back/title state once the real toolbar is attached to the activity tree.
+		post(this::refreshCanonicalTopBar);
+	}
+
+	@Override
+	public void onActivityEvent(ActivityDelegate activity, long event) {
+		super.onActivityEvent(activity, event);
+		if (event != ACTIVITY_DESTROY) refreshCanonicalTopBar();
+	}
+
+	private void refreshCanonicalTopBar() {
+		ActivityFragment fragment = getActiveFragment();
+		Mediator mediator = getMediator();
+		if ((fragment == null) || (mediator == null)) return;
+		if (findViewById(me.aap.utils.R.id.tool_bar_back_button) == null)
+			TopBarMediatorSupport.installBackButton(this, mediator);
+		TopBarController.refresh(MainActivityDelegate.get(getContext()), fragment);
 	}
 
 	@Override
