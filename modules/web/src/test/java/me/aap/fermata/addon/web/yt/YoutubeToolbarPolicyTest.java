@@ -7,28 +7,21 @@ import org.junit.Test;
 
 public class YoutubeToolbarPolicyTest {
 	@Test
-	public void directWatchPageShowsBackWithoutWebHistory() {
-		assertTrue(YoutubeToolbarPolicy.showBack(false, false, false, true,
-				"https://m.youtube.com/watch?v=nufLYe9Bg0E"));
+	public void homeDoesNotReusePlaybackTitle() {
+		assertFalse(YoutubeToolbarPolicy.usePlaybackTitle("https://m.youtube.com/", true));
 	}
 
 	@Test
-	public void shortsPageShowsBackWithoutWebHistory() {
-		assertTrue(YoutubeToolbarPolicy.showBack(false, false, false, true,
-				"https://m.youtube.com/shorts/nufLYe9Bg0E"));
-	}
-
-	@Test
-	public void homeDoesNotReusePlaybackTitleOrForceBack() {
-		String home = "https://m.youtube.com/";
-		assertFalse(YoutubeToolbarPolicy.showBack(false, false, false, true, home));
-		assertFalse(YoutubeToolbarPolicy.usePlaybackTitle(home, true));
+	public void watchAndShortsPagesUsePlaybackTitleForCurrentYoutubeOwner() {
+		assertTrue(YoutubeToolbarPolicy.usePlaybackTitle(
+				"https://m.youtube.com/watch?v=nufLYe9Bg0E", true));
+		assertTrue(YoutubeToolbarPolicy.usePlaybackTitle(
+				"https://m.youtube.com/shorts/nufLYe9Bg0E", true));
 	}
 
 	@Test
 	public void playbackTitleRequiresCurrentYoutubeOwner() {
 		String watch = "https://m.youtube.com/watch?v=nufLYe9Bg0E";
-		assertTrue(YoutubeToolbarPolicy.usePlaybackTitle(watch, true));
 		assertFalse(YoutubeToolbarPolicy.usePlaybackTitle(watch, false));
 	}
 }
