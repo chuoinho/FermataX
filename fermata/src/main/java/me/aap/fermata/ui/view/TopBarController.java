@@ -1,5 +1,6 @@
 package me.aap.fermata.ui.view;
 
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
 
@@ -38,9 +39,11 @@ public final class TopBarController {
 
 		State state = resolveState(activity, fragment);
 		View back = toolBar.findViewById(me.aap.utils.R.id.tool_bar_back_button);
-		if (back != null) back.setVisibility(state.backVisibility());
+		if ((back != null) && (back.getVisibility() != state.backVisibility()))
+			back.setVisibility(state.backVisibility());
 		TextView title = toolBar.findViewById(me.aap.utils.R.id.tool_bar_title);
-		if (title != null) title.setText(state.title());
+		if ((title != null) && !TextUtils.equals(title.getText(), state.title()))
+			title.setText(state.title());
 	}
 
 	@NonNull
@@ -49,6 +52,8 @@ public final class TopBarController {
 		PlayableItem item = snapshot.getItem();
 		int playbackOwnerFragmentId = (item == null) ? 0 :
 				ItemRoutePolicy.getPlaybackOwnerFragmentId(item);
+		if ((fragment instanceof TopBarPlaybackContext context) &&
+				!context.usePlaybackTitle(snapshot)) playbackOwnerFragmentId = 0;
 		return TopBarPolicy.resolve(activity.getRuntimeHostMode(),
 				fragment instanceof DashboardFragment, fragment.getFragmentId(),
 				playbackOwnerFragmentId, fragment.getTitle(), snapshot.getDisplayTitle(),
