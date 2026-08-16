@@ -108,7 +108,9 @@ public class TopBarAuthorityContractTest {
 	public void webBackUsesCommonActivityBackAndCommonVisibilityAuthority() throws Exception {
 		String web = repositorySource(
 				"modules/web/src/main/java/me/aap/fermata/addon/web/WebToolBarMediator.java");
-		assertTrue(web.contains("MainActivityDelegate.get(v.getContext()).onBackPressed()"));
+		String support = coreSource("ui/view/TopBarMediatorSupport.java");
+		assertTrue(web.contains("TopBarMediatorSupport.installBackButton(tb, this)"));
+		assertTrue(support.contains("MainActivityDelegate.get(v.getContext()).onBackPressed()"));
 		assertTrue(web.contains("TopBarController.refresh(MainActivityDelegate.get(tb.getContext()))"));
 		assertFalse(web.contains(
 				"findViewById(me.aap.utils.R.id.tool_bar_back_button).setVisibility"));
