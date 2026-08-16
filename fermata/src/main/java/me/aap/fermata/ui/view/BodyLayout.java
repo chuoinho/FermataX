@@ -241,27 +241,42 @@ public class BodyLayout extends SplitLayout
 		MainActivityDelegate a = getActivity();
 		MediaSessionCallback cb = a.getMediaSessionCallback();
 		boolean customEngineProvider = cb.hasCustomEngineProvider();
+		Mode originalMode = getMode();
 		Mode requestedMode = PlaybackLayoutPolicy.getModeOnPlayRequest(
-				getMode(), i, customEngineProvider);
-		if (requestedMode != getMode()) setMode(requestedMode);
+				originalMode, i, customEngineProvider);
+		if (requestedMode != originalMode) setMode(requestedMode);
 
 		if (i.isVideo() && !customEngineProvider && !getVideoView().isSurfaceCreated()) {
-			getVideoView().onSurfaceCreated(() -> playItem(i));
+			getVideoView().onSurfaceCreated(() ->
+					startPlaybackRequest(i, originalMode, requestedMode));
 			return;
 		}
 
+		startPlaybackRequest(i, originalMode, requestedMode);
+	}
+
+	private void startPlaybackRequest(MediaLib.PlayableItem i, Mode originalMode,
+			Mode requestedMode) {
+		MainActivityDelegate a = getActivity();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		MediaLib.PlayableItem cur = b.getCurrentItem();
 		startingPlayback = new Promise<Void>().thenRun(() -> startingPlayback = completedVoid());
 		boolean requestStarted = b.playItem(i);
+		MediaEngine eng = b.getCurrentEngine();
+		boolean currentVideoModeRequired = i.equals(cur) && (eng != null) && eng.isVideoModeRequired();
+
 		if (requestStarted) {
 			playbackLoading = a.setContentLoading(i, OperationType.STREAM_PREPARE,
 					startingPlayback.timeout(PLAYBACK_LOADING_TIMEOUT_MS, () -> null));
 		} else {
 			finishPlaybackLoading();
+			Mode rejectedMode = PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(
+					originalMode, requestedMode, currentVideoModeRequired);
+			if ((currentVideoModeRequired || (getMode() == requestedMode)) &&
+					(rejectedMode != getMode())) setMode(rejectedMode);
 		}
-		MediaEngine eng = b.getCurrentEngine();
-		if (i.equals(cur) && (eng != null) && eng.isVideoModeRequired())
+
+		if (currentVideoModeRequired && (getMode() != BodyLayout.Mode.VIDEO))
 			setMode(BodyLayout.Mode.VIDEO);
 	}
 
