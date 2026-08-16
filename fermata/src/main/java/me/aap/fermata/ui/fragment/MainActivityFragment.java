@@ -9,9 +9,11 @@ import com.google.android.play.core.splitcompat.SplitCompat;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.VoiceCommand;
+import me.aap.fermata.ui.view.TopBarMediator;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.view.FloatingButton;
+import me.aap.utils.ui.view.ToolBarView;
 
 /**
  * @author Andrey Pavlenko
@@ -27,6 +29,11 @@ public abstract class MainActivityFragment extends ActivityFragment {
 	@Override
 	public MainActivityDelegate getActivityDelegate() {
 		return (MainActivityDelegate) super.getActivityDelegate();
+	}
+
+	@Override
+	public ToolBarView.Mediator getToolBarMediator() {
+		return TopBarMediator.instance;
 	}
 
 	@Override
