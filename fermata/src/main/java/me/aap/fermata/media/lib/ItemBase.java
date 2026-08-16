@@ -221,6 +221,7 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 
 	@Override
 	public String getPreferenceKey(Pref<?> key) {
+		if (MediaPrefs.VIDEO_SCALE.getName().equals(key.getName())) return key.getName();
 		return getId() + "#" + key.getName();
 	}
 
