@@ -378,14 +378,10 @@ public class ControlPanelView extends ConstraintLayout
 
 	public boolean onTouch(@Nullable VideoView video) {
 		MainActivityDelegate a = getActivity();
-		BodyLayout b = a.getBody();
 		View info = (video != null) ? video.getVideoInfoView() : null;
 		if (info != null) info.setVisibility(GONE);
 
-		if (b.getMode() == BodyLayout.Mode.BOTH) {
-			b.setMode(BodyLayout.Mode.VIDEO);
-			return true;
-		}
+		if (VideoPresentationController.enterFullscreenFromSplit(a)) return true;
 
 		int delay = getTouchDelay();
 		if (delay == 0) return false;
