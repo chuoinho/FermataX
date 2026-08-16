@@ -3,7 +3,7 @@ package me.aap.fermata.ui.activity;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.policy.BackNavigationPolicy;
 
-/** Common semantic entry point for top-level navigation intents. */
+/** Common semantic entry point for top-level navigation intents and route synchronization. */
 public final class NavigationCoordinator {
 	private NavigationCoordinator() {
 	}
@@ -23,6 +23,18 @@ public final class NavigationCoordinator {
 		if (activity.showFragmentWhenReady(destinationId)) return true;
 		activity.setActiveNavItemId(previous);
 		return false;
+	}
+
+	/**
+	 * Synchronizes authoritative destination state when a route was opened programmatically rather
+	 * than through a nav click. Non-nav pages intentionally preserve the previously selected
+	 * top-level destination so Back can return to it.
+	 */
+	public static void routeChanged(MainActivityDelegate activity, int routeId,
+			boolean topLevelDestination) {
+		if (topLevelDestination && (activity.getActiveNavItemId() != routeId)) {
+			activity.setActiveNavItemId(routeId);
+		}
 	}
 
 	/** Returns true when the common navigation policy consumed a destination reselection. */
