@@ -1,0 +1,221 @@
+package me.aap.fermata.architecture;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Test;
+
+/** Final architecture gate for the unified PHONE/automotive UI shell. */
+public class UiShellArchitectureGuardTest {
+	@Test
+	public void semanticPoliciesDoNotForkByAutomotiveHost() throws IOException {
+		for (String path : List.of(
+				"fermata/src/main/java/me/aap/fermata/ui/policy/TopBarPolicy.java",
+				"fermata/src/main/java/me/aap/fermata/ui/policy/BackNavigationPolicy.java",
+				"fermata/src/main/java/me/aap/fermata/ui/activity/NavigationCoordinator.java",
+				"fermata/src/main/java/me/aap/fermata/ui/policy/PlaybackPresentationReducer.java",
+				"fermata/src/main/java/me/aap/fermata/ui/policy/PlaybackLayoutPolicy.java")) {
+			String source = source(path);
+			assertFalse(path + " must not branch on automotive presentation",
+					source.contains("usesAutomotivePresentation()"));
+			assertFalse(path + " must not branch on AUTO build semantics",
+					source.contains("BuildConfig.AUTO"));
+		}
+	}
+
+	@Test
+	public void surfaceRenderersDoNotMutateOtherShellSurfaces() throws IOException {
+		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/view/ControlPanelView.java",
+				"tool_bar_title", "tool_bar_back_button", "ChromePolicy.refreshTopBackButton",
+				"NavBarController.refresh", ".setMode(");
+		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/view/ControlPanelPresentationView.java",
+				"tool_bar_title", "tool_bar_back_button", "TopBarController", "NavBarController");
+		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/view/TopBarController.java",
+				"getNavBar()", "getControlPanel()", "setVideoMode(", "BodyLayout");
+		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/view/NavBarController.java",
+				"getToolBar()", "getControlPanel()", "setVideoMode(", "BodyLayout");
+		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/fragment/NavBarMediator.java",
+				"setActiveNavItemId(", "BackNavigationPolicy.leaveVideoMode", "setVideoMode(", "BodyLayout");
+		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/fragment/ToolBarMediator.java",
+				"setVideoMode(", "BodyLayout", "getNavBar().findViewById");
+	}
+
+	@Test
+	public void chromeAndNavigationIntentsUseVideoPresentationController() throws IOException {
+		String player = source("fermata/src/main/java/me/aap/fermata/ui/view/ControlPanelView.java");
+		assertTrue(player.contains("VideoPresentationController.enterFullscreenFromSplit(a)"));
+		assertFalse(player.contains(".setMode("));
+
+		String back = source("fermata/src/main/java/me/aap/fermata/ui/policy/BackNavigationPolicy.java");
+		assertTrue(back.contains("VideoPresentationController.leaveFullscreen(a,"));
+		assertFalse(back.contains(".setMode("));
+		assertFalse(back.contains("usesAutomotivePresentation()"));
+		assertFalse(back.contains("ChromePolicy.refreshTopBackButton"));
+		assertFalse(back.contains("MediaItemListView.focusActive"));
+
+		String dashboard = source("fermata/src/main/java/me/aap/fermata/ui/fragment/DashboardPlayableNavigator.java");
+		assertTrue(dashboard.contains("VideoPresentationController.enterFullscreen(activity)"));
+		assertFalse(dashboard.contains(".setMode("));
+		assertFalse(dashboard.contains("BodyLayout"));
+
+		String controller = source("fermata/src/main/java/me/aap/fermata/ui/view/VideoPresentationController.java");
+		assertTrue(controller.contains("body.setMode("));
+		assertTrue(controller.contains("enterFullscreenFromSplit"));
+		assertTrue(controller.contains("leaveFullscreen"));
+	}
+
+	@Test
+	public void routeVideoExitModeIsHostIndependent() throws IOException {
+		String policy = source("fermata/src/main/java/me/aap/fermata/ui/policy/PlaybackLayoutPolicy.java");
+		assertTrue(policy.contains("getModeAfterLeavingVideo(boolean ignoredCarActivity)"));
+		assertTrue(policy.contains("return BodyLayout.Mode.FRAME;"));
+		assertFalse(policy.contains("carActivity ? BodyLayout.Mode.FRAME : BodyLayout.Mode.BOTH"));
+	}
+
+	@Test
+	public void defaultFermataToolbarNeverUsesGenericBackTitleWriter() throws IOException {
+		String fragment = source("fermata/src/main/java/me/aap/fermata/ui/fragment/MainActivityFragment.java");
+		assertTrue(fragment.contains("return TopBarMediator.instance;"));
+
+		String mediator = source("fermata/src/main/java/me/aap/fermata/ui/view/TopBarMediator.java");
+		assertTrue(mediator.contains("TopBarMediatorSupport.installBackTitle(toolBar, fragment, this)"));
+		assertTrue(mediator.contains("TopBarController.refresh(MainActivityDelegate.get(toolBar.getContext()), fragment)"));
+		assertFalse(mediator.contains("BackTitle.super.enable"));
+		assertFalse(mediator.contains("BackTitle.super.onActivityEvent"));
+		assertFalse(mediator.contains("title.setText("));
+		assertFalse(mediator.contains("back.setVisibility("));
+	}
+
+	@Test
+	public void everyFermataToolbarGetsCanonicalBackAfterMediatorBuild() throws IOException {
+		String toolbar = source("fermata/src/main/java/me/aap/fermata/ui/view/FermataToolBarView.java");
+		assertTrue(toolbar.contains("findViewById(me.aap.utils.R.id.tool_bar_back_button) == null"));
+		assertTrue(toolbar.contains("TopBarMediatorSupport.installBackButton(this, mediator)"));
+		assertTrue(toolbar.contains("TopBarController.refresh(MainActivityDelegate.get(getContext()), fragment)"));
+
+		String support = source("fermata/src/main/java/me/aap/fermata/ui/view/TopBarMediatorSupport.java");
+		assertTrue(support.contains("public static void installBackButton("));
+		assertTrue(support.contains("public static int getBackButtonSide("));
+		assertTrue(support.contains("MainActivityDelegate.get(toolBar.getContext()).getNavBar().isRight()"));
+
+		String web = source("modules/web/src/main/java/me/aap/fermata/addon/web/WebToolBarMediator.java");
+		assertTrue(web.contains("TopBarMediatorSupport.installBackButton(tb, this)"));
+		assertFalse(web.contains("private int getBackButtonSide("));
+	}
+
+	@Test
+	public void addonCodeCannotForkCanonicalBackStructureOrVisibility() throws IOException {
+		Path root = projectRoot();
+		Path modules = root.resolve("modules");
+		List<String> violations = new ArrayList<>();
+		try (var files = Files.walk(modules)) {
+			for (Path file : files.filter(Files::isRegularFile)
+					.filter(path -> path.toString().endsWith(".java") ||
+							path.toString().endsWith(".kt")).toList()) {
+				List<String> lines = Files.readAllLines(file);
+				for (int i = 0; i < lines.size(); i++) {
+					String line = lines.get(i);
+					if (!line.contains("tool_bar_back_button")) continue;
+					if (line.contains("setVisibility(") || line.contains("addButton(")) {
+						violations.add(root.relativize(file) + ":" + (i + 1) + " " + line.trim());
+					}
+				}
+			}
+		}
+		if (!violations.isEmpty()) {
+			fail("Addon code must use the common top-bar Back structure/visibility authority:\n" +
+					String.join("\n", violations));
+		}
+	}
+
+	@Test
+	public void addonCodeCannotOwnBodyLayoutTransitions() throws IOException {
+		Path root = projectRoot();
+		Path modules = root.resolve("modules");
+		List<String> violations = new ArrayList<>();
+		try (var files = Files.walk(modules)) {
+			for (Path file : files.filter(Files::isRegularFile)
+					.filter(path -> path.toString().endsWith(".java") ||
+							path.toString().endsWith(".kt")).toList()) {
+				List<String> lines = Files.readAllLines(file);
+				for (int i = 0; i < lines.size(); i++) {
+					String line = lines.get(i);
+					if (line.contains("BodyLayout") && (line.contains("setMode(") || line.contains(".Mode."))) {
+						violations.add(root.relativize(file) + ":" + (i + 1) + " " + line.trim());
+					}
+				}
+			}
+		}
+		if (!violations.isEmpty()) {
+			fail("Addon code must not own FRAME/BOTH/VIDEO transitions:\n" + String.join("\n", violations));
+		}
+	}
+
+	@Test
+	public void configurationChangesReflowShellAndYoutubeFullscreenGeometry() throws IOException {
+		String activity = source("fermata/src/main/java/me/aap/fermata/ui/activity/MainActivity.java");
+		assertTrue(activity.contains("public void onConfigurationChanged(@NonNull Configuration newConfig)"));
+		assertTrue(activity.contains("getActivityDelegate().onSuccess(UiShellController::onConfigurationChanged)"));
+
+		String shell = source("fermata/src/main/java/me/aap/fermata/ui/view/UiShellController.java");
+		assertTrue(shell.contains("public static void onConfigurationChanged(MainActivityDelegate activity)"));
+		assertTrue(shell.contains("ControlPanelSeekView.reflowAfterConfigurationChange(panel)"));
+
+		String player = source("fermata/src/main/java/me/aap/fermata/ui/view/ControlPanelSeekView.java");
+		assertTrue(player.contains("protected void onConfigurationChanged(Configuration newConfig)"));
+		assertTrue(player.contains("constraints = null;"));
+		assertTrue(player.contains("constraintsNoSeek = null;"));
+		assertTrue(player.contains("protected void onSizeChanged(int w, int h, int oldw, int oldh)"));
+		assertTrue(player.contains("ControlPanelGeometryPolicy.getTransportButtonSize"));
+		assertTrue(player.contains("post(this::reflowTransportGeometry)"));
+
+		String youtube = source("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeVideoView.java");
+		assertTrue(youtube.contains("protected void onConfigurationChanged(Configuration newConfig)"));
+		assertTrue(youtube.contains("post(this::reflowFullscreenContent)"));
+		assertTrue(youtube.contains("params.width = MATCH_PARENT"));
+		assertTrue(youtube.contains("params.height = MATCH_PARENT"));
+		assertTrue(youtube.contains("child.forceLayout()"));
+		assertTrue(youtube.contains("child.requestLayout()"));
+	}
+
+	@Test
+	public void shellInvalidationFlowsThroughSurfaceControllers() throws IOException {
+		String shell = source("fermata/src/main/java/me/aap/fermata/ui/view/UiShellController.java");
+		assertTrue(shell.contains("TopBarController.refresh(activity);"));
+		assertTrue(shell.contains("NavBarController.refresh(activity);"));
+		assertFalse(shell.contains("findViewById"));
+		assertFalse(shell.contains("setVisibility("));
+		assertFalse(shell.contains("setSelected("));
+	}
+
+	private static void assertContainsNone(String path, String... forbidden) throws IOException {
+		String source = source(path);
+		for (String value : forbidden) {
+			assertFalse(path + " must not contain cross-surface writer: " + value,
+					source.contains(value));
+		}
+	}
+
+	private static String source(String relativePath) throws IOException {
+		return new String(Files.readAllBytes(projectRoot().resolve(relativePath)), StandardCharsets.UTF_8);
+	}
+
+	private static Path projectRoot() {
+		Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+		while (current != null) {
+			if (Files.isRegularFile(current.resolve("settings.gradle")) &&
+					Files.isDirectory(current.resolve("fermata"))) return current;
+			current = current.getParent();
+		}
+		throw new IllegalStateException("Unable to locate FermataX project root");
+	}
+}

@@ -33,9 +33,10 @@ import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.fermata.ui.policy.ChromePolicy;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListView;
+import me.aap.fermata.ui.view.TopBarController;
+import me.aap.fermata.ui.view.TopBarMediatorSupport;
 import me.aap.fermata.ui.voice.VoiceUiPolicy;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -55,7 +56,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 
 	@Override
 	public void enable(ToolBarView tb, ActivityFragment f) {
-		ToolBarView.Mediator.BackTitleFilter.super.enable(tb, f);
+		TopBarMediatorSupport.installBackTitleFilter(tb, f, this);
 		MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
 		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
 		addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
@@ -77,8 +78,6 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		if (!BuildConfig.AUTO && (f instanceof MediaLibFragment) && a.getPrefs().getShowPgUpDownPref(a)) {
 			addButton(tb, R.drawable.pg_down, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_down, LEFT);
 			addButton(tb, R.drawable.pg_up, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_up, LEFT);
-		} else {
-			tb.findViewById(me.aap.utils.R.id.tool_bar_back_button);
 		}
 
 		for (FermataAddon addon : AddonManager.get().getAddons()) {
@@ -88,6 +87,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		}
 
 		setButtonsVisibility(tb, f);
+		TopBarController.refresh(a, f);
 		int n = tb.getChildCount();
 
 		if (n > 1) {
@@ -100,12 +100,13 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 
 	@Override
 	public void onActivityEvent(ToolBarView view, ActivityDelegate a, long e) {
-		ToolBarView.Mediator.BackTitleFilter.super.onActivityEvent(view, a, e);
+		if (e == FRAGMENT_CHANGED) setFilterVisibility(view, false);
 
 		if ((e == FRAGMENT_CHANGED) || (e == FRAGMENT_CONTENT_CHANGED) || (e == MODE_CHANGED)) {
 			ActivityFragment f = a.getActiveFragment();
 			if (f != null) {
-				setButtonVisibility(view, me.aap.utils.R.id.tool_bar_back_button, getBackButtonVisibility(f));
+				MainActivityDelegate activity = (MainActivityDelegate) a;
+				TopBarController.refresh(activity, f);
 				setButtonsVisibility(view, f);
 			}
 		}
@@ -343,12 +344,6 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	private static void setSortBy(MediaLibFragment.ListAdapter adapter, int sortBy) {
 		BrowsableItem p = adapter.getParent();
 		p.updateSorting().main().thenRun(() -> p.getPrefs().setSortByPref(sortBy));
-	}
-
-	@Override
-	public int getBackButtonVisibility(ActivityFragment f) {
-		MainActivityDelegate a = MainActivityDelegate.get(f.requireContext());
-		return ChromePolicy.getTopBackVisibility(a, f);
 	}
 
 	@Override

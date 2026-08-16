@@ -49,6 +49,7 @@ public class BodyLayout extends SplitLayout
 	private FutureSupplier<?> startingPlayback = completedVoid();
 	private FutureSupplier<?> playbackLoading = completedVoid();
 	private final PostLayoutVideoShowGate videoShowAfterLayout = new PostLayoutVideoShowGate();
+	private long playbackStartGeneration;
 
 	public BodyLayout(@NonNull Context ctx, @Nullable AttributeSet attrs) {
 		super(ctx, attrs);
@@ -239,26 +240,74 @@ public class BodyLayout extends SplitLayout
 	public void playItem(MediaLib.PlayableItem i) {
 		finishPlaybackLoading();
 		MainActivityDelegate a = getActivity();
+		MediaSessionCallback cb = a.getMediaSessionCallback();
+		boolean customEngineProvider = cb.hasCustomEngineProvider();
+		Mode originalMode = getMode();
+		Mode requestedMode = PlaybackLayoutPolicy.getModeOnPlayRequest(
+				originalMode, i, customEngineProvider);
+		long request = ++playbackStartGeneration;
+		if (requestedMode != originalMode) setMode(requestedMode);
+		awaitPlaybackViewport(i, originalMode, requestedMode, customEngineProvider, request);
+	}
 
-		if (i.isVideo() && !getVideoView().isSurfaceCreated() &&
-				!a.getMediaSessionCallback().hasCustomEngineProvider()) {
-			setMode(BodyLayout.Mode.VIDEO);
-			getVideoView().onSurfaceCreated(() -> playItem(i));
+	private void awaitPlaybackViewport(MediaLib.PlayableItem i, Mode originalMode,
+			Mode requestedMode, boolean customEngineProvider, long request) {
+		if (request != playbackStartGeneration) return;
+		if (requestedMode != originalMode) {
+			VideoView video = getVideoView();
+			ViewTreeObserver observer = video.getViewTreeObserver();
+			if (observer.isAlive()) {
+				observer.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+					@Override
+					public boolean onPreDraw() {
+						ViewTreeObserver current = video.getViewTreeObserver();
+						if (current.isAlive()) current.removeOnPreDrawListener(this);
+						awaitPlaybackSurface(i, originalMode, requestedMode,
+								customEngineProvider, request);
+						return true;
+					}
+				});
+				return;
+			}
+		}
+		awaitPlaybackSurface(i, originalMode, requestedMode, customEngineProvider, request);
+	}
+
+	private void awaitPlaybackSurface(MediaLib.PlayableItem i, Mode originalMode,
+			Mode requestedMode, boolean customEngineProvider, long request) {
+		if (request != playbackStartGeneration) return;
+		VideoView video = getVideoView();
+		if (i.isVideo() && !customEngineProvider && !video.isSurfaceCreated()) {
+			video.onSurfaceCreated(() ->
+					startPlaybackRequest(i, originalMode, requestedMode, request));
 			return;
 		}
+		startPlaybackRequest(i, originalMode, requestedMode, request);
+	}
 
+	private void startPlaybackRequest(MediaLib.PlayableItem i, Mode originalMode,
+			Mode requestedMode, long request) {
+		if (request != playbackStartGeneration) return;
+		MainActivityDelegate a = getActivity();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		MediaLib.PlayableItem cur = b.getCurrentItem();
 		startingPlayback = new Promise<Void>().thenRun(() -> startingPlayback = completedVoid());
 		boolean requestStarted = b.playItem(i);
+		MediaEngine eng = b.getCurrentEngine();
+		boolean currentVideoModeRequired = i.equals(cur) && (eng != null) && eng.isVideoModeRequired();
+
 		if (requestStarted) {
 			playbackLoading = a.setContentLoading(i, OperationType.STREAM_PREPARE,
 					startingPlayback.timeout(PLAYBACK_LOADING_TIMEOUT_MS, () -> null));
 		} else {
 			finishPlaybackLoading();
+			Mode rejectedMode = PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(
+					originalMode, requestedMode, currentVideoModeRequired);
+			if ((currentVideoModeRequired || (getMode() == requestedMode)) &&
+					(rejectedMode != getMode())) setMode(rejectedMode);
 		}
-		MediaEngine eng = b.getCurrentEngine();
-		if (i.equals(cur) && (eng != null) && eng.isVideoModeRequired())
+
+		if (currentVideoModeRequired && (getMode() != BodyLayout.Mode.VIDEO))
 			setMode(BodyLayout.Mode.VIDEO);
 	}
 

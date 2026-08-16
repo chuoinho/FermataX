@@ -10,6 +10,7 @@ import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -24,6 +25,7 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
+import me.aap.fermata.ui.view.UiShellController;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.activity.SplitCompatActivityBase;
@@ -92,6 +94,12 @@ public class MainActivity extends SplitCompatActivityBase
 			}
 		});
 		super.onCreate(savedInstanceState);
+	}
+
+	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		getActivityDelegate().onSuccess(UiShellController::onConfigurationChanged);
 	}
 
 	@Override

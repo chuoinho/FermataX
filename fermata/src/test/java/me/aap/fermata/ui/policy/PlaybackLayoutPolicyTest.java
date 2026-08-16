@@ -32,6 +32,38 @@ public class PlaybackLayoutPolicyTest {
 	}
 
 	@Test
+	public void localVideoRequestEntersFinalViewportBeforePlayback() {
+		assertEquals(VIDEO, PlaybackLayoutPolicy.getModeOnPlayRequest(FRAME, true, false));
+		assertEquals(BOTH, PlaybackLayoutPolicy.getModeOnPlayRequest(BOTH, true, false));
+		assertEquals(VIDEO, PlaybackLayoutPolicy.getModeOnPlayRequest(VIDEO, true, false));
+		assertEquals(FRAME, PlaybackLayoutPolicy.getModeOnPlayRequest(FRAME, false, false));
+	}
+
+	@Test
+	public void customEngineProviderKeepsItsOwnPresentationLifecycle() {
+		assertEquals(FRAME, PlaybackLayoutPolicy.getModeOnPlayRequest(FRAME, true, true));
+		assertEquals(BOTH, PlaybackLayoutPolicy.getModeOnPlayRequest(BOTH, true, true));
+	}
+
+	@Test
+	public void rejectedVideoPreflightRestoresThePreviousViewport() {
+		assertEquals(FRAME,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(FRAME, VIDEO, false));
+		assertEquals(BOTH,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(BOTH, BOTH, false));
+		assertEquals(VIDEO,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(VIDEO, VIDEO, false));
+	}
+
+	@Test
+	public void rejectedReplayKeepsExistingRequiredVideoPresentation() {
+		assertEquals(VIDEO,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(FRAME, VIDEO, true));
+		assertEquals(VIDEO,
+				PlaybackLayoutPolicy.getModeAfterRejectedPlayRequest(BOTH, BOTH, true));
+	}
+
+	@Test
 	public void playableChangesPreserveAcceptedFrameVideoAndSplitModes() {
 		assertEquals(FRAME, PlaybackLayoutPolicy.getModeOnPlayableChanged(
 				VIDEO, false, false, false, false, false));
@@ -60,9 +92,9 @@ public class PlaybackLayoutPolicyTest {
 	}
 
 	@Test
-	public void leavingVideoUsesFrameOnCarAndSplitOnPhone() {
+	public void routeVideoExitModeIsHostIndependent() {
 		assertEquals(FRAME, PlaybackLayoutPolicy.getModeAfterLeavingVideo(true));
-		assertEquals(BOTH, PlaybackLayoutPolicy.getModeAfterLeavingVideo(false));
+		assertEquals(FRAME, PlaybackLayoutPolicy.getModeAfterLeavingVideo(false));
 	}
 
 	@Test

@@ -1,5 +1,6 @@
 package me.aap.fermata.architecture;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -45,6 +46,54 @@ public class ArchitectureBoundaryTest {
 		Path root = projectRoot();
 		assertNoForbiddenImports(root.resolve("fermata/src/main"), null);
 		assertNoForbiddenImports(root.resolve("fermata/src/auto"), null);
+	}
+
+	@Test
+	public void coreUiDoesNotReferenceConcreteAddonFragmentTypes() throws IOException {
+		Path root = projectRoot();
+		List<String> forbidden = List.of("TvFragment", "YoutubeFragment", "WebBrowserFragment");
+		assertNoSourceReferences(root, root.resolve("fermata/src/main/java/me/aap/fermata/ui"), forbidden);
+		assertNoSourceReferences(root, root.resolve("fermata/src/auto/java/me/aap/fermata/ui"), forbidden);
+	}
+
+	@Test
+	public void webAddonUsesCommonUiShellAuthorities() throws IOException {
+		String fragment = source("modules/web/src/main/java/me/aap/fermata/addon/web/WebBrowserFragment.java");
+		String toolbar = source("modules/web/src/main/java/me/aap/fermata/addon/web/WebToolBarMediator.java");
+		String youtube = source("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeFragment.java");
+
+		assertTrue(fragment.contains("WebBackNavigationPolicy.resolve(fullScreen, v.canGoBack())"));
+		assertTrue(fragment.contains("case EXIT_FULLSCREEN -> v.exitFullScreenForBack()"));
+		assertTrue(fragment.contains("case WEB_HISTORY ->"));
+		assertTrue(toolbar.contains("TopBarMediatorSupport.installBackButton(tb, this)"));
+		assertFalse(toolbar.contains("addButton(tb, me.aap.utils.R.drawable.back"));
+		assertTrue(toolbar.contains("TopBarController.refresh(MainActivityDelegate.get(tb.getContext()), f)"));
+		assertTrue(toolbar.contains("TopBarController.refresh(MainActivityDelegate.get(tb.getContext()))"));
+		assertFalse(toolbar.contains("tool_bar_back_button).setVisibility"));
+		assertTrue(youtube.contains("TopBarPlaybackContext"));
+		assertTrue(youtube.contains("YoutubeToolbarPolicy.usePlaybackTitle("));
+		assertTrue(youtube.contains("TopBarController.refresh(a, f)"));
+		assertFalse(youtube.contains("tb.setTitle("));
+		assertFalse(youtube.contains("getToolBar().setTitle("));
+	}
+
+	@Test
+	public void tvAddonUsesCommonUiShellAuthorities() throws IOException {
+		String tv = source("modules/tv/src/main/java/me/aap/fermata/addon/tv/TvFragment.java");
+		String media = source("fermata/src/main/java/me/aap/fermata/ui/fragment/MediaLibFragment.java");
+
+		assertTrue(tv.contains("public class TvFragment extends MediaLibFragment"));
+		assertTrue(tv.contains("return me.aap.fermata.R.id.tv_fragment;"));
+		assertFalse(tv.contains("getToolBarMediator()"));
+		assertFalse(tv.contains("public boolean onBackPressed()"));
+		assertTrue(tv.contains("public void navBarItemReselected(int itemId)"));
+		assertTrue(tv.contains("getAdapter().setParent(getRootItem())"));
+		assertFalse(tv.contains("setVideoMode("));
+		assertFalse(tv.contains("BodyLayout"));
+		assertFalse(tv.contains("TopBarController"));
+		assertFalse(tv.contains("BackNavigationPolicy"));
+		assertTrue(media.contains("return ToolBarMediator.instance;"));
+		assertTrue(media.contains("if (BackNavigationPolicy.leaveVideoMode(ad)) return true;"));
 	}
 
 	@Test
@@ -121,6 +170,10 @@ public class ArchitectureBoundaryTest {
 				"updatePlaybackSnapshot(state, metadata, item)", "session.setPlaybackState(state)");
 	}
 
+	private static String source(String relativePath) throws IOException {
+		return new String(Files.readAllBytes(projectRoot().resolve(relativePath)), UTF_8);
+	}
+
 	private static void assertOrder(String source, String method, String publication,
 			String callback) {
 		int methodIndex = source.indexOf(method);
@@ -129,6 +182,30 @@ public class ArchitectureBoundaryTest {
 		assertTrue("Missing method marker: " + method, methodIndex >= 0);
 		assertTrue("Snapshot publication must precede callback in " + method,
 				(publicationIndex > methodIndex) && (callbackIndex > publicationIndex));
+	}
+
+	private static void assertNoSourceReferences(Path root, Path source, List<String> forbidden)
+			throws IOException {
+		if (!Files.isDirectory(source)) return;
+		List<String> violations = new ArrayList<>();
+		try (var files = Files.walk(source)) {
+			List<Path> sourceFiles = files.filter(Files::isRegularFile)
+					.filter(path -> path.toString().endsWith(".java") ||
+							path.toString().endsWith(".kt")).toList();
+			for (Path file : sourceFiles) {
+				List<String> lines = Files.readAllLines(file);
+				for (int i = 0; i < lines.size(); i++) {
+					String line = lines.get(i);
+					for (String type : forbidden) {
+						if (line.contains(type)) {
+							violations.add(root.relativize(file) + ":" + (i + 1) +
+									" [core UI -> concrete addon fragment] " + type);
+						}
+					}
+				}
+			}
+		}
+		if (!violations.isEmpty()) fail(String.join("\n", violations));
 	}
 
 	private static void assertNoForbiddenImports(Path source, String allowedPrefix)

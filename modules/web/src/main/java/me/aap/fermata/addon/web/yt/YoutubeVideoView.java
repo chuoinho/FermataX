@@ -4,9 +4,12 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -41,6 +44,41 @@ public class YoutubeVideoView extends VideoView {
 		info.setLayoutParams(lp);
 		videoInfo = info;
 		addView(info);
+	}
+
+	@Override
+	protected void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		// MainActivity handles rotation without recreation. A WebChromeClient custom video view can
+		// therefore retain the landscape bounds it had when it was attached. Re-apply MATCH_PARENT
+		// after the new viewport is installed so its nested Surface/Texture is laid out again.
+		requestLayout();
+		post(this::reflowFullscreenContent);
+	}
+
+	private void reflowFullscreenContent() {
+		ViewGroup.LayoutParams hostParams = content.getLayoutParams();
+		if (hostParams != null) {
+			hostParams.width = MATCH_PARENT;
+			hostParams.height = MATCH_PARENT;
+			content.setLayoutParams(hostParams);
+		}
+		content.forceLayout();
+		content.requestLayout();
+
+		for (int i = 0; i < content.getChildCount(); i++) {
+			View child = content.getChildAt(i);
+			ViewGroup.LayoutParams params = child.getLayoutParams();
+			if (params != null) {
+				params.width = MATCH_PARENT;
+				params.height = MATCH_PARENT;
+				child.setLayoutParams(params);
+			}
+			child.forceLayout();
+			child.requestLayout();
+			child.invalidate();
+		}
+		invalidate();
 	}
 
 	@NonNull

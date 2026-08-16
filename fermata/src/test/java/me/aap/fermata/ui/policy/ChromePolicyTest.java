@@ -7,34 +7,27 @@ import org.junit.Test;
 
 public class ChromePolicyTest {
 	@Test
-	public void phoneTopBackFollowsRouteInsteadOfPlaybackOwnership() {
-		assertFalse(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.PHONE, true, false, true, false, false));
-		assertTrue(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.PHONE, true, false, false, false, false));
-		assertTrue(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.PHONE, false, false, false, false, false));
-		assertTrue(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.PHONE, true, false, false, true, false));
-		assertTrue(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.PHONE, false, true, false, false, false));
-		assertTrue(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.PHONE, false, true, false, false, true));
+	public void topBackFollowsRouteInsteadOfPlaybackOwnershipOnEveryHost() {
+		for (RuntimeHostMode host : new RuntimeHostMode[]{
+				RuntimeHostMode.PHONE, RuntimeHostMode.AA_PROJECTION, RuntimeHostMode.MIRROR}) {
+			assertFalse(ChromePolicy.isTopBackVisible(
+					host, true, false, true, false, false));
+			assertTrue(ChromePolicy.isTopBackVisible(
+					host, true, false, false, false, false));
+			assertTrue(ChromePolicy.isTopBackVisible(
+					host, false, false, false, false, false));
+			assertTrue(ChromePolicy.isTopBackVisible(
+					host, true, false, false, true, false));
+			assertTrue(ChromePolicy.isTopBackVisible(
+					host, false, true, false, false, false));
+			assertTrue(ChromePolicy.isTopBackVisible(
+					host, false, true, false, false, true));
+		}
 	}
 
 	@Test
-	public void automotiveTopBackKeepsSinglePlaybackOwner() {
+	public void missingHostNeverShowsTopBack() {
 		assertFalse(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.AA_PROJECTION, true, false, true, false, false));
-		assertTrue(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.AA_PROJECTION, true, false, false, false, false));
-		assertTrue(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.MIRROR, false, true, false, false, false));
-		assertFalse(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.AA_PROJECTION, false, true, false, false, true));
-		assertFalse(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.AA_PROJECTION, true, false, false, true, false));
-		assertFalse(ChromePolicy.isTopBackVisible(
-				RuntimeHostMode.AA_PROJECTION, false, false, false, false, false));
+				null, true, true, false, false, false));
 	}
 }

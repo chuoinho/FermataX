@@ -383,12 +383,9 @@ public class MainActivityDelegate extends ActivityDelegate
 		hideActiveMenu();
 		BodyLayout body = getBody();
 		if (!body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
-		View active = getNavBar().findViewById(getActiveNavItemId());
-		View dashboard = getNavBar().findViewById(R.id.dashboard_fragment);
-		if ((active != null) && (active != dashboard)) active.setSelected(false);
-		if (dashboard != null) dashboard.setSelected(true);
-		showFragment(R.id.dashboard_fragment);
+		int previous = getActiveNavItemId();
 		setActiveNavItemId(R.id.dashboard_fragment);
+		if (showFragment(R.id.dashboard_fragment) == null) setActiveNavItemId(previous);
 	}
 
 	@Override
@@ -732,8 +729,8 @@ public class MainActivityDelegate extends ActivityDelegate
 			}
 		} catch (RuntimeException | Error failure) {
 			AsyncOperationController.DiagnosticsObserver.videoMode(
-					AsyncOperationController.DiagnosticsObserver.VideoModeEvent.FAILED,
-					operationId, videoMode, false, false);
+						AsyncOperationController.DiagnosticsObserver.VideoModeEvent.FAILED,
+						operationId, videoMode, false, false);
 			throw failure;
 		}
 	}
@@ -1104,20 +1101,20 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public void addPlaylistMenu(OverlayMenu.Builder builder,
-															FutureSupplier<List<PlayableItem>> selection) {
+			FutureSupplier<List<PlayableItem>> selection) {
 		addPlaylistMenu(builder, () -> selection, () -> "");
 	}
 
 	public void addPlaylistMenu(OverlayMenu.Builder builder,
-															Supplier<FutureSupplier<List<PlayableItem>>> selection,
-															Supplier<? extends CharSequence> initName) {
+			Supplier<FutureSupplier<List<PlayableItem>>> selection,
+			Supplier<? extends CharSequence> initName) {
 		builder.addItem(R.id.playlist_add, R.drawable.playlist_add, R.string.playlist_add)
 				.setSubmenu(b -> createPlaylistMenu(b, selection, initName));
 	}
 
 	private void createPlaylistMenu(OverlayMenu.Builder b,
-																	Supplier<FutureSupplier<List<PlayableItem>>> selection,
-																	Supplier<? extends CharSequence> initName) {
+			Supplier<FutureSupplier<List<PlayableItem>>> selection,
+			Supplier<? extends CharSequence> initName) {
 		getLib().getPlaylists().getUnsortedChildren().main().onSuccess(playlists -> {
 			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
 					.setHandler(i -> createPlaylist(selection.get(), initName));
@@ -1132,7 +1129,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection,
-																 Supplier<? extends CharSequence> initName) {
+			Supplier<? extends CharSequence> initName) {
 		UiUtils.queryText(getContext(), R.string.playlist_name, R.drawable.playlist, initName.get())
 				.onSuccess(name -> {
 					discardSelection();
@@ -1302,7 +1299,7 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	public boolean onKeyLongPress(int code, KeyEvent event,
-																IntObjectFunction<KeyEvent, Boolean> next) {
+			IntObjectFunction<KeyEvent, Boolean> next) {
 		return handleKeyEvent(this, event, next);
 	}
 

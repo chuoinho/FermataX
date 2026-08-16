@@ -5,7 +5,6 @@ import static android.view.View.VISIBLE;
 
 import android.graphics.drawable.Drawable;
 import android.view.View;
-import android.widget.TextView;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -14,8 +13,6 @@ import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.policy.ItemRoutePolicy;
 import me.aap.fermata.ui.policy.PlaybackPresentationOwner.Identity;
-import me.aap.fermata.ui.policy.ToolBarTitlePolicy;
-import me.aap.utils.ui.fragment.ActivityFragment;
 
 final class ControlPanelPresentationView {
 	private final ControlPanelView panel;
@@ -49,16 +46,7 @@ final class ControlPanelPresentationView {
 	}
 
 	void updateVideoTitle(MainActivityDelegate activity) {
-		if (!activity.getRuntimeHostMode().usesAutomotivePresentation()) return;
-		TextView title = activity.getToolBar().findViewById(me.aap.utils.R.id.tool_bar_title);
-		if (title == null) return;
-		ActivityFragment fragment = activity.getActiveFragment();
-		if (fragment == null) return;
-		PlaybackSnapshot snapshot = activity.getMediaSessionCallback().getPlaybackSnapshot();
-		PlayableItem item = snapshot.getItem();
-		int ownerId = (item == null) ? 0 : ItemRoutePolicy.getPlaybackOwnerFragmentId(item);
-		title.setText(ToolBarTitlePolicy.resolve(fragment.getFragmentId(), ownerId,
-				fragment.getTitle(), snapshot.getDisplayTitle(), snapshot.getPreparationStatus()));
+		UiShellController.onPlaybackPresentationChanged(activity);
 	}
 
 	Identity currentIdentity(MainActivityDelegate activity) {

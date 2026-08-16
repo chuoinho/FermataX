@@ -28,6 +28,34 @@ public final class PlaybackLayoutPolicy {
 				usesBodyVideoView && sameRoot;
 	}
 
+	/**
+	 * Resolves the body mode before a local playback request is handed to the engine. Entering VIDEO
+	 * while still in FRAME prevents the first decoded frame from being rendered in the old list
+	 * viewport. Existing split/fullscreen intent is preserved. Custom engine providers own their
+	 * presentation lifecycle (for example Web/YouTube) and are never preflighted here.
+	 */
+	public static BodyLayout.Mode getModeOnPlayRequest(BodyLayout.Mode currentMode,
+			MediaLib.PlayableItem item, boolean customEngineProvider) {
+		return getModeOnPlayRequest(currentMode, item != null && item.isVideo(), customEngineProvider);
+	}
+
+	static BodyLayout.Mode getModeOnPlayRequest(BodyLayout.Mode currentMode, boolean videoItem,
+			boolean customEngineProvider) {
+		if (!videoItem || customEngineProvider) return currentMode;
+		return currentMode == BodyLayout.Mode.FRAME ? BodyLayout.Mode.VIDEO : currentMode;
+	}
+
+	/**
+	 * A viewport preflight is speculative until the service accepts the play request. Rejected
+	 * requests restore the original layout, except when the already-current engine still requires
+	 * fullscreen video; that existing playback remains authoritative.
+	 */
+	public static BodyLayout.Mode getModeAfterRejectedPlayRequest(BodyLayout.Mode originalMode,
+			BodyLayout.Mode requestedMode, boolean currentVideoModeRequired) {
+		if (currentVideoModeRequired) return BodyLayout.Mode.VIDEO;
+		return (requestedMode != originalMode) ? originalMode : requestedMode;
+	}
+
 	public static BodyLayout.Mode getModeOnPlayableChanged(BodyLayout.Mode currentMode,
 																				 MediaLib.PlayableItem newItem,
 																				 MediaEngine eng) {
@@ -65,8 +93,12 @@ public final class PlaybackLayoutPolicy {
 				splitSupported && videoModeRequired;
 	}
 
-	public static BodyLayout.Mode getModeAfterLeavingVideo(boolean carActivity) {
-		return carActivity ? BodyLayout.Mode.FRAME : BodyLayout.Mode.BOTH;
+	/**
+	 * Navigating to another route always leaves fullscreen in FRAME on every host. PHONE/AA may
+	 * render FRAME differently, but route semantics must not fork by host type.
+	 */
+	public static BodyLayout.Mode getModeAfterLeavingVideo(boolean ignoredCarActivity) {
+		return BodyLayout.Mode.FRAME;
 	}
 
 	public static boolean shouldKeepExternalVideoMode(RuntimeHostMode hostMode,
