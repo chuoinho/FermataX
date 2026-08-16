@@ -7,7 +7,6 @@ import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.LEFT;
-import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.RIGHT;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.util.Utils.dynCtx;
 
@@ -16,9 +15,9 @@ import android.widget.EditText;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.TopBarController;
+import me.aap.fermata.ui.view.TopBarMediatorSupport;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.ToolBarView;
@@ -41,12 +40,10 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		String url = b.getUrl();
 		if (url != null) t.setText(url);
 		addView(tb, t, R.id.browser_addr, LEFT);
-		int backSide = getBackButtonSide(tb);
+		int backSide = TopBarMediatorSupport.getBackButtonSide(tb);
 		addButton(tb, R.drawable.forward, v ->
 				requireNonNull(b.getWebView()).goForward(), R.id.browser_forward, backSide);
-		addButton(tb, me.aap.utils.R.drawable.back, v ->
-				MainActivityDelegate.get(v.getContext()).onBackPressed(),
-				me.aap.utils.R.id.tool_bar_back_button, backSide);
+		TopBarMediatorSupport.installBackButton(tb, this);
 		addButton(tb, R.drawable.clear, v -> t.setText(""), R.id.browser_addr_clear);
 		addButton(tb, me.aap.fermata.R.drawable.bookmark_filled, v ->
 				onBookmarksButtonClick(b), me.aap.fermata.R.id.bookmarks);
@@ -54,11 +51,6 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		setButtonsVisibility(tb, (wv != null) && wv.canGoBack(), (wv != null) && wv.canGoForward());
 		ToolBarView.Mediator.super.enable(tb, f);
 		TopBarController.refresh(MainActivityDelegate.get(tb.getContext()), f);
-	}
-
-	private int getBackButtonSide(ToolBarView tb) {
-		return (BuildConfig.AUTO && MainActivityDelegate.get(tb.getContext()).getNavBar().isRight()) ?
-				RIGHT : LEFT;
 	}
 
 	private void onBookmarksButtonClick(WebBrowserFragment f) {
