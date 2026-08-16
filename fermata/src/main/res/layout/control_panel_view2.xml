@@ -133,12 +133,12 @@
         <me.aap.utils.ui.view.ImageButton
             android:id="@+id/control_favorite"
             style="?attr/appControlPanelStyle"
-            android:layout_width="32dp"
+            android:layout_width="@dimen/control_panel_edge_action_size"
             android:layout_height="match_parent"
             android:background="@drawable/focusable_shape_transparent"
             android:clickable="true"
             android:focusable="true"
-            android:padding="8dp"
+            android:padding="@dimen/control_panel_edge_action_padding"
             android:scaleType="fitCenter"
             android:src="@drawable/favorite"
             android:visibility="gone" />
@@ -154,7 +154,7 @@
             android:src="@drawable/more" />
     </LinearLayout>
 
-    <me.aap.utils.ui.view.ImageButton
+    <me.aap.fermata.ui.view.AdaptiveTransportButton
         android:id="@+id/control_prev"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
@@ -173,7 +173,7 @@
         app:layout_constraintStart_toStartOf="@id/control_panel_transport_start"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <me.aap.utils.ui.view.ImageButton
+    <me.aap.fermata.ui.view.AdaptiveTransportButton
         android:id="@+id/control_rw"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
@@ -191,7 +191,7 @@
         app:layout_constraintStart_toEndOf="@id/control_prev"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <me.aap.utils.ui.view.ImageButton
+    <me.aap.fermata.ui.view.AdaptiveTransportButton
         android:id="@+id/control_play_pause"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
@@ -210,7 +210,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:tint="?android:attr/colorBackground" />
 
-    <me.aap.utils.ui.view.ImageButton
+    <me.aap.fermata.ui.view.AdaptiveTransportButton
         android:id="@+id/control_ff"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
@@ -228,7 +228,7 @@
         app:layout_constraintStart_toEndOf="@id/control_play_pause"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <me.aap.utils.ui.view.ImageButton
+    <me.aap.fermata.ui.view.AdaptiveTransportButton
         android:id="@+id/control_next"
         style="?attr/appControlPanelStyle"
         android:layout_width="0dp"
