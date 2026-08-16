@@ -27,6 +27,12 @@ public final class VideoPresentationController {
 		BodyLayout body = activity.getBody();
 		if ((body == null) || !body.isVideoMode()) return false;
 		body.setMode(targetMode);
+		activity.setBarsHidden(false);
+		activity.post(() -> {
+			if (activity.getRuntimeHostMode().usesAutomotivePresentation())
+				MediaItemListView.focusActive(activity.getContext(), null);
+			TopBarController.refresh(activity);
+		});
 		return true;
 	}
 
