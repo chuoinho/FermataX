@@ -260,7 +260,7 @@ public class DashboardFragment extends MainActivityFragment
 		DashboardAdapter adapter = this.adapter;
 		if ((adapter != null) && adapter.isSmartTopV2Enabled()) return;
 		Runnable reset = () -> {
-			if ((list == dashboard) && isStableDashboardViewport(true)) {
+			if ((list == dashboard) && isStableDashboardViewport(true))) {
 				requestStableViewport(true);
 			}
 		};
@@ -741,6 +741,7 @@ public class DashboardFragment extends MainActivityFragment
 					} else {
 						refreshLastPlayedTopCard(generation);
 					}
+				}
 			}).onFailure(err -> refreshLastPlayedTopCard(generation));
 		}
 
