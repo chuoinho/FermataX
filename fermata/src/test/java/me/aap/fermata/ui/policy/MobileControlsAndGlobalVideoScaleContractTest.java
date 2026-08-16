@@ -14,11 +14,17 @@ public class MobileControlsAndGlobalVideoScaleContractTest {
 	public void phoneFullscreenNeverRevealsTheFloatingBackOverlay() throws Exception {
 		String chrome = repositorySource(
 				"modules/web/src/main/java/me/aap/fermata/addon/web/FermataChromeClient.java");
+		int fullScreen = chrome.indexOf("protected void setFullScreen(MainActivityDelegate a, boolean fullScreen)");
 		int touch = chrome.indexOf("protected boolean onTouchEvent(View v, MotionEvent event)");
 		int autoGuard = chrome.indexOf(
 				"if (!a.getRuntimeHostMode().usesAutomotivePresentation())", touch);
 		int phoneGone = chrome.indexOf("fb.setVisibility(GONE);", autoGuard);
 		int autoVisible = chrome.indexOf("fb.setVisibility(VISIBLE);", phoneGone);
+		assertTrue(fullScreen >= 0);
+		assertTrue(chrome.substring(fullScreen, touch)
+				.contains("a.getFloatingButton().setVisibility(GONE);"));
+		assertFalse(chrome.substring(fullScreen, touch)
+				.contains("fullScreen ? GONE : VISIBLE"));
 		assertTrue(touch >= 0);
 		assertTrue(autoGuard > touch);
 		assertTrue(phoneGone > autoGuard);
@@ -41,6 +47,9 @@ public class MobileControlsAndGlobalVideoScaleContractTest {
 			String xml = repositorySource("fermata/src/main/res/layout/" + layout);
 			int count = xml.split("me\\.aap\\.fermata\\.ui\\.view\\.AdaptiveTransportButton", -1).length - 1;
 			assertTrue(layout, count == 5);
+			String favorite = element(xml, "@+id/control_favorite");
+			assertTrue(favorite.contains("android:layout_width=\"@dimen/control_panel_edge_action_size\""));
+			assertTrue(favorite.contains("android:padding=\"@dimen/control_panel_edge_action_padding\""));
 		}
 		String button = fermataSource("ui/view/AdaptiveTransportButton.java");
 		assertTrue(button.contains("ControlPanelSizingPolicy.resolve(width, height)"));
@@ -59,6 +68,13 @@ public class MobileControlsAndGlobalVideoScaleContractTest {
 		assertTrue(settings.contains("o.pref = MediaLibPrefs.VIDEO_SCALE;"));
 		assertTrue(video.contains("item.getPrefs().getVideoScalePref()"));
 		assertFalse(itemBase.contains("getId() + \"#\" + MediaPrefs.VIDEO_SCALE.getName()"));
+	}
+
+	private static String element(String xml, String id) {
+		int at = xml.indexOf(id);
+		int start = xml.lastIndexOf('<', at);
+		int end = xml.indexOf("/>", at);
+		return xml.substring(start, end + 2);
 	}
 
 	private static String fermataSource(String relativePath) throws Exception {
