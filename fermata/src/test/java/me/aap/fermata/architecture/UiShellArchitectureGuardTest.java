@@ -20,7 +20,8 @@ public class UiShellArchitectureGuardTest {
 				"fermata/src/main/java/me/aap/fermata/ui/policy/TopBarPolicy.java",
 				"fermata/src/main/java/me/aap/fermata/ui/policy/BackNavigationPolicy.java",
 				"fermata/src/main/java/me/aap/fermata/ui/activity/NavigationCoordinator.java",
-				"fermata/src/main/java/me/aap/fermata/ui/policy/PlaybackPresentationReducer.java")) {
+				"fermata/src/main/java/me/aap/fermata/ui/policy/PlaybackPresentationReducer.java",
+				"fermata/src/main/java/me/aap/fermata/ui/policy/PlaybackLayoutPolicy.java")) {
 			String source = source(path);
 			assertFalse(path + " must not branch on automotive presentation",
 					source.contains("usesAutomotivePresentation()"));
@@ -33,7 +34,7 @@ public class UiShellArchitectureGuardTest {
 	public void surfaceRenderersDoNotMutateOtherShellSurfaces() throws IOException {
 		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/view/ControlPanelView.java",
 				"tool_bar_title", "tool_bar_back_button", "ChromePolicy.refreshTopBackButton",
-				"NavBarController.refresh");
+				"NavBarController.refresh", ".setMode(");
 		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/view/ControlPanelPresentationView.java",
 				"tool_bar_title", "tool_bar_back_button", "TopBarController", "NavBarController");
 		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/view/TopBarController.java",
@@ -44,6 +45,38 @@ public class UiShellArchitectureGuardTest {
 				"setActiveNavItemId(", "BackNavigationPolicy.leaveVideoMode", "setVideoMode(", "BodyLayout");
 		assertContainsNone("fermata/src/main/java/me/aap/fermata/ui/fragment/ToolBarMediator.java",
 				"setVideoMode(", "BodyLayout", "getNavBar().findViewById");
+	}
+
+	@Test
+	public void chromeAndNavigationIntentsUseVideoPresentationController() throws IOException {
+		String player = source("fermata/src/main/java/me/aap/fermata/ui/view/ControlPanelView.java");
+		assertTrue(player.contains("VideoPresentationController.enterFullscreenFromSplit(a)"));
+		assertFalse(player.contains(".setMode("));
+
+		String back = source("fermata/src/main/java/me/aap/fermata/ui/policy/BackNavigationPolicy.java");
+		assertTrue(back.contains("VideoPresentationController.leaveFullscreen(a,"));
+		assertFalse(back.contains(".setMode("));
+		assertFalse(back.contains("usesAutomotivePresentation()"));
+		assertFalse(back.contains("ChromePolicy.refreshTopBackButton"));
+		assertFalse(back.contains("MediaItemListView.focusActive"));
+
+		String dashboard = source("fermata/src/main/java/me/aap/fermata/ui/fragment/DashboardPlayableNavigator.java");
+		assertTrue(dashboard.contains("VideoPresentationController.enterFullscreen(activity)"));
+		assertFalse(dashboard.contains(".setMode("));
+		assertFalse(dashboard.contains("BodyLayout"));
+
+		String controller = source("fermata/src/main/java/me/aap/fermata/ui/view/VideoPresentationController.java");
+		assertTrue(controller.contains("body.setMode("));
+		assertTrue(controller.contains("enterFullscreenFromSplit"));
+		assertTrue(controller.contains("leaveFullscreen"));
+	}
+
+	@Test
+	public void routeVideoExitModeIsHostIndependent() throws IOException {
+		String policy = source("fermata/src/main/java/me/aap/fermata/ui/policy/PlaybackLayoutPolicy.java");
+		assertTrue(policy.contains("getModeAfterLeavingVideo(boolean ignoredCarActivity)"));
+		assertTrue(policy.contains("return BodyLayout.Mode.FRAME;"));
+		assertFalse(policy.contains("carActivity ? BodyLayout.Mode.FRAME : BodyLayout.Mode.BOTH"));
 	}
 
 	@Test
@@ -99,6 +132,29 @@ public class UiShellArchitectureGuardTest {
 		if (!violations.isEmpty()) {
 			fail("Addon code must use the common top-bar Back structure/visibility authority:\n" +
 					String.join("\n", violations));
+		}
+	}
+
+	@Test
+	public void addonCodeCannotOwnBodyLayoutTransitions() throws IOException {
+		Path root = projectRoot();
+		Path modules = root.resolve("modules");
+		List<String> violations = new ArrayList<>();
+		try (var files = Files.walk(modules)) {
+			for (Path file : files.filter(Files::isRegularFile)
+					.filter(path -> path.toString().endsWith(".java") ||
+							path.toString().endsWith(".kt")).toList()) {
+				List<String> lines = Files.readAllLines(file);
+				for (int i = 0; i < lines.size(); i++) {
+					String line = lines.get(i);
+					if (line.contains("BodyLayout") && (line.contains("setMode(") || line.contains(".Mode."))) {
+						violations.add(root.relativize(file) + ":" + (i + 1) + " " + line.trim());
+					}
+				}
+			}
+		}
+		if (!violations.isEmpty()) {
+			fail("Addon code must not own FRAME/BOTH/VIDEO transitions:\n" + String.join("\n", violations));
 		}
 	}
 
