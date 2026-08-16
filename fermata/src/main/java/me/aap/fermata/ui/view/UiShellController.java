@@ -1,5 +1,6 @@
 package me.aap.fermata.ui.view;
 
+import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 
 /**
@@ -27,7 +28,13 @@ public final class UiShellController {
 	 */
 	public static void onConfigurationChanged(MainActivityDelegate activity) {
 		ControlPanelView panel = activity.getControlPanel();
-		if (panel != null) panel.post(panel::computeSize);
+		if (panel != null) {
+			panel.post(() -> {
+				panel.computeSize();
+				ControlPanelSeekView seek = panel.findViewById(R.id.seek_bar);
+				if (seek != null) seek.reflowTransportGeometry();
+			});
+		}
 		TopBarController.refresh(activity);
 		NavBarController.refresh(activity);
 	}
