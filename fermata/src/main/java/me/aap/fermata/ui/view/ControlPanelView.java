@@ -110,10 +110,17 @@ public class ControlPanelView extends ConstraintLayout
 
 		ViewGroup g = findViewById(R.id.show_hide_bars);
 		showHideBars = (ImageView) g.getChildAt(0);
-		bindBackControl(g);
+		View seekTime = findViewById(R.id.seek_time);
+		if (isAutoUi(a)) {
+			bindBackControl(g);
+			bindBackControl(seekTime);
+		} else {
+			disableBackControl(g);
+			disableBackControl(seekTime);
+			showHideBars.setVisibility(GONE);
+		}
 		showHideBars.setClickable(false);
 		showHideBars.setFocusable(false);
-		bindBackControl(findViewById(R.id.seek_time));
 		g = findViewById(R.id.control_menu_button);
 		g.setOnClickListener(this::showMenu);
 		favoriteController = new PlayerFavoriteButtonController(a, findViewById(R.id.control_favorite));
@@ -124,6 +131,13 @@ public class ControlPanelView extends ConstraintLayout
 		v.setClickable(true);
 		v.setOnClickListener(this::backOrShowHideBars);
 		v.setOnTouchListener(this::backOrShowHideBarsTouch);
+	}
+
+	private static void disableBackControl(View v) {
+		v.setClickable(false);
+		v.setFocusable(false);
+		v.setOnClickListener(null);
+		v.setOnTouchListener(null);
 	}
 
 	@Nullable
@@ -535,12 +549,7 @@ public class ControlPanelView extends ConstraintLayout
 
 	private void backOrShowHideBars(View v) {
 		MainActivityDelegate a = getActivity();
-		if (isAutoUi(a)) {
-			performAutoPlayerBack(a);
-		} else {
-			a.setBarsHidden(!a.isBarsHidden());
-			setShowHideBarsIcon(a);
-		}
+		if (isAutoUi(a)) performAutoPlayerBack(a);
 	}
 
 	private boolean backOrShowHideBarsTouch(View v, MotionEvent e) {
@@ -654,9 +663,14 @@ public class ControlPanelView extends ConstraintLayout
 	}
 
 	private void setShowHideBarsIcon(MainActivityDelegate a) {
-		a.post(() -> showHideBars.setImageResource(
-				isAutoUi(a) ? me.aap.utils.R.drawable.back :
-						a.isBarsHidden() ? R.drawable.expand : me.aap.utils.R.drawable.collapse));
+		a.post(() -> {
+			if (!isAutoUi(a)) {
+				showHideBars.setVisibility(GONE);
+				return;
+			}
+			showHideBars.setVisibility(VISIBLE);
+			showHideBars.setImageResource(me.aap.utils.R.drawable.back);
+		});
 	}
 
 	private static boolean isAutoUi(MainActivityDelegate a) {
@@ -720,7 +734,7 @@ public class ControlPanelView extends ConstraintLayout
 			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
 			if (eng == null) return;
 			AudioStreamInfo ai = eng.getCurrentAudioStreamInfo();
-			List<AudioStreamInfo> streams = eng.getAudioStreamInfo();
+			List<AudioStreamInfo> streams = engine.getAudioStreamInfo();
 			b.setSelectionHandler(this::audioStreamSelected);
 
 			for (int i = 0; i < streams.size(); i++) {
