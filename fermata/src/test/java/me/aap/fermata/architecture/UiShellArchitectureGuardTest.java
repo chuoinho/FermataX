@@ -152,12 +152,30 @@ public class UiShellArchitectureGuardTest {
 					if (line.contains("BodyLayout") && (line.contains("setMode(") || line.contains(".Mode."))) {
 						violations.add(root.relativize(file) + ":" + (i + 1) + " " + line.trim());
 					}
-				}
 			}
 		}
 		if (!violations.isEmpty()) {
 			fail("Addon code must not own FRAME/BOTH/VIDEO transitions:\n" + String.join("\n", violations));
 		}
+	}
+
+	@Test
+	public void configurationChangesReflowShellAndYoutubeFullscreenGeometry() throws IOException {
+		String activity = source("fermata/src/main/java/me/aap/fermata/ui/activity/MainActivity.java");
+		assertTrue(activity.contains("public void onConfigurationChanged(@NonNull Configuration newConfig)"));
+		assertTrue(activity.contains("getActivityDelegate().onSuccess(UiShellController::onConfigurationChanged)"));
+
+		String shell = source("fermata/src/main/java/me/aap/fermata/ui/view/UiShellController.java");
+		assertTrue(shell.contains("public static void onConfigurationChanged(MainActivityDelegate activity)"));
+		assertTrue(shell.contains("panel.post(panel::computeSize)"));
+
+		String youtube = source("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeVideoView.java");
+		assertTrue(youtube.contains("protected void onConfigurationChanged(Configuration newConfig)"));
+		assertTrue(youtube.contains("post(this::reflowFullscreenContent)"));
+		assertTrue(youtube.contains("params.width = MATCH_PARENT"));
+		assertTrue(youtube.contains("params.height = MATCH_PARENT"));
+		assertTrue(youtube.contains("child.forceLayout()"));
+		assertTrue(youtube.contains("child.requestLayout()"));
 	}
 
 	@Test
