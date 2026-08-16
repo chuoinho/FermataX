@@ -221,6 +221,10 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 
 	@Override
 	public String getPreferenceKey(Pref<?> key) {
+		// Video scaling is a presentation preference, not media identity. Keep one library-level
+		// key so TV channels, local videos and native-backed addon items all retain the same scale
+		// when playback moves to a different item. Legacy per-item VIDEO_SCALE keys are ignored.
+		if (MediaPrefs.VIDEO_SCALE.getName().equals(key.getName())) return key.getName();
 		return getId() + "#" + key.getName();
 	}
 
