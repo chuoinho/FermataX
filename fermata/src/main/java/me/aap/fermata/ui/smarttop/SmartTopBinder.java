@@ -107,6 +107,10 @@ public final class SmartTopBinder {
 		for (ImageButton button : buttons) clearAction(button);
 		List<SmartTopAction> actions = editMode ? List.of() : state.actions();
 		for (SmartTopAction action : actions) {
+			if (isLabeled(action)) {
+				bindLabeledAction(views.labeledAction(), views.root(), action, state);
+				continue;
+			}
 			ImageButton button = actionSlot(buttons, action);
 			if (button != null) bindAction(button, views.root(), action, state);
 		}
@@ -116,7 +120,7 @@ public final class SmartTopBinder {
 	private static ImageButton actionSlot(List<ImageButton> buttons, SmartTopAction action) {
 		if (buttons.size() < 5) return null;
 		return switch (action) {
-			case PLAY, PLAY_PAUSE, OPEN_ADDONS, RETRY -> buttons.get(1);
+			case PLAY, PLAY_PAUSE -> buttons.get(1);
 			case OPEN_CONTEXT, HISTORY -> buttons.get(3);
 			case FAVORITE -> buttons.get(4);
 			default -> null;
