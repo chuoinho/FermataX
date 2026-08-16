@@ -222,7 +222,7 @@ public class FermataChromeClient extends WebChromeClient {
 
 	protected void setFullScreen(MainActivityDelegate a, boolean fullScreen) {
 		a.setVideoMode(fullScreen, null);
-		a.getFloatingButton().setVisibility(fullScreen ? GONE : VISIBLE);
+		a.getFloatingButton().setVisibility(GONE);
 	}
 
 	public boolean canEnterFullScreen() {
