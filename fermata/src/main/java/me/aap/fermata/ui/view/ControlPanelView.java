@@ -44,7 +44,6 @@ import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.fermata.ui.policy.ChromePolicy;
 import me.aap.fermata.ui.policy.PlaybackPresentationOwner.Token;
 import me.aap.fermata.ui.policy.PlaybackPresentationReducer.State;
 import me.aap.fermata.ui.policy.PlaybackUiPolicy;
@@ -393,14 +392,10 @@ public class ControlPanelView extends ConstraintLayout
 
 	public boolean onTouch(@Nullable VideoView video) {
 		MainActivityDelegate a = getActivity();
-		BodyLayout b = a.getBody();
 		View info = (video != null) ? video.getVideoInfoView() : null;
 		if (info != null) info.setVisibility(GONE);
 
-		if (b.getMode() == BodyLayout.Mode.BOTH) {
-			b.setMode(BodyLayout.Mode.VIDEO);
-			return true;
-		}
+		if (VideoPresentationController.enterFullscreenFromSplit(a)) return true;
 
 		int delay = getTouchDelay();
 		if (delay == 0) return false;
@@ -638,11 +633,7 @@ public class ControlPanelView extends ConstraintLayout
 		a.getFloatingButton().setVisibility(state.videoMode() || isAutoUi(a) ? GONE : VISIBLE);
 		a.setBarsHidden(state.barsHidden());
 		if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(state.barsHidden());
-		if (!state.barsHidden()) {
-			presentationView.updateVideoTitle(a);
-			ChromePolicy.refreshTopBackButton(a);
-			a.post(() -> presentationView.updateVideoTitle(a));
-		}
+		if (!state.barsHidden()) presentationView.updateVideoTitle(a);
 		setShowHideBarsIcon(a);
 		playbackTimerController.refresh(a);
 	}

@@ -52,6 +52,7 @@ import me.aap.utils.ui.view.FloatingButton;
 public class FermataChromeClient extends WebChromeClient {
 	private final FermataWebView web;
 	private final ViewGroup fullScreenView;
+	private final WebVideoScaleController videoScale;
 	private View customView;
 	private CustomViewCallback customViewCallback;
 	private Promise<Void> fullScreenReq;
@@ -66,6 +67,7 @@ public class FermataChromeClient extends WebChromeClient {
 			DiagnosticsObserver diagnosticsObserver) {
 		this.web = web;
 		this.fullScreenView = fullScreenView;
+		videoScale = new WebVideoScaleController(web);
 		this.diagnosticsObserver = (diagnosticsObserver == null) ?
 				FermataWebClient.diagnosticsObserver() : diagnosticsObserver;
 	}
@@ -146,6 +148,7 @@ public class FermataChromeClient extends WebChromeClient {
 		customViewCallback = callback;
 		addCustomView(view);
 		setFullScreen(a, true);
+		videoScale.attach();
 		diagnosticsObserver.onCustomView(CustomViewEvent.ATTACHED,
 				customViewSnapshot(view, a));
 		view.postDelayed(() -> {
@@ -171,6 +174,7 @@ public class FermataChromeClient extends WebChromeClient {
 		if (a == null) a = getLiveActivity(web.getContext());
 		diagnosticsObserver.onCustomView(CustomViewEvent.DETACH_REQUESTED,
 				customViewSnapshot(customView, a));
+		videoScale.detach();
 		removeCustomView(customView);
 		getWebView().setVisibility(VISIBLE);
 		if (a != null) setFullScreen(a, false);
