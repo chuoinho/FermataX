@@ -59,6 +59,35 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./gradlew testAutoDebugUnitTest --no-daemon --no-parallel --stacktrace
 
+      - name: Surface failing Auto tests
+        if: ${{ failure() && !cancelled() }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          found = False
+          for report in Path('.').glob('**/build/test-results/testAutoDebugUnitTest/TEST-*.xml'):
+              try:
+                  root = ET.parse(report).getroot()
+              except Exception:
+                  continue
+              for case in root.findall('testcase'):
+                  failure = case.find('failure')
+                  error = case.find('error')
+                  node = failure if failure is not None else error
+                  if node is None:
+                      continue
+                  found = True
+                  name = case.attrib.get('name', '<unknown>')
+                  cls = case.attrib.get('classname', root.attrib.get('name', '<unknown>'))
+                  message = (node.attrib.get('message') or (node.text or '')).strip()
+                  message = ' '.join(message.split())[:1500]
+                  print(f'::error file={report}::{cls}.{name}: {message}')
+          if not found:
+              print('::error::.Auto unit suite failed but no failing XML testcase was found')
+          PY
+
       - name: Architecture boundary guards
         if: ${{ !cancelled() }}
         run: >-
