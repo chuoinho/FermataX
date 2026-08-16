@@ -81,7 +81,8 @@ public class UiRuntimeRegressionContractTest {
 	}
 
 	private static String source(String relativePath) throws Exception {
-		return Files.readString(repositoryRoot().resolve(relativePath), StandardCharsets.UTF_8);
+		return new String(Files.readAllBytes(repositoryRoot().resolve(relativePath)),
+				StandardCharsets.UTF_8);
 	}
 
 	private static String resource(String relativePath) throws Exception {
