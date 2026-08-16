@@ -49,6 +49,7 @@ public class BodyLayout extends SplitLayout
 	private FutureSupplier<?> startingPlayback = completedVoid();
 	private FutureSupplier<?> playbackLoading = completedVoid();
 	private final PostLayoutVideoShowGate videoShowAfterLayout = new PostLayoutVideoShowGate();
+	private long playbackStartGeneration;
 
 	public BodyLayout(@NonNull Context ctx, @Nullable AttributeSet attrs) {
 		super(ctx, attrs);
@@ -244,19 +245,49 @@ public class BodyLayout extends SplitLayout
 		Mode originalMode = getMode();
 		Mode requestedMode = PlaybackLayoutPolicy.getModeOnPlayRequest(
 				originalMode, i, customEngineProvider);
+		long request = ++playbackStartGeneration;
 		if (requestedMode != originalMode) setMode(requestedMode);
+		awaitPlaybackViewport(i, originalMode, requestedMode, customEngineProvider, request);
+	}
 
-		if (i.isVideo() && !customEngineProvider && !getVideoView().isSurfaceCreated()) {
-			getVideoView().onSurfaceCreated(() ->
-					startPlaybackRequest(i, originalMode, requestedMode));
+	private void awaitPlaybackViewport(MediaLib.PlayableItem i, Mode originalMode,
+			Mode requestedMode, boolean customEngineProvider, long request) {
+		if (request != playbackStartGeneration) return;
+		if (requestedMode != originalMode) {
+			VideoView video = getVideoView();
+			ViewTreeObserver observer = video.getViewTreeObserver();
+			if (observer.isAlive()) {
+				observer.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+					@Override
+					public boolean onPreDraw() {
+						ViewTreeObserver current = video.getViewTreeObserver();
+						if (current.isAlive()) current.removeOnPreDrawListener(this);
+						awaitPlaybackSurface(i, originalMode, requestedMode,
+								customEngineProvider, request);
+						return true;
+					}
+				});
+				return;
+			}
+		}
+		awaitPlaybackSurface(i, originalMode, requestedMode, customEngineProvider, request);
+	}
+
+	private void awaitPlaybackSurface(MediaLib.PlayableItem i, Mode originalMode,
+			Mode requestedMode, boolean customEngineProvider, long request) {
+		if (request != playbackStartGeneration) return;
+		VideoView video = getVideoView();
+		if (i.isVideo() && !customEngineProvider && !video.isSurfaceCreated()) {
+			video.onSurfaceCreated(() ->
+					startPlaybackRequest(i, originalMode, requestedMode, request));
 			return;
 		}
-
-		startPlaybackRequest(i, originalMode, requestedMode);
+		startPlaybackRequest(i, originalMode, requestedMode, request);
 	}
 
 	private void startPlaybackRequest(MediaLib.PlayableItem i, Mode originalMode,
-			Mode requestedMode) {
+			Mode requestedMode, long request) {
+		if (request != playbackStartGeneration) return;
 		MainActivityDelegate a = getActivity();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		MediaLib.PlayableItem cur = b.getCurrentItem();
