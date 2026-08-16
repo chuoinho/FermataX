@@ -20,4 +20,15 @@ public final class UiShellController {
 		TopBarController.refresh(activity);
 		NavBarController.refresh(activity);
 	}
+
+	/**
+	 * MainActivity handles orientation/configuration changes in place, so shell surfaces that cache
+	 * explicit resource-derived dimensions must recompute them instead of waiting for recreation.
+	 */
+	public static void onConfigurationChanged(MainActivityDelegate activity) {
+		ControlPanelView panel = activity.getControlPanel();
+		if (panel != null) panel.post(panel::computeSize);
+		TopBarController.refresh(activity);
+		NavBarController.refresh(activity);
+	}
 }
