@@ -28,13 +28,17 @@ public class FloatingButtonMediator implements BackMenu {
 	@Override
 	public void enable(FloatingButton fb, ActivityFragment f) {
 		BackMenu.super.enable(fb, f);
-		if (BuildConfig.AUTO) fb.setVisibility(View.GONE);
+		updateVisibility(fb, MainActivityDelegate.get(fb.getContext()), f);
 	}
 
 	@Override
 	public void onActivityEvent(FloatingButton fb, me.aap.utils.ui.activity.ActivityDelegate a, long e) {
 		BackMenu.super.onActivityEvent(fb, a, e);
-		if (BuildConfig.AUTO) fb.setVisibility(View.GONE);
+		if (a instanceof MainActivityDelegate main) {
+			updateVisibility(fb, main, main.getActiveFragment());
+		} else if (BuildConfig.AUTO) {
+			fb.setVisibility(View.GONE);
+		}
 	}
 
 	@Override
@@ -89,6 +93,18 @@ public class FloatingButtonMediator implements BackMenu {
 		}
 
 		return null;
+	}
+
+	private static void updateVisibility(FloatingButton fb, MainActivityDelegate a,
+			@Nullable ActivityFragment f) {
+		fb.setVisibility(shouldHide(a, f) ? View.GONE : View.VISIBLE);
+	}
+
+	static boolean shouldHide(MainActivityDelegate a, @Nullable ActivityFragment f) {
+		if (BuildConfig.AUTO || a.isVideoMode()) return true;
+		if (f == null) return false;
+		int id = f.getFragmentId();
+		return (id == R.id.youtube_fragment) || (id == R.id.web_browser_fragment);
 	}
 
 	private boolean isAddFolderEnabled(ActivityFragment f) {
