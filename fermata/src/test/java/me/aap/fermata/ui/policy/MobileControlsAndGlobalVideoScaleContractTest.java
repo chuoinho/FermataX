@@ -26,6 +26,29 @@ public class MobileControlsAndGlobalVideoScaleContractTest {
 	}
 
 	@Test
+	public void phoneWebAndYoutubeNeverOwnTheFloatingBackButton() throws Exception {
+		String mediator = fermataSource("ui/fragment/FloatingButtonMediator.java");
+		assertTrue(mediator.contains("updateVisibility(fb, MainActivityDelegate.get(fb.getContext()), f)"));
+		assertTrue(mediator.contains("if (BuildConfig.AUTO || a.isVideoMode()) return true;"));
+		assertTrue(mediator.contains("id == R.id.youtube_fragment"));
+		assertTrue(mediator.contains("id == R.id.web_browser_fragment"));
+		assertTrue(mediator.contains("fb.setVisibility(shouldHide(a, f) ? View.GONE : View.VISIBLE)"));
+	}
+
+	@Test
+	public void transportButtonsUseMeasuredCellGeometryInsteadOfFixedVisualSizing() throws Exception {
+		for (String layout : new String[]{"control_panel_view.xml", "control_panel_view2.xml"}) {
+			String xml = repositorySource("fermata/src/main/res/layout/" + layout);
+			int count = xml.split("me\\.aap\\.fermata\\.ui\\.view\\.AdaptiveTransportButton", -1).length - 1;
+			assertTrue(layout, count == 5);
+		}
+		String button = fermataSource("ui/view/AdaptiveTransportButton.java");
+		assertTrue(button.contains("ControlPanelSizingPolicy.resolve(width, height)"));
+		assertTrue(button.contains("new InsetDrawable(background, insetX, insetY, insetX, insetY)"));
+		assertFalse(button.contains("16dp"));
+	}
+
+	@Test
 	public void videoScaleUsesOneLibraryPreferenceKeyAcrossPlayableItems() throws Exception {
 		String itemBase = fermataSource("media/lib/ItemBase.java");
 		String settings = fermataSource("ui/fragment/MediaEnginePrefsBuilder.java");
