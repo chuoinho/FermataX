@@ -35,8 +35,10 @@ public class NavBarAuthorityContractTest {
 		String coordinator = coreSource("ui/activity/NavigationCoordinator.java");
 		assertTrue(coordinator.contains("activity.setActiveNavItemId(destinationId)"));
 		assertTrue(coordinator.contains("activity.showFragmentWhenReady(destinationId)"));
-		assertTrue(coordinator.contains("activity.setActiveNavItemId(routeId)"));
-		assertTrue(coordinator.contains("topLevelDestination"));
+		assertTrue(coordinator.contains(
+				"resolveRouteSelection(current, routeId, topLevelDestination)"));
+		assertTrue(coordinator.contains("activity.setActiveNavItemId(selected)"));
+		assertTrue(coordinator.contains("topLevelDestination ? routeId : currentSelection"));
 		assertTrue(coordinator.contains("BackNavigationPolicy.handleNavReselection"));
 	}
 
