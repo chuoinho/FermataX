@@ -28,6 +28,7 @@ public class TopBarAuthorityContractTest {
 		assertTrue(mediator.contains("TopBarController.refresh(activity, f);"));
 		assertFalse(mediator.contains(
 				"tb.findViewById(me.aap.utils.R.id.tool_bar_back_button);"));
+		assertFalse(mediator.contains("BackTitleFilter.super.onActivityEvent"));
 	}
 
 	@Test
