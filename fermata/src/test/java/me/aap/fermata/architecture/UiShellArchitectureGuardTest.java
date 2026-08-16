@@ -47,7 +47,24 @@ public class UiShellArchitectureGuardTest {
 	}
 
 	@Test
-	public void addonCodeCannotDirectlyRewriteCanonicalBackVisibility() throws IOException {
+	public void everyFermataToolbarGetsCanonicalBackAfterMediatorBuild() throws IOException {
+		String toolbar = source("fermata/src/main/java/me/aap/fermata/ui/view/FermataToolBarView.java");
+		assertTrue(toolbar.contains("findViewById(me.aap.utils.R.id.tool_bar_back_button) == null"));
+		assertTrue(toolbar.contains("TopBarMediatorSupport.installBackButton(this, mediator)"));
+		assertTrue(toolbar.contains("TopBarController.refresh(MainActivityDelegate.get(getContext()), fragment)"));
+
+		String support = source("fermata/src/main/java/me/aap/fermata/ui/view/TopBarMediatorSupport.java");
+		assertTrue(support.contains("public static void installBackButton("));
+		assertTrue(support.contains("public static int getBackButtonSide("));
+		assertTrue(support.contains("MainActivityDelegate.get(toolBar.getContext()).getNavBar().isRight()"));
+
+		String web = source("modules/web/src/main/java/me/aap/fermata/addon/web/WebToolBarMediator.java");
+		assertTrue(web.contains("TopBarMediatorSupport.installBackButton(tb, this)"));
+		assertFalse(web.contains("private int getBackButtonSide("));
+	}
+
+	@Test
+	public void addonCodeCannotForkCanonicalBackStructureOrVisibility() throws IOException {
 		Path root = projectRoot();
 		Path modules = root.resolve("modules");
 		List<String> violations = new ArrayList<>();
@@ -58,14 +75,15 @@ public class UiShellArchitectureGuardTest {
 				List<String> lines = Files.readAllLines(file);
 				for (int i = 0; i < lines.size(); i++) {
 					String line = lines.get(i);
-					if (line.contains("tool_bar_back_button") && line.contains("setVisibility(")) {
+					if (!line.contains("tool_bar_back_button")) continue;
+					if (line.contains("setVisibility(") || line.contains("addButton(")) {
 						violations.add(root.relativize(file) + ":" + (i + 1) + " " + line.trim());
 					}
 				}
 			}
 		}
 		if (!violations.isEmpty()) {
-			fail("Addon code must not own canonical top-bar Back visibility:\n" +
+			fail("Addon code must use the common top-bar Back structure/visibility authority:\n" +
 					String.join("\n", violations));
 		}
 	}
