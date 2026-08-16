@@ -54,4 +54,21 @@ For every phase:
 7. Repeat audit/fix/validation until the phase acceptance criteria pass.
 8. Commit the phase separately.
 
-The overall goal is complete only when all acceptance criteria and scenario-matrix rows are covered and no legacy competing state writer remains.
+## Pre-device closure status
+
+The source/architecture phase has completed its automated closure loop. The validated source checkpoint is:
+
+- Branch: `agent/unify-ui-shell`
+- Source HEAD: `0d8300d00bcc8f852315dd78378be593c5491fd2`
+- GitHub Actions: CI #125 / run `31935440098`
+- Job: `95136479944`
+- Result: `success`
+- Gates passed: Mobile unit suite, Auto unit suite, Web addon UI-shell guard, TV addon UI-shell guard, UI-shell single-writer guard, architecture boundary guards, Mobile/Auto lint and PR whitespace check.
+
+The final production diff was audited for topbar, playerbar, navbar, video presentation and Web/YouTube/TV/Chat integration boundaries. `UI_SHELL_READINESS.md` records the detailed source/CI checklist and the remaining real-device matrix.
+
+A documentation-only closure commit containing this status must also pass the full CI workflow before device testing begins. Its exact final HEAD/run is recorded in PR #12 after that run completes; embedding a commit's own final SHA inside that same commit would necessarily create a different SHA.
+
+The overall goal is **not** complete until the real-device PHONE and AA/DHU/mirror matrix in `UI_SHELL_READINESS.md` passes. PR #12 must remain draft and unmerged until then.
+
+The overall goal is complete only when all acceptance criteria and scenario-matrix rows are covered, no legacy competing state writer remains, and the pending real-device matrix is confirmed.
