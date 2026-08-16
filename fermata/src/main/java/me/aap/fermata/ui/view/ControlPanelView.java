@@ -734,7 +734,7 @@ public class ControlPanelView extends ConstraintLayout
 			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
 			if (eng == null) return;
 			AudioStreamInfo ai = eng.getCurrentAudioStreamInfo();
-			List<AudioStreamInfo> streams = engine.getAudioStreamInfo();
+			List<AudioStreamInfo> streams = eng.getAudioStreamInfo();
 			b.setSelectionHandler(this::audioStreamSelected);
 
 			for (int i = 0; i < streams.size(); i++) {
