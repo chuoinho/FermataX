@@ -168,7 +168,15 @@ public class UiShellArchitectureGuardTest {
 
 		String shell = source("fermata/src/main/java/me/aap/fermata/ui/view/UiShellController.java");
 		assertTrue(shell.contains("public static void onConfigurationChanged(MainActivityDelegate activity)"));
-		assertTrue(shell.contains("panel.post(panel::computeSize)"));
+		assertTrue(shell.contains("ControlPanelSeekView.reflowAfterConfigurationChange(panel)"));
+
+		String player = source("fermata/src/main/java/me/aap/fermata/ui/view/ControlPanelSeekView.java");
+		assertTrue(player.contains("protected void onConfigurationChanged(Configuration newConfig)"));
+		assertTrue(player.contains("constraints = null;"));
+		assertTrue(player.contains("constraintsNoSeek = null;"));
+		assertTrue(player.contains("protected void onSizeChanged(int w, int h, int oldw, int oldh)"));
+		assertTrue(player.contains("ControlPanelGeometryPolicy.getTransportButtonSize"));
+		assertTrue(player.contains("post(this::reflowTransportGeometry)"));
 
 		String youtube = source("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeVideoView.java");
 		assertTrue(youtube.contains("protected void onConfigurationChanged(Configuration newConfig)"));
