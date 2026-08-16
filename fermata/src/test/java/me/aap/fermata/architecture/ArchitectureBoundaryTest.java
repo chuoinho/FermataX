@@ -1,5 +1,6 @@
 package me.aap.fermata.architecture;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -53,6 +54,45 @@ public class ArchitectureBoundaryTest {
 		List<String> forbidden = List.of("TvFragment", "YoutubeFragment", "WebBrowserFragment");
 		assertNoSourceReferences(root, root.resolve("fermata/src/main/java/me/aap/fermata/ui"), forbidden);
 		assertNoSourceReferences(root, root.resolve("fermata/src/auto/java/me/aap/fermata/ui"), forbidden);
+	}
+
+	@Test
+	public void webAddonUsesCommonUiShellAuthorities() throws IOException {
+		String fragment = source("modules/web/src/main/java/me/aap/fermata/addon/web/WebBrowserFragment.java");
+		String toolbar = source("modules/web/src/main/java/me/aap/fermata/addon/web/WebToolBarMediator.java");
+		String youtube = source("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeFragment.java");
+
+		assertTrue(fragment.contains("WebBackNavigationPolicy.resolve(fullScreen, v.canGoBack())"));
+		assertTrue(fragment.contains("case EXIT_FULLSCREEN -> v.exitFullScreenForBack()"));
+		assertTrue(fragment.contains("case WEB_HISTORY ->"));
+		assertTrue(toolbar.contains("MainActivityDelegate.get(v.getContext()).onBackPressed()"));
+		assertTrue(toolbar.contains("TopBarController.refresh(MainActivityDelegate.get(tb.getContext()), f)"));
+		assertTrue(toolbar.contains("TopBarController.refresh(MainActivityDelegate.get(tb.getContext()))"));
+		assertFalse(toolbar.contains("tool_bar_back_button).setVisibility"));
+		assertTrue(youtube.contains("TopBarPlaybackContext"));
+		assertTrue(youtube.contains("YoutubeToolbarPolicy.usePlaybackTitle("));
+		assertTrue(youtube.contains("TopBarController.refresh(a, f)"));
+		assertFalse(youtube.contains("tb.setTitle("));
+		assertFalse(youtube.contains("getToolBar().setTitle("));
+	}
+
+	@Test
+	public void tvAddonUsesCommonUiShellAuthorities() throws IOException {
+		String tv = source("modules/tv/src/main/java/me/aap/fermata/addon/tv/TvFragment.java");
+		String media = source("fermata/src/main/java/me/aap/fermata/ui/fragment/MediaLibFragment.java");
+
+		assertTrue(tv.contains("public class TvFragment extends MediaLibFragment"));
+		assertTrue(tv.contains("return me.aap.fermata.R.id.tv_fragment;"));
+		assertFalse(tv.contains("getToolBarMediator()"));
+		assertFalse(tv.contains("public boolean onBackPressed()"));
+		assertTrue(tv.contains("public void navBarItemReselected(int itemId)"));
+		assertTrue(tv.contains("getAdapter().setParent(getRootItem())"));
+		assertFalse(tv.contains("setVideoMode("));
+		assertFalse(tv.contains("BodyLayout"));
+		assertFalse(tv.contains("TopBarController"));
+		assertFalse(tv.contains("BackNavigationPolicy"));
+		assertTrue(media.contains("return ToolBarMediator.instance;"));
+		assertTrue(media.contains("if (BackNavigationPolicy.leaveVideoMode(ad)) return true;"));
 	}
 
 	@Test
@@ -127,6 +167,10 @@ public class ArchitectureBoundaryTest {
 		assertOrder(source,
 				"private void setPlaybackState(PlaybackStateCompat state, @Nullable PlayableItem item,",
 				"updatePlaybackSnapshot(state, metadata, item)", "session.setPlaybackState(state)");
+	}
+
+	private static String source(String relativePath) throws IOException {
+		return new String(Files.readAllBytes(projectRoot().resolve(relativePath)), UTF_8);
 	}
 
 	private static void assertOrder(String source, String method, String publication,
