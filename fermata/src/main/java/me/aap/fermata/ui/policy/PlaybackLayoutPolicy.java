@@ -45,6 +45,17 @@ public final class PlaybackLayoutPolicy {
 		return currentMode == BodyLayout.Mode.FRAME ? BodyLayout.Mode.VIDEO : currentMode;
 	}
 
+	/**
+	 * A viewport preflight is speculative until the service accepts the play request. Rejected
+	 * requests restore the original layout, except when the already-current engine still requires
+	 * fullscreen video; that existing playback remains authoritative.
+	 */
+	public static BodyLayout.Mode getModeAfterRejectedPlayRequest(BodyLayout.Mode originalMode,
+			BodyLayout.Mode requestedMode, boolean currentVideoModeRequired) {
+		if (currentVideoModeRequired) return BodyLayout.Mode.VIDEO;
+		return (requestedMode != originalMode) ? originalMode : requestedMode;
+	}
+
 	public static BodyLayout.Mode getModeOnPlayableChanged(BodyLayout.Mode currentMode,
 																				 MediaLib.PlayableItem newItem,
 																				 MediaEngine eng) {
