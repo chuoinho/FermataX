@@ -100,7 +100,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 
 	@Override
 	public void onActivityEvent(ToolBarView view, ActivityDelegate a, long e) {
-		ToolBarView.Mediator.BackTitleFilter.super.onActivityEvent(view, a, e);
+		if (e == FRAGMENT_CHANGED) setFilterVisibility(view, false);
 
 		if ((e == FRAGMENT_CHANGED) || (e == FRAGMENT_CONTENT_CHANGED) || (e == MODE_CHANGED)) {
 			ActivityFragment f = a.getActiveFragment();
