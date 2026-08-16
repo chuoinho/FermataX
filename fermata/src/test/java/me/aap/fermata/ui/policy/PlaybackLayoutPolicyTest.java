@@ -92,9 +92,9 @@ public class PlaybackLayoutPolicyTest {
 	}
 
 	@Test
-	public void leavingVideoUsesFrameOnCarAndSplitOnPhone() {
+	public void routeVideoExitModeIsHostIndependent() {
 		assertEquals(FRAME, PlaybackLayoutPolicy.getModeAfterLeavingVideo(true));
-		assertEquals(BOTH, PlaybackLayoutPolicy.getModeAfterLeavingVideo(false));
+		assertEquals(FRAME, PlaybackLayoutPolicy.getModeAfterLeavingVideo(false));
 	}
 
 	@Test
