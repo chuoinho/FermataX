@@ -17,15 +17,30 @@ public class TopBarAuthorityContractTest {
 		assertTrue(controller.contains("TopBarPolicy.resolve("));
 		assertTrue(controller.contains("snapshot.getDisplayTitle()"));
 		assertTrue(controller.contains("ItemRoutePolicy.getPlaybackOwnerFragmentId(item)"));
+		assertTrue(controller.contains("fragment instanceof TopBarPlaybackContext context"));
+		assertTrue(controller.contains("back.getVisibility() != state.backVisibility()"));
+		assertTrue(controller.contains("!TextUtils.equals(title.getText(), state.title())"));
 		assertTrue(controller.contains("back.setVisibility(state.backVisibility())"));
 		assertTrue(controller.contains("title.setText(state.title())"));
 	}
 
 	@Test
+	public void structuralInstallerNeverResolvesTitleOrRouteBackVisibility() throws Exception {
+		String support = coreSource("ui/view/TopBarMediatorSupport.java");
+		assertTrue(support.contains("installBackTitle("));
+		assertTrue(support.contains("installBackTitleFilter("));
+		assertFalse(support.contains("title.setText("));
+		assertFalse(support.contains("back.setVisibility("));
+		assertFalse(support.contains("TopBarPolicy.resolve("));
+	}
+
+	@Test
 	public void mediaToolbarAppliesCommonControllerOnEnableAndLifecycleChanges() throws Exception {
 		String mediator = coreSource("ui/fragment/ToolBarMediator.java");
+		assertTrue(mediator.contains("TopBarMediatorSupport.installBackTitleFilter(tb, f, this)"));
 		assertTrue(mediator.contains("TopBarController.refresh(a, f);"));
 		assertTrue(mediator.contains("TopBarController.refresh(activity, f);"));
+		assertFalse(mediator.contains("BackTitleFilter.super.enable(tb, f)"));
 		assertFalse(mediator.contains(
 				"tb.findViewById(me.aap.utils.R.id.tool_bar_back_button);"));
 		assertFalse(mediator.contains("BackTitleFilter.super.onActivityEvent"));
