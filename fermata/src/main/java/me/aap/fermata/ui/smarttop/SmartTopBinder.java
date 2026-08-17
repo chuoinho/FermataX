@@ -105,7 +105,8 @@ public final class SmartTopBinder {
 		List<ImageButton> buttons = views.actionButtons();
 		clearLabeledAction(views.labeledAction());
 		for (ImageButton button : buttons) clearAction(button);
-		List<SmartTopAction> actions = editMode ? List.of() : state.actions();
+		List<SmartTopAction> actions = editMode ? List.of() :
+				SmartTopLayoutController.presentation(views.root(), state).visibleActions();
 		for (SmartTopAction action : actions) {
 			if (isLabeled(action)) {
 				bindLabeledAction(views.labeledAction(), views.root(), action, state);
@@ -350,7 +351,7 @@ public final class SmartTopBinder {
 	}
 
 	private static boolean isLabeled(SmartTopAction action) {
-		return (action == SmartTopAction.OPEN_ADDONS) || (action == SmartTopAction.RETRY);
+		return SmartTopPresentationPolicy.isLabeled(action);
 	}
 
 	private static boolean isPrimary(SmartTopAction action) {

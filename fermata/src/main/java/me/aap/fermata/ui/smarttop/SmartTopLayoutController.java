@@ -1,14 +1,18 @@
 package me.aap.fermata.ui.smarttop;
 
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.util.TypedValue;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.google.android.material.button.MaterialButton;
+
+import java.util.List;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.view.MinimumTouchTargetDelegate;
@@ -21,15 +25,18 @@ public final class SmartTopLayoutController {
 
 	public static void apply(View root, SmartTopViewState state, boolean automotive) {
 		SmartTopLayoutMode mode = state.layout();
-		boolean showContext = (mode != SmartTopLayoutMode.COMPACT) &&
+		float fontScale = root.getResources().getConfiguration().fontScale;
+		boolean quickRecentAvailable = (mode != SmartTopLayoutMode.COMPACT) &&
 				!state.quickRecent().isEmpty();
-		LayoutToken token = new LayoutToken(mode, automotive,
-				root.getResources().getConfiguration().fontScale, state.actions().size(), showContext);
+		SmartTopPresentationPolicy.Presentation presentation = SmartTopPresentationPolicy.resolve(
+				measuredWidthDp(root), fontScale, automotive, mode, state.actions(),
+				quickRecentAvailable, state.title().length());
+		boolean showContext = presentation.showQuickRecent();
+		LayoutToken token = new LayoutToken(mode, automotive, fontScale, presentation);
 		if (token.equals(root.getTag(R.id.dashboard_smart_layout_token))) return;
 		int padding = px(root, cardPaddingDp(mode, automotive));
 		root.setPadding(padding, padding, padding, padding);
-		int height = px(root, SmartTopLayoutPolicy.cardHeightDp(mode,
-				root.getResources().getConfiguration().fontScale));
+		int height = px(root, SmartTopLayoutPolicy.cardHeightDp(mode, fontScale));
 		ViewGroup.LayoutParams rootParams = root.getLayoutParams();
 		if ((rootParams != null) && (rootParams.height != height)) {
 			rootParams.height = height;
@@ -99,9 +106,10 @@ public final class SmartTopLayoutController {
 
 		MaterialButton label = root.findViewById(R.id.dashboard_action_label);
 		label.setMaxWidth(px(root, labeledActionMaxWidthDp(automotive)));
+		applyActionGeometry(root, label, presentation, automotive);
 
 		if (root instanceof ViewGroup group) {
-			int minTargetDp = automotive ? mode.automotiveTouchTargetDp() :
+			int minTargetDp = automotive ? presentation.actionCellDp() :
 					SmartTopLayoutPolicy.MIN_CONTROL_DP;
 			MinimumTouchTargetDelegate.install(group, minTargetDp,
 					label,
@@ -112,6 +120,86 @@ public final class SmartTopLayoutController {
 					root.findViewById(R.id.dashboard_action_back_to_list));
 		}
 		root.setTag(R.id.dashboard_smart_layout_token, token);
+	}
+
+	static SmartTopPresentationPolicy.Presentation presentation(View root,
+			SmartTopViewState state) {
+		Object tag = root.getTag(R.id.dashboard_smart_layout_token);
+		if (tag instanceof LayoutToken token) return token.presentation();
+		boolean quickRecentAvailable = (state.layout() != SmartTopLayoutMode.COMPACT) &&
+				!state.quickRecent().isEmpty();
+		return SmartTopPresentationPolicy.resolve(measuredWidthDp(root),
+				root.getResources().getConfiguration().fontScale, false, state.layout(),
+				state.actions(), quickRecentAvailable, state.title().length());
+	}
+
+	private static void applyActionGeometry(View root, MaterialButton label,
+			SmartTopPresentationPolicy.Presentation presentation, boolean automotive) {
+		if (!automotive) return;
+		int cell = px(root, presentation.actionCellDp());
+		int gap = px(root, presentation.actionGapDp());
+		View actions = root.findViewById(R.id.dashboard_item_actions);
+		ViewGroup.LayoutParams containerParams = actions.getLayoutParams();
+		if ((containerParams != null) && (containerParams.height != cell)) {
+			containerParams.height = cell;
+			actions.setLayoutParams(containerParams);
+		}
+
+		List<SmartTopAction> visible = presentation.visibleActions();
+		boolean labelActive = false;
+		for (SmartTopAction action : visible) {
+			if (SmartTopPresentationPolicy.isLabeled(action)) {
+				labelActive = true;
+				break;
+			}
+		}
+		LinearLayout.LayoutParams labelParams = (LinearLayout.LayoutParams) label.getLayoutParams();
+		labelParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+		labelParams.height = cell;
+		labelParams.setMarginEnd(labelActive && (SmartTopPresentationPolicy.componentCount(visible) > 1) ?
+				gap : 0);
+		label.setLayoutParams(labelParams);
+		label.setMinimumWidth(cell);
+		label.setMinimumHeight(cell);
+		label.setIconSize(px(root, presentation.secondaryGlyphDp()));
+
+		List<ImageButton> buttons = List.of(
+				root.findViewById(R.id.dashboard_action_prev),
+				root.findViewById(R.id.dashboard_action_play_pause),
+				root.findViewById(R.id.dashboard_action_next),
+				root.findViewById(R.id.dashboard_action_favorite),
+				root.findViewById(R.id.dashboard_action_back_to_list));
+		for (int slot = 0; slot < buttons.size(); slot++) {
+			ImageButton button = buttons.get(slot);
+			SmartTopAction action = SmartTopPresentationPolicy.actionAtSlot(visible, slot);
+			LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) button.getLayoutParams();
+			params.width = (action == null) ? 0 : cell;
+			params.height = cell;
+			params.setMarginEnd((action != null) && hasLaterSlot(visible, slot) ? gap : 0);
+			button.setLayoutParams(params);
+			if (action != null) {
+				int glyphDp = ((action == SmartTopAction.PLAY) ||
+						(action == SmartTopAction.PLAY_PAUSE)) ? presentation.primaryGlyphDp() :
+						presentation.secondaryGlyphDp();
+				int inset = Math.max(0, (cell - px(root, glyphDp)) / 2);
+				button.setPadding(inset, inset, inset, inset);
+			}
+		}
+	}
+
+	private static boolean hasLaterSlot(List<SmartTopAction> actions, int slot) {
+		for (SmartTopAction action : actions) {
+			if (SmartTopPresentationPolicy.slotIndex(action) > slot) return true;
+		}
+		return false;
+	}
+
+	static float measuredWidthDp(View root) {
+		float density = Math.max(0.1F, root.getResources().getDisplayMetrics().density);
+		int width = root.getWidth();
+		if ((width <= 0) && (root.getParent() instanceof View parent)) width = parent.getWidth();
+		return (width > 0) ? width / density :
+				root.getResources().getConfiguration().screenWidthDp;
 	}
 
 	static int artworkSizeDp(SmartTopLayoutMode mode, boolean automotive) {
@@ -169,6 +257,6 @@ public final class SmartTopLayoutController {
 	}
 
 	private record LayoutToken(SmartTopLayoutMode layout, boolean automotive,
-			float fontScale, int actionCount, boolean showContext) {
+			float fontScale, SmartTopPresentationPolicy.Presentation presentation) {
 	}
 }
