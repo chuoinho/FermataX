@@ -231,8 +231,8 @@ public final class SmartTopBinder {
 
 	private void bindRecent(Views views, SmartTopViewState state, boolean editMode) {
 		boolean hasContent = !state.quickRecent().isEmpty() && !views.recentItems().isEmpty();
-		boolean showPanel = !editMode && (state.layout() != SmartTopLayoutMode.COMPACT) &&
-				hasContent;
+		boolean showPanel = !editMode && hasContent &&
+				SmartTopLayoutController.presentation(views.root(), state).showQuickRecent();
 		views.recentPanel().setVisibility(showPanel ? View.VISIBLE : View.GONE);
 		views.recentPanel().setOnClickListener(showPanel ? ignored -> handler.onAllRecent() : null);
 		views.recentPanel().setClickable(showPanel);
