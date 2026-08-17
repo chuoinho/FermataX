@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.Test;
 
@@ -39,11 +40,11 @@ public class YoutubeRuntimeQaContractTest {
 	}
 
 	private static String read(String path) throws Exception {
-		return Files.readString(repositoryRoot().resolve(path), UTF_8);
+		return new String(Files.readAllBytes(repositoryRoot().resolve(path)), UTF_8);
 	}
 
 	private static Path repositoryRoot() {
-		Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath();
+		Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
 		for (int i = 0; (i < 5) && (current != null); i++, current = current.getParent()) {
 			if (Files.isDirectory(current.resolve("modules/web/src/main"))) return current;
 		}
