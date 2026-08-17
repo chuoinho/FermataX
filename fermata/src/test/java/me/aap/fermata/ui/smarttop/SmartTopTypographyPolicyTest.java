@@ -49,7 +49,8 @@ public class SmartTopTypographyPolicyTest {
 		assertTrue(controller.contains("view.setMaxLines(1)"));
 		assertTrue(controller.contains("view.setIncludeFontPadding(false)"));
 		assertTrue(controller.contains("view.setMinHeight(px(root, minHeightDp))"));
-		assertTrue(controller.contains("SmartTopLayoutPolicy.showQuickRecent("));
+		assertTrue(controller.contains("float fontScale = root.getResources().getConfiguration().fontScale;"));
+		assertTrue(controller.contains("SmartTopPresentationPolicy.resolve("));
 		assertTrue(binder.contains("subtitle().setVisibility(state.subtitle().length() == 0 ? View.INVISIBLE"));
 	}
 
