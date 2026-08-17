@@ -51,9 +51,25 @@ jobs:
           ./gradlew --version
 
       - name: Mobile unit suite
+        id: mobile
+        continue-on-error: true
         run: >-
           ./gradlew testMobileDebugUnitTest :whisper:testMobileDebugUnitTest
           --no-daemon --no-parallel --stacktrace
+
+      - name: Upload Mobile unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smarttop-mobile-test-results
+          if-no-files-found: warn
+          path: |
+            **/build/test-results/testMobileDebugUnitTest/**
+            **/build/reports/tests/testMobileDebugUnitTest/**
+
+      - name: Fail when Mobile suite failed
+        if: steps.mobile.outcome == 'failure'
+        run: exit 1
 
       - name: Auto unit suite
         if: ${{ !cancelled() }}
