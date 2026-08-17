@@ -27,7 +27,7 @@ public final class SmartTopLayoutController {
 		SmartTopLayoutMode mode = state.layout();
 		float fontScale = root.getResources().getConfiguration().fontScale;
 		float widthDp = measuredWidthDp(root);
-		boolean quickRecentAvailable = quickRecentAvailable(state, widthDp, fontScale);
+		boolean quickRecentAvailable = quickRecentAvailable(state);
 		SmartTopPresentationPolicy.Presentation presentation = SmartTopPresentationPolicy.resolve(
 				widthDp, fontScale, automotive, mode, state.actions(),
 				quickRecentAvailable, state.title().length());
@@ -126,15 +126,13 @@ public final class SmartTopLayoutController {
 		if (tag instanceof LayoutToken token) return token.presentation();
 		float widthDp = measuredWidthDp(root);
 		float fontScale = root.getResources().getConfiguration().fontScale;
-		boolean quickRecentAvailable = quickRecentAvailable(state, widthDp, fontScale);
+		boolean quickRecentAvailable = quickRecentAvailable(state);
 		return SmartTopPresentationPolicy.resolve(widthDp, fontScale, false, state.layout(),
 				state.actions(), quickRecentAvailable, state.title().length());
 	}
 
-	private static boolean quickRecentAvailable(SmartTopViewState state, float widthDp,
-			float fontScale) {
-		return !state.quickRecent().isEmpty() && SmartTopLayoutPolicy.showQuickRecent(
-				state.layout(), widthDp, fontScale, state.actions().size(), state.title().length());
+	private static boolean quickRecentAvailable(SmartTopViewState state) {
+		return !state.quickRecent().isEmpty();
 	}
 
 	private static void applyTextRole(View root, TextView view, float textSizeSp,

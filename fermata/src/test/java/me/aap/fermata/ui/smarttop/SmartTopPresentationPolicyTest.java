@@ -71,6 +71,14 @@ public class SmartTopPresentationPolicyTest {
 	}
 
 	@Test
+	public void accessibleWideBudgetKeepsQuickRecentWithoutLegacyPreGate() {
+		SmartTopPresentationPolicy.Presentation presentation = SmartTopPresentationPolicy.resolve(
+				948F, 1.5F, true, SmartTopLayoutMode.STANDARD, CURRENT, true, 24);
+		assertTrue(presentation.showQuickRecent());
+		assertEquals(CURRENT, presentation.visibleActions());
+	}
+
+	@Test
 	public void narrowBudgetDropsFavoriteThenContextButNeverTransport() {
 		SmartTopPresentationPolicy.Presentation presentation = SmartTopPresentationPolicy.resolve(
 				600F, 1F, true, SmartTopLayoutMode.STANDARD, CURRENT, true, 24);
@@ -94,6 +102,15 @@ public class SmartTopPresentationPolicyTest {
 		String binder = new String(Files.readAllBytes(repositoryRoot().resolve(
 				"fermata/src/main/java/me/aap/fermata/ui/smarttop/SmartTopBinder.java")), UTF_8);
 		assertTrue(binder.contains("SmartTopLayoutController.presentation(views.root(), state).showQuickRecent()"));
+	}
+
+	@Test
+	public void controllerDelegatesQuickRecentAvailabilityToPresentationBudget() throws Exception {
+		String controller = new String(Files.readAllBytes(repositoryRoot().resolve(
+				"fermata/src/main/java/me/aap/fermata/ui/smarttop/SmartTopLayoutController.java")), UTF_8);
+		assertFalse(controller.contains("SmartTopLayoutPolicy.showQuickRecent("));
+		assertTrue(controller.contains("boolean quickRecentAvailable = quickRecentAvailable(state);"));
+		assertTrue(controller.contains("return !state.quickRecent().isEmpty();"));
 	}
 
 	@Test
