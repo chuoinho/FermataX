@@ -442,11 +442,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	@Override
 	public void prepare(PlayableItem source) {
 		source = PlayableItemResolver.unwrap(source);
-		String sourceId = source.getOrigId();
-		if ((source == next) || NEXT_ID.equals(sourceId)) {
+		if ((source == next) || NEXT_ID.equals(source.getOrigId())) {
 			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
 			web.next();
-		} else if ((source == prev) || PREV_ID.equals(sourceId)) {
+		} else if ((source == prev) || PREV_ID.equals(source.getOrigId())) {
 			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
 			web.prev();
 		} else {
@@ -1121,12 +1120,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		return id.startsWith("youtube:video:");
 	}
 
-	private static TransportItem transportItem(String id, @NonNull BrowsableItem parent) {
-		String action = NEXT_ID.equals(id) ? "next" : "prev";
-		return new TransportItem(id, parent,
-				GenericFileSystem.getInstance().create("http://youtube.com/" + action));
-	}
-
 	static class YoutubePlayableItem extends ExtPlayable {
 		public YoutubePlayableItem(String id, @NonNull BrowsableItem parent, @NonNull VirtualResource resource) {
 			super(id, parent, resource);
@@ -1150,13 +1143,13 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		@NonNull
 		@Override
 		public FutureSupplier<PlayableItem> getPrevPlayable() {
-			return completed(transportItem(PREV_ID, getParent()));
+			return completed(new TransportItem(PREV_ID, getParent(), GenericFileSystem.getInstance().create("http://youtube.com/prev")));
 		}
 
 		@NonNull
 		@Override
 		public FutureSupplier<PlayableItem> getNextPlayable() {
-			return completed(transportItem(NEXT_ID, getParent()));
+			return completed(new TransportItem(NEXT_ID, getParent(), GenericFileSystem.getInstance().create("http://youtube.com/next")));
 		}
 
 		@Override
@@ -1286,18 +1279,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 		private void invalidateMetadata() {
 			reset();
-		}
-
-		@NonNull
-		@Override
-		public FutureSupplier<PlayableItem> getPrevPlayable() {
-			return completed(prev);
-		}
-
-		@NonNull
-		@Override
-		public FutureSupplier<PlayableItem> getNextPlayable() {
-			return completed(next);
 		}
 	}
 }

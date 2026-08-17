@@ -1,6 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
@@ -16,8 +17,10 @@ public class YoutubeSmartTopTransportContractTest {
 		int playable = engine.indexOf("static class YoutubePlayableItem");
 		int transport = engine.indexOf("private static class TransportItem", playable);
 		String body = engine.substring(playable, transport);
-		assertTrue(body.contains("return completed(transportItem(PREV_ID, getParent()))"));
-		assertTrue(body.contains("return completed(transportItem(NEXT_ID, getParent()))"));
+		assertTrue(body.contains("new TransportItem(PREV_ID, getParent()"));
+		assertTrue(body.contains("http://youtube.com/prev"));
+		assertTrue(body.contains("new TransportItem(NEXT_ID, getParent()"));
+		assertTrue(body.contains("http://youtube.com/next"));
 	}
 
 	@Test
@@ -26,11 +29,19 @@ public class YoutubeSmartTopTransportContractTest {
 		int prepare = engine.indexOf("public void prepare(PlayableItem source)");
 		int start = engine.indexOf("public void start()", prepare);
 		String body = engine.substring(prepare, start);
-		assertTrue(body.contains("String sourceId = source.getOrigId()"));
-		assertTrue(body.contains("NEXT_ID.equals(sourceId)"));
-		assertTrue(body.contains("PREV_ID.equals(sourceId)"));
+		assertTrue(body.contains("NEXT_ID.equals(source.getOrigId())"));
+		assertTrue(body.contains("PREV_ID.equals(source.getOrigId())"));
 		assertTrue(body.contains("web.next()"));
 		assertTrue(body.contains("web.prev()"));
+	}
+
+	@Test
+	public void currentUsesTheSameTransportContractWithoutDuplicateOverrides() throws Exception {
+		String engine = source();
+		int current = engine.indexOf("private final class Current");
+		String body = engine.substring(current);
+		assertFalse(body.contains("FutureSupplier<PlayableItem> getPrevPlayable()"));
+		assertFalse(body.contains("FutureSupplier<PlayableItem> getNextPlayable()"));
 	}
 
 	private static String source() throws Exception {
