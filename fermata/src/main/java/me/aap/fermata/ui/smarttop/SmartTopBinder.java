@@ -83,7 +83,8 @@ public final class SmartTopBinder {
 		views.eyebrow().setText(state.eyebrow());
 		views.title().setText(state.title());
 		views.subtitle().setText(state.subtitle());
-		views.subtitle().setVisibility(state.subtitle().length() == 0 ? View.INVISIBLE : View.VISIBLE);
+		views.subtitle().setVisibility(shouldShowSubtitle(state.eyebrow(), state.subtitle()) ?
+				View.VISIBLE : View.INVISIBLE);
 		views.root().setOnClickListener(editMode ? null : ignored -> {
 			SmartTopViewState current = boundState(views.root());
 			if (current != null) handler.onCard(current);
@@ -313,6 +314,12 @@ public final class SmartTopBinder {
 			case OPEN_ADDONS -> R.string.settings;
 			case RETRY -> R.string.retry;
 		});
+	}
+
+	static boolean shouldShowSubtitle(CharSequence eyebrow, CharSequence subtitle) {
+		if ((subtitle == null) || (subtitle.length() == 0)) return false;
+		if ((eyebrow == null) || (eyebrow.length() == 0)) return true;
+		return !eyebrow.toString().trim().equalsIgnoreCase(subtitle.toString().trim());
 	}
 
 	private static String itemId(PlayableItem item) {

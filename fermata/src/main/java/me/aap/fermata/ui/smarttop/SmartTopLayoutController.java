@@ -83,6 +83,18 @@ public final class SmartTopLayoutController {
 		actionParams.startToEnd = ConstraintLayout.LayoutParams.UNSET;
 		actionParams.endToStart = R.id.dashboard_smart_context_guide;
 		actionParams.setMarginStart(0);
+		if (automotive) {
+			actionParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
+			actionParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
+			actionParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
+			actionParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
+			actionParams.verticalBias = 0.5F;
+		} else {
+			actionParams.topToTop = ConstraintLayout.LayoutParams.UNSET;
+			actionParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
+			actionParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
+			actionParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
+		}
 		actions.setLayoutParams(actionParams);
 
 		View progress = root.findViewById(R.id.dashboard_smart_progress_group);

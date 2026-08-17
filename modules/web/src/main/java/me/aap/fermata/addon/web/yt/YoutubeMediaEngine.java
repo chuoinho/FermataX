@@ -442,10 +442,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	@Override
 	public void prepare(PlayableItem source) {
 		source = PlayableItemResolver.unwrap(source);
-		if (source == next) {
+		String sourceId = source.getOrigId();
+		if ((source == next) || NEXT_ID.equals(sourceId)) {
 			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
 			web.next();
-		} else if (source == prev) {
+		} else if ((source == prev) || PREV_ID.equals(sourceId)) {
 			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
 			web.prev();
 		} else {
@@ -562,7 +563,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			return completed(duration);
 		}
 		long fallback = (current instanceof Current active && active.descriptor != null) ?
-				active.descriptor.durationMillis() : 0L;
+					active.descriptor.durationMillis() : 0L;
 		return web.getContentDuration().map(duration -> (duration > 0L) ? duration : fallback);
 	}
 
@@ -1120,6 +1121,12 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		return id.startsWith("youtube:video:");
 	}
 
+	private static TransportItem transportItem(String id, @NonNull BrowsableItem parent) {
+		String action = NEXT_ID.equals(id) ? "next" : "prev";
+		return new TransportItem(id, parent,
+				GenericFileSystem.getInstance().create("http://youtube.com/" + action));
+	}
+
 	static class YoutubePlayableItem extends ExtPlayable {
 		public YoutubePlayableItem(String id, @NonNull BrowsableItem parent, @NonNull VirtualResource resource) {
 			super(id, parent, resource);
@@ -1138,6 +1145,18 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		@Override
 		public int getVideoEnginePref() {
 			return MEDIA_ENG_YT;
+		}
+
+		@NonNull
+		@Override
+		public FutureSupplier<PlayableItem> getPrevPlayable() {
+			return completed(transportItem(PREV_ID, getParent()));
+		}
+
+		@NonNull
+		@Override
+		public FutureSupplier<PlayableItem> getNextPlayable() {
+			return completed(transportItem(NEXT_ID, getParent()));
 		}
 
 		@Override

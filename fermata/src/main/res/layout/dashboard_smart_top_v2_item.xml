@@ -82,6 +82,7 @@
         android:layout_height="@dimen/dashboard_smart_v2_control_size"
         android:gravity="center_vertical"
         android:orientation="horizontal"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide">
 
@@ -118,7 +119,7 @@
             android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
-            android:visibility="gone"
+            android:visibility="invisible"
             app:tint="@color/dashboard_smart_action_v2_tint" />
 
         <androidx.appcompat.widget.AppCompatImageButton
@@ -130,6 +131,7 @@
             android:background="@drawable/dashboard_smart_action_v2_bg"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
+            android:visibility="invisible"
             app:tint="@color/dashboard_smart_action_v2_tint" />
 
         <androidx.appcompat.widget.AppCompatImageButton
@@ -141,7 +143,7 @@
             android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
-            android:visibility="gone"
+            android:visibility="invisible"
             app:tint="@color/dashboard_smart_action_v2_tint" />
 
         <androidx.appcompat.widget.AppCompatImageButton
@@ -153,6 +155,7 @@
             android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
+            android:visibility="invisible"
             app:tint="@color/dashboard_smart_action_v2_tint" />
 
         <androidx.appcompat.widget.AppCompatImageButton
@@ -163,6 +166,7 @@
             android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
+            android:visibility="invisible"
             app:tint="@color/dashboard_smart_action_v2_tint" />
     </LinearLayout>
 
