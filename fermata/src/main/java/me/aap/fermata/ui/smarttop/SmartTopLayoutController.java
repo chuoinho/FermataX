@@ -26,10 +26,10 @@ public final class SmartTopLayoutController {
 	public static void apply(View root, SmartTopViewState state, boolean automotive) {
 		SmartTopLayoutMode mode = state.layout();
 		float fontScale = root.getResources().getConfiguration().fontScale;
-		boolean quickRecentAvailable = (mode != SmartTopLayoutMode.COMPACT) &&
-				!state.quickRecent().isEmpty();
+		float widthDp = measuredWidthDp(root);
+		boolean quickRecentAvailable = quickRecentAvailable(state, widthDp, fontScale);
 		SmartTopPresentationPolicy.Presentation presentation = SmartTopPresentationPolicy.resolve(
-				measuredWidthDp(root), fontScale, automotive, mode, state.actions(),
+				widthDp, fontScale, automotive, mode, state.actions(),
 				quickRecentAvailable, state.title().length());
 		boolean showContext = presentation.showQuickRecent();
 		LayoutToken token = new LayoutToken(mode, automotive, fontScale, presentation);
@@ -68,15 +68,13 @@ public final class SmartTopLayoutController {
 				ConstraintLayout.LayoutParams.UNSET;
 		guide.setLayoutParams(guideParams);
 
-		TextView title = root.findViewById(R.id.dashboard_item_title);
-		title.setMaxLines(1);
-		title.setTextSize(TypedValue.COMPLEX_UNIT_SP, titleSizeSp(mode));
+		SmartTopTypographyPolicy.Typography typography = SmartTopTypographyPolicy.resolve(mode);
 		TextView eyebrow = root.findViewById(R.id.dashboard_item_eyebrow);
-		eyebrow.setTextSize(TypedValue.COMPLEX_UNIT_SP,
-				(mode == SmartTopLayoutMode.EXPANDED) ? 14F : 13F);
+		applyTextRole(root, eyebrow, typography.eyebrowSp(), typography.eyebrowMinHeightDp());
+		TextView title = root.findViewById(R.id.dashboard_item_title);
+		applyTextRole(root, title, typography.titleSp(), typography.titleMinHeightDp());
 		TextView subtitle = root.findViewById(R.id.dashboard_item_subtitle);
-		subtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP,
-				(mode == SmartTopLayoutMode.EXPANDED) ? 15F : 14F);
+		applyTextRole(root, subtitle, typography.subtitleSp(), typography.subtitleMinHeightDp());
 
 		View actions = root.findViewById(R.id.dashboard_item_actions);
 		ConstraintLayout.LayoutParams actionParams =
@@ -126,11 +124,26 @@ public final class SmartTopLayoutController {
 			SmartTopViewState state) {
 		Object tag = root.getTag(R.id.dashboard_smart_layout_token);
 		if (tag instanceof LayoutToken token) return token.presentation();
-		boolean quickRecentAvailable = (state.layout() != SmartTopLayoutMode.COMPACT) &&
-				!state.quickRecent().isEmpty();
-		return SmartTopPresentationPolicy.resolve(measuredWidthDp(root),
-				root.getResources().getConfiguration().fontScale, false, state.layout(),
+		float widthDp = measuredWidthDp(root);
+		float fontScale = root.getResources().getConfiguration().fontScale;
+		boolean quickRecentAvailable = quickRecentAvailable(state, widthDp, fontScale);
+		return SmartTopPresentationPolicy.resolve(widthDp, fontScale, false, state.layout(),
 				state.actions(), quickRecentAvailable, state.title().length());
+	}
+
+	private static boolean quickRecentAvailable(SmartTopViewState state, float widthDp,
+			float fontScale) {
+		return !state.quickRecent().isEmpty() && SmartTopLayoutPolicy.showQuickRecent(
+				state.layout(), widthDp, fontScale, state.actions().size(), state.title().length());
+	}
+
+	private static void applyTextRole(View root, TextView view, float textSizeSp,
+			int minHeightDp) {
+		view.setMinLines(1);
+		view.setMaxLines(1);
+		view.setIncludeFontPadding(false);
+		view.setMinHeight(px(root, minHeightDp));
+		view.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
 	}
 
 	private static void applyActionGeometry(View root, MaterialButton label,
@@ -241,14 +254,6 @@ public final class SmartTopLayoutController {
 			case COMPACT -> automotive ? 13 : 11;
 			case STANDARD -> 16;
 			case EXPANDED -> 18;
-		};
-	}
-
-	static float titleSizeSp(SmartTopLayoutMode mode) {
-		return switch (mode) {
-			case COMPACT -> 19F;
-			case STANDARD -> 22F;
-			case EXPANDED -> 24F;
 		};
 	}
 
