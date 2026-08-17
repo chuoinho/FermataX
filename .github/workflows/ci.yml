@@ -55,6 +55,16 @@ jobs:
           ./gradlew testMobileDebugUnitTest :whisper:testMobileDebugUnitTest
           --no-daemon --no-parallel --stacktrace
 
+      - name: Upload Mobile unit test results
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: smarttop-mobile-test-results
+          if-no-files-found: warn
+          path: |
+            **/build/test-results/testMobileDebugUnitTest/**
+            **/build/reports/tests/testMobileDebugUnitTest/**
+
       - name: Auto unit suite
         if: ${{ !cancelled() }}
         run: ./gradlew testAutoDebugUnitTest --no-daemon --no-parallel --stacktrace
