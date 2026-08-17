@@ -1,6 +1,6 @@
 # FermataX Master Context
 
-> Last updated: 2026-08-04
+> Last updated: 2026-08-17
 >
 > This document is the primary project context for maintainers and coding agents. Read it
 > before changing product behavior, navigation, playback, addon activation, packaging, or
@@ -56,10 +56,11 @@ Drivers and passengers who want one Android Auto interface for frequently used m
 4. Correct playback state, back behavior, and restoration after leaving Android Auto.
 5. Performance, source caching, and loading speed after UX and reliability are stable.
 
-Current active roadmap: SmartTop V2 safe rollout through Phases 0-4. Podcast/Audiobook SmartTop
-providers remain deferred until their cached-only ownership seams are characterized independently.
-A local `docs/smarttop/SMARTTOP_V2_GOAL.md` planning artifact may provide additional working notes,
-but it is ignored and is not part of the shared canonical repository until separately reviewed.
+SmartTop V2 source rollout Phases 0-4 is complete. Final DHU/device runtime validation remains
+pending before the SmartTop branch is eligible to merge. Podcast/Audiobook SmartTop providers
+remain deferred until their cached-only ownership seams are characterized independently. A local
+`docs/smarttop/SMARTTOP_V2_GOAL.md` planning artifact may provide additional working notes, but it
+is ignored and is not part of the shared canonical repository until separately reviewed.
 
 ### Explicitly excluded or deferred
 
@@ -150,24 +151,44 @@ excluded from this UI refresh.
 
 ### SmartTopCard
 
-SmartTopCard is the wide primary card at the top of Dashboard.
+SmartTopCard is the wide primary card at the top of Dashboard. The final SmartTop V2 semantic
+matrix and presentation ownership are canonical:
 
-- While media is playing, it acts as the mini player/Now Playing card.
-- It displays the current item, source/category context, and relevant compact actions.
-- Supported actions include previous, play/pause, next, favorite when supported, and
-  back-to-list/open-list.
-- Favorite is shown only when the current item supports favorites.
-- For paused or resumable video, it may represent Smart Continue.
-- When no current playable item is available, it exposes Unified Recent behavior.
-- Show at most one quick Recent item on the right only when the measured layout has room.
-  Compact layouts show the stable `All Recent` destination without a quick row, preserving
-  action hit targets and readable titles.
-- Recent items can be deleted only after opening the Recent view, not directly from the
-  collapsed SmartTopCard.
-- Tapping current TV/video should open the playing content in the appropriate fullscreen or
-  player destination.
-- Tapping current Radio should open the corresponding station/source list with the radio
-  playerbar visible; it must not jump to an older TV or YouTube item.
+- `CURRENT / COMPACT`: Play/Pause, Context, Favorite when supported.
+- `CURRENT / STANDARD` and `CURRENT / EXPANDED`: Previous, Play/Pause, Next, Context, Favorite
+  when supported.
+- `RESUME`: Play, Context, Favorite when supported and when the measured presentation budget fits.
+- `RECENT`: Play, Context, Favorite when supported and when the measured presentation budget fits.
+- `EMPTY`: one labeled terminal CTA. The current safe label is **Settings** because the existing
+  `OPEN_ADDONS` route opens Settings root; do not display a misleading **Add-ons** label until a
+  Settings > Add-ons deep link exists.
+- `RECOVERY`: labeled Retry plus Context when context exists and the measured budget fits.
+- `RECOMMENDED`: compatibility only. Keep the enum, provider candidate kind, and compatibility
+  action/API surface, but SmartTop selection and coordinator display flow must never select or
+  publish a RECOMMENDED state.
+- `SmartTopActionPolicy` owns semantic actions. `SmartTopPresentationPolicy` is the pure measured-
+  width budget authority. `SmartTopLayoutController` applies the presentation result; it must not
+  invent or pre-filter semantic state.
+- Quick Recent data reaches `SmartTopPresentationPolicy` unfiltered. The budget yield order is:
+  Quick Recent first, then action spacing from 24dp toward 0, then Favorite, then Context. Never
+  sacrifice the title reserve or Play/Play-Pause to preserve auxiliary content.
+- Android Auto action cells are at least 76dp and must never overlap. Primary Play/Play-Pause glyph
+  is 44dp; secondary action glyphs are 36dp. Mobile retains the existing 48dp visual/control
+  baseline unless a separate mobile change is approved.
+- Show at most one quick Recent item on the right only when the measured budget has room. Compact
+  layouts omit the quick row while preserving the stable All Recent destination.
+- Typography remains SP-scaled; the layout controller owns the runtime text roles and card-height
+  adjustment. There is no SmartTop row-height phase or row-height engine.
+- Add-on tiles retain their existing horizontal row geometry; Android Auto emphasizes add-on title
+  text rather than shrinking the already-large add-on glyph.
+- While media is playing, SmartTop acts as the mini player/Now Playing card and exposes the current
+  item, source/category context, timeline when meaningful, and the semantic actions above.
+- Recent items can be deleted only after opening the Recent view, not directly from the collapsed
+  SmartTopCard.
+- Tapping current TV/video opens the playing content in the appropriate fullscreen or player
+  destination.
+- Tapping current Radio opens the corresponding station/source list with the radio playerbar
+  visible; it must not jump to an older TV or YouTube item.
 - SmartTop actions must avoid double-click and drag conflicts.
 
 ### Unified Recent and Favorites
