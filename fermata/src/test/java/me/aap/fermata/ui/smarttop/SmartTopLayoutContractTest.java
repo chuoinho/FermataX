@@ -128,11 +128,16 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
-	public void actionRailUsesStableSemanticSlotsAndEmptyRecentIsStructural() throws Exception {
+	public void actionRailUsesStableSemanticSlotsAndLabeledTerminalActions() throws Exception {
 		String binder = source("ui/smarttop/SmartTopBinder.java");
-		assertTrue(binder.contains("case PLAY, PLAY_PAUSE, OPEN_ADDONS, RETRY -> buttons.get(1)"));
+		assertTrue(binder.contains("if (isLabeled(action))"));
+		assertTrue(binder.contains("bindLabeledAction(views.labeledAction()"));
+		assertTrue(binder.contains("case PREVIOUS -> buttons.get(0)"));
+		assertTrue(binder.contains("case PLAY, PLAY_PAUSE -> buttons.get(1)"));
+		assertTrue(binder.contains("case NEXT -> buttons.get(2)"));
 		assertTrue(binder.contains("case OPEN_CONTEXT, HISTORY -> buttons.get(3)"));
 		assertTrue(binder.contains("case FAVORITE -> buttons.get(4)"));
+		assertFalse(binder.contains("OPEN_ADDONS, RETRY -> buttons.get(1)"));
 		assertTrue(binder.contains("button.setVisibility(View.INVISIBLE)"));
 		assertTrue(binder.contains("&&\n\t\t\t\thasContent"));
 		assertTrue(binder.contains("recentPanel().setVisibility(showPanel ? View.VISIBLE : View.GONE)"));

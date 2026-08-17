@@ -18,7 +18,7 @@ public final class SmartTopActionPolicy {
 		}
 
 		boolean compact = layout == SmartTopLayoutMode.COMPACT;
-		if (mode == SmartTopMode.CURRENT) return current(capabilities);
+		if (mode == SmartTopMode.CURRENT) return current(capabilities, compact);
 
 		List<SmartTopAction> actions = new ArrayList<>(4);
 		actions.add(SmartTopAction.PLAY);
@@ -28,9 +28,11 @@ public final class SmartTopActionPolicy {
 		return List.copyOf(actions);
 	}
 
-	private static List<SmartTopAction> current(SmartTopCapabilities capabilities) {
-		List<SmartTopAction> actions = new ArrayList<>(3);
+	private static List<SmartTopAction> current(SmartTopCapabilities capabilities, boolean compact) {
+		List<SmartTopAction> actions = new ArrayList<>(5);
+		if (!compact) actions.add(SmartTopAction.PREVIOUS);
 		actions.add(SmartTopAction.PLAY_PAUSE);
+		if (!compact) actions.add(SmartTopAction.NEXT);
 		if (capabilities.canOpenContext()) actions.add(SmartTopAction.OPEN_CONTEXT);
 		if (capabilities.canFavorite()) actions.add(SmartTopAction.FAVORITE);
 		return List.copyOf(actions);

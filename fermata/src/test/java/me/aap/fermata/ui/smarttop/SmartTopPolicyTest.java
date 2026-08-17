@@ -26,9 +26,9 @@ public class SmartTopPolicyTest {
 	}
 
 	@Test
-	public void currentActionsAreCapabilityDrivenAndOrdered() {
-		assertEquals(List.of(SmartTopAction.PLAY_PAUSE, SmartTopAction.OPEN_CONTEXT,
-				SmartTopAction.FAVORITE),
+	public void currentActionsExposeTransportOutsideCompactLayouts() {
+		assertEquals(List.of(SmartTopAction.PREVIOUS, SmartTopAction.PLAY_PAUSE,
+				SmartTopAction.NEXT, SmartTopAction.OPEN_CONTEXT, SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, SmartTopLayoutMode.STANDARD,
 						SmartTopCapabilities.current(true, true)));
 		assertEquals(List.of(SmartTopAction.PLAY_PAUSE, SmartTopAction.OPEN_CONTEXT,
@@ -130,7 +130,7 @@ public class SmartTopPolicyTest {
 		assertEquals(SmartTopTimelinePresentation.of(first),
 				SmartTopTimelinePresentation.of(samePresentation));
 		assertFalse(SmartTopTimelinePresentation.of(first).equals(
-				SmartTopTimelinePresentation.of(nextSecond)));
+					SmartTopTimelinePresentation.of(nextSecond)));
 	}
 
 	@Test
