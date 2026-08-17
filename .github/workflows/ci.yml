@@ -17,7 +17,7 @@ jobs:
   verify:
     name: Verify Mobile, Auto, lint, hotspot, and whitespace
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
 
     steps:
       - name: Check out source and PR base history
@@ -114,3 +114,19 @@ jobs:
           fi
           git cat-file -e "$base_sha^{commit}"
           git diff --check "$base_sha...HEAD"
+
+      - name: Package Mobile and Auto device-test APKs
+        if: ${{ success() }}
+        run: >-
+          ./gradlew :fermata:packageMobileDebugUniversalApk
+          :fermata:packageAutoDebugUniversalApk
+          --no-daemon --no-parallel --stacktrace
+
+      - name: Upload device-test APKs
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fermatax-device-test-${{ github.sha }}
+          path: fermata/build/outputs/**/*.apk
+          if-no-files-found: error
+          retention-days: 7
