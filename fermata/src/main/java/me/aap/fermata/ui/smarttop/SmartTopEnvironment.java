@@ -2,7 +2,10 @@ package me.aap.fermata.ui.smarttop;
 
 import java.util.Objects;
 
-/** Measured runtime environment shared by phone, tablet, mirror and Android Auto/DHU. */
+/**
+ * Measured runtime environment shared by phone, tablet, mirror and Android Auto/DHU.
+ * Space is described by the actual content viewport; interaction requirements remain a separate axis.
+ */
 public record SmartTopEnvironment(
 		float contentWidthDp,
 		float viewportHeightDp,
