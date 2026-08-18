@@ -8,7 +8,7 @@ public final class SmartTopLayoutPolicy {
 	public static final int FOCUS_RING_DP = 2;
 	public static final int MOBILE_ARTWORK_DP = 56;
 	public static final int MAX_LABELED_ACTION_DP = 112;
-	public static final int MAX_MOBILE_LABELED_ACTION_DP = 108;
+	public static final int MAX_MOBILE_LABELED_ACTION_DP = 120;
 
 	private SmartTopLayoutPolicy() {
 	}
