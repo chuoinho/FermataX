@@ -90,6 +90,25 @@ public class SmartTopAdaptivePolicyTest {
 		assertTrue(accessible.cardHeightDp() > normal.cardHeightDp());
 	}
 
+	@Test
+	public void portraitLandscapePortraitReturnsToTheOriginalAdaptiveSpecClass() {
+		SmartTopEnvironment portrait = env(384, 780, 1F, SmartTopInteractionProfile.TOUCH);
+		SmartTopEnvironment landscape = env(704, 360, 1F, SmartTopInteractionProfile.TOUCH);
+		SmartTopLayoutSpec first = SmartTopAdaptivePolicy.resolve(portrait, CURRENT,
+				new SmartTopContentMetrics(120, 0, 3));
+		SmartTopLayoutSpec rotated = SmartTopAdaptivePolicy.resolve(landscape, CURRENT,
+				new SmartTopContentMetrics(120, 0, 3));
+		SmartTopLayoutSpec restored = SmartTopAdaptivePolicy.resolve(portrait, CURRENT,
+				new SmartTopContentMetrics(120, 0, 3));
+		assertEquals(SmartTopLayoutMode.COMPACT, first.mode());
+		assertEquals(SmartTopLayoutMode.STANDARD, rotated.mode());
+		assertEquals(first.mode(), restored.mode());
+		assertEquals(first.cardHeightDp(), restored.cardHeightDp());
+		assertEquals(first.visibleActions(), restored.visibleActions());
+		assertEquals(0, first.recentRows());
+		assertEquals(3, rotated.recentRows());
+	}
+
 	private static SmartTopEnvironment env(float width, float height, float scale,
 			SmartTopInteractionProfile profile) {
 		return new SmartTopEnvironment(width, height, scale, profile);
