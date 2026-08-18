@@ -34,20 +34,24 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
-	public void layoutExposesAllSixStateRendererSurfacesWithoutExtraRecentRows() throws Exception {
+	public void layoutExposesAllSixStateRendererSurfacesAndThreeRecentRows() throws Exception {
 		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
 		for (String id : new String[]{"dashboard_action_label", "dashboard_action_prev",
 				"dashboard_action_play_pause", "dashboard_action_next",
 				"dashboard_action_favorite", "dashboard_action_back_to_list",
 				"dashboard_smart_progress", "dashboard_smart_progress_current",
 				"dashboard_smart_progress_total", "dashboard_recent_panel",
-				"dashboard_recent_item_1"}) {
+				"dashboard_recent_item_1", "dashboard_recent_item_2", "dashboard_recent_item_3"}) {
 			assertTrue(id, layout.contains("@+id/" + id));
 		}
-		assertTrue(layout.contains("@+id/dashboard_recent_item_2"));
-		assertTrue(layout.contains("@+id/dashboard_recent_item_3"));
-		assertTrue(layout.contains("android:layout_height=\"0dp\""));
-		assertFalse(layout.contains("android:layout_height=\"28dp\"\n                android:visibility=\"gone\""));
+		for (String id : new String[]{"dashboard_recent_item_1", "dashboard_recent_item_2",
+				"dashboard_recent_item_3"}) {
+			String row = element(layout, "@+id/" + id);
+			assertTrue(id, row.contains("android:layout_height=\"28dp\""));
+			assertTrue(id, row.contains("android:ellipsize=\"end\""));
+			assertTrue(id, row.contains("android:maxLines=\"1\""));
+			assertFalse(id, row.contains("android:visibility=\"gone\""));
+		}
 	}
 
 	@Test
@@ -84,6 +88,19 @@ public class SmartTopLayoutContractTest {
 		assertTrue(binder.contains("setContentDescription(null)"));
 		assertTrue(binder.contains("setActivated(false)"));
 		assertTrue(binder.contains("token.equals(view.getTag(R.id.dashboard_smart_bind_token))"));
+	}
+
+	@Test
+	public void quickRecentLoadsAndBindsUpToThreeIndependentItems() throws Exception {
+		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
+		String state = source("ui/smarttop/SmartTopViewState.java");
+		String binder = source("ui/smarttop/SmartTopBinder.java");
+		assertTrue(state.contains("MAX_QUICK_RECENT = 3"));
+		assertTrue(state.contains("Math.min(MAX_QUICK_RECENT, recent.size())"));
+		assertTrue(coordinator.contains("SmartTopViewState.MAX_QUICK_RECENT"));
+		assertTrue(binder.contains("for (int i = 0; i < count; i++)"));
+		assertTrue(binder.contains("state.quickRecent().get(i)"));
+		assertTrue(binder.contains("views.recentItems().get(i)"));
 	}
 
 	@Test
