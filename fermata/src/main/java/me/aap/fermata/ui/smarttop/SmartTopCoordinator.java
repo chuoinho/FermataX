@@ -127,7 +127,8 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			SmartTopViewState current = state;
 			if ((current == null) || (current.generation() != generation) ||
 					(current.mode() != SmartTopMode.CURRENT)) return;
-			publish(current.withQuickRecent(recent(items, active, 1)));
+			publish(current.withQuickRecent(recent(items, active,
+					SmartTopViewState.MAX_QUICK_RECENT)));
 		});
 	}
 
