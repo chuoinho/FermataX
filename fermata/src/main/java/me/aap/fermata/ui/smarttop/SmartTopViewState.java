@@ -9,7 +9,7 @@ import java.util.Objects;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.addon.SmartTopProviderResult;
 
-/** Immutable renderer input. It carries presentation and canonical ownership separately. */
+/** Immutable renderer input. Semantic content survives viewport changes unchanged. */
 public record SmartTopViewState(
 		long generation,
 		SmartTopMode mode,
@@ -46,12 +46,12 @@ public record SmartTopViewState(
 		}
 	}
 
+	/** Compatibility-only layout mutation. It must never prune semantic actions or Recent data. */
 	public SmartTopViewState withLayout(SmartTopLayoutMode nextLayout) {
 		if (layout == nextLayout) return this;
 		return new SmartTopViewState(generation, mode, nextLayout, presentedItem, canonicalItem,
-				icon, eyebrow, title, subtitle, timeline, capabilities,
-				SmartTopActionPolicy.resolve(mode, nextLayout, capabilities), favorite,
-				(nextLayout == SmartTopLayoutMode.COMPACT) ? List.of() : quickRecent, providerResult);
+				icon, eyebrow, title, subtitle, timeline, capabilities, actions, favorite,
+				quickRecent, providerResult);
 	}
 
 	public SmartTopViewState withTitle(CharSequence nextTitle) {
@@ -61,12 +61,8 @@ public record SmartTopViewState(
 	}
 
 	public SmartTopViewState withQuickRecent(List<PlayableItem> recent) {
-		List<PlayableItem> bounded;
-		if ((layout == SmartTopLayoutMode.COMPACT) || recent.isEmpty()) {
-			bounded = List.of();
-		} else {
-			bounded = List.copyOf(recent.subList(0, Math.min(MAX_QUICK_RECENT, recent.size())));
-		}
+		List<PlayableItem> bounded = recent.isEmpty() ? List.of() :
+				List.copyOf(recent.subList(0, Math.min(MAX_QUICK_RECENT, recent.size())));
 		return new SmartTopViewState(generation, mode, layout, presentedItem, canonicalItem,
 				icon, eyebrow, title, subtitle, timeline, capabilities, actions,
 				favorite, bounded, providerResult);
