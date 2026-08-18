@@ -1,6 +1,9 @@
 package me.aap.fermata.ui.smarttop;
 
-/** Interaction requirements are independent from the amount of layout space available. */
+/**
+ * Minimum interaction requirements, independent from space class.
+ * TOUCH and AUTOMOTIVE may resolve the same COMPACT/STANDARD/EXPANDED composition with different controls.
+ */
 public enum SmartTopInteractionProfile {
 	TOUCH,
 	AUTOMOTIVE;
