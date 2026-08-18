@@ -116,7 +116,7 @@ public final class SmartTopLayoutController {
 
 		MaterialButton label = root.findViewById(R.id.dashboard_action_label);
 		label.setMaxWidth(px(root, labeledActionMaxWidthDp(automotive)));
-		applyActionGeometry(root, label, presentation, automotive);
+		applyActionGeometry(root, label, presentation);
 
 		if (root instanceof ViewGroup group) {
 			int minTargetDp = automotive ? presentation.actionCellDp() :
@@ -156,9 +156,13 @@ public final class SmartTopLayoutController {
 		view.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
 	}
 
+	/**
+	 * The semantic rail owns width on both phone and automotive hosts. INVISIBLE recycled slots
+	 * must collapse to zero width; otherwise five 48dp phone slots can consume the entire card and
+	 * squeeze eyebrow/title/subtitle to zero even though only one action is actually visible.
+	 */
 	private static void applyActionGeometry(View root, MaterialButton label,
-			SmartTopPresentationPolicy.Presentation presentation, boolean automotive) {
-		if (!automotive) return;
+			SmartTopPresentationPolicy.Presentation presentation) {
 		int cell = px(root, presentation.actionCellDp());
 		int gap = px(root, presentation.actionGapDp());
 		View actions = root.findViewById(R.id.dashboard_item_actions);
