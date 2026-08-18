@@ -115,8 +115,10 @@ jobs:
           git cat-file -e "$base_sha^{commit}"
           git diff --check "$base_sha...HEAD"
 
-      # Distribution contract: FermataX ships exactly one universal APK for phone + Android Auto.
-      # Mobile/Auto source sets are tested above, but they are never separate distributed products.
+      # NON-NEGOTIABLE DISTRIBUTION CONTRACT:
+      # FermataX ships exactly ONE universal APK used on both phone and Android Auto/DHU.
+      # Mobile/Auto are internal source sets/test targets only and must never become separate
+      # user-facing APKs, releases, or CI artifacts.
       - name: Package single FermataX universal APK
         if: ${{ success() }}
         run: |
