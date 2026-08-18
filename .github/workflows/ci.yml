@@ -115,19 +115,22 @@ jobs:
           git cat-file -e "$base_sha^{commit}"
           git diff --check "$base_sha...HEAD"
 
-      # Distribution contract: FermataX ships one universal APK for both phone and Android Auto.
-      # Mobile/Auto source sets are still tested independently above, but they are not separate products.
-      - name: Package single universal device-test APK
+      # Distribution contract: FermataX ships exactly one universal APK for phone + Android Auto.
+      # Mobile/Auto source sets are tested above, but they are never separate distributed products.
+      - name: Package single FermataX universal APK
         if: ${{ success() }}
-        run: >-
-          ./gradlew :fermata:packageAutoDebugUniversalApk
-          --no-daemon --no-parallel --stacktrace
+        run: |
+          ./gradlew :fermata:packageAutoDebugUniversalApk --no-daemon --no-parallel --stacktrace
+          mkdir -p dist
+          apk="$(find fermata/build/outputs/apk_from_bundle/autoDebug -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$apk"
+          cp "$apk" dist/FermataX-debug-universal.apk
 
-      - name: Upload single universal device-test APK
+      - name: Upload single FermataX universal APK
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
-          name: fermatax-device-test-${{ github.sha }}
-          path: fermata/build/outputs/apk_from_bundle/autoDebug/*.apk
+          name: FermataX-device-test-${{ github.sha }}
+          path: dist/FermataX-debug-universal.apk
           if-no-files-found: error
           retention-days: 7
