@@ -241,22 +241,26 @@ public final class SmartTopBinder {
 		views.recentPanel().setFocusable(showPanel);
 
 		for (TextView view : views.recentItems()) clearRecent(view);
-		if (!showPanel || state.quickRecent().isEmpty() || views.recentItems().isEmpty()) return;
+		if (!showPanel) return;
 
-		PlayableItem item = state.quickRecent().get(0);
-		TextView view = views.recentItems().get(0);
-		BindToken token = new BindToken(state.generation(), itemId(item));
-		view.setTag(R.id.dashboard_smart_bind_token, token);
-		view.setVisibility(View.VISIBLE);
-		view.setText(item.getName());
-		view.setClickable(true);
-		view.setFocusable(true);
-		view.setOnClickListener(ignored -> handler.onQuickRecent(item));
-		item.getMediaData().main().onSuccess(metadata -> {
-			if (token.equals(view.getTag(R.id.dashboard_smart_bind_token))) {
-				view.setText(PlaybackSnapshot.resolveDisplayTitle(item, metadata));
-			}
-		});
+		int count = Math.min(state.quickRecent().size(), views.recentItems().size());
+		count = Math.min(count, SmartTopViewState.MAX_QUICK_RECENT);
+		for (int i = 0; i < count; i++) {
+			PlayableItem item = state.quickRecent().get(i);
+			TextView view = views.recentItems().get(i);
+			BindToken token = new BindToken(state.generation(), itemId(item));
+			view.setTag(R.id.dashboard_smart_bind_token, token);
+			view.setVisibility(View.VISIBLE);
+			view.setText(item.getName());
+			view.setClickable(true);
+			view.setFocusable(true);
+			view.setOnClickListener(ignored -> handler.onQuickRecent(item));
+			item.getMediaData().main().onSuccess(metadata -> {
+				if (token.equals(view.getTag(R.id.dashboard_smart_bind_token))) {
+					view.setText(PlaybackSnapshot.resolveDisplayTitle(item, metadata));
+				}
+			});
+		}
 	}
 
 	private static void clearAction(ImageButton button) {
