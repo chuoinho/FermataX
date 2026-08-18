@@ -11,24 +11,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.aap.fermata.R;
-import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.pref.PreferenceStore;
 
 final class DashboardModelBuilder {
 	private static final float AUTOMOTIVE_ADDON_TITLE_SCALE = 1.15F;
 	private final Context ctx;
 	private final PreferenceStore store;
+	private final boolean automotive;
 
-	DashboardModelBuilder(Context ctx, PreferenceStore store) {
+	DashboardModelBuilder(Context ctx, PreferenceStore store, boolean automotive) {
 		this.ctx = ctx;
 		this.store = store;
+		this.automotive = automotive;
 	}
 
 	void rebuild(List<DashboardCard> cards, @Nullable DashboardCard smartTopCard) {
 		cards.clear();
 		if (smartTopCard != null) cards.add(smartTopCard);
-		boolean automotive = MainActivityDelegate.get(ctx).getRuntimeHostMode()
-				.usesAutomotivePresentation();
 		for (DashboardItems.Item item : DashboardItems.getDashboardItems(ctx, store)) {
 			if (item.id == R.id.recent_fragment) continue;
 			if ((smartTopCard != null) && (smartTopCard.targetId == item.id)) continue;

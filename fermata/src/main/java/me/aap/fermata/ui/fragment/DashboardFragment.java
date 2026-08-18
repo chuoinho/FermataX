@@ -452,7 +452,8 @@ public class DashboardFragment extends MainActivityFragment
 			this.activity = activity;
 			this.ctx = ctx;
 			this.store = store;
-			modelBuilder = new DashboardModelBuilder(ctx, store);
+			modelBuilder = new DashboardModelBuilder(ctx, store,
+					activity.getRuntimeHostMode().usesAutomotivePresentation());
 			smartTopV2Enabled = activity.getPrefs().isSmartTopV2Enabled();
 			smartTopCoordinator = smartTopV2Enabled ?
 					new SmartTopCoordinator(activity, ctx, this) : null;
@@ -1127,7 +1128,8 @@ public class DashboardFragment extends MainActivityFragment
 			return new SmartTopBinder.Views(itemView, icon, eyebrow, title, subtitle, actions,
 					labeledAction, List.of(prev, playPause, next, favorite, backToList),
 					progressGroup, progress, progressCurrent, progressTotal,
-					recentPanel, recentTitle, List.of(recentItems[0]));
+					recentPanel, recentTitle,
+					List.of(recentItems[0], recentItems[1], recentItems[2]));
 		}
 	}
 
