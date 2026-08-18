@@ -44,6 +44,9 @@ echo "CMAKE_PATH=$CMAKE_PATH"
 export PATH=$CMAKE_PATH:$PATH
 cd "$DIR"
 
+# Distribution contract: FermataX is one app/package for phone and Android Auto.
+# Gradle keeps its platform source sets internally, but this script must never publish
+# separate Mobile and Auto products.
 build() {
   local ext="$TASK"
   local app_flavor=${APP_ID_SFX:-$(grep -oP "${TASK}Flavor=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
@@ -61,7 +64,7 @@ build() {
   for path in $(ls fermata/build/outputs/*/*/fermata*.$ext); do
     local version=${path##*fermata-}
     version=${version%%-*}
-    local dst="$DEST_DIR/fermata-auto-${version}${sfx}.$ext"
+    local dst="$DEST_DIR/FermataX-${version}${sfx}.$ext"
     mv "$path" "$dst"
     echo "Built $dst"
   done
