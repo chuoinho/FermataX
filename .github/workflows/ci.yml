@@ -115,17 +115,26 @@ jobs:
           git cat-file -e "$base_sha^{commit}"
           git diff --check "$base_sha...HEAD"
 
-      - name: Package single device-test APK
+      - name: Package Mobile and Auto device-test APKs
         if: ${{ success() }}
         run: >-
-          ./gradlew :fermata:packageAutoDebugUniversalApk
+          ./gradlew :fermata:packageMobileDebugUniversalApk :fermata:packageAutoDebugUniversalApk
           --no-daemon --no-parallel --stacktrace
 
-      - name: Upload device-test APK
+      - name: Upload Mobile device-test APK
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
-          name: fermatax-device-test-${{ github.sha }}
+          name: fermatax-mobile-device-test-${{ github.sha }}
+          path: fermata/build/outputs/apk_from_bundle/mobileDebug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Auto device-test APK
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fermatax-auto-device-test-${{ github.sha }}
           path: fermata/build/outputs/apk_from_bundle/autoDebug/*.apk
           if-no-files-found: error
           retention-days: 7
