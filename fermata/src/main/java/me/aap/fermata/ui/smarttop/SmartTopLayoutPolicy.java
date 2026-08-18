@@ -1,6 +1,9 @@
 package me.aap.fermata.ui.smarttop;
 
-/** Compatibility entry point for Dashboard resize plumbing; all decisions live in SmartTopAdaptivePolicy. */
+/**
+ * Compatibility bridge for existing Dashboard resize plumbing.
+ * This class owns no layout policy; all space-class decisions delegate to SmartTopAdaptivePolicy.
+ */
 public final class SmartTopLayoutPolicy {
 	private SmartTopLayoutPolicy() {
 	}
