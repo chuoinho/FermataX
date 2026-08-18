@@ -1,6 +1,6 @@
 package me.aap.fermata.ui.smarttop;
 
-/** Intrinsic text/data measurements supplied by the Android renderer to the pure adaptive policy. */
+/** Intrinsic content measurements supplied by the Android renderer to the pure adaptive policy. */
 public record SmartTopContentMetrics(
 		float titleWidthDp,
 		float terminalLabelWidthDp,
