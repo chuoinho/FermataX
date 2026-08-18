@@ -26,6 +26,8 @@ public record SmartTopViewState(
 		boolean favorite,
 		List<PlayableItem> quickRecent,
 		@Nullable SmartTopProviderResult providerResult) {
+	public static final int MAX_QUICK_RECENT = 3;
+
 	public SmartTopViewState {
 		Objects.requireNonNull(mode, "mode");
 		Objects.requireNonNull(layout, "layout");
@@ -36,7 +38,9 @@ public record SmartTopViewState(
 		Objects.requireNonNull(capabilities, "capabilities");
 		actions = List.copyOf(Objects.requireNonNull(actions, "actions"));
 		quickRecent = List.copyOf(Objects.requireNonNull(quickRecent, "quickRecent"));
-		if (quickRecent.size() > 1) throw new IllegalArgumentException("At most one Quick Recent item");
+		if (quickRecent.size() > MAX_QUICK_RECENT) {
+			throw new IllegalArgumentException("At most three Quick Recent items");
+		}
 		if ((mode == SmartTopMode.CURRENT) && (canonicalItem == null)) {
 			throw new IllegalArgumentException("Current state requires canonical ownership");
 		}
@@ -57,8 +61,12 @@ public record SmartTopViewState(
 	}
 
 	public SmartTopViewState withQuickRecent(List<PlayableItem> recent) {
-		List<PlayableItem> bounded = (layout == SmartTopLayoutMode.COMPACT) || recent.isEmpty() ?
-				List.of() : List.of(recent.get(0));
+		List<PlayableItem> bounded;
+		if ((layout == SmartTopLayoutMode.COMPACT) || recent.isEmpty()) {
+			bounded = List.of();
+		} else {
+			bounded = List.copyOf(recent.subList(0, Math.min(MAX_QUICK_RECENT, recent.size())));
+		}
 		return new SmartTopViewState(generation, mode, layout, presentedItem, canonicalItem,
 				icon, eyebrow, title, subtitle, timeline, capabilities, actions,
 				favorite, bounded, providerResult);
