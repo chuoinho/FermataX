@@ -104,7 +104,7 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-												 @Nullable Bundle savedInstanceState) {
+													 @Nullable Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.initial_setup, container, false);
 	}
 
@@ -234,13 +234,18 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		boolean voice = voiceEnabled.isChecked();
 		String voiceLocale = selectedVoiceLocale(activity);
 		boolean autoVoice = voiceLanguage.getSelectedItemPosition() == VOICE_AUTO;
-		boolean recreate = !prefs.getLocalePref().equals(MainActivityPrefs.Lang.get(locale).locale) ||
-					(prefs.getNavBarPosPref(activity) != nav);
+		boolean navChanged = prefs.getNavBarPosPref(activity) != nav;
+		boolean localeChanged = !prefs.getLocalePref().equals(MainActivityPrefs.Lang.get(locale).locale);
+		boolean presentationChanged = navChanged || localeChanged;
 
 		try (var edit = prefs.editPreferenceStore()) {
-			edit.setIntPref(NAV_BAR_POS, nav);
-			if (BuildConfig.AUTO) edit.setIntPref(NAV_BAR_POS_AA, nav);
-			edit.setIntPref(LOCALE, locale);
+			// MainActivityDelegate owns the single recreation caused by these presentation prefs.
+			// Do not write them when unchanged: remove-default edits still broadcast a change.
+			if (navChanged) {
+				edit.setIntPref(NAV_BAR_POS, nav);
+				if (BuildConfig.AUTO) edit.setIntPref(NAV_BAR_POS_AA, nav);
+			}
+			if (localeChanged) edit.setIntPref(LOCALE, locale);
 			edit.setBooleanPref(VOICE_CONTROl_ENABLED, voice);
 			edit.setStringPref(VOICE_CONTROL_LANG, voiceLocale);
 			edit.setBooleanPref(VOICE_CONTROL_AUTO_LANG, autoVoice);
@@ -248,7 +253,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 			edit.setIntPref(INITIAL_SETUP_VERSION, INITIAL_SETUP_CURRENT_VERSION);
 		}
 
-		if (recreate) activity.recreate();
-		else activity.showDashboard();
+		// A changed nav position/locale already schedules exactly one recreation via the
+		// activity preference listener. Otherwise stay in the task and enter Dashboard now.
+		if (!presentationChanged) activity.showDashboard();
 	}
 }
