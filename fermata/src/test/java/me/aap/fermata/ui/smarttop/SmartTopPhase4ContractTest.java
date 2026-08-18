@@ -32,7 +32,8 @@ public class SmartTopPhase4ContractTest {
 
 		assertFalse(coordinator.contains("SmartTopLayoutPolicy.showQuickRecent("));
 		assertFalse(controller.contains("SmartTopLayoutPolicy.showQuickRecent("));
-		assertTrue(coordinator.contains("publish(current.withQuickRecent(recent(items, active, 1)))"));
+		assertTrue(coordinator.contains("SmartTopViewState.MAX_QUICK_RECENT"));
+		assertTrue(coordinator.contains("publish(current.withQuickRecent(recent(items, active,"));
 		assertTrue(binder.contains(
 				"SmartTopLayoutController.presentation(views.root(), state).showQuickRecent()"));
 	}
