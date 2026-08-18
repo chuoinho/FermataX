@@ -1,6 +1,9 @@
 package me.aap.fermata.ui.smarttop;
 
-/** Resolves layout from measured Dashboard content, never from the full display alone. */
+/**
+ * Compatibility entry point for Dashboard viewport plumbing.
+ * All space-class decisions are delegated to SmartTopAdaptivePolicy; geometry no longer belongs here.
+ */
 public final class SmartTopLayoutPolicy {
 	public static final int VISUAL_ACTION_DP = 44;
 	public static final int ACTION_GLYPH_DP = 22;
@@ -14,24 +17,12 @@ public final class SmartTopLayoutPolicy {
 	}
 
 	public static SmartTopLayoutMode resolve(float measuredContentWidthDp, float fontScale) {
-		float scale = Math.max(1F, fontScale);
-		if ((measuredContentWidthDp < 460F) ||
-				((measuredContentWidthDp < 700F) && (scale >= 1.5F))) {
-			return SmartTopLayoutMode.COMPACT;
-		}
-		if ((measuredContentWidthDp >= 1000F) && (scale <= 1.5F)) {
-			return SmartTopLayoutMode.EXPANDED;
-		}
-		return SmartTopLayoutMode.STANDARD;
+		return SmartTopAdaptivePolicy.resolveMode(new SmartTopEnvironment(
+				measuredContentWidthDp, 0F, fontScale, SmartTopInteractionProfile.TOUCH));
 	}
 
-	public static boolean showQuickRecent(SmartTopLayoutMode mode,
-			float measuredContentWidthDp, float fontScale, int actionCount, int titleLength) {
-		return (mode != SmartTopLayoutMode.COMPACT) && (measuredContentWidthDp >= 640F) &&
-				(fontScale <= 1.3F) && (actionCount <= 5) && (titleLength <= 48);
-	}
-
-	/** Preserves the approved base geometry while making room for accessibility text scaling. */
+	/** Compatibility bridge removed from the renderer in Phase 4. */
+	@Deprecated
 	public static int cardHeightDp(SmartTopLayoutMode mode, float fontScale) {
 		float boundedScale = Math.max(1F, Math.min(2F, fontScale));
 		return mode.cardHeightDp() + Math.round(40F * (boundedScale - 1F));
