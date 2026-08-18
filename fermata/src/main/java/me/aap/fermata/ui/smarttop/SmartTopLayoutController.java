@@ -136,19 +136,6 @@ public final class SmartTopLayoutController {
 				contentMetrics(root, state, environment));
 	}
 
-	/** Temporary Phase-4 bridge for the pre-adaptive binder. Removed in Phase 5. */
-	@Deprecated
-	static SmartTopPresentationPolicy.Presentation presentation(View root,
-			SmartTopViewState state) {
-		Object tag = root.getTag(R.id.dashboard_smart_layout_token);
-		boolean automotive = (tag instanceof LayoutToken token) &&
-				token.environment().interaction().isAutomotive();
-		float widthDp = measuredWidthDp(root);
-		float fontScale = root.getResources().getConfiguration().fontScale;
-		return SmartTopPresentationPolicy.resolve(widthDp, fontScale, automotive, state.layout(),
-				state.actions(), !state.quickRecent().isEmpty(), state.title().length());
-	}
-
 	private static SmartTopEnvironment environment(View root, boolean automotive) {
 		return new SmartTopEnvironment(measuredWidthDp(root), measuredViewportHeightDp(root),
 				root.getResources().getConfiguration().fontScale,
@@ -265,47 +252,6 @@ public final class SmartTopLayoutController {
 		if ((height <= 0) && (root.getRootView() != null)) height = root.getRootView().getHeight();
 		return (height > 0) ? height / density :
 				root.getResources().getConfiguration().screenHeightDp;
-	}
-
-	@Deprecated
-	static int artworkSizeDp(SmartTopLayoutMode mode, boolean automotive) {
-		return switch (mode) {
-			case COMPACT -> automotive ? 66 : 56;
-			case STANDARD -> 80;
-			case EXPANDED -> 88;
-		};
-	}
-
-	@Deprecated
-	static int labeledActionMaxWidthDp(boolean automotive) {
-		return automotive ? 112 : 108;
-	}
-
-	@Deprecated
-	static int contextPanelWidthDp(SmartTopLayoutMode mode) {
-		return switch (mode) {
-			case COMPACT -> 0;
-			case STANDARD -> 160;
-			case EXPANDED -> 196;
-		};
-	}
-
-	@Deprecated
-	static int timelineWidthDp(SmartTopLayoutMode mode) {
-		return switch (mode) {
-			case COMPACT -> 0;
-			case STANDARD -> 140;
-			case EXPANDED -> 176;
-		};
-	}
-
-	@Deprecated
-	static int cardPaddingDp(SmartTopLayoutMode mode, boolean automotive) {
-		return switch (mode) {
-			case COMPACT -> automotive ? 10 : 12;
-			case STANDARD -> 14;
-			case EXPANDED -> 16;
-		};
 	}
 
 	private static int px(View view, int dp) {

@@ -19,7 +19,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.policy.PlaybackTimelinePolicy;
 
-/** Binds a complete immutable V2 state and clears every recycled callback before reuse. */
+/** Binds immutable SmartTop semantics into the adaptive layout already resolved by the controller. */
 public final class SmartTopBinder {
 	public interface Handler {
 		void onCard(SmartTopViewState state);
@@ -95,7 +95,7 @@ public final class SmartTopBinder {
 		bindRecent(views, state, editMode);
 	}
 
-	/** Updates only timeline-backed presentation while keeping layout, artwork and Recent stable. */
+	/** Updates only timeline-backed presentation while keeping geometry, artwork and Recent stable. */
 	public void bindTimelineUpdate(Views views, SmartTopViewState state) {
 		views.root().setTag(R.id.dashboard_smart_state_tag, state);
 		bindTimeline(views, state.timeline());
@@ -106,11 +106,11 @@ public final class SmartTopBinder {
 		List<ImageButton> buttons = views.actionButtons();
 		clearLabeledAction(views.labeledAction());
 		for (ImageButton button : buttons) clearAction(button);
-		List<SmartTopAction> actions = editMode ? List.of() :
-				SmartTopLayoutController.presentation(views.root(), state).visibleActions();
+		SmartTopLayoutSpec spec = SmartTopLayoutController.layoutSpec(views.root(), state);
+		List<SmartTopAction> actions = editMode ? List.of() : spec.visibleActions();
 		for (SmartTopAction action : actions) {
 			if (isLabeled(action)) {
-				bindLabeledAction(views.labeledAction(), views.root(), action, state);
+				bindLabeledAction(views.labeledAction(), views.root(), action, state, spec);
 				continue;
 			}
 			ImageButton button = actionSlot(buttons, action);
@@ -142,10 +142,14 @@ public final class SmartTopBinder {
 	}
 
 	private void bindLabeledAction(MaterialButton button, View root, SmartTopAction action,
-			SmartTopViewState state) {
+			SmartTopViewState state, SmartTopLayoutSpec spec) {
 		button.setVisibility(View.VISIBLE);
 		button.setText(description(action, state));
-		button.setIconResource(icon(action, state));
+		if (spec.terminalActionStyle() == SmartTopTerminalActionStyle.LABEL_ONLY) {
+			button.setIcon(null);
+		} else {
+			button.setIconResource(icon(action, state));
+		}
 		button.setContentDescription(description(action, state));
 		button.setActivated(isPrimary(action));
 		button.setTag(R.id.dashboard_smart_action_tag, action);
@@ -153,15 +157,23 @@ public final class SmartTopBinder {
 	}
 
 	private void refreshActionPresentation(Views views, SmartTopViewState state) {
-		refreshActionPresentation(views.labeledAction(), state);
-		for (ImageButton button : views.actionButtons()) refreshActionPresentation(button, state);
+		SmartTopLayoutSpec spec = SmartTopLayoutController.layoutSpec(views.root(), state);
+		refreshActionPresentation(views.labeledAction(), state, spec);
+		for (ImageButton button : views.actionButtons()) {
+			refreshActionPresentation(button, state, spec);
+		}
 	}
 
-	private void refreshActionPresentation(View button, SmartTopViewState state) {
+	private void refreshActionPresentation(View button, SmartTopViewState state,
+			SmartTopLayoutSpec spec) {
 		Object tag = button.getTag(R.id.dashboard_smart_action_tag);
 		if (!(tag instanceof SmartTopAction action) || (button.getVisibility() != View.VISIBLE)) return;
 		if (button instanceof MaterialButton labeled) {
-			labeled.setIconResource(icon(action, state));
+			if (spec.terminalActionStyle() == SmartTopTerminalActionStyle.LABEL_ONLY) {
+				labeled.setIcon(null);
+			} else {
+				labeled.setIconResource(icon(action, state));
+			}
 			labeled.setContentDescription(description(action, state));
 		} else if (button instanceof ImageButton image) {
 			image.setImageResource(icon(action, state));
@@ -231,10 +243,10 @@ public final class SmartTopBinder {
 	}
 
 	private void bindRecent(Views views, SmartTopViewState state, boolean editMode) {
-		boolean hasContent = !state.quickRecent().isEmpty() && !views.recentItems().isEmpty();
-		boolean showPanel = !editMode &&
-				hasContent &&
-				SmartTopLayoutController.presentation(views.root(), state).showQuickRecent();
+		SmartTopLayoutSpec spec = SmartTopLayoutController.layoutSpec(views.root(), state);
+		int count = Math.min(spec.recentRows(),
+				Math.min(state.quickRecent().size(), views.recentItems().size()));
+		boolean showPanel = !editMode && (count > 0);
 		views.recentPanel().setVisibility(showPanel ? View.VISIBLE : View.GONE);
 		views.recentPanel().setOnClickListener(showPanel ? ignored -> handler.onAllRecent() : null);
 		views.recentPanel().setClickable(showPanel);
@@ -243,8 +255,6 @@ public final class SmartTopBinder {
 		for (TextView view : views.recentItems()) clearRecent(view);
 		if (!showPanel) return;
 
-		int count = Math.min(state.quickRecent().size(), views.recentItems().size());
-		count = Math.min(count, SmartTopViewState.MAX_QUICK_RECENT);
 		for (int i = 0; i < count; i++) {
 			PlayableItem item = state.quickRecent().get(i);
 			TextView view = views.recentItems().get(i);
@@ -363,7 +373,7 @@ public final class SmartTopBinder {
 	}
 
 	private static boolean isLabeled(SmartTopAction action) {
-		return SmartTopPresentationPolicy.isLabeled(action);
+		return SmartTopAdaptivePolicy.isLabeled(action);
 	}
 
 	private static boolean isPrimary(SmartTopAction action) {

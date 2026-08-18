@@ -25,17 +25,26 @@ public class SmartTopPhase4ContractTest {
 	}
 
 	@Test
-	public void quickRecentDataReachesMeasuredPresentationBudgetUnfiltered() throws Exception {
+	public void quickRecentDataReachesAdaptiveBudgetUnfiltered() throws Exception {
 		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
+		String state = source("ui/smarttop/SmartTopViewState.java");
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		String binder = source("ui/smarttop/SmartTopBinder.java");
 
-		assertFalse(coordinator.contains("SmartTopLayoutPolicy.showQuickRecent("));
-		assertFalse(controller.contains("SmartTopLayoutPolicy.showQuickRecent("));
 		assertTrue(coordinator.contains("SmartTopViewState.MAX_QUICK_RECENT"));
 		assertTrue(coordinator.contains("publish(current.withQuickRecent(recent(items, active,"));
-		assertTrue(binder.contains(
-				"SmartTopLayoutController.presentation(views.root(), state).showQuickRecent()"));
+		assertFalse(state.contains("(layout == SmartTopLayoutMode.COMPACT) || recent.isEmpty()"));
+		assertTrue(controller.contains("SmartTopAdaptivePolicy.resolve(environment, state.actions(), metrics)"));
+		assertTrue(binder.contains("int count = Math.min(spec.recentRows()"));
+		assertFalse(binder.contains("SmartTopLayoutController.presentation("));
+	}
+
+	@Test
+	public void legacyPresentationPolicyIsNotReferencedByRuntime() throws Exception {
+		String controller = source("ui/smarttop/SmartTopLayoutController.java");
+		String binder = source("ui/smarttop/SmartTopBinder.java");
+		assertFalse(controller.contains("SmartTopPresentationPolicy"));
+		assertFalse(binder.contains("SmartTopPresentationPolicy"));
 	}
 
 	private static String source(String relativePath) throws Exception {

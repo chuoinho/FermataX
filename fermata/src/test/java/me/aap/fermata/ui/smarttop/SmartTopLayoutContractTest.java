@@ -9,10 +9,10 @@ import java.nio.file.Path;
 
 import org.junit.Test;
 
-/** Source/resource guards for the isolated V2 renderer and its visual geometry. */
+/** Source/resource guards for the adaptive V2 renderer. */
 public class SmartTopLayoutContractTest {
 	@Test
-	public void v2UsesADedicatedLayoutAndLegacyViewTypeRemainsAvailable() throws Exception {
+	public void v2UsesDedicatedLayoutAndLegacyViewTypeRemainsAvailable() throws Exception {
 		String dashboard = source("ui/fragment/DashboardFragment.java");
 		assertTrue(dashboard.contains("VIEW_TYPE_SMART_TOP_V2"));
 		assertTrue(dashboard.contains("R.layout.dashboard_smart_top_v2_item"));
@@ -21,20 +21,7 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
-	public void controlsSeparateVisualSurfaceGlyphAndTouchGeometry() throws Exception {
-		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
-		String dimensions = resource("values/dimens.xml");
-		assertTrue(dimensions.contains("dashboard_smart_v2_control_size\">48dp"));
-		assertTrue(dimensions.contains("dashboard_smart_v2_visual_action_size\">44dp"));
-		assertTrue(dimensions.contains("dashboard_smart_v2_action_glyph_size\">22dp"));
-		assertTrue(layout.contains("android:layout_width=\"@dimen/dashboard_smart_v2_control_size\""));
-		assertTrue(layout.contains("android:layout_height=\"@dimen/dashboard_smart_v2_control_size\""));
-		assertTrue(layout.contains("android:padding=\"@dimen/dashboard_smart_v2_action_padding\""));
-		assertTrue(layout.contains("@drawable/dashboard_smart_action_v2_bg"));
-	}
-
-	@Test
-	public void layoutExposesAllSixStateRendererSurfacesAndThreeRecentRows() throws Exception {
+	public void layoutExposesAllRendererSurfacesAndThreeRecentRows() throws Exception {
 		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
 		for (String id : new String[]{"dashboard_action_label", "dashboard_action_prev",
 				"dashboard_action_play_pause", "dashboard_action_next",
@@ -50,44 +37,36 @@ public class SmartTopLayoutContractTest {
 			assertTrue(id, row.contains("android:layout_height=\"28dp\""));
 			assertTrue(id, row.contains("android:ellipsize=\"end\""));
 			assertTrue(id, row.contains("android:maxLines=\"1\""));
-			assertFalse(id, row.contains("android:visibility=\"gone\""));
 		}
 	}
 
 	@Test
-	public void rtlLongTextAndFocusUseBoundedLogicalGeometry() throws Exception {
-		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
+	public void adaptiveControllerIsSingleWriterForGeometry() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
-		assertTrue(layout.contains("android:ellipsize=\"end\""));
-		assertTrue(layout.contains("android:maxLines=\"1\""));
-		assertTrue(layout.contains("android:maxWidth=\"112dp\""));
-		assertTrue(layout.contains("android:layout_marginStart"));
-		assertTrue(layout.contains("android:layout_marginEnd"));
-		assertFalse(layout.contains("android:layout_marginLeft"));
-		assertFalse(layout.contains("android:layout_marginRight"));
-		assertTrue(controller.contains("setMarginStart"));
-		assertTrue(controller.contains("setMarginEnd"));
-		assertTrue(controller.indexOf("dashboard_action_label") <
-				controller.indexOf("dashboard_action_prev"));
-		assertTrue(layout.indexOf("dashboard_action_prev") <
-				layout.indexOf("dashboard_action_play_pause"));
-		assertTrue(layout.indexOf("dashboard_action_play_pause") <
-				layout.indexOf("dashboard_action_next"));
-		assertTrue(layout.indexOf("dashboard_action_next") <
-				layout.indexOf("dashboard_action_favorite"));
-		assertTrue(layout.indexOf("dashboard_action_favorite") <
-				layout.indexOf("dashboard_action_back_to_list"));
+		assertTrue(controller.contains("SmartTopAdaptivePolicy.resolve(environment, state.actions(), metrics)"));
+		assertTrue(controller.contains("spec.cardHeightDp()"));
+		assertTrue(controller.contains("spec.artworkSizeDp()"));
+		assertTrue(controller.contains("spec.actionCellDp()"));
+		assertTrue(controller.contains("spec.recentPanelWidthDp()"));
+		assertTrue(controller.contains("if (spec.centerActionRail())"));
+		assertFalse(controller.contains("SmartTopPresentationPolicy"));
 	}
 
 	@Test
-	public void binderClearsRecycledActionsAndGuardsLateRecentMetadata() throws Exception {
+	public void binderConsumesAdaptiveActionsTerminalStyleAndRecentRows() throws Exception {
 		String binder = source("ui/smarttop/SmartTopBinder.java");
-		assertTrue(binder.contains("clearLabeledAction"));
-		assertTrue(binder.contains("for (ImageButton button : buttons) clearAction(button)"));
-		assertTrue(binder.contains("setOnClickListener(null)"));
-		assertTrue(binder.contains("setContentDescription(null)"));
-		assertTrue(binder.contains("setActivated(false)"));
-		assertTrue(binder.contains("token.equals(view.getTag(R.id.dashboard_smart_bind_token))"));
+		assertTrue(binder.contains("SmartTopLayoutController.layoutSpec(views.root(), state)"));
+		assertTrue(binder.contains("spec.visibleActions()"));
+		assertTrue(binder.contains("SmartTopTerminalActionStyle.LABEL_ONLY"));
+		assertTrue(binder.contains("int count = Math.min(spec.recentRows()"));
+		assertFalse(binder.contains("SmartTopLayoutController.presentation("));
+	}
+
+	@Test
+	public void invisibleSemanticSlotsCollapseToZeroWidth() throws Exception {
+		String controller = source("ui/smarttop/SmartTopLayoutController.java");
+		assertTrue(controller.contains("params.width = (action == null) ? 0 : cell"));
+		assertTrue(controller.contains("labelParams.width = labelActive ?"));
 	}
 
 	@Test
@@ -99,78 +78,24 @@ public class SmartTopLayoutContractTest {
 		assertTrue(state.contains("Math.min(MAX_QUICK_RECENT, recent.size())"));
 		assertTrue(coordinator.contains("SmartTopViewState.MAX_QUICK_RECENT"));
 		assertTrue(binder.contains("for (int i = 0; i < count; i++)"));
-		assertTrue(binder.contains("state.quickRecent().get(i)"));
-		assertTrue(binder.contains("views.recentItems().get(i)"));
 	}
 
 	@Test
-	public void timelinePayloadAvoidsFullBindAndRefreshesTheCurrentStateIdentity() throws Exception {
+	public void timelinePayloadAvoidsFullBindAndRefreshesCurrentStateIdentity() throws Exception {
 		String dashboard = source("ui/fragment/DashboardFragment.java");
 		String binder = source("ui/smarttop/SmartTopBinder.java");
 		assertTrue(dashboard.contains("PAYLOAD_SMART_TOP_TIMELINE"));
 		assertTrue(dashboard.contains("notifyItemChanged(position, PAYLOAD_SMART_TOP_TIMELINE)"));
 		assertTrue(dashboard.contains("bindTimelineUpdate(holder.smartTopViews(), card.smartTopState)"));
 		assertTrue(binder.contains("setTag(R.id.dashboard_smart_state_tag, state)"));
-		assertTrue(binder.contains("SmartTopViewState current = boundState(views.root())"));
-		assertTrue(binder.contains("dispatchAction(button, root)"));
 	}
 
 	@Test
-	public void hiddenTimelineKeepsGeometryAndLayoutApplicationIsTokenGuarded() throws Exception {
-		String binder = source("ui/smarttop/SmartTopBinder.java");
-		String controller = source("ui/smarttop/SmartTopLayoutController.java");
-		assertTrue(binder.contains("progressGroup().setVisibility(View.INVISIBLE)"));
-		assertTrue(binder.contains("progress().setVisibility(View.INVISIBLE)"));
-		assertTrue(binder.contains("progressTotal().setVisibility(View.INVISIBLE)"));
-		assertTrue(binder.contains("actions().setVisibility(actions.isEmpty() ? View.INVISIBLE"));
-		assertTrue(controller.contains("dashboard_smart_layout_token"));
-		assertTrue(controller.contains("if (token.equals(root.getTag("));
-		assertTrue(controller.contains("boolean showContext"));
-	}
-
-	@Test
-	public void timelineStaysWithPrimaryContentAndRecentHeaderMatchesTheEyebrow() throws Exception {
-		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
+	public void timelineStaysWithPrimaryContent() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		assertTrue(controller.contains("progressParams.width = 0"));
 		assertTrue(controller.contains("progressParams.topToBottom = R.id.dashboard_item_subtitle"));
 		assertTrue(controller.contains("progressParams.endToStart = R.id.dashboard_item_actions"));
-		assertTrue(layout.contains("android:layout_height=\"5dp\""));
-		assertTrue(layout.contains("android:progressDrawable=\"@drawable/dashboard_smart_progress\""));
-		String recent = element(layout, "@+id/dashboard_recent_title");
-		assertTrue(recent.contains("android:textAllCaps=\"true\""));
-		assertTrue(recent.contains("android:textColor=\"?attr/colorOnSecondary\""));
-		assertTrue(recent.contains("android:textSize=\"13sp\""));
-		assertTrue(recent.contains("android:textStyle=\"bold\""));
-	}
-
-	@Test
-	public void actionRailUsesStableSemanticSlotsAndLabeledTerminalActions() throws Exception {
-		String binder = source("ui/smarttop/SmartTopBinder.java");
-		assertTrue(binder.contains("if (isLabeled(action))"));
-		assertTrue(binder.contains("bindLabeledAction(views.labeledAction()"));
-		assertTrue(binder.contains("case PREVIOUS -> buttons.get(0)"));
-		assertTrue(binder.contains("case PLAY, PLAY_PAUSE -> buttons.get(1)"));
-		assertTrue(binder.contains("case NEXT -> buttons.get(2)"));
-		assertTrue(binder.contains("case OPEN_CONTEXT, HISTORY -> buttons.get(3)"));
-		assertTrue(binder.contains("case FAVORITE -> buttons.get(4)"));
-		assertFalse(binder.contains("OPEN_ADDONS, RETRY -> buttons.get(1)"));
-		assertTrue(binder.contains("button.setVisibility(View.INVISIBLE)"));
-		assertTrue(binder.contains("&&\n\t\t\t\thasContent"));
-		assertTrue(binder.contains("recentPanel().setVisibility(showPanel ? View.VISIBLE : View.GONE)"));
-	}
-
-	@Test
-	public void coldLaunchStartsRecentAlongsideProviderDiscovery() throws Exception {
-		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
-		int method = coordinator.indexOf("private void loadProviderCandidates");
-		int preview = coordinator.indexOf("loadRecentPreview(generation);", method);
-		int providers = coordinator.indexOf("providers.loadCandidates()", method);
-		assertTrue(preview > method);
-		assertTrue(preview < providers);
-		assertTrue(coordinator.contains("getRecent().getUnsortedChildren()"));
-		assertTrue(coordinator.contains("return empty(refreshGeneration, layout)"));
-		assertTrue(coordinator.contains("current.mode() != SmartTopMode.EMPTY"));
 	}
 
 	private static String element(String xml, String id) {

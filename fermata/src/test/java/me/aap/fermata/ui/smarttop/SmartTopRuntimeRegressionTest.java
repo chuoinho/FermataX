@@ -9,7 +9,7 @@ import java.nio.file.Path;
 
 import org.junit.Test;
 
-/** Regression coverage for issues found during final DHU validation. */
+/** Regression coverage for issues found during final DHU and phone validation. */
 public class SmartTopRuntimeRegressionTest {
 	@Test
 	public void duplicateEyebrowSubtitleIsSuppressed() {
@@ -33,16 +33,24 @@ public class SmartTopRuntimeRegressionTest {
 	}
 
 	@Test
-	public void automotiveActionRailIsCenteredInsteadOfBottomAnchored() throws Exception {
+	public void nonCompactActionRailIsCenteredBySpaceClassNotHostType() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
-		int automotive = controller.indexOf("if (automotive) {");
-		int center = controller.indexOf("actionParams.verticalBias = 0.5F", automotive);
-		assertTrue(automotive >= 0);
+		int adaptive = controller.indexOf("if (spec.centerActionRail()) {");
+		int center = controller.indexOf("actionParams.verticalBias = 0.5F", adaptive);
+		assertTrue(adaptive >= 0);
 		assertTrue(controller.indexOf(
-				"actionParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID", automotive) < center);
+				"actionParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID", adaptive) < center);
 		assertTrue(controller.indexOf(
-				"actionParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID", automotive) < center);
-		assertTrue(center > automotive);
+				"actionParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID", adaptive) < center);
+		assertTrue(center > adaptive);
+	}
+
+	@Test
+	public void terminalCtaCanDropIconWithoutDroppingItsLabel() throws Exception {
+		String binder = source("ui/smarttop/SmartTopBinder.java");
+		assertTrue(binder.contains("SmartTopTerminalActionStyle.LABEL_ONLY"));
+		assertTrue(binder.contains("button.setIcon(null)"));
+		assertTrue(binder.contains("button.setText(description(action, state))"));
 	}
 
 	private static String element(String xml, String id) {

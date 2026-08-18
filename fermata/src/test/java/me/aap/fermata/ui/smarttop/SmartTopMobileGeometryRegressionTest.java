@@ -12,20 +12,31 @@ import org.junit.Test;
 /** Guards the phone renderer against invisible semantic slots consuming the text budget. */
 public class SmartTopMobileGeometryRegressionTest {
 	@Test
-	public void phoneAndAutomotiveShareMeasuredActionGeometry() throws Exception {
+	public void phoneAndAutomotiveShareAdaptiveActionGeometry() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		assertFalse(controller.contains("if (!automotive) return;"));
-		assertTrue(controller.contains("int cell = px(root, presentation.actionCellDp());"));
-		assertTrue(controller.contains("int gap = px(root, presentation.actionGapDp());"));
+		assertTrue(controller.contains("int cell = px(root, spec.actionCellDp());"));
+		assertTrue(controller.contains("int gap = px(root, spec.actionGapDp());"));
 		assertTrue(controller.contains("params.width = (action == null) ? 0 : cell;"));
 	}
 
 	@Test
-	public void phoneBudgetRemainsFortyEightDpWithTwentyTwoDpGlyphs() throws Exception {
-		String policy = source("ui/smarttop/SmartTopPresentationPolicy.java");
-		assertTrue(policy.contains("MOBILE_ACTION_CELL_DP = 48"));
-		assertTrue(policy.contains("MOBILE_GLYPH_DP = 22"));
-		assertTrue(policy.contains("MOBILE_GAP_DP = 4"));
+	public void touchBudgetRemainsFortyEightDpWithTwentyTwoDpGlyphs() {
+		assertTrue(SmartTopAdaptivePolicy.TOUCH_ACTION_CELL_DP == 48);
+		assertTrue(SmartTopAdaptivePolicy.TOUCH_GLYPH_DP == 22);
+		assertTrue(SmartTopAdaptivePolicy.TOUCH_ACTION_GAP_DP == 4);
+	}
+
+	@Test
+	public void narrowPhoneDropsAuxiliarySlotsInsteadOfCollapsingText() {
+		SmartTopLayoutSpec spec = SmartTopAdaptivePolicy.resolve(
+				new SmartTopEnvironment(313, 720, 1F, SmartTopInteractionProfile.TOUCH),
+				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT,
+						SmartTopCapabilities.current(true, true)),
+				new SmartTopContentMetrics(120, 0, 3));
+		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
+		assertFalse(spec.visibleActions().contains(SmartTopAction.FAVORITE));
+		assertFalse(spec.visibleActions().contains(SmartTopAction.OPEN_CONTEXT));
 	}
 
 	private static String source(String relativePath) throws Exception {

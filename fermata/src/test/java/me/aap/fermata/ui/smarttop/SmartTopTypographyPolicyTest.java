@@ -41,7 +41,7 @@ public class SmartTopTypographyPolicyTest {
 	}
 
 	@Test
-	public void controllerLocksRowsAndPreservesFontScaleFallback() throws Exception {
+	public void controllerLocksRowsAndUsesAdaptiveMetrics() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		String binder = source("ui/smarttop/SmartTopBinder.java");
 		assertTrue(controller.contains("SmartTopTypographyPolicy.resolve(mode)"));
@@ -49,8 +49,8 @@ public class SmartTopTypographyPolicyTest {
 		assertTrue(controller.contains("view.setMaxLines(1)"));
 		assertTrue(controller.contains("view.setIncludeFontPadding(false)"));
 		assertTrue(controller.contains("view.setMinHeight(px(root, minHeightDp))"));
-		assertTrue(controller.contains("float fontScale = root.getResources().getConfiguration().fontScale;"));
-		assertTrue(controller.contains("SmartTopPresentationPolicy.resolve("));
+		assertTrue(controller.contains("root.getResources().getConfiguration().fontScale"));
+		assertTrue(controller.contains("SmartTopAdaptivePolicy.resolve(environment, state.actions(), metrics)"));
 		assertTrue(binder.contains("shouldShowSubtitle(state.eyebrow(), state.subtitle())"));
 	}
 
