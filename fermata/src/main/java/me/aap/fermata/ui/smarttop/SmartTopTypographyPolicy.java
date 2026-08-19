@@ -44,6 +44,15 @@ public final class SmartTopTypographyPolicy {
 		};
 	}
 
+	/**
+	 * Returns the SP value to request from Android so the resulting visual size follows the
+	 * bounded secondary-text scale rather than multiplying without limit with system fontScale.
+	 */
+	public static float secondarySp(float baseSp, float systemFontScale) {
+		float scale = Math.max(1F, systemFontScale);
+		return baseSp * secondaryVisualScale(scale) / scale;
+	}
+
 	static int fontScaleBucket(float systemFontScale) {
 		float scale = Math.max(1F, systemFontScale);
 		if (scale <= 1.05F) return 0;
