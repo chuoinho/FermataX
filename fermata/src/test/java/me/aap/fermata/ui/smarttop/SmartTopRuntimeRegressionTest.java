@@ -33,16 +33,16 @@ public class SmartTopRuntimeRegressionTest {
 	}
 
 	@Test
-	public void nonCompactActionRailIsCenteredBySpaceClassNotHostType() throws Exception {
+	public void actionRailIsAlwaysAlignedToTheStableMetadataBlock() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
-		int adaptive = controller.indexOf("if (spec.centerActionRail()) {");
-		int center = controller.indexOf("actionParams.verticalBias = 0.5F", adaptive);
-		assertTrue(adaptive >= 0);
-		assertTrue(controller.indexOf(
-				"actionParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID", adaptive) < center);
-		assertTrue(controller.indexOf(
-				"actionParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID", adaptive) < center);
-		assertTrue(center > adaptive);
+		assertTrue(controller.contains(
+				"actionParams.topToTop = R.id.dashboard_item_eyebrow"));
+		assertTrue(controller.contains(
+				"actionParams.bottomToBottom = R.id.dashboard_smart_progress_group"));
+		assertTrue(controller.contains("actionParams.verticalBias = 0.5F"));
+		assertFalse(controller.contains("centerActionRail"));
+		assertFalse(controller.contains(
+				"actionParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID"));
 	}
 
 	@Test
