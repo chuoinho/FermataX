@@ -33,7 +33,7 @@ final class DashboardModelBuilder {
 		DashboardCard visibleSmartTop = smartTopVisible ? smartTopCard : null;
 		if (visibleSmartTop != null) cards.add(visibleSmartTop);
 		for (DashboardItems.Item item : DashboardItems.getDashboardItems(ctx, store)) {
-			if (item.id == R.id.recent_fragment) continue;
+			if ((visibleSmartTop != null) && (item.id == R.id.recent_fragment)) continue;
 			if ((visibleSmartTop != null) && (visibleSmartTop.targetId == item.id)) continue;
 			DashboardCard card = DashboardCard.item(item);
 			if (automotive && (item.addonInfo != null)) card = card.withTitle(emphasizeAddonTitle(card.title));
