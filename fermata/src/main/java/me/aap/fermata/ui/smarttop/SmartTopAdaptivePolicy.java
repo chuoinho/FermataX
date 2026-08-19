@@ -96,7 +96,7 @@ public final class SmartTopAdaptivePolicy {
 		return new SmartTopLayoutSpec(mode, cardHeightDp, cardPaddingDp,
 				artworkSizeDp, artworkPaddingDp, typography, cellDp, primaryGlyphDp,
 				secondaryGlyphDp, gapDp, actions, terminalStyle, terminalWidthDp,
-				recentRows, recentPanelWidthDp, true);
+				recentRows, recentPanelWidthDp);
 	}
 
 	public static SmartTopLayoutMode resolveMode(SmartTopEnvironment env) {
