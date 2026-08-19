@@ -16,9 +16,9 @@ import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.SmartTopCandidate;
 import me.aap.fermata.addon.SmartTopProviderCoordinator;
 import me.aap.fermata.addon.SmartTopProviderResult;
+import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
@@ -95,14 +95,64 @@ public final class SmartTopCoordinator implements AutoCloseable {
 
 	public void refresh() {
 		if (closed) return;
-		int generation = ++refreshGeneration;
 		PlayableItem active = activity.getCurrentPlayable();
+		if ((active != null) && refreshCurrentInPlace(active)) return;
+
+		int generation = ++refreshGeneration;
 		if (active != null) {
 			publishCurrent(generation, active);
 			loadQuickRecent(generation, active);
 			return;
 		}
 		loadProviderCandidates(generation);
+	}
+
+	/**
+	 * Reuses the current generation while the canonical media item is unchanged. A pure
+	 * play/pause/timeline change is published through the timeline payload so RecyclerView never
+	 * rebinds geometry or temporarily drops Quick Recent.
+	 */
+	private boolean refreshCurrentInPlace(PlayableItem active) {
+		SmartTopViewState current = state;
+		if ((current == null) || (current.mode() != SmartTopMode.CURRENT) ||
+				(current.canonicalItem() == null) || !samePlayable(current.canonicalItem(), active)) {
+			return false;
+		}
+
+		PlaybackSnapshot snapshot = activity.getMediaSessionCallback().getPlaybackSnapshot();
+		PlayableItem snapshotItem = snapshot.getItem();
+		CharSequence title = ((snapshotItem != null) && samePlayable(snapshotItem, active)) ?
+				snapshot.getDisplayTitle() : active.getName();
+		CharSequence subtitle = subtitle(active);
+		boolean favoriteSupported = !active.isExternal();
+		boolean favorite = favoriteSupported && active.isFavoriteItem();
+		SmartTopCapabilities capabilities = SmartTopCapabilities.current(favoriteSupported, true);
+		List<SmartTopAction> actions =
+				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, layout, capabilities);
+		SmartTopTimeline timeline = activeTimeline(active);
+
+		SmartTopViewState next = new SmartTopViewState(current.generation(), SmartTopMode.CURRENT,
+				layout, active, PlayableItemResolver.unwrap(active), active.getIcon(),
+				context.getString(R.string.dashboard_now_playing), title, subtitle, timeline,
+				capabilities, actions, favorite, current.quickRecent(), null);
+		boolean metadataStable = (current.icon() == next.icon()) &&
+				TextUtils.equals(current.eyebrow(), next.eyebrow()) &&
+				TextUtils.equals(current.title(), next.title()) &&
+				TextUtils.equals(current.subtitle(), next.subtitle()) &&
+				(current.favorite() == next.favorite()) && current.actions().equals(next.actions());
+		boolean timelineChanged = !SmartTopTimelinePresentation.of(current.timeline()).equals(
+				SmartTopTimelinePresentation.of(next.timeline()));
+
+		if (metadataStable) {
+			if (timelineChanged) {
+				state = next;
+				listener.onSmartTopTimeline(next);
+			}
+			return true;
+		}
+
+		publish(next);
+		return true;
 	}
 
 	private void publishCurrent(int generation, PlayableItem active) {
