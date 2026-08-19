@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Verify Mobile, Auto, lint, hotspot, and whitespace
+    name: Verify FermataX source, lint, architecture, and universal package
     runs-on: ubuntu-latest
     timeout-minutes: 75
 
@@ -49,6 +49,9 @@ jobs:
         run: |
           java -version
           ./gradlew --version
+
+      - name: Validate universal build entry point
+        run: sh -n build.sh
 
       - name: Mobile unit suite
         run: >-
@@ -121,12 +124,18 @@ jobs:
       # user-facing APKs, releases, or CI artifacts.
       - name: Package single FermataX universal APK
         if: ${{ success() }}
+        shell: bash
         run: |
+          set -euo pipefail
           ./gradlew :fermata:packageAutoDebugUniversalApk --no-daemon --no-parallel --stacktrace
           mkdir -p dist
-          apk="$(find fermata/build/outputs/apk_from_bundle/autoDebug -maxdepth 1 -type f -name '*.apk' -print -quit)"
-          test -n "$apk"
-          cp "$apk" dist/FermataX-debug-universal.apk
+          rm -f dist/FermataX-debug-universal.apk
+          mapfile -t apks < <(find fermata/build/outputs/apk_from_bundle/autoDebug -maxdepth 1 -type f -name '*.apk' -print)
+          if [ "${#apks[@]}" -ne 1 ]; then
+            echo "Expected exactly one universal APK, found ${#apks[@]}"
+            exit 1
+          fi
+          cp "${apks[0]}" dist/FermataX-debug-universal.apk
 
       - name: Upload single FermataX universal APK
         if: ${{ success() }}
