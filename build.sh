@@ -12,9 +12,6 @@ while [ "$1" != "" ]; do
         -c)
             CLEAN='clean'
             ;;
-        -a)
-            ARM=true
-            ;;
         -b)
             TASK='aab'
             ;;
@@ -46,7 +43,7 @@ cd "$DIR"
 
 # Distribution contract: FermataX is one app/package for phone and Android Auto.
 # Gradle keeps its platform source sets internally, but this script must never publish
-# separate Mobile and Auto products.
+# separate Mobile/Auto or ABI-specific APK products. APK builds are one universal package.
 build() {
   local ext="$TASK"
   local app_flavor=${APP_ID_SFX:-$(grep -oP "${TASK}Flavor=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
@@ -54,21 +51,18 @@ build() {
   [ -z "$app_sfx" ] || local app_sfx="-PAPP_ID_SFX=$app_sfx"
   if [ $TASK = 'apk' ]; then
     local task="package${app_flavor}AutoReleaseUniversalApk"
-    local abi="-PABI=$1"
-    [ "$1" = 'arm64-v8a' ] && local sfx='-arm64' || local sfx='-arm'
   else
     local task="bundle${app_flavor}AutoRelease"
   fi
 
-  ./gradlew $CLEAN fermata:$task $abi $app_sfx
+  ./gradlew $CLEAN fermata:$task $app_sfx
   for path in $(ls fermata/build/outputs/*/*/fermata*.$ext); do
     local version=${path##*fermata-}
     version=${version%%-*}
-    local dst="$DEST_DIR/FermataX-${version}${sfx}.$ext"
+    local dst="$DEST_DIR/FermataX-${version}.$ext"
     mv "$path" "$dst"
     echo "Built $dst"
   done
 }
 
-[ $ARM ] && [ "$TASK" = 'apk' ] && build 'armeabi-v7a' || true
-build 'arm64-v8a'
+build
