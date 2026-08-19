@@ -31,25 +31,42 @@ public class SmartTopTypographyPolicyTest {
 	}
 
 	@Test
-	public void stableRowsReserveSpaceWithoutDisablingFontScaling() {
+	public void everyModeOwnsAStableTwoLineTitleSlot() {
 		for (SmartTopLayoutMode mode : SmartTopLayoutMode.values()) {
 			SmartTopTypographyPolicy.Typography type = SmartTopTypographyPolicy.resolve(mode);
+			assertEquals(2, type.titleLines());
 			assertTrue(type.eyebrowMinHeightDp() > 0);
-			assertTrue(type.titleMinHeightDp() > type.eyebrowMinHeightDp());
+			assertTrue(type.titleMinHeightDp() > type.subtitleMinHeightDp());
 			assertTrue(type.subtitleMinHeightDp() >= type.eyebrowMinHeightDp());
 		}
 	}
 
 	@Test
-	public void controllerLocksRowsAndUsesAdaptiveMetrics() throws Exception {
+	public void fontScaleUsesStableBucketsAndCapsVisualGrowth() {
+		assertEquals(0, SmartTopTypographyPolicy.fontScaleBucket(1F));
+		assertEquals(1, SmartTopTypographyPolicy.fontScaleBucket(1.3F));
+		assertEquals(2, SmartTopTypographyPolicy.fontScaleBucket(1.5F));
+		assertEquals(3, SmartTopTypographyPolicy.fontScaleBucket(2F));
+
+		SmartTopTypographyPolicy.Typography normal =
+				SmartTopTypographyPolicy.resolve(SmartTopLayoutMode.STANDARD, 1F);
+		SmartTopTypographyPolicy.Typography huge =
+				SmartTopTypographyPolicy.resolve(SmartTopLayoutMode.STANDARD, 2F);
+		assertTrue(huge.titleSp() < normal.titleSp());
+		assertTrue(huge.titleMinHeightDp() > normal.titleMinHeightDp());
+		assertEquals(2, huge.titleLines());
+	}
+
+	@Test
+	public void controllerLocksTwoLineTitleAndUsesAdaptiveMetrics() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		String binder = source("ui/smarttop/SmartTopBinder.java");
-		assertTrue(controller.contains("SmartTopTypographyPolicy.resolve(mode)"));
-		assertTrue(controller.contains("view.setMinLines(1)"));
-		assertTrue(controller.contains("view.setMaxLines(1)"));
+		assertTrue(controller.contains("SmartTopTypographyPolicy.resolve(mode, environment.fontScale())"));
+		assertTrue(controller.contains("view.setMinLines(lines)"));
+		assertTrue(controller.contains("view.setMaxLines(lines)"));
+		assertTrue(controller.contains("typography.titleLines()"));
 		assertTrue(controller.contains("view.setIncludeFontPadding(false)"));
 		assertTrue(controller.contains("view.setMinHeight(px(root, minHeightDp))"));
-		assertTrue(controller.contains("root.getResources().getConfiguration().fontScale"));
 		assertTrue(controller.contains("SmartTopAdaptivePolicy.resolve(environment, state.actions(), metrics)"));
 		assertTrue(binder.contains("shouldShowSubtitle(state.eyebrow(), state.subtitle())"));
 	}
