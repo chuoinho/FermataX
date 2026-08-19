@@ -15,7 +15,10 @@ public class DistributionContractTest {
 	public void localBuildProducesOneUniversalApkWithoutPlatformOrAbiSplit() throws Exception {
 		String build = read("build.sh");
 		assertTrue(build.contains("package${app_flavor}AutoReleaseUniversalApk"));
+		assertTrue(build.contains("output_root=\"fermata/build/outputs/apk_from_bundle\""));
+		assertTrue(build.contains("Expected exactly one FermataX $ext artifact"));
 		assertTrue(build.contains("FermataX-${version}.$ext"));
+		assertTrue(build.contains("cp \"$path\" \"$dst\""));
 		assertFalse(build.contains("-PABI="));
 		assertFalse(build.contains("package${app_flavor}Mobile"));
 		assertFalse(build.contains("fermata-auto-"));
