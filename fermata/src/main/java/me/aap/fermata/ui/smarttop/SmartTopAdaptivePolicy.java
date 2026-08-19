@@ -4,17 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Pure adaptive policy shared by phone, tablet, mirror and Android Auto/DHU.
- * Space decides composition; the interaction profile only decides minimum control geometry.
+ * Pure adaptive policy shared by every SmartTop renderer host. Space decides composition; the
+ * interaction profile decides control geometry. SmartTop is currently surfaced only on eligible
+ * automotive Dashboard viewports, but keeping this policy pure makes its geometry deterministic.
  */
 public final class SmartTopAdaptivePolicy {
 	public static final int TOUCH_ACTION_CELL_DP = 48;
-	public static final int AUTOMOTIVE_ACTION_CELL_DP = 76;
+	public static final int AUTOMOTIVE_MAX_ACTION_CELL_DP = 76;
+	public static final int AUTOMOTIVE_MIN_ACTION_CELL_DP = 56;
 	public static final int TOUCH_GLYPH_DP = 22;
 	public static final int AUTOMOTIVE_PRIMARY_GLYPH_DP = 44;
 	public static final int AUTOMOTIVE_SECONDARY_GLYPH_DP = 36;
 	public static final int TOUCH_ACTION_GAP_DP = 4;
-	public static final int AUTOMOTIVE_MAX_GAP_DP = 24;
+	public static final int AUTOMOTIVE_MAX_GAP_DP = 18;
 	private static final int RECENT_ROW_DP = 28;
 	private static final int RECENT_HEADER_DP = 22;
 	private static final int TERMINAL_HORIZONTAL_PADDING_DP = 24;
@@ -29,14 +31,15 @@ public final class SmartTopAdaptivePolicy {
 		boolean automotive = env.interaction().isAutomotive();
 		float fontScale = Math.max(1F, env.fontScale());
 		int cardPaddingDp = cardPaddingDp(mode, automotive);
-		int artworkSizeDp = artworkSizeDp(mode, automotive);
+		int artworkSizeDp = artworkSizeDp(mode, automotive, fontScale);
 		int artworkPaddingDp = artworkPaddingDp(mode, automotive);
-		int cardHeightDp = cardHeightDp(mode, fontScale, env.viewportHeightDp());
-		SmartTopTypographyPolicy.Typography typography = SmartTopTypographyPolicy.resolve(mode);
+		int cardHeightDp = cardHeightDp(mode, fontScale);
+		SmartTopTypographyPolicy.Typography typography =
+				SmartTopTypographyPolicy.resolve(mode, fontScale);
 
-		int cellDp = automotive ? AUTOMOTIVE_ACTION_CELL_DP : TOUCH_ACTION_CELL_DP;
-		int primaryGlyphDp = automotive ? AUTOMOTIVE_PRIMARY_GLYPH_DP : TOUCH_GLYPH_DP;
-		int secondaryGlyphDp = automotive ? AUTOMOTIVE_SECONDARY_GLYPH_DP : TOUCH_GLYPH_DP;
+		int cellDp = actionCellDp(env);
+		int primaryGlyphDp = primaryGlyphDp(cellDp, automotive);
+		int secondaryGlyphDp = secondaryGlyphDp(cellDp, automotive);
 		int availableDp = Math.max(0, Math.round(env.contentWidthDp()));
 		int fixedDp = (cardPaddingDp * 2) + artworkSizeDp + 10 +
 				titleReserveDp(mode, fontScale, metrics.titleWidthDp());
@@ -51,6 +54,7 @@ public final class SmartTopAdaptivePolicy {
 		int recentPanelWidthDp = (recentRows > 0) ? recentPanelWidthDp(mode) : 0;
 		int gapDp = preferredGapDp(env.contentWidthDp(), automotive, actions, cellDp, terminalWidthDp);
 
+		// Recent is the first optional region to yield. Primary metadata and transport never wrap.
 		if (requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
 				recentPanelWidthDp) > availableDp) {
 			recentRows = 0;
@@ -69,6 +73,7 @@ public final class SmartTopAdaptivePolicy {
 					cellDp, terminalWidthDp, gapDp);
 		}
 
+		// Auxiliary actions yield before the transport triplet. The rail itself remains one row.
 		for (SmartTopAction auxiliary : new SmartTopAction[]{
 				SmartTopAction.FAVORITE, SmartTopAction.OPEN_CONTEXT, SmartTopAction.HISTORY}) {
 			if (requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
@@ -80,8 +85,8 @@ public final class SmartTopAdaptivePolicy {
 
 		if (requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
 				recentPanelWidthDp) > availableDp) {
-			// PLAY/PLAY_PAUSE is the invariant transport control. Previous/Next are a pair that
-			// yields only when the measured viewport cannot preserve a useful text reserve.
+			// PLAY/PLAY_PAUSE is invariant. Previous/Next remain a pair and yield only when even
+			// the minimum automotive cell cannot preserve the two-line metadata reserve.
 			actions.remove(SmartTopAction.PREVIOUS);
 			actions.remove(SmartTopAction.NEXT);
 			gapDp = fitGapDp(availableDp, fixedDp, recentPanelWidthDp, actions,
@@ -91,7 +96,7 @@ public final class SmartTopAdaptivePolicy {
 		return new SmartTopLayoutSpec(mode, cardHeightDp, cardPaddingDp,
 				artworkSizeDp, artworkPaddingDp, typography, cellDp, primaryGlyphDp,
 				secondaryGlyphDp, gapDp, actions, terminalStyle, terminalWidthDp,
-				recentRows, recentPanelWidthDp, mode != SmartTopLayoutMode.COMPACT);
+				recentRows, recentPanelWidthDp, true);
 	}
 
 	public static SmartTopLayoutMode resolveMode(SmartTopEnvironment env) {
@@ -132,6 +137,30 @@ public final class SmartTopAdaptivePolicy {
 		return count;
 	}
 
+	static int actionCellDp(SmartTopEnvironment env) {
+		if (!env.interaction().isAutomotive()) return TOUCH_ACTION_CELL_DP;
+		float width = Math.max(0F, env.contentWidthDp());
+		int cell = (width >= 1000F) ? AUTOMOTIVE_MAX_ACTION_CELL_DP :
+				(width >= 820F) ? 68 : 60;
+		return switch (SmartTopTypographyPolicy.fontScaleBucket(env.fontScale())) {
+			case 0, 1 -> cell;
+			case 2 -> Math.max(AUTOMOTIVE_MIN_ACTION_CELL_DP, cell - 4);
+			default -> Math.max(AUTOMOTIVE_MIN_ACTION_CELL_DP, cell - 8);
+		};
+	}
+
+	private static int primaryGlyphDp(int cellDp, boolean automotive) {
+		if (!automotive) return TOUCH_GLYPH_DP;
+		return Math.min(AUTOMOTIVE_PRIMARY_GLYPH_DP,
+				Math.max(30, Math.round(cellDp * 0.58F)));
+	}
+
+	private static int secondaryGlyphDp(int cellDp, boolean automotive) {
+		if (!automotive) return TOUCH_GLYPH_DP;
+		return Math.min(AUTOMOTIVE_SECONDARY_GLYPH_DP,
+				Math.max(24, Math.round(cellDp * 0.46F)));
+	}
+
 	private static int requiredWidthDp(int fixedDp, List<SmartTopAction> actions,
 			int cellDp, int gapDp, int terminalWidthDp, int recentPanelWidthDp) {
 		return fixedDp + railWidthDp(actions, cellDp, gapDp, terminalWidthDp) + recentPanelWidthDp;
@@ -159,7 +188,7 @@ public final class SmartTopAdaptivePolicy {
 		if (count <= 1) return 0;
 		if (!automotive) return TOUCH_ACTION_GAP_DP;
 		int baseRail = railWidthDp(actions, cellDp, 0, terminalWidthDp);
-		int preferredBudget = Math.max(baseRail, Math.round(Math.max(0F, widthDp) * 0.48F));
+		int preferredBudget = Math.max(baseRail, Math.round(Math.max(0F, widthDp) * 0.42F));
 		return Math.max(0, Math.min(AUTOMOTIVE_MAX_GAP_DP,
 				(preferredBudget - baseRail) / (count - 1)));
 	}
@@ -202,58 +231,68 @@ public final class SmartTopAdaptivePolicy {
 	private static int cardPaddingDp(SmartTopLayoutMode mode, boolean automotive) {
 		return switch (mode) {
 			case COMPACT -> automotive ? 10 : 12;
-			case STANDARD -> 14;
-			case EXPANDED -> 16;
+			case STANDARD -> 12;
+			case EXPANDED -> 14;
 		};
 	}
 
-	private static int artworkSizeDp(SmartTopLayoutMode mode, boolean automotive) {
-		return switch (mode) {
-			case COMPACT -> automotive ? 66 : 56;
-			case STANDARD -> 80;
-			case EXPANDED -> 88;
+	private static int artworkSizeDp(SmartTopLayoutMode mode, boolean automotive, float fontScale) {
+		int base = switch (mode) {
+			case COMPACT -> automotive ? 64 : 56;
+			case STANDARD -> 72;
+			case EXPANDED -> 80;
+		};
+		if (!automotive) return base;
+		return switch (SmartTopTypographyPolicy.fontScaleBucket(fontScale)) {
+			case 0, 1 -> base;
+			case 2 -> Math.max(58, base - 4);
+			default -> Math.max(56, base - 8);
 		};
 	}
 
 	private static int artworkPaddingDp(SmartTopLayoutMode mode, boolean automotive) {
 		return switch (mode) {
-			case COMPACT -> automotive ? 13 : 11;
-			case STANDARD -> 16;
-			case EXPANDED -> 18;
+			case COMPACT -> automotive ? 12 : 11;
+			case STANDARD -> 14;
+			case EXPANDED -> 16;
 		};
 	}
 
-	private static int cardHeightDp(SmartTopLayoutMode mode, float fontScale, float viewportHeightDp) {
+	/** Card height is bucketed only by layout/font scale; playback state cannot change it. */
+	static int cardHeightDp(SmartTopLayoutMode mode, float fontScale) {
 		int base = switch (mode) {
 			case COMPACT -> 160;
-			case STANDARD -> 144;
-			case EXPANDED -> 152;
+			case STANDARD -> 148;
+			case EXPANDED -> 156;
 		};
-		int min = switch (mode) {
-			case COMPACT -> 148;
-			case STANDARD -> 136;
-			case EXPANDED -> 144;
+		int extra = switch (SmartTopTypographyPolicy.fontScaleBucket(fontScale)) {
+			case 0 -> 0;
+			case 1 -> 10;
+			case 2 -> 18;
+			default -> 30;
 		};
-		float boundedScale = Math.max(1F, Math.min(2F, fontScale));
-		int target = base + Math.round(40F * (boundedScale - 1F));
-		if (viewportHeightDp <= 0F) return target;
-		int viewportBudget = Math.max(min, Math.round(viewportHeightDp * 0.52F));
-		return Math.max(min, Math.min(target, viewportBudget));
+		return base + extra;
 	}
 
+	/** Reserve a useful two-line text column; a long intrinsic one-line title never owns the rail. */
 	private static int titleReserveDp(SmartTopLayoutMode mode, float fontScale, float titleWidthDp) {
 		int base = switch (mode) {
-			case COMPACT -> 110;
-			case STANDARD -> 150;
-			case EXPANDED -> 190;
+			case COMPACT -> 132;
+			case STANDARD -> 178;
+			case EXPANDED -> 220;
 		};
 		int max = switch (mode) {
-			case COMPACT -> 170;
-			case STANDARD -> 240;
-			case EXPANDED -> 320;
+			case COMPACT -> 180;
+			case STANDARD -> 230;
+			case EXPANDED -> 300;
 		};
-		int scaleExtra = Math.round(Math.max(0F, fontScale - 1F) * 48F);
-		int intrinsic = Math.min(max, Math.max(0, (int) Math.ceil(titleWidthDp)));
-		return Math.max(base + scaleExtra, intrinsic);
+		int scaleExtra = switch (SmartTopTypographyPolicy.fontScaleBucket(fontScale)) {
+			case 0 -> 0;
+			case 1 -> 10;
+			case 2 -> 18;
+			default -> 26;
+		};
+		int twoLineIntrinsic = Math.max(0, (int) Math.ceil(titleWidthDp / 2F));
+		return Math.min(max, Math.max(base + scaleExtra, twoLineIntrinsic));
 	}
 }
