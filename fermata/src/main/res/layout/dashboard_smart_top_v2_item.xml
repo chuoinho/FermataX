@@ -54,7 +54,8 @@
         android:layout_marginStart="10dp"
         android:layout_marginTop="1dp"
         android:ellipsize="end"
-        android:maxLines="1"
+        android:minLines="2"
+        android:maxLines="2"
         android:textAppearance="?attr/textAppearanceListItem"
         android:textSize="21sp"
         android:textStyle="bold"
@@ -83,8 +84,9 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide">
+        app:layout_constraintBottom_toBottomOf="@id/dashboard_smart_progress_group"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintTop_toTopOf="@id/dashboard_item_eyebrow">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/dashboard_action_label"
