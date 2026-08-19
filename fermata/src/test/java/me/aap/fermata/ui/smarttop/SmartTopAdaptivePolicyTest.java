@@ -35,26 +35,41 @@ public class SmartTopAdaptivePolicyTest {
 	}
 
 	@Test
-	public void phoneLandscapeCanUseStandardCompositionAndRecentWithoutOrientationRules() {
+	public void standardSpaceCanFitThreeRecentRowsWithoutOrientationRules() {
 		SmartTopLayoutSpec spec = SmartTopAdaptivePolicy.resolve(
 				env(700, 360, 1F, SmartTopInteractionProfile.TOUCH), CURRENT,
 				new SmartTopContentMetrics(120, 0, 3));
 		assertEquals(SmartTopLayoutMode.STANDARD, spec.mode());
 		assertEquals(3, spec.recentRows());
 		assertTrue(spec.showQuickRecent());
-		assertTrue(spec.centerActionRail());
 	}
 
 	@Test
-	public void automotiveInteractionRaisesControlGeometryWithoutChangingSpaceClass() {
+	public void automotiveCellsShrinkBeforeTheHorizontalRailCanCrowdMetadata() {
 		SmartTopLayoutSpec spec = SmartTopAdaptivePolicy.resolve(
 				env(700, 480, 1F, SmartTopInteractionProfile.AUTOMOTIVE), CURRENT,
 				new SmartTopContentMetrics(120, 0, 3));
 		assertEquals(SmartTopLayoutMode.STANDARD, spec.mode());
-		assertEquals(76, spec.actionCellDp());
-		assertEquals(44, spec.primaryGlyphDp());
-		assertEquals(36, spec.secondaryGlyphDp());
+		assertEquals(60, spec.actionCellDp());
+		assertEquals(35, spec.primaryGlyphDp());
+		assertEquals(28, spec.secondaryGlyphDp());
 		assertEquals(0, spec.recentRows());
+		assertTrue(spec.visibleActions().contains(SmartTopAction.PREVIOUS));
+		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
+		assertTrue(spec.visibleActions().contains(SmartTopAction.NEXT));
+	}
+
+	@Test
+	public void fontPressureCanShrinkAutomotiveCellsFurtherWithoutChangingCardOnPlaybackState() {
+		SmartTopEnvironment environment =
+				env(700, 480, 1.5F, SmartTopInteractionProfile.AUTOMOTIVE);
+		SmartTopLayoutSpec playing = SmartTopAdaptivePolicy.resolve(environment, CURRENT,
+				new SmartTopContentMetrics(180, 0, 0));
+		SmartTopLayoutSpec paused = SmartTopAdaptivePolicy.resolve(environment, CURRENT,
+				new SmartTopContentMetrics(180, 0, 0));
+		assertEquals(56, playing.actionCellDp());
+		assertEquals(playing.cardHeightDp(), paused.cardHeightDp());
+		assertEquals(playing.visibleActions(), paused.visibleActions());
 	}
 
 	@Test
@@ -63,8 +78,18 @@ public class SmartTopAdaptivePolicyTest {
 				env(1176, 720, 1F, SmartTopInteractionProfile.AUTOMOTIVE), CURRENT,
 				new SmartTopContentMetrics(180, 0, 3));
 		assertEquals(SmartTopLayoutMode.EXPANDED, spec.mode());
+		assertEquals(76, spec.actionCellDp());
 		assertEquals(3, spec.recentRows());
 		assertEquals(196, spec.recentPanelWidthDp());
+	}
+
+	@Test
+	public void longTitleIsBudgetedAsTwoLinesInsteadOfStealingTheTransportRail() {
+		SmartTopLayoutSpec spec = SmartTopAdaptivePolicy.resolve(
+				env(704, 480, 1.3F, SmartTopInteractionProfile.AUTOMOTIVE), CURRENT,
+				new SmartTopContentMetrics(520, 0, 0));
+		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
+		assertTrue(spec.actionCellDp() >= SmartTopAdaptivePolicy.AUTOMOTIVE_MIN_ACTION_CELL_DP);
 	}
 
 	@Test
@@ -78,7 +103,7 @@ public class SmartTopAdaptivePolicyTest {
 	}
 
 	@Test
-	public void fontPressureCanDemoteWidthClassAndIncreaseRequiredHeight() {
+	public void fontPressureCanDemoteWidthClassAndUsesBucketedHeight() {
 		SmartTopLayoutSpec normal = SmartTopAdaptivePolicy.resolve(
 				env(600, 800, 1F, SmartTopInteractionProfile.TOUCH), CURRENT,
 				SmartTopContentMetrics.empty());
@@ -88,6 +113,8 @@ public class SmartTopAdaptivePolicyTest {
 		assertEquals(SmartTopLayoutMode.STANDARD, normal.mode());
 		assertEquals(SmartTopLayoutMode.COMPACT, accessible.mode());
 		assertTrue(accessible.cardHeightDp() > normal.cardHeightDp());
+		assertEquals(SmartTopAdaptivePolicy.cardHeightDp(accessible.mode(), 1.5F),
+				accessible.cardHeightDp());
 	}
 
 	@Test
