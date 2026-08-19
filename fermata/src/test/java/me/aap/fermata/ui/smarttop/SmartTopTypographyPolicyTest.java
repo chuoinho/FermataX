@@ -58,6 +58,20 @@ public class SmartTopTypographyPolicyTest {
 	}
 
 	@Test
+	public void secondarySurfacesUseTheSameBoundedFontScalePolicy() {
+		assertEquals(13F, SmartTopTypographyPolicy.secondarySp(13F, 1F), 0.001F);
+		assertEquals(10.8F, SmartTopTypographyPolicy.secondarySp(13F, 1.3F), 0.001F);
+		assertEquals(9.88F, SmartTopTypographyPolicy.secondarySp(13F, 1.5F), 0.001F);
+		assertEquals(7.8F, SmartTopTypographyPolicy.secondarySp(13F, 2F), 0.001F);
+
+		float normalVisualSp = SmartTopTypographyPolicy.secondarySp(13F, 1F);
+		float hugeVisualSp = SmartTopTypographyPolicy.secondarySp(13F, 2F) * 2F;
+		assertEquals(13F, normalVisualSp, 0.001F);
+		assertEquals(15.6F, hugeVisualSp, 0.001F);
+		assertTrue(hugeVisualSp < normalVisualSp * 2F);
+	}
+
+	@Test
 	public void controllerLocksTwoLineTitleAndUsesAdaptiveMetrics() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		String binder = source("ui/smarttop/SmartTopBinder.java");
@@ -68,6 +82,12 @@ public class SmartTopTypographyPolicyTest {
 		assertTrue(controller.contains("view.setIncludeFontPadding(false)"));
 		assertTrue(controller.contains("view.setMinHeight(px(root, minHeightDp))"));
 		assertTrue(controller.contains("SmartTopAdaptivePolicy.resolve(environment, state.actions(), metrics)"));
+		assertTrue(controller.contains("applySecondaryTextScale(root, environment.fontScale())"));
+		for (String id : new String[]{"dashboard_smart_progress_current",
+				"dashboard_smart_progress_total", "dashboard_recent_title",
+				"dashboard_recent_item_1", "dashboard_recent_item_2", "dashboard_recent_item_3"}) {
+			assertTrue(id, controller.contains("R.id." + id));
+		}
 		assertTrue(binder.contains("shouldShowSubtitle(state.eyebrow(), state.subtitle())"));
 	}
 
