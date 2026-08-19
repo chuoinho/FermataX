@@ -19,8 +19,7 @@ public record SmartTopLayoutSpec(
 		SmartTopTerminalActionStyle terminalActionStyle,
 		int terminalActionWidthDp,
 		int recentRows,
-		int recentPanelWidthDp,
-		boolean centerActionRail) {
+		int recentPanelWidthDp) {
 	public SmartTopLayoutSpec {
 		Objects.requireNonNull(mode, "mode");
 		Objects.requireNonNull(typography, "typography");
