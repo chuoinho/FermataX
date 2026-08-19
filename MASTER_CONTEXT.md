@@ -1,6 +1,6 @@
 # FermataX Master Context
 
-> Last updated: 2026-08-17
+> Last updated: 2026-08-19
 >
 > This document is the primary project context for maintainers and coding agents. Read it
 > before changing product behavior, navigation, playback, addon activation, packaging, or
@@ -43,7 +43,11 @@ Drivers and passengers who want one Android Auto interface for frequently used m
 ### Platform scope
 
 - Android Auto is the primary platform and design target.
-- Mobile Android remains buildable and should not be broken by shared-code changes.
+- FermataX ships as **one application / one universal APK** used on both phone Android and
+  Android Auto/DHU. Mobile/Auto Gradle source sets may remain for implementation and testing, but
+  they are internal only and must never become separate user-facing APKs, releases, or artifacts.
+- Phone Android remains supported by the same universal package; SmartTop itself is intentionally
+  hidden on phone while the ordinary Dashboard Recent tile remains available.
 - Android TV is not a product priority.
 - HUR may be useful for occasional reproduction, but final Android Auto UI validation should
   use Google Desktop Head Unit (DHU) unless a task explicitly says otherwise.
@@ -56,9 +60,10 @@ Drivers and passengers who want one Android Auto interface for frequently used m
 4. Correct playback state, back behavior, and restoration after leaving Android Auto.
 5. Performance, source caching, and loading speed after UX and reliability are stable.
 
-SmartTop V2 source rollout Phases 0-4 is complete. Final DHU/device runtime validation remains
-pending before the SmartTop branch is eligible to merge. Podcast/Audiobook SmartTop providers
-remain deferred until their cached-only ownership seams are characterized independently. A local
+SmartTop V2 semantic/adaptive rollout and the horizontal-stability Phases 1-5 are complete in
+source. Exact-head CI and final DHU/device runtime validation remain required before the SmartTop
+branch is eligible to merge. Podcast/Audiobook SmartTop providers remain deferred until their
+cached-only ownership seams are characterized independently. A local
 `docs/smarttop/SMARTTOP_V2_GOAL.md` planning artifact may provide additional working notes, but it
 is ignored and is not part of the shared canonical repository until separately reviewed.
 
@@ -85,6 +90,20 @@ is ignored and is not part of the shared canonical repository until separately r
   dynamic feature loading, or external integrations, do not delete it based only on a text
   reference count.
 - Preserve user preferences and source data on update.
+
+### Distribution contract
+
+- FermataX has exactly one user-facing application package / universal APK for phone and Android
+  Auto/DHU.
+- Mobile/Auto are internal source sets and test targets only. Never publish, document, or offer
+  separate Mobile and Auto APKs to users.
+- Do not split the normal APK build by ABI. `build.sh` and CI must produce one neutral universal
+  APK name without `mobile`, `auto`, `arm`, or `arm64` product suffixes.
+- The canonical Gradle packaging task currently uses the internal Auto universal path because that
+  source set contains both the phone launcher and Android Auto integration. The task name is an
+  implementation detail, not a separate Auto product.
+- CI may run Mobile and Auto unit/lint tasks independently for verification; that does not change
+  the single-package distribution rule.
 
 ### Addon isolation
 
@@ -151,14 +170,19 @@ excluded from this UI refresh.
 
 ### SmartTopCard
 
-SmartTopCard is the wide primary card at the top of Dashboard. The final SmartTop V2 semantic
-matrix and presentation ownership are canonical:
+SmartTopCard is the wide primary card at the top of the eligible automotive Dashboard. The final
+SmartTop V2 semantic and adaptive presentation contracts are canonical:
 
-- `CURRENT / COMPACT`: Play/Pause, Context, Favorite when supported.
-- `CURRENT / STANDARD` and `CURRENT / EXPANDED`: Previous, Play/Pause, Next, Context, Favorite
-  when supported.
-- `RESUME`: Play, Context, Favorite when supported and when the measured presentation budget fits.
-- `RECENT`: Play, Context, Favorite when supported and when the measured presentation budget fits.
+- Visibility is host-gated before layout: phone never shows SmartTop; automotive full-screen width
+  below `799dp` hides SmartTop; `>=799dp` is eligible. When SmartTop is hidden, the normal Dashboard
+  Recent tile remains available.
+- `CURRENT` semantic actions are Previous, Play/Pause, Next, Context, and Favorite when supported.
+  Measured presentation may remove optional actions under pressure, but semantic state itself is
+  not pruned by COMPACT/STANDARD/EXPANDED.
+- `RESUME`: Play, Context, Favorite when supported; measured presentation may remove optional
+  actions when required by the available budget.
+- `RECENT`: Play, Context, Favorite when supported; measured presentation may remove optional
+  actions when required by the available budget.
 - `EMPTY`: one labeled terminal CTA. The current safe label is **Settings** because the existing
   `OPEN_ADDONS` route opens Settings root; do not display a misleading **Add-ons** label until a
   Settings > Add-ons deep link exists.
@@ -166,19 +190,30 @@ matrix and presentation ownership are canonical:
 - `RECOMMENDED`: compatibility only. Keep the enum, provider candidate kind, and compatibility
   action/API surface, but SmartTop selection and coordinator display flow must never select or
   publish a RECOMMENDED state.
-- `SmartTopActionPolicy` owns semantic actions. `SmartTopPresentationPolicy` is the pure measured-
-  width budget authority. `SmartTopLayoutController` applies the presentation result; it must not
-  invent or pre-filter semantic state.
-- Quick Recent data reaches `SmartTopPresentationPolicy` unfiltered. The budget yield order is:
-  Quick Recent first, then action spacing from 24dp toward 0, then Favorite, then Context. Never
-  sacrifice the title reserve or Play/Play-Pause to preserve auxiliary content.
-- Android Auto action cells are at least 76dp and must never overlap. Primary Play/Play-Pause glyph
-  is 44dp; secondary action glyphs are 36dp. Mobile retains the existing 48dp visual/control
-  baseline unless a separate mobile change is approved.
-- Show at most one quick Recent item on the right only when the measured budget has room. Compact
-  layouts omit the quick row while preserving the stable All Recent destination.
-- Typography remains SP-scaled; the layout controller owns the runtime text roles and card-height
-  adjustment. There is no SmartTop row-height phase or row-height engine.
+- `SmartTopActionPolicy` owns semantic actions. `SmartTopAdaptivePolicy` is the pure measured
+  composition/geometry authority. `SmartTopLayoutController` applies one resolved
+  `SmartTopLayoutSpec`; it must not invent or pre-filter semantic state.
+- Quick Recent semantic data retains up to three items. Presentation may show 0-3 rows depending on
+  measured budget; sufficiently wide DHU layouts must be able to render all three.
+- Horizontal pressure yields in this order: Quick Recent first, then action gaps/terminal icon,
+  then Favorite/Context/History. Previous/Next remain a pair and yield only at the final transport
+  fallback. Play/Play-Pause is invariant. The transport rail never wraps to a second row.
+- Automotive action cells adapt to measured width/fontScale instead of being hard-fixed at 76dp.
+  Current policy ranges from 56dp to 76dp with a minimum 64dp delegated touch target; primary and
+  secondary glyphs shrink proportionally up to the 44dp/36dp caps. Touch presentation retains the
+  48dp cell / 22dp glyph baseline.
+- Title owns a stable two-line slot (`minLines=2`, `maxLines=2`) with end ellipsis. A long intrinsic
+  title is budgeted as two lines and cannot steal the transport rail.
+- SmartTop font scaling is bucketed/capped. Title, eyebrow/subtitle, progress time and Quick Recent
+  text use bounded visual growth rather than multiplying every surface without limit at large
+  system fontScale.
+- Card height is a deterministic layout-class + fontScale-bucket value. Playback state and measured
+  viewport height must not change the card height, preventing Play/Pause relayout flicker.
+- For the same canonical CURRENT item, Play/Pause/timeline refresh reuses the current generation and
+  publishes through the timeline payload path. It must not clear Quick Recent or full-rebind the
+  card merely because playback state changed.
+- The action rail is always horizontally laid out and vertically centered against the stable
+  eyebrow-to-progress metadata block, not conditionally centered against the whole card.
 - Add-on tiles retain their existing horizontal row geometry; Android Auto emphasizes add-on title
   text rather than shrinking the already-large add-on glyph.
 - While media is playing, SmartTop acts as the mini player/Now Playing card and exposes the current
@@ -304,7 +339,8 @@ Relevant policy classes:
 
 ## 7. Playerbar and Playback Ownership
 
-- Dashboard uses SmartTopCard instead of a duplicate bottom playerbar.
+- Dashboard uses SmartTopCard instead of a duplicate bottom playerbar on hosts where SmartTop is
+  actually visible; phone/hidden-SmartTop Dashboard retains its normal Dashboard composition.
 - Radio lists show an audio playerbar while their matching station/source is active.
 - Video playerbar behavior is tied to the active video/player route.
 - Playerbar Back follows the navigation contract, not a generic fragment pop.
@@ -598,8 +634,8 @@ Subsequent committed hardening:
   per connection to configured IPTV/M3U, XMLTV/EPG, and Stremio origins, with strict cross-origin
   redirect downgrade and policy-separated connection caching.
 - GitHub Actions now gates Mobile and Auto unit suites, architecture boundaries, both lint flavors,
-  and diff whitespace. The architecture gate includes the hotspot baseline and the zero
-  cross-addon-import rule.
+  and diff whitespace. Those Mobile/Auto tasks are internal verification only; CI then packages and
+  uploads exactly one neutral `FermataX-debug-universal.apk` artifact.
 
 Phase 4 source rollback archive:
 
@@ -751,14 +787,25 @@ DHU regression plan. Prefer extracting one responsibility at a time.
 
 ### Build commands
 
-Windows PowerShell:
+Preferred local universal APK build from Git Bash/WSL/macOS/Linux:
 
-```powershell
-.\gradlew.bat :fermata:bundleAutoRelease
-.\gradlew.bat :fermata:packageAutoReleaseUniversalApk
+```sh
+./build.sh
 ```
 
-Useful verification commands:
+`build.sh` produces one neutral universal APK in `dist/` and deliberately does not apply an ABI
+filter. `./build.sh -b` builds the AAB instead. There is no Mobile-versus-Auto product choice.
+
+Windows PowerShell direct Gradle fallback:
+
+```powershell
+.\gradlew.bat :fermata:packageAutoReleaseUniversalApk --no-daemon --no-parallel --stacktrace
+```
+
+The `Auto` token in that Gradle task is the **internal canonical universal packaging source set**;
+it is not a separate user-facing Auto build. Do not pair it with a Mobile APK build.
+
+Useful internal verification commands:
 
 ```powershell
 .\gradlew.bat testMobileDebugUnitTest --no-daemon --no-parallel --stacktrace
@@ -772,15 +819,17 @@ Useful verification commands:
 git diff --check
 ```
 
-`.github/workflows/ci.yml` runs these verification families on every pull request to `main`
-and every push to `main`. It verifies source and tests only; release signing/publishing is not
-part of CI.
+`.github/workflows/ci.yml` runs these internal verification families on every pull request to
+`main` and every push to `main`, then packages and uploads exactly one neutral
+`FermataX-debug-universal.apk`. Release signing/publishing is not part of CI.
 
 ### Outputs
 
-- AAB: `fermata/build/outputs/bundle/autoRelease/`
-- Universal APK: `fermata/build/outputs/apk_from_bundle/autoRelease/`
-- Debug APK: `fermata/build/outputs/apk/auto/debug/`
+- Preferred local APK: `dist/FermataX-<version>.apk`
+- Preferred local AAB: `dist/FermataX-<version>.aab`
+- Raw internal release universal APK: `fermata/build/outputs/apk_from_bundle/autoRelease/`
+- Raw AAB: `fermata/build/outputs/bundle/autoRelease/`
+- CI universal APK staging path: `dist/FermataX-debug-universal.apk`
 
 ### Signing
 
@@ -793,37 +842,38 @@ part of CI.
 ### Package composition
 
 - Base `applicationId`: `me.app.fermataX`
-- Auto flavor suffix: `.auto`
-- Final Auto package: `me.app.fermataX.auto`
+- Internal canonical universal source-set suffix: `.auto`
+- Current installed package from that internal path: `me.app.fermataX.auto`
+- That one package includes the phone launcher and Android Auto integration and is the FermataX
+  package used for both phone and Android Auto/DHU testing.
 - Do not restore old `me.aap.fermata.auto` provider authorities or package values.
+- Do not create a second user-facing Mobile package or ABI-specific APK product.
 
 ## 12. Testing and Validation
 
 ### Automated status at this snapshot
 
-- Mobile unit suite: pass
-- Auto unit suite: pass
-- Architecture boundary gate: hotspot baselines and zero cross-addon imports/dependencies pass
-- Android Lint: Mobile and Auto both pass with zero errors; remaining warnings stay visible and
-  no lint baseline is used
-- Push/PR diff whitespace check: pass
-- Latest shared verification evidence at this update:
-  <https://github.com/chuoinho/FermataX/actions/runs/30864033737>
+- Mobile unit suite: pass on the most recently completed pre-horizontal-stability baseline; exact
+  current-head status must be read from CI/PR #18 rather than assumed from this document.
+- Auto unit suite: same rule as above.
+- Architecture boundary gate, Android Lint, and diff whitespace remain mandatory CI gates.
+- `DistributionContractTest` guards the single universal APK contract in `build.sh` and CI.
+- The CI workflow and PR #18 body are the canonical current automated status; do not hard-code a
+  workflow run here as if it certified later commits.
 
-The CI workflow is the canonical current automated status. Historical release APK/AAB, R8,
-update-install, and DHU results below remain evidence for their named snapshot only; they do not
-implicitly certify later commits.
+Historical release APK/AAB, R8, update-install, and DHU results below remain evidence for their
+named snapshot only; they do not implicitly certify later commits.
 
 The former `SubtitlesTest.testScheduler` hang was removed by replacing only its real-time test
 harness with a deterministic clock/executor. Runtime subtitle behavior was not changed.
 
 ### ADB
 
-Typical validation:
+Typical validation for the current universal debug package:
 
 ```powershell
 adb devices -l
-adb install -r "fermata\build\outputs\apk_from_bundle\autoRelease\fermata-2.0.1-auto-release-universal.apk"
+adb install -r "FermataX-debug-universal.apk"
 adb shell dumpsys package me.app.fermataX.auto
 adb logcat -c
 ```
@@ -853,28 +903,36 @@ The Android Auto Head Unit Server must already be enabled on the connected phone
 
 ### Required manual regression checklist
 
-1. Dashboard starts at the top and SmartTopCard is fully visible.
-2. Navigation rail left/right setting persists after restart.
-3. Rail scrolling does not activate the touched addon accidentally.
-4. Settings sections render in the expected order and open without crash.
-5. Enabled addons appear without disable/re-enable workarounds.
-6. TV source list loads existing M3U and Xtream sources.
-7. Live TV opens fullscreen; Back returns to split view with navigation visible.
-8. Selecting another TV channel in split view changes the playing stream.
-9. TV to Radio switches both UI and actual media engine/audio.
-10. Radio station playback shows the audio playerbar on the station list.
-11. Radio Back keeps audio playing and returns to the correct list.
-12. Dashboard SmartTop Radio opens the active Radio list with playerbar.
-13. Dashboard SmartTop TV/video opens the active video destination.
-14. YouTube root does not show an empty top bar.
-15. YouTube fullscreen hides bars; tap shows controls; timeout hides them again.
-16. YouTube playerbar Back exits fullscreen and remains inline beyond the 1,500 ms delayed-entry
+1. Phone portrait/landscape shows no SmartTop and retains the ordinary Dashboard Recent tile.
+2. Eligible automotive Dashboard (`>=799dp` full-screen width) shows SmartTop fully; narrower
+   automotive hosts hide it and retain the ordinary Recent tile.
+3. DHU 800x480 and 1280x720 at fontScale 1.0/1.3/1.5/2.0 keep SmartTop title, metadata and transport
+   balanced with no overlap or vertical drift.
+4. SmartTop short, one-line, two-line and very long titles keep a stable two-line title slot and a
+   horizontal transport rail.
+5. Repeated SmartTop Play/Pause does not change card height/position, clear Quick Recent, or flicker
+   the Dashboard; Quick Recent renders 0-3 rows by budget and all 3 on sufficiently wide DHU.
+6. Navigation rail left/right setting persists after restart.
+7. Rail scrolling does not activate the touched addon accidentally.
+8. Settings sections render in the expected order and open without crash.
+9. Enabled addons appear without disable/re-enable workarounds.
+10. TV source list loads existing M3U and Xtream sources.
+11. Live TV opens fullscreen; Back returns to split view with navigation visible.
+12. Selecting another TV channel in split view changes the playing stream.
+13. TV to Radio switches both UI and actual media engine/audio.
+14. Radio station playback shows the audio playerbar on the station list.
+15. Radio Back keeps audio playing and returns to the correct list.
+16. Dashboard SmartTop Radio opens the active Radio list with playerbar.
+17. Dashboard SmartTop TV/video opens the active video destination.
+18. YouTube root does not show an empty top bar.
+19. YouTube fullscreen hides bars; tap shows controls; timeout hides them again.
+20. YouTube playerbar Back exits fullscreen and remains inline beyond the 1,500 ms delayed-entry
     window, including when Back is pressed during the app-video/custom-view transition; the next
     Back walks WebView history without auto-reentering fullscreen; selecting a different video by
     tapping it may fullscreen again.
-17. Switching from another playing addon to YouTube clears old audio/title/metadata.
-18. Leaving Android Auto and returning restores bars according to actual fullscreen state.
-19. App update preserves sources, addon state, Dashboard order, language, and navigation side.
+21. Switching from another playing addon to YouTube clears old audio/title/metadata.
+22. Leaving Android Auto and returning restores bars according to actual fullscreen state.
+23. App update preserves sources, addon state, Dashboard order, language, and navigation side.
 
 ## 13. Historical Verified Runtime Snapshot (2026-07)
 
@@ -1002,6 +1060,8 @@ when a new artifact is intentionally designated as the verified snapshot.
 
 - Complete manual regression of TV fullscreen/split-view and YouTube handoff after every
   shared navigation/player change.
+- Complete the current SmartTop DHU matrix before merging PR #18: 800x480 and 1280x720 at
+  fontScale 1.0/1.3/1.5/2.0, long titles, repeated Play/Pause, and Quick Recent 0-3.
 - VLC render plans may use Android layout sentinels while provisional. Native engine APIs must
   only receive positive final Surface pixels, or the measured viewport as the provisional
   fallback. A zero-sized libVLC layout callback during `detachViews()` is a lifecycle reset and
@@ -1054,13 +1114,14 @@ During coding:
 Before reporting completion:
 
 1. Run `git diff --check`.
-2. Compile Auto and any modified dynamic feature.
+2. Compile the internal Mobile/Auto verification targets affected by the change; never turn those
+   test source sets into separate user-facing APKs.
 3. Run relevant unit tests.
-4. Build the universal release when packaging/runtime integration is affected.
-5. Sideload with `adb install -r` for update behavior.
-6. Test the relevant workflow on Google DHU.
-7. Review the final diff adversarially for lifecycle, short-circuit, route, and addon-isolation
-   regressions.
+4. Build the single universal release when packaging/runtime integration is affected.
+5. Sideload that same universal APK with `adb install -r` for update behavior.
+6. Test the relevant workflow on Google DHU and, when shared phone code changed, on phone as well.
+7. Review the final diff adversarially for lifecycle, short-circuit, route, layout-stability, and
+   addon-isolation regressions.
 8. Update this tracked file when a confirmed product rule, version, package, architecture boundary,
    toolchain, CI process, or verified snapshot changes. README remains the concise onboarding/build
    entry point; this file is the canonical product and architecture context.
