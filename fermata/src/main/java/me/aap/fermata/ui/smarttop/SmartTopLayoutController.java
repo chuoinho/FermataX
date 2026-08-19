@@ -67,11 +67,12 @@ public final class SmartTopLayoutController {
 
 		SmartTopTypographyPolicy.Typography typography = spec.typography();
 		TextView eyebrow = root.findViewById(R.id.dashboard_item_eyebrow);
-		applyTextRole(root, eyebrow, typography.eyebrowSp(), typography.eyebrowMinHeightDp());
+		applyTextRole(root, eyebrow, typography.eyebrowSp(), typography.eyebrowMinHeightDp(), 1);
 		TextView title = root.findViewById(R.id.dashboard_item_title);
-		applyTextRole(root, title, typography.titleSp(), typography.titleMinHeightDp());
+		applyTextRole(root, title, typography.titleSp(), typography.titleMinHeightDp(),
+				typography.titleLines());
 		TextView subtitle = root.findViewById(R.id.dashboard_item_subtitle);
-		applyTextRole(root, subtitle, typography.subtitleSp(), typography.subtitleMinHeightDp());
+		applyTextRole(root, subtitle, typography.subtitleSp(), typography.subtitleMinHeightDp(), 1);
 
 		View actions = root.findViewById(R.id.dashboard_item_actions);
 		ConstraintLayout.LayoutParams actionParams =
@@ -145,7 +146,8 @@ public final class SmartTopLayoutController {
 	private static SmartTopContentMetrics contentMetrics(View root, SmartTopViewState state,
 			SmartTopEnvironment environment) {
 		SmartTopLayoutMode mode = SmartTopAdaptivePolicy.resolveMode(environment);
-		SmartTopTypographyPolicy.Typography typography = SmartTopTypographyPolicy.resolve(mode);
+		SmartTopTypographyPolicy.Typography typography =
+				SmartTopTypographyPolicy.resolve(mode, environment.fontScale());
 		float titleWidthDp = measureTextDp(root, state.title(), typography.titleSp());
 		CharSequence terminalLabel = terminalLabel(root, state.actions());
 		float terminalWidthDp = measureTextDp(root, terminalLabel, 13F);
@@ -169,9 +171,9 @@ public final class SmartTopLayoutController {
 	}
 
 	private static void applyTextRole(View root, TextView view, float textSizeSp,
-			int minHeightDp) {
-		view.setMinLines(1);
-		view.setMaxLines(1);
+			int minHeightDp, int lines) {
+		view.setMinLines(lines);
+		view.setMaxLines(lines);
 		view.setIncludeFontPadding(false);
 		view.setMinHeight(px(root, minHeightDp));
 		view.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
