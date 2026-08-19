@@ -49,20 +49,34 @@ build() {
   local app_flavor=${APP_ID_SFX:-$(grep -oP "${TASK}Flavor=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
   local app_sfx=${APP_ID_SFX:-$(grep -oP "${TASK}IdSfx=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
   [ -z "$app_sfx" ] || local app_sfx="-PAPP_ID_SFX=$app_sfx"
-  if [ $TASK = 'apk' ]; then
+  if [ "$TASK" = 'apk' ]; then
     local task="package${app_flavor}AutoReleaseUniversalApk"
+    local output_root="fermata/build/outputs/apk_from_bundle"
   else
     local task="bundle${app_flavor}AutoRelease"
+    local output_root="fermata/build/outputs/bundle"
+  fi
+
+  # Remove stale artifacts from this packaging family so an old build can never overwrite
+  # the newly produced universal package in dist/.
+  if [ -d "$output_root" ]; then
+    find "$output_root" -type f -name "fermata*.$ext" -delete
   fi
 
   ./gradlew $CLEAN fermata:$task $app_sfx
-  for path in $(ls fermata/build/outputs/*/*/fermata*.$ext); do
-    local version=${path##*fermata-}
-    version=${version%%-*}
-    local dst="$DEST_DIR/FermataX-${version}.$ext"
-    mv "$path" "$dst"
-    echo "Built $dst"
-  done
+
+  set -- $(find "$output_root" -type f -name "fermata*.$ext" -print)
+  if [ "$#" -ne 1 ]; then
+    echo "Expected exactly one FermataX $ext artifact, found $#"
+    exit 1
+  fi
+
+  local path="$1"
+  local version=${path##*fermata-}
+  version=${version%%-*}
+  local dst="$DEST_DIR/FermataX-${version}.$ext"
+  cp "$path" "$dst"
+  echo "Built $dst"
 }
 
 build
