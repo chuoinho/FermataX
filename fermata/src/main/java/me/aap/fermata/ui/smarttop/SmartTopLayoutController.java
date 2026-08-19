@@ -71,6 +71,7 @@ public final class SmartTopLayoutController {
 				typography.titleLines());
 		TextView subtitle = root.findViewById(R.id.dashboard_item_subtitle);
 		applyTextRole(root, subtitle, typography.subtitleSp(), typography.subtitleMinHeightDp(), 1);
+		applySecondaryTextScale(root, environment.fontScale());
 
 		View progress = root.findViewById(R.id.dashboard_smart_progress_group);
 		ConstraintLayout.LayoutParams progressParams =
@@ -144,7 +145,8 @@ public final class SmartTopLayoutController {
 				SmartTopTypographyPolicy.resolve(mode, environment.fontScale());
 		float titleWidthDp = measureTextDp(root, state.title(), typography.titleSp());
 		CharSequence terminalLabel = terminalLabel(root, state.actions());
-		float terminalWidthDp = measureTextDp(root, terminalLabel, 13F);
+		float terminalWidthDp = measureTextDp(root, terminalLabel,
+				SmartTopTypographyPolicy.secondarySp(13F, environment.fontScale()));
 		return new SmartTopContentMetrics(titleWidthDp, terminalWidthDp, state.quickRecent().size());
 	}
 
@@ -171,6 +173,26 @@ public final class SmartTopLayoutController {
 		view.setIncludeFontPadding(false);
 		view.setMinHeight(px(root, minHeightDp));
 		view.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
+	}
+
+	private static void applySecondaryTextScale(View root, float fontScale) {
+		setTextSize(root, R.id.dashboard_smart_progress_current,
+				SmartTopTypographyPolicy.secondarySp(10F, fontScale));
+		setTextSize(root, R.id.dashboard_smart_progress_total,
+				SmartTopTypographyPolicy.secondarySp(10F, fontScale));
+		setTextSize(root, R.id.dashboard_recent_title,
+				SmartTopTypographyPolicy.secondarySp(13F, fontScale));
+		setTextSize(root, R.id.dashboard_recent_item_1,
+				SmartTopTypographyPolicy.secondarySp(13F, fontScale));
+		setTextSize(root, R.id.dashboard_recent_item_2,
+				SmartTopTypographyPolicy.secondarySp(13F, fontScale));
+		setTextSize(root, R.id.dashboard_recent_item_3,
+				SmartTopTypographyPolicy.secondarySp(13F, fontScale));
+	}
+
+	private static void setTextSize(View root, int id, float sp) {
+		TextView view = root.findViewById(id);
+		if (view != null) view.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
 	}
 
 	private static void applyActionGeometry(View root, MaterialButton label,
