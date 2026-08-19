@@ -33,7 +33,7 @@ final class DashboardModelBuilder {
 		DashboardCard visibleSmartTop = smartTopVisible ? smartTopCard : null;
 		if (visibleSmartTop != null) cards.add(visibleSmartTop);
 		for (DashboardItems.Item item : DashboardItems.getDashboardItems(ctx, store)) {
-			if ((visibleSmartTop != null) && (item.id == R.id.recent_fragment)) continue;
+			if (shouldSuppressRecent(visibleSmartTop != null, item.id)) continue;
 			if ((visibleSmartTop != null) && (visibleSmartTop.targetId == item.id)) continue;
 			DashboardCard card = DashboardCard.item(item);
 			if (automotive && (item.addonInfo != null)) card = card.withTitle(emphasizeAddonTitle(card.title));
@@ -51,6 +51,10 @@ final class DashboardModelBuilder {
 
 	static boolean shouldShowSmartTop(boolean automotive, int screenWidthDp) {
 		return automotive && (screenWidthDp >= SMART_TOP_MIN_SCREEN_WIDTH_DP);
+	}
+
+	static boolean shouldSuppressRecent(boolean smartTopVisible, int itemId) {
+		return smartTopVisible && (itemId == R.id.recent_fragment);
 	}
 
 	static float addonTitleScale(boolean automotive, boolean addon) {
