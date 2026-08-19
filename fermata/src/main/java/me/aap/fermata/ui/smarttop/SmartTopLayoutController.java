@@ -49,9 +49,7 @@ public final class SmartTopLayoutController {
 			artworkParams.width = artworkSize;
 			artworkParams.height = artworkSize;
 		}
-		boolean compact = spec.mode() == SmartTopLayoutMode.COMPACT;
-		artworkParams.bottomToBottom = compact ? ConstraintLayout.LayoutParams.UNSET :
-				ConstraintLayout.LayoutParams.PARENT_ID;
+		artworkParams.bottomToBottom = ConstraintLayout.LayoutParams.UNSET;
 		artworkParams.verticalBias = 0.5F;
 		artwork.setLayoutParams(artworkParams);
 		int artworkPadding = px(root, spec.artworkPaddingDp());
@@ -74,27 +72,6 @@ public final class SmartTopLayoutController {
 		TextView subtitle = root.findViewById(R.id.dashboard_item_subtitle);
 		applyTextRole(root, subtitle, typography.subtitleSp(), typography.subtitleMinHeightDp(), 1);
 
-		View actions = root.findViewById(R.id.dashboard_item_actions);
-		ConstraintLayout.LayoutParams actionParams =
-				(ConstraintLayout.LayoutParams) actions.getLayoutParams();
-		actionParams.startToStart = ConstraintLayout.LayoutParams.UNSET;
-		actionParams.startToEnd = ConstraintLayout.LayoutParams.UNSET;
-		actionParams.endToStart = R.id.dashboard_smart_context_guide;
-		actionParams.setMarginStart(0);
-		if (spec.centerActionRail()) {
-			actionParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
-			actionParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
-			actionParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-			actionParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
-			actionParams.verticalBias = 0.5F;
-		} else {
-			actionParams.topToTop = ConstraintLayout.LayoutParams.UNSET;
-			actionParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
-			actionParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-			actionParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
-		}
-		actions.setLayoutParams(actionParams);
-
 		View progress = root.findViewById(R.id.dashboard_smart_progress_group);
 		ConstraintLayout.LayoutParams progressParams =
 				(ConstraintLayout.LayoutParams) progress.getLayoutParams();
@@ -111,6 +88,22 @@ public final class SmartTopLayoutController {
 		progressParams.bottomMargin = 0;
 		progress.setLayoutParams(progressParams);
 
+		// The transport rail is always a peer of metadata, never a second row. Center it against
+		// the stable eyebrow -> progress metadata block so larger fonts do not make it drift down.
+		View actions = root.findViewById(R.id.dashboard_item_actions);
+		ConstraintLayout.LayoutParams actionParams =
+				(ConstraintLayout.LayoutParams) actions.getLayoutParams();
+		actionParams.startToStart = ConstraintLayout.LayoutParams.UNSET;
+		actionParams.startToEnd = ConstraintLayout.LayoutParams.UNSET;
+		actionParams.endToStart = R.id.dashboard_smart_context_guide;
+		actionParams.setMarginStart(0);
+		actionParams.topToTop = R.id.dashboard_item_eyebrow;
+		actionParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
+		actionParams.bottomToBottom = R.id.dashboard_smart_progress_group;
+		actionParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
+		actionParams.verticalBias = 0.5F;
+		actions.setLayoutParams(actionParams);
+
 		MaterialButton label = root.findViewById(R.id.dashboard_action_label);
 		if (spec.terminalActionWidthDp() > 0) {
 			label.setMaxWidth(px(root, spec.terminalActionWidthDp()));
@@ -118,7 +111,8 @@ public final class SmartTopLayoutController {
 		applyActionGeometry(root, label, spec);
 
 		if (root instanceof ViewGroup group) {
-			MinimumTouchTargetDelegate.install(group, spec.actionCellDp(),
+			int touchTargetDp = automotive ? Math.max(64, spec.actionCellDp()) : spec.actionCellDp();
+			MinimumTouchTargetDelegate.install(group, touchTargetDp,
 					label,
 					root.findViewById(R.id.dashboard_action_prev),
 					root.findViewById(R.id.dashboard_action_play_pause),
