@@ -21,7 +21,7 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
-	public void layoutExposesAllRendererSurfacesAndThreeRecentRows() throws Exception {
+	public void layoutExposesAllRendererSurfacesThreeRecentRowsAndTwoLineTitle() throws Exception {
 		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
 		for (String id : new String[]{"dashboard_action_label", "dashboard_action_prev",
 				"dashboard_action_play_pause", "dashboard_action_next",
@@ -31,6 +31,9 @@ public class SmartTopLayoutContractTest {
 				"dashboard_recent_item_1", "dashboard_recent_item_2", "dashboard_recent_item_3"}) {
 			assertTrue(id, layout.contains("@+id/" + id));
 		}
+		String title = element(layout, "@+id/dashboard_item_title");
+		assertTrue(title.contains("android:minLines=\"2\""));
+		assertTrue(title.contains("android:maxLines=\"2\""));
 		for (String id : new String[]{"dashboard_recent_item_1", "dashboard_recent_item_2",
 				"dashboard_recent_item_3"}) {
 			String row = element(layout, "@+id/" + id);
@@ -41,14 +44,16 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
-	public void adaptiveControllerIsSingleWriterForGeometry() throws Exception {
+	public void adaptiveControllerIsSingleWriterForGeometryAndRailNeverWraps() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		assertTrue(controller.contains("SmartTopAdaptivePolicy.resolve(environment, state.actions(), metrics)"));
 		assertTrue(controller.contains("spec.cardHeightDp()"));
 		assertTrue(controller.contains("spec.artworkSizeDp()"));
 		assertTrue(controller.contains("spec.actionCellDp()"));
 		assertTrue(controller.contains("spec.recentPanelWidthDp()"));
-		assertTrue(controller.contains("if (spec.centerActionRail())"));
+		assertTrue(controller.contains("actionParams.topToTop = R.id.dashboard_item_eyebrow"));
+		assertTrue(controller.contains("actionParams.bottomToBottom = R.id.dashboard_smart_progress_group"));
+		assertFalse(controller.contains("centerActionRail"));
 		assertFalse(controller.contains("SmartTopPresentationPolicy"));
 	}
 
@@ -81,12 +86,16 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
-	public void timelinePayloadAvoidsFullBindAndRefreshesCurrentStateIdentity() throws Exception {
+	public void playPauseReusesCurrentGenerationAndTimelinePayload() throws Exception {
 		String dashboard = source("ui/fragment/DashboardFragment.java");
+		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
 		String binder = source("ui/smarttop/SmartTopBinder.java");
 		assertTrue(dashboard.contains("PAYLOAD_SMART_TOP_TIMELINE"));
 		assertTrue(dashboard.contains("notifyItemChanged(position, PAYLOAD_SMART_TOP_TIMELINE)"));
 		assertTrue(dashboard.contains("bindTimelineUpdate(holder.smartTopViews(), card.smartTopState)"));
+		assertTrue(coordinator.contains("refreshCurrentInPlace(active)"));
+		assertTrue(coordinator.contains("listener.onSmartTopTimeline(next)"));
+		assertTrue(coordinator.contains("current.quickRecent()"));
 		assertTrue(binder.contains("setTag(R.id.dashboard_smart_state_tag, state)"));
 	}
 
