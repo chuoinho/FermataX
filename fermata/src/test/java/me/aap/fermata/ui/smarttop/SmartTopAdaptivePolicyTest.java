@@ -31,7 +31,7 @@ public class SmartTopAdaptivePolicyTest {
 		assertFalse(spec.visibleActions().contains(SmartTopAction.OPEN_CONTEXT));
 		assertFalse(spec.visibleActions().contains(SmartTopAction.FAVORITE));
 		assertEquals(0, spec.recentRows());
-		assertEquals(160, spec.cardHeightDp());
+		assertEquals(152, spec.cardHeightDp());
 	}
 
 	@Test
@@ -84,6 +84,17 @@ public class SmartTopAdaptivePolicyTest {
 		assertEquals(56, playing.actionCellDp());
 		assertEquals(playing.cardHeightDp(), paused.cardHeightDp());
 		assertEquals(playing.visibleActions(), paused.visibleActions());
+	}
+
+	@Test
+	public void sameFontScaleUsesOneHeightAcrossAllWidthClasses() {
+		for (float scale : new float[]{1F, 1.3F, 1.5F, 2F}) {
+			int compact = SmartTopAdaptivePolicy.cardHeightDp(SmartTopLayoutMode.COMPACT, scale);
+			int standard = SmartTopAdaptivePolicy.cardHeightDp(SmartTopLayoutMode.STANDARD, scale);
+			int expanded = SmartTopAdaptivePolicy.cardHeightDp(SmartTopLayoutMode.EXPANDED, scale);
+			assertEquals(compact, standard);
+			assertEquals(standard, expanded);
+		}
 	}
 
 	@Test
@@ -145,6 +156,7 @@ public class SmartTopAdaptivePolicyTest {
 		assertEquals(SmartTopLayoutMode.COMPACT, first.mode());
 		assertEquals(SmartTopLayoutMode.STANDARD, rotated.mode());
 		assertEquals(first.mode(), restored.mode());
+		assertEquals(first.cardHeightDp(), rotated.cardHeightDp());
 		assertEquals(first.cardHeightDp(), restored.cardHeightDp());
 		assertEquals(first.visibleActions(), restored.visibleActions());
 		assertEquals(0, first.recentRows());
