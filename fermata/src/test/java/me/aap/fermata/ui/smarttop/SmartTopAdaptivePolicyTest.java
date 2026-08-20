@@ -53,10 +53,24 @@ public class SmartTopAdaptivePolicyTest {
 		assertEquals(60, spec.actionCellDp());
 		assertEquals(35, spec.primaryGlyphDp());
 		assertEquals(28, spec.secondaryGlyphDp());
+		assertEquals(2, spec.actionGapDp());
 		assertEquals(0, spec.recentRows());
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PREVIOUS));
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
 		assertTrue(spec.visibleActions().contains(SmartTopAction.NEXT));
+	}
+
+	@Test
+	public void automotiveRailKeepsCompactGapTiersToProtectTitleWidth() {
+		SmartTopLayoutSpec medium = SmartTopAdaptivePolicy.resolve(
+				env(900, 480, 1F, SmartTopInteractionProfile.AUTOMOTIVE), CURRENT,
+				new SmartTopContentMetrics(180, 0, 0));
+		SmartTopLayoutSpec wide = SmartTopAdaptivePolicy.resolve(
+				env(1176, 720, 1F, SmartTopInteractionProfile.AUTOMOTIVE), CURRENT,
+				new SmartTopContentMetrics(180, 0, 0));
+		assertEquals(4, medium.actionGapDp());
+		assertEquals(SmartTopAdaptivePolicy.AUTOMOTIVE_MAX_GAP_DP, wide.actionGapDp());
+		assertEquals(6, SmartTopAdaptivePolicy.AUTOMOTIVE_MAX_GAP_DP);
 	}
 
 	@Test
@@ -79,6 +93,7 @@ public class SmartTopAdaptivePolicyTest {
 				new SmartTopContentMetrics(180, 0, 3));
 		assertEquals(SmartTopLayoutMode.EXPANDED, spec.mode());
 		assertEquals(76, spec.actionCellDp());
+		assertEquals(6, spec.actionGapDp());
 		assertEquals(3, spec.recentRows());
 		assertEquals(196, spec.recentPanelWidthDp());
 	}
