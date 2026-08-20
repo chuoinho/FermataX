@@ -10,8 +10,7 @@ import org.junit.Test;
 
 public class SmartTopAdaptivePolicyTest {
 	private static final List<SmartTopAction> CURRENT = List.of(
-			SmartTopAction.PREVIOUS, SmartTopAction.PLAY_PAUSE, SmartTopAction.NEXT,
-			SmartTopAction.OPEN_CONTEXT, SmartTopAction.FAVORITE);
+			SmartTopAction.PREVIOUS, SmartTopAction.PLAY_PAUSE, SmartTopAction.FAVORITE);
 
 	@Test
 	public void spaceClassDoesNotDependOnHostIdentity() {
@@ -22,22 +21,24 @@ public class SmartTopAdaptivePolicyTest {
 	}
 
 	@Test
-	public void narrowPortraitKeepsPrimaryTransportAndDropsSpaceHungryActions() {
+	public void compactAutomotiveKeepsQuickRecentAndPrimaryPlaybackAtNarrowWidth() {
 		SmartTopLayoutSpec spec = SmartTopAdaptivePolicy.resolve(
-				env(313, 720, 1F, SmartTopInteractionProfile.TOUCH), CURRENT,
+				env(420, 480, 1F, SmartTopInteractionProfile.AUTOMOTIVE), CURRENT,
 				new SmartTopContentMetrics(120, 0, 3));
 		assertEquals(SmartTopLayoutMode.COMPACT, spec.mode());
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
+		assertFalse(spec.visibleActions().contains(SmartTopAction.NEXT));
 		assertFalse(spec.visibleActions().contains(SmartTopAction.OPEN_CONTEXT));
-		assertFalse(spec.visibleActions().contains(SmartTopAction.FAVORITE));
-		assertEquals(0, spec.recentRows());
+		assertEquals(3, spec.recentRows());
+		assertEquals(148, spec.recentPanelWidthDp());
+		assertTrue(spec.showQuickRecent());
 		assertEquals(152, spec.cardHeightDp());
 	}
 
 	@Test
-	public void standardSpaceCanFitThreeRecentRowsWithoutOrientationRules() {
+	public void standardSpaceKeepsThreeRecentRowsWithoutOrientationRules() {
 		SmartTopLayoutSpec spec = SmartTopAdaptivePolicy.resolve(
-				env(700, 360, 1F, SmartTopInteractionProfile.TOUCH), CURRENT,
+				env(700, 360, 1F, SmartTopInteractionProfile.AUTOMOTIVE), CURRENT,
 				new SmartTopContentMetrics(120, 0, 3));
 		assertEquals(SmartTopLayoutMode.STANDARD, spec.mode());
 		assertEquals(3, spec.recentRows());
@@ -54,10 +55,11 @@ public class SmartTopAdaptivePolicyTest {
 		assertEquals(35, spec.primaryGlyphDp());
 		assertEquals(28, spec.secondaryGlyphDp());
 		assertEquals(2, spec.actionGapDp());
-		assertEquals(0, spec.recentRows());
+		assertEquals(3, spec.recentRows());
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PREVIOUS));
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
-		assertTrue(spec.visibleActions().contains(SmartTopAction.NEXT));
+		assertFalse(spec.visibleActions().contains(SmartTopAction.NEXT));
+		assertFalse(spec.visibleActions().contains(SmartTopAction.OPEN_CONTEXT));
 	}
 
 	@Test
@@ -78,12 +80,13 @@ public class SmartTopAdaptivePolicyTest {
 		SmartTopEnvironment environment =
 				env(700, 480, 1.5F, SmartTopInteractionProfile.AUTOMOTIVE);
 		SmartTopLayoutSpec playing = SmartTopAdaptivePolicy.resolve(environment, CURRENT,
-				new SmartTopContentMetrics(180, 0, 0));
+				new SmartTopContentMetrics(180, 0, 3));
 		SmartTopLayoutSpec paused = SmartTopAdaptivePolicy.resolve(environment, CURRENT,
-				new SmartTopContentMetrics(180, 0, 0));
+				new SmartTopContentMetrics(180, 0, 3));
 		assertEquals(56, playing.actionCellDp());
 		assertEquals(playing.cardHeightDp(), paused.cardHeightDp());
 		assertEquals(playing.visibleActions(), paused.visibleActions());
+		assertEquals(3, playing.recentRows());
 	}
 
 	@Test
@@ -110,11 +113,12 @@ public class SmartTopAdaptivePolicyTest {
 	}
 
 	@Test
-	public void longTitleIsBudgetedAsTwoLinesInsteadOfStealingTheTransportRail() {
+	public void longTitleIsBudgetedAsTwoLinesWithoutDroppingQuickRecent() {
 		SmartTopLayoutSpec spec = SmartTopAdaptivePolicy.resolve(
 				env(704, 480, 1.3F, SmartTopInteractionProfile.AUTOMOTIVE), CURRENT,
-				new SmartTopContentMetrics(520, 0, 0));
+				new SmartTopContentMetrics(520, 0, 3));
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
+		assertEquals(3, spec.recentRows());
 		assertTrue(spec.actionCellDp() >= SmartTopAdaptivePolicy.AUTOMOTIVE_MIN_ACTION_CELL_DP);
 	}
 
@@ -159,7 +163,7 @@ public class SmartTopAdaptivePolicyTest {
 		assertEquals(first.cardHeightDp(), rotated.cardHeightDp());
 		assertEquals(first.cardHeightDp(), restored.cardHeightDp());
 		assertEquals(first.visibleActions(), restored.visibleActions());
-		assertEquals(0, first.recentRows());
+		assertEquals(3, first.recentRows());
 		assertEquals(3, rotated.recentRows());
 	}
 
