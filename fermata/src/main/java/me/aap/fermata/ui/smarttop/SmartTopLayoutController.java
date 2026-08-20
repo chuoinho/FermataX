@@ -117,9 +117,7 @@ public final class SmartTopLayoutController {
 					label,
 					root.findViewById(R.id.dashboard_action_prev),
 					root.findViewById(R.id.dashboard_action_play_pause),
-					root.findViewById(R.id.dashboard_action_next),
-					root.findViewById(R.id.dashboard_action_favorite),
-					root.findViewById(R.id.dashboard_action_back_to_list));
+					root.findViewById(R.id.dashboard_action_favorite));
 		}
 		// The XML starts invisible so an unbound baseline cannot flash at the wrong height.
 		// Reveal only after the complete measured geometry for this holder is installed.
@@ -227,6 +225,8 @@ public final class SmartTopLayoutController {
 		label.setMinimumHeight(cell);
 		label.setIconSize(px(root, spec.secondaryGlyphDp()));
 
+		// Keep legacy holder views in this ordered list only so retired slots are actively collapsed
+		// to width 0. SmartTopAdaptivePolicy no longer assigns NEXT/Back/History to those slots.
 		List<ImageButton> buttons = List.of(
 				root.findViewById(R.id.dashboard_action_prev),
 				root.findViewById(R.id.dashboard_action_play_pause),
