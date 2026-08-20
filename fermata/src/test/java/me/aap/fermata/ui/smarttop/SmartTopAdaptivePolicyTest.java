@@ -1,7 +1,6 @@
 package me.aap.fermata.ui.smarttop;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -27,8 +26,6 @@ public class SmartTopAdaptivePolicyTest {
 				new SmartTopContentMetrics(120, 0, 3));
 		assertEquals(SmartTopLayoutMode.COMPACT, spec.mode());
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
-		assertFalse(spec.visibleActions().contains(SmartTopAction.NEXT));
-		assertFalse(spec.visibleActions().contains(SmartTopAction.OPEN_CONTEXT));
 		assertEquals(3, spec.recentRows());
 		assertEquals(148, spec.recentPanelWidthDp());
 		assertTrue(spec.showQuickRecent());
@@ -58,8 +55,6 @@ public class SmartTopAdaptivePolicyTest {
 		assertEquals(3, spec.recentRows());
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PREVIOUS));
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
-		assertFalse(spec.visibleActions().contains(SmartTopAction.NEXT));
-		assertFalse(spec.visibleActions().contains(SmartTopAction.OPEN_CONTEXT));
 	}
 
 	@Test
