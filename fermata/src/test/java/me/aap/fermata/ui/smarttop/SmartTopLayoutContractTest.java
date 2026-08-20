@@ -44,6 +44,16 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
+	public void coldLayoutUsesTheSameWidthInvariantHeightBaseline() throws Exception {
+		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
+		String dimens = resource("values/dimens.xml");
+		assertTrue(layout.contains("android:layout_height=\"@dimen/dashboard_smart_v2_compact_height\""));
+		assertTrue(dimens.contains("dashboard_smart_v2_compact_height\">152dp"));
+		assertTrue(dimens.contains("dashboard_smart_v2_standard_height\">152dp"));
+		assertTrue(dimens.contains("dashboard_smart_v2_expanded_height\">152dp"));
+	}
+
+	@Test
 	public void adaptiveControllerIsSingleWriterForGeometryAndRailNeverWraps() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		assertTrue(controller.contains("SmartTopAdaptivePolicy.resolve(environment, state.actions(), metrics)"));
