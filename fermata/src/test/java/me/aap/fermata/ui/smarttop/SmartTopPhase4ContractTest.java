@@ -53,6 +53,29 @@ public class SmartTopPhase4ContractTest {
 	}
 
 	@Test
+	public void smartTopRuntimeDoesNotRenderNextOrBackActions() throws Exception {
+		String policy = source("ui/smarttop/SmartTopActionPolicy.java");
+		String binder = source("ui/smarttop/SmartTopBinder.java");
+		String adaptive = source("ui/smarttop/SmartTopAdaptivePolicy.java");
+
+		assertFalse(policy.contains("actions.add(SmartTopAction.NEXT)"));
+		assertFalse(policy.contains("actions.add(SmartTopAction.OPEN_CONTEXT)"));
+		assertFalse(policy.contains("actions.add(SmartTopAction.HISTORY)"));
+		assertFalse(binder.contains("case NEXT -> R.drawable.next"));
+		assertFalse(binder.contains("case OPEN_CONTEXT -> R.drawable.view_list"));
+		assertFalse(adaptive.contains("case NEXT -> 2"));
+		assertFalse(adaptive.contains("case OPEN_CONTEXT, HISTORY -> 3"));
+	}
+
+	@Test
+	public void persistentQuickRecentIsNotDroppedByCompactOrWidthPressure() throws Exception {
+		String adaptive = source("ui/smarttop/SmartTopAdaptivePolicy.java");
+		assertTrue(adaptive.contains("case COMPACT -> 148"));
+		assertFalse(adaptive.contains("recentRows = 0;"));
+		assertFalse(adaptive.contains("recentPanelWidthDp = 0;"));
+	}
+
+	@Test
 	public void legacyPresentationPolicyIsNotReferencedByRuntime() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		String binder = source("ui/smarttop/SmartTopBinder.java");
