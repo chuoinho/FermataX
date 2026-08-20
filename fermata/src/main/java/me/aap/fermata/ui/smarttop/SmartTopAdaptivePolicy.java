@@ -104,8 +104,6 @@ public final class SmartTopAdaptivePolicy {
 		return switch (action) {
 			case PREVIOUS -> 0;
 			case PLAY, PLAY_PAUSE -> 1;
-			case NEXT -> 2;
-			case OPEN_CONTEXT, HISTORY -> 3;
 			case FAVORITE -> 4;
 			default -> -1;
 		};
