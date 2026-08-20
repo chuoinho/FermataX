@@ -44,13 +44,17 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
-	public void coldLayoutUsesTheSameWidthInvariantHeightBaseline() throws Exception {
+	public void coldLayoutUsesTheSameWidthInvariantHeightBaselineAndRevealsAfterApply() throws Exception {
 		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
 		String dimens = resource("values/dimens.xml");
+		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		assertTrue(layout.contains("android:layout_height=\"@dimen/dashboard_smart_v2_compact_height\""));
+		assertTrue(layout.substring(0, layout.indexOf("<androidx.constraintlayout.widget.Guideline"))
+				.contains("android:visibility=\"invisible\""));
 		assertTrue(dimens.contains("dashboard_smart_v2_compact_height\">152dp"));
 		assertTrue(dimens.contains("dashboard_smart_v2_standard_height\">152dp"));
 		assertTrue(dimens.contains("dashboard_smart_v2_expanded_height\">152dp"));
+		assertTrue(controller.contains("root.setVisibility(View.VISIBLE)"));
 	}
 
 	@Test
