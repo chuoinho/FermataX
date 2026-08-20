@@ -264,8 +264,6 @@ public class DashboardFragment extends MainActivityFragment
 				requestStableViewport(true);
 			}
 		};
-		// The smart card is loaded asynchronously after the initial adapter layout. Apply
-		// the invariant again after that refresh so RecyclerView cannot restore an old offset.
 		dashboard.post(reset);
 		dashboard.postDelayed(reset, 350L);
 		dashboard.postDelayed(reset, 1500L);
@@ -513,8 +511,7 @@ public class DashboardFragment extends MainActivityFragment
 				case VIEW_TYPE_SMART_TOP_V2 -> R.layout.dashboard_smart_top_v2_item;
 				default -> R.layout.dashboard_item;
 			};
-			View v = LayoutInflater.from(parent.getContext())
-					.inflate(layout, parent, false);
+			View v = LayoutInflater.from(parent.getContext()).inflate(layout, parent, false);
 			return new ItemHolder(v);
 		}
 
@@ -570,7 +567,6 @@ public class DashboardFragment extends MainActivityFragment
 					DashboardPlayableNavigator.openSmartTop(a, card.playable);
 					return;
 				}
-
 				if (card.targetId == ID_NULL) return;
 				a.setActiveNavItemId(R.id.dashboard_fragment);
 				a.showFragmentWhenReady(card.targetId);
@@ -587,13 +583,6 @@ public class DashboardFragment extends MainActivityFragment
 					refreshSmartTopCard();
 				});
 			}
-			if (holder.next != null) {
-				holder.next.setOnClickListener(v -> {
-					if (editMode || !acceptClick() || (card.playable == null)) return;
-					activity.getMediaServiceBinder().skipToNext();
-					refreshSmartTopCard();
-				});
-			}
 			holder.favorite.setOnClickListener(v -> {
 				if (editMode || !acceptClick() || (card.playable == null) || card.playable.isExternal()) return;
 				if (card.playable.isFavoriteItem()) {
@@ -603,10 +592,6 @@ public class DashboardFragment extends MainActivityFragment
 					card.playable.getLib().getFavorites().addItem(card.playable)
 							.main().onSuccess(done -> refreshSmartTopCard());
 				}
-			});
-			holder.backToList.setOnClickListener(v -> {
-				if (editMode || !acceptClick() || (card.playable == null)) return;
-				DashboardPlayableNavigator.goToPlayable(activity, card.playable);
 			});
 		}
 
@@ -652,7 +637,6 @@ public class DashboardFragment extends MainActivityFragment
 			if (holder.editActions == null) return;
 			holder.editActions.setVisibility(editable ? View.VISIBLE : View.GONE);
 			if (!editable) return;
-
 			int from = cards.indexOf(card);
 			int earlier = getMoveTarget(from, -1, cards.size(), i -> cards.get(i).fixed);
 			int later = getMoveTarget(from, 1, cards.size(), i -> cards.get(i).fixed);
@@ -679,7 +663,6 @@ public class DashboardFragment extends MainActivityFragment
 			int from = cards.indexOf(card);
 			int target = getMoveTarget(from, direction, cards.size(), i -> cards.get(i).fixed);
 			if (target == -1) return;
-
 			manualReorder = true;
 			boolean moved;
 			try {
@@ -722,7 +705,6 @@ public class DashboardFragment extends MainActivityFragment
 				return;
 			}
 			int generation = ++smartRefreshGeneration;
-
 			MainActivityDelegate a = activity;
 			a.getLib().getRecent().getChildren().main().onSuccess(items -> {
 				if (!isSmartRefreshActive(generation)) return;
@@ -793,10 +775,6 @@ public class DashboardFragment extends MainActivityFragment
 					activity.getMediaServiceBinder().skipToPrevious();
 					refreshSmartTopCard();
 				}
-				case NEXT -> {
-					activity.getMediaServiceBinder().skipToNext();
-					refreshSmartTopCard();
-				}
 				case PLAY_PAUSE -> {
 					if (item != null) {
 						DashboardPlayableNavigator.togglePlayback(activity, item);
@@ -813,14 +791,6 @@ public class DashboardFragment extends MainActivityFragment
 					}
 				}
 				case FAVORITE -> toggleFavorite(item);
-				case OPEN_CONTEXT -> {
-					if (item != null) DashboardPlayableNavigator.goToPlayable(activity, item);
-					else if (state.providerResult() != null) {
-						resolveProvider(state, resolved ->
-								DashboardPlayableNavigator.goToPlayable(activity, resolved));
-					}
-				}
-				case HISTORY -> openAllRecent();
 				case OPEN_ADDONS -> {
 					activity.setActiveNavItemId(R.id.dashboard_fragment);
 					activity.showFragmentWhenReady(R.id.settings_fragment);
@@ -1038,11 +1008,9 @@ public class DashboardFragment extends MainActivityFragment
 					(fromPosition >= cards.size()) || (toPosition >= cards.size())) {
 				return false;
 			}
-
 			if (cards.get(fromPosition).fixed || cards.get(toPosition).fixed) {
 				return false;
 			}
-
 			move(cards, fromPosition, toPosition);
 			ignoreClicksUntil = SystemClock.uptimeMillis() + 500;
 			DashboardItems.setDashboardOrder(store, getDashboardItems());
@@ -1078,9 +1046,7 @@ public class DashboardFragment extends MainActivityFragment
 		final MaterialButton labeledAction;
 		final ImageButton playPause;
 		final ImageButton favorite;
-		final ImageButton backToList;
 		final ImageButton prev;
-		final ImageButton next;
 		final View progressGroup;
 		final ProgressBar progress;
 		final TextView progressCurrent;
@@ -1102,9 +1068,7 @@ public class DashboardFragment extends MainActivityFragment
 			labeledAction = itemView.findViewById(R.id.dashboard_action_label);
 			playPause = itemView.findViewById(R.id.dashboard_action_play_pause);
 			favorite = itemView.findViewById(R.id.dashboard_action_favorite);
-			backToList = itemView.findViewById(R.id.dashboard_action_back_to_list);
 			prev = itemView.findViewById(R.id.dashboard_action_prev);
-			next = itemView.findViewById(R.id.dashboard_action_next);
 			progressGroup = itemView.findViewById(R.id.dashboard_smart_progress_group);
 			progress = itemView.findViewById(R.id.dashboard_smart_progress);
 			progressCurrent = itemView.findViewById(R.id.dashboard_smart_progress_current);
@@ -1126,7 +1090,7 @@ public class DashboardFragment extends MainActivityFragment
 
 		private SmartTopBinder.Views smartTopViews() {
 			return new SmartTopBinder.Views(itemView, icon, eyebrow, title, subtitle, actions,
-					labeledAction, List.of(prev, playPause, next, favorite, backToList),
+					labeledAction, List.of(prev, playPause, favorite),
 					progressGroup, progress, progressCurrent, progressTotal,
 					recentPanel, recentTitle,
 					List.of(recentItems[0], recentItems[1], recentItems[2]));
