@@ -26,23 +26,19 @@ public class SmartTopPolicyTest {
 	}
 
 	@Test
-	public void smartTopSemanticsExcludeNextAndBackControls() {
-		SmartTopCapabilities current = SmartTopCapabilities.current(true, true);
+	public void smartTopUsesOnlyRemainingPlaybackControls() {
+		SmartTopCapabilities current = SmartTopCapabilities.current(true);
 		assertEquals(List.of(SmartTopAction.PREVIOUS, SmartTopAction.PLAY_PAUSE,
 				SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, current));
 
-		SmartTopCapabilities suggestion = SmartTopCapabilities.suggestion(true, true);
+		SmartTopCapabilities suggestion = SmartTopCapabilities.suggestion(true);
 		assertEquals(List.of(SmartTopAction.PLAY, SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.RESUME, suggestion));
 		assertEquals(List.of(SmartTopAction.RETRY),
 				SmartTopActionPolicy.resolve(SmartTopMode.RECOVERY, suggestion));
 		assertEquals(List.of(SmartTopAction.OPEN_ADDONS),
 				SmartTopActionPolicy.resolve(SmartTopMode.EMPTY, SmartTopCapabilities.NONE));
-		assertFalse(SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, current)
-				.contains(SmartTopAction.NEXT));
-		assertFalse(SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, current)
-				.contains(SmartTopAction.OPEN_CONTEXT));
 	}
 
 	@Test
@@ -105,11 +101,11 @@ public class SmartTopPolicyTest {
 		SmartTopLayoutSpec normal = SmartTopAdaptivePolicy.resolve(
 				env(600, 800, 1F, SmartTopInteractionProfile.TOUCH),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT,
-						SmartTopCapabilities.current(true, true)), SmartTopContentMetrics.empty());
+						SmartTopCapabilities.current(true)), SmartTopContentMetrics.empty());
 		SmartTopLayoutSpec accessible = SmartTopAdaptivePolicy.resolve(
 				env(600, 800, 1.5F, SmartTopInteractionProfile.TOUCH),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT,
-						SmartTopCapabilities.current(true, true)), SmartTopContentMetrics.empty());
+						SmartTopCapabilities.current(true)), SmartTopContentMetrics.empty());
 		assertEquals(SmartTopLayoutMode.STANDARD, normal.mode());
 		assertEquals(SmartTopLayoutMode.COMPACT, accessible.mode());
 		assertTrue(accessible.cardHeightDp() > normal.cardHeightDp());
