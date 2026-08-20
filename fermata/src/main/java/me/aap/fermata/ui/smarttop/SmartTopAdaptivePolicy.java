@@ -17,6 +17,7 @@ public final class SmartTopAdaptivePolicy {
 	public static final int AUTOMOTIVE_SECONDARY_GLYPH_DP = 36;
 	public static final int TOUCH_ACTION_GAP_DP = 4;
 	public static final int AUTOMOTIVE_MAX_GAP_DP = 6;
+	private static final int BASE_CARD_HEIGHT_DP = 152;
 	private static final int RECENT_ROW_DP = 28;
 	private static final int RECENT_HEADER_DP = 22;
 	private static final int TERMINAL_HORIZONTAL_PADDING_DP = 24;
@@ -256,20 +257,19 @@ public final class SmartTopAdaptivePolicy {
 		};
 	}
 
-	/** Card height is bucketed only by layout/font scale; playback state cannot change it. */
-	static int cardHeightDp(SmartTopLayoutMode mode, float fontScale) {
-		int base = switch (mode) {
-			case COMPACT -> 160;
-			case STANDARD -> 148;
-			case EXPANDED -> 156;
-		};
+	/**
+	 * Card height is width-class invariant. Cold-start fallback width and the first measured
+	 * RecyclerView width may resolve different composition classes, but that transition must never
+	 * resize the Dashboard card. Only the stable font-scale bucket can change height.
+	 */
+	static int cardHeightDp(SmartTopLayoutMode ignoredMode, float fontScale) {
 		int extra = switch (SmartTopTypographyPolicy.fontScaleBucket(fontScale)) {
 			case 0 -> 0;
 			case 1 -> 10;
 			case 2 -> 18;
 			default -> 30;
 		};
-		return base + extra;
+		return BASE_CARD_HEIGHT_DP + extra;
 	}
 
 	/** Reserve a useful two-line text column; a long intrinsic one-line title never owns the rail. */
