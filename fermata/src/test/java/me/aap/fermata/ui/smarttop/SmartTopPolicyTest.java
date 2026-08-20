@@ -26,18 +26,23 @@ public class SmartTopPolicyTest {
 	}
 
 	@Test
-	public void semanticActionsDoNotDependOnLayoutDensity() {
+	public void smartTopSemanticsExcludeNextAndBackControls() {
 		SmartTopCapabilities current = SmartTopCapabilities.current(true, true);
 		assertEquals(List.of(SmartTopAction.PREVIOUS, SmartTopAction.PLAY_PAUSE,
-				SmartTopAction.NEXT, SmartTopAction.OPEN_CONTEXT, SmartTopAction.FAVORITE),
+				SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, current));
 
 		SmartTopCapabilities suggestion = SmartTopCapabilities.suggestion(true, true);
-		assertEquals(List.of(SmartTopAction.PLAY, SmartTopAction.OPEN_CONTEXT,
-				SmartTopAction.FAVORITE),
+		assertEquals(List.of(SmartTopAction.PLAY, SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.RESUME, suggestion));
+		assertEquals(List.of(SmartTopAction.RETRY),
+				SmartTopActionPolicy.resolve(SmartTopMode.RECOVERY, suggestion));
 		assertEquals(List.of(SmartTopAction.OPEN_ADDONS),
 				SmartTopActionPolicy.resolve(SmartTopMode.EMPTY, SmartTopCapabilities.NONE));
+		assertFalse(SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, current)
+				.contains(SmartTopAction.NEXT));
+		assertFalse(SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, current)
+				.contains(SmartTopAction.OPEN_CONTEXT));
 	}
 
 	@Test
