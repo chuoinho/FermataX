@@ -18,8 +18,6 @@ public final class SmartTopAdaptivePolicy {
 	public static final int TOUCH_ACTION_GAP_DP = 4;
 	public static final int AUTOMOTIVE_MAX_GAP_DP = 6;
 	private static final int BASE_CARD_HEIGHT_DP = 152;
-	private static final int RECENT_ROW_DP = 28;
-	private static final int RECENT_HEADER_DP = 22;
 	private static final int TERMINAL_HORIZONTAL_PADDING_DP = 24;
 	private static final int TERMINAL_ICON_GAP_DP = 8;
 
@@ -51,16 +49,12 @@ public final class SmartTopAdaptivePolicy {
 		int terminalWidthDp = hasTerminal ? terminalWidthDp(metrics.terminalLabelWidthDp(),
 				cellDp, secondaryGlyphDp, terminalStyle) : 0;
 
-		int recentRows = recentRows(mode, cardHeightDp, cardPaddingDp, metrics.recentItems());
+		// On Android Auto Quick Recent is a persistent peer of metadata, not an optional region.
+		// With valid data it remains visible at every width; narrow layouts compress actions/title
+		// around it instead of dropping the panel.
+		int recentRows = recentRows(metrics.recentItems());
 		int recentPanelWidthDp = (recentRows > 0) ? recentPanelWidthDp(mode) : 0;
 		int gapDp = preferredGapDp(env.contentWidthDp(), automotive, actions);
-
-		// Recent is the first optional region to yield. Primary metadata and transport never wrap.
-		if (requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
-				recentPanelWidthDp) > availableDp) {
-			recentRows = 0;
-			recentPanelWidthDp = 0;
-		}
 
 		gapDp = fitGapDp(availableDp, fixedDp, recentPanelWidthDp, actions,
 				cellDp, terminalWidthDp, gapDp);
@@ -74,22 +68,18 @@ public final class SmartTopAdaptivePolicy {
 					cellDp, terminalWidthDp, gapDp);
 		}
 
-		// Auxiliary actions yield before the transport triplet. The rail itself remains one row.
-		for (SmartTopAction auxiliary : new SmartTopAction[]{
-				SmartTopAction.FAVORITE, SmartTopAction.OPEN_CONTEXT, SmartTopAction.HISTORY}) {
-			if (requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
-					recentPanelWidthDp) <= availableDp) break;
-			actions.remove(auxiliary);
+		// Favorite yields before primary playback controls. NEXT and Back/Open Context are no
+		// longer part of SmartTop semantics, leaving more width for title + persistent Quick Recent.
+		if ((requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
+				recentPanelWidthDp) > availableDp) && actions.remove(SmartTopAction.FAVORITE)) {
 			gapDp = fitGapDp(availableDp, fixedDp, recentPanelWidthDp, actions,
 					cellDp, terminalWidthDp, gapDp);
 		}
 
 		if (requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
 				recentPanelWidthDp) > availableDp) {
-			// PLAY/PLAY_PAUSE is invariant. Previous/Next remain a pair and yield only when even
-			// the minimum automotive cell cannot preserve the two-line metadata reserve.
+			// PLAY/PLAY_PAUSE is invariant. Previous is the final transport fallback.
 			actions.remove(SmartTopAction.PREVIOUS);
-			actions.remove(SmartTopAction.NEXT);
 			gapDp = fitGapDp(availableDp, fixedDp, recentPanelWidthDp, actions,
 					cellDp, terminalWidthDp, gapDp);
 		}
@@ -211,17 +201,14 @@ public final class SmartTopAdaptivePolicy {
 		return Math.max(cellDp, width);
 	}
 
-	private static int recentRows(SmartTopLayoutMode mode, int cardHeightDp,
-			int paddingDp, int recentItems) {
-		if ((mode == SmartTopLayoutMode.COMPACT) || (recentItems <= 0)) return 0;
-		int innerHeight = Math.max(0, cardHeightDp - (paddingDp * 2));
-		int capacity = Math.max(0, (innerHeight - RECENT_HEADER_DP) / RECENT_ROW_DP);
-		return Math.min(recentItems, Math.min(SmartTopViewState.MAX_QUICK_RECENT, capacity));
+	private static int recentRows(int recentItems) {
+		if (recentItems <= 0) return 0;
+		return Math.min(recentItems, SmartTopViewState.MAX_QUICK_RECENT);
 	}
 
 	private static int recentPanelWidthDp(SmartTopLayoutMode mode) {
 		return switch (mode) {
-			case COMPACT -> 0;
+			case COMPACT -> 148;
 			case STANDARD -> 160;
 			case EXPANDED -> 196;
 		};
