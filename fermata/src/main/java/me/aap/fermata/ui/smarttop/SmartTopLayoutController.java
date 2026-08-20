@@ -121,6 +121,9 @@ public final class SmartTopLayoutController {
 					root.findViewById(R.id.dashboard_action_favorite),
 					root.findViewById(R.id.dashboard_action_back_to_list));
 		}
+		// The XML starts invisible so an unbound baseline cannot flash at the wrong height.
+		// Reveal only after the complete measured geometry for this holder is installed.
+		root.setVisibility(View.VISIBLE);
 		root.setTag(R.id.dashboard_smart_layout_token, token);
 	}
 
