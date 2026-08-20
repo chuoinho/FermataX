@@ -32,11 +32,24 @@ public class SmartTopPhase4ContractTest {
 		String binder = source("ui/smarttop/SmartTopBinder.java");
 
 		assertTrue(coordinator.contains("SmartTopViewState.MAX_QUICK_RECENT"));
-		assertTrue(coordinator.contains("publish(current.withQuickRecent(recent(items, active,"));
+		assertTrue(coordinator.contains("List<PlayableItem> nextRecent = recent(items, active,"));
+		assertTrue(coordinator.contains("publish(current.withQuickRecent(nextRecent))"));
 		assertFalse(state.contains("(layout == SmartTopLayoutMode.COMPACT) || recent.isEmpty()"));
 		assertTrue(controller.contains("SmartTopAdaptivePolicy.resolve(environment, state.actions(), metrics)"));
 		assertTrue(binder.contains("int count = Math.min(spec.recentRows()"));
 		assertFalse(binder.contains("SmartTopLayoutController.presentation("));
+	}
+
+	@Test
+	public void sameCurrentItemStillReloadsAllQuickRecentRowsWithoutNoopRebind() throws Exception {
+		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
+		int refresh = coordinator.indexOf("public void refresh()");
+		int current = coordinator.indexOf("private boolean refreshCurrentInPlace", refresh);
+		String refreshBody = coordinator.substring(refresh, current);
+		assertTrue(refreshBody.contains("refreshCurrentInPlace(active)"));
+		assertTrue(refreshBody.contains("loadQuickRecent(refreshGeneration, active)"));
+		assertTrue(coordinator.contains("if (sameRecent(current.quickRecent(), nextRecent)) return;"));
+		assertTrue(coordinator.contains("static boolean sameRecent("));
 	}
 
 	@Test
