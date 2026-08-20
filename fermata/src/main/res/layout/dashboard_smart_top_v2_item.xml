@@ -9,7 +9,8 @@
     android:padding="12dp"
     android:background="@drawable/dashboard_smart_top_bg"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:visibility="invisible">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/dashboard_smart_context_guide"
