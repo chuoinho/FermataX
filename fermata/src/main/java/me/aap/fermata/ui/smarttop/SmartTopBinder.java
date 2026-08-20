@@ -120,11 +120,11 @@ public final class SmartTopBinder {
 	}
 
 	private static ImageButton actionSlot(List<ImageButton> buttons, SmartTopAction action) {
-		if (buttons.size() < 5) return null;
+		if (buttons.size() < 3) return null;
 		return switch (action) {
 			case PREVIOUS -> buttons.get(0);
 			case PLAY, PLAY_PAUSE -> buttons.get(1);
-			case FAVORITE -> buttons.get(4);
+			case FAVORITE -> buttons.get(2);
 			default -> null;
 		};
 	}
