@@ -97,9 +97,6 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		if (closed) return;
 		PlayableItem active = activity.getCurrentPlayable();
 		if ((active != null) && refreshCurrentInPlace(active)) {
-			// Playback state may be unchanged while the shared Recent collection has changed
-			// underneath the same canonical item (for example YouTube navigation/autoplay).
-			// Refresh the complete three-row snapshot, but publish only when its identities differ.
 			loadQuickRecent(refreshGeneration, active);
 			return;
 		}
@@ -113,11 +110,6 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		loadProviderCandidates(generation);
 	}
 
-	/**
-	 * Reuses the current generation while the canonical media item is unchanged. A pure
-	 * play/pause/timeline change is published through the timeline payload so RecyclerView never
-	 * rebinds geometry or temporarily drops Quick Recent.
-	 */
 	private boolean refreshCurrentInPlace(PlayableItem active) {
 		SmartTopViewState current = state;
 		if ((current == null) || (current.mode() != SmartTopMode.CURRENT) ||
@@ -132,7 +124,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		CharSequence subtitle = subtitle(active);
 		boolean favoriteSupported = !active.isExternal();
 		boolean favorite = favoriteSupported && active.isFavoriteItem();
-		SmartTopCapabilities capabilities = SmartTopCapabilities.current(favoriteSupported, true);
+		SmartTopCapabilities capabilities = SmartTopCapabilities.current(favoriteSupported);
 		List<SmartTopAction> actions =
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, layout, capabilities);
 		SmartTopTimeline timeline = activeTimeline(active);
@@ -167,8 +159,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		CharSequence title = ((snapshotItem != null) && samePlayable(snapshotItem, active)) ?
 				snapshot.getDisplayTitle() : active.getName();
 		boolean favoriteSupported = !active.isExternal();
-		SmartTopCapabilities capabilities =
-				SmartTopCapabilities.current(favoriteSupported, true);
+		SmartTopCapabilities capabilities = SmartTopCapabilities.current(favoriteSupported);
 		SmartTopTimeline timeline = activeTimeline(active);
 		publish(new SmartTopViewState(generation, SmartTopMode.CURRENT, layout,
 				active, PlayableItemResolver.unwrap(active), active.getIcon(),
@@ -190,10 +181,6 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	}
 
 	private void loadProviderCandidates(int generation) {
-		// Recent is local fallback data and is usually available before addon providers finish.
-		// Publish it as soon as it resolves so a cold AA launch does not show an empty card while
-		// providers are still inside their bounded load window. A later Resume candidate retains
-		// its higher selection priority and replaces this provisional state.
 		loadRecentPreview(generation);
 		providers.loadCandidates().main().onCompletion((candidates, failure) -> {
 			if (!owns(generation)) return;
@@ -265,8 +252,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	private void publishItem(int generation, SmartTopMode mode, PlayableItem item,
 			SmartTopTimeline timeline) {
 		boolean favoriteSupported = !item.isExternal();
-		SmartTopCapabilities capabilities =
-				SmartTopCapabilities.suggestion(favoriteSupported, true);
+		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(favoriteSupported);
 		CharSequence subtitle = subtitle(item);
 		SmartTopViewState viewState = new SmartTopViewState(generation, mode, layout,
 				item, PlayableItemResolver.unwrap(item), item.getIcon(), eyebrow(mode), item.getName(),
@@ -299,7 +285,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	private void publishResumeProvider(int generation, SmartTopProviderResult providerResult) {
 		SmartTopCandidate candidate = providerResult.candidate();
 		if (candidate.kind() != SmartTopCandidate.Kind.RESUME) return;
-		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false, true);
+		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false);
 		SmartTopTimeline timeline = new SmartTopTimeline(
 				PlaybackTimelinePolicy.Mode.SEEKABLE, candidate.positionMillis(),
 				candidate.durationMillis(), false);
@@ -335,7 +321,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 
 	public void showRecovery(SmartTopViewState failed) {
 		if (!isCurrentState(failed)) return;
-		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false, true);
+		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false);
 		publish(new SmartTopViewState(failed.generation(), SmartTopMode.RECOVERY, layout,
 				null, null, R.drawable.refresh,
 				context.getString(R.string.dashboard_smart_recovery),
