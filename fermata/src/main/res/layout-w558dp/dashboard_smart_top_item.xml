@@ -64,7 +64,7 @@
         android:id="@+id/dashboard_item_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-		android:layout_marginStart="@dimen/dashboard_smart_text_gap"
+        android:layout_marginStart="@dimen/dashboard_smart_text_gap"
         android:ellipsize="end"
         android:gravity="start"
         android:maxLines="1"
@@ -128,18 +128,6 @@
             app:tint="?android:attr/colorBackground" />
 
         <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/dashboard_action_next"
-            android:layout_width="@dimen/dashboard_smart_action_width"
-            android:layout_height="@dimen/dashboard_smart_action_height"
-            android:layout_marginStart="@dimen/dashboard_smart_action_gap"
-            android:background="@drawable/aa_action_button_bg"
-            android:contentDescription="@string/next"
-            android:padding="@dimen/dashboard_smart_action_padding"
-            android:scaleType="fitCenter"
-            app:srcCompat="@drawable/next"
-            app:tint="?attr/colorOnSecondary" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_favorite"
             android:layout_width="@dimen/dashboard_smart_action_width"
             android:layout_height="@dimen/dashboard_smart_action_height"
@@ -149,18 +137,6 @@
             android:padding="@dimen/dashboard_smart_action_padding"
             android:scaleType="fitCenter"
             app:srcCompat="@drawable/favorite"
-            app:tint="?attr/colorOnSecondary" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/dashboard_action_back_to_list"
-            android:layout_width="@dimen/dashboard_smart_action_width"
-            android:layout_height="@dimen/dashboard_smart_action_height"
-            android:layout_marginStart="@dimen/dashboard_smart_action_gap"
-            android:background="@drawable/aa_action_button_bg"
-            android:contentDescription="@string/dashboard_back_to_list"
-            android:padding="@dimen/dashboard_smart_action_padding"
-            android:scaleType="fitCenter"
-            app:srcCompat="@drawable/view_list"
             app:tint="?attr/colorOnSecondary" />
     </LinearLayout>
 
