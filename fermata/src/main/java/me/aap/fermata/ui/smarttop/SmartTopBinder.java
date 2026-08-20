@@ -124,8 +124,6 @@ public final class SmartTopBinder {
 		return switch (action) {
 			case PREVIOUS -> buttons.get(0);
 			case PLAY, PLAY_PAUSE -> buttons.get(1);
-			case NEXT -> buttons.get(2);
-			case OPEN_CONTEXT, HISTORY -> buttons.get(3);
 			case FAVORITE -> buttons.get(4);
 			default -> null;
 		};
@@ -307,12 +305,10 @@ public final class SmartTopBinder {
 			case PREVIOUS -> R.drawable.prev;
 			case PLAY -> R.drawable.play;
 			case PLAY_PAUSE -> state.timeline().playing() ? R.drawable.pause : R.drawable.play;
-			case NEXT -> R.drawable.next;
 			case FAVORITE -> state.favorite() ? R.drawable.favorite_filled : R.drawable.favorite;
-			case OPEN_CONTEXT -> R.drawable.view_list;
-			case HISTORY -> R.drawable.timer;
 			case OPEN_ADDONS -> R.drawable.view_grid;
 			case RETRY -> R.drawable.refresh;
+			default -> throw new IllegalArgumentException("Unsupported SmartTop action: " + action);
 		};
 	}
 
@@ -321,12 +317,10 @@ public final class SmartTopBinder {
 			case PREVIOUS -> R.string.action_prev;
 			case PLAY -> R.string.action_play;
 			case PLAY_PAUSE -> state.timeline().playing() ? R.string.action_pause : R.string.action_play;
-			case NEXT -> R.string.action_next;
 			case FAVORITE -> state.favorite() ? R.string.favorites_remove : R.string.favorites_add;
-			case OPEN_CONTEXT -> R.string.dashboard_back_to_list;
-			case HISTORY -> R.string.recent;
 			case OPEN_ADDONS -> R.string.settings;
 			case RETRY -> R.string.retry;
+			default -> throw new IllegalArgumentException("Unsupported SmartTop action: " + action);
 		});
 	}
 
