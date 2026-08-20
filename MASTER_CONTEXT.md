@@ -1,6 +1,6 @@
 # FermataX Master Context
 
-> Last updated: 2026-08-19
+> Last updated: 2026-08-20
 >
 > This document is the primary project context for maintainers and coding agents. Read it
 > before changing product behavior, navigation, playback, addon activation, packaging, or
@@ -170,12 +170,12 @@ excluded from this UI refresh.
 
 ### SmartTopCard
 
-SmartTopCard is the wide primary card at the top of the eligible automotive Dashboard. The final
-SmartTop V2 semantic and adaptive presentation contracts are canonical:
+SmartTopCard is the wide primary card at the top of the automotive Dashboard. The final SmartTop V2
+semantic and adaptive presentation contracts are canonical:
 
-- Visibility is host-gated before layout: phone never shows SmartTop; automotive full-screen width
-  below `799dp` hides SmartTop; `>=799dp` is eligible. When SmartTop is hidden, the normal Dashboard
-  Recent tile remains available.
+- Visibility is host-gated only: phone never shows SmartTop; every automotive presentation host
+  shows SmartTop regardless of width. When SmartTop is hidden on phone, the normal Dashboard Recent
+  tile remains available.
 - `CURRENT` semantic actions are Previous, Play/Pause, Next, Context, and Favorite when supported.
   Measured presentation may remove optional actions under pressure, but semantic state itself is
   not pruned by COMPACT/STANDARD/EXPANDED.
@@ -202,6 +202,9 @@ SmartTop V2 semantic and adaptive presentation contracts are canonical:
   Current policy ranges from 56dp to 76dp with a minimum 64dp delegated touch target; primary and
   secondary glyphs shrink proportionally up to the 44dp/36dp caps. Touch presentation retains the
   48dp cell / 22dp glyph baseline.
+- Automotive transport spacing is deliberately compact to preserve metadata/title width: preferred
+  inter-action gaps are 2dp on narrow AA viewports, 4dp from 820dp, and at most 6dp from 1000dp.
+  Gap fitting may reduce them further when space is constrained.
 - Title owns a stable two-line slot (`minLines=2`, `maxLines=2`) with end ellipsis. A long intrinsic
   title is budgeted as two lines and cannot steal the transport rail.
 - SmartTop font scaling is bucketed/capped. Title, eyebrow/subtitle, progress time and Quick Recent
@@ -339,8 +342,8 @@ Relevant policy classes:
 
 ## 7. Playerbar and Playback Ownership
 
-- Dashboard uses SmartTopCard instead of a duplicate bottom playerbar on hosts where SmartTop is
-  actually visible; phone/hidden-SmartTop Dashboard retains its normal Dashboard composition.
+- Dashboard uses SmartTopCard instead of a duplicate bottom playerbar on automotive hosts; phone
+  Dashboard intentionally omits SmartTop and retains its normal Dashboard composition.
 - Radio lists show an audio playerbar while their matching station/source is active.
 - Video playerbar behavior is tied to the active video/player route.
 - Playerbar Back follows the navigation contract, not a generic fragment pop.
@@ -904,8 +907,8 @@ The Android Auto Head Unit Server must already be enabled on the connected phone
 ### Required manual regression checklist
 
 1. Phone portrait/landscape shows no SmartTop and retains the ordinary Dashboard Recent tile.
-2. Eligible automotive Dashboard (`>=799dp` full-screen width) shows SmartTop fully; narrower
-   automotive hosts hide it and retain the ordinary Recent tile.
+2. Every automotive Dashboard shows SmartTop regardless of width; narrow hosts adapt by reducing
+   Recent/gaps/optional actions rather than hiding the card.
 3. DHU 800x480 and 1280x720 at fontScale 1.0/1.3/1.5/2.0 keep SmartTop title, metadata and transport
    balanced with no overlap or vertical drift.
 4. SmartTop short, one-line, two-line and very long titles keep a stable two-line title slot and a
@@ -1060,8 +1063,8 @@ when a new artifact is intentionally designated as the verified snapshot.
 
 - Complete manual regression of TV fullscreen/split-view and YouTube handoff after every
   shared navigation/player change.
-- Complete the current SmartTop DHU matrix before merging PR #18: 800x480 and 1280x720 at
-  fontScale 1.0/1.3/1.5/2.0, long titles, repeated Play/Pause, and Quick Recent 0-3.
+- Complete the current SmartTop DHU matrix before merging PR #18: narrow and wide automotive
+  viewports at fontScale 1.0/1.3/1.5/2.0, long titles, repeated Play/Pause, and Quick Recent 0-3.
 - VLC render plans may use Android layout sentinels while provisional. Native engine APIs must
   only receive positive final Surface pixels, or the measured viewport as the provisional
   fallback. A zero-sized libVLC layout callback during `detachViews()` is a lifecycle reset and
