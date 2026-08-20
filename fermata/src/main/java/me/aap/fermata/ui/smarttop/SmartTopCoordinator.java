@@ -96,7 +96,13 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	public void refresh() {
 		if (closed) return;
 		PlayableItem active = activity.getCurrentPlayable();
-		if ((active != null) && refreshCurrentInPlace(active)) return;
+		if ((active != null) && refreshCurrentInPlace(active)) {
+			// Playback state may be unchanged while the shared Recent collection has changed
+			// underneath the same canonical item (for example YouTube navigation/autoplay).
+			// Refresh the complete three-row snapshot, but publish only when its identities differ.
+			loadQuickRecent(refreshGeneration, active);
+			return;
+		}
 
 		int generation = ++refreshGeneration;
 		if (active != null) {
@@ -177,8 +183,9 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			SmartTopViewState current = state;
 			if ((current == null) || (current.generation() != generation) ||
 					(current.mode() != SmartTopMode.CURRENT)) return;
-			publish(current.withQuickRecent(recent(items, active,
-					SmartTopViewState.MAX_QUICK_RECENT)));
+			List<PlayableItem> nextRecent = recent(items, active, SmartTopViewState.MAX_QUICK_RECENT);
+			if (sameRecent(current.quickRecent(), nextRecent)) return;
+			publish(current.withQuickRecent(nextRecent));
 		});
 	}
 
@@ -394,6 +401,14 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		second = PlayableItemResolver.unwrap(second);
 		return TextUtils.equals(first.getOrigId(), second.getOrigId()) ||
 				TextUtils.equals(first.getId(), second.getId());
+	}
+
+	static boolean sameRecent(List<PlayableItem> first, List<PlayableItem> second) {
+		if (first.size() != second.size()) return false;
+		for (int i = 0; i < first.size(); i++) {
+			if (!samePlayable(first.get(i), second.get(i))) return false;
+		}
+		return true;
 	}
 
 	@Nullable
