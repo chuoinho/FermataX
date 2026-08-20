@@ -20,7 +20,7 @@
 
 	<dimen name="dashboard_smart_height">140dp</dimen>
 	<dimen name="dashboard_smart_mobile_height">176dp</dimen>
-	<!-- V2 uses one width-class-invariant cold baseline; runtime adds only font-scale bucket height. -->
+	<!-- V2 cold baseline is width-class invariant; runtime height changes only by font-scale bucket. -->
 	<dimen name="dashboard_smart_v2_compact_height">152dp</dimen>
 	<dimen name="dashboard_smart_v2_standard_height">152dp</dimen>
 	<dimen name="dashboard_smart_v2_expanded_height">152dp</dimen>
