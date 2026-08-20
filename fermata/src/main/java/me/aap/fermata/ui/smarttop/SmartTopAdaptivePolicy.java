@@ -68,8 +68,8 @@ public final class SmartTopAdaptivePolicy {
 					cellDp, terminalWidthDp, gapDp);
 		}
 
-		// Favorite yields before primary playback controls. NEXT and Back/Open Context are no
-		// longer part of SmartTop semantics, leaving more width for title + persistent Quick Recent.
+		// Favorite yields before primary playback controls. Next and Back are not part of
+		// SmartTop semantics, leaving more width for title + persistent Quick Recent.
 		if ((requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
 				recentPanelWidthDp) > availableDp) && actions.remove(SmartTopAction.FAVORITE)) {
 			gapDp = fitGapDp(availableDp, fixedDp, recentPanelWidthDp, actions,
@@ -104,7 +104,7 @@ public final class SmartTopAdaptivePolicy {
 		return switch (action) {
 			case PREVIOUS -> 0;
 			case PLAY, PLAY_PAUSE -> 1;
-			case FAVORITE -> 4;
+			case FAVORITE -> 2;
 			default -> -1;
 		};
 	}
