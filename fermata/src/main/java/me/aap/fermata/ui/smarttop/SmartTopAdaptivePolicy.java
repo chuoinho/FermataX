@@ -5,8 +5,8 @@ import java.util.List;
 
 /**
  * Pure adaptive policy shared by every SmartTop renderer host. Space decides composition; the
- * interaction profile decides control geometry. SmartTop is currently surfaced only on eligible
- * automotive Dashboard viewports, but keeping this policy pure makes its geometry deterministic.
+ * interaction profile decides control geometry. SmartTop is surfaced on automotive Dashboard
+ * hosts at every width, while phone Dashboard intentionally omits it.
  */
 public final class SmartTopAdaptivePolicy {
 	public static final int TOUCH_ACTION_CELL_DP = 48;
@@ -16,7 +16,7 @@ public final class SmartTopAdaptivePolicy {
 	public static final int AUTOMOTIVE_PRIMARY_GLYPH_DP = 44;
 	public static final int AUTOMOTIVE_SECONDARY_GLYPH_DP = 36;
 	public static final int TOUCH_ACTION_GAP_DP = 4;
-	public static final int AUTOMOTIVE_MAX_GAP_DP = 18;
+	public static final int AUTOMOTIVE_MAX_GAP_DP = 6;
 	private static final int RECENT_ROW_DP = 28;
 	private static final int RECENT_HEADER_DP = 22;
 	private static final int TERMINAL_HORIZONTAL_PADDING_DP = 24;
@@ -52,7 +52,7 @@ public final class SmartTopAdaptivePolicy {
 
 		int recentRows = recentRows(mode, cardHeightDp, cardPaddingDp, metrics.recentItems());
 		int recentPanelWidthDp = (recentRows > 0) ? recentPanelWidthDp(mode) : 0;
-		int gapDp = preferredGapDp(env.contentWidthDp(), automotive, actions, cellDp, terminalWidthDp);
+		int gapDp = preferredGapDp(env.contentWidthDp(), automotive, actions);
 
 		// Recent is the first optional region to yield. Primary metadata and transport never wrap.
 		if (requiredWidthDp(fixedDp, actions, cellDp, gapDp, terminalWidthDp,
@@ -183,14 +183,12 @@ public final class SmartTopAdaptivePolicy {
 	}
 
 	private static int preferredGapDp(float widthDp, boolean automotive,
-			List<SmartTopAction> actions, int cellDp, int terminalWidthDp) {
-		int count = componentCount(actions);
-		if (count <= 1) return 0;
+			List<SmartTopAction> actions) {
+		if (componentCount(actions) <= 1) return 0;
 		if (!automotive) return TOUCH_ACTION_GAP_DP;
-		int baseRail = railWidthDp(actions, cellDp, 0, terminalWidthDp);
-		int preferredBudget = Math.max(baseRail, Math.round(Math.max(0F, widthDp) * 0.42F));
-		return Math.max(0, Math.min(AUTOMOTIVE_MAX_GAP_DP,
-				(preferredBudget - baseRail) / (count - 1)));
+		float width = Math.max(0F, widthDp);
+		int gap = (width >= 1000F) ? AUTOMOTIVE_MAX_GAP_DP : (width >= 820F) ? 4 : 2;
+		return Math.min(AUTOMOTIVE_MAX_GAP_DP, gap);
 	}
 
 	private static int fitGapDp(int availableDp, int fixedDp, int recentPanelWidthDp,
