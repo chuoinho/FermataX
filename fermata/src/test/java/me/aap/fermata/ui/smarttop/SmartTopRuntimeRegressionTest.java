@@ -25,10 +25,22 @@ public class SmartTopRuntimeRegressionTest {
 		assertTrue(element(layout, "@+id/dashboard_item_actions")
 				.contains("android:visibility=\"invisible\""));
 		for (String id : new String[]{"dashboard_action_prev", "dashboard_action_play_pause",
-				"dashboard_action_next", "dashboard_action_favorite",
-				"dashboard_action_back_to_list"}) {
+				"dashboard_action_favorite"}) {
 			assertTrue(id, element(layout, "@+id/" + id)
 					.contains("android:visibility=\"invisible\""));
+		}
+	}
+
+	@Test
+	public void retiredNextAndBackControlsAreAbsentFromEverySmartTopLayout() throws Exception {
+		for (String path : new String[]{
+				"layout/dashboard_smart_top_v2_item.xml",
+				"layout/dashboard_smart_top_item.xml",
+				"layout-w460dp/dashboard_smart_top_item.xml",
+				"layout-w558dp/dashboard_smart_top_item.xml"}) {
+			String layout = resource(path);
+			assertFalse(path, layout.contains("dashboard_action_next"));
+			assertFalse(path, layout.contains("dashboard_action_back_to_list"));
 		}
 	}
 
