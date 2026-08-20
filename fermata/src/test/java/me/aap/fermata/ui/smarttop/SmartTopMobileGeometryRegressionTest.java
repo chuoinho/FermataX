@@ -9,10 +9,10 @@ import java.nio.file.Path;
 
 import org.junit.Test;
 
-/** Guards the phone renderer against invisible semantic slots consuming the text budget. */
+/** Guards adaptive geometry against invisible semantic slots consuming the text budget. */
 public class SmartTopMobileGeometryRegressionTest {
 	@Test
-	public void phoneAndAutomotiveShareAdaptiveActionGeometry() throws Exception {
+	public void touchAndAutomotiveShareAdaptiveActionGeometry() throws Exception {
 		String controller = source("ui/smarttop/SmartTopLayoutController.java");
 		assertFalse(controller.contains("if (!automotive) return;"));
 		assertTrue(controller.contains("int cell = px(root, spec.actionCellDp());"));
@@ -28,15 +28,15 @@ public class SmartTopMobileGeometryRegressionTest {
 	}
 
 	@Test
-	public void narrowPhoneDropsAuxiliarySlotsInsteadOfCollapsingText() {
+	public void narrowBudgetKeepsPlayAndQuickRecentBeforeOptionalFavorite() {
 		SmartTopLayoutSpec spec = SmartTopAdaptivePolicy.resolve(
 				new SmartTopEnvironment(313, 720, 1F, SmartTopInteractionProfile.TOUCH),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT,
-						SmartTopCapabilities.current(true, true)),
+						SmartTopCapabilities.current(true)),
 				new SmartTopContentMetrics(120, 0, 3));
 		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
 		assertFalse(spec.visibleActions().contains(SmartTopAction.FAVORITE));
-		assertFalse(spec.visibleActions().contains(SmartTopAction.OPEN_CONTEXT));
+		assertTrue(spec.recentRows() == 3);
 	}
 
 	private static String source(String relativePath) throws Exception {
