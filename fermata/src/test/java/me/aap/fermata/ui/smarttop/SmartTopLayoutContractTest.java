@@ -21,16 +21,17 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
-	public void layoutExposesAllRendererSurfacesThreeRecentRowsAndTwoLineTitle() throws Exception {
+	public void layoutExposesRemainingRendererSurfacesThreeRecentRowsAndTwoLineTitle() throws Exception {
 		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
 		for (String id : new String[]{"dashboard_action_label", "dashboard_action_prev",
-				"dashboard_action_play_pause", "dashboard_action_next",
-				"dashboard_action_favorite", "dashboard_action_back_to_list",
+				"dashboard_action_play_pause", "dashboard_action_favorite",
 				"dashboard_smart_progress", "dashboard_smart_progress_current",
 				"dashboard_smart_progress_total", "dashboard_recent_panel",
 				"dashboard_recent_item_1", "dashboard_recent_item_2", "dashboard_recent_item_3"}) {
 			assertTrue(id, layout.contains("@+id/" + id));
 		}
+		assertFalse(layout.contains("dashboard_action_next"));
+		assertFalse(layout.contains("dashboard_action_back_to_list"));
 		String title = element(layout, "@+id/dashboard_item_title");
 		assertTrue(title.contains("android:minLines=\"2\""));
 		assertTrue(title.contains("android:maxLines=\"2\""));
@@ -67,6 +68,8 @@ public class SmartTopLayoutContractTest {
 		assertTrue(controller.contains("spec.recentPanelWidthDp()"));
 		assertTrue(controller.contains("actionParams.topToTop = R.id.dashboard_item_eyebrow"));
 		assertTrue(controller.contains("actionParams.bottomToBottom = R.id.dashboard_smart_progress_group"));
+		assertFalse(controller.contains("dashboard_action_next"));
+		assertFalse(controller.contains("dashboard_action_back_to_list"));
 		assertFalse(controller.contains("centerActionRail"));
 		assertFalse(controller.contains("SmartTopPresentationPolicy"));
 	}
