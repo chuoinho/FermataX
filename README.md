@@ -26,7 +26,7 @@ It brings local media, IPTV and Xtream, Internet Radio, Podcasts, Audiobooks, St
 
 ## Continuous integration
 
-Every pull request targeting `main` and every push to `main` runs the repository's verification pipeline. CI executes the Mobile and Auto unit suites, architecture boundary guards (hotspot baselines and zero cross-addon dependencies), Android Lint, and a three-dot `git diff --check` against the pull-request base (or push base). The workflow verifies source and tests only; it does not build, sign, publish, or upload release APKs.
+Every pull request targeting `main` and every push to `main` runs the repository's verification pipeline. CI executes the Mobile and Auto unit suites, Web/TV UI-shell guards, UI single-writer and architecture boundary guards, Android Lint, and a three-dot `git diff --check` against the pull-request base (or push base). After every successful run, the workflow packages and uploads exactly one unsigned universal debug APK for phone and Android Auto/DHU device testing. Release signing and publishing remain separate maintainer actions.
 
 Maintainers and coding agents should also read [MASTER_CONTEXT.md](MASTER_CONTEXT.md), the tracked canonical product and architecture context. README remains the concise onboarding and build-status entry point.
 
@@ -34,7 +34,7 @@ Maintainers and coding agents should also read [MASTER_CONTEXT.md](MASTER_CONTEX
 
 - **Dashboard-first interface** designed for quick access on Android Auto screens.
 - **Left or right navigation rail** with customizable and scrollable items.
-- **SmartTopCard** with Now Playing, Continue, and recent media.
+- **Adaptive SmartTopCard** on Android Auto/DHU with Now Playing, Continue/Recent, up to three Quick Recent rows, and width-aware Play/Pause and Favorite actions; phone keeps the ordinary Dashboard without SmartTop.
 - **Local audio and video** playback with folders and playlists.
 - **IPTV and Xtream Codes** with M3U, XMLTV EPG, Catchup, Live TV, Movies, and Series.
 - **Internet Radio** with user-added sources and online station discovery.
