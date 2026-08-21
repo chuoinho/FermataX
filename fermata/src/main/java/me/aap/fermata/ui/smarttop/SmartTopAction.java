@@ -1,8 +1,7 @@
 package me.aap.fermata.ui.smarttop;
 
-/** Active SmartTop controls. Next and Back/Open-Context are intentionally not SmartTop actions. */
+/** Active SmartTop controls. Transport navigation is intentionally owned by full players, not SmartTop. */
 public enum SmartTopAction {
-	PREVIOUS,
 	PLAY,
 	PLAY_PAUSE,
 	FAVORITE,
