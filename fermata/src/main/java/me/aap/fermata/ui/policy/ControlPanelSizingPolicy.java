@@ -21,6 +21,15 @@ public final class ControlPanelSizingPolicy {
 				backgroundInsetX, backgroundInsetY);
 	}
 
+	/**
+	 * Returns the measured horizontal correction needed to put a child exactly on its parent's
+	 * physical centre. ConstraintLayout weighted chains can land half/a few pixels off-centre when
+	 * the available width is not evenly divisible by all transport cells.
+	 */
+	public static float centerOffset(int parentWidth, int childLeft, int childRight) {
+		return (parentWidth - childLeft - childRight) / 2F;
+	}
+
 	public record Geometry(int visualSize, int glyphSize, int horizontalPadding,
 			int verticalPadding, int backgroundInsetX, int backgroundInsetY) {
 	}

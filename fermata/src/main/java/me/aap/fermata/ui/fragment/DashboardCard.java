@@ -33,9 +33,9 @@ final class DashboardCard {
 	final SmartTopViewState smartTopState;
 
 	private DashboardCard(DashboardItems.Item item, PlayableItem playable, int targetId, int icon,
-								CharSequence title, CharSequence subtitle, boolean fixed, boolean wide,
-								boolean playing, @Nullable List<PlayableItem> recentItems,
-								@Nullable SmartTopViewState smartTopState) {
+				CharSequence title, CharSequence subtitle, boolean fixed, boolean wide,
+				boolean playing, @Nullable List<PlayableItem> recentItems,
+				@Nullable SmartTopViewState smartTopState) {
 		this.item = item;
 		this.playable = playable;
 		this.targetId = targetId;
@@ -54,18 +54,23 @@ final class DashboardCard {
 				false, false, false, null, null);
 	}
 
+	DashboardCard withTitle(CharSequence title) {
+		return new DashboardCard(item, playable, targetId, icon, title, subtitle, fixed, wide,
+				playing, recentItems, smartTopState);
+	}
+
 	DashboardCard withSubtitle(CharSequence subtitle) {
 		return new DashboardCard(item, playable, targetId, icon, title, subtitle, fixed, wide,
 				playing, recentItems, smartTopState);
 	}
 
 	static DashboardCard playable(PlayableItem playable, boolean playing,
-												 @Nullable List<PlayableItem> recentItems) {
+				@Nullable List<PlayableItem> recentItems) {
 		return playable(playable, playable.getName(), playing, recentItems);
 	}
 
 	static DashboardCard playable(PlayableItem playable, CharSequence title, boolean playing,
-												 @Nullable List<PlayableItem> recentItems) {
+				@Nullable List<PlayableItem> recentItems) {
 		String subtitle = "";
 		if ((playable.getParent() != null) && !(playable.getParent() instanceof Recent)) {
 			String parent = playable.getParent().getName();

@@ -442,10 +442,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	@Override
 	public void prepare(PlayableItem source) {
 		source = PlayableItemResolver.unwrap(source);
-		if (source == next) {
+		if ((source == next) || NEXT_ID.equals(source.getOrigId())) {
 			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
 			web.next();
-		} else if (source == prev) {
+		} else if ((source == prev) || PREV_ID.equals(source.getOrigId())) {
 			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
 			web.prev();
 		} else {
@@ -562,7 +562,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			return completed(duration);
 		}
 		long fallback = (current instanceof Current active && active.descriptor != null) ?
-				active.descriptor.durationMillis() : 0L;
+					active.descriptor.durationMillis() : 0L;
 		return web.getContentDuration().map(duration -> (duration > 0L) ? duration : fallback);
 	}
 
@@ -1140,6 +1140,18 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			return MEDIA_ENG_YT;
 		}
 
+		@NonNull
+		@Override
+		public FutureSupplier<PlayableItem> getPrevPlayable() {
+			return completed(new TransportItem(PREV_ID, getParent(), GenericFileSystem.getInstance().create("http://youtube.com/prev")));
+		}
+
+		@NonNull
+		@Override
+		public FutureSupplier<PlayableItem> getNextPlayable() {
+			return completed(new TransportItem(NEXT_ID, getParent(), GenericFileSystem.getInstance().create("http://youtube.com/next")));
+		}
+
 		@Override
 		public boolean equals(@Nullable Object obj) {
 			return obj == this;
@@ -1267,18 +1279,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 		private void invalidateMetadata() {
 			reset();
-		}
-
-		@NonNull
-		@Override
-		public FutureSupplier<PlayableItem> getPrevPlayable() {
-			return completed(prev);
-		}
-
-		@NonNull
-		@Override
-		public FutureSupplier<PlayableItem> getNextPlayable() {
-			return completed(next);
 		}
 	}
 }

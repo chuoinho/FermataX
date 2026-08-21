@@ -10,7 +10,7 @@ public final class SmartTopSelectionPolicy {
 		if (hasCanonicalCurrent) return SmartTopMode.CURRENT;
 		if (hasResume) return SmartTopMode.RESUME;
 		if (hasRecent) return SmartTopMode.RECENT;
-		if (hasRecommendation) return SmartTopMode.RECOMMENDED;
+		// Keep the recommendation input for compatibility, but it is no longer a display tier.
 		return SmartTopMode.EMPTY;
 	}
 }

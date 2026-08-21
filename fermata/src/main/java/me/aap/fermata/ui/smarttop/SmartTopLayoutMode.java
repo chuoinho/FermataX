@@ -1,29 +1,11 @@
 package me.aap.fermata.ui.smarttop;
 
+/**
+ * Coarse space/composition class only. It intentionally carries no dimensions or host identity;
+ * SmartTopAdaptivePolicy resolves all geometry from the measured runtime environment.
+ */
 public enum SmartTopLayoutMode {
-	COMPACT(176, 66, 64),
-	STANDARD(144, 80, 76),
-	EXPANDED(152, 88, 76);
-
-	private final int cardHeightDp;
-	private final int artworkSizeDp;
-	private final int automotiveTouchTargetDp;
-
-	SmartTopLayoutMode(int cardHeightDp, int artworkSizeDp, int automotiveTouchTargetDp) {
-		this.cardHeightDp = cardHeightDp;
-		this.artworkSizeDp = artworkSizeDp;
-		this.automotiveTouchTargetDp = automotiveTouchTargetDp;
-	}
-
-	public int cardHeightDp() {
-		return cardHeightDp;
-	}
-
-	public int artworkSizeDp() {
-		return artworkSizeDp;
-	}
-
-	public int automotiveTouchTargetDp() {
-		return automotiveTouchTargetDp;
-	}
+	COMPACT,
+	STANDARD,
+	EXPANDED
 }

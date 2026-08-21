@@ -281,6 +281,7 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	void setScale(VideoScale scale) {
 		getPreferenceStore().applyStringPref(VIDEO_SCALE, scale.prefName());
+		YoutubeVideoScaleController.apply(currentActivity(), scale);
 	}
 
 	String getLastYoutubeUrl() {
@@ -319,7 +320,9 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	void rememberYoutubeItem(YoutubeItem item) {
 		if (item == null) return;
-		storeYoutubeItem(item.playedAt(System.currentTimeMillis()));
+		YoutubeItem played = item.playedAt(System.currentTimeMillis());
+		storeYoutubeItem(played);
+		YoutubeRecentSync.add(currentActivity(), this, played);
 	}
 
 	void updateYoutubeItem(YoutubeItem item) {

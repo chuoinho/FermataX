@@ -61,7 +61,7 @@ final class DashboardPlayableNavigator {
 	}
 
 	private static void playIfNeeded(MainActivityDelegate activity, PlayableItem item) {
-		PlayableItem current = activity.getCurrentPlayable();
+		PlayableItem current = activity.getMediaServiceBinder().getCurrentItem();
 		if ((current == null) || !isSamePlayable(current, item) ||
 				!activity.getMediaServiceBinder().isPlaying()) {
 			activity.getMediaServiceBinder().playItem(item);

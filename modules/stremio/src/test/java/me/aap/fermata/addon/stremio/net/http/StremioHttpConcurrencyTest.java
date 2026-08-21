@@ -53,12 +53,16 @@ public class StremioHttpConcurrencyTest {
 		for (int i = 0; i < 6; i++) calls.add(execute("https://same.example.invalid/" + i));
 		for (int i = 0; i < 6; i++) calls.add(execute("https://host" + i + ".example.invalid/item"));
 
-		await(() -> transport.active.get() == 8);
+		await(() -> transport.started.get() == 8);
+		assertEquals(8, transport.active.get());
 		assertEquals(8, transport.maxActive.get());
 		assertEquals(4, transport.maxForHost("same.example.invalid"));
 		assertEquals(4, transport.activeForHost("same.example.invalid"));
 
-		transport.completeFirst("host0.example.invalid", response(200));
+		String activeUniqueHost = transport.calls.stream()
+				.filter(call -> !call.host.equals("same.example.invalid") && !call.finished.get())
+				.findFirst().orElseThrow().host;
+		transport.completeFirst(activeUniqueHost, response(200));
 		await(() -> transport.started.get() == 9);
 		assertEquals(8, transport.maxActive.get());
 

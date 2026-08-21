@@ -12,9 +12,6 @@ while [ "$1" != "" ]; do
         -c)
             CLEAN='clean'
             ;;
-        -a)
-            ARM=true
-            ;;
         -b)
             TASK='aab'
             ;;
@@ -44,28 +41,42 @@ echo "CMAKE_PATH=$CMAKE_PATH"
 export PATH=$CMAKE_PATH:$PATH
 cd "$DIR"
 
+# Distribution contract: FermataX is one app/package for phone and Android Auto.
+# Gradle keeps its platform source sets internally, but this script must never publish
+# separate Mobile/Auto or ABI-specific APK products. APK builds are one universal package.
 build() {
   local ext="$TASK"
   local app_flavor=${APP_ID_SFX:-$(grep -oP "${TASK}Flavor=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
   local app_sfx=${APP_ID_SFX:-$(grep -oP "${TASK}IdSfx=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
   [ -z "$app_sfx" ] || local app_sfx="-PAPP_ID_SFX=$app_sfx"
-  if [ $TASK = 'apk' ]; then
+  if [ "$TASK" = 'apk' ]; then
     local task="package${app_flavor}AutoReleaseUniversalApk"
-    local abi="-PABI=$1"
-    [ "$1" = 'arm64-v8a' ] && local sfx='-arm64' || local sfx='-arm'
+    local output_root="fermata/build/outputs/apk_from_bundle"
   else
     local task="bundle${app_flavor}AutoRelease"
+    local output_root="fermata/build/outputs/bundle"
   fi
 
-  ./gradlew $CLEAN fermata:$task $abi $app_sfx
-  for path in $(ls fermata/build/outputs/*/*/fermata*.$ext); do
-    local version=${path##*fermata-}
-    version=${version%%-*}
-    local dst="$DEST_DIR/fermata-auto-${version}${sfx}.$ext"
-    mv "$path" "$dst"
-    echo "Built $dst"
-  done
+  # Remove stale artifacts from this packaging family so an old build can never overwrite
+  # the newly produced universal package in dist/.
+  if [ -d "$output_root" ]; then
+    find "$output_root" -type f -name "fermata*.$ext" -delete
+  fi
+
+  ./gradlew $CLEAN fermata:$task $app_sfx
+
+  set -- $(find "$output_root" -type f -name "fermata*.$ext" -print)
+  if [ "$#" -ne 1 ]; then
+    echo "Expected exactly one FermataX $ext artifact, found $#"
+    exit 1
+  fi
+
+  local path="$1"
+  local version=${path##*fermata-}
+  version=${version%%-*}
+  local dst="$DEST_DIR/FermataX-${version}.$ext"
+  cp "$path" "$dst"
+  echo "Built $dst"
 }
 
-[ $ARM ] && [ "$TASK" = 'apk' ] && build 'armeabi-v7a' || true
-build 'arm64-v8a'
+build

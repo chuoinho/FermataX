@@ -9,7 +9,8 @@
     android:padding="12dp"
     android:background="@drawable/dashboard_smart_top_bg"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:visibility="invisible">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/dashboard_smart_context_guide"
@@ -54,7 +55,8 @@
         android:layout_marginStart="10dp"
         android:layout_marginTop="1dp"
         android:ellipsize="end"
-        android:maxLines="1"
+        android:minLines="2"
+        android:maxLines="2"
         android:textAppearance="?attr/textAppearanceListItem"
         android:textSize="21sp"
         android:textStyle="bold"
@@ -78,12 +80,14 @@
 
     <LinearLayout
         android:id="@+id/dashboard_item_actions"
-		android:layout_width="wrap_content"
+        android:layout_width="wrap_content"
         android:layout_height="@dimen/dashboard_smart_v2_control_size"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide">
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@id/dashboard_smart_progress_group"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintTop_toTopOf="@id/dashboard_item_eyebrow">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/dashboard_action_label"
@@ -110,17 +114,6 @@
             app:iconTint="?attr/colorSecondary" />
 
         <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/dashboard_action_prev"
-            style="@style/Widget.AppCompat.ImageButton"
-			android:layout_width="0dp"
-            android:layout_height="@dimen/dashboard_smart_v2_control_size"
-			android:background="@null"
-            android:padding="@dimen/dashboard_smart_v2_action_padding"
-            android:scaleType="fitCenter"
-			android:visibility="gone"
-			app:tint="@color/dashboard_smart_action_v2_tint" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_play_pause"
             style="@style/Widget.AppCompat.ImageButton"
             android:layout_width="@dimen/dashboard_smart_v2_control_size"
@@ -129,38 +122,18 @@
             android:background="@drawable/dashboard_smart_action_v2_bg"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
+            android:visibility="invisible"
             app:tint="@color/dashboard_smart_action_v2_tint" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/dashboard_action_next"
-            style="@style/Widget.AppCompat.ImageButton"
-			android:layout_width="0dp"
-            android:layout_height="@dimen/dashboard_smart_v2_control_size"
-			android:background="@null"
-            android:padding="@dimen/dashboard_smart_v2_action_padding"
-            android:scaleType="fitCenter"
-			android:visibility="gone"
-			app:tint="@color/dashboard_smart_action_v2_tint" />
 
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_favorite"
             style="@style/Widget.AppCompat.ImageButton"
             android:layout_width="@dimen/dashboard_smart_v2_control_size"
             android:layout_height="@dimen/dashboard_smart_v2_control_size"
-            android:layout_marginEnd="4dp"
-			android:background="@null"
+            android:background="@null"
             android:padding="@dimen/dashboard_smart_v2_action_padding"
             android:scaleType="fitCenter"
-            app:tint="@color/dashboard_smart_action_v2_tint" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/dashboard_action_back_to_list"
-            style="@style/Widget.AppCompat.ImageButton"
-            android:layout_width="@dimen/dashboard_smart_v2_control_size"
-            android:layout_height="@dimen/dashboard_smart_v2_control_size"
-			android:background="@null"
-            android:padding="@dimen/dashboard_smart_v2_action_padding"
-            android:scaleType="fitCenter"
+            android:visibility="invisible"
             app:tint="@color/dashboard_smart_action_v2_tint" />
     </LinearLayout>
 
@@ -170,21 +143,21 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginEnd="8dp"
-		android:layout_marginTop="4dp"
+        android:layout_marginTop="4dp"
         android:orientation="vertical"
-		android:visibility="invisible"
-		app:layout_constraintEnd_toStartOf="@id/dashboard_item_actions"
-		app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
-		app:layout_constraintTop_toBottomOf="@id/dashboard_item_subtitle">
+        android:visibility="invisible"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_item_actions"
+        app:layout_constraintStart_toEndOf="@id/dashboard_item_icon"
+        app:layout_constraintTop_toBottomOf="@id/dashboard_item_subtitle">
 
         <ProgressBar
             android:id="@+id/dashboard_smart_progress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-			android:layout_height="5dp"
-			android:max="1000"
-			android:progress="0"
-			android:progressDrawable="@drawable/dashboard_smart_progress" />
+            android:layout_height="5dp"
+            android:max="1000"
+            android:progress="0"
+            android:progressDrawable="@drawable/dashboard_smart_progress" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -255,14 +228,22 @@
             <TextView
                 android:id="@+id/dashboard_recent_item_2"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:visibility="gone" />
+                android:layout_height="28dp"
+                android:background="@drawable/focusable_shape_transparent"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/dashboard_recent_item_3"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:visibility="gone" />
+                android:layout_height="28dp"
+                android:background="@drawable/focusable_shape_transparent"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 

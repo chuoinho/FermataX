@@ -16,9 +16,9 @@ import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.SmartTopCandidate;
 import me.aap.fermata.addon.SmartTopProviderCoordinator;
 import me.aap.fermata.addon.SmartTopProviderResult;
+import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
@@ -28,7 +28,8 @@ import me.aap.utils.async.FutureSupplier;
 
 /**
  * Owns SmartTop refresh generations and state derivation. DashboardAdapter only renders states.
- * Provider-backed Resume/Recommendation candidates join this coordinator in the provider phase.
+ * Provider-backed Resume candidates may join the display flow. Recommendation provider contracts
+ * remain available for compatibility but are not selected or published by this coordinator.
  */
 public final class SmartTopCoordinator implements AutoCloseable {
 	public interface Listener {
@@ -94,8 +95,13 @@ public final class SmartTopCoordinator implements AutoCloseable {
 
 	public void refresh() {
 		if (closed) return;
-		int generation = ++refreshGeneration;
 		PlayableItem active = activity.getCurrentPlayable();
+		if ((active != null) && refreshCurrentInPlace(active)) {
+			loadQuickRecent(refreshGeneration, active);
+			return;
+		}
+
+		int generation = ++refreshGeneration;
 		if (active != null) {
 			publishCurrent(generation, active);
 			loadQuickRecent(generation, active);
@@ -104,14 +110,56 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		loadProviderCandidates(generation);
 	}
 
+	private boolean refreshCurrentInPlace(PlayableItem active) {
+		SmartTopViewState current = state;
+		if ((current == null) || (current.mode() != SmartTopMode.CURRENT) ||
+				(current.canonicalItem() == null) || !samePlayable(current.canonicalItem(), active)) {
+			return false;
+		}
+
+		PlaybackSnapshot snapshot = activity.getMediaSessionCallback().getPlaybackSnapshot();
+		PlayableItem snapshotItem = snapshot.getItem();
+		CharSequence title = ((snapshotItem != null) && samePlayable(snapshotItem, active)) ?
+				snapshot.getDisplayTitle() : active.getName();
+		CharSequence subtitle = subtitle(active);
+		boolean favoriteSupported = !active.isExternal();
+		boolean favorite = favoriteSupported && active.isFavoriteItem();
+		SmartTopCapabilities capabilities = SmartTopCapabilities.current(favoriteSupported);
+		List<SmartTopAction> actions =
+				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, layout, capabilities);
+		SmartTopTimeline timeline = activeTimeline(active);
+
+		SmartTopViewState next = new SmartTopViewState(current.generation(), SmartTopMode.CURRENT,
+				layout, active, PlayableItemResolver.unwrap(active), active.getIcon(),
+				context.getString(R.string.dashboard_now_playing), title, subtitle, timeline,
+				capabilities, actions, favorite, current.quickRecent(), null);
+		boolean metadataStable = (current.icon() == next.icon()) &&
+				TextUtils.equals(current.eyebrow(), next.eyebrow()) &&
+				TextUtils.equals(current.title(), next.title()) &&
+				TextUtils.equals(current.subtitle(), next.subtitle()) &&
+				(current.favorite() == next.favorite()) && current.actions().equals(next.actions());
+		boolean timelineChanged = !SmartTopTimelinePresentation.of(current.timeline()).equals(
+				SmartTopTimelinePresentation.of(next.timeline()));
+
+		if (metadataStable) {
+			if (timelineChanged) {
+				state = next;
+				listener.onSmartTopTimeline(next);
+			}
+			return true;
+		}
+
+		publish(next);
+		return true;
+	}
+
 	private void publishCurrent(int generation, PlayableItem active) {
 		PlaybackSnapshot snapshot = activity.getMediaSessionCallback().getPlaybackSnapshot();
 		PlayableItem snapshotItem = snapshot.getItem();
 		CharSequence title = ((snapshotItem != null) && samePlayable(snapshotItem, active)) ?
 				snapshot.getDisplayTitle() : active.getName();
 		boolean favoriteSupported = !active.isExternal();
-		SmartTopCapabilities capabilities =
-				SmartTopCapabilities.current(favoriteSupported, true);
+		SmartTopCapabilities capabilities = SmartTopCapabilities.current(favoriteSupported);
 		SmartTopTimeline timeline = activeTimeline(active);
 		publish(new SmartTopViewState(generation, SmartTopMode.CURRENT, layout,
 				active, PlayableItemResolver.unwrap(active), active.getIcon(),
@@ -126,20 +174,13 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			SmartTopViewState current = state;
 			if ((current == null) || (current.generation() != generation) ||
 					(current.mode() != SmartTopMode.CURRENT)) return;
-			List<PlayableItem> recent = recent(items, active, 1);
-			if (!SmartTopLayoutPolicy.showQuickRecent(layout,
-					measuredWidthDp(), scaledFont(), current.actions().size(), current.title().length())) {
-				recent = List.of();
-			}
-			publish(current.withQuickRecent(recent));
+			List<PlayableItem> nextRecent = recent(items, active, SmartTopViewState.MAX_QUICK_RECENT);
+			if (sameRecent(current.quickRecent(), nextRecent)) return;
+			publish(current.withQuickRecent(nextRecent));
 		});
 	}
 
 	private void loadProviderCandidates(int generation) {
-		// Recent is local fallback data and is usually available before addon providers finish.
-		// Publish it as soon as it resolves so a cold AA launch does not show an empty card while
-		// providers are still inside their bounded load window. A later Resume candidate retains
-		// its higher selection priority and replaces this provisional state.
 		loadRecentPreview(generation);
 		providers.loadCandidates().main().onCompletion((candidates, failure) -> {
 			if (!owns(generation)) return;
@@ -151,11 +192,10 @@ public final class SmartTopCoordinator implements AutoCloseable {
 					(failure == null) && (candidates != null) ? candidates : List.of();
 			SmartTopProviderResult resume = firstProvider(available, SmartTopCandidate.Kind.RESUME);
 			if (resume != null) {
-				publishProvider(generation, resume);
+				publishResumeProvider(generation, resume);
 				return;
 			}
-			loadRecent(generation,
-					firstProvider(available, SmartTopCandidate.Kind.RECOMMENDED));
+			loadRecent(generation);
 		});
 	}
 
@@ -171,7 +211,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		});
 	}
 
-	private void loadRecent(int generation, @Nullable SmartTopProviderResult recommendation) {
+	private void loadRecent(int generation) {
 		activity.getLib().getRecent().getChildren().main().onCompletion((items, failure) -> {
 			if (!owns(generation)) return;
 			if (activity.getCurrentPlayable() != null) {
@@ -183,17 +223,15 @@ public final class SmartTopCoordinator implements AutoCloseable {
 				publishItem(generation, SmartTopMode.RECENT, recent, SmartTopTimeline.HIDDEN);
 				return;
 			}
-			loadLastPlayed(generation, recommendation);
+			loadLastPlayed(generation);
 		});
 	}
 
-	private void loadLastPlayed(int generation,
-			@Nullable SmartTopProviderResult recommendation) {
+	private void loadLastPlayed(int generation) {
 		activity.getLib().getLastPlayedItem().main().onCompletion((item, failure) -> {
 			if (!owns(generation)) return;
 			if ((failure != null) || (item == null)) {
-				if (recommendation != null) publishProvider(generation, recommendation);
-				else publish(empty(generation, layout));
+				publish(empty(generation, layout));
 				return;
 			}
 			long position = activity.getLib().getLastPlayedPosition(item);
@@ -214,8 +252,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	private void publishItem(int generation, SmartTopMode mode, PlayableItem item,
 			SmartTopTimeline timeline) {
 		boolean favoriteSupported = !item.isExternal();
-		SmartTopCapabilities capabilities =
-				SmartTopCapabilities.suggestion(favoriteSupported, true);
+		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(favoriteSupported);
 		CharSequence subtitle = subtitle(item);
 		SmartTopViewState viewState = new SmartTopViewState(generation, mode, layout,
 				item, PlayableItemResolver.unwrap(item), item.getIcon(), eyebrow(mode), item.getName(),
@@ -245,18 +282,17 @@ public final class SmartTopCoordinator implements AutoCloseable {
 				false, List.of(), null);
 	}
 
-	private void publishProvider(int generation, SmartTopProviderResult providerResult) {
+	private void publishResumeProvider(int generation, SmartTopProviderResult providerResult) {
 		SmartTopCandidate candidate = providerResult.candidate();
-		SmartTopMode mode = candidate.kind() == SmartTopCandidate.Kind.RESUME ?
-				SmartTopMode.RESUME : SmartTopMode.RECOMMENDED;
-		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false, true);
-		SmartTopTimeline timeline = (mode == SmartTopMode.RESUME) ? new SmartTopTimeline(
+		if (candidate.kind() != SmartTopCandidate.Kind.RESUME) return;
+		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false);
+		SmartTopTimeline timeline = new SmartTopTimeline(
 				PlaybackTimelinePolicy.Mode.SEEKABLE, candidate.positionMillis(),
-				candidate.durationMillis(), false) : SmartTopTimeline.HIDDEN;
-		publish(new SmartTopViewState(generation, mode, layout, null, null,
+				candidate.durationMillis(), false);
+		publish(new SmartTopViewState(generation, SmartTopMode.RESUME, layout, null, null,
 				candidate.video() ? R.drawable.video : R.drawable.audiotrack,
-				eyebrow(mode), candidate.title(), candidate.subtitle(), timeline, capabilities,
-				SmartTopActionPolicy.resolve(mode, layout, capabilities), false, List.of(),
+				eyebrow(SmartTopMode.RESUME), candidate.title(), candidate.subtitle(), timeline, capabilities,
+				SmartTopActionPolicy.resolve(SmartTopMode.RESUME, layout, capabilities), false, List.of(),
 				providerResult));
 	}
 
@@ -285,7 +321,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 
 	public void showRecovery(SmartTopViewState failed) {
 		if (!isCurrentState(failed)) return;
-		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false, true);
+		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false);
 		publish(new SmartTopViewState(failed.generation(), SmartTopMode.RECOVERY, layout,
 				null, null, R.drawable.refresh,
 				context.getString(R.string.dashboard_smart_recovery),
@@ -325,9 +361,9 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			case CURRENT -> context.getString(R.string.dashboard_now_playing);
 			case RESUME -> context.getString(R.string.dashboard_continue);
 			case RECENT -> context.getString(R.string.recent);
-			case RECOMMENDED -> context.getString(R.string.dashboard_smart_recommended);
 			case EMPTY -> context.getString(R.string.dashboard_smart_discover);
 			case RECOVERY -> context.getString(R.string.dashboard_smart_recovery);
+			default -> throw new IllegalArgumentException("Compatibility-only SmartTop mode: " + mode);
 		};
 	}
 
@@ -353,6 +389,14 @@ public final class SmartTopCoordinator implements AutoCloseable {
 				TextUtils.equals(first.getId(), second.getId());
 	}
 
+	static boolean sameRecent(List<PlayableItem> first, List<PlayableItem> second) {
+		if (first.size() != second.size()) return false;
+		for (int i = 0; i < first.size(); i++) {
+			if (!samePlayable(first.get(i), second.get(i))) return false;
+		}
+		return true;
+	}
+
 	@Nullable
 	private static PlayableItem firstPlayable(@Nullable List<Item> items) {
 		if (items == null) return null;
@@ -371,17 +415,6 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			if (result.size() == limit) break;
 		}
 		return List.copyOf(result);
-	}
-
-	private float measuredWidthDp() {
-		float density = context.getResources().getDisplayMetrics().density;
-		int width = activity.getBody().getWidth();
-		return (width > 0) ? width / Math.max(0.1F, density) :
-				context.getResources().getConfiguration().screenWidthDp;
-	}
-
-	private float scaledFont() {
-		return context.getResources().getConfiguration().fontScale;
 	}
 
 	private static CharSequence subtitle(PlayableItem item) {

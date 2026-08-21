@@ -103,6 +103,7 @@ final class YoutubeFullscreenHostAdapter implements YoutubeFullscreenCoordinator
 	public void enterFallbackVideoMode() {
 		MainActivityDelegate activity = getLiveActivity();
 		if ((activity == null) || !canEnterFullscreen(activity)) return;
+		YoutubeVideoScaleController.apply(web, web.getAddon().getScale());
 		web.setImmersiveVideoMode(true);
 		activity.setVideoMode(true, null);
 	}

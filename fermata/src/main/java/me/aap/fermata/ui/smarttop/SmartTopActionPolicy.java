@@ -3,35 +3,33 @@ package me.aap.fermata.ui.smarttop;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Pure action ordering and density policy shared by Auto and Mobile renderers. */
+/** Pure semantic action availability. Measured presentation density belongs to SmartTopAdaptivePolicy. */
 public final class SmartTopActionPolicy {
 	private SmartTopActionPolicy() {
 	}
 
 	public static List<SmartTopAction> resolve(SmartTopMode mode,
-			SmartTopLayoutMode layout, SmartTopCapabilities capabilities) {
+			SmartTopCapabilities capabilities) {
 		if (mode == SmartTopMode.EMPTY) return List.of(SmartTopAction.OPEN_ADDONS);
-		if (mode == SmartTopMode.RECOVERY) {
-			return capabilities.canOpenContext() ?
-					List.of(SmartTopAction.RETRY, SmartTopAction.OPEN_CONTEXT) :
-					List.of(SmartTopAction.RETRY);
-		}
-
-		boolean compact = layout == SmartTopLayoutMode.COMPACT;
+		if (mode == SmartTopMode.RECOVERY) return List.of(SmartTopAction.RETRY);
 		if (mode == SmartTopMode.CURRENT) return current(capabilities);
 
-		List<SmartTopAction> actions = new ArrayList<>(4);
+		List<SmartTopAction> actions = new ArrayList<>(2);
 		actions.add(SmartTopAction.PLAY);
-		if (capabilities.canOpenContext()) actions.add(SmartTopAction.OPEN_CONTEXT);
-		if (!compact && capabilities.canFavorite()) actions.add(SmartTopAction.FAVORITE);
-		if (compact && !capabilities.canOpenContext()) actions.add(SmartTopAction.HISTORY);
+		if (capabilities.canFavorite()) actions.add(SmartTopAction.FAVORITE);
 		return List.copyOf(actions);
 	}
 
+	/** Compatibility bridge while the renderer migrates off layout-owned semantic state. */
+	@Deprecated
+	public static List<SmartTopAction> resolve(SmartTopMode mode,
+			SmartTopLayoutMode ignoredLayout, SmartTopCapabilities capabilities) {
+		return resolve(mode, capabilities);
+	}
+
 	private static List<SmartTopAction> current(SmartTopCapabilities capabilities) {
-		List<SmartTopAction> actions = new ArrayList<>(3);
+		List<SmartTopAction> actions = new ArrayList<>(2);
 		actions.add(SmartTopAction.PLAY_PAUSE);
-		if (capabilities.canOpenContext()) actions.add(SmartTopAction.OPEN_CONTEXT);
 		if (capabilities.canFavorite()) actions.add(SmartTopAction.FAVORITE);
 		return List.copyOf(actions);
 	}

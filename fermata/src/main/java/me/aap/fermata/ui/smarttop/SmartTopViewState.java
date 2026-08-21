@@ -9,7 +9,7 @@ import java.util.Objects;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.addon.SmartTopProviderResult;
 
-/** Immutable renderer input. It carries presentation and canonical ownership separately. */
+/** Immutable renderer input. Semantic content survives viewport changes unchanged. */
 public record SmartTopViewState(
 		long generation,
 		SmartTopMode mode,
@@ -26,6 +26,8 @@ public record SmartTopViewState(
 		boolean favorite,
 		List<PlayableItem> quickRecent,
 		@Nullable SmartTopProviderResult providerResult) {
+	public static final int MAX_QUICK_RECENT = 3;
+
 	public SmartTopViewState {
 		Objects.requireNonNull(mode, "mode");
 		Objects.requireNonNull(layout, "layout");
@@ -36,18 +38,20 @@ public record SmartTopViewState(
 		Objects.requireNonNull(capabilities, "capabilities");
 		actions = List.copyOf(Objects.requireNonNull(actions, "actions"));
 		quickRecent = List.copyOf(Objects.requireNonNull(quickRecent, "quickRecent"));
-		if (quickRecent.size() > 1) throw new IllegalArgumentException("At most one Quick Recent item");
+		if (quickRecent.size() > MAX_QUICK_RECENT) {
+			throw new IllegalArgumentException("At most three Quick Recent items");
+		}
 		if ((mode == SmartTopMode.CURRENT) && (canonicalItem == null)) {
 			throw new IllegalArgumentException("Current state requires canonical ownership");
 		}
 	}
 
+	/** Compatibility-only layout mutation. It must never prune semantic actions or Recent data. */
 	public SmartTopViewState withLayout(SmartTopLayoutMode nextLayout) {
 		if (layout == nextLayout) return this;
 		return new SmartTopViewState(generation, mode, nextLayout, presentedItem, canonicalItem,
-				icon, eyebrow, title, subtitle, timeline, capabilities,
-				SmartTopActionPolicy.resolve(mode, nextLayout, capabilities), favorite,
-				(nextLayout == SmartTopLayoutMode.COMPACT) ? List.of() : quickRecent, providerResult);
+				icon, eyebrow, title, subtitle, timeline, capabilities, actions, favorite,
+				quickRecent, providerResult);
 	}
 
 	public SmartTopViewState withTitle(CharSequence nextTitle) {
@@ -57,8 +61,8 @@ public record SmartTopViewState(
 	}
 
 	public SmartTopViewState withQuickRecent(List<PlayableItem> recent) {
-		List<PlayableItem> bounded = (layout == SmartTopLayoutMode.COMPACT) || recent.isEmpty() ?
-				List.of() : List.of(recent.get(0));
+		List<PlayableItem> bounded = recent.isEmpty() ? List.of() :
+				List.copyOf(recent.subList(0, Math.min(MAX_QUICK_RECENT, recent.size())));
 		return new SmartTopViewState(generation, mode, layout, presentedItem, canonicalItem,
 				icon, eyebrow, title, subtitle, timeline, capabilities, actions,
 				favorite, bounded, providerResult);

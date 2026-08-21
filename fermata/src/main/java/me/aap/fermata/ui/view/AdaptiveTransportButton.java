@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
 import android.util.AttributeSet;
+import android.view.View;
 
 import androidx.annotation.Nullable;
 
@@ -42,6 +43,15 @@ public class AdaptiveTransportButton extends me.aap.utils.ui.view.ImageButton {
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
 		applyAdaptiveGeometry(w, h);
+	}
+
+	@Override
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+		super.onLayout(changed, left, top, right, bottom);
+		if (getId() != R.id.control_play_pause) return;
+		if (!(getParent() instanceof View parent)) return;
+		float offset = ControlPanelSizingPolicy.centerOffset(parent.getWidth(), left, right);
+		if (getTranslationX() != offset) setTranslationX(offset);
 	}
 
 	private void applyAdaptiveGeometry(int width, int height) {

@@ -19,7 +19,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.policy.PlaybackTimelinePolicy;
 
-/** Binds a complete immutable V2 state and clears every recycled callback before reuse. */
+/** Binds immutable SmartTop semantics into the adaptive layout already resolved by the controller. */
 public final class SmartTopBinder {
 	public interface Handler {
 		void onCard(SmartTopViewState state);
@@ -83,7 +83,8 @@ public final class SmartTopBinder {
 		views.eyebrow().setText(state.eyebrow());
 		views.title().setText(state.title());
 		views.subtitle().setText(state.subtitle());
-		views.subtitle().setVisibility(state.subtitle().length() == 0 ? View.INVISIBLE : View.VISIBLE);
+		views.subtitle().setVisibility(shouldShowSubtitle(state.eyebrow(), state.subtitle()) ?
+				View.VISIBLE : View.INVISIBLE);
 		views.root().setOnClickListener(editMode ? null : ignored -> {
 			SmartTopViewState current = boundState(views.root());
 			if (current != null) handler.onCard(current);
@@ -94,7 +95,7 @@ public final class SmartTopBinder {
 		bindRecent(views, state, editMode);
 	}
 
-	/** Updates only timeline-backed presentation while keeping layout, artwork and Recent stable. */
+	/** Updates only timeline-backed presentation while keeping geometry, artwork and Recent stable. */
 	public void bindTimelineUpdate(Views views, SmartTopViewState state) {
 		views.root().setTag(R.id.dashboard_smart_state_tag, state);
 		bindTimeline(views, state.timeline());
@@ -105,8 +106,13 @@ public final class SmartTopBinder {
 		List<ImageButton> buttons = views.actionButtons();
 		clearLabeledAction(views.labeledAction());
 		for (ImageButton button : buttons) clearAction(button);
-		List<SmartTopAction> actions = editMode ? List.of() : state.actions();
+		SmartTopLayoutSpec spec = SmartTopLayoutController.layoutSpec(views.root(), state);
+		List<SmartTopAction> actions = editMode ? List.of() : spec.visibleActions();
 		for (SmartTopAction action : actions) {
+			if (isLabeled(action)) {
+				bindLabeledAction(views.labeledAction(), views.root(), action, state, spec);
+				continue;
+			}
 			ImageButton button = actionSlot(buttons, action);
 			if (button != null) bindAction(button, views.root(), action, state);
 		}
@@ -114,11 +120,10 @@ public final class SmartTopBinder {
 	}
 
 	private static ImageButton actionSlot(List<ImageButton> buttons, SmartTopAction action) {
-		if (buttons.size() < 5) return null;
+		if (buttons.size() < 2) return null;
 		return switch (action) {
-			case PLAY, PLAY_PAUSE, OPEN_ADDONS, RETRY -> buttons.get(1);
-			case OPEN_CONTEXT, HISTORY -> buttons.get(3);
-			case FAVORITE -> buttons.get(4);
+			case PLAY, PLAY_PAUSE -> buttons.get(0);
+			case FAVORITE -> buttons.get(1);
 			default -> null;
 		};
 	}
@@ -134,10 +139,14 @@ public final class SmartTopBinder {
 	}
 
 	private void bindLabeledAction(MaterialButton button, View root, SmartTopAction action,
-			SmartTopViewState state) {
+			SmartTopViewState state, SmartTopLayoutSpec spec) {
 		button.setVisibility(View.VISIBLE);
 		button.setText(description(action, state));
-		button.setIconResource(icon(action, state));
+		if (spec.terminalActionStyle() == SmartTopTerminalActionStyle.LABEL_ONLY) {
+			button.setIcon(null);
+		} else {
+			button.setIconResource(icon(action, state));
+		}
 		button.setContentDescription(description(action, state));
 		button.setActivated(isPrimary(action));
 		button.setTag(R.id.dashboard_smart_action_tag, action);
@@ -145,15 +154,23 @@ public final class SmartTopBinder {
 	}
 
 	private void refreshActionPresentation(Views views, SmartTopViewState state) {
-		refreshActionPresentation(views.labeledAction(), state);
-		for (ImageButton button : views.actionButtons()) refreshActionPresentation(button, state);
+		SmartTopLayoutSpec spec = SmartTopLayoutController.layoutSpec(views.root(), state);
+		refreshActionPresentation(views.labeledAction(), state, spec);
+		for (ImageButton button : views.actionButtons()) {
+			refreshActionPresentation(button, state, spec);
+		}
 	}
 
-	private void refreshActionPresentation(View button, SmartTopViewState state) {
+	private void refreshActionPresentation(View button, SmartTopViewState state,
+			SmartTopLayoutSpec spec) {
 		Object tag = button.getTag(R.id.dashboard_smart_action_tag);
 		if (!(tag instanceof SmartTopAction action) || (button.getVisibility() != View.VISIBLE)) return;
 		if (button instanceof MaterialButton labeled) {
-			labeled.setIconResource(icon(action, state));
+			if (spec.terminalActionStyle() == SmartTopTerminalActionStyle.LABEL_ONLY) {
+				labeled.setIcon(null);
+			} else {
+				labeled.setIconResource(icon(action, state));
+			}
 			labeled.setContentDescription(description(action, state));
 		} else if (button instanceof ImageButton image) {
 			image.setImageResource(icon(action, state));
@@ -223,31 +240,34 @@ public final class SmartTopBinder {
 	}
 
 	private void bindRecent(Views views, SmartTopViewState state, boolean editMode) {
-		boolean hasContent = !state.quickRecent().isEmpty() && !views.recentItems().isEmpty();
-		boolean showPanel = !editMode && (state.layout() != SmartTopLayoutMode.COMPACT) &&
-				hasContent;
+		SmartTopLayoutSpec spec = SmartTopLayoutController.layoutSpec(views.root(), state);
+		int count = Math.min(spec.recentRows(),
+				Math.min(state.quickRecent().size(), views.recentItems().size()));
+		boolean showPanel = !editMode && (count > 0);
 		views.recentPanel().setVisibility(showPanel ? View.VISIBLE : View.GONE);
 		views.recentPanel().setOnClickListener(showPanel ? ignored -> handler.onAllRecent() : null);
 		views.recentPanel().setClickable(showPanel);
 		views.recentPanel().setFocusable(showPanel);
 
 		for (TextView view : views.recentItems()) clearRecent(view);
-		if (!showPanel || state.quickRecent().isEmpty() || views.recentItems().isEmpty()) return;
+		if (!showPanel) return;
 
-		PlayableItem item = state.quickRecent().get(0);
-		TextView view = views.recentItems().get(0);
-		BindToken token = new BindToken(state.generation(), itemId(item));
-		view.setTag(R.id.dashboard_smart_bind_token, token);
-		view.setVisibility(View.VISIBLE);
-		view.setText(item.getName());
-		view.setClickable(true);
-		view.setFocusable(true);
-		view.setOnClickListener(ignored -> handler.onQuickRecent(item));
-		item.getMediaData().main().onSuccess(metadata -> {
-			if (token.equals(view.getTag(R.id.dashboard_smart_bind_token))) {
-				view.setText(PlaybackSnapshot.resolveDisplayTitle(item, metadata));
-			}
-		});
+		for (int i = 0; i < count; i++) {
+			PlayableItem item = state.quickRecent().get(i);
+			TextView view = views.recentItems().get(i);
+			BindToken token = new BindToken(state.generation(), itemId(item));
+			view.setTag(R.id.dashboard_smart_bind_token, token);
+			view.setVisibility(View.VISIBLE);
+			view.setText(item.getName());
+			view.setClickable(true);
+			view.setFocusable(true);
+			view.setOnClickListener(ignored -> handler.onQuickRecent(item));
+			item.getMediaData().main().onSuccess(metadata -> {
+				if (token.equals(view.getTag(R.id.dashboard_smart_bind_token))) {
+					view.setText(PlaybackSnapshot.resolveDisplayTitle(item, metadata));
+				}
+			});
+		}
 	}
 
 	private static void clearAction(ImageButton button) {
@@ -281,30 +301,30 @@ public final class SmartTopBinder {
 
 	private int icon(SmartTopAction action, SmartTopViewState state) {
 		return switch (action) {
-			case PREVIOUS -> R.drawable.prev;
 			case PLAY -> R.drawable.play;
 			case PLAY_PAUSE -> state.timeline().playing() ? R.drawable.pause : R.drawable.play;
-			case NEXT -> R.drawable.next;
 			case FAVORITE -> state.favorite() ? R.drawable.favorite_filled : R.drawable.favorite;
-			case OPEN_CONTEXT -> R.drawable.view_list;
-			case HISTORY -> R.drawable.timer;
 			case OPEN_ADDONS -> R.drawable.view_grid;
 			case RETRY -> R.drawable.refresh;
+			default -> throw new IllegalArgumentException("Unsupported SmartTop action: " + action);
 		};
 	}
 
 	private CharSequence description(SmartTopAction action, SmartTopViewState state) {
 		return context.getString(switch (action) {
-			case PREVIOUS -> R.string.action_prev;
 			case PLAY -> R.string.action_play;
 			case PLAY_PAUSE -> state.timeline().playing() ? R.string.action_pause : R.string.action_play;
-			case NEXT -> R.string.action_next;
 			case FAVORITE -> state.favorite() ? R.string.favorites_remove : R.string.favorites_add;
-			case OPEN_CONTEXT -> R.string.dashboard_back_to_list;
-			case HISTORY -> R.string.recent;
-			case OPEN_ADDONS -> R.string.addons;
+			case OPEN_ADDONS -> R.string.settings;
 			case RETRY -> R.string.retry;
+			default -> throw new IllegalArgumentException("Unsupported SmartTop action: " + action);
 		});
+	}
+
+	static boolean shouldShowSubtitle(CharSequence eyebrow, CharSequence subtitle) {
+		if ((subtitle == null) || (subtitle.length() == 0)) return false;
+		if ((eyebrow == null) || (eyebrow.length() == 0)) return true;
+		return !eyebrow.toString().trim().equalsIgnoreCase(subtitle.toString().trim());
 	}
 
 	private static String itemId(PlayableItem item) {
@@ -344,7 +364,7 @@ public final class SmartTopBinder {
 	}
 
 	private static boolean isLabeled(SmartTopAction action) {
-		return (action == SmartTopAction.OPEN_ADDONS) || (action == SmartTopAction.RETRY);
+		return SmartTopAdaptivePolicy.isLabeled(action);
 	}
 
 	private static boolean isPrimary(SmartTopAction action) {
