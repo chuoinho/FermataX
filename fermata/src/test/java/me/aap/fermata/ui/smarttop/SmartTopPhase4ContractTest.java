@@ -53,18 +53,23 @@ public class SmartTopPhase4ContractTest {
 	}
 
 	@Test
-	public void smartTopRuntimeDoesNotRenderNextOrBackActions() throws Exception {
+	public void smartTopRuntimeDoesNotOwnTransportNavigationActions() throws Exception {
 		String policy = source("ui/smarttop/SmartTopActionPolicy.java");
 		String binder = source("ui/smarttop/SmartTopBinder.java");
 		String adaptive = source("ui/smarttop/SmartTopAdaptivePolicy.java");
+		String dashboard = source("ui/fragment/DashboardFragment.java");
 
+		assertFalse(policy.contains("actions.add(SmartTopAction.PREVIOUS)"));
 		assertFalse(policy.contains("actions.add(SmartTopAction.NEXT)"));
 		assertFalse(policy.contains("actions.add(SmartTopAction.OPEN_CONTEXT)"));
 		assertFalse(policy.contains("actions.add(SmartTopAction.HISTORY)"));
+		assertFalse(binder.contains("case PREVIOUS -> R.drawable.prev"));
 		assertFalse(binder.contains("case NEXT -> R.drawable.next"));
 		assertFalse(binder.contains("case OPEN_CONTEXT -> R.drawable.view_list"));
+		assertFalse(adaptive.contains("case PREVIOUS -> 0"));
 		assertFalse(adaptive.contains("case NEXT -> 2"));
 		assertFalse(adaptive.contains("case OPEN_CONTEXT, HISTORY -> 3"));
+		assertFalse(dashboard.contains("case PREVIOUS ->"));
 	}
 
 	@Test

@@ -9,7 +9,10 @@ import java.nio.file.Path;
 
 import org.junit.Test;
 
-/** Locks SmartTop/media-session Previous/Next routing for persisted YouTube history items. */
+/**
+ * Locks full-player/media-session Previous/Next routing for persisted YouTube history items.
+ * SmartTop intentionally does not expose these transport-navigation actions.
+ */
 public class YoutubeSmartTopTransportContractTest {
 	@Test
 	public void persistedYoutubeItemsExposeStableTransportCommands() throws Exception {

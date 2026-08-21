@@ -576,13 +576,6 @@ public class DashboardFragment extends MainActivityFragment
 				DashboardPlayableNavigator.togglePlayback(activity, card.playable);
 				refreshSmartTopCard();
 			});
-			if (holder.prev != null) {
-				holder.prev.setOnClickListener(v -> {
-					if (editMode || !acceptClick() || (card.playable == null)) return;
-					activity.getMediaServiceBinder().skipToPrevious();
-					refreshSmartTopCard();
-				});
-			}
 			holder.favorite.setOnClickListener(v -> {
 				if (editMode || !acceptClick() || (card.playable == null) || card.playable.isExternal()) return;
 				if (card.playable.isFavoriteItem()) {
@@ -771,10 +764,6 @@ public class DashboardFragment extends MainActivityFragment
 			SmartTopViewState state = currentSmartTopState(generation, item);
 			if (editMode || (state == null) || !acceptClick()) return;
 			switch (action) {
-				case PREVIOUS -> {
-					activity.getMediaServiceBinder().skipToPrevious();
-					refreshSmartTopCard();
-				}
 				case PLAY_PAUSE -> {
 					if (item != null) {
 						DashboardPlayableNavigator.togglePlayback(activity, item);
@@ -1046,7 +1035,6 @@ public class DashboardFragment extends MainActivityFragment
 		final MaterialButton labeledAction;
 		final ImageButton playPause;
 		final ImageButton favorite;
-		final ImageButton prev;
 		final View progressGroup;
 		final ProgressBar progress;
 		final TextView progressCurrent;
@@ -1068,7 +1056,6 @@ public class DashboardFragment extends MainActivityFragment
 			labeledAction = itemView.findViewById(R.id.dashboard_action_label);
 			playPause = itemView.findViewById(R.id.dashboard_action_play_pause);
 			favorite = itemView.findViewById(R.id.dashboard_action_favorite);
-			prev = itemView.findViewById(R.id.dashboard_action_prev);
 			progressGroup = itemView.findViewById(R.id.dashboard_smart_progress_group);
 			progress = itemView.findViewById(R.id.dashboard_smart_progress);
 			progressCurrent = itemView.findViewById(R.id.dashboard_smart_progress_current);
@@ -1090,7 +1077,7 @@ public class DashboardFragment extends MainActivityFragment
 
 		private SmartTopBinder.Views smartTopViews() {
 			return new SmartTopBinder.Views(itemView, icon, eyebrow, title, subtitle, actions,
-					labeledAction, List.of(prev, playPause, favorite),
+					labeledAction, List.of(playPause, favorite),
 					progressGroup, progress, progressCurrent, progressTotal,
 					recentPanel, recentTitle,
 					List.of(recentItems[0], recentItems[1], recentItems[2]));

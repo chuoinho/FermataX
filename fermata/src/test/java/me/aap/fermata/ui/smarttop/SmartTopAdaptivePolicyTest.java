@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class SmartTopAdaptivePolicyTest {
 	private static final List<SmartTopAction> CURRENT = List.of(
-			SmartTopAction.PREVIOUS, SmartTopAction.PLAY_PAUSE, SmartTopAction.FAVORITE);
+			SmartTopAction.PLAY_PAUSE, SmartTopAction.FAVORITE);
 
 	@Test
 	public void spaceClassDoesNotDependOnHostIdentity() {
@@ -53,8 +53,7 @@ public class SmartTopAdaptivePolicyTest {
 		assertEquals(28, spec.secondaryGlyphDp());
 		assertEquals(2, spec.actionGapDp());
 		assertEquals(3, spec.recentRows());
-		assertTrue(spec.visibleActions().contains(SmartTopAction.PREVIOUS));
-		assertTrue(spec.visibleActions().contains(SmartTopAction.PLAY_PAUSE));
+		assertEquals(CURRENT, spec.visibleActions());
 	}
 
 	@Test

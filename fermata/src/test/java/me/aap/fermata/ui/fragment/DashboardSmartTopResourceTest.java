@@ -25,9 +25,9 @@ public class DashboardSmartTopResourceTest {
 	}
 
 	@Test
-	public void compactTwoColumnLayoutFitsFiveActionsFrom460Through557Dp() throws Exception {
-		int required = (5 * 48) + (4 * dimenDp("values-w460dp/dimens.xml",
-				"dashboard_smart_action_gap"));
+	public void compactTwoColumnLayoutFitsTwoActionsFrom460Through557Dp() throws Exception {
+		int required = (2 * 48) + dimenDp("values-w460dp/dimens.xml",
+				"dashboard_smart_action_gap");
 		Document layout = document("layout-w460dp/dashboard_smart_top_item.xml");
 		float split = Float.parseFloat(elementById(layout, "@+id/dashboard_smart_split")
 				.getAttributeNS(APP_NS, "layout_constraintGuide_percent"));

@@ -113,7 +113,6 @@ public final class SmartTopLayoutController {
 			int touchTargetDp = automotive ? Math.max(64, spec.actionCellDp()) : spec.actionCellDp();
 			MinimumTouchTargetDelegate.install(group, touchTargetDp,
 					label,
-					root.findViewById(R.id.dashboard_action_prev),
 					root.findViewById(R.id.dashboard_action_play_pause),
 					root.findViewById(R.id.dashboard_action_favorite));
 		}
@@ -222,7 +221,6 @@ public final class SmartTopLayoutController {
 		label.setIconSize(px(root, spec.secondaryGlyphDp()));
 
 		List<ImageButton> buttons = List.of(
-				root.findViewById(R.id.dashboard_action_prev),
 				root.findViewById(R.id.dashboard_action_play_pause),
 				root.findViewById(R.id.dashboard_action_favorite));
 		for (int slot = 0; slot < buttons.size(); slot++) {

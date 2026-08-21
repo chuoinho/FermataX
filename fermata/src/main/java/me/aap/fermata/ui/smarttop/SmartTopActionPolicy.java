@@ -28,8 +28,7 @@ public final class SmartTopActionPolicy {
 	}
 
 	private static List<SmartTopAction> current(SmartTopCapabilities capabilities) {
-		List<SmartTopAction> actions = new ArrayList<>(3);
-		if (capabilities.canSkipPrevious()) actions.add(SmartTopAction.PREVIOUS);
+		List<SmartTopAction> actions = new ArrayList<>(2);
 		actions.add(SmartTopAction.PLAY_PAUSE);
 		if (capabilities.canFavorite()) actions.add(SmartTopAction.FAVORITE);
 		return List.copyOf(actions);

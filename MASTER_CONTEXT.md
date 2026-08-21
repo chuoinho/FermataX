@@ -176,33 +176,29 @@ semantic and adaptive presentation contracts are canonical:
 - Visibility is host-gated only: phone never shows SmartTop; every automotive presentation host
   shows SmartTop regardless of width. When SmartTop is hidden on phone, the normal Dashboard Recent
   tile remains available.
-- `CURRENT` semantic actions are Previous, Play/Pause, Next, Context, and Favorite when supported.
-  Measured presentation may remove optional actions under pressure, but semantic state itself is
-  not pruned by COMPACT/STANDARD/EXPANDED.
-- `RESUME`: Play, Context, Favorite when supported; measured presentation may remove optional
-  actions when required by the available budget.
-- `RECENT`: Play, Context, Favorite when supported; measured presentation may remove optional
-  actions when required by the available budget.
+- `CURRENT` semantic actions are Play/Pause and Favorite when supported. Previous, Next and
+  Back/Open Context belong to full players and MediaSession surfaces, not SmartTop.
+- `RESUME` and `RECENT`: Play and Favorite when supported; measured presentation may remove
+  Favorite when required by the available budget.
 - `EMPTY`: one labeled terminal CTA. The current safe label is **Settings** because the existing
   `OPEN_ADDONS` route opens Settings root; do not display a misleading **Add-ons** label until a
   Settings > Add-ons deep link exists.
-- `RECOVERY`: labeled Retry plus Context when context exists and the measured budget fits.
+- `RECOVERY`: one labeled Retry action.
 - `RECOMMENDED`: compatibility only. Keep the enum, provider candidate kind, and compatibility
   action/API surface, but SmartTop selection and coordinator display flow must never select or
   publish a RECOMMENDED state.
 - `SmartTopActionPolicy` owns semantic actions. `SmartTopAdaptivePolicy` is the pure measured
   composition/geometry authority. `SmartTopLayoutController` applies one resolved
   `SmartTopLayoutSpec`; it must not invent or pre-filter semantic state.
-- Quick Recent semantic data retains up to three items. Presentation may show 0-3 rows depending on
-  measured budget; sufficiently wide DHU layouts must be able to render all three.
-- Horizontal pressure yields in this order: Quick Recent first, then action gaps/terminal icon,
-  then Favorite/Context/History. Previous/Next remain a pair and yield only at the final transport
-  fallback. Play/Play-Pause is invariant. The transport rail never wraps to a second row.
+- Quick Recent semantic data retains up to three items. Whenever valid data exists, presentation
+  shows 1-3 rows at every automotive width; width pressure must not drop the panel.
+- Horizontal pressure compresses action gaps/terminal icon and then removes Favorite. Play or
+  Play/Pause and valid Quick Recent are invariant. The action rail never wraps to a second row.
 - Automotive action cells adapt to measured width/fontScale instead of being hard-fixed at 76dp.
   Current policy ranges from 56dp to 76dp with a minimum 64dp delegated touch target; primary and
   secondary glyphs shrink proportionally up to the 44dp/36dp caps. Touch presentation retains the
   48dp cell / 22dp glyph baseline.
-- Automotive transport spacing is deliberately compact to preserve metadata/title width: preferred
+- Automotive action spacing is deliberately compact to preserve metadata/title width: preferred
   inter-action gaps are 2dp on narrow AA viewports, 4dp from 820dp, and at most 6dp from 1000dp.
   Gap fitting may reduce them further when space is constrained.
 - Title owns a stable two-line slot (`minLines=2`, `maxLines=2`) with end ellipsis. A long intrinsic
@@ -220,7 +216,8 @@ semantic and adaptive presentation contracts are canonical:
 - Add-on tiles retain their existing horizontal row geometry; Android Auto emphasizes add-on title
   text rather than shrinking the already-large add-on glyph.
 - While media is playing, SmartTop acts as the mini player/Now Playing card and exposes the current
-  item, source/category context, timeline when meaningful, and the semantic actions above.
+  item, source/category context, timeline when meaningful, and Play/Pause plus Favorite when
+  supported. Transport navigation remains available only on the appropriate full player surfaces.
 - Recent items can be deleted only after opening the Recent view, not directly from the collapsed
   SmartTopCard.
 - Tapping current TV/video opens the playing content in the appropriate fullscreen or player
@@ -908,13 +905,13 @@ The Android Auto Head Unit Server must already be enabled on the connected phone
 
 1. Phone portrait/landscape shows no SmartTop and retains the ordinary Dashboard Recent tile.
 2. Every automotive Dashboard shows SmartTop regardless of width; narrow hosts adapt by reducing
-   Recent/gaps/optional actions rather than hiding the card.
-3. DHU 800x480 and 1280x720 at fontScale 1.0/1.3/1.5/2.0 keep SmartTop title, metadata and transport
+   gaps/Favorite rather than hiding the card or valid Quick Recent.
+3. DHU 800x480 and 1280x720 at fontScale 1.0/1.3/1.5/2.0 keep SmartTop title, metadata and controls
    balanced with no overlap or vertical drift.
 4. SmartTop short, one-line, two-line and very long titles keep a stable two-line title slot and a
-   horizontal transport rail.
+   horizontal action rail.
 5. Repeated SmartTop Play/Pause does not change card height/position, clear Quick Recent, or flicker
-   the Dashboard; Quick Recent renders 0-3 rows by budget and all 3 on sufficiently wide DHU.
+   the Dashboard; Quick Recent renders all 1-3 valid rows at every automotive width.
 6. Navigation rail left/right setting persists after restart.
 7. Rail scrolling does not activate the touched addon accidentally.
 8. Settings sections render in the expected order and open without crash.
@@ -1064,7 +1061,8 @@ when a new artifact is intentionally designated as the verified snapshot.
 - Complete manual regression of TV fullscreen/split-view and YouTube handoff after every
   shared navigation/player change.
 - Complete the current SmartTop DHU matrix before merging PR #18: narrow and wide automotive
-  viewports at fontScale 1.0/1.3/1.5/2.0, long titles, repeated Play/Pause, and Quick Recent 0-3.
+  viewports at fontScale 1.0/1.3/1.5/2.0, long titles, repeated Play/Pause, Quick Recent 1-3, and
+  confirmation that Previous/Next/Back are absent only from SmartTop.
 - VLC render plans may use Android layout sentinels while provisional. Native engine APIs must
   only receive positive final Surface pixels, or the measured viewport as the provisional
   fallback. A zero-sized libVLC layout callback during `detachViews()` is a lifecycle reset and

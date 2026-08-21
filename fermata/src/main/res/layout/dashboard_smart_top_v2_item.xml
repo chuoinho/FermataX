@@ -114,18 +114,6 @@
             app:iconTint="?attr/colorSecondary" />
 
         <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/dashboard_action_prev"
-            style="@style/Widget.AppCompat.ImageButton"
-            android:layout_width="@dimen/dashboard_smart_v2_control_size"
-            android:layout_height="@dimen/dashboard_smart_v2_control_size"
-            android:layout_marginEnd="4dp"
-            android:background="@null"
-            android:padding="@dimen/dashboard_smart_v2_action_padding"
-            android:scaleType="fitCenter"
-            android:visibility="invisible"
-            app:tint="@color/dashboard_smart_action_v2_tint" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_play_pause"
             style="@style/Widget.AppCompat.ImageButton"
             android:layout_width="@dimen/dashboard_smart_v2_control_size"

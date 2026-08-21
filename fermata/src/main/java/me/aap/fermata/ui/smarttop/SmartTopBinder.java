@@ -120,11 +120,10 @@ public final class SmartTopBinder {
 	}
 
 	private static ImageButton actionSlot(List<ImageButton> buttons, SmartTopAction action) {
-		if (buttons.size() < 3) return null;
+		if (buttons.size() < 2) return null;
 		return switch (action) {
-			case PREVIOUS -> buttons.get(0);
-			case PLAY, PLAY_PAUSE -> buttons.get(1);
-			case FAVORITE -> buttons.get(2);
+			case PLAY, PLAY_PAUSE -> buttons.get(0);
+			case FAVORITE -> buttons.get(1);
 			default -> null;
 		};
 	}
@@ -302,7 +301,6 @@ public final class SmartTopBinder {
 
 	private int icon(SmartTopAction action, SmartTopViewState state) {
 		return switch (action) {
-			case PREVIOUS -> R.drawable.prev;
 			case PLAY -> R.drawable.play;
 			case PLAY_PAUSE -> state.timeline().playing() ? R.drawable.pause : R.drawable.play;
 			case FAVORITE -> state.favorite() ? R.drawable.favorite_filled : R.drawable.favorite;
@@ -314,7 +312,6 @@ public final class SmartTopBinder {
 
 	private CharSequence description(SmartTopAction action, SmartTopViewState state) {
 		return context.getString(switch (action) {
-			case PREVIOUS -> R.string.action_prev;
 			case PLAY -> R.string.action_play;
 			case PLAY_PAUSE -> state.timeline().playing() ? R.string.action_pause : R.string.action_play;
 			case FAVORITE -> state.favorite() ? R.string.favorites_remove : R.string.favorites_add;

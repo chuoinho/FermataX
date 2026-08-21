@@ -88,21 +88,9 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/dashboard_action_prev"
-            android:layout_width="@dimen/dashboard_smart_action_width"
-            android:layout_height="@dimen/dashboard_smart_action_height"
-            android:background="@drawable/aa_action_button_bg"
-            android:contentDescription="@string/prev"
-            android:padding="@dimen/dashboard_smart_action_padding"
-            android:scaleType="fitCenter"
-            app:srcCompat="@drawable/prev"
-            app:tint="?attr/colorOnSecondary" />
-
-        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/dashboard_action_play_pause"
             android:layout_width="@dimen/dashboard_smart_action_width"
             android:layout_height="@dimen/dashboard_smart_action_height"
-            android:layout_marginStart="@dimen/dashboard_smart_action_gap"
             android:background="@drawable/aa_play_button_bg"
             android:contentDescription="@string/action_play_pause"
             android:padding="@dimen/dashboard_smart_action_padding"

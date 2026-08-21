@@ -28,8 +28,7 @@ public class SmartTopPolicyTest {
 	@Test
 	public void smartTopUsesOnlyRemainingPlaybackControls() {
 		SmartTopCapabilities current = SmartTopCapabilities.current(true);
-		assertEquals(List.of(SmartTopAction.PREVIOUS, SmartTopAction.PLAY_PAUSE,
-				SmartTopAction.FAVORITE),
+		assertEquals(List.of(SmartTopAction.PLAY_PAUSE, SmartTopAction.FAVORITE),
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, current));
 
 		SmartTopCapabilities suggestion = SmartTopCapabilities.suggestion(true);
