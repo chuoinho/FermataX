@@ -60,9 +60,11 @@ Drivers and passengers who want one Android Auto interface for frequently used m
 4. Correct playback state, back behavior, and restoration after leaving Android Auto.
 5. Performance, source caching, and loading speed after UX and reliability are stable.
 
-SmartTop V2 semantic/adaptive rollout and the horizontal-stability Phases 1-5 are complete in
-source. Exact-head CI and final DHU/device runtime validation remain required before the SmartTop
-branch is eligible to merge. Podcast/Audiobook SmartTop providers remain deferred until their
+SmartTop V2 semantic/adaptive rollout and the horizontal-stability Phases 1-5 were completed,
+validated, and merged to `main` through PR #18 on 2026-08-21. The accepted source keeps SmartTop
+automotive-only, preserves a stable two-line title and 1-3 valid Quick Recent rows, and removes
+Previous, Next, and Back/Open Context from SmartTop without changing those controls on full-player
+or MediaSession surfaces. Podcast/Audiobook SmartTop providers remain deferred until their
 cached-only ownership seams are characterized independently. A local
 `docs/smarttop/SMARTTOP_V2_GOAL.md` planning artifact may provide additional working notes, but it
 is ignored and is not part of the shared canonical repository until separately reviewed.
@@ -853,13 +855,20 @@ git diff --check
 
 ### Automated status at this snapshot
 
-- Mobile unit suite: pass on the most recently completed pre-horizontal-stability baseline; exact
-  current-head status must be read from CI/PR #18 rather than assumed from this document.
-- Auto unit suite: same rule as above.
-- Architecture boundary gate, Android Lint, and diff whitespace remain mandatory CI gates.
+- SmartTop V2 completion source HEAD `e56c377be715f40a2fd6bfb5810fdf4a3c8e0038` passed CI
+  run #313 before merging through PR #18 as `e8f30e3c310a3d965a44d4fc1e2a504a92feb1a3`.
+- The accepted run passed Mobile and Auto unit suites, Web/TV UI-shell guards, the UI-shell
+  single-writer guard, architecture boundary guards, Android Lint, whitespace validation, and
+  single-universal-APK packaging/upload.
+- Focused runtime validation passed on phone and Android Auto/DHU, including 800x480 and 1280x720
+  automotive smoke checks. Previous, Next, and Back remained absent from SmartTop without ghost
+  space or overlap; Play/Pause, Favorite, Quick Recent, full-player/YouTube transport, fullscreen
+  Back, and phone Dashboard behavior remained intact.
+- PR #19 and PR #20 were temporary diagnostic drafts and were intentionally closed without merge;
+  their workflow-only commits are not part of the accepted source history.
 - `DistributionContractTest` guards the single universal APK contract in `build.sh` and CI.
-- The CI workflow and PR #18 body are the canonical current automated status; do not hard-code a
-  workflow run here as if it certified later commits.
+- This is immutable evidence for the named PR #18 source snapshot. Later commits must be evaluated
+  from their own CI and runtime evidence rather than inheriting this result.
 
 Historical release APK/AAB, R8, update-install, and DHU results below remain evidence for their
 named snapshot only; they do not implicitly certify later commits.
@@ -1060,9 +1069,10 @@ when a new artifact is intentionally designated as the verified snapshot.
 
 - Complete manual regression of TV fullscreen/split-view and YouTube handoff after every
   shared navigation/player change.
-- Complete the current SmartTop DHU matrix before merging PR #18: narrow and wide automotive
-  viewports at fontScale 1.0/1.3/1.5/2.0, long titles, repeated Play/Pause, Quick Recent 1-3, and
-  confirmation that Previous/Next/Back are absent only from SmartTop.
+- Repeat the focused SmartTop matrix after future Dashboard, presentation, transport, typography,
+  or host-detection changes: narrow/wide automotive viewports, representative font scales, long
+  titles, repeated Play/Pause, Quick Recent 1-3, and confirmation that Previous/Next/Back remain
+  absent only from SmartTop.
 - VLC render plans may use Android layout sentinels while provisional. Native engine APIs must
   only receive positive final Surface pixels, or the measured viewport as the provisional
   fallback. A zero-sized libVLC layout callback during `detachViews()` is a lifecycle reset and
