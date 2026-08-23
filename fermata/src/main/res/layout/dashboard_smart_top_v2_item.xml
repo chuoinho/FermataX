@@ -19,6 +19,18 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="1.0" />
 
+    <View
+        android:id="@+id/dashboard_smart_context_divider"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:alpha="0.22"
+        android:background="?attr/colorOnSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@id/dashboard_smart_context_guide"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <ImageView
         android:id="@+id/dashboard_item_icon"
         android:layout_width="66dp"

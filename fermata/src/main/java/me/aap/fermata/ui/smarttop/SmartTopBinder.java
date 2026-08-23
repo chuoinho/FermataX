@@ -259,6 +259,8 @@ public final class SmartTopBinder {
 			view.setTag(R.id.dashboard_smart_bind_token, token);
 			view.setVisibility(View.VISIBLE);
 			view.setText(item.getName());
+			view.setCompoundDrawablesRelativeWithIntrinsicBounds(item.getIcon(), 0, 0, 0);
+			view.setCompoundDrawablePadding(me.aap.utils.ui.UiUtils.toIntPx(context, 6));
 			view.setClickable(true);
 			view.setFocusable(true);
 			view.setOnClickListener(ignored -> handler.onQuickRecent(item));
@@ -297,6 +299,8 @@ public final class SmartTopBinder {
 		view.setFocusable(false);
 		view.setTag(null);
 		view.setTag(R.id.dashboard_smart_bind_token, null);
+		view.setCompoundDrawablesRelative(null, null, null, null);
+		view.setCompoundDrawablePadding(0);
 	}
 
 	private int icon(SmartTopAction action, SmartTopViewState state) {

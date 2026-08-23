@@ -96,6 +96,8 @@ public final class SmartTopLayoutController {
 		actionParams.startToEnd = ConstraintLayout.LayoutParams.UNSET;
 		actionParams.endToStart = R.id.dashboard_smart_context_guide;
 		actionParams.setMarginStart(0);
+		// Keep the primary action clear of the Recent divider without changing its touch target.
+		actionParams.setMarginEnd(px(root, 10));
 		actionParams.topToTop = R.id.dashboard_item_eyebrow;
 		actionParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
 		actionParams.bottomToBottom = R.id.dashboard_smart_progress_group;

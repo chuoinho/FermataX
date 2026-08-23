@@ -479,6 +479,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 						int pos = (int) (position / 1000);
 						long knownDuration = (duration == null) ? 0L : duration.peek(0L);
+						if (knownDuration <= 0L) knownDuration = lastKnownTimelineDuration(src);
 						publishTimeline(eng, src, position, knownDuration, true);
 						if (progressBar != null) {
 							progressBar.setProgress(pos);
@@ -684,6 +685,12 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 					Math.max(0L, durationMillis), playing);
 			playbackTimelineSnapshot = next;
 			fireBroadcastEvent(listener -> listener.onPlaybackTimelineChanged(next));
+		}
+
+		/** Avoid replacing a resolved seekable timeline with a transient zero-duration read. */
+		private long lastKnownTimelineDuration(PlayableItem item) {
+			PlaybackTimelineSnapshot timeline = playbackTimelineSnapshot;
+			return ((timeline != null) && (timeline.item() == item)) ? timeline.durationMillis() : 0L;
 		}
 
 		private void hideTimeline() {

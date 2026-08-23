@@ -2,6 +2,7 @@ package me.aap.fermata.ui.smarttop;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
@@ -17,6 +18,13 @@ public class SmartTopRuntimeRegressionTest {
 		assertFalse(SmartTopBinder.shouldShowSubtitle(" recent ", "RECENT"));
 		assertFalse(SmartTopBinder.shouldShowSubtitle("RECENT", ""));
 		assertTrue(SmartTopBinder.shouldShowSubtitle("RECENT", "YouTube"));
+	}
+
+	@Test
+	public void externalMediaUsesItsReadableSourceOnTheFirstSmartTopBind() {
+		assertEquals("YouTube", SmartTopCoordinator.sourceName("youtube"));
+		assertEquals("Stremio", SmartTopCoordinator.sourceName("stremio"));
+		assertEquals("TV", SmartTopCoordinator.sourceName("TV"));
 	}
 
 	@Test

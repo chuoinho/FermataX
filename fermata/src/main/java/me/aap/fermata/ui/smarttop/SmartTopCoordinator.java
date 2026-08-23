@@ -427,9 +427,28 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	}
 
 	private static CharSequence subtitle(PlayableItem item) {
+		if (item.isExternal()) {
+			String source = sourceName(item.getRoot().getId());
+			if (source != null) return source;
+		}
 		if (item.getParent() == null) return "";
 		CharSequence subtitle = item.getParent().getName();
 		return TextUtils.isEmpty(subtitle) ? "" : subtitle;
+	}
+
+	@Nullable
+	static String sourceName(String id) {
+		if (TextUtils.isEmpty(id) || (id.length() > 32) || id.contains("://")) return null;
+		return switch (id.toLowerCase(java.util.Locale.ROOT)) {
+			case "youtube" -> "YouTube";
+			case "stremio" -> "Stremio";
+			case "tv" -> "TV";
+			case "radio" -> "Radio";
+			case "podcast" -> "Podcast";
+			case "audiobook" -> "Audiobook";
+			case "web" -> "Web Browser";
+			default -> id;
+		};
 	}
 
 	@Override
