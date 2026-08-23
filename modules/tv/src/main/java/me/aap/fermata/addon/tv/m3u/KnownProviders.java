@@ -5,17 +5,23 @@ import static me.aap.utils.text.TextUtils.isNullOrBlank;
 
 import android.net.Uri;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import me.aap.utils.pref.PreferenceStore;
 
 /**
  * @author Andrey Pavlenko
  */
 class KnownProviders {
+	private static final String TVQQ_RAW =
+			"https://raw.githubusercontent.com/chuoinho/IPTV/refs/heads/master/123.m3u";
+	private static final String TVQQ_CDN =
+			"https://cdn.jsdelivr.net/gh/chuoinho/IPTV@master/123.m3u";
 
 	static void configure(PreferenceStore ps) {
 		String playlistUrl = ps.getStringPref(URL);
 		if (isNullOrBlank(playlistUrl)) return;
-		configureKnownMirror(ps, playlistUrl);
 		String host = Uri.parse(playlistUrl).getHost();
 		if (host == null) return;
 		int i1 = host.lastIndexOf('.');
@@ -37,22 +43,18 @@ class KnownProviders {
 		}
 	}
 
-	private static void configureKnownMirror(PreferenceStore ps, String playlistUrl) {
-		String normalized = playlistUrl.trim();
-		String mirror = null;
-
-		if ("http://bit.ly/tvqq".equalsIgnoreCase(normalized) ||
+	static List<String> fetchCandidates(String playlistUrl) {
+		String normalized = (playlistUrl == null) ? "" : playlistUrl.trim();
+		if (!("http://bit.ly/tvqq".equalsIgnoreCase(normalized) ||
 				"https://bit.ly/tvqq".equalsIgnoreCase(normalized) ||
-				normalized.equalsIgnoreCase(
-						"https://raw.githubusercontent.com/chuoinho/IPTV/refs/heads/master/123.m3u")) {
-			mirror = "https://cdn.jsdelivr.net/gh/chuoinho/IPTV@master/123.m3u";
-		}
-
-		if ((mirror != null) && !mirror.equals(normalized)) {
-			try (PreferenceStore.Edit e = ps.editPreferenceStore()) {
-				e.setStringPref(URL, mirror);
-			}
-		}
+				TVQQ_RAW.equalsIgnoreCase(normalized) || TVQQ_CDN.equalsIgnoreCase(normalized)))
+			return List.of(normalized);
+		List<String> result = new ArrayList<>(3);
+		result.add(TVQQ_RAW);
+		if (!normalized.equalsIgnoreCase(TVQQ_RAW) && !normalized.equalsIgnoreCase(TVQQ_CDN))
+			result.add(normalized);
+		result.add(TVQQ_CDN);
+		return List.copyOf(result);
 	}
 
 	static void configure(PreferenceStore ps, String epg, int catchup) {

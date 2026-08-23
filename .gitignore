@@ -67,6 +67,13 @@ desktop.ini
 /sdks-offline.xml
 /typos/
 
+# Reproducible Stremio native-build workspaces. Only reviewed lock files,
+# scripts, licenses and promoted artifacts belong in source control.
+/third_party/stremio/work/
+/third_party/stremio/out/
+/third_party/stremio/reports/
+/.tmp-nativebridge-aar/
+
 # Custom builds
 fermata/src/custom/
 build-custom.gradle

@@ -11,6 +11,7 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_READY;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_TOUCHED;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_PLAYBACK_INTENT;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_NAVIGATION;
 
 import android.content.Context;
 import android.os.Handler;
@@ -54,6 +55,7 @@ public class YoutubeWebView extends FermataWebView {
 	private static final long RELOAD_AUDIO_RETRY_MS = 300L;
 	private final Handler sponsorHandler = new Handler(Looper.getMainLooper());
 	private final YoutubeReloadCoordinator reloadCoordinator = new YoutubeReloadCoordinator();
+	private final YoutubeNavigationCoordinator navigation = new YoutubeNavigationCoordinator();
 	private FutureSupplier<List<SponsorBlockClient.Segment>> sponsorRequest;
 	private List<SponsorBlockClient.Segment> sponsorSegments = List.of();
 	private int sponsorSegmentIndex;
@@ -79,7 +81,6 @@ public class YoutubeWebView extends FermataWebView {
 	private boolean voiceSearchCollecting;
 	private int voiceSearchGeneration;
 	private boolean initialPlaybackNavigationClaimed;
-	private boolean suppressSessionExpiryOnce;
 	private boolean clearHistoryOnNextPageCommit;
 	private boolean fullscreenTapEnabled;
 	private int reloadAudioGeneration;
@@ -121,17 +122,15 @@ public class YoutubeWebView extends FermataWebView {
 	public void init(WebBrowserAddon addon, FermataWebClient webClient,
 			FermataChromeClient chromeClient) {
 		super.init(addon, webClient, chromeClient);
+		navigation.open(getAddon());
 		initialPlaybackNavigationClaimed = false;
 		MainActivityDelegate activity = MainActivityDelegate.get(getContext());
 		MediaSessionCallback callback = activity.getMediaSessionCallback();
 		boolean preferredHost = getAddon().isPreferredPlaybackActivity(activity);
-		if (preferredHost &&
-				(callback.getEngine() instanceof YoutubeDeferredMediaEngine pending) &&
-				pending.belongsTo(getAddon()))
-			initialPlaybackNavigationClaimed = pending.attach(mediaEngine);
-		else if (preferredHost && (callback.getEngine() instanceof YoutubeMediaEngine previous) &&
-				(previous != mediaEngine) && previous.belongsTo(getAddon()))
-			previous.transferTo(mediaEngine);
+		getAddon().getRuntime().registerHost(this, mediaEngine, activity);
+		if (preferredHost && (callback.getEngine() instanceof YoutubeSessionEngine stable) &&
+				stable.belongsTo(getAddon()))
+			initialPlaybackNavigationClaimed = stable.owns(mediaEngine);
 	}
 
 	boolean consumeInitialPlaybackNavigationClaim() {
@@ -169,6 +168,21 @@ public class YoutubeWebView extends FermataWebView {
 	public void loadUrl(@NonNull String url) {
 		Log.d("Loading URL: " + url);
 		super.loadUrl(url);
+	}
+
+	boolean loadExplicitUrl(@NonNull String url) {
+		if (!navigation.begin(true)) return false;
+		armExplicitPlayback();
+		loadUrl(url);
+		return true;
+	}
+
+	void onMainFramePageStarted() {
+		navigation.pageStarted();
+	}
+
+	long sessionGeneration() {
+		return navigation.current();
 	}
 
 	@Override
@@ -210,11 +224,12 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void resetToHome() {
+		if (!navigation.begin(false)) return;
 		cancelReloadAudioRestore();
 		cancelAutoNextAudioRestore();
 		leavePlaybackPresentation();
 		clearHistoryOnNextPageCommit = true;
-		getAddon().setLastYoutubeUrl(HOME_URL);
+		getAddon().setLastYoutubeUrl(HOME_URL, navigation.current());
 		stopLoading();
 		loadUrl(HOME_URL);
 	}
@@ -300,8 +315,7 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void playVoiceVideo(String videoId) {
-		armExplicitPlayback();
-		loadUrl("https://www.youtube.com/watch?v=" + videoId);
+		loadExplicitUrl("https://www.youtube.com/watch?v=" + videoId);
 	}
 
 	void armExplicitPlayback() {
@@ -317,17 +331,11 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	public void goBack() {
 		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
-		if (cb.getEngine() instanceof YoutubeMediaEngine) {
-			suppressSessionExpiryOnce = true;
+		if ((cb.getEngine() instanceof YoutubeMediaEngine) ||
+				(cb.getEngine() instanceof YoutubeSessionEngine)) {
 			cb.onStop();
 		}
 		super.goBack();
-	}
-
-	boolean consumeSessionExpirySuppression() {
-		boolean suppress = suppressSessionExpiryOnce;
-		suppressSessionExpiryOnce = false;
-		return suppress;
 	}
 
 	@Override
@@ -463,7 +471,12 @@ public class YoutubeWebView extends FermataWebView {
 
 	@Override
 	protected void pageLoaded(String uri) {
-		getAddon().setLastYoutubeUrl(uri);
+		if (!navigation.acceptsPage(uri, getUrl())) {
+			Log.d("Ignoring stale YouTube page callback: " + uri);
+			return;
+		}
+		long generation = navigation.current();
+		getAddon().setLastYoutubeUrl(uri, generation);
 		if (clearHistoryOnNextPageCommit) {
 			clearHistoryOnNextPageCommit = false;
 			post(() -> {
@@ -471,7 +484,8 @@ public class YoutubeWebView extends FermataWebView {
 				notifyToolbarPageChanged();
 			});
 		}
-		attachListeners((mediaEngine == null) ? 0L : mediaEngine.playbackGenerationSeed());
+		attachListeners((mediaEngine == null) ? 0L : mediaEngine.playbackGenerationSeed(),
+				generation);
 		if (mediaEngine != null) mediaEngine.onPageLoaded(uri);
 		injectSponsorBlock();
 		configureAdSkip();
@@ -482,6 +496,20 @@ public class YoutubeWebView extends FermataWebView {
 			reloadAudioPageCommitted = true;
 			restoreReloadAudio(0, reloadAudioGeneration);
 		}
+	}
+
+	boolean acceptsPageCallback(String url) {
+		return navigation.acceptsPage(url, getUrl());
+	}
+
+	void onSpaNavigation(String data) {
+		YoutubeNavigationCoordinator.Navigation accepted = navigation.acceptSpa(data, getUrl());
+		if (accepted == null) return;
+		String url = accepted.url();
+		getAddon().setLastYoutubeUrl(url, accepted.generation());
+		if (mediaEngine != null) mediaEngine.onPageLoaded(url);
+		collectVoiceSearchResults(url);
+		notifyToolbarPageChanged();
 	}
 
 	private void notifyToolbarPageChanged() {
@@ -497,7 +525,7 @@ public class YoutubeWebView extends FermataWebView {
 		super.submitForm();
 	}
 
-	private void attachListeners(long seedGeneration) {
+	private void attachListeners(long seedGeneration, long sessionGeneration) {
 		String debug = BuildConfig.D ? "event(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
 		evaluateJavascript(String.format(Locale.ROOT, """
@@ -511,6 +539,7 @@ public class YoutubeWebView extends FermataWebView {
 				  state.lastEvent = 0;
 				  state.lastSignal = '';
 				  window.__fermataPlaybackGeneration = %d;
+				  const sessionGeneration = %d;
 				  window.__fermataFullscreenTapEnabled = %b;
 				  function event(code, data) {
 				    try { %s(code, data); } catch (err) {}
@@ -655,15 +684,20 @@ public class YoutubeWebView extends FermataWebView {
 				      var current = activeVideo();
 				      if (current) current.__fermataGeneration =
 				          Number(window.__fermataPlaybackGeneration || 0);
+				      event(%d, JSON.stringify({
+				        generation: sessionGeneration,
+				        url: location.href
+				      }));
 				      setTimeout(function() { scheduleScan(true); }, 250);
 				      setTimeout(function() { retryTitle(location.href, 0); }, 250);
 				    }
 				  }, 750);
-				})();""", scale, Math.max(0L, seedGeneration), fullscreenTapEnabled,
+				})();""", scale, Math.max(0L, seedGeneration),
+				Math.max(0L, sessionGeneration), fullscreenTapEnabled,
 				JS_EVENT, PLAYBACK_SIGNAL_JS, JS_PLAYBACK_INTENT,
 				JS_VIDEO_PLAYING, JS_VIDEO_READY, debug, JS_VIDEO_PLAYING,
 				JS_VIDEO_PAUSED, JS_VIDEO_ENDED, JS_VIDEO_FULLSCREEN_TAP,
-				JS_VIDEO_TOUCHED, JS_VIDEO_TOUCHED), null);
+				JS_VIDEO_TOUCHED, JS_VIDEO_TOUCHED, JS_NAVIGATION), null);
 	}
 
 	void syncPlaybackState() {
@@ -1077,7 +1111,10 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	public void destroy() {
 		setFullscreenTapEnabled(false);
-		if (mediaEngine != null) mediaEngine.onWebViewDestroyed();
+		if (mediaEngine != null) {
+			getAddon().getRuntime().unregisterHost(this, mediaEngine);
+			mediaEngine.onWebViewDestroyed();
+		}
 		cancelSponsorBlock();
 		super.destroy();
 	}

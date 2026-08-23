@@ -74,11 +74,21 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			if (!ok) return false;
 			setPrefs(ps, f);
 
-			if (!Objects.equals(url, f.getUrl())
-					|| !Objects.equals(epgUrl, f.getEpgUrl())
-					|| (shift != f.getEpgShift())) {
-				Log.d("TV source has been modified - clearing stamps.");
-				f.clearStamps();
+			boolean playlistChanged = !Objects.equals(url, f.getUrl());
+			boolean epgChanged = !Objects.equals(epgUrl, f.getEpgUrl());
+			boolean shiftChanged = shift != f.getEpgShift();
+
+			if (playlistChanged) {
+				Log.d("TV playlist location has changed - invalidating playlist validation.");
+				f.invalidatePlaylistValidation();
+			}
+			if (epgChanged) {
+				Log.d("TV EPG location has changed - invalidating EPG cache and database.");
+				f.invalidateEpgValidation();
+				f.invalidateEpgDatabase();
+			} else if (shiftChanged) {
+				Log.d("TV EPG shift has changed - invalidating EPG database.");
+				f.invalidateEpgDatabase();
 			}
 
 			return true;

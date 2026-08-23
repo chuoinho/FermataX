@@ -72,6 +72,8 @@ public class HttpFileDownloader {
 	private final TlsTrustPolicy tlsTrustPolicy;
 	private StatusListener statusListener;
 	private boolean returnExistingOnFail;
+	private boolean forceRevalidate;
+	private ContentValidator contentValidator;
 
 	public HttpFileDownloader() {
 		this(TlsTrustPolicy.STRICT);
@@ -129,6 +131,14 @@ public class HttpFileDownloader {
 		this.returnExistingOnFail = returnExistingOnFail;
 	}
 
+	public void setForceRevalidate(boolean forceRevalidate) {
+		this.forceRevalidate = forceRevalidate;
+	}
+
+	public void setContentValidator(ContentValidator contentValidator) {
+		this.contentValidator = contentValidator;
+	}
+
 	public FutureSupplier<Status> download(String src, File dst) {
 		var prefs = new BasicPreferenceStore();
 		prefs.applyBooleanPref(DECODE, true);
@@ -157,6 +167,8 @@ public class HttpFileDownloader {
 		private final String revisionKey;
 		private final DownloadPromise promise;
 		private final String diagnosticOperationId;
+		private final boolean forceRevalidateRequest;
+		private final ContentValidator validator;
 		private int subscribers;
 		private final AtomicBoolean finished = new AtomicBoolean();
 		private final AtomicBoolean diagnosticTerminal = new AtomicBoolean();
@@ -170,10 +182,14 @@ public class HttpFileDownloader {
 			this.destination = destination;
 			this.prefs = prefs;
 			this.listener = listener;
+			forceRevalidateRequest = forceRevalidate;
+			validator = contentValidator;
 			destinationKey = HttpFileDownloader.destinationKey(destination);
 			revisionKey = source.toExternalForm() + '\n' + prefs.getStringPref(AGENT) + '\n' +
 					prefs.getStringPref(ETAG) + '\n' + prefs.getBooleanPref(DECODE) + '\n' +
-					prefs.getIntPref(RESP_TIMEOUT) + '\n' + prefs.getIntPref(DOWNLOAD_TIMEOUT);
+					prefs.getIntPref(RESP_TIMEOUT) + '\n' + prefs.getIntPref(DOWNLOAD_TIMEOUT) + '\n' +
+					forceRevalidateRequest + '\n' +
+					((validator == null) ? "" : validator.getClass().getName());
 			promise = new DownloadPromise(this::cancelOperation);
 			diagnosticOperationId = Long.toString(diagnosticIds.updateAndGet(previous ->
 					(previous == Long.MAX_VALUE) ? 1L : previous + 1L));
@@ -228,7 +244,7 @@ public class HttpFileDownloader {
 			Log.d("Downloading ", source, " to ", destination);
 			boolean exists = destination.isFile();
 
-			if (exists) {
+			if (exists && !forceRevalidateRequest) {
 				long stamp = prefs.getLongPref(TIMESTAMP);
 				int age = prefs.getIntPref(MAX_AGE);
 
@@ -309,8 +325,10 @@ public class HttpFileDownloader {
 				}
 			}
 
-			DownloadStatus status = new DownloadStatus(opts.url, destination,
-					response.getContentLength());
+			boolean notModified = response.getStatusCode() == HttpStatusCode.NOT_MODIFIED;
+			long contentLength = (notModified && destination.isFile()) ? destination.length() :
+					response.getContentLength();
+			DownloadStatus status = new DownloadStatus(opts.url, destination, contentLength);
 			diagnostic("download_headers_received", Map.of(
 					"error_code", response.getStatusCode(),
 					"byte_count", Math.max(0L, response.getContentLength())), null);
@@ -319,7 +337,19 @@ public class HttpFileDownloader {
 			status.setEncoding(encoding);
 			Log.d("Response received:\n", response);
 
-			if (response.getStatusCode() == HttpStatusCode.NOT_MODIFIED) {
+			if (notModified) {
+				if (!destination.isFile()) {
+					fail(new IOException("HTTP 304 without an existing file: " + opts.url), status);
+					response.getConnection().close();
+					finish();
+					return completedVoid();
+				}
+				if (status.getEtag() == null) status.setEtag(prefs.getStringPref(ETAG));
+				if (status.getCharacterEncoding() == null)
+					status.setCharset(prefs.getStringPref(CHARSET));
+				if (status.getContentEncoding() == null)
+					status.setEncoding(prefs.getStringPref(ENCODING));
+				prefs.applyLongPref(TIMESTAMP, System.currentTimeMillis());
 				Log.d("File not modified: ", source, ". Returning existing file: ", destination);
 				succeed(status);
 				finish();
@@ -402,6 +432,8 @@ public class HttpFileDownloader {
 					status.setEncoding(null);
 				}
 
+				token.check();
+				if (validator != null) validator.validate(status, staged);
 				token.check();
 				if (!promise.beginCommit()) throw new InterruptedIOException("Download was cancelled");
 				try {
@@ -1170,6 +1202,11 @@ public class HttpFileDownloader {
 		void onSuccess(Status status);
 
 		void onFailure(Status status);
+	}
+
+	@FunctionalInterface
+	public interface ContentValidator {
+		void validate(Status status, File stagedFile) throws Throwable;
 	}
 
 	private static final class DownloadStatus implements Status {

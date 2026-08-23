@@ -48,8 +48,18 @@ public class FermataToolBarView extends ToolBarView {
 		ActivityFragment fragment = getActiveFragment();
 		Mediator mediator = getMediator();
 		if ((fragment == null) || (mediator == null)) return;
+		if ((mediator instanceof Mediator.BackTitle) &&
+				((findViewById(me.aap.utils.R.id.tool_bar_back_button) == null) ||
+						(findViewById(me.aap.utils.R.id.tool_bar_title) == null))) {
+			// A retained mediator can survive a host-view recreation after its children were removed.
+			// Re-enable the complete mediator so fragment actions are restored with Back/title.
+			mediator.disable(this);
+			mediator.enable(this, fragment);
+		}
 		if (findViewById(me.aap.utils.R.id.tool_bar_back_button) == null)
 			TopBarMediatorSupport.installBackButton(this, mediator);
+		MainActivityDelegate activity = MainActivityDelegate.get(getContext());
+		if (!activity.isBarsHidden()) refreshMediatorVisibility();
 		TopBarController.refresh(MainActivityDelegate.get(getContext()), fragment);
 	}
 

@@ -19,15 +19,15 @@ final class TvSourceRefreshCoordinator {
 	}
 
 	FutureSupplier<Result<String>> auto(TvSourceItem source) {
-		return refreshes.auto(source.getId(), source::refresh);
+		return refreshes.auto(source.getId(), () -> source.refresh(TvRefreshMode.AUTO));
 	}
 
 	FutureSupplier<Result<String>> manual(TvSourceItem source) {
-		return refreshes.manual(source.getId(), source::refresh);
+		return refreshes.manual(source.getId(), () -> source.refresh(TvRefreshMode.MANUAL));
 	}
 
 	FutureSupplier<Result<String>> edited(TvSourceItem source) {
-		return refreshes.replace(source.getId(), source::refresh);
+		return refreshes.replace(source.getId(), () -> source.refresh(TvRefreshMode.EDIT));
 	}
 
 	void start() {

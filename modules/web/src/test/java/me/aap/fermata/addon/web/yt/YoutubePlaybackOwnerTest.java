@@ -23,15 +23,4 @@ public class YoutubePlaybackOwnerTest {
 		assertEquals("web-current", owner.resolve("web-current"));
 	}
 
-	@Test
-	public void webViewReplacementTransfersPlaybackOwnerOnce() {
-		YoutubePlaybackOwner<String> source = new YoutubePlaybackOwner<>();
-		YoutubePlaybackOwner<String> target = new YoutubePlaybackOwner<>();
-		source.prepare("recent-item", "video-1", true);
-
-		source.transferTo(target);
-
-		assertEquals("fallback", source.resolve("fallback"));
-		assertEquals("recent-item", target.resolve("fallback"));
-	}
 }

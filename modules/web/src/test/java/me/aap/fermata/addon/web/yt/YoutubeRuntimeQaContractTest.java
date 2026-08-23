@@ -36,7 +36,51 @@ public class YoutubeRuntimeQaContractTest {
 		String body = source.substring(start, end);
 		assertTrue(body.contains("YoutubeItem played = item.playedAt"));
 		assertTrue(body.contains("storeYoutubeItem(played)"));
-		assertTrue(body.contains("YoutubeRecentSync.add(currentActivity(), this, played)"));
+		assertTrue(body.contains("YoutubeRecentSync.add(currentPlaybackActivity(), this, played)"));
+	}
+
+	@Test
+	public void pageCommitCannotCompleteExplicitTargetPrepare() throws Exception {
+		String source = read("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeMediaEngine.java");
+		int start = source.indexOf("void onPageLoaded(String pageUrl)");
+		int end = source.indexOf("private void completeTargetPrepare", start);
+		String body = source.substring(start, end);
+		assertTrue(body.contains("web.rebindPlaybackGeneration"));
+		assertFalse(body.contains("completeTargetPrepare"));
+	}
+
+	@Test
+	public void stableSessionHasNoGeneralCurrentSetter() throws Exception {
+		String source = read("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeSessionEngine.java");
+
+		assertFalse(source.contains("void setCurrent("));
+		assertTrue(source.contains("setAuthoritativeSource(candidate, nextDescriptor)"));
+		assertTrue(source.indexOf("setAuthoritativeSource(candidate, nextDescriptor)") <
+				source.indexOf("callback.startExternalPlayback(this)"));
+	}
+
+	@Test
+	public void transportCommandsDoNotReplaceTheAuthoritativeSource() throws Exception {
+		String source = read("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeSessionEngine.java");
+		int start = source.indexOf("public void prepare(PlayableItem requested)");
+		int end = source.indexOf("PlayableItem resolved", start);
+		String transportBranch = source.substring(start, end);
+
+		assertTrue(transportBranch.contains("requested.isPlaybackTransportCommand()"));
+		assertTrue(transportBranch.contains("current.prepare(requested)"));
+		assertFalse(transportBranch.contains("setAuthoritativeSource"));
+	}
+
+	@Test
+	public void delegatePublishesThroughTheTypedSessionActivation() throws Exception {
+		String source = read("modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeMediaEngine.java");
+		int start = source.indexOf("private boolean claimExternalPlayback");
+		int end = source.indexOf("void ready", start);
+		String body = source.substring(start, end);
+
+		assertTrue(body.contains("owner.activate(activation)"));
+		assertTrue(body.contains("claimBrowserPlayback(this, cb, activation)"));
+		assertFalse(body.contains("cb.startExternalPlayback"));
 	}
 
 	private static String read(String path) throws Exception {

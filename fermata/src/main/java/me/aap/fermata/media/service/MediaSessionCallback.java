@@ -407,22 +407,22 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	public boolean startExternalPlayback(@NonNull MediaEngine engine) {
-		PlayableItem source = engine.getSource();
-		boolean sameEngine = engine == getEngine();
-		boolean pendingTarget = false;
-		if (playbackTransition.hasPending()) {
-			if ((source == null) ||
-					!playbackTransition.isPending(PlayableItemResolver.unwrap(source))) return false;
-			source = PlayableItemResolver.unwrap(source);
-			pendingTarget = true;
-			if (sameEngine &&
-					(playbackOwnership.bindEngine(playbackRequestRevision, source, engine) == null))
-				return false;
+		ExternalPlaybackAdmission admission = ExternalPlaybackAdmission.evaluate(playbackOwnership.getPending(),
+				playbackTransition, engine.getSource());
+		PlayableItem source = admission.source();
+		if (!admission.accepted()) {
+			recordPlaybackDiagnostic("engine_callback_rejected", DiagnosticScope.ESSENTIAL,
+					DiagnosticPriority.WARN, engine, source, playbackRequestRevision, admission.rejectionReason(), null);
+			return false;
 		}
+		boolean sameEngine = engine == getEngine();
+		PlaybackOwnership.Token pendingOwner = admission.pendingOwner();
+		if ((pendingOwner != null) && sameEngine &&
+				(playbackOwnership.bindEngine(pendingOwner, engine) == null)) return false;
 		switchEngine(engine);
-		boolean alreadyOwns = sameEngine && !pendingTarget && (source != null) &&
+		boolean alreadyOwns = sameEngine && (pendingOwner == null) && (source != null) &&
 				playbackOwnership.owns(engine, PlayableItemResolver.unwrap(source));
-		switch (selectExternalPlaybackOwnershipBranch(sameEngine, pendingTarget,
+		switch (selectExternalPlaybackOwnershipBranch(sameEngine, pendingOwner != null,
 				source != null, alreadyOwns)) {
 			case PENDING_TARGET_COMPLETION -> {
 				if (!playbackOwnership.commit(engine, source)) return false;

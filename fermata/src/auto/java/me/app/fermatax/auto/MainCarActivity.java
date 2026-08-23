@@ -118,6 +118,9 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		MainActivityDelegate.setTheme(this, true);
 		super.onCreate(savedInstanceState);
 		initCarActivity(this);
+		// CarActivity creation is an authoritative projected-host signal. Open the new generation
+		// synchronously so the media-service bind cannot race the asynchronous CarConnection value.
+		AutoSessionShutdown.sessionStarted();
 		int notifColor = FermataMediaServiceConnection.resolveNotificationColor(this);
 		DirectAppStartupCoordinator.Startup<FermataMediaServiceConnection> startup =
 				STARTUP.begin(() -> FermataMediaServiceConnection.connect(notifColor));

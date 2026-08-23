@@ -3,6 +3,7 @@ package me.aap.fermata.addon.web.yt;
 import static me.aap.fermata.BuildConfig.AUTO;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.Keep;
@@ -70,11 +71,14 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final Pref<Supplier<String[]>> YT_BOOKMARKS = Pref.sa("YT_BOOKMARKS");
 	private static final Pref<Supplier<String>> VIDEO_SCALE = Pref.s("VIDEO_SCALE", VideoScale.CONTAIN::prefName);
 	private static final Pref<Supplier<String>> YT_LAST_URL = Pref.s("YT_LAST_URL", "https://m.youtube.com");
-	private static final Pref<BooleanSupplier> YT_SESSION_RESET_PENDING =
+	private static final Pref<BooleanSupplier> LEGACY_YT_SESSION_RESET_PENDING =
 			Pref.b("YT_SESSION_RESET_PENDING", false);
-	private static final Pref<LongSupplier> YT_SESSION_LEFT_AT =
+	private static final Pref<LongSupplier> LEGACY_YT_SESSION_LEFT_AT =
 			Pref.l("YT_SESSION_LEFT_AT", 0L);
-	private static final long YT_SESSION_RETENTION_MS = 10L * 60L * 1000L;
+	private static final Pref<BooleanSupplier> YT_SESSION_COLD =
+			Pref.b("YT_SESSION_COLD_V2", false);
+	private static final Pref<LongSupplier> YT_SESSION_SOFT_LEFT_AT =
+			Pref.l("YT_SESSION_SOFT_LEFT_AT_V2", 0L);
 	private static final Pref<BooleanSupplier> YT_OPEN_ON_START = Pref.b("YT_OPEN_ON_START", false);
 	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
 			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
@@ -83,11 +87,12 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final YoutubeRetentionPolicy ITEM_RETENTION =
 			new YoutubeRetentionPolicy(10, Long.MAX_VALUE);
 	private final SponsorBlockController sponsorBlockController = new SponsorBlockController();
-	private static final int HISTORY_ATTACH_MAX_ATTEMPTS = 100;
-	private static final long HISTORY_ATTACH_RETRY_MS = 100L;
-	private static final long HISTORY_ATTACH_TIMEOUT_MS =
-			(HISTORY_ATTACH_MAX_ATTEMPTS * HISTORY_ATTACH_RETRY_MS) + 1_000L;
 	private static final long HOST_HANDOFF_DEBOUNCE_MS = 2_000L;
+	private static final YoutubeSessionPolicy SESSION_POLICY = new YoutubeSessionPolicy(
+			YoutubeSessionPolicy.DEFAULT_RETENTION_MILLIS);
+	private final YoutubeNavigationGeneration navigationGeneration =
+			new YoutubeNavigationGeneration();
+	private final YoutubeRuntime runtime = new YoutubeRuntime(this);
 
 	@NonNull
 	@Override
@@ -136,6 +141,13 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	@Override
 	public void install() {
+		getSharedPreferences().edit()
+				.remove(LEGACY_YT_SESSION_RESET_PENDING.getName())
+				.remove(LEGACY_YT_SESSION_LEFT_AT.getName())
+				.remove(YT_SESSION_COLD.getName())
+				.remove("YT_RESUME_POS")
+				.remove("YT_RESUME_VIDEO_ID")
+				.apply();
 		reconcilePinnedItems();
 	}
 
@@ -258,10 +270,9 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	private void stopOwnedPlayback(MediaSessionCallback callback) {
 		MediaEngine engine = callback.getEngine();
-		if ((engine instanceof YoutubeMediaEngine youtube) && youtube.belongsTo(this)) {
+		if ((engine instanceof YoutubeSessionEngine youtube) && youtube.belongsTo(this)) {
 			callback.onStop();
-		} else if ((engine instanceof YoutubeDeferredMediaEngine pending) &&
-				pending.belongsTo(this)) {
+		} else if ((engine instanceof YoutubeMediaEngine youtube) && youtube.belongsTo(this)) {
 			callback.onStop();
 		}
 	}
@@ -281,33 +292,77 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	void setScale(VideoScale scale) {
 		getPreferenceStore().applyStringPref(VIDEO_SCALE, scale.prefName());
-		YoutubeVideoScaleController.apply(currentActivity(), scale);
+		YoutubeVideoScaleController.apply(currentPlaybackActivity(), scale);
 	}
 
 	String getLastYoutubeUrl() {
 		return getPreferenceStore().getStringPref(YT_LAST_URL);
 	}
 
-	void setLastYoutubeUrl(String url) {
+	private void setLastYoutubeUrl(String url) {
 		getPreferenceStore().applyStringPref(YT_LAST_URL, url);
 	}
 
-	void markPlaybackSessionLeft(long timestampMillis) {
-		PreferenceStore store = getPreferenceStore();
-		store.applyLongPref(YT_SESSION_LEFT_AT, Math.max(0L, timestampMillis));
-		store.applyBooleanPref(YT_SESSION_RESET_PENDING, true);
+	void setLastYoutubeUrl(String url, long generation) {
+		if (isNavigationGenerationCurrent(generation)) setLastYoutubeUrl(url);
 	}
 
-	SessionReturnAction consumePlaybackSessionReturn(long timestampMillis) {
-		PreferenceStore store = getPreferenceStore();
-		if (!store.getBooleanPref(YT_SESSION_RESET_PENDING)) return SessionReturnAction.KEEP;
+	long beginNavigation(boolean explicitTarget) {
+		long generation = navigationGeneration.next();
+		if ((generation > 0L) && explicitTarget) clearSessionBoundary();
+		return generation;
+	}
 
-		long leftAt = store.getLongPref(YT_SESSION_LEFT_AT);
-		store.removePref(YT_SESSION_RESET_PENDING);
-		store.removePref(YT_SESSION_LEFT_AT);
-		long elapsed = timestampMillis - leftAt;
-		return ((leftAt > 0L) && (elapsed >= YT_SESSION_RETENTION_MS)) ?
+	long beginNavigationRuntime() {
+		return navigationGeneration.openRuntime();
+	}
+
+	boolean isNavigationGenerationCurrent(long generation) {
+		return navigationGeneration.isCurrent(generation);
+	}
+
+	void markSessionInactive(long timestampMillis) {
+		getSharedPreferences().edit().putLong(YT_SESSION_SOFT_LEFT_AT.getName(),
+				Math.max(0L, timestampMillis)).apply();
+	}
+
+	SessionReturnAction consumeSessionReturn(long timestampMillis, boolean explicitTarget,
+			boolean playbackActive, long generation) {
+		if (!isNavigationGenerationCurrent(generation)) return SessionReturnAction.KEEP;
+		SharedPreferences prefs = getSharedPreferences();
+		YoutubeSessionPolicy.Action action = SESSION_POLICY.resolve(explicitTarget, playbackActive,
+				prefs.getBoolean(YT_SESSION_COLD.getName(), false),
+				prefs.getLong(YT_SESSION_SOFT_LEFT_AT.getName(), 0L), timestampMillis);
+		clearSessionBoundary();
+		return (action == YoutubeSessionPolicy.Action.RESET_HOME) ?
 				SessionReturnAction.RESET_HOME : SessionReturnAction.KEEP;
+	}
+
+	SessionReturnAction consumeEntry(MainActivityDelegate activity, long timestampMillis,
+			boolean explicitTarget, boolean playbackActive, long generation) {
+		SessionReturnAction automotive = runtime.consumeEntry(activity, explicitTarget, playbackActive);
+		return (automotive != null) ? automotive : consumeSessionReturn(timestampMillis,
+				explicitTarget, playbackActive, generation);
+	}
+
+	@Override
+	public void onAutomotiveShutdown() {
+		navigationGeneration.closeRuntime();
+		super.onAutomotiveShutdown();
+	}
+
+	@Override
+	public void onAutomotiveSessionStarted() {
+		// A retained WebView must be able to issue fresh explicit navigations in the new AA session.
+		navigationGeneration.openRuntime();
+		super.onAutomotiveSessionStarted();
+	}
+
+	private void clearSessionBoundary() {
+		getSharedPreferences().edit()
+				.remove(YT_SESSION_COLD.getName())
+				.remove(YT_SESSION_SOFT_LEFT_AT.getName())
+				.apply();
 	}
 
 	boolean autoHighestQuality() {
@@ -322,7 +377,7 @@ public class YoutubeAddon extends WebBrowserAddon
 		if (item == null) return;
 		YoutubeItem played = item.playedAt(System.currentTimeMillis());
 		storeYoutubeItem(played);
-		YoutubeRecentSync.add(currentActivity(), this, played);
+		YoutubeRecentSync.add(currentPlaybackActivity(), this, played);
 	}
 
 	void updateYoutubeItem(YoutubeItem item) {
@@ -363,7 +418,7 @@ public class YoutubeAddon extends WebBrowserAddon
 	}
 
 	private void updateCachedHistoryItem(YoutubeItem item) {
-		MainActivityDelegate activity = currentActivity();
+		MainActivityDelegate activity = currentPlaybackActivity();
 		if (activity == null) return;
 		Item cached = activity.getLib().getCachedItem(item.stableId());
 		if (cached instanceof YoutubeHistoryItem history) history.updateDescriptor(item);
@@ -552,56 +607,35 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	@Nullable
 	private MediaEngine createHistoryEngine(@Nullable MediaEngine current,
-																						 MediaEngine.Listener listener,
-																						 YoutubeItem descriptor) {
-		if ((current instanceof YoutubeMediaEngine engine) && engine.belongsTo(this)) return current;
-		if ((current instanceof YoutubeDeferredMediaEngine pending) && pending.belongsTo(this))
-			return current;
-		MainActivityDelegate activity = currentActivity();
-		if (activity != null) {
-			ActivityFragment fragment = activity.getActiveFragment();
-			if (fragment instanceof YoutubeFragment youtube) {
-				YoutubeWebView web = youtube.getWebView();
-				if ((web != null) && (web.getMediaEngine() != null) &&
-						web.getMediaEngine().belongsTo(this)) return web.getMediaEngine();
-			}
-		}
+										 MediaEngine.Listener listener,
+										 YoutubeItem descriptor) {
 		if (listener instanceof MediaSessionCallback callback)
-			return new YoutubeDeferredMediaEngine(this, descriptor, callback);
+			return runtime.sessionEngine(current, callback, descriptor);
 		return null;
 	}
 
-	void attachHistoryEngine(YoutubeDeferredMediaEngine pending, long generation) {
-		if (!pending.belongsTo(this) || !pending.isAttachmentCurrent(generation)) return;
-		attachHistoryEngine(pending, generation, 0);
-		FermataApplication.get().getHandler().postDelayed(() -> {
-			if (pending.isAttachmentCurrent(generation)) {
-				Log.w("Timed out waiting for YouTube Activity/WebView attachment");
-				pending.failAttachment(generation);
-			}
-		}, HISTORY_ATTACH_TIMEOUT_MS);
-	}
+	@Nullable
+	PlayableItem createCanonicalPlaybackItem(YoutubeItem descriptor,
+			@Nullable PlayableItem context) {
+		DefaultMediaLib lib = ((context != null) &&
+				(context.getLib() instanceof DefaultMediaLib currentLib)) ? currentLib : null;
+		if (lib == null) {
+			MainActivityDelegate activity = currentPlaybackActivity();
+			if ((activity != null) && (activity.getLib() instanceof DefaultMediaLib currentLib))
+				lib = currentLib;
+		}
+		if (lib == null) return null;
 
-	private void attachHistoryEngine(YoutubeDeferredMediaEngine pending,
-			long generation, int attempt) {
-		if (!pending.isAttachmentCurrent(generation)) return;
-		if (attempt >= HISTORY_ATTACH_MAX_ATTEMPTS) {
-			Log.w("Timed out waiting for YouTube Activity/WebView attachment");
-			pending.failAttachment(generation);
-			return;
+		Item cached = lib.getCachedItem(descriptor.stableId());
+		if ((cached instanceof YoutubeHistoryItem history) && (history.addon == this)) {
+			history.updateDescriptor(descriptor);
+			return history;
 		}
-		MainActivityDelegate activity = currentActivity();
-		if (activity == null) {
-			FermataApplication.get().getHandler().postDelayed(
-					() -> attachHistoryEngine(pending, generation, attempt + 1),
-					HISTORY_ATTACH_RETRY_MS);
-			return;
-		}
-		activity.post(() -> attachHistoryEngine(activity, pending, generation, attempt));
+		return new YoutubeHistoryItem(this, lib, descriptor);
 	}
 
 	@Nullable
-	private MainActivityDelegate currentActivity() {
+	MainActivityDelegate currentPlaybackActivity() {
 		MainActivityDelegate automotive = activeAutomotiveActivity();
 		if (automotive != null) return automotive;
 
@@ -619,6 +653,10 @@ public class YoutubeAddon extends WebBrowserAddon
 		} catch (RuntimeException ignored) {
 			return null;
 		}
+	}
+
+	YoutubeRuntime getRuntime() {
+		return runtime;
 	}
 
 	boolean isPreferredPlaybackActivity(MainActivityDelegate activity) {
@@ -672,36 +710,6 @@ public class YoutubeAddon extends WebBrowserAddon
 		return null;
 	}
 
-	private void attachHistoryEngine(MainActivityDelegate activity,
-			YoutubeDeferredMediaEngine pending, long generation, int attempt) {
-		if (!pending.isAttachmentCurrent(generation)) return;
-		if (attempt >= HISTORY_ATTACH_MAX_ATTEMPTS) {
-			Log.w("Timed out waiting for YouTube Activity/WebView attachment");
-			pending.failAttachment(generation);
-			return;
-		}
-		if (activity.getAppActivity().isFinishing() || activity.getAppActivity().isDestroyed()) {
-			pending.failAttachment(generation);
-			return;
-		}
-		ActivityFragment fragment = activity.showFragment(getAddonId());
-		if (!(fragment instanceof YoutubeFragment youtube)) {
-			activity.postDelayed(() -> attachHistoryEngine(activity, pending, generation, attempt + 1),
-					HISTORY_ATTACH_RETRY_MS);
-			return;
-		}
-		YoutubeWebView web = youtube.getWebView();
-		YoutubeMediaEngine engine = (web == null) ? null : web.getMediaEngine();
-		if (engine == null) {
-			activity.postDelayed(() -> attachHistoryEngine(activity, pending, generation, attempt + 1),
-					HISTORY_ATTACH_RETRY_MS);
-			return;
-		}
-		if (!pending.attach(engine, generation)) {
-			activity.postDelayed(() -> attachHistoryEngine(activity, pending, generation, attempt + 1),
-					HISTORY_ATTACH_RETRY_MS);
-		}
-	}
 
 	static final class YoutubeHistoryItem extends YoutubeMediaEngine.YoutubePlayableItem
 			implements YoutubeDescriptorItem {

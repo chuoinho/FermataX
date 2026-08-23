@@ -123,12 +123,26 @@ public class TvM3uFile extends M3uFile {
 	}
 
 	public void clearStamps() {
+		invalidatePlaylistValidation();
+		invalidateEpgValidation();
+	}
+
+	public void invalidatePlaylistValidation() {
 		try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
 			e.removePref(ETAG);
 			e.removePref(TIMESTAMP);
+		}
+	}
+
+	public void invalidateEpgValidation() {
+		try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
 			e.removePref(EpgPrefs.EPG_ETAG);
 			e.removePref(EpgPrefs.EPG_TIMESTAMP);
 		}
+	}
+
+	public void invalidateEpgDatabase() {
+		SQLite.delete(getEpgDbFile());
 	}
 
 	public int getEpgMaxAge() {

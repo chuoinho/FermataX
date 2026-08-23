@@ -3,6 +3,8 @@ package me.aap.fermata.vfs.m3u;
 import static me.aap.fermata.util.Utils.createUserSourceDownloader;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -11,6 +13,7 @@ import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import me.aap.fermata.util.Utils;
@@ -19,6 +22,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpFileDownloader;
+import me.aap.utils.net.http.HttpFileDownloader.Status;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.resource.Rid;
 import me.aap.utils.vfs.VirtualFileSystem;
@@ -87,11 +91,7 @@ public class M3uFileSystem implements VirtualFileSystem {
 			return p;
 		}
 
-		File cacheFile = file.getLocalFile();
-		Context ctx = App.get();
-		HttpFileDownloader d = createUserSourceDownloader(ctx, url);
-		d.setReturnExistingOnFail(true);
-		d.download(url, cacheFile, file.getPrefs()).onCompletion((f, err) -> {
+		fetch(file, null).onCompletion((result, err) -> {
 			if (err == null) {
 				p.complete(file);
 			} else {
@@ -100,6 +100,68 @@ public class M3uFileSystem implements VirtualFileSystem {
 		});
 
 		return p;
+	}
+
+	public FutureSupplier<M3uFetchResult> refresh(M3uFile file, M3uRefreshMode mode) {
+		String url = file.getUrl();
+		if ((url == null) || url.startsWith("/") || url.startsWith("content://"))
+			return completedNull();
+		return refresh(file, mode, Collections.singletonList(url));
+	}
+
+	public FutureSupplier<M3uFetchResult> refresh(M3uFile file, M3uRefreshMode mode,
+			List<String> candidates) {
+		if ((candidates == null) || candidates.isEmpty())
+			return failed(new IllegalArgumentException("No M3U fetch candidates"));
+		return refresh(file, mode, candidates, 0);
+	}
+
+	private FutureSupplier<M3uFetchResult> refresh(M3uFile file, M3uRefreshMode mode,
+			List<String> candidates, int index) {
+		boolean hasNext = (index + 1) < candidates.size();
+		return fetch(file, mode, candidates.get(index)).then(value ->
+				(hasNext && (value.state() == M3uFetchResult.State.STALE_FALLBACK)) ?
+						refresh(file, mode, candidates, index + 1) : completed(value),
+				error -> (hasNext && !isCancellation(error)) ?
+						refresh(file, mode, candidates, index + 1) : failed(error));
+	}
+
+	private FutureSupplier<M3uFetchResult> fetch(M3uFile file, M3uRefreshMode mode) {
+		return fetch(file, mode, file.getUrl());
+	}
+
+	private FutureSupplier<M3uFetchResult> fetch(M3uFile file, M3uRefreshMode mode, String url) {
+		File cacheFile = file.getLocalFile();
+		boolean existed = cacheFile.isFile();
+		boolean fresh = existed && isFresh(file);
+		Context ctx = App.get();
+		HttpFileDownloader downloader = createUserSourceDownloader(ctx, url);
+		downloader.setReturnExistingOnFail(true);
+		downloader.setForceRevalidate((mode == M3uRefreshMode.MANUAL) ||
+				(mode == M3uRefreshMode.EDIT));
+		downloader.setContentValidator(new M3uContentValidator());
+		return downloader.download(url, cacheFile, file.getPrefs()).map(status ->
+				toFetchResult(status, mode, fresh));
+	}
+
+	private static boolean isFresh(M3uFile file) {
+		long timestamp = file.getPrefs().getLongPref(HttpFileDownloader.TIMESTAMP);
+		int maxAge = file.getPrefs().getIntPref(HttpFileDownloader.MAX_AGE);
+		return (timestamp > 0L) && (maxAge > 0) &&
+				((timestamp + maxAge * 1000L) > System.currentTimeMillis());
+	}
+
+	private static M3uFetchResult toFetchResult(Status status, M3uRefreshMode mode,
+			boolean wasFresh) {
+		Throwable failure = status.getFailure();
+		if (failure != null)
+			return new M3uFetchResult(M3uFetchResult.State.STALE_FALLBACK, status, failure);
+		if (status.bytesDownloaded() > 0L)
+			return new M3uFetchResult(M3uFetchResult.State.UPDATED, status, null);
+		M3uFetchResult.State state = ((mode == null) ||
+				((mode == M3uRefreshMode.AUTO) && wasFresh)) ?
+				M3uFetchResult.State.FRESH_CACHE : M3uFetchResult.State.NOT_MODIFIED;
+		return new M3uFetchResult(state, status, null);
 	}
 
 	public static final class Provider implements VirtualFileSystem.Provider {

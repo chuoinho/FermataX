@@ -31,6 +31,7 @@ public class YoutubeWebClient extends FermataWebClient {
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 		MainActivityDelegate.get(view.getContext()).clearVoiceSelection();
+		if (view instanceof YoutubeWebView youtube) youtube.onMainFramePageStarted();
 		super.onPageStarted(view, url, favicon);
 	}
 
@@ -64,6 +65,7 @@ public class YoutubeWebClient extends FermataWebClient {
 	@Override
 	public void onPageFinished(WebView view, String url) {
 		super.onPageFinished(view, url);
-		if (view instanceof YoutubeWebView youtube) youtube.collectVoiceSearchResults(url);
+		if ((view instanceof YoutubeWebView youtube) && youtube.acceptsPageCallback(url))
+			youtube.collectVoiceSearchResults(url);
 	}
 }

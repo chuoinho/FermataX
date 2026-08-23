@@ -118,7 +118,8 @@ public class YoutubeChromeClient extends FermataChromeClient {
 		MainActivityDelegate a = getLiveActivity(getWebView().getContext());
 		if (a == null) return false;
 		MediaSessionCallback cb = a.getMediaSessionCallback();
-		if (!((cb.getEngine() instanceof YoutubeMediaEngine))) return false;
+		if (!((cb.getEngine() instanceof YoutubeMediaEngine) ||
+				(cb.getEngine() instanceof YoutubeSessionEngine))) return false;
 		int st = cb.getPlaybackState().getState();
 		return (st == STATE_PLAYING) || (st == STATE_PAUSED);
 	}

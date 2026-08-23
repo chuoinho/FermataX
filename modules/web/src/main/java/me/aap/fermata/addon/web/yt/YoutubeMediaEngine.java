@@ -50,6 +50,7 @@ import me.aap.utils.vfs.generic.GenericFileSystem;
  */
 class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private static final long FULLSCREEN_TAP_PAUSE_GUARD_MS = 750L;
+	private static final long TARGET_PREPARE_TIMEOUT_MS = 15_000L;
 	private static final String ID = "youtube";
 	private static final String CURRENT_ID = ID + ":current";
 	private static final String NEXT_ID = ID + ":next";
@@ -66,6 +67,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private final YoutubeAdController adController = new YoutubeAdController();
 	private final YoutubePlaybackSession playbackSession = new YoutubePlaybackSession();
 	private final YoutubePlaybackOwner<PlayableItem> playbackOwner = new YoutubePlaybackOwner<>();
+	private final YoutubeTargetPrepareGate targetPrepareGate = new YoutubeTargetPrepareGate();
 	private final YoutubePlaybackMetadata playbackMetadata;
 	private final DiagnosticsObserver diagnosticsObserver;
 	private YoutubePlayableItem current;
@@ -77,13 +79,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private String qualityUrl;
 	private boolean ignorePause;
 	private long touchStamp;
-	private YoutubeMediaEngine transferSource;
-	private String transferVideoId = "";
-	private long transferPosition;
-	private float transferSpeed = 1f;
-	private boolean transferPlayRequested;
-	private boolean transferPositionReady;
-	private boolean transferTargetReady;
 	private boolean webDestroyed;
 	private boolean audibleStartPending;
 	private long fullscreenTapPauseGuardUntil;
@@ -92,6 +87,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private boolean muteDiagnosticKnown;
 	private boolean lastMuteDiagnosticState;
 	private long lastMuteDiagnosticGeneration;
+	private YoutubeSessionEngine sessionOwner;
 
 	public YoutubeMediaEngine(YoutubeWebView web, MainActivityDelegate a) {
 		this.web = web;
@@ -112,18 +108,38 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		};
 	}
 
+	void attachSession(YoutubeSessionEngine owner) {
+		sessionOwner = owner;
+	}
+
+	void detachSession(YoutubeSessionEngine owner) {
+		if (sessionOwner == owner) sessionOwner = null;
+	}
+
+	private MediaEngine callbackEngine() {
+		return (sessionOwner == null) ? this : sessionOwner;
+	}
+
+	private boolean claimExternalPlayback(YoutubePlaybackActivation activation) {
+		YoutubeSessionEngine owner = sessionOwner;
+		return (owner == null) ? web.getAddon().getRuntime()
+				.claimBrowserPlayback(this, cb, activation) : owner.activate(activation);
+	}
+
 	void ready(String url) {
 		if (!YoutubePlaybackMetadata.isStructuredSignal(url)) return;
 		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(url, web.getUrl());
 		recordPlaybackSignal(PlaybackEvent.READY_SIGNAL, signal, false);
-		if (!acceptsPlaybackGeneration(url)) {
+		if (!acceptsPlaybackGeneration(url) ||
+				!targetPrepareGate.accepts(signal.videoId(), signal.generation())) {
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
 			if (rejectsExternalAutoNext(url)) web.silenceRejectedPlayback(url);
 			return;
 		}
 		if (isCurrentEngine()) {
-			url = setCurrent(url);
-			completePendingTransfer();
+			ObservedPlayback observed = observePlayback(url);
+			url = observed.mediaUrl();
+			completeTargetPrepare(signal.videoId(), signal.generation());
 			resumeAudibleStartIfPending();
 			requestAutoVideoMode(url);
 			return;
@@ -140,8 +156,9 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			return;
 		}
 
-		url = setCurrent(url);
-		if (cb.startExternalPlayback(this)) {
+		ObservedPlayback observed = observePlayback(url);
+		url = observed.mediaUrl();
+		if ((observed.activation() != null) && claimExternalPlayback(observed.activation())) {
 			requestAutoVideoMode(url);
 			web.playAudible();
 		}
@@ -151,7 +168,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		if (!YoutubePlaybackMetadata.isStructuredSignal(url)) return;
 		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(url, web.getUrl());
 		recordPlaybackSignal(PlaybackEvent.PLAYING_SIGNAL, signal, true);
-		if (!acceptsPlaybackGeneration(url)) {
+		if (!acceptsPlaybackGeneration(url) ||
+				!targetPrepareGate.accepts(signal.videoId(), signal.generation())) {
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
 			if (rejectsExternalAutoNext(url)) web.silenceRejectedPlayback(url);
 			return;
@@ -170,8 +188,15 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			web.silenceRejectedPlayback(url);
 			return;
 		}
-		url = setCurrent(url);
-		completePendingTransfer();
+		ObservedPlayback observed = observePlayback(url);
+		url = observed.mediaUrl();
+		completeTargetPrepare(signal.videoId(), signal.generation());
+		boolean claimed = (observed.activation() != null) &&
+				claimExternalPlayback(observed.activation());
+		if (!claimed) {
+			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
+			return;
+		}
 		resumeAudibleStartIfPending();
 		if (!web.getAddon().autoHighestQuality()) {
 			qualityUrl = null;
@@ -179,8 +204,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			qualityUrl = url;
 			web.setHighestVideoQuality();
 		}
-		boolean claimed = cb.startExternalPlayback(this);
-		if (claimed || isCurrentEngine()) requestAutoVideoMode(url);
+		requestAutoVideoMode(url);
 		recordPlaybackSignal(PlaybackEvent.OWNERSHIP_ADOPTED, signal, true);
 		if (shouldRestoreAudibleAfterClaim(currentEngine, claimed)) web.playAudible();
 		web.onYoutubePlaybackResumed();
@@ -237,9 +261,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	private void refreshContentMetadata() {
-		if (!(current instanceof Current active) || !isCurrentEngine()) return;
+		if (!(current instanceof Current active) || !isCurrentEngine() ||
+				!callbackSourceMatchesCurrent()) return;
 		active.invalidateMetadata();
-		cb.onEngineMetadataChanged(this);
+		cb.onEngineMetadataChanged(callbackEngine());
 	}
 
 	private void requestAdSkip(boolean retry) {
@@ -304,7 +329,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		current = end;
 		qualityUrl = null;
 		boolean currentEngine = isCurrentEngine();
-		if (currentEngine) cb.onEngineEnded(this);
+		if (currentEngine) cb.onEngineEnded(callbackEngine());
 	}
 
 	void paused(String signal) {
@@ -370,10 +395,28 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		if (!isCurrentEngine() || (snapshot == null) || !playbackSession.isCurrent(snapshot)) return;
 		try {
 			YoutubeItem item = YoutubeItem.fromPageUrl(pageUrl, "", 0L);
-			if (snapshot.item().videoId().equals(item.videoId()))
+			if (snapshot.item().videoId().equals(item.videoId())) {
+				// YouTube updates the SPA URL before its player has necessarily replaced the
+				// previous video. Rebind the bridge here, but wait for a trusted READY/PLAYING
+				// signal whose player video ID matches this page before completing prepare.
 				web.rebindPlaybackGeneration(snapshot.generation());
+			}
 		} catch (IllegalArgumentException ignored) {
 		}
+	}
+
+	private void completeTargetPrepare(String videoId, long generation) {
+		if (!targetPrepareGate.complete(videoId, generation)) return;
+		cb.onEnginePrepared(callbackEngine());
+		resumeAudibleStartIfPending();
+	}
+
+	private void scheduleTargetPrepareTimeout(long request) {
+		web.postDelayed(() -> {
+			if (!targetPrepareGate.cancel(request) || webDestroyed) return;
+			cb.onEngineError(callbackEngine(),
+					new IllegalStateException("YouTube target page did not load"));
+		}, TARGET_PREPARE_TIMEOUT_MS);
 	}
 
 	long playbackGenerationSeed() {
@@ -450,6 +493,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			web.prev();
 		} else {
 			YoutubeDescriptorItem descriptorItem = descriptorItem(source);
+			boolean waitForTarget = false;
 			if (web.usesAutoPlaybackBehavior()) {
 				if ((descriptorItem != null) && !(source instanceof Current)) armExplicitPlayback();
 				else armPlaybackIntent();
@@ -477,14 +521,25 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 				cancelAdRetry();
 				adPlaybackGeneration = adController.beginPlayback(current.getId()).generation();
 				if (matchesLoadedPage(descriptor.pageUrl())) {
+					targetPrepareGate.cancel();
 					web.rebindPlaybackGeneration(playbackSessionSnapshot.generation());
 				} else if (!(source instanceof Current)) {
-					web.loadUrl(descriptor.pageUrl());
+					long request = targetPrepareGate.begin(descriptor.videoId(),
+							playbackSessionSnapshot.generation());
+					if (!web.loadExplicitUrl(descriptor.pageUrl())) {
+						targetPrepareGate.cancel(request);
+						cb.onEngineError(callbackEngine(), new IllegalStateException(
+								"YouTube navigation runtime is unavailable"));
+						return;
+					}
+					scheduleTargetPrepareTimeout(request);
+					waitForTarget = true;
 				}
 			} else if (source instanceof Current) {
+				targetPrepareGate.cancel();
 				current = (YoutubePlayableItem) source;
 			}
-			cb.onEnginePrepared(this);
+			if (!waitForTarget) cb.onEnginePrepared(callbackEngine());
 		}
 	}
 
@@ -493,11 +548,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		audibleStartPending = true;
 		recordPlayback(PlaybackEvent.AUDIBLE_START_REQUESTED, playbackSessionSnapshot,
 				true, false, false, false, false, 0L);
-		if (transferSource != null) {
-			transferPlayRequested = true;
-			transferSource.start();
-		}
-		if (!webDestroyed) web.playAudible();
+		if (!webDestroyed && !targetPrepareGate.isPending()) web.playAudible();
 	}
 
 	private void resumeAudibleStartIfPending() {
@@ -513,11 +564,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		audibleStartPending = false;
 		clearFullscreenTapPauseGuard();
 		web.setFullscreenTapEnabled(false);
-		boolean suppressSessionExpiry = web.consumeSessionExpirySuppression();
-		boolean markSessionLeft = isCurrentEngine() && (current != null) && (current != end) &&
-				!suppressSessionExpiry;
 		playbackIntentGate.reset();
-		finishPendingTransferSource();
+		targetPrepareGate.cancel();
 		if ((current != null) && (current != end)) {
 			endAdPlayback();
 			current = null;
@@ -534,17 +582,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		fullScreenCoordinator.cancelPlayback();
 		clearExternalPlaybackOwner();
 		playbackOwner.clear();
-		if (markSessionLeft && !webDestroyed)
-			web.getAddon().markPlaybackSessionLeft(System.currentTimeMillis());
 	}
 
 	@Override
 	public void pause() {
 		audibleStartPending = false;
-		if (transferSource != null) {
-			transferPlayRequested = false;
-			transferSource.pause();
-		}
 		if (!ignorePause && !webDestroyed) web.pause();
 	}
 
@@ -555,7 +597,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public FutureSupplier<Long> getDuration() {
-		if (transferSource != null) return transferSource.getDuration();
 		if (webDestroyed) {
 			long duration = (current instanceof Current active && active.descriptor != null) ?
 					active.descriptor.durationMillis() : 0L;
@@ -568,23 +609,17 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public FutureSupplier<Long> getPosition() {
-		if (transferSource != null) return transferSource.getPosition();
 		if (webDestroyed) return completed(Math.max(0L, cb.getPlaybackState().getPosition()));
 		return web.getPosition();
 	}
 
 	@Override
 	public void setPosition(long position) {
-		if (transferSource != null) {
-			transferPosition = Math.max(0L, position);
-			transferSource.setPosition(position);
-		}
 		if (!webDestroyed) web.setPosition(position);
 	}
 
 	@Override
 	public FutureSupplier<Float> getSpeed() {
-		if (transferSource != null) return transferSource.getSpeed();
 		if (webDestroyed) {
 			float speed = cb.getPlaybackState().getPlaybackSpeed();
 			return completed((speed > 0f) ? speed : 1f);
@@ -594,10 +629,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public void setSpeed(float speed) {
-		if (transferSource != null) {
-			transferSpeed = speed;
-			transferSource.setSpeed(speed);
-		}
 		if (!webDestroyed) web.setSpeed(speed);
 	}
 
@@ -617,12 +648,13 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public void close() {
+		if ((sessionOwner != null) && (cb.getEngine() == sessionOwner)) return;
 		recordPlayback(PlaybackEvent.OWNERSHIP_LOST, playbackSessionSnapshot,
 				false, false, false, false, false, 0L);
 		clearFullscreenTapPauseGuard();
 		web.setFullscreenTapEnabled(false);
 		playbackIntentGate.reset();
-		finishPendingTransferSource();
+		targetPrepareGate.cancel();
 		if ((current != null) && (current != end)) {
 			endAdPlayback();
 			current = null;
@@ -757,7 +789,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	boolean isCurrentEngine() {
-		return cb.getEngine() == this;
+		return cb.getEngine() == callbackEngine();
 	}
 
 	boolean isCurrentVideo(String videoId) {
@@ -768,6 +800,15 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	boolean ownsPlayback(String videoId) {
 		return isCurrentEngine() && isCurrentVideo(videoId);
+	}
+
+	boolean isCurrentActivation(YoutubePlaybackActivation activation) {
+		if (webDestroyed || (activation.origin() != this) ||
+				!isCurrentVideo(activation.videoId())) return false;
+		YoutubePlaybackSession.Snapshot snapshot = playbackSessionSnapshot;
+		return (snapshot != null) && playbackSession.isCurrent(snapshot) &&
+				(snapshot.generation() == activation.generation()) &&
+				snapshot.item().videoId().equals(activation.videoId());
 	}
 
 	YoutubePlaybackSession.Snapshot playbackSnapshot(String videoId) {
@@ -788,111 +829,16 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		return externalPlaybackOwner;
 	}
 
-	boolean transferTo(YoutubeMediaEngine replacement) {
-		if ((replacement == null) || (replacement == this) || !isCurrentEngine()) return false;
-		boolean wasPlaying = cb.isPlaying();
-		Current active = (current instanceof Current value) ? value : null;
-		YoutubeItem descriptor = (active == null) ? null : active.descriptor;
-		boolean ended = current == end;
-		YoutubeMediaEngine source = (transferSource == null) ? this : transferSource;
-		FutureSupplier<Long> sourcePosition = (descriptor == null) ? completed(0L) :
-				source.getPosition().main();
-		if (!cb.replaceEngine(this, replacement)) return false;
-
-		if (descriptor != null) {
-			replacement.current = replacement.new Current(descriptor);
-			replacement.externalPlaybackOwner = externalPlaybackOwner;
-			replacement.externalPlaybackVideoId = externalPlaybackVideoId;
-			playbackOwner.transferTo(replacement.playbackOwner);
-			replacement.playbackSessionSnapshot = replacement.playbackSession.begin(
-					descriptor, System.currentTimeMillis());
-			replacement.adPlaybackGeneration = replacement.adController
-					.beginPlayback(replacement.current.getId()).generation();
-			replacement.transferSource = source;
-			replacement.transferVideoId = descriptor.videoId();
-			replacement.transferPosition = Math.max(0L, cb.getPlaybackState().getPosition());
-			replacement.transferPositionReady = sourcePosition.isDone();
-			if (replacement.transferPositionReady)
-				replacement.transferPosition = Math.max(0L, sourcePosition.get(() -> replacement.transferPosition));
-			float playbackSpeed = cb.getPlaybackState().getPlaybackSpeed();
-			replacement.transferSpeed = (playbackSpeed > 0f) ? playbackSpeed : 1f;
-			replacement.transferPlayRequested = wasPlaying;
-			if (!replacement.transferPositionReady) {
-				sourcePosition.onCompletion((position, error) -> {
-					if ((replacement.transferSource != source) ||
-							!descriptor.videoId().equals(replacement.transferVideoId)) return;
-					if ((error == null) && (position != null))
-						replacement.transferPosition = Math.max(0L, position);
-					replacement.transferPositionReady = true;
-					replacement.tryCompletePendingTransfer();
-				});
-			}
-		} else if (ended) {
-			replacement.current = replacement.end;
-		}
-		replacement.qualityUrl = qualityUrl;
-		if (wasPlaying) replacement.playbackIntentGate.armExplicitPlayback();
-
-		transferSource = null;
-		externalPlaybackOwner = null;
-		externalPlaybackVideoId = "";
-		if (source != this || descriptor == null) discardBridgeState();
-		source.playbackIntentGate.reset();
-		source.fullScreenCoordinator.cancelPlayback();
-		return true;
-	}
-
-	private void completePendingTransfer() {
-		transferTargetReady = true;
-		tryCompletePendingTransfer();
-	}
-
-	private void tryCompletePendingTransfer() {
-		YoutubeMediaEngine source = transferSource;
-		if ((source == null) || !isCurrentEngine() || !transferPositionReady ||
-				!transferTargetReady) return;
-		transferSource = null;
-
-		long position = transferPosition;
-		if (!(current instanceof Current active) || (active.descriptor == null) ||
-				!transferVideoId.equals(active.descriptor.videoId())) position = 0L;
-		boolean play = transferPlayRequested && cb.isPlaying();
-		float speed = transferSpeed;
-		resetTransferState();
-
-		source.finishTransferredOut(true);
-		if (position > 0L) web.setPosition(position);
-		if (speed > 0f && speed != 1f) web.setSpeed(speed);
-		if (current instanceof Current active && active.descriptor != null)
-			web.onYoutubePlaybackItemChanged(active.descriptor);
-		if (play) web.play();
-		else web.pause();
-		cb.onEngineMetadataChanged(this);
-	}
-
-	private void finishPendingTransferSource() {
-		YoutubeMediaEngine source = transferSource;
-		if (source == null) return;
-		transferSource = null;
-		resetTransferState();
-		source.finishTransferredOut(false);
-	}
-
-	private void finishTransferredOut(boolean handoff) {
-		if (!webDestroyed) {
-			if (handoff) web.pause();
-			else web.stop();
-		}
-		discardBridgeState();
-	}
-
 	void onWebViewDestroyed() {
 		if (webDestroyed) return;
 		recordPlayback(PlaybackEvent.OWNERSHIP_LOST, playbackSessionSnapshot,
 				false, false, false, false, false, 0L);
 		clearFullscreenTapPauseGuard();
+		targetPrepareGate.cancel();
 		webDestroyed = true;
-		if (isCurrentEngine()) cb.onStop();
+		YoutubeSessionEngine owner = sessionOwner;
+		if (owner != null) owner.onDelegateDestroyed(this);
+		else if (isCurrentEngine()) cb.onStop();
 	}
 
 	private void discardBridgeState() {
@@ -902,6 +848,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		audibleStartPending = false;
 		qualityUrl = null;
 		playbackIntentGate.reset();
+		targetPrepareGate.cancel();
 		playbackSession.invalidate();
 		recordPlayback(PlaybackEvent.SESSION_INVALIDATED, playbackSessionSnapshot,
 				false, false, false, false, false, 0L);
@@ -911,15 +858,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		fullScreenCoordinator.cancelPlayback();
 		clearExternalPlaybackOwner();
 		playbackOwner.clear();
-	}
-
-	private void resetTransferState() {
-		transferVideoId = "";
-		transferPosition = 0L;
-		transferSpeed = 1f;
-		transferPlayRequested = false;
-		transferPositionReady = false;
-		transferTargetReady = false;
 	}
 
 	boolean isYoutubeActive(MainActivityDelegate a) {
@@ -943,7 +881,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		externalPlaybackVideoId = "";
 	}
 
-	private String setCurrent(String url) {
+	private ObservedPlayback observePlayback(String url) {
 		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(url, web.getUrl());
 		String pageUrl = signal.pageUrl();
 		String mediaUrl = signal.mediaUrl();
@@ -962,6 +900,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			// Keep the legacy transient item for non-video pages and malformed navigation signals.
 		}
 
+		YoutubePlaybackActivation.Reason activationReason = (descriptor == null) ? null :
+				activationReason(descriptor.videoId());
 		boolean newItem = !(current instanceof Current c) ||
 				!c.matches(descriptor, pageUrl);
 		playbackOwner.retain((descriptor == null) ? "" : descriptor.videoId());
@@ -988,8 +928,34 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		else if (titleChanged) ((Current) current).updateTitle(playbackMetadata.getTitle());
 		if (playbackSessionSnapshot != null)
 			web.setPlaybackGeneration(playbackSessionSnapshot.generation());
-		if (newItem && isCurrentEngine()) cb.onEngineMetadataChanged(this);
-		return mediaUrl;
+		if (newItem && isCurrentEngine() && callbackSourceMatchesCurrent())
+			cb.onEngineMetadataChanged(callbackEngine());
+		YoutubePlaybackSession.Snapshot snapshot = playbackSessionSnapshot;
+		YoutubePlaybackActivation activation = ((descriptor == null) || (snapshot == null) ||
+				(activationReason == null)) ? null : new YoutubePlaybackActivation(this,
+				descriptor, snapshot.generation(), activationReason);
+		return new ObservedPlayback(mediaUrl, activation);
+	}
+
+	private YoutubePlaybackActivation.Reason activationReason(String videoId) {
+		if (targetPrepareGate.isPending())
+			return YoutubePlaybackActivation.Reason.EXPLICIT_TARGET;
+		if (current == end) return YoutubePlaybackActivation.Reason.AUTO_NEXT;
+		if (isCurrentVideo(videoId)) return YoutubePlaybackActivation.Reason.RELOAD;
+		YoutubeSessionEngine owner = sessionOwner;
+		return ((owner != null) && owner.ownsVideo(videoId)) ?
+				YoutubePlaybackActivation.Reason.HOST_HANDOFF :
+				YoutubePlaybackActivation.Reason.WEB_SELECTION;
+	}
+
+	private boolean callbackSourceMatchesCurrent() {
+		if (!(current instanceof Current active) || (active.descriptor == null)) return false;
+		YoutubeSessionEngine owner = sessionOwner;
+		return (owner == null) || owner.ownsVideo(active.descriptor.videoId());
+	}
+
+	private record ObservedPlayback(String mediaUrl,
+			@Nullable YoutubePlaybackActivation activation) {
 	}
 
 	private boolean matchesCurrentSignal(String data) {
@@ -1213,8 +1179,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 				updatePlaybackSession(descriptor);
 				web.getAddon().updateYoutubeItem(descriptor);
 				invalidateMetadata();
-				if ((current == this) && isCurrentEngine())
-					cb.onEngineMetadataChanged(YoutubeMediaEngine.this);
+				if ((current == this) && isCurrentEngine() && callbackSourceMatchesCurrent())
+					cb.onEngineMetadataChanged(callbackEngine());
 			}
 		}
 

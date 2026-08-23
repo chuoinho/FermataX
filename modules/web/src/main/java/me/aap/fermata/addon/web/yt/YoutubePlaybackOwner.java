@@ -23,12 +23,6 @@ final class YoutubePlaybackOwner<T> {
 		if (!Objects.equals(videoId, activeVideoId)) clear();
 	}
 
-	void transferTo(YoutubePlaybackOwner<T> target) {
-		target.owner = owner;
-		target.videoId = videoId;
-		clear();
-	}
-
 	void clear() {
 		owner = null;
 		videoId = "";

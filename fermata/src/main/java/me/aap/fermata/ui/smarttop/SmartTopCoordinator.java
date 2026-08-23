@@ -170,10 +170,11 @@ public final class SmartTopCoordinator implements AutoCloseable {
 
 	private void loadQuickRecent(int generation, PlayableItem active) {
 		activity.getLib().getRecent().getChildren().main().onSuccess(items -> {
-			if (!owns(generation) || !isCurrent(active)) return;
+			if (!owns(generation)) return;
 			SmartTopViewState current = state;
 			if ((current == null) || (current.generation() != generation) ||
-					(current.mode() != SmartTopMode.CURRENT)) return;
+					!sameNullablePlayable(current.presentedItem(), active)) return;
+			if ((current.mode() == SmartTopMode.CURRENT) && !isCurrent(active)) return;
 			List<PlayableItem> nextRecent = recent(items, active, SmartTopViewState.MAX_QUICK_RECENT);
 			if (sameRecent(current.quickRecent(), nextRecent)) return;
 			publish(current.withQuickRecent(nextRecent));
@@ -260,6 +261,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 				SmartTopActionPolicy.resolve(mode, layout, capabilities),
 				favoriteSupported && item.isFavoriteItem(), List.of(), null);
 		publish(viewState);
+		loadQuickRecent(generation, item);
 		item.getMediaData().main().onSuccess(metadata -> {
 			if (!owns(generation)) return;
 			SmartTopViewState current = state;
@@ -294,6 +296,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 				eyebrow(SmartTopMode.RESUME), candidate.title(), candidate.subtitle(), timeline, capabilities,
 				SmartTopActionPolicy.resolve(SmartTopMode.RESUME, layout, capabilities), false, List.of(),
 				providerResult));
+		loadQuickRecent(generation, null);
 	}
 
 	@Nullable
@@ -387,6 +390,12 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		second = PlayableItemResolver.unwrap(second);
 		return TextUtils.equals(first.getOrigId(), second.getOrigId()) ||
 				TextUtils.equals(first.getId(), second.getId());
+	}
+
+	private static boolean sameNullablePlayable(@Nullable PlayableItem first,
+			@Nullable PlayableItem second) {
+		return (first == null) ? (second == null) :
+				(second != null) && samePlayable(first, second);
 	}
 
 	static boolean sameRecent(List<PlayableItem> first, List<PlayableItem> second) {

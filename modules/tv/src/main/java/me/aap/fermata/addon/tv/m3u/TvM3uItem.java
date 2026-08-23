@@ -7,6 +7,7 @@ import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_FLUSSONIC;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
 import static me.aap.fermata.util.Utils.dynCtx;
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.failed;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -24,6 +25,7 @@ import java.util.Objects;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.R;
 import me.aap.fermata.addon.tv.TvRootItem;
+import me.aap.fermata.addon.tv.TvRefreshMode;
 import me.aap.fermata.addon.tv.TvSourceItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.M3uGroupItem;
@@ -31,6 +33,8 @@ import me.aap.fermata.media.lib.M3uItem;
 import me.aap.fermata.media.lib.M3uTrackItem;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
+import me.aap.fermata.vfs.m3u.M3uFetchResult;
+import me.aap.fermata.vfs.m3u.M3uRefreshMode;
 import me.aap.utils.async.FutureRef;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
@@ -196,9 +200,27 @@ public class TvM3uItem extends M3uItem implements TvSourceItem {
 
 	@Override
 	public FutureSupplier<Void> refresh() {
+		return refresh(TvRefreshMode.MANUAL);
+	}
+
+	@Override
+	public FutureSupplier<Void> refresh(TvRefreshMode mode) {
 		TvM3uFile file = getResource();
 		prepareRemoteSource(file);
-		return super.refresh();
+		if (!isRemote(file)) return super.refresh();
+		M3uRefreshMode fetchMode = switch (mode) {
+			case AUTO -> M3uRefreshMode.AUTO;
+			case MANUAL -> M3uRefreshMode.MANUAL;
+			case EDIT -> M3uRefreshMode.EDIT;
+		};
+		return TvM3uFileSystem.getInstance().refresh(file, fetchMode,
+				KnownProviders.fetchCandidates(file.getUrl())).then(result -> {
+			if (result == null) return super.refresh();
+			if (result.state() == M3uFetchResult.State.STALE_FALLBACK)
+				return failed(result.fallbackFailure());
+			return (result.state() == M3uFetchResult.State.UPDATED) ?
+					super.refresh() : me.aap.utils.async.Completed.completedVoid();
+		});
 	}
 
 	public String getEpgUrl() {
@@ -215,11 +237,9 @@ public class TvM3uItem extends M3uItem implements TvSourceItem {
 	}
 
 	private static void prepareRemoteSource(TvM3uFile file) {
-		String oldUrl = file.getUrl();
 		KnownProviders.configure(file.getPrefs());
-		boolean changed = !Objects.equals(oldUrl, file.getUrl());
 		boolean invalid = clearInvalidRemoteCache(file);
-		if (changed || invalid) file.clearStamps();
+		if (invalid) file.invalidatePlaylistValidation();
 	}
 
 	private static boolean clearInvalidRemoteCache(TvM3uFile file) {
