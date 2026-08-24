@@ -57,7 +57,7 @@ jobs:
           java -version
           ./gradlew --version
 
-      - name: Core minSdk 28 lint probe
+      - name: Core minSdk 28 lint probe (F-1, expected red)
         shell: bash
         run: |
           set +e
