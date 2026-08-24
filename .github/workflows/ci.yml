@@ -58,9 +58,18 @@ jobs:
           ./gradlew --version
 
       - name: Core minSdk 28 lint probe (F-2, expected red)
-        run: >-
-          ./gradlew :coreprobe:lintDebug
-          --no-daemon --no-parallel --stacktrace
+        shell: bash
+        run: |
+          set +e
+          ./gradlew :coreprobe:lintDebug --no-daemon --no-parallel --stacktrace
+          status=$?
+          report=modules-probe/coreprobe/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt
+          if [ -f "$report" ]; then
+            cat "$report"
+          else
+            echo "Lint text report was not generated: $report"
+          fi
+          exit "$status"
 
       - name: Validate universal build entry point
         run: sh -n build.sh
