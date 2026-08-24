@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: chuoinho/stremio-core-java
-          ref: a8f595adf53d095aad7226dfdbed2902a8c75893
+          ref: 66fef5103df1c40a22a1d59aaebbe7cdbc0794ee
           path: stremio-core-java
 
       - name: Set up JDK 17
