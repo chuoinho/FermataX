@@ -6,10 +6,10 @@ def coreDir = file(configuredCoreDir)
 android {
     namespace = 'me.aap.fermata.coreprobe'
 
-    // F-1 disables desugaring so the baseline records every NewApi finding
-    // while lint scans the complete platform-neutral stremio-core source set.
+    // F-2 and the final gate use FermataX's production desugaring setup while
+    // lint scans the complete platform-neutral stremio-core source set.
     compileOptions {
-        coreLibraryDesugaringEnabled = false
+        coreLibraryDesugaringEnabled = true
     }
 
     sourceSets {
