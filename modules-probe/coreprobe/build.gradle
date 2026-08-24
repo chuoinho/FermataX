@@ -38,7 +38,7 @@ android {
 
     sourceSets {
         main {
-            java.srcDir generatedCoreDir
+            java.srcDir generatedCoreDir.get().asFile
         }
     }
 
