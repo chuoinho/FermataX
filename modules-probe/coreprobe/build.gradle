@@ -1,0 +1,37 @@
+def configuredCoreDir = providers.gradleProperty('stremioCoreDir')
+        .orElse(providers.environmentVariable('STREMIO_CORE_DIR'))
+        .getOrElse(rootProject.file('stremio-core-java').absolutePath)
+def coreDir = file(configuredCoreDir)
+
+android {
+    namespace = 'me.aap.fermata.coreprobe'
+
+    // F-1 intentionally disables desugaring so NewApi proves that lint scans
+    // the complete platform-neutral stremio-core source set.
+    compileOptions {
+        coreLibraryDesugaringEnabled = false
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = [
+                    new File(coreDir, 'stremio-core/src/main/java'),
+                    new File(coreDir, 'stremio-watched-bitfield/src/main/java')
+            ]
+            java.exclude 'com/stremio/core/runtime/JdkEnv.java'
+            java.exclude 'com/stremio/core/runtime/JdkHttpFetcher.java'
+            java.exclude 'com/stremio/core/runtime/JdkHttpRequests.java'
+            java.exclude 'com/stremio/core/transport/JdkAddonJsonClient.java'
+        }
+    }
+
+    lint {
+        abortOnError = true
+        checkReleaseBuilds = true
+    }
+}
+
+dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2'
+}

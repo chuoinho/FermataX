@@ -25,6 +25,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check out stremio-core-java compatibility baseline
+        uses: actions/checkout@v6
+        with:
+          repository: chuoinho/stremio-core-java
+          ref: 5ae0957e610be33ae00c5ae4de2b3323973ab21e
+          path: stremio-core-java
+
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
@@ -49,6 +56,11 @@ jobs:
         run: |
           java -version
           ./gradlew --version
+
+      - name: Core minSdk 28 lint probe (F-1, expected red)
+        run: >-
+          ./gradlew :coreprobe:lintDebug
+          --no-daemon --no-parallel --stacktrace
 
       - name: Validate universal build entry point
         run: sh -n build.sh
