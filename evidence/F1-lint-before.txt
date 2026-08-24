@@ -77,4 +77,3 @@ Collection factory NewApi count: 0
 /home/runner/work/FermataX/FermataX/stremio-core-java/stremio-core/src/main/java/com/stremio/core/models/streamingserver/StreamingServer.java:586: Error: Call requires API level 33, or core library desugaring (current min is 28): java.net.URLEncoder#encode [NewApi]
 /home/runner/work/FermataX/FermataX/stremio-core-java/stremio-core/src/main/java/com/stremio/core/types/streamingserver/TorrentStatisticsRequest.java:24: Error: Call requires API level 33, or core library desugaring (current min is 28): java.net.URLEncoder#encode [NewApi]
 /home/runner/work/FermataX/FermataX/stremio-core-java/stremio-core/src/main/java/com/stremio/core/transport/UnsupportedTransport.java:28: Error: Call requires API level 31 (current min is 28): java.util.concurrent.CompletableFuture#failedFuture [NewApi]
-
