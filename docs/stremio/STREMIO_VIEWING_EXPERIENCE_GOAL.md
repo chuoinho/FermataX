@@ -1,5 +1,8 @@
 # FermataX Stremio Viewing Experience Goal
 
+> Status: SUPERSEDED. This native UI direction is retained as historical context only. The current
+> normative plan is [`web-only/README.md`](web-only/README.md).
+
 Status: active product direction
 
 Created: 2026-07-22

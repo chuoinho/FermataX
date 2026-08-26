@@ -1,5 +1,8 @@
 # FermataX Stremio P2P Reliability Technical Plan
 
+> Status: HISTORICAL. Native P2P/torrent work is not part of the current Stremio Web-only model;
+> see [`web-only/README.md`](web-only/README.md).
+
 Status: implementation complete; DHU/device acceptance pending
 Scope owner: `modules/stremio/.../torrent`
 

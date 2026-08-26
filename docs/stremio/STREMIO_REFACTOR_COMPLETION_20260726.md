@@ -1,5 +1,8 @@
 # Stremio Behavior-Preserving Refactor Completion
 
+> Status: HISTORICAL EVIDENCE for the retired native Stremio implementation. The current
+> implementation authority is [`web-only/README.md`](web-only/README.md).
+
 Date: 2026-07-26
 
 ## Scope and invariant

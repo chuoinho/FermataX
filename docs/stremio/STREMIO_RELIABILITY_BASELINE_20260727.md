@@ -1,5 +1,8 @@
 # Stremio Reliability Baseline
 
+> Status: HISTORICAL BASELINE for the retired native Stremio implementation. The current
+> implementation authority is [`web-only/README.md`](web-only/README.md).
+
 Captured: 2026-07-27
 
 This baseline starts the reliability program in

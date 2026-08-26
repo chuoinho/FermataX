@@ -1,5 +1,8 @@
 # Stremio Phase 0 Baseline
 
+> Status: HISTORICAL BASELINE for the retired native Stremio implementation. The current
+> implementation authority is [`web-only/README.md`](web-only/README.md).
+
 Captured: 2026-07-21
 
 ## Source State

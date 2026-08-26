@@ -1,5 +1,8 @@
 # Stremio Acceptance Report
 
+> Status: HISTORICAL EVIDENCE for the retired native Stremio implementation. The current
+> implementation authority is [`web-only/README.md`](web-only/README.md).
+
 Status: release candidate; device/DHU acceptance pending
 
 Last updated: 2026-07-23

@@ -1,5 +1,8 @@
 # FermataX Stremio Reliability Implementation Guide
 
+> Status: SUPERSEDED. This native-addon implementation guide is historical reference only. The
+> current normative plan is [`web-only/README.md`](web-only/README.md).
+
 Status: implementation specification
 
 This document is the handoff contract for an implementation agent. The objective is not to fix a

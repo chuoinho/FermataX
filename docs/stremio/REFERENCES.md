@@ -1,5 +1,8 @@
 # Stremio Reference Register
 
+> Status: HISTORICAL REFERENCE. It does not authorize the retired native Stremio architecture;
+> use [`web-only/README.md`](web-only/README.md) for current references.
+
 This file freezes the Phase 0 research inputs for the FermataX Stremio addon. It is a provenance
 register, not permission to copy an upstream implementation. Protocol behavior must be verified
 against the primary Stremio specifications before third-party code is consulted.

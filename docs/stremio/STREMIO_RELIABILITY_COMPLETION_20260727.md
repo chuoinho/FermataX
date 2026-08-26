@@ -1,5 +1,8 @@
 # Stremio Reliability Implementation Report
 
+> Status: HISTORICAL EVIDENCE for the retired native Stremio implementation. The current
+> implementation authority is [`web-only/README.md`](web-only/README.md).
+
 Date: 2026-07-27
 Specification: `docs/stremio/STREMIO_RELIABILITY_IMPLEMENTATION_GUIDE.md`
 

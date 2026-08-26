@@ -1,5 +1,8 @@
 # FermataX Stremio Addon Goal and Technical Plan
 
+> Status: SUPERSEDED. This native-addon goal is retained as historical evidence only. The current
+> normative plan is [`web-only/README.md`](web-only/README.md).
+
 Status: backend foundation implemented; active UX work moved to
 `STREMIO_VIEWING_EXPERIENCE_GOAL.md`
 
