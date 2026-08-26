@@ -72,13 +72,27 @@ would be a different architecture and is prohibited by this package.
 | Hosted production origin renders in Fermata WebView | PASS |
 | Canonical detail route observable without DOM scraping | PASS |
 | External server can become ready through the hosted Web contract | PASS (external test process only) |
-| Login/addon configuration flow | NOT OBSERVED (anonymous profile only) |
-| Android external-player setting persists through hosted state | NOT OBSERVED (anonymous profile cannot change it) |
-| Direct MP4/HLS external-player intent | BLOCKED |
+| Login/addon configuration flow | PASS: authenticated profile rendered and persisted in the hosted WebView |
+| Android external-player setting persists through hosted state | PASS: Android UI exposed and stored `Allow choosing` |
+| Direct MP4/HLS external-player intent | BLOCKED: no callback observed |
 | Magnet/no-server negative behavior | PARTIAL: hosted UI reports unavailable; no selectable stream fixture |
 | Renderer recovery subtype | NOT OBSERVED |
 
 The production refactor must not start until an approved, externally provided Stremio Core/server
-environment **and a test Stremio profile** demonstrate a real direct MP4/HLS
+environment demonstrates a real direct MP4/HLS
 `deepLinks.externalPlayer` handoff on the device. If that environment is outside scope, the
 Web-only plan has a design blocker rather than an implementation task.
+
+## Authenticated External-Player Evidence (2026-08-26)
+
+An authenticated Stremio Web profile was used only through the visible hosted UI on the physical
+device. The Player setting `Play in external player` was changed from `Disabled` to
+`Allow choosing`, and the selected value remained visible after navigation. No account identity,
+cookie, addon configuration, token, or URL was retained in this repository.
+
+A direct-MP4 fixture was then attempted through Stremio Web's own `Search or paste link` field.
+The field became focused, but Android text injection could not deliver a value to the cloned
+Fermata display. The activity then produced a real Android ANR and recovered after selecting
+the system `Wait` action. No media callback, navigation override, new-window event, or external
+player chooser was observed. This is negative evidence only: it does not establish a handoff
+contract and keeps the direct-MP4/HLS gate blocked.

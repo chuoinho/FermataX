@@ -62,15 +62,28 @@ final Fermata APK, and the plan forbids building or embedding a replacement.
 An approved external test environment must be supplied and proven on device for all of the
 following before Phase 1 starts:
 
-1. hosted Web login/addon configuration (the observed anonymous profile cannot persist the Player
-   setting);
-2. Android external-player setting (`Allow choosing`);
-3. direct MP4 and HLS `deepLinks.externalPlayer` callbacks;
-4. safe no-server magnet behavior; and
-5. client-subtype renderer recovery.
+1. direct MP4 and HLS `deepLinks.externalPlayer` callbacks;
+2. safe no-server magnet behavior; and
+3. client-subtype renderer recovery.
+
+## Authenticated Retest (2026-08-26)
+
+The test profile was authenticated in the hosted Stremio Web UI on the physical device. Its
+Player setting was changed through the Android UI from `Disabled` to `Allow choosing`, and the
+persisted selected value was observed after navigation. This closes the login/configuration
+sub-gate without collecting account or credential material.
+
+The direct-MP4 fixture was attempted only via Stremio Web's visible `Search or paste link` input.
+The Android keyboard opened, but shell text injection could not enter data into the cloned display;
+the main activity subsequently produced an Android ANR and recovered after the system `Wait`
+action. There was no observed WebView external navigation, chooser, or callback URI. HLS was not
+attempted after this failure because the same input path is required.
+
+The new observed ANR means renderer/client recovery remains not observed and the phase cannot
+advance. It does not change production code or establish a direct-playback implementation path.
 
 ## Exit Gate
 
-**PARTIAL / BLOCKED.** The route contract passes, but the required direct URL handoff has not
-been observed and cannot be fabricated without violating the approved architecture. Per the
-implementation plan, phases 1 through 8 must not begin.
+**PARTIAL / BLOCKED.** Hosted login and external-player preference persistence now pass, but the
+required direct URL handoff has not been observed. The real input-path ANR is an additional
+physical-device blocker. Per the implementation plan, phases 1 through 8 must not begin.
