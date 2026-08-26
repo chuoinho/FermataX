@@ -85,12 +85,9 @@ a player/detail navigation entry in the latest run: its Forward action returned 
 but that player surface was also blank. Reopening FermataX and loading the hosted home recovered
 the catalog, so this is not persistent profile or storage corruption.
 
-The physical evidence does not identify a JavaScript exception, rejected promise, network request,
-or renderer restart. A direct comparison was attempted with `com.kododake.aabrowser`, which uses
-the same installed Android System WebView (`com.android.webview 145.0.7632.109`). The browser could
-be launched, but its independent menu navigation did not complete a valid Stremio page load and it
-does not share the authenticated FermataX Stremio session. The upstream comparison is therefore
-**BLOCKED/INCONCLUSIVE**, not evidence that the behavior is upstream or Android WebView.
+The physical evidence did not initially identify a JavaScript exception, rejected promise, network
+request, or renderer restart. That initial classification was superseded by the independent-browser
+comparison below.
 
 | Scenario | Result | Observed evidence |
 | --- | --- | --- |
@@ -104,10 +101,39 @@ does not share the authenticated FermataX Stremio session. The upstream comparis
 | Three repeated fullscreen cycles | BLOCKED | First Android Back invalidates the player/detail surface |
 | Fullscreen -> background -> resume | BLOCKED | Cannot hold a valid fullscreen session after exit failure |
 | Orientation / lock-screen fullscreen | BLOCKED | Not attempted after the exit failure |
-| Upstream independent-browser comparison | BLOCKED/INCONCLUSIVE | AABrowser navigation/session unavailable |
+| Upstream independent-browser comparison | PASS | Reproduced in AABrowser; desktop Chromium returns to detail |
 
 No production, test, or build-script code was changed in this follow-up. Consequently no build was
 rerun; the previously recorded unit and release-build gates remain the relevant build evidence.
+
+### Independent Browser Classification
+
+The independent comparison was completed on the same Redmi Note 8 without using FermataX's
+`StremioWebFragment`, `FermataChromeClient`, preferences, or navigation code. `com.kododake.aabrowser`
+opened public `web.stremio.com`, loaded the same `Obsession` detail, played the same trailer, and
+then received Android Back. After eight seconds it showed the same blank hosted surface. Remote
+inspection showed the expected detail hash while `#app` had been unmounted to an empty 20-byte
+element. Reloading that same hash restored the detail page.
+
+An error listener installed before the independent trailer run captured this exception from the
+hosted Stremio bundle:
+
+```text
+Uncaught TypeError: Cannot read properties of undefined (reading 'setActionHandler')
+source: https://web.stremio.com/.../scripts/main.js
+```
+
+Both the FermataX WebView and AABrowser reported `navigator.mediaSession` as absent, including an
+absent `setActionHandler`. The installed Android System WebView provider was
+`com.android.webview 145.0.7632.109`. In contrast, the same public detail -> trailer -> browser
+Back flow in independent desktop Chromium restored the detail route and DOM; its only console
+warning was a non-fatal YouTube iframe attachment warning.
+
+Classification is therefore **UPSTREAM_STREMIO_WEB on Android WebView**: the hosted bundle invokes
+the unsupported Media Session API without a guard on this WebView path, then leaves the application
+root empty. It is not attributable to FermataX integration. No production workaround is applied:
+injecting a Media Session shim, reloading every Back, or manipulating Stremio DOM/router state would
+violate the hosted-app boundary and could conceal upstream state errors.
 
 ### Streaming Server Status
 
@@ -122,7 +148,7 @@ server-backed playback evidence.
 **PARTIAL.** Addon registration, hosted-session retention, inline trailer playback, inline
 background/resume, and browser custom-view fullscreen entry are observed. Fullscreen exit with
 Android Back and player-to-detail navigation are not accepted because they produce the hosted blank
-surface. Their classification remains **INCONCLUSIVE** pending a valid independent-browser
-reproduction or further browser-level evidence. Server-backed playback remains
+surface. Independent AABrowser evidence classifies that failure as **UPSTREAM_STREMIO_WEB on
+Android WebView**, not a FermataX integration defect. Server-backed playback remains
 **BLOCKED_USER_CONFIGURATION**. This result must not be converted into a native fallback
 implementation.
