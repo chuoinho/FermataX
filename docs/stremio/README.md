@@ -2,21 +2,27 @@
 
 ## Current Architecture
 
-The authoritative design for the FermataX Stremio addon is the hosted Web-only model in
-[`web-only/README.md`](web-only/README.md). It replaces the legacy native Stremio implementation
-with a dedicated `web.stremio.com` WebView surface in `modules/web`, and hands only validated
-HTTP(S) media URLs to the existing Fermata player.
+The authoritative design is the hosted, inline WebView model documented in
+[`web-only/README.md`](web-only/README.md). FermataX hosts the official
+`https://web.stremio.com/#/` UI and its HTML5 `stremio-video` player.
 
-Read the documents in `web-only/` in their numbered order. `08_TRACEABILITY_MATRIX.md` is the
-requirements-to-verification index and `03_IMPLEMENTATION_PLAN.md` defines the mandatory phase
-gates.
+FermataX owns only addon registration, WebView lifecycle/storage, browser custom-view fullscreen,
+activity video mode, and back/navigation integration. Stremio Web owns login, addons, catalog,
+search, library, settings, stream selection, player state, playback and progress.
 
-## Status Of Earlier Documents
+There is no external-player callback, URL handoff, VLC/native renderer, JavaScript-to-native
+playback bridge, torrent engine, bundled streaming server, Stremio Core, or `aauto.aar` change in
+this architecture. A user who needs torrent playback configures a compatible streaming server in
+Stremio Web settings; its HTTP/HLS result is played by the hosted HTML5 player.
 
-The other files in this directory describe the previous native Stremio addon. They remain as
-historical evidence and protocol/reference material only; they are not an implementation target.
-In particular, no document outside `web-only/` authorizes a Core bridge, a native streaming server,
-or bundled torrent runtime.
+## Build Selection
 
-The legacy source remains in the repository until the Web-only migration reaches its cleanup gate.
-It must not be used as a runtime fallback.
+`-PWEB_STREMIO=true` replaces legacy `:stremio` with the Web-only addon at build time. It registers
+exactly one `stremio_fragment` from `:web` and excludes the legacy `jlibtorrent` feature graph.
+Without the property, the existing production graph is unchanged.
+
+## Historical Material
+
+Documents outside `web-only/` and Phase 0B evidence are historical only. The Phase 0B
+external-player experiment is retained as evidence of an architecture that was later rejected; it
+is not a release gate or a fallback path.

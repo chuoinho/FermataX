@@ -70,8 +70,8 @@ public class WebBrowserFragment extends MainActivityFragment
 		Context ctx = view.getContext();
 		FermataWebView webView = view.findViewById(R.id.browserWebView);
 		ViewGroup fullScreenView = view.findViewById(R.id.browserFullScreenView);
-		FermataWebClient webClient = new FermataWebClient();
-		FermataChromeClient chromeClient = new FermataChromeClient(webView, fullScreenView);
+		FermataWebClient webClient = createWebClient();
+		FermataChromeClient chromeClient = createChromeClient(webView, fullScreenView);
 		webView.init(addon, webClient, chromeClient);
 		addon.attachRuntimeFragment(this);
 		if (!addon.attachExternalFragment(this)) webView.loadUrl(addon.getLastUrl());
@@ -199,7 +199,7 @@ public class WebBrowserFragment extends MainActivityFragment
 				v.loadUrl(url);
 			}
 		} else {
-			WebBrowserAddon addon = AddonManager.get().getAddon(WebBrowserAddon.class);
+			WebBrowserAddon addon = getAddon();
 			if (addon != null) addon.setLastUrl(url);
 		}
 	}
@@ -292,6 +292,16 @@ public class WebBrowserFragment extends MainActivityFragment
 
 	protected boolean isDesktopVersionSupported() {
 		return true;
+	}
+
+	@NonNull
+	protected FermataWebClient createWebClient() {
+		return new FermataWebClient();
+	}
+
+	@NonNull
+	protected FermataChromeClient createChromeClient(FermataWebView webView, ViewGroup fullScreenView) {
+		return new FermataChromeClient(webView, fullScreenView);
 	}
 
 	@Override

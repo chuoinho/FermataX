@@ -1,6 +1,9 @@
 gradle.ext.modules = []
 def abi = gradle.startParameter.projectProperties.get('ABI')
 gradle.ext.abiFilters = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86_64']
+// A Web-only Stremio build replaces the legacy dynamic feature at build time. Keeping the
+// default false preserves the existing production graph until the migration is accepted.
+gradle.ext.webStremioEnabled = gradle.startParameter.projectProperties.get('WEB_STREMIO') == 'true'
 
 gradle.ext.localProps = new Properties()
 gradle.ext.enableGoogleServices = (System.getenv('NO_GS') == null)
@@ -113,6 +116,7 @@ project(':coreprobe').projectDir = file('modules-probe/coreprobe')
 file('modules').eachDir {
     def name = ':' + it.name
     if ((':gdrive' == name) && !gradle.ext.enableGoogleServices) return
+    if ((':stremio' == name) && gradle.ext.webStremioEnabled) return
     gradle.ext.modules.add(name)
     include name
     project(name).projectDir = it

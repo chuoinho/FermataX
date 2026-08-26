@@ -54,7 +54,6 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 		ExternalPlaybackHandler, WebExternalMediaEngine.Host, AutomotiveShutdownParticipant {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(WebBrowserAddon.class.getName());
-	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
 	public static final int DARK_MODE_DISABLED = 0;
 	public static final int DARK_MODE_ENABLED = 1;
 	public static final int DARK_MODE_AUTO = 2;
@@ -71,6 +70,7 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	private static final Pref<BooleanSupplier> WEB_OPEN_ON_START = Pref.b("WEB_OPEN_ON_START", false);
 	private static final Pref<Supplier<String[]>> BOOKMARKS = Pref.sa("BOOKMARKS");
 	private final SharedPreferences prefs;
+	private final Pref<Supplier<String>> lastUrl;
 	private boolean ignorePrefChange;
 	private WebExternalMediaEngine externalEngine;
 	private WebBrowserFragment externalFragment;
@@ -79,7 +79,12 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	private static final long EXTERNAL_ATTACH_RETRY_MS = 100L;
 
 	public WebBrowserAddon() {
-		prefs = App.get().getSharedPreferences("web", Context.MODE_PRIVATE);
+		this("web", "http://google.com");
+	}
+
+	protected WebBrowserAddon(String preferenceFile, String initialUrl) {
+		prefs = App.get().getSharedPreferences(preferenceFile, Context.MODE_PRIVATE);
+		lastUrl = Pref.s("LAST_URL", initialUrl);
 	}
 
 	@IdRes
@@ -398,11 +403,11 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 		getPreferenceStore().applyStringArrayPref(getBookmarksPref(), p);
 	}
 
-	String getLastUrl() {
-		return getPreferenceStore().getStringPref(LAST_URL);
+	protected String getLastUrl() {
+		return getPreferenceStore().getStringPref(lastUrl);
 	}
 
-	void setLastUrl(String url) {
-		getPreferenceStore().applyStringPref(LAST_URL, url);
+	protected void setLastUrl(String url) {
+		getPreferenceStore().applyStringPref(lastUrl, url);
 	}
 }
