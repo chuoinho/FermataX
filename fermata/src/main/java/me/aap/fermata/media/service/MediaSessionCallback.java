@@ -174,6 +174,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private final PlaybackCustomActions playbackActions;
 	private final BroadcastReceiver onNoisy;
 	private MediaEngine engine;
+	private ControlOnlyDelegate controlOnlyDelegate;
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
 	private boolean isMuted;
@@ -295,6 +296,55 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Nullable
 	public MediaEngine getEngine() {
 		return engine;
+	}
+
+	/**
+	 * A short-lived transport owner for renderers which remain outside Fermata's media-engine
+	 * pipeline. It cannot supply a source, decoder, audio focus, position, or stream URL.
+	 */
+	public interface ControlOnlyDelegate {
+		boolean isControlOnlyActive();
+
+		boolean dispatchControlOnlyAction(ControlOnlyAction action);
+	}
+
+	public enum ControlOnlyAction { PLAY, PAUSE, NEXT_TRACK }
+
+	public boolean claimControlOnly(@NonNull ControlOnlyDelegate delegate, int state,
+			long actions, @Nullable MediaMetadataCompat nextMetadata) {
+		if (terminal || !delegate.isControlOnlyActive() || (engine != null)) return false;
+		ControlOnlyDelegate current = controlOnlyDelegate;
+		if ((current != null) && (current != delegate)) return false;
+		controlOnlyDelegate = delegate;
+		long supported = ACTION_PLAY | ACTION_PAUSE | ACTION_PLAY_PAUSE;
+		if ((actions & ACTION_SKIP_TO_NEXT) != 0) supported |= ACTION_SKIP_TO_NEXT;
+		metadata = nextMetadata;
+		session.setMetadata(nextMetadata);
+		setPlaybackState(new PlaybackStateCompat.Builder().setActions(supported)
+				.setState(state, 0L, 1f).build(), null, nextMetadata);
+		return true;
+	}
+
+	public void releaseControlOnly(@NonNull ControlOnlyDelegate delegate) {
+		if (controlOnlyDelegate != delegate) return;
+		controlOnlyDelegate = null;
+		if (engine != null) return;
+		metadata = null;
+		session.setMetadata(null);
+		setPlaybackState(new PlaybackStateCompat.Builder().setActions(0L)
+				.setState(STATE_NONE, 0L, 1f).build(), null, null);
+		session.setActive(false);
+	}
+
+	private boolean dispatchControlOnlyAction(ControlOnlyAction action) {
+		ControlOnlyDelegate delegate = controlOnlyDelegate;
+		if ((delegate == null) || !delegate.isControlOnlyActive()) return false;
+		try {
+			return delegate.dispatchControlOnlyAction(action);
+		} catch (RuntimeException error) {
+			Log.d(error, "Control-only media action failed");
+			return false;
+		}
 	}
 
 	@Override
@@ -738,6 +788,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPlay() {
+		if (dispatchControlOnlyAction(ControlOnlyAction.PLAY)) return;
 		if (terminal) return; permanentFocusLoss.cancel();
 		playerTask.cancel();
 		playerTask = play();
@@ -838,6 +889,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPause() {
+		if (dispatchControlOnlyAction(ControlOnlyAction.PAUSE)) return;
 		if (terminal) return;
 		PlayableItem i;
 		MediaEngine eng = getEngine();
@@ -992,6 +1044,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onSkipToNext() {
+		if (dispatchControlOnlyAction(ControlOnlyAction.NEXT_TRACK)) return;
 		if (terminal) return; permanentFocusLoss.cancel();
 		playerTask.cancel();
 		playerTask = skipTo(true, false);

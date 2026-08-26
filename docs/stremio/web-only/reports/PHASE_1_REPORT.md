@@ -152,3 +152,63 @@ surface. Independent AABrowser evidence classifies that failure as **UPSTREAM_ST
 Android WebView**, not a FermataX integration defect. Server-backed playback remains
 **BLOCKED_USER_CONFIGURATION**. This result must not be converted into a native fallback
 implementation.
+
+## Phase 2A/2B - WebView Media Session Compatibility and Control Bridge
+
+Android System WebView `145.0.7632.109` on the Redmi Note 8 does not provide
+`navigator.mediaSession`. The hosted Stremio bundle calls `setActionHandler` during player
+cleanup, which caused the previously observed unguarded exception and blank `#app` surface.
+
+FermataX now supplies a Stremio-only, document-start compatibility layer only when the browser API
+is absent. It is restricted to the exact `https://web.stremio.com` main-frame origin. The shim
+supports only the API that the current Stremio Web player invokes: `playbackState`, `metadata`,
+`MediaMetadata`, and `play`/`pause`/`nexttrack` handlers. The native bridge uses AndroidX WebKit
+`addWebMessageListener`; it does not use `addJavascriptInterface`, DOM selectors, router changes,
+stream extraction, a native renderer, or a player URL.
+
+The temporary native MediaSession delegate is control-only. It claims controls only while the
+Stremio fragment is active and the current document has a valid, non-`none` playback state plus a
+play or pause handler. It dispatches only fixed play, pause, and next callbacks. It owns no
+decoder, source, item, URL, position, duration, progress, audio focus, or streaming transport.
+Fragment switch/hide, document navigation, session close, WebView destruction, and renderer
+replacement release the claim. Each document has a fresh opaque token, so stale page messages are
+ignored.
+
+### Phase 2 Physical Evidence
+
+Device: Redmi Note 8, Android 16, serial `15c36230`; signed Auto universal release APK.
+
+- DevTools on the hosted Obsession detail confirmed `navigator.mediaSession` is an `object`, the
+  Fermata shim reports version `1`, and `#app` has rendered children.
+- The 2:13 Obsession YouTube trailer rendered and played under `#/player/...`; Chromium requested
+  audio focus, while `dumpsys media_session` showed Fermata's control-only state `PLAYING` with
+  play, pause, toggle, and no advertised next action.
+- ADB `KEYCODE_MEDIA_PAUSE`, `KEYCODE_MEDIA_PLAY`, and two `KEYCODE_MEDIA_PLAY_PAUSE` operations
+  produced exactly the expected `PAUSED`, `PLAYING`, `PAUSED`, and `PLAYING` MediaSession states.
+  `KEYCODE_MEDIA_NEXT` left state unchanged because this page did not register `nexttrack`.
+- `detail -> trailer -> browser custom fullscreen -> Android Back` returned to a rendered Obsession
+  detail surface. Filtered logcat contained no `setActionHandler` exception, crash, or ANR.
+- Leaving Stremio for Dashboard released its claim immediately: `active=false`, `state=NONE`, and
+  `actions=0`. A subsequent Play key was handled by the native media engine, not the Stremio page.
+
+### Phase 2 Gates
+
+- `gradlew projects -PWEB_STREMIO=true`: PASS; `:stremio` is absent.
+- `gradlew :web:dependencies --configuration mobileDebugRuntimeClasspath -PWEB_STREMIO=true`:
+  PASS; no `jlibtorrent` or new player/torrent dependency.
+- `gradlew :web:testMobileDebugUnitTest -PWEB_STREMIO=true`: PASS.
+- `gradlew :fermata:assembleAutoRelease :fermata:packageAutoReleaseUniversalApk
+  -PWEB_STREMIO=true`: PASS.
+- `aauto.aar` SHA-256 remained
+  `99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+- Universal APK signer SHA-256:
+  `A8:6D:57:6F:F1:EC:0E:32:45:F5:A6:15:2C:5D:8D:66:B5:DF:8B:B5:10:82:0D:75:DC:61:11:0B:19:C3:AE:B4`.
+
+### Remaining Limits
+
+Automotive/DHU hardware-host controls were not attached in this run:
+`AUTOMOTIVE_HOST_NOT_VERIFIED`. The Web page did not expose `nexttrack`, so next callback dispatch
+is covered by unit behavior but not physical-player evidence. Streaming-server-backed playback,
+seek, subtitle/audio-track handling, and renderer-replacement recovery remain
+`BLOCKED_USER_CONFIGURATION` or unobserved. The hosted HTML5/Chromium renderer remains the sole
+player.
