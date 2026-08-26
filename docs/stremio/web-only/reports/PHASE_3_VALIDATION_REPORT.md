@@ -59,27 +59,48 @@ replacement path already preserves the Stremio-specific bridge boundary.
 
 ## Streaming Server and Real Stream Playback
 
-Hosted Stremio Web still reports that its streaming server is unavailable. No server URL, token,
-or endpoint was configured, logged, or stored during validation. The project must not use an
-unknown public torrent server or fabricate a server URL.
+An **ephemeral local** instance of official Stremio Server 4.21.0 was used only for this
+follow-up validation. Its downloaded `server.js` had SHA-256
+`82175D7982BCE864DF071DF93B4B3D567A401E65881A8AC579D7DB0CE71DAFD7`.
+It ran on the development PC at loopback port 11470 with an isolated temporary state directory;
+`adb reverse tcp:11470 tcp:11470` made it reachable from the physical phone. Device
+`/heartbeat` returned `{"success":true}`, the hosted Web UI accepted the bootstrap endpoint, and
+its prior streaming-server-unavailable banner disappeared.
+
+The server's own `/settings` and `/samples/hevc.mkv` endpoints returned HTTP 200. This proves
+reachability and the temporary server's HTTP surface only; the embedded HEVC sample is not a
+playable-content acceptance fixture.
+
+A local-only torrent fixture was then created from a public sample video. Its tracker and seeder
+ran only on loopback; no public tracker or public torrent server was used. The tracker observed
+both the seeder and Stremio Server client, but Stremio Server closed each peer connection before
+transferring data: stream progress and downloaded bytes remained zero. A second local WebTorrent
+client also timed out against this fixture, so it is invalid as a server-backed playback fixture
+and is not evidence of a FermataX failure. The server also did not have `ffmpeg`, preventing an
+HLS-transcode acceptance claim.
 
 | Check | Result |
 | --- | --- |
-| Streaming-server configuration | `BLOCKED_USER_CONFIGURATION` |
-| HTTP/HLS or torrent-backed playback | `BLOCKED_USER_CONFIGURATION` |
-| Duration/position/seek/resume | `BLOCKED_USER_CONFIGURATION` |
-| Subtitle and audio-track selection | `BLOCKED_USER_CONFIGURATION` |
-| Server failure/reconnect matrix | `BLOCKED_USER_CONFIGURATION` |
+| Temporary local server reachability | PASS |
+| Server HTTP health/settings surface | PASS |
+| Physical server-backed HTTP playback through Stremio player | `BLOCKED_FIXTURE_UNAVAILABLE` |
+| Local torrent engine transfer | `BLOCKED_FIXTURE_INVALID` |
+| HLS-transcode playback | `BLOCKED_FFMPEG_UNAVAILABLE` |
+| Duration/position/seek/resume | `BLOCKED_FIXTURE_UNAVAILABLE` |
+| Subtitle and audio-track selection | `BLOCKED_FIXTURE_UNAVAILABLE` |
+| Server failure/reconnect matrix | `BLOCKED_FIXTURE_UNAVAILABLE` |
 | Physical `nexttrack` episode transition | `BLOCKED_FIXTURE_UNAVAILABLE` |
 
-The only observed playback is the hosted Obsession HTML5 trailer. It must not be treated as
-evidence of server-backed content playback, subtitle support, seeking, audio-track switching,
-or episode progression.
+The only observed playback remains the hosted Obsession HTML5 trailer. It must not be treated as
+evidence of server-backed content playback, subtitle support, seeking, audio-track switching, or
+episode progression. The temporary server, ADB reverse rule, isolated state/cache, local media,
+fixture scripts, npm packages, and temporary screenshots are removed after this validation. No
+endpoint, credential, token, or capability is stored in FermataX source control or diagnostics.
 
-To run the blocked matrix, the user must provide or configure a valid streaming-server endpoint
-reachable by the phone, whether it requires authentication, and a non-sensitive playable fixture
-(movie, multi-episode series, subtitle fixture, and optionally multi-audio fixture). The endpoint
-and credentials must remain out of source control and validation reports.
+To complete the blocked matrix, use a reproducibly valid local fixture with a working standard
+BitTorrent seeder or an approved HTTP/HLS Stremio stream, plus a real series, subtitle, and
+multi-audio fixture. The endpoint and all credentials must remain out of source control and
+validation reports.
 
 ## Regression and Build Gates
 
