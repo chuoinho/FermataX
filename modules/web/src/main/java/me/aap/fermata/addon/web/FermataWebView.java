@@ -40,6 +40,8 @@ import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.external.ExternalPlaybackRequest;
+import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsSnapshot;
+import me.aap.fermata.addon.web.FermataWebClient.PageEvent;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.policy.RuntimeHostMode;
@@ -367,9 +369,28 @@ public class FermataWebView extends WebView
 	public boolean exitFullScreenForBack() {
 		FermataChromeClient c = getWebChromeClient();
 		if ((c == null) || !c.isFullScreen()) return false;
+		FermataWebClient.diagnosticsObserver().onFullscreen(
+				FermataWebClient.FullscreenEvent.BACK_EXIT_REQUESTED,
+				DiagnosticsSnapshot.builder().web(isShown(), isAttachedToWindow(), getWidth(), getHeight())
+						.fullscreen(true, isAppVideoMode()).build());
 		onUserExitFullScreen();
 		c.exitFullScreen();
 		return true;
+	}
+
+	@Override
+	public void goBack() {
+		FermataChromeClient c = getWebChromeClient();
+		FermataWebClient.diagnosticsObserver().onPage(PageEvent.HISTORY_BACK_DISPATCHED,
+				DiagnosticsSnapshot.builder().web(isShown(), isAttachedToWindow(), getWidth(), getHeight())
+						.result(true, canGoBack()).fullscreen((c != null) && c.isFullScreen(),
+								isAppVideoMode()).build());
+		super.goBack();
+	}
+
+	private boolean isAppVideoMode() {
+		MainActivityDelegate activity = FermataChromeClient.getLiveActivity(getContext());
+		return (activity != null) && activity.isVideoMode();
 	}
 
 	protected void onUserExitFullScreen() {

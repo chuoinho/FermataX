@@ -19,6 +19,9 @@ public class DiagnosticSanitizerTest {
 		assertTrue(DiagnosticSchema.isEvent("application_initialized"));
 		assertTrue(DiagnosticSchema.isEvent("input_received"));
 		assertTrue(DiagnosticSchema.isEvent("database_open_retry"));
+		assertTrue(DiagnosticSchema.isEvent("back_exit_requested"));
+		assertTrue(DiagnosticSchema.isEvent("history_back_dispatched"));
+		assertTrue(DiagnosticSchema.isEvent("history_back_suppressed"));
 		assertTrue(DiagnosticSchema.isOperation("protocol_request"));
 		assertFalse(DiagnosticSchema.isCategory("private_movie"));
 		assertFalse(DiagnosticSchema.isEvent("private_query"));

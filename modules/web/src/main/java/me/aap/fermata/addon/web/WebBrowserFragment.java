@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,7 +48,10 @@ import me.aap.utils.ui.view.ToolBarView;
 @SuppressWarnings("unused")
 public class WebBrowserFragment extends MainActivityFragment
 		implements OverlayMenu.SelectionHandler, MainActivityListener {
+	private static final long FULLSCREEN_BACK_DUPLICATE_WINDOW_MS = 250L;
+
 	private boolean fullScreenOnResume;
+	private long suppressHistoryBackUntil;
 
 	@Override
 	public int getFragmentId() {
@@ -223,9 +227,23 @@ public class WebBrowserFragment extends MainActivityFragment
 		if (v == null) return false;
 		FermataChromeClient chrome = v.getWebChromeClient();
 		boolean fullScreen = (chrome != null) && chrome.isFullScreen();
+		long now = SystemClock.elapsedRealtime();
+		if (!fullScreen && (now < suppressHistoryBackUntil)) {
+			suppressHistoryBackUntil = 0L;
+			FermataWebClient.diagnosticsObserver().onPage(
+					FermataWebClient.PageEvent.HISTORY_BACK_SUPPRESSED,
+					FermataWebClient.DiagnosticsSnapshot.builder().web(v.isShown(), v.isAttachedToWindow(),
+							v.getWidth(), v.getHeight()).result(true, v.canGoBack()).build());
+			return true;
+		}
+		suppressHistoryBackUntil = 0L;
 
 		return switch (WebBackNavigationPolicy.resolve(fullScreen, v.canGoBack())) {
-			case EXIT_FULLSCREEN -> v.exitFullScreenForBack();
+			case EXIT_FULLSCREEN -> {
+				boolean exited = v.exitFullScreenForBack();
+				if (exited) suppressHistoryBackUntil = now + FULLSCREEN_BACK_DUPLICATE_WINDOW_MS;
+				yield exited;
+			}
 			case WEB_HISTORY -> {
 				v.goBack();
 				yield true;

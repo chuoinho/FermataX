@@ -168,19 +168,21 @@ public class FermataChromeClient extends WebChromeClient {
 
 	@Override
 	public void onHideCustomView() {
-		if (customViewCallback == null) return;
-		touchStamp = 0;
-		MainActivityDelegate a = getLiveActivity(customView.getContext());
-		if (a == null) a = getLiveActivity(web.getContext());
-		diagnosticsObserver.onCustomView(CustomViewEvent.DETACH_REQUESTED,
-				customViewSnapshot(customView, a));
-		videoScale.detach();
-		removeCustomView(customView);
-		getWebView().setVisibility(VISIBLE);
-		if (a != null) setFullScreen(a, false);
-		customViewCallback.onCustomViewHidden();
+		CustomViewCallback callback = customViewCallback;
+		if (callback == null) return;
+		View view = customView;
 		customView = null;
 		customViewCallback = null;
+		touchStamp = 0;
+		MainActivityDelegate a = getLiveActivity(view.getContext());
+		if (a == null) a = getLiveActivity(web.getContext());
+		diagnosticsObserver.onCustomView(CustomViewEvent.DETACH_REQUESTED,
+				customViewSnapshot(view, a));
+		videoScale.detach();
+		removeCustomView(view);
+		getWebView().setVisibility(VISIBLE);
+		if (a != null) setFullScreen(a, false);
+		callback.onCustomViewHidden();
 		diagnosticsObserver.onCustomView(CustomViewEvent.DETACHED,
 				customViewSnapshot(null, a));
 

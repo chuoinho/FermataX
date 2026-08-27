@@ -45,6 +45,8 @@ public class FermataWebClient extends WebViewClientCompat {
 	public enum PageEvent {
 		MAIN_FRAME_STARTED,
 		MAIN_FRAME_FINISHED,
+		HISTORY_BACK_DISPATCHED,
+		HISTORY_BACK_SUPPRESSED,
 		MAIN_FRAME_ERROR,
 		MAIN_FRAME_HTTP_ERROR,
 		MAIN_FRAME_SSL_ERROR,
@@ -69,7 +71,8 @@ public class FermataWebClient extends WebViewClientCompat {
 		BROWSER_VISIBILITY_CHANGED,
 		FALLBACK_ENTERED,
 		CUSTOM_VIEW_REJECTED,
-		PRESENTATION_RELEASED
+		PRESENTATION_RELEASED,
+		BACK_EXIT_REQUESTED
 	}
 
 	public enum PlaybackEvent {
