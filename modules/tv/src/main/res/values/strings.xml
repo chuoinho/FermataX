@@ -44,6 +44,7 @@
     <string name="connection_settings">Connection settings</string>
 
     <string name="err_failed_to_add_tv_source">Failed to add source: %1$s</string>
+	<string name="err_failed_to_load_tv_sources">Unable to load the following sources:\n%1$s</string>
 	<string name="xtream_error_incomplete_account">Enter host, username and password.</string>
 	<string name="xtream_error_host_not_found">Unable to find Xtream server %1$s. Check the host and port.</string>
 	<string name="xtream_error_connect">Unable to connect to Xtream server %1$s. Check the host, port and network.</string>

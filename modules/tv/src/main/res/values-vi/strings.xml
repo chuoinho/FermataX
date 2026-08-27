@@ -35,6 +35,7 @@
 	<string name="catchup_days">Số ngày</string>
 	<string name="connection_settings">Cài đặt kết nối</string>
 	<string name="err_failed_to_add_tv_source">Không thể thêm nguồn: %1$s</string>
+	<string name="err_failed_to_load_tv_sources">Không thể tải các nguồn sau:\n%1$s</string>
 	<string name="catchup">Bắt kịp</string>
 	<string name="catchup_type_append">Nối thêm</string>
 	<string name="catchup_type_default">Mặc định</string>
