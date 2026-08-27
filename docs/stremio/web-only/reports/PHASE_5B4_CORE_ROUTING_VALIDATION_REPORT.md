@@ -1,102 +1,120 @@
-# Phase 5B4: Guest/Core Routing Validation
+# Phase 5B4: Guest/Core Addon Activation and Routing Validation
 
-## Status
+## Final Classification
 
-**`BLOCKED_CHROME_INCOGNITO_INTERACTION_SURFACE`** before fixture installation.
+**`PRESENTATION_TO_CORE_ROUTING_FAILURE`** at the catalog boundary.
 
-This run did not reach any of the request-boundary classifications defined for
-Phase 5B4. It established a fresh Android Chrome Incognito Guest session and
-granted Local Network Access (LNA) before the Stremio Guest home had completed
-initialization. The Stremio Guest home then rendered normally. Before the
-standard Addons UI could be reached, the Chrome page transitioned to an
-unusable black/immersive web surface. Android accessibility exposed only the
-Chrome container, and the standard UI had no safe, visible Addons control.
+The one permitted standard-UI installation succeeded and the initial reload
+retained an addon-detail surface with `Uninstall`. However, the Stremio
+Discover catalog selector never exposed the fixture catalog and the fixture
+received no `catalog`, `meta`, `stream`, or MP4 request. The failure therefore
+precedes stream selection, Player creation, and HTML5 media loading.
 
-The fixture was deliberately **not installed**. Consequently, no catalog,
-metadata, stream, or media request was created in this run. The result does not
-implicate the fixture protocol, Stremio Core routing, the FermataX player, or
-HTML5 rendering.
+This is not evidence of a FermataX player, Android media, or renderer failure.
 
 ## Environment and Preflight
 
-- Worktree: `E:\\Chatgpt\\fermata-stremio-web-only` on branch
-  `codex/stremio-web-only`, clean before the report was created.
+- Worktree: `E:\\Chatgpt\\fermata-stremio-web-only`, branch
+  `codex/stremio-web-only`.
 - Device: physical ADB device `15c36230`.
 - Android: release `16`, SDK `36`.
 - Chrome: `151.0.7922.173`.
+- Chrome was used only in a new Incognito Guest tab. No Stremio account was
+  signed in and no account data, cookies, tokens, storage, or credentials were
+  accessed.
 - FermataX was not opened.
-- The retained direct-stream fixture was the unchanged Phase 4 fixture, bound
-  to loopback only. Its safe request log contained no entry from this run.
-- Before setup, TCP 7000 was held by the exact fixture `node server.mjs`
-  process and `adb reverse tcp:7000 tcp:7000` existed. Both were traced to the
-  retained Phase 4 fixture rather than an unrelated service.
+- The retained Phase 4 direct-stream fixture was started unchanged on
+  `127.0.0.1:7000` and exposed only through `adb reverse tcp:7000 tcp:7000`.
+  Its server SHA-256 before the run was
+  `F5E74A953A64F8C60F390121A41541E76781728EF874B2AB7221DC5A9749194D`.
+- The fixture request log records only timestamp, method, query-free path,
+  Origin, `Sec-Fetch-*`, status, and response lifecycle. It does not record
+  cookies, authorization, tokens, referer, response bodies, or sensitive query
+  material.
 
-## Guest and LNA Evidence
+## Guest, LNA, and UI Preconditions
 
-1. The pre-existing Stremio Incognito tab was closed through Chrome's tab UI.
-   A fresh Incognito tab was created through Chrome's standard menu.
-2. `https://web.stremio.com` was opened with the Chrome address bar. Chrome
-   displayed its standard request for `web.stremio.com` to access local-network
-   applications and services.
-3. LNA was granted through the visible `Allow` button before Guest home
-   rendered. The resulting Stremio UI identified the session as `anonymous`.
-4. The Guest Board/Home displayed normal upstream content. No sign-in, account
-   data, cookie, token, local storage, or Core dispatch API was accessed.
+1. The prior Incognito Stremio tab was closed in Chrome's tab UI. A new
+   Incognito tab was created through Chrome's standard menu.
+2. `web.stremio.com` was opened through Chrome's address bar. Chrome displayed
+   its Local Network Access prompt; the visible `Allow` control was used before
+   the Guest Board completed initialization.
+3. Stremio rendered its normal anonymous Guest Board/Home. A direct Chrome
+   address-bar navigation to the regular `#/addons` UI also rendered normally.
+   This confirmed the earlier black/immersive surface was not reproduced by the
+   minimal Home-to-Addons route and was not used as a Core-routing result.
 
-## Blocker Evidence
+## Installation and Hydration Evidence
 
-- While dismissing the unrelated upstream "Streaming server is not available"
-  prompt and trying to expose the normal left navigation, the Stremio page
-  entered an immersive black surface.
-- Chrome DevTools was used only passively to observe the top-level page route;
-  it showed `https://web.stremio.com/` and later the UI-entered
-  `#/addons` route. No `Runtime.evaluate`, DOM read, storage read, or dispatch
-  was used.
-- Android's Incognito screenshot capture was black, as observed in Phase 5B2.
-  After the transition, accessibility likewise contained only the Chrome web
-  container rather than actionable Stremio controls.
-- Filtered logcat showed Chrome sandbox-process lifecycle noise but no
-  attributable Stremio exception, console exception, CORS/LNA denial, ANR, or
-  Chrome main-process crash. This is insufficient to diagnose the transition.
+1. In the standard Addons page, `Add addon` opened the normal external-link
+   dialog.
+2. The loopback manifest was entered in that dialog. The button was activated
+   once by normal keyboard focus and `Enter`; no script, Core dispatch, DOM
+   automation, or retry was used.
+3. The fixture observed exactly one new manifest request from Stremio:
 
-Because the Addons UI was not safely reachable, no install submission was sent.
-The fixture log confirms that its last manifest request predates this run; the
-only fixture activity during setup was the local protocol listener already
-running at preflight. There is therefore no valid evidence for any requested
-chain boundary:
+   | Field | Observation |
+   | --- | --- |
+   | Method/path | `GET /manifest.json` |
+   | Status | `200` |
+   | Origin | `https://web.stremio.com` |
+   | `Sec-Fetch-Mode` | `cors` |
+   | `Sec-Fetch-Site` | `cross-site` |
+   | `Sec-Fetch-Dest` | `empty` |
+   | Lifecycle | `finish`, then `close_after_finish` |
 
-| Boundary | Observed result |
+4. Stremio displayed `Fermata Local Validation` and `Uninstall` in the addon
+   result/detail UI.
+5. Chrome's standard reload command was used exactly once in the same
+   Incognito session. The fixture received one further manifest `GET 200` with
+   the same safe request shape. The reloaded addon detail still displayed the
+   fixture and `Uninstall`.
+
+## Routing Boundary Evidence
+
+After reload, the normal Board and Discover UI were opened through their
+visible Stremio navigation controls. In Discover, the catalog selector exposed
+the existing Cinemeta and Public Domain Movies entries, but did not expose the
+fixture catalog. A selector interaction produced no fixture request.
+
+| Request boundary | Evidence |
 | --- | --- |
-| Manifest install | Not attempted |
-| Catalog | Not attempted |
-| Meta | Not attempted |
-| Stream | Not attempted |
-| MP4 GET / Range / `206` | Not attempted |
+| Manifest | PASS: initial install and one reload both returned `200` |
+| Fixture UI presentation | PASS: addon detail showed fixture and `Uninstall` |
+| Catalog | FAIL: fixture catalog absent from selector; no request emitted |
+| Meta | Not reached |
+| Stream | Not reached |
+| MP4 / Range / `206` | Not reached |
 | Player surface | Not reached |
+
+A later return to the standalone Installed list did not expose the fixture as a
+safe uninstall target, despite the preceding detail page. This is consistent
+with a presentation/Core collection divergence, but no storage, profile, or
+Core state was inspected or modified to infer a cause.
 
 ## Cleanup
 
-- The test-created Incognito Stremio tab was closed with Chrome's tab UI.
-  Chrome then showed only the pre-existing standard tab; no Incognito tab
-  remained.
-- The fixture was never installed, so no uninstall target existed.
+- No safe `Uninstall` target remained in the normal Installed list. Instead of
+  clearing storage or dispatching a Core action, the entire test-created
+  Incognito tab was closed through Chrome's tab UI, which discarded the Guest
+  partition. Chrome then showed only the pre-existing standard tab.
 - `adb reverse tcp:7000` was removed.
-- The traced fixture `node` process was stopped.
+- The exact fixture process created for this run was stopped.
 - Host TCP 7000 no longer listened.
-- A device loopback `toybox nc` check returned `Connection refused`.
-- The temporary CDP forward (`tcp:9222`) and device-side UI dump files were
-  removed.
-- No fixture response, production code, or test code was modified.
+- A device loopback `toybox nc` connection attempt returned `Connection
+  refused`.
+- Temporary ADB UI captures and forwards were created only for this run; no
+  production or fixture source was changed.
 
-## Change Audit and Next Checkpoint
+## Change Audit and Remaining Matrix
 
 - Production/test LOC: `0`.
-- This report is the only repository change from this phase.
-- Not run: fixture install/hydration, catalog, metadata, stream selection,
-  Player/MP4 handoff, HLS, seek, subtitles, fullscreen, lifecycle, next-track,
-  and torrent.
+- This report is the only repository change for the completed Phase 5B4 run.
+- Not run: metadata, stream selection, direct MP4, HLS, seek, subtitles,
+  fullscreen, lifecycle, next-track, and torrent.
 
-**Proposed Phase 5B5 checkpoint:** first reproduce and identify the Android
-Chrome Incognito black/immersive transition with a strictly UI-only navigation
-trace, without fixture installation or production-code changes. Do not retry
-the Phase 5B4 install until that interaction surface is stable.
+**Checkpoint for the next phase:** diagnose why an addon detail may show
+`Uninstall` while the Core-backed Discover selector has no corresponding
+catalog. Keep all work in a Chrome Incognito Guest session; do not modify
+FermataX production code, fixture protocol, browser security, or account
+storage until the active addon collection boundary is observed.
