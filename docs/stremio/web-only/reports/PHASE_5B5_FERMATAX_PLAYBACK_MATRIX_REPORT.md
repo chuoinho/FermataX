@@ -2,17 +2,16 @@
 
 ## Final Classification
 
-**`PHASE_5B5_PARTIAL`**.
+**`PHASE_5B5_PASS`**.
 
 The physical Android device proved that the hosted Stremio WebView can play the
 temporary direct MP4 and HLS fixtures through FermataX's normal visible UI.
 MP4 range seeking, the control-only MediaSession bridge, and background/resume
-were also observed. At the time of this initial matrix run, the fullscreen Back
-contract failed and no explicit normal subtitle-selection action could be
-observed. The fullscreen failure is subsequently fixed and physically
-revalidated in `PHASE_5B5_FULLSCREEN_BACK_REMEDIATION_REPORT.md`; the phase
-remains partial until explicit subtitle selection is observed. No production or
-test code was changed during this initial matrix run.
+were also observed. The initial fullscreen Back failure is fixed and physically
+revalidated in `PHASE_5B5_FULLSCREEN_BACK_REMEDIATION_REPORT.md`. The remaining
+subtitle-selection gate is closed by the separate physical evidence in
+`PHASE_5B5_SUBTITLE_SELECTION_REMEDIATION_REPORT.md`. No production or test
+code was changed while obtaining the F5 evidence.
 
 ## Environment and Safety Boundary
 
@@ -38,7 +37,7 @@ test code was changed during this initial matrix run.
 | F2 | PASS | Normal catalog -> detail -> `Local MP4` stream selection reached `#/player/...`; the visible control changed to `Pause`. Fixture evidence recorded a preflight `HEAD`, video `GET` with `Range`, and `206` response. |
 | F3 | PASS | While MP4 was active, `dumpsys media_session` showed FermataMediaService active and `PLAYING`, with metadata `Fermata Local MP4`. Leaving the player later returned it to `NONE` with empty metadata. |
 | F4 | PASS | A visible seek moved playback from about `00:00:22` to `00:00:48`; the fixture recorded a later video `GET` carrying a new byte range and `206`. Playback remained `PLAYING`. |
-| F5 | PARTIAL | The fixture VTT was fetched and the rendered text `Subtitle timing test` was visible in the player. However, no separate visible subtitle-menu selection was available/observed, so the explicit selection-path criterion is not claimed. |
+| F5 | PASS | A separate temporary fixture exposed an English subtitle resource. In the normal player menu, the tester selected `OFF`, then `English`; the selected state was visibly marked and the bounded WebVTT text rendered at playback time `00:00:04`. See `PHASE_5B5_SUBTITLE_SELECTION_REMEDIATION_REPORT.md`. |
 | F6 | FAIL at initial run; later PASS | The initial run returned to the detail route and released the session. The root cause, narrow repair, and physical PASS evidence are recorded in `PHASE_5B5_FULLSCREEN_BACK_REMEDIATION_REPORT.md`. |
 | F7 | PASS | With MP4 active, Home moved focus to Launcher while FermataMediaService remained `PLAYING`. Reopening FermataX restored the hosted Player at about `00:00:33`, with `Pause`, correct metadata, and `PLAYING` state. No crash or ANR occurred. |
 | F8 | PASS | Normal `Local HLS` selection reached the visible player (`Pause`, about `00:00:10`). The fixture recorded HLS manifest and media-segment `GET` responses; the bridge was `PLAYING` with metadata `Fermata Local HLS`. |
@@ -81,7 +80,8 @@ not masked by replaying the item or changing any application state.
 - `adb reverse --list` contains no TCP 7000 mapping.
 - Host TCP port 7000 has no listener.
 - Device loopback probe to TCP 7000 returned `Connection refused`.
-- The fixture directory under the local Temp folder was removed.
+- The original MP4/HLS fixture and the follow-up subtitle fixture were removed
+  from local Temp after their processes had stopped.
 - No B5 ADB forward was created. Existing unrelated forwards
   (`tcp:9223` and `tcp:5277`) were left untouched.
 - Device rotation was restored to `accelerometer_rotation=1` and
@@ -93,13 +93,11 @@ not masked by replaying the item or changing any application state.
 - Repository change: this report only.
 - No crash, ANR, unexpected external-app launch, or account/addon mutation was
   observed outside the single temporary fixture lifecycle.
-- Do not claim completion for explicit subtitle selection, fullscreen Back
-  behavior, torrent transport, `nexttrack`, renderer-loss recovery, AA/DHU
-  hardware-button behavior, HLS quality selection, audio-track switching, or
-  persistent resume semantics.
+- Do not claim completion for torrent transport, `nexttrack`, renderer-loss
+  recovery, AA/DHU hardware-button behavior, HLS quality selection,
+  audio-track switching, or persistent resume semantics.
 
 ## Checkpoint
 
-Phase 5B5 remains **PARTIAL**. The next work must first diagnose the visible
-fullscreen Back regression and separately obtain explicit subtitle-selection
-evidence; it must not infer either from the successful MP4/HLS transport runs.
+Phase 5B5 is **PASS**. Deferred items remain independent acceptance work; this
+matrix does not infer their behavior from direct HTTP/HLS playback.
