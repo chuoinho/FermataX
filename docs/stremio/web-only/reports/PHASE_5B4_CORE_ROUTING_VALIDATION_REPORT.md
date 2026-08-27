@@ -97,8 +97,8 @@ At stop:
 - fixture process PID `50960` is listening only on `127.0.0.1:7000`;
 - `adb reverse tcp:7000 tcp:7000` remains active;
 - the device can still reach the loopback fixture;
-- passive observer PID `32612` and its temporary `tcp:9222` forward remain
-  available solely to preserve diagnostic state.
+- the passive observer completed after recording its route event; its temporary
+  `tcp:9222` forward remains available solely to preserve diagnostic state.
 
 No fixture protocol, production, or test source was changed.
 
