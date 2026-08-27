@@ -2,13 +2,17 @@
 
 ## Final Classification
 
-**`PRESENTATION_TO_CORE_ROUTING_FAILURE`** at the catalog boundary.
+**`GUEST_PERSISTENCE_OR_HYDRATION_FAILURE`** at the active-addon collection
+boundary.
 
-The one permitted standard-UI installation succeeded and the initial reload
-retained an addon-detail surface with `Uninstall`. However, the Stremio
-Discover catalog selector never exposed the fixture catalog and the fixture
-received no `catalog`, `meta`, `stream`, or MP4 request. The failure therefore
-precedes stream selection, Player creation, and HTML5 media loading.
+The one permitted standard-UI installation succeeded and the current
+`#/addons?addon=...` detail route retained an `Uninstall` surface after one
+browser reload. That reload preserved the detail route itself, so it did not
+prove the addon had hydrated into the active Guest collection. On returning to
+the canonical `#/addons` route, the fixture was absent from Installed addons;
+Discover consequently had no fixture catalog and emitted no `catalog`, `meta`,
+`stream`, or MP4 request. The failure therefore precedes stream selection,
+Player creation, and HTML5 media loading.
 
 This is not evidence of a FermataX player, Android media, or renderer failure.
 
@@ -67,30 +71,31 @@ This is not evidence of a FermataX player, Android media, or renderer failure.
    result/detail UI.
 5. Chrome's standard reload command was used exactly once in the same
    Incognito session. The fixture received one further manifest `GET 200` with
-   the same safe request shape. The reloaded addon detail still displayed the
-   fixture and `Uninstall`.
+   the same safe request shape. The URL remained `#/addons?addon=...`, and its
+   reloaded detail still displayed the fixture and `Uninstall`. This proves
+   reload of the detail route, not collection persistence.
 
 ## Routing Boundary Evidence
 
-After reload, the normal Board and Discover UI were opened through their
-visible Stremio navigation controls. In Discover, the catalog selector exposed
-the existing Cinemeta and Public Domain Movies entries, but did not expose the
-fixture catalog. A selector interaction produced no fixture request.
+After reload, the canonical Addons, Board, and Discover UI were opened through
+their visible Stremio navigation controls. The canonical Installed list did
+not expose the fixture. In Discover, the catalog selector exposed the existing
+Cinemeta and Public Domain Movies entries, but did not expose the fixture
+catalog. A selector interaction produced no fixture request.
 
 | Request boundary | Evidence |
 | --- | --- |
 | Manifest | PASS: initial install and one reload both returned `200` |
-| Fixture UI presentation | PASS: addon detail showed fixture and `Uninstall` |
-| Catalog | FAIL: fixture catalog absent from selector; no request emitted |
+| Detail route | PASS: query-backed addon detail showed fixture and `Uninstall` |
+| Active Guest collection | FAIL: canonical Installed list omitted fixture |
+| Catalog | Not reachable: fixture absent from active collection and selector |
 | Meta | Not reached |
 | Stream | Not reached |
 | MP4 / Range / `206` | Not reached |
 | Player surface | Not reached |
 
-A later return to the standalone Installed list did not expose the fixture as a
-safe uninstall target, despite the preceding detail page. This is consistent
-with a presentation/Core collection divergence, but no storage, profile, or
-Core state was inspected or modified to infer a cause.
+The query-backed detail result and canonical collection therefore diverged. No
+storage, profile, or Core state was inspected or modified to infer a cause.
 
 ## Cleanup
 
@@ -113,8 +118,8 @@ Core state was inspected or modified to infer a cause.
 - Not run: metadata, stream selection, direct MP4, HLS, seek, subtitles,
   fullscreen, lifecycle, next-track, and torrent.
 
-**Checkpoint for the next phase:** diagnose why an addon detail may show
-`Uninstall` while the Core-backed Discover selector has no corresponding
-catalog. Keep all work in a Chrome Incognito Guest session; do not modify
-FermataX production code, fixture protocol, browser security, or account
-storage until the active addon collection boundary is observed.
+**Checkpoint for the next phase:** diagnose why the query-backed addon detail
+does not hydrate the addon into the Chrome Guest active collection. Keep all
+work in a Chrome Incognito Guest session; do not modify FermataX production
+code, fixture protocol, browser security, or account storage until the active
+addon collection boundary is observed.
