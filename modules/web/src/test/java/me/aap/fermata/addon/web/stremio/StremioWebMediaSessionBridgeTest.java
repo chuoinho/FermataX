@@ -59,12 +59,17 @@ public class StremioWebMediaSessionBridgeTest {
 	}
 
 	@Test
-	public void shimIsIdempotentAndDoesNotReplaceNativeMediaSession() {
+	public void shimIsIdempotentAndObservesNativeMediaSessionWithoutReplacingNavigator() {
 		String source = StremioWebMediaSessionBridge.shimSource();
-		assertTrue(source.contains("navigator.mediaSession || window.__fermataStremioMediaSessionV1"));
+		assertTrue(source.contains("window.__fermataStremioMediaSessionV1"));
 		assertTrue(source.contains("window.top !== window"));
-		assertTrue(source.contains("play:true,pause:true,nexttrack:true"));
+		assertTrue(source.contains("Object.assign(Object.create(null), {play:true,pause:true,nexttrack:true})"));
 		assertTrue(source.contains("HANDLER_REMOVED"));
+		assertTrue(source.contains("var nativeSession = navigator.mediaSession"));
+		assertTrue(source.contains("var observeNative = function(mediaSession)"));
+		assertTrue(source.contains("setHandler.call(mediaSession, action, callback)"));
+		assertFalse(source.contains("Object.defineProperty(navigator, 'mediaSession'" +
+				"{value:nativeSession"));
 		assertFalse(source.contains("seekforward"));
 		assertFalse(source.contains("previoustrack"));
 	}

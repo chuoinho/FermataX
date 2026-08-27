@@ -193,46 +193,80 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		return """
 			(function(){
 			  'use strict';
-			  if (window.top !== window || navigator.mediaSession || window.__fermataStremioMediaSessionV1) return;
+			  if (window.top !== window || window.__fermataStremioMediaSessionV1) return;
 			  var port = window.fermataStremioControl;
 			  if (!port || typeof port.postMessage !== 'function') return;
 			  var session = Math.random().toString(36).slice(2) + Date.now().toString(36);
-			  var allowed = {play:true,pause:true,nexttrack:true};
+			  var allowed = Object.freeze(Object.assign(Object.create(null), {play:true,pause:true,nexttrack:true}));
 			  var handlers = Object.create(null);
 			  var send = function(type, data) { try {
 			    var msg = data || {}; msg.v = 1; msg.t = type; msg.s = session;
 			    port.postMessage(JSON.stringify(msg));
 			  } catch (_) {} };
 			  var text = function(value) { return typeof value === 'string' ? value.slice(0, 256) : ''; };
-			  if (!window.MediaMetadata) window.MediaMetadata = function(init) {
-			    init = init || {}; this.title = text(init.title); this.artist = text(init.artist);
-			    this.album = text(init.album); this.artwork = Array.isArray(init.artwork) ? init.artwork : [];
-			  };
-			  var mediaSession = {
-			    _state: 'none', _metadata: null,
-			    get playbackState() { return this._state; },
-			    set playbackState(value) {
-			      value = value === 'playing' || value === 'paused' ? value : 'none';
-			      this._state = value; send('PLAYBACK_STATE', {state:value});
-			    },
-			    get metadata() { return this._metadata; },
-			    set metadata(value) {
-			      this._metadata = value || null;
-			      send('METADATA', {title:text(value && value.title), artist:text(value && value.artist)});
-			    },
-			    setActionHandler: function(action, callback) {
-			      if (!allowed[action]) return;
-			      if (callback == null) { delete handlers[action]; send('HANDLER_REMOVED', {action:action}); return; }
-			      if (typeof callback !== 'function') return;
-			      handlers[action] = callback; send('HANDLER_REGISTERED', {action:action});
-			    }
-			  };
-			  try { Object.defineProperty(navigator, 'mediaSession', {value:mediaSession, configurable:true}); }
-			  catch (_) { try { navigator.mediaSession = mediaSession; } catch (_) { return; } }
-			  window.__fermataStremioMediaSessionV1 = Object.freeze({version:1, dispatch:function(action) {
+			  var expose = function() { window.__fermataStremioMediaSessionV1 = Object.freeze({version:1, dispatch:function(action) {
 			    var callback = handlers[action]; if (typeof callback !== 'function') return false;
 			    try { callback(); } catch (_) {} return true;
-			  }});
+			  }}); };
+			  var descriptor = function(object, name) {
+			    while (object) { var value = Object.getOwnPropertyDescriptor(object, name); if (value) return value;
+			      object = Object.getPrototypeOf(object); }
+			    return null;
+			  };
+			  var observeNative = function(mediaSession) {
+			    var state = descriptor(mediaSession, 'playbackState');
+			    var metadata = descriptor(mediaSession, 'metadata');
+			    var setHandler = mediaSession.setActionHandler;
+			    if (!state || typeof state.get !== 'function' || typeof state.set !== 'function' ||
+			        !metadata || typeof metadata.get !== 'function' || typeof metadata.set !== 'function' ||
+			        typeof setHandler !== 'function') return false;
+			    try {
+			      Object.defineProperty(mediaSession, 'playbackState', {configurable:true, enumerable:state.enumerable,
+			        get:function(){ return state.get.call(mediaSession); }, set:function(value) {
+			          state.set.call(mediaSession, value); send('PLAYBACK_STATE', {state:value}); }});
+			      Object.defineProperty(mediaSession, 'metadata', {configurable:true, enumerable:metadata.enumerable,
+			        get:function(){ return metadata.get.call(mediaSession); }, set:function(value) {
+			          metadata.set.call(mediaSession, value);
+			          send('METADATA', {title:text(value && value.title), artist:text(value && value.artist)}); }});
+			      Object.defineProperty(mediaSession, 'setActionHandler', {configurable:true, writable:true,
+			        value:function(action, callback) { setHandler.call(mediaSession, action, callback);
+			          if (!allowed[action]) return;
+			          if (callback == null) { delete handlers[action]; send('HANDLER_REMOVED', {action:action}); }
+			          else if (typeof callback === 'function') { handlers[action] = callback;
+			            send('HANDLER_REGISTERED', {action:action}); } }});
+			      return true;
+			    } catch (_) { return false; }
+			  };
+			  var nativeSession = navigator.mediaSession;
+			  if (nativeSession) { if (!observeNative(nativeSession)) return; expose(); }
+			  else {
+			    if (!window.MediaMetadata) window.MediaMetadata = function(init) {
+			      init = init || {}; this.title = text(init.title); this.artist = text(init.artist);
+			      this.album = text(init.album); this.artwork = Array.isArray(init.artwork) ? init.artwork : [];
+			    };
+			    var mediaSession = {
+			      _state: 'none', _metadata: null,
+			      get playbackState() { return this._state; },
+			      set playbackState(value) {
+			        value = value === 'playing' || value === 'paused' ? value : 'none';
+			        this._state = value; send('PLAYBACK_STATE', {state:value});
+			      },
+			      get metadata() { return this._metadata; },
+			      set metadata(value) {
+			        this._metadata = value || null;
+			        send('METADATA', {title:text(value && value.title), artist:text(value && value.artist)});
+			      },
+			      setActionHandler: function(action, callback) {
+			        if (!allowed[action]) return;
+			        if (callback == null) { delete handlers[action]; send('HANDLER_REMOVED', {action:action}); return; }
+			        if (typeof callback !== 'function') return;
+			        handlers[action] = callback; send('HANDLER_REGISTERED', {action:action});
+			      }
+			    };
+			    try { Object.defineProperty(navigator, 'mediaSession', {value:mediaSession, configurable:true}); }
+			    catch (_) { try { navigator.mediaSession = mediaSession; } catch (_) { return; } }
+			    expose();
+			  }
 			  addEventListener('pagehide', function(){ send('SESSION_CLOSED'); }, {once:true});
 			  send('READY');
 			})();
