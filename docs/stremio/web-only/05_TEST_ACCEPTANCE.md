@@ -30,7 +30,7 @@
 | Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C Home/reopen, lock/wake, renderer recovery and addon switching) |
 | Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (Phase 8A now proves the active native claim during hosted playback; a valid DHU or vehicle-host input path is still unobserved) |
 | No impact to other addons | Focused physical regression sweep across unaffected addons | PASS (Phase 6C entry/render/switch baseline; not a substitute for each addon's playback suite) |
-| Torrent stream through a user-configured Stremio streaming server | Separate approved server/fixture decision and physical evidence | BLOCKED (Phase 6G found no reproducible local server-backed torrent fixture; not a Fermata native-player or native-torrent requirement) |
+| Torrent stream through a user-configured Stremio streaming server | Separate approved server/fixture decision and physical evidence | BLOCKED (P8D local-only retry found an upstream server that injects public trackers and a WebTorrent fixture that cannot complete metadata; no device playback was attempted) |
 | Fermata native torrent transport/player | Architecture review | NOT APPLICABLE (approved architecture is hosted Stremio Web plus user-configured server) |
 
 `PASS` requires observed evidence, not source-code inference. Historical blockers
@@ -49,7 +49,8 @@ remaining playback-host boundaries work. The release-readiness state is therefor
   now-proven active Stremio MediaSession claim.
 - `NOT OBSERVED`: hosted multi-audio selector and active-episode `nexttrack` registration.
 - `BLOCKED`: a reproducible, separately approved user-configured streaming-server/torrent
-  validation environment.
+  validation environment. The P8D retry narrowed the required prerequisite to a
+  server without mandatory public-tracker injection and a compatible local seeder.
 
 The legacy `modules/stremio` source tree remains in the repository for non-Web-only builds, but
 `-PWEB_STREMIO=true` excludes it from the Gradle graph and release APK. The web-only artifact has

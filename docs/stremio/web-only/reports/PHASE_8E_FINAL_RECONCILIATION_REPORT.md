@@ -29,7 +29,7 @@ APK smoke pass; hosted capability and external transport gaps remain non-PASS.
 | Hosted audio-track selector | NOT OBSERVED (P8B) |
 | Episode `nexttrack` | NOT OBSERVED (P8C) |
 | DHU/vehicle controls | PARTIAL |
-| Streaming-server/torrent transport | BLOCKED (P8D) |
+| Streaming-server/torrent transport | BLOCKED (P8D; local-only retry did not pass server safety or metadata-transfer preflight) |
 | Fermata native torrent/player | NOT APPLICABLE |
 
 No phase listener remains on `7000`, `7001`, `7002`, `11470`, `42000`, `18080`
