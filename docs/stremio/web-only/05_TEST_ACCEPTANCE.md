@@ -30,7 +30,7 @@
 | Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C Home/reopen, lock/wake, renderer recovery and addon switching) |
 | Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (DHU connected through the pre-existing ADB transport but remained `Waiting for phone`; no Android Auto projection surface or host input reached FermataX. A fresh lifecycle playback retry also observed native session `NONE`, so it could not be used as a valid control target.) |
 | No impact to other addons | Focused physical regression sweep across unaffected addons | PASS (Phase 6C entry/render/switch baseline; not a substitute for each addon's playback suite) |
-| Torrent stream through a user-configured Stremio streaming server | Separate approved server/fixture decision and physical evidence | BLOCKED (P8D local-only retry found an upstream server that injects public trackers and a WebTorrent fixture that cannot complete metadata; no device playback was attempted) |
+| Torrent stream through a user-configured Stremio streaming server | Physical visible stream selection, local torrent metadata/piece transfer, ranged server response and hosted Player rendering | PASS (P8G self-owned local-only fixture; historical P8D blockers are superseded) |
 | Fermata native torrent transport/player | Architecture review | NOT APPLICABLE (approved architecture is hosted Stremio Web plus user-configured server) |
 
 `PASS` requires observed evidence, not source-code inference. Historical blockers
@@ -50,9 +50,9 @@ remaining playback-host boundaries work. The release-readiness state is therefor
 - `NOT OBSERVED`: hosted multi-audio selector.
 - `CONDITIONAL_NOT_ADVERTISED`: episode `nexttrack` was not registered by the
   observed native MediaSession; this is not a failure.
-- `BLOCKED`: a reproducible, separately approved user-configured streaming-server/torrent
-  validation environment. The P8D retry narrowed the required prerequisite to a
-  server without mandatory public-tracker injection and a compatible local seeder.
+- `PASS`: P8G observed the separately governed streaming-server/torrent path
+  using a self-owned, loopback-only fixture. This does not change the Web-only
+  architecture or claim any native Fermata torrent capability.
 
 The legacy `modules/stremio` source tree remains in the repository for non-Web-only builds, but
 `-PWEB_STREMIO=true` excludes it from the Gradle graph and release APK. The web-only artifact has
