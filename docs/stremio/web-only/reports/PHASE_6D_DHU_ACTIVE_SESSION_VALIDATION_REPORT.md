@@ -45,6 +45,13 @@ choice from the user:
    baseline** for validation. This avoids removing user state, but changes the
    existing six-addon cleanup contract and must be explicitly accepted.
 
-No Phase 6D/6E/6F fixture, server or DHU test will start until one option is
-selected. Phase 6G configuration is also deferred: it shares the same
-single-temporary-addon account-protection rule.
+## Resolution
+
+The user selected option 2. For Phases 6D through 6G only, the protected
+baseline is the seven currently installed addons: the documented six plus the
+pre-existing legacy OpenSubtitles addon. Each phase may add exactly one
+temporary fixture and must restore this seven-addon baseline through the
+visible Addons UI. No existing addon may be removed, reordered or configured.
+
+The historical six-addon baseline remains intact as prior evidence; this is a
+prospective validation-scope override, not a rewrite of that history.
