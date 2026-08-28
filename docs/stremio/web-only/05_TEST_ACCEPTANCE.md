@@ -24,7 +24,7 @@
 | Fullscreen without reload/position loss | Physical device video fixture | PASS (P1B/Phase 5B5 preserved hosted Player and observed position) |
 | Back order | Physical device video fixture | PASS (P5B5 fullscreen exit preserves Player/playback) |
 | Subtitle selection | Physical device video fixture | PASS (P5B5 explicit `OFF` -> `English`, rendered WebVTT) |
-| Audio-track selection | Physical device fixture with multiple advertised audio tracks | NOT OBSERVED (no accepted multi-audio fixture run) |
+| Audio-track selection | Physical device fixture with multiple advertised audio tracks | NOT OBSERVED (Phase 6E physical two-track MP4 reached Player, but hosted UI did not advertise a selector) |
 | Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C Home/reopen, lock/wake, renderer recovery and addon switching) |
 | Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (Phase 6D confirmed hosted Range playback, but the native session remained `NONE`; no valid DHU input path yet) |
 | No impact to other addons | Focused physical regression sweep across unaffected addons | PASS (Phase 6C entry/render/switch baseline; not a substitute for each addon's playback suite) |
