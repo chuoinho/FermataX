@@ -2,8 +2,8 @@
 
 ## Status
 
-**Implementation and automated verification PASS. Physical playback acceptance
-remains PARTIAL.**
+**PASS.** The implementation, automated verification, and every Phase 1C
+lifecycle acceptance scenario now have observed physical-device evidence.
 
 ## Defect
 
@@ -81,19 +81,50 @@ Validation` direct-MP4 fixture was added through the normal Addons UI.
   crash, ANR, or unexpected external launch. Playback was intentionally not
   inferred to persist across an explicit addon switch.
 
-Renderer-loss recovery remains unobserved: no safe, targeted renderer-loss
-trigger is available on this physical device. Killing Android System WebView or
-clearing its data would violate the test boundary. Lock/unlock was likewise not
-performed because it requires a user-lock transition outside this acceptance
-run. Therefore the overall physical acceptance status remains **PARTIAL**.
+## Final Physical Lifecycle Evidence
+
+The lifecycle fixture was installed again through the visible Stremio Addons UI
+for the final renderer-recovery check. No account API, page script, DOM query,
+storage read, or external player was used.
+
+- Android Home/reopen restored the hosted Player with `Pause` visible while
+  `FermataMediaService` remained `PLAYING`.
+- During a real screen-off transition, Android reported `Dozing` and the
+  Stremio session remained `PLAYING`. After wake, Chromium released the
+  decoder and FermataX correctly left the session at `NONE`; it did not invent
+  a resumed session or crash.
+- Switching from Stremio to YouTube released Stremio's control-only session to
+  `NONE`. Returning to Stremio restored the hosted detail route without a
+  crash, ANR, or external launch.
+- A temporary CDP forward was attached only to the Fermata-owned Stremio
+  renderer. `Page.crash` was sent to that page target; no runtime evaluation,
+  DOM access, cookie/storage access, or stream URL read occurred. Chromium
+  reported the renderer crash and Android created a fresh Fermata-owned
+  sandboxed renderer.
+- The app's actual `FermataWebClient.onRenderProcessGone` ->
+  `FermataWebView.recoverRenderProcess` path ran (confirmed by the Android
+  stack trace). The fixture then received fresh metadata and stream-list
+  requests. A physical screenshot showed the same hosted Stremio detail route
+  and `Fermata Lifecycle MP4` rendered after recovery. There was no FermataX
+  process crash or ANR.
+
+The first blank accessibility snapshot after `Page.crash` was from the Android
+Auto projection surface while it was changing focus. It is not used as a
+failure result: the subsequent physical surface and fixture-server evidence
+confirm the replacement view rendered normally.
 
 ## Cleanup
 
-- The temporary addon is absent from the final device UI.
-- The Node fixture process was stopped.
-- `adb reverse tcp:7000` was removed.
-- Host TCP 7000 has no listener; the device loopback probe returned
-  `Connection refused`.
-- The stopped lifecycle fixture folder and local screenshots/XML remain because
-  the execution environment rejects the verified, scoped recursive deletion.
-  They contain no account material and no process references them.
+- The fixture was removed once through the visible Stremio Addons `Uninstall`
+  control. The resulting list contains exactly `Cinemeta`, `YouTube`,
+  `WatchHub`, `Public Domain Movies`, `OpenSubtitles v3`, and `Local Files
+  (without catalog support)`; it no longer contains `Fermata Lifecycle
+  Validation`.
+- The local Node fixture process was stopped. Host TCP 7000 is closed and the
+  device loopback probe returns `Connection refused`.
+- `adb reverse tcp:7000` and the temporary CDP `tcp:9224` forward were
+  removed. Pre-existing unrelated forwards were left unchanged.
+- The execution environment rejects its scoped recursive-delete operation, so
+  the now inert lifecycle-fixture directory remains in local Temp. It contains
+  no credentials, no process refers to it, and it does not include the
+  separately protected P8 fixture directory.

@@ -10,10 +10,10 @@
 | ADB play/pause/toggle control | Physical device trailer and `dumpsys media_session` | PASS |
 | Next control | Physical device only when Stremio registers `nexttrack` | NOT OBSERVED (not advertised) |
 | Inline HTTP MP4/HLS playback | Physical device with working server | PASS (P5B5 direct MP4 and HLS fixture) |
-| Fullscreen without reload/position loss | Physical device video fixture | PARTIAL (custom-view entry/Back route observed; position not measured) |
+| Fullscreen without reload/position loss | Physical device video fixture | PASS (P1B/Phase 5B5 fixture preserved the hosted Player and observed position) |
 | Back order | Physical device video fixture | PASS (P5B5 fullscreen exit preserves Player/playback) |
 | Subtitle selection | Physical device video fixture | PASS (P5B5 explicit `OFF` -> `English`, rendered WebVTT) |
-| Background/recovery/switching | Physical device lifecycle matrix | PARTIAL (P5B5 background/resume observed; switching not accepted) |
+| Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C physical Home/reopen, lock/wake, renderer recovery and addon switching) |
 | No impact to other addons | Existing unit suite plus manual AA sweep | PARTIAL |
 
 `PASS` requires observed evidence, not an inference from source code. A missing streaming server
