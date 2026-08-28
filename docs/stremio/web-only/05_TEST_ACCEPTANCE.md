@@ -15,7 +15,7 @@
 | One Web-only addon, no legacy feature | Gradle projects/dependency graph | PASS |
 | Addon is enabled and opens hosted origin | Physical device UI | PASS |
 | Existing authenticated Web session remains | Physical device avatar/session UI | PASS |
-| Catalog/search/library/settings sweep | Physical device manual sweep of all four hosted sections | PARTIAL (catalog/detail and Addons observed; full four-section sweep remains) |
+| Catalog/search/library/settings sweep | Physical device manual sweep of all four hosted sections | PASS (Phase 6B hosted UI sweep) |
 | Android WebView Media Session compatibility | Physical device DevTools and logcat | PASS |
 | ADB play/pause/toggle control | Physical device trailer and `dumpsys media_session` | PASS |
 | Next control | Physical device only when Stremio registers `nexttrack` | CONDITIONAL_NOT_ADVERTISED (no physical page registered the action) |
