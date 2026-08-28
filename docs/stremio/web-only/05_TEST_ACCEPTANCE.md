@@ -18,7 +18,7 @@
 | Catalog/search/library/settings sweep | Physical device manual sweep of all four hosted sections | PASS (Phase 6B hosted UI sweep) |
 | Android WebView Media Session compatibility | Physical device DevTools and logcat | PASS |
 | ADB play/pause/toggle control | Physical device trailer and `dumpsys media_session` | PASS |
-| Next control | Physical device only when Stremio registers `nexttrack` | CONDITIONAL_NOT_ADVERTISED (no physical page registered the action) |
+| Next control | Physical device only when Stremio registers `nexttrack` | NOT OBSERVED (Phase 6F two-episode UI did not reach an active Player/session; no action was sent) |
 | Inline HTTP MP4/HLS playback | Physical device with working server | PASS (P5B5 direct MP4 and HLS fixture) |
 | Seek | Physical device MP4 fixture plus changed range request | PASS (P5B5 F4) |
 | Fullscreen without reload/position loss | Physical device video fixture | PASS (P1B/Phase 5B5 preserved hosted Player and observed position) |
