@@ -27,7 +27,7 @@
 | Audio-track selection | Physical device fixture with multiple advertised audio tracks | NOT OBSERVED (no accepted multi-audio fixture run) |
 | Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C Home/reopen, lock/wake, renderer recovery and addon switching) |
 | Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (hosted UI and ownership observed; no DHU transport input path) |
-| No impact to other addons | Focused physical regression sweep across unaffected addons | PARTIAL (ownership switch observed; broader sweep remains) |
+| No impact to other addons | Focused physical regression sweep across unaffected addons | PASS (Phase 6C entry/render/switch baseline; not a substitute for each addon's playback suite) |
 | Torrent stream through a user-configured Stremio streaming server | Separate approved server/fixture decision and physical evidence | BLOCKED (not a Fermata native-player or native-torrent requirement) |
 | Fermata native torrent transport/player | Architecture review | NOT APPLICABLE (approved architecture is hosted Stremio Web plus user-configured server) |
 
