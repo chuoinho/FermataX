@@ -28,7 +28,7 @@
 | Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C Home/reopen, lock/wake, renderer recovery and addon switching) |
 | Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (Phase 6D confirmed hosted Range playback, but the native session remained `NONE`; no valid DHU input path yet) |
 | No impact to other addons | Focused physical regression sweep across unaffected addons | PASS (Phase 6C entry/render/switch baseline; not a substitute for each addon's playback suite) |
-| Torrent stream through a user-configured Stremio streaming server | Separate approved server/fixture decision and physical evidence | BLOCKED (not a Fermata native-player or native-torrent requirement) |
+| Torrent stream through a user-configured Stremio streaming server | Separate approved server/fixture decision and physical evidence | BLOCKED (Phase 6G found no reproducible local server-backed torrent fixture; not a Fermata native-player or native-torrent requirement) |
 | Fermata native torrent transport/player | Architecture review | NOT APPLICABLE (approved architecture is hosted Stremio Web plus user-configured server) |
 
 `PASS` requires observed evidence, not source-code inference. Historical blockers
