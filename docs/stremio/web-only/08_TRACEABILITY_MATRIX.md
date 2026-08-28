@@ -12,7 +12,7 @@
 | No native Stremio runtime | Build graph | Dependency report excludes `:stremio` and `jlibtorrent` |
 | Signed Web-only release | Universal APK, approved upload certificate and immutable input | PASS: Phase 7 release audit and device smoke |
 | No legacy native payload in Web-only APK | Web-only Gradle graph and APK archive inspection | PASS: legacy `:stremio` is excluded; no `jlibtorrent`/torrent native library is packaged |
-| Hosted MediaSession bridge boundary | Origin-scoped document-start message bridge | PARTIAL: direct playback works, but the active MediaSession/DHU claim remains unobserved |
+| Hosted MediaSession bridge boundary | Origin-scoped document-start message bridge | PASS for the active Android MediaSession claim (Phase 8A physical Player, progressing video, `PLAYING`, actions and metadata); DHU/vehicle-host control delivery remains a separate PARTIAL acceptance item |
 
 The historical Phase 0B external-player requirements are intentionally not included here.
 The reconciled physical acceptance baseline and remaining independent gaps are

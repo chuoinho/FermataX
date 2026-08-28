@@ -19,6 +19,7 @@
 | Catalog/search/library/settings sweep | Physical device manual sweep of all four hosted sections | PASS (Phase 6B hosted UI sweep) |
 | Android WebView Media Session compatibility | Physical device DevTools and logcat | PASS |
 | ADB play/pause/toggle control | Physical device trailer and `dumpsys media_session` | PASS |
+| Active hosted Stremio MediaSession claim | Physical direct-stream fixture reaches Player; UI state, progressing position and `dumpsys media_session` agree | PASS (Phase 8A: active `PLAYING` session, control actions and title metadata observed) |
 | Next control | Physical device only when Stremio registers `nexttrack` in an active episode session | NOT OBSERVED (Phase 6F did not reach an active Player/session, so registration itself could not be observed and no action was sent) |
 | Inline HTTP MP4/HLS playback | Physical device with working server | PASS (P5B5 direct MP4 and HLS fixture) |
 | Seek | Physical device MP4 fixture plus changed range request | PASS (P5B5 F4) |
@@ -27,7 +28,7 @@
 | Subtitle selection | Physical device video fixture | PASS (P5B5 explicit `OFF` -> `English`, rendered WebVTT) |
 | Audio-track selection | Physical device fixture with multiple advertised audio tracks | NOT OBSERVED (Phase 6E physical two-track MP4 reached Player, but hosted UI did not advertise a selector) |
 | Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C Home/reopen, lock/wake, renderer recovery and addon switching) |
-| Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (Phase 6D confirmed hosted Range playback, but the native session remained `NONE`; no valid DHU input path yet) |
+| Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (Phase 8A now proves the active native claim during hosted playback; a valid DHU or vehicle-host input path is still unobserved) |
 | No impact to other addons | Focused physical regression sweep across unaffected addons | PASS (Phase 6C entry/render/switch baseline; not a substitute for each addon's playback suite) |
 | Torrent stream through a user-configured Stremio streaming server | Separate approved server/fixture decision and physical evidence | BLOCKED (Phase 6G found no reproducible local server-backed torrent fixture; not a Fermata native-player or native-torrent requirement) |
 | Fermata native torrent transport/player | Architecture review | NOT APPLICABLE (approved architecture is hosted Stremio Web plus user-configured server) |
@@ -44,7 +45,8 @@ The signed universal Web-only package passed Phase 7 build, dependency, immutabl
 bounded physical smoke checks. This is a packaging and regression gate, not evidence that the
 remaining playback-host boundaries work. The release-readiness state is therefore **PARTIAL**:
 
-- `PARTIAL`: active Stremio MediaSession/DHU host control has not been observed.
+- `PARTIAL`: DHU or vehicle-host input has not yet been observed reaching the
+  now-proven active Stremio MediaSession claim.
 - `NOT OBSERVED`: hosted multi-audio selector and active-episode `nexttrack` registration.
 - `BLOCKED`: a reproducible, separately approved user-configured streaming-server/torrent
   validation environment.
