@@ -26,16 +26,17 @@ APK smoke pass; hosted capability and external transport gaps remain non-PASS.
 | --- | --- |
 | Direct MP4/HLS, seek, subtitles, fullscreen/Back | PASS |
 | Active control-only MediaSession claim | PASS (P8A) |
-| Hosted audio-track selector | NOT OBSERVED (P8B) |
-| Episode `nexttrack` | NOT OBSERVED (P8C) |
-| DHU/vehicle controls | PARTIAL |
+| Hosted audio-track selector | NOT OBSERVED (P8B reached a dual-audio HLS Player but no selector was rendered) |
+| Episode `nexttrack` | CONDITIONAL_NOT_ADVERTISED (P8C reached Episode 1 Player but its native session did not register the action) |
+| DHU/vehicle controls | PARTIAL (DHU transport connected but Android Auto remained `Waiting for phone`; no host input was delivered) |
 | Streaming-server/torrent transport | BLOCKED (P8D; local-only retry did not pass server safety or metadata-transfer preflight) |
 | Fermata native torrent/player | NOT APPLICABLE |
 
 No phase listener remains on `7000`, `7001`, `7002`, `11470`, `42000`, `18080`
 or `18081`; no phase reverse mapping remains. The seven-addon baseline contains
 no P8 fixture. Existing forwards `9223` and `5277` remain intact. Fixture
-processes are stopped; Temp directories are inert where deletion is blocked.
+processes and DHU are stopped; Temp directories are inert where deletion is
+blocked by the execution environment.
 
 Production LOC: `0`.
 

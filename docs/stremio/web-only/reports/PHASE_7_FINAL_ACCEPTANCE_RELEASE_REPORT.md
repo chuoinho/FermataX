@@ -66,9 +66,9 @@ create a fixture, streaming server, forward or reverse rule.
 | Native MediaSession decoration and ADB play/pause/toggle | PASS | Physical P1C evidence. |
 | Lifecycle, renderer recovery and addon switching | PASS | Physical P1C evidence. |
 | Catalog/search/library/settings and focused unaffected-addon sweep | PASS | Physical Phase 6B/6C evidence. |
-| Stremio active MediaSession plus DHU host controls | PARTIAL | Direct hosted playback reached Range `206`, but the active MediaSession claim remained `NONE`; no valid DHU control test was run. |
-| Hosted multi-audio choice | NOT OBSERVED | A real two-track MP4 rendered, but no hosted selector was exposed. |
-| `nexttrack` | NOT OBSERVED | Phase 6F did not reach an active episode Player/session, so upstream action registration could not be observed. |
+| Stremio active MediaSession plus DHU host controls | PARTIAL | P8A later observed a real active claim, but the P8F retry varied back to `NONE`; DHU connected to transport but remained `Waiting for phone`, so no valid host input was delivered. |
+| Hosted multi-audio choice | NOT OBSERVED | P8B reached a dual-audio HLS Player but no selector was exposed. |
+| `nexttrack` | CONDITIONAL_NOT_ADVERTISED | P8C reached the Episode 1 Player and visible Episode 2 overlay, but its native session did not register `nexttrack`. |
 | User-configured streaming-server/torrent transport | BLOCKED | No separately approved reproducible server-backed torrent environment exists. |
 | Fermata native torrent/player | NOT APPLICABLE | It violates the approved Web-only architecture. |
 
@@ -86,4 +86,6 @@ create a fixture, streaming server, forward or reverse rule.
 
 Ship-ready packaging is proven, but release acceptance remains **PARTIAL**. Do not use this phase
 as evidence for DHU controls, audio selection, next-track behavior or torrent/server playback.
-Those boundaries require independently approved physical evidence.
+Those boundaries require independently approved physical evidence. P8F is the
+post-Phase-7 continuation record for the current final status; this report
+retains the original Phase 7 packaging evidence.

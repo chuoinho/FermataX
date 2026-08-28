@@ -2,10 +2,11 @@
 
 ## Result
 
-**NOT OBSERVED (`FIXTURE_FLOW_NOT_EQUIVALENT`).** A local dual-audio HLS fixture
-was installed with normal hosted Stremio UI, but it did not become a selectable
-Discover catalog before the local-only fixture state was reloaded. The Player
-made no HLS request, so no audio-selector claim is made.
+**NOT OBSERVED (`SELECTOR_ABSENT`).** The initial local-fixture retry did not
+reach Player. The later physical continuation did reach the hosted Player and
+proved dual-audio HLS playback, but Stremio Web did not render an audio-track
+selector on this device. A selection therefore could not be performed or
+claimed.
 
 ## Evidence And Cleanup
 
@@ -26,7 +27,34 @@ Production LOC: `0`.
 
 Test LOC: `0`.
 
+## Physical Continuation: Player Reached
+
+The continuation used the same self-owned, loopback-only HLS fixture through
+the visible Addons, catalog, detail and stream UI. It did not use Core actions,
+DOM automation, storage access, account APIs or an external player.
+
+- The HLS master playlist advertised two distinct renditions: `English` and
+  `Vietnamese`.
+- The hosted Player opened and visibly rendered video. Fixture evidence shows
+  the master playlist, video playlist, English audio playlist and media
+  segments were requested successfully.
+- At the observed start of playback, the FermataX MediaSession was
+  `active=true` and `PLAYING`; this proves the HLS Player path was real, rather
+  than a catalog-only result.
+- The visible Player controls exposed no audio-language or audio-track menu.
+  The Vietnamese rendition was not selected because there was no supported UI
+  action with which to make that choice.
+- The fixture was uninstalled through the visible Addons UI. The protected
+  seven-addon baseline was then re-observed.
+- The phase-created server was stopped and `adb reverse tcp:7001` was removed.
+  There is no listener on port `7001`; pre-existing forwards `9223` and `5277`
+  were left untouched.
+
+This continuation supersedes the former `FIXTURE_FLOW_NOT_EQUIVALENT` reason,
+but not the `NOT OBSERVED` result: the selector itself was absent.
+
 ## Decision
 
-Do not add a FermataX audio selector. A future retry needs a fixture-install
-route whose catalog remains selectable within the active hosted WebView session.
+Do not add a FermataX-native audio selector. A future acceptance run needs an
+upstream Stremio Web build/device combination that renders a selectable
+audio-track control for an active multi-audio stream.

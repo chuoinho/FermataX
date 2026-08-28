@@ -7,6 +7,16 @@ Chrome, FermataX, a fixture, a server, or playback. It inspected the acceptance
 plan and the already recorded physical evidence. Production LOC: `0`. Test LOC:
 `0`.
 
+## Later Status
+
+This report preserves the Phase 6A baseline as historical reconciliation. The
+subsequent physical phases supersede its pending rows: Phase 6B and 6C passed;
+P8B reached the dual-audio Player but exposed no selector; P8C reached the
+episode Player but did not advertise `nexttrack`; P8D remains blocked; and P8F
+records the unsuccessful DHU projection attempt. The authoritative current
+matrix is `05_TEST_ACCEPTANCE.md` and the final continuation evidence is
+`PHASE_8F_REMAINING_ACCEPTANCE_EVIDENCE_REPORT.md`.
+
 The accepted architecture remains Web-only: FermataX hosts
 `https://web.stremio.com/#/`; Stremio Web owns account, catalog, stream
 selection, HTML5 playback, subtitles and progress; FermataX owns the WebView,
