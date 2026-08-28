@@ -29,3 +29,8 @@ complete. The reconciled physical evidence and the remaining independent
 acceptance phases are maintained in `05_TEST_ACCEPTANCE.md` and
 `reports/PHASE_6A_ACCEPTANCE_RECONCILIATION_REPORT.md`. They do not change the
 Web-only architecture defined above.
+
+Phase 7 verified the signed universal APK and its bounded physical smoke path.
+It does not close the remaining independent acceptance gaps, so the release
+status is **PARTIAL**, not PASS. The current final record is
+`reports/PHASE_7_FINAL_ACCEPTANCE_RELEASE_REPORT.md`.
