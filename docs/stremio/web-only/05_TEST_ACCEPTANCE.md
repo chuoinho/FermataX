@@ -28,7 +28,7 @@
 | Subtitle selection | Physical device video fixture | PASS (P5B5 explicit `OFF` -> `English`, rendered WebVTT) |
 | Audio-track selection | Physical device fixture with multiple advertised audio tracks | NOT OBSERVED (P8B dual-audio HLS reached Player, loaded the default English rendition and visibly rendered video, but did not expose a selector for the advertised Vietnamese rendition) |
 | Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C Home/reopen, lock/wake, renderer recovery and addon switching) |
-| Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (DHU connected through the pre-existing ADB transport but remained `Waiting for phone`; no Android Auto projection surface or host input reached FermataX. A fresh lifecycle playback retry also observed native session `NONE`, so it could not be used as a valid control target.) |
+| Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PASS (P8H used the Android SDK DHU media card, not ADB media keys: its visible pause/resume control changed the hosted Player and FermataX `MediaSession` through `PLAYING -> PAUSED -> PLAYING`.) |
 | No impact to other addons | Focused physical regression sweep across unaffected addons | PASS (Phase 6C entry/render/switch baseline; not a substitute for each addon's playback suite) |
 | Torrent stream through a user-configured Stremio streaming server | Physical visible stream selection, local torrent metadata/piece transfer, ranged server response and hosted Player rendering | PASS (P8G self-owned local-only fixture; historical P8D blockers are superseded) |
 | Fermata native torrent transport/player | Architecture review | NOT APPLICABLE (approved architecture is hosted Stremio Web plus user-configured server) |
@@ -42,17 +42,20 @@ unverified describe their own earlier test boundary.
 ## Release Gate
 
 The signed universal Web-only package passed Phase 7 build, dependency, immutable-input and
-bounded physical smoke checks. This is a packaging and regression gate, not evidence that the
-remaining playback-host boundaries work. The release-readiness state is therefore **PARTIAL**:
+bounded physical smoke checks. The last host-control gate passed in P8H. The release evidence is
+therefore **COMPLETE FOR THE ADVERTISED WEB-ONLY SCOPE**, with two upstream-conditioned
+capabilities that must not be advertised as FermataX features:
 
-- `PARTIAL`: DHU or vehicle-host input has not yet been observed reaching the
-  now-proven active Stremio MediaSession claim.
-- `NOT OBSERVED`: hosted multi-audio selector.
-- `CONDITIONAL_NOT_ADVERTISED`: episode `nexttrack` was not registered by the
-  observed native MediaSession; this is not a failure.
-- `PASS`: P8G observed the separately governed streaming-server/torrent path
-  using a self-owned, loopback-only fixture. This does not change the Web-only
-  architecture or claim any native Fermata torrent capability.
+- `NOT OBSERVED`: the hosted multi-audio selector was absent even when the physical HLS fixture
+  advertised English and Vietnamese tracks. This is not a FermataX-native selector gap under the
+  approved Web-only architecture.
+- `CONDITIONAL_NOT_ADVERTISED`: episode `nexttrack` was not registered by the observed native
+  MediaSession; this is not a failure and no synthetic action was sent.
+- `PASS`: P8G observed the separately governed streaming-server/torrent path using a self-owned,
+  loopback-only fixture. This does not change the Web-only architecture or claim any native
+  Fermata torrent capability.
+- `PASS`: P8H observed a real DHU media-card pause/resume transition against the current active
+  Stremio claim. It is not inferred from ADB key events.
 
 The legacy `modules/stremio` source tree remains in the repository for non-Web-only builds, but
 `-PWEB_STREMIO=true` excludes it from the Gradle graph and release APK. The web-only artifact has

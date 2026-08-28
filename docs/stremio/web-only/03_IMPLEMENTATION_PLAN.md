@@ -33,6 +33,10 @@ Web-only architecture defined above.
 Phase 8E re-verified the signed universal sideload artifact and hosted entry on
 the physical device. P8G later closed the separately governed
 streaming-server/torrent boundary with a self-owned loopback-only fixture.
-Release status remains **PARTIAL**, not PASS, until DHU host controls are
-observed. The current torrent record is
-`reports/PHASE_8G_LOCAL_ONLY_TORRENT_PLAYBACK_REPORT.md`.
+P8H completed the DHU host-control acceptance gate with a real host media-card
+pause/resume transition. The current torrent record is
+`reports/PHASE_8G_LOCAL_ONLY_TORRENT_PLAYBACK_REPORT.md`; the final DHU record
+is `reports/PHASE_8H_DHU_HOST_CONTROL_REPORT.md`. The observed upstream Player
+does not advertise a multi-audio selector, and the observed episode session did
+not advertise `nexttrack`; neither is a Web-only FermataX capability to add or
+claim without an upstream-advertised surface.
