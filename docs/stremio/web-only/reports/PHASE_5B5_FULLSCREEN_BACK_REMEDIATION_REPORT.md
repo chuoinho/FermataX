@@ -2,9 +2,11 @@
 
 ## Result
 
-**F6 PASS on the physical Android device.** Phase 5B5 remains **PARTIAL** only
-because the required explicit subtitle-selection interaction still has not
-been observed. This follow-up does not claim that remaining matrix item.
+**F6 PASS on the physical Android device.** At this follow-up's original
+checkpoint, Phase 5B5 remained partial because subtitle selection had not yet
+been observed. That historical qualification is superseded by
+`PHASE_5B5_SUBTITLE_SELECTION_REMEDIATION_REPORT.md`, which closed F5 and the
+P5B5 matrix.
 
 ## Root Cause
 
@@ -84,6 +86,9 @@ Passed:
   diagnostics allowlist coverage.
 - No account credentials, cookies, addon storage, or stream URLs were read or
   recorded.
-- Still unverified: explicit subtitle selection, torrent transport, next-track,
-  renderer-loss recovery, AA/DHU hardware controls, HLS quality selection,
-  audio-track switching, and persistent resume semantics.
+- Still unverified at this report's original checkpoint: explicit subtitle
+  selection, torrent transport, next-track, renderer-loss recovery, AA/DHU
+  hardware controls, HLS quality selection, audio-track switching, and
+  persistent resume semantics. Later evidence supersedes subtitle selection
+  (P5B5 subtitle follow-up) and renderer-loss recovery (P1C); the remaining
+  gaps are reconciled by Phase 6A.

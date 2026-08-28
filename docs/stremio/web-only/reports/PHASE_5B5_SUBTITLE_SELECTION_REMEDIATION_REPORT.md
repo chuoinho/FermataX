@@ -59,6 +59,7 @@ This is explicit UI selection evidence, not an inference from VTT prefetching.
 - Production LOC: `0`.
 - Test LOC: `0`.
 - Repository change: documentation only.
-- Deferred: torrent transport, `nexttrack`, renderer-loss recovery, AA/DHU
-  hardware controls, HLS quality selection, audio-track switching, and
-  persistent resume semantics.
+- Deferred at this report's checkpoint: torrent transport, `nexttrack`,
+  renderer-loss recovery, AA/DHU hardware controls, HLS quality selection,
+  audio-track switching, and persistent resume semantics. P1C later supplied
+  physical renderer-recovery evidence; Phase 6A reconciles the remaining gaps.

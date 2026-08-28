@@ -21,3 +21,11 @@
 
 Do not add native playback, transport, torrent or DOM-automation code to satisfy a missing Phase
 1B fixture. Those alternatives are outside this architecture.
+
+## Current Acceptance Baseline
+
+The Phase 1 implementation and direct playback/lifecycle acceptance work are
+complete. The reconciled physical evidence and the remaining independent
+acceptance phases are maintained in `05_TEST_ACCEPTANCE.md` and
+`reports/PHASE_6A_ACCEPTANCE_RECONCILIATION_REPORT.md`. They do not change the
+Web-only architecture defined above.

@@ -1,26 +1,38 @@
 # 05 - Acceptance Matrix
 
+## Status vocabulary
+
+- **PASS**: required evidence was observed on the required physical surface.
+- **PARTIAL**: some, but not every, required scenario was observed.
+- **NOT OBSERVED**: no claim is made because the relevant event was absent.
+- **BLOCKED**: a prerequisite or an explicit scope decision is still required.
+- **CONDITIONAL_NOT_ADVERTISED**: the optional upstream action was not registered;
+  this is not a failure.
+- **NOT APPLICABLE**: deliberately outside the approved Web-only architecture.
+
 | Requirement | Evidence required | Current state |
 |---|---|---|
 | One Web-only addon, no legacy feature | Gradle projects/dependency graph | PASS |
 | Addon is enabled and opens hosted origin | Physical device UI | PASS |
 | Existing authenticated Web session remains | Physical device avatar/session UI | PASS |
-| Catalog/search/library/settings are usable | Physical device manual test | PARTIAL (catalog/detail/trailer route observed) |
+| Catalog/search/library/settings sweep | Physical device manual sweep of all four hosted sections | PARTIAL (catalog/detail and Addons observed; full four-section sweep remains) |
 | Android WebView Media Session compatibility | Physical device DevTools and logcat | PASS |
 | ADB play/pause/toggle control | Physical device trailer and `dumpsys media_session` | PASS |
-| Next control | Physical device only when Stremio registers `nexttrack` | NOT OBSERVED (not advertised) |
+| Next control | Physical device only when Stremio registers `nexttrack` | CONDITIONAL_NOT_ADVERTISED (no physical page registered the action) |
 | Inline HTTP MP4/HLS playback | Physical device with working server | PASS (P5B5 direct MP4 and HLS fixture) |
-| Fullscreen without reload/position loss | Physical device video fixture | PASS (P1B/Phase 5B5 fixture preserved the hosted Player and observed position) |
+| Seek | Physical device MP4 fixture plus changed range request | PASS (P5B5 F4) |
+| Fullscreen without reload/position loss | Physical device video fixture | PASS (P1B/Phase 5B5 preserved hosted Player and observed position) |
 | Back order | Physical device video fixture | PASS (P5B5 fullscreen exit preserves Player/playback) |
 | Subtitle selection | Physical device video fixture | PASS (P5B5 explicit `OFF` -> `English`, rendered WebVTT) |
-| Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C physical Home/reopen, lock/wake, renderer recovery and addon switching) |
-| No impact to other addons | Existing unit suite plus manual AA sweep | PARTIAL |
+| Audio-track selection | Physical device fixture with multiple advertised audio tracks | NOT OBSERVED (no accepted multi-audio fixture run) |
+| Background/recovery/switching | Physical device lifecycle matrix | PASS (P1C Home/reopen, lock/wake, renderer recovery and addon switching) |
+| Android Auto/DHU host media controls | DHU or vehicle-host input reaches current Stremio claim | PARTIAL (hosted UI and ownership observed; no DHU transport input path) |
+| No impact to other addons | Focused physical regression sweep across unaffected addons | PARTIAL (ownership switch observed; broader sweep remains) |
+| Torrent stream through a user-configured Stremio streaming server | Separate approved server/fixture decision and physical evidence | BLOCKED (not a Fermata native-player or native-torrent requirement) |
+| Fermata native torrent transport/player | Architecture review | NOT APPLICABLE (approved architecture is hosted Stremio Web plus user-configured server) |
 
-`PASS` requires observed evidence, not an inference from source code. A missing streaming server
-is a test-environment limitation, not a reason to add a native playback fallback.
-
-The previous blank-detail failure was attributable to Stremio Web calling an unavailable Android
-WebView Media Session API. The compatibility shim is now exercised on-device. Direct-server
-playback, seek, and explicit subtitle selection are physically observed; audio-track handling,
-Automotive host controls, torrent transport, and renderer-loss recovery remain separately
-unverified.
+`PASS` requires observed evidence, not source-code inference. Historical blockers
+in Phase 5B3 and earlier are retained as evidence, but the direct MP4/HLS
+Player boundary is superseded by the complete P5B5 physical matrix.
+Renderer-loss recovery is PASS under P1C; earlier documents that say it was
+unverified describe their own earlier test boundary.

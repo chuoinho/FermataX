@@ -58,6 +58,11 @@ query strings, cookies, or route payloads are recorded.
 
 ## Fullscreen Failure Detail
 
+This section preserves the initial F6 failure evidence. It was superseded by
+the physical PASS recorded in
+`PHASE_5B5_FULLSCREEN_BACK_REMEDIATION_REPORT.md`; it is not the final F6
+classification.
+
 The failure is bounded to the Back contract, not fullscreen entry or rendering:
 
 1. The player advertised `Enter fullscreen mode`.
@@ -93,9 +98,13 @@ not masked by replaying the item or changing any application state.
 - Repository change: this report only.
 - No crash, ANR, unexpected external-app launch, or account/addon mutation was
   observed outside the single temporary fixture lifecycle.
-- Do not claim completion for torrent transport, `nexttrack`, renderer-loss
+- At this report's checkpoint, torrent transport, `nexttrack`, renderer-loss
   recovery, AA/DHU hardware-button behavior, HLS quality selection,
-  audio-track switching, or persistent resume semantics.
+  audio-track switching, and persistent resume semantics were not claimed.
+  Later evidence supersedes only renderer-loss recovery: P1C physically
+  observed `onRenderProcessGone` -> `recoverRenderProcess` and a rendered
+  replacement detail route. `nexttrack` remains conditional because no
+  physical Stremio page advertised the action.
 
 ## Checkpoint
 
