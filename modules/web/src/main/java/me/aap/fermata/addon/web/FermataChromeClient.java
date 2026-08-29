@@ -44,6 +44,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.view.FloatingButton;
 
 /**
@@ -57,6 +58,7 @@ public class FermataChromeClient extends WebChromeClient {
 	private CustomViewCallback customViewCallback;
 	private Promise<Void> fullScreenReq;
 	private long touchStamp;
+	private boolean phonePermissionHintShown;
 	protected final DiagnosticsObserver diagnosticsObserver;
 
 	public FermataChromeClient(FermataWebView web, ViewGroup fullScreenView) {
@@ -308,7 +310,19 @@ public class FermataChromeClient extends WebChromeClient {
 
 	@Override
 	public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback cb) {
-		FutureSupplier<int[]> perm = ActivityDelegate.get(getWebView().getContext()).getAppActivity()
+		MainActivityDelegate activity = MainActivityDelegate.get(getWebView().getContext());
+		if (BuildConfig.AUTO && activity.isCarActivityNotMirror()) {
+			Context context = getWebView().getContext();
+			boolean coarse = ContextCompat.checkSelfPermission(context,
+					Manifest.permission.ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED;
+			boolean fine = ContextCompat.checkSelfPermission(context,
+					Manifest.permission.ACCESS_FINE_LOCATION) == PERMISSION_GRANTED;
+			if (cb != null) cb.invoke(origin, coarse || fine, false);
+			if (!coarse && !fine) showPhonePermissionHint(context);
+			return;
+		}
+
+		FutureSupplier<int[]> perm = activity.getAppActivity()
 				.checkPermissions(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION);
 		if (cb != null) {
 			perm.onCompletion((p, f) -> {
@@ -358,7 +372,10 @@ public class FermataChromeClient extends WebChromeClient {
 				if (ContextCompat.checkSelfPermission(context, entry.getKey()) == PERMISSION_GRANTED)
 					granted.add(entry.getValue());
 			}
-			if (granted.isEmpty()) request.deny();
+			if (granted.isEmpty()) {
+				request.deny();
+				showPhonePermissionHint(context);
+			}
 			else request.grant(granted.toArray(new String[0]));
 			return;
 		}
@@ -385,6 +402,12 @@ public class FermataChromeClient extends WebChromeClient {
 				}
 			}
 		});
+	}
+
+	private void showPhonePermissionHint(Context context) {
+		if (phonePermissionHintShown) return;
+		phonePermissionHintShown = true;
+		UiUtils.showAlert(context, context.getString(me.aap.fermata.R.string.use_phone_to_grant_perm));
 	}
 
 	@Override

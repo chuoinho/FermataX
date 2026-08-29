@@ -354,7 +354,7 @@
     <string name="p2p_rebuffering_status">Rebuffering | %1$d peers | %2$s/s</string>
     <string name="press_back_again">Press back button again to exit.</string>
     <string name="please_restart_app">Please restart the application.</string>
-    <string name="use_phone_to_grant_perm">Please use you phone to grant required permissions.</string>
+    <string name="use_phone_to_grant_perm">This feature needs permission on your phone. Open FermataX on the phone and try again.</string>
 
     <string name="vfs_content">Content</string>
     <string name="vfs_file_system">File system</string>
@@ -453,7 +453,7 @@
     <string name="diagnostic_report_failed">Unable to create diagnostic report: %1$s</string>
     <string name="diagnostic_data_cleared">Diagnostic data cleared.</string>
     <string name="diagnostics_phone_only">Export diagnostic reports from FermataX Settings on your phone.</string>
-    <string name="unlock_phone_and_grant">Unlock the phone and grant the requested permissions.</string>
+    <string name="unlock_phone_and_grant">Unlock your phone, open FermataX and confirm screen sharing to start mirroring.</string>
     <string name="screen_capture_rejected">Screen capture request rejected.</string>
     <string name="accessibility_dsc">The accessibility service is used by Fermata Mirror to simulate touch screen events.</string>
     <string name="media_projection_action_text">Start now</string>

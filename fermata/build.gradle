@@ -6,6 +6,10 @@ def configuredAutoIdSuffix = project.getProperties().getOrDefault('APP_ID_SFX', 
 def expectedAutoReleaseApplicationId = configuredApplicationId + '.auto' + configuredAutoIdSuffix
 def artifactIdentity = expectedAutoReleaseApplicationId
         .replaceAll('[^A-Za-z0-9._-]', '_')
+def youtubeAudioRestoreEnabled = project.getProperties()
+        .getOrDefault('YT_AUDIO_RESTORE', 'true').toString().toBoolean()
+def youtubeDiagnosticsEnabled = project.getProperties()
+        .getOrDefault('YT_DIAGNOSTICS', 'false').toString().toBoolean()
 
 android {
     defaultConfig {
@@ -14,6 +18,8 @@ android {
         versionCode VERSION_CODE
         versionName VERSION_NAME
         base.archivesName = "fermata-$versionName-$artifactIdentity"
+        buildConfigField "boolean", 'YT_AUDIO_RESTORE', "${youtubeAudioRestoreEnabled}"
+        buildConfigField "boolean", 'YT_DIAGNOSTICS', "${youtubeDiagnosticsEnabled}"
 
         ndk {
             //noinspection ChromeOsAbiSupport

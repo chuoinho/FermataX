@@ -165,8 +165,6 @@ public class ProjectionActivity extends ActivityBase {
 
 	private FutureSupplier<Intent> requestScreenCapturePermission() {
 		Log.i("Requesting screen cast permission");
-		AccessibilityEventDispatcherService.autoClickOnButton(
-				getString(R.string.media_projection_action_text));
 		var mm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
 		return startActivityForResult(() -> createScreenCaptureIntent(mm));
 	}

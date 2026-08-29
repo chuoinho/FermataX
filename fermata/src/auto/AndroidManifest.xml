@@ -10,11 +10,7 @@
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
 	<!-- Auto can run on TV-style head units that do not expose a touchscreen. -->
 	<uses-feature
@@ -125,18 +121,6 @@
 
                 <category android:name="com.google.android.gms.car.category.CATEGORY_PROJECTION" />
                 <category android:name="com.google.android.gms.car.category.CATEGORY_PROJECTION_OEM" />
-            </intent-filter>
-        </service>
-
-        <service
-            android:name="me.app.fermatax.auto.MirrorServiceFS"
-            android:exported="true"
-            android:icon="@drawable/mirror_fs"
-            android:label="@string/mirror_fs_service_name"
-            tools:ignore="ExportedService">
-            <intent-filter>
-                <action android:name="androidx.car.app.CarAppService" />
-                <category android:name="androidx.car.app.category.NAVIGATION" />
             </intent-filter>
         </service>
 

@@ -59,8 +59,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -274,30 +272,22 @@ public class MainActivityDelegate extends ActivityDelegate
 
 		AddonManager.get().onActivityCreate(this);
 
-		String[] perms = getRequiredPermissions();
-		a.checkPermissions(perms).onCompletion((result, fail) -> {
-			if (fail != null) {
-				if (!isCarActivityNotMirror()) Log.e(fail);
-			} else {
-				Log.d("Requested permissions: ", Arrays.toString(perms),
-						". Result: " + Arrays.toString(result));
-			}
+		// Permissions are requested by the feature that needs them. In particular, an Android
+		// Auto activity must never try to launch a phone runtime-permission dialog at startup.
+		if (restoredFragmentId != ID_NULL) {
+			setActiveNavItemId(restoredNavId);
+			showFragment(restoredFragmentId);
+			return;
+		}
 
-			if (restoredFragmentId != ID_NULL) {
-				setActiveNavItemId(restoredNavId);
-				showFragment(restoredFragmentId);
-				return;
-			}
-
-			if ((intent != null) && !Intent.ACTION_MAIN.equals(intent.getAction())) {
-				handleIntent(intent).onCompletion((r, err) -> {
-					if (err != null) Log.e(err, "Failed to handle intent ", intent);
-					if ((r == null) || !r) defaultIntent(initialSetup);
-				});
-			} else {
-				defaultIntent(initialSetup);
-			}
-		});
+		if ((intent != null) && !Intent.ACTION_MAIN.equals(intent.getAction())) {
+			handleIntent(intent).onCompletion((r, err) -> {
+				if (err != null) Log.e(err, "Failed to handle intent ", intent);
+				if ((r == null) || !r) defaultIntent(initialSetup);
+			});
+		} else {
+			defaultIntent(initialSetup);
+		}
 	}
 
 	@Override
@@ -1217,26 +1207,6 @@ public class MainActivityDelegate extends ActivityDelegate
 			case NavBarView.POSITION_RIGHT -> R.layout.main_activity_right;
 			default -> R.layout.main_activity_left;
 		};
-	}
-
-	private static String[] getRequiredPermissions() {
-		List<String> perms = new ArrayList<>();
-		perms.add(permission.READ_EXTERNAL_STORAGE);
-		if (VERSION.SDK_INT >= VERSION_CODES.P) {
-			perms.add(permission.FOREGROUND_SERVICE);
-		}
-		if (VERSION.SDK_INT >= VERSION_CODES.Q) {
-			perms.add(permission.ACCESS_MEDIA_LOCATION);
-			perms.add(permission.USE_FULL_SCREEN_INTENT);
-		}
-		if (VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
-			perms.add(permission.USE_FULL_SCREEN_INTENT);
-			perms.add(permission.POST_NOTIFICATIONS);
-		}
-		if (VERSION.SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE) {
-			perms.add(permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK);
-		}
-		return perms.toArray(new String[0]);
 	}
 
 	@Override

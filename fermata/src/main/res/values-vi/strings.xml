@@ -319,7 +319,7 @@
     <string name="loading">Đang tải…</string>
     <string name="press_back_again">Nhấn nút quay lại lần nữa để thoát.</string>
     <string name="please_restart_app">Vui lòng khởi động lại ứng dụng.</string>
-    <string name="use_phone_to_grant_perm">Vui lòng sử dụng điện thoại của bạn để cấp các quyền cần thiết.</string>
+	<string name="use_phone_to_grant_perm">Tính năng này cần được cấp quyền trên điện thoại. Hãy mở FermataX trên điện thoại và thử lại.</string>
 
     <string name="vfs_content">Nội dung</string>
     <string name="vfs_file_system">Tệp tin hệ thống</string>
@@ -399,7 +399,7 @@
     <string name="import_prefs_failed">Không thể nhập tệp tin cấu hình cài đặt: %1$s</string>
     <string name="prefs_not_found">Không tìm thấy tệp tin cấu hình cài đặt</string>
     <string name="open_log">Mở tệp nhật ký</string>
-    <string name="unlock_phone_and_grant">Mở khóa điện thoại và cấp các quyền được yêu cầu.</string>
+    <string name="unlock_phone_and_grant">Mở khóa điện thoại, mở FermataX và xác nhận chia sẻ màn hình để bắt đầu mirroring.</string>
     <string name="screen_capture_rejected">Yêu cầu chụp ảnh màn hình bị từ chối.</string>
     <string name="accessibility_dsc">Dịch vụ trợ năng được Fermata Mirror sử dụng để mô phỏng các sự kiện trên màn hình cảm ứng.</string>
     <string name="media_projection_action_text">Bắt đầu ngay</string>

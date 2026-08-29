@@ -187,7 +187,8 @@ public class YoutubeWebView extends FermataWebView {
 
 	@Override
 	public void reload() {
-		if ((mediaEngine == null) || !mediaEngine.isPlaybackActive()) {
+		if (!BuildConfig.YT_AUDIO_RESTORE || (mediaEngine == null) ||
+				!mediaEngine.isPlaybackActive()) {
 			cancelReloadAudioRestore();
 			super.reload();
 			return;
@@ -871,6 +872,7 @@ public class YoutubeWebView extends FermataWebView {
 
 	void prepareAutoNextAudioRestore(YoutubePlaybackMetadata.Signal signal) {
 		cancelAutoNextAudioRestore();
+		if (!BuildConfig.YT_AUDIO_RESTORE) return;
 		if ((signal == null) || !signal.isAudible() || signal.videoId().isEmpty()) return;
 		autoNextAudioRestorePending = true;
 		autoNextAudioSourceId = signal.videoId();
@@ -1126,6 +1128,7 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void setImmersiveVideoMode(boolean enabled) {
+		logPlaybackDiagnostics(enabled ? "before_immersive_enable" : "before_immersive_disable");
 		evaluateJavascript(String.format(Locale.ROOT, """
 				(function(enabled) {
 				  const id = 'fermata-yt-immersive-style';
@@ -1161,7 +1164,30 @@ public class YoutubeWebView extends FermataWebView {
 				  } else {
 				    document.documentElement.classList.remove('fermata-yt-immersive');
 				  }
-				})(%s);""", enabled ? "true" : "false"), null);
+				})(%s);""", enabled ? "true" : "false"), ignored -> {
+			logPlaybackDiagnostics(enabled ? "after_immersive_enable" : "after_immersive_disable");
+			postDelayed(() -> logPlaybackDiagnostics(enabled ?
+					"settled_immersive_enable" : "settled_immersive_disable"), 500L);
+		});
+	}
+
+	private void logPlaybackDiagnostics(String reason) {
+		if (!BuildConfig.YT_DIAGNOSTICS) return;
+		evaluateJavascript(PLAYBACK_SIGNAL_JS + """
+				(function(reason) {
+				  var v = fermataActiveContentVideo();
+				  var p = document.querySelector('#movie_player');
+				  var r = v ? v.getBoundingClientRect() : null;
+				  var s = v ? getComputedStyle(v) : null;
+				  var pv = null;
+				  try { if (p && typeof p.getVolume === 'function') pv = p.getVolume(); } catch (e) {}
+				  return JSON.stringify({reason:reason,hasVideo:!!v,playing:!!v&&!v.paused&&!v.ended,
+				    muted:!!v&&v.muted,volume:v?v.volume:null,playerVolume:pv,
+				    immersive:document.documentElement.classList.contains('fermata-yt-immersive'),
+				    viewport:[innerWidth,innerHeight],rect:r?[r.x,r.y,r.width,r.height]:null,
+				    intrinsic:v?[v.videoWidth,v.videoHeight]:null,objectFit:s?s.objectFit:null});
+				})(""" + JSONObject.quote(reason) + ");", value ->
+				android.util.Log.i("FermataXYtDiag", YoutubeScripts.decodeJavascriptString(value)));
 	}
 
 	void play() {
