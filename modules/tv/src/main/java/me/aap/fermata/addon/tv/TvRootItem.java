@@ -8,6 +8,7 @@ import java.util.List;
 
 import me.aap.fermata.addon.tv.m3u.TvM3uFile;
 import me.aap.fermata.addon.tv.m3u.TvM3uEpgItem;
+import me.aap.fermata.addon.tv.m3u.TvM3uFileSystem;
 import me.aap.fermata.addon.tv.m3u.TvM3uGroupItem;
 import me.aap.fermata.addon.tv.m3u.TvM3uItem;
 import me.aap.fermata.addon.tv.m3u.TvM3uTrackItem;
@@ -32,13 +33,17 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.BiConsumer;
+import me.aap.utils.function.Function;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 
 import static me.aap.utils.async.Async.forEach;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.text.TextUtils.isNullOrBlank;
 
 /**
  * @author Andrey Pavlenko
@@ -50,6 +55,7 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 	private final M3uSourceHandler m3uSources;
 	private final XtreamSourceHandler xtreamSources;
 	private final TvItemFactory itemFactory;
+	private List<String> failedSourceNames = List.of();
 
 	public TvRootItem(DefaultMediaLib lib) {
 		super(ID, null, null);
@@ -114,14 +120,78 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 		int[] ids = sources.getSourceIds();
 		List<Integer> idList = new ArrayList<>(ids.length);
 		for (int i : ids) idList.add(i);
-		List<Item> children = new ArrayList<>(ids.length);
+		List<String> failures = new ArrayList<>();
+		return loadAvailableSources(idList, this::createSource, (id, failure) -> {
+			String name = getSourceName(id);
+			failures.add(name);
+			if (failure != null) Log.e(failure, "Skipping failed TV source ", name);
+			else Log.e("Skipping unavailable TV source ", name);
+		}).map(children -> {
+			setFailedSourceNames(failures);
+			return new ArrayList<Item>(children);
+		});
+	}
+
+	static <T> FutureSupplier<List<T>> loadAvailableSources(List<Integer> sourceIds,
+			Function<Integer, FutureSupplier<? extends T>> loader,
+			BiConsumer<Integer, Throwable> onFailure) {
+		List<T> children = new ArrayList<>(sourceIds.size());
 		return forEach(id -> {
-			FutureSupplier<? extends TvSourceItem> f = createSource(id);
-			if (f != null) return f.onSuccess(i -> {
-				if (i != null) children.add(i);
+			FutureSupplier<? extends T> source;
+			try {
+				source = loader.apply(id);
+			} catch (Throwable failure) {
+				onFailure.accept(id, failure);
+				return completedVoid();
+			}
+
+			if (source == null) {
+				onFailure.accept(id, null);
+				return completedVoid();
+			}
+
+			return source.onSuccess(item -> {
+				if (item != null) children.add(item);
+				else onFailure.accept(id, null);
+			}).ifFail(failure -> {
+				onFailure.accept(id, failure);
+				return null;
 			});
-			return completedVoid();
-		}, idList).map(v -> children);
+		}, sourceIds).map(v -> children);
+	}
+
+	private String getSourceName(int sourceId) {
+		try {
+			if (TvSourceItem.TYPE_XTREAM.equals(sources.getSourceType(sourceId))) {
+				PreferenceStore store = sources.getStore();
+				String name = store.getStringPref(XtreamAccount.namePref(sourceId));
+				if (!isNullOrBlank(name)) return name;
+				String host = store.getStringPref(XtreamAccount.hostPref(sourceId));
+				if (!isNullOrBlank(host)) return host;
+			} else {
+				String m3uId = sources.getM3uId(sourceId);
+				if (!isNullOrBlank(m3uId)) {
+					TvM3uFileSystem fs = TvM3uFileSystem.getInstance();
+					String name = new TvM3uFile(fs.toRid(m3uId)).getName();
+					if (!isNullOrBlank(name)) return name;
+				}
+			}
+		} catch (Throwable failure) {
+			Log.e(failure, "Failed to resolve TV source name for ", sourceId);
+		}
+
+		return getLib().getContext().getString(R.string.tv_source_name) + " #" + sourceId;
+	}
+
+	private synchronized void setFailedSourceNames(List<String> names) {
+		failedSourceNames = names.isEmpty() ? List.of() : List.copyOf(names);
+	}
+
+	synchronized List<String> consumeFailedSourceNames() {
+		if (failedSourceNames.isEmpty()) return List.of();
+		List<String> result = failedSourceNames;
+		failedSourceNames = List.of();
+		return result;
 	}
 
 	@Override

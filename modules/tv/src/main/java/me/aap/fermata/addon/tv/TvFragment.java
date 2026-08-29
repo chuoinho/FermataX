@@ -11,6 +11,7 @@ import android.view.animation.AnimationUtils;
 import androidx.annotation.NonNull;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -89,6 +90,7 @@ public class TvFragment extends MediaLibFragment {
 		if (a != null) {
 			a.animateAddButton(a.getParent());
 			autoReloadSources(a);
+			showFailedSources(getRootItem());
 		}
 	}
 
@@ -332,6 +334,24 @@ public class TvFragment extends MediaLibFragment {
 		return null;
 	}
 
+	private void showFailedSources(TvRootItem root) {
+		App.get().getHandler().post(() -> {
+			if ((getView() == null) || isHidden()) return;
+			TvAdapter adapter = getAdapter();
+			if ((adapter == null) || (adapter.getParent() != root)) return;
+
+			List<String> failures = root.consumeFailedSourceNames();
+			if (failures.isEmpty()) return;
+			StringBuilder names = new StringBuilder();
+			for (String name : failures) {
+				if (names.length() != 0) names.append('\n');
+				names.append("\u2022 ").append(name);
+			}
+			UiUtils.showAlert(getContext(),
+					getString(R.string.err_failed_to_load_tv_sources, names.toString()));
+		});
+	}
+
 	private class TvAdapter extends ListAdapter {
 
 		TvAdapter(MainActivityDelegate activity, BrowsableItem parent) {
@@ -342,6 +362,13 @@ public class TvFragment extends MediaLibFragment {
 		@Override
 		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
 			return super.setParent(parent, userAction).onSuccess(v -> animateAddButton(parent));
+		}
+
+		@Override
+		protected void setChildren(List<? extends Item> children) {
+			super.setChildren(children);
+			BrowsableItem parent = getParent();
+			if (parent instanceof TvRootItem) showFailedSources((TvRootItem) parent);
 		}
 
 		public boolean isLongPressDragEnabled() {
