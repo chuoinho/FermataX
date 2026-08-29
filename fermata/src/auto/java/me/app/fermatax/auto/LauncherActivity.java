@@ -412,7 +412,7 @@ public class LauncherActivity extends AppCompatActivity {
 				icon.startAnimation(animation);
 
 				if (appInfo.equals(AppInfo.EXIT)) {
-					MirrorDisplay.close();
+					AutoSessionShutdown.shutdown(getContext());
 				} else if (appInfo.equals(AppInfo.ADD)) {
 					var pm = getContext().getPackageManager();
 					var allApps = loadAllAppList(pm);

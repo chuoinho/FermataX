@@ -55,6 +55,28 @@ public final class StremioWebFragment extends WebBrowserFragment {
 		updateMediaSessionClaim(!hidden);
 	}
 
+	@Override
+	protected String getInitialUrl(@NonNull WebBrowserAddon addon) {
+		return ((StremioWebAddon) addon).getEntryUrl();
+	}
+
+	@Override
+	protected void onAutomotiveShutdown() {
+		FermataWebView web = getWebView();
+		if (web instanceof StremioWebView stremio) stremio.endAutomotiveSession();
+		super.onAutomotiveShutdown();
+	}
+
+	@Override
+	protected void onAutomotiveSessionStarted() {
+		super.onAutomotiveSessionStarted();
+		FermataWebView web = getWebView();
+		if ((web instanceof StremioWebView stremio) &&
+				(getAddon() instanceof StremioWebAddon addon) && addon.requiresHomeOnNextEntry()) {
+			stremio.resetToHomeForNewSession();
+		}
+	}
+
 	private void updateMediaSessionClaim(boolean active) {
 		FermataWebView web = getWebView();
 		if (web instanceof StremioWebView stremio) {
@@ -84,6 +106,8 @@ public final class StremioWebFragment extends WebBrowserFragment {
 	}
 
 	void openSearch(String query) {
+		StremioWebAddon addon = (StremioWebAddon) getAddon();
+		if (addon != null) addon.beginExplicitNavigation();
 		voiceCommand(new me.aap.fermata.ui.activity.VoiceCommand(query,
 				me.aap.fermata.ui.activity.VoiceCommand.ACTION_FIND));
 	}

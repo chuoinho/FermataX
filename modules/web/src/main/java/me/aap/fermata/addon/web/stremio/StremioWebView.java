@@ -38,8 +38,34 @@ public final class StremioWebView extends FermataWebView {
 	public void loadUrl(String url) {
 		StremioWebMediaSessionBridge bridge = mediaSessionBridge;
 		if ((bridge != null) && ((url == null) || !url.regionMatches(true, 0,
-				"javascript:", 0, 11))) bridge.onDocumentNavigation();
+				"javascript:", 0, 11))) bridge.onDocumentNavigation(url);
 		super.loadUrl(url);
+	}
+
+	@Override
+	protected boolean shouldPersistLoadedPage(String url) {
+		return super.shouldPersistLoadedPage(url) && StremioWebSessionPolicy.isPersistableRoute(url);
+	}
+
+	@Override
+	protected void pageLoaded(String url) {
+		super.pageLoaded(url);
+		WebBrowserAddon addon = getAddon();
+		if (addon instanceof StremioWebAddon stremio) stremio.onPageCommitted(url);
+	}
+
+	void endAutomotiveSession() {
+		StremioWebMediaSessionBridge bridge = mediaSessionBridge;
+		if (bridge != null) bridge.endAutomotiveSession();
+		stopLoading();
+		clearHistory();
+		super.loadUrl("about:blank");
+	}
+
+	void resetToHomeForNewSession() {
+		stopLoading();
+		clearHistory();
+		loadUrl(StremioWebAddon.HOME_URL);
 	}
 
 	@Override

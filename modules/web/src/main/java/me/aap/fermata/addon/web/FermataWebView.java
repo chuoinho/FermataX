@@ -406,7 +406,7 @@ public class FermataWebView extends WebView
 			updateWebToolbar(uri);
 			return;
 		}
-		if (!shouldPersistPage(false, clearingExternalPlayback, uri)) {
+		if (!shouldPersistLoadedPage(uri)) {
 			clearingExternalPlayback = false;
 			return;
 		}
@@ -420,6 +420,11 @@ public class FermataWebView extends WebView
 			String uri) {
 		return !externalPlayback &&
 				!(clearingExternalPlayback && "about:blank".equals(uri));
+	}
+
+	/** Allows a hosted addon to keep unsafe transient routes out of its persisted entry URL. */
+	protected boolean shouldPersistLoadedPage(String uri) {
+		return shouldPersistPage(false, clearingExternalPlayback, uri);
 	}
 
 	private void updateWebToolbar(String uri) {

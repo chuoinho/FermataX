@@ -23,6 +23,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.EnumSet;
+import java.util.Locale;
 import java.util.Set;
 
 import me.aap.fermata.media.service.MediaSessionCallback;
@@ -42,6 +43,8 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	private ScriptHandler script;
 	private MediaSessionCallback claimedCallback;
 	private boolean installed;
+	private boolean acceptingMessages;
+	private long documentGeneration;
 
 	StremioWebMediaSessionBridge(StremioWebView web) {
 		this.web = web;
@@ -54,19 +57,36 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			return;
 		}
 		try {
-			script = WebViewCompat.addDocumentStartJavaScript(web, shimSource(), ORIGINS);
 			WebViewCompat.addWebMessageListener(web, PORT, ORIGINS, this::onMessage);
 			installed = true;
 		} catch (RuntimeException error) {
-			if (script != null) script.remove();
-			script = null;
+			removeDocumentScript();
 			Log.w(error, "Stremio media-session bridge disabled");
 		}
 	}
 
-	void onDocumentNavigation() {
+	void onDocumentNavigation(String url) {
 		state.reset();
 		releaseClaim();
+		acceptingMessages = false;
+		removeDocumentScript();
+		if (!isHostedDocument(url)) return;
+		try {
+			documentGeneration++;
+			script = WebViewCompat.addDocumentStartJavaScript(web, shimSource(documentGeneration), ORIGINS);
+			acceptingMessages = true;
+		} catch (RuntimeException error) {
+			Log.w(error, "Stremio media-session bridge document setup failed");
+		}
+	}
+
+	/** Blocks the old document before an automotive session is torn down. */
+	void endAutomotiveSession() {
+		documentGeneration++;
+		acceptingMessages = false;
+		state.reset();
+		releaseClaim();
+		removeDocumentScript();
 	}
 
 	void onFragmentActiveChanged(boolean active) {
@@ -93,10 +113,11 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 
 	void close() {
 		installed = false;
+		acceptingMessages = false;
+		documentGeneration++;
 		state.reset();
 		releaseClaim();
-		if (script != null) script.remove();
-		script = null;
+		removeDocumentScript();
 		try {
 			WebViewCompat.removeWebMessageListener(web, PORT);
 		} catch (RuntimeException ignored) {
@@ -105,12 +126,13 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 
 	private void onMessage(WebView source, WebMessageCompat message, Uri origin,
 			boolean isMainFrame, JavaScriptReplyProxy reply) {
-		if ((source != web) || !isMainFrame || !isAllowedOrigin(origin.toString())) return;
+		if (!acceptingMessages || (source != web) || !isMainFrame || !isAllowedOrigin(origin.toString())) return;
 		String data = message.getData();
 		if (!isBoundedPayload(data)) return;
 		try {
 			JSONObject json = new JSONObject(data);
 			if (json.optInt("v", -1) != VERSION) return;
+			if (!isCurrentDocumentGeneration(documentGeneration, json.optLong("g", -1L))) return;
 			String type = json.optString("t", "");
 			if (!isSupportedMessageType(type)) return;
 			String session = bounded(json.optString("s", ""), 64);
@@ -164,6 +186,23 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		}
 	}
 
+	private void removeDocumentScript() {
+		ScriptHandler current = script;
+		script = null;
+		if (current != null) current.remove();
+	}
+
+	private static boolean isHostedDocument(String url) {
+		if (url == null) return false;
+		try {
+			Uri uri = Uri.parse(url);
+			return "https".equalsIgnoreCase(uri.getScheme()) &&
+					"web.stremio.com".equalsIgnoreCase(uri.getHost());
+		} catch (RuntimeException ignored) {
+			return false;
+		}
+	}
+
 	private static String bounded(String value, int maxLength) {
 		if (value == null) return "";
 		return value.substring(0, Math.min(value.length(), maxLength));
@@ -181,6 +220,10 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		return (payload != null) && (payload.length() <= MAX_MESSAGE_SIZE);
 	}
 
+	static boolean isCurrentDocumentGeneration(long expected, long messageGeneration) {
+		return expected == messageGeneration;
+	}
+
 	static boolean isSupportedMessageType(String type) {
 		return switch (type) {
 			case "READY", "PLAYBACK_STATE", "METADATA", "HANDLER_REGISTERED",
@@ -190,7 +233,11 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	}
 
 	static String shimSource() {
-		return """
+		return shimSource(1L);
+	}
+
+	static String shimSource(long generation) {
+		return String.format(Locale.ROOT, """
 			(function(){
 			  'use strict';
 			  if (window.top !== window || window.__fermataStremioMediaSessionV1) return;
@@ -200,7 +247,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			  var allowed = Object.freeze(Object.assign(Object.create(null), {play:true,pause:true,nexttrack:true}));
 			  var handlers = Object.create(null);
 			  var send = function(type, data) { try {
-			    var msg = data || {}; msg.v = 1; msg.t = type; msg.s = session;
+			    var msg = data || {}; msg.v = 1; msg.g = %d; msg.t = type; msg.s = session;
 			    port.postMessage(JSON.stringify(msg));
 			  } catch (_) {} };
 			  var text = function(value) { return typeof value === 'string' ? value.slice(0, 256) : ''; };
@@ -270,7 +317,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			  addEventListener('pagehide', function(){ send('SESSION_CLOSED'); }, {once:true});
 			  send('READY');
 			})();
-			""";
+			""", generation);
 	}
 
 	private static String dispatchSource(String action) {

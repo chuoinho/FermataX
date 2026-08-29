@@ -59,6 +59,13 @@ public class StremioWebMediaSessionBridgeTest {
 	}
 
 	@Test
+	public void rejectsStaleDocumentGeneration() {
+		assertTrue(StremioWebMediaSessionBridge.isCurrentDocumentGeneration(7L, 7L));
+		assertFalse(StremioWebMediaSessionBridge.isCurrentDocumentGeneration(8L, 7L));
+		assertTrue(StremioWebMediaSessionBridge.shimSource(37L).contains("msg.g = 37"));
+	}
+
+	@Test
 	public void shimIsIdempotentAndObservesNativeMediaSessionWithoutReplacingNavigator() {
 		String source = StremioWebMediaSessionBridge.shimSource();
 		assertTrue(source.contains("window.__fermataStremioMediaSessionV1"));
