@@ -94,6 +94,10 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		else releaseClaim();
 	}
 
+	boolean isPlaybackActive() {
+		return state.isPlaybackActive();
+	}
+
 	@Override
 	public boolean isControlOnlyActive() {
 		return installed && isStremioActive() && state.canClaim();
@@ -130,6 +134,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		String data = message.getData();
 		if (!isBoundedPayload(data)) return;
 		try {
+			boolean wasPlaybackActive = state.isPlaybackActive();
 			JSONObject json = new JSONObject(data);
 			if (json.optInt("v", -1) != VERSION) return;
 			if (!isCurrentDocumentGeneration(documentGeneration, json.optLong("g", -1L))) return;
@@ -154,7 +159,16 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 				}
 			}
 			syncClaim();
+			if (wasPlaybackActive != state.isPlaybackActive()) notifyContentChanged();
 		} catch (JSONException ignored) {
+		}
+	}
+
+	private void notifyContentChanged() {
+		try {
+			MainActivityDelegate.get(web.getContext()).fireBroadcastEvent(
+					me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED);
+		} catch (RuntimeException ignored) {
 		}
 	}
 
@@ -376,6 +390,10 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		boolean canClaim() {
 			return (playback != Playback.NONE) &&
 					(handlers.contains(Action.PLAY) || handlers.contains(Action.PAUSE));
+		}
+
+		boolean isPlaybackActive() {
+			return playback != Playback.NONE;
 		}
 
 		boolean canDispatch(String action) {

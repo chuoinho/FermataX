@@ -22,6 +22,8 @@ public class TopBarAuthorityContractTest {
 		assertTrue(controller.contains("!TextUtils.equals(title.getText(), state.title())"));
 		assertTrue(controller.contains("back.setVisibility(state.backVisibility())"));
 		assertTrue(controller.contains("title.setText(state.title())"));
+		assertTrue(controller.contains("TopBarPolicy.resolveTopBarVisibility"));
+		assertTrue(controller.contains("toolBar.setVisibility(visibility)"));
 	}
 
 	@Test
@@ -32,6 +34,13 @@ public class TopBarAuthorityContractTest {
 		assertFalse(support.contains("title.setText("));
 		assertFalse(support.contains("back.setVisibility("));
 		assertFalse(support.contains("TopBarPolicy.resolve("));
+	}
+
+	@Test
+	public void toolbarRestoresMediatorVisibilityThroughTheCommonChromeAuthority()
+			throws Exception {
+		String toolbar = coreSource("ui/view/FermataToolBarView.java");
+		assertTrue(toolbar.contains("TopBarController.applyVisibility(this, fragment)"));
 	}
 
 	@Test

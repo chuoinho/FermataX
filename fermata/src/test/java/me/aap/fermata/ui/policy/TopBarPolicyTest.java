@@ -6,7 +6,16 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import me.aap.fermata.R;
+
 public class TopBarPolicyTest {
+	@Test
+	public void stremioHidesTheEntireTopBarWithoutAffectingOtherFragments() {
+		assertEquals(GONE, TopBarPolicy.resolveTopBarVisibility(R.id.stremio_fragment));
+		assertEquals(VISIBLE, TopBarPolicy.resolveTopBarVisibility(R.id.youtube_fragment));
+		assertEquals(VISIBLE, TopBarPolicy.resolveTopBarVisibility(R.id.dashboard_fragment));
+	}
+
 	@Test
 	public void backFollowsRouteOnEveryHost() {
 		assertEquals(GONE, TopBarPolicy.resolve(RuntimeHostMode.PHONE,

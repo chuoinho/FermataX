@@ -304,7 +304,7 @@ public class WebBrowserFragment extends MainActivityFragment
 		if (chrome == null) return;
 
 		if (!chrome.isFullScreen()) {
-			if (chrome.canEnterFullScreen()) {
+			if (supportsManualFullscreen(v, chrome)) {
 				b.addItem(R.id.fullscreen,
 						ResourcesCompat.getDrawable(res, R.drawable.fullscreen, theme),
 						res.getString(R.string.full_screen)).setHandler(this);
@@ -322,6 +322,10 @@ public class WebBrowserFragment extends MainActivityFragment
 
 	protected boolean isDesktopVersionSupported() {
 		return true;
+	}
+
+	protected boolean supportsManualFullscreen(FermataWebView web, FermataChromeClient chrome) {
+		return chrome.canEnterFullScreen();
 	}
 
 	@NonNull

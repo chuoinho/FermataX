@@ -83,6 +83,12 @@ public final class StremioWebAddon extends WebBrowserAddon {
 	}
 
 	@NonNull
+	String getPlayerBackTarget() {
+		String detail = getPreferenceStore().getStringPref(LAST_DETAIL_URL);
+		return StremioWebSessionPolicy.isDetailRoute(detail) ? detail : HOME_URL;
+	}
+
+	@NonNull
 	String getEntryUrl() {
 		return StremioWebSessionPolicy.entryUrl(requiresHomeOnNextEntry(), getLastUrl());
 	}

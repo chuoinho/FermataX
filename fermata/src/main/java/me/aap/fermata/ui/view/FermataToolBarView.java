@@ -64,6 +64,13 @@ public class FermataToolBarView extends ToolBarView {
 	}
 
 	@Override
+	public void refreshMediatorVisibility() {
+		super.refreshMediatorVisibility();
+		ActivityFragment fragment = getActiveFragment();
+		if (fragment != null) TopBarController.applyVisibility(this, fragment);
+	}
+
+	@Override
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 		super.onLayout(changed, left, top, right, bottom);
 		if (!(getParent() instanceof ViewGroup parent)) return;

@@ -36,6 +36,7 @@ public final class TopBarController {
 		if (fragment == null) return;
 		ToolBarView toolBar = activity.getToolBar();
 		if (toolBar == null) return;
+		if (!applyVisibility(toolBar, fragment)) return;
 
 		State state = resolveState(activity, fragment);
 		View back = toolBar.findViewById(me.aap.utils.R.id.tool_bar_back_button);
@@ -44,6 +45,13 @@ public final class TopBarController {
 		TextView title = toolBar.findViewById(me.aap.utils.R.id.tool_bar_title);
 		if ((title != null) && !TextUtils.equals(title.getText(), state.title()))
 			title.setText(state.title());
+	}
+
+	/** Applies the fragment-wide chrome rule after a mediator restores its own visibility. */
+	public static boolean applyVisibility(ToolBarView toolBar, ActivityFragment fragment) {
+		int visibility = TopBarPolicy.resolveTopBarVisibility(fragment.getFragmentId());
+		if (toolBar.getVisibility() != visibility) toolBar.setVisibility(visibility);
+		return visibility == View.VISIBLE;
 	}
 
 	@NonNull

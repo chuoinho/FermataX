@@ -2,6 +2,7 @@ package me.aap.fermata.addon.web.stremio;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -30,6 +31,25 @@ public class StremioWebSessionPolicyTest {
 				StremioWebSessionPolicy.replaceLegacyPlayerRoute(
 						"https://web.stremio.com/#/player/legacy-stream",
 						"https://web.stremio.com/#/search?search=example"));
+	}
+
+	@Test
+	public void backFollowsPlayerDetailHomeAndParentHierarchy() {
+		String player = "https://web.stremio.com/#/player/encoded-stream";
+		String detail = "https://web.stremio.com/#/detail/movie/tt123";
+		assertEquals(detail, StremioWebSessionPolicy.backTarget(player, detail, false));
+		assertEquals(StremioWebSessionPolicy.HOME_URL,
+				StremioWebSessionPolicy.backTarget(player, "https://web.stremio.com/#/discover", false));
+		assertEquals(StremioWebSessionPolicy.HOME_URL,
+				StremioWebSessionPolicy.backTarget(detail, detail, false));
+		assertNull(StremioWebSessionPolicy.backTarget(StremioWebSessionPolicy.HOME_URL, detail, false));
+		assertEquals(detail, StremioWebSessionPolicy.backTarget(detail, detail, true));
+	}
+
+	@Test
+	public void activePlaybackRouteIsAllowedToRemainPersisted() {
+		assertTrue(StremioWebSessionPolicy.isPersistableRoute(
+				"https://web.stremio.com/#/detail/movie/tt123"));
 	}
 
 	@Test

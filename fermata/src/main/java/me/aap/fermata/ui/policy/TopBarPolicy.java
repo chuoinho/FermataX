@@ -32,6 +32,11 @@ public final class TopBarPolicy {
 				dashboardFragment) != BackTarget.NONE;
 	}
 
+	/** Stremio owns its in-page chrome, so it must use the entire content height. */
+	public static int resolveTopBarVisibility(int activeFragmentId) {
+		return (activeFragmentId == me.aap.fermata.R.id.stremio_fragment) ? GONE : VISIBLE;
+	}
+
 	public record State(int backVisibility, @NonNull CharSequence title,
 			@NonNull BackTarget backTarget) {
 	}

@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.web.FermataWebClient;
+import me.aap.fermata.addon.web.FermataChromeClient;
 import me.aap.fermata.addon.web.FermataWebView;
 import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.WebBrowserAddon;
@@ -68,7 +69,31 @@ public final class StremioWebFragment extends WebBrowserFragment {
 	@Override
 	protected void goHome() {
 		FermataWebView web = getWebView();
-		if (web != null) web.loadUrl(StremioWebAddon.HOME_URL);
+		if (web instanceof StremioWebView stremio) stremio.loadFreshDocument(StremioWebAddon.HOME_URL);
+		else if (web != null) web.loadUrl(StremioWebAddon.HOME_URL);
+	}
+
+	@Override
+	public boolean onBackPressed() {
+		FermataWebView web = getWebView();
+		FermataChromeClient chrome = (web == null) ? null : web.getWebChromeClient();
+		if ((web instanceof StremioWebView stremio) && ((chrome == null) || !chrome.isFullScreen())) {
+			StremioWebAddon addon = (StremioWebAddon) getAddon();
+			String target = StremioWebSessionPolicy.backTarget(web.getUrl(),
+					(addon == null) ? StremioWebAddon.HOME_URL : addon.getPlayerBackTarget(),
+					stremio.isPlayerActive());
+			if (target != null) {
+				stremio.loadFreshDocument(target);
+				return true;
+			}
+			// Stremio Home is the add-on root. Do not return false here: Android treats that
+			// as an unhandled Back and finishes the activity instead of returning to Fermata.
+			if (StremioWebSessionPolicy.isHomeUrl(web.getUrl())) {
+				MainActivityDelegate.get(requireContext()).showDashboard();
+				return true;
+			}
+		}
+		return super.onBackPressed();
 	}
 
 	@Override
@@ -109,6 +134,17 @@ public final class StremioWebFragment extends WebBrowserFragment {
 	@Override
 	protected FermataWebClient createWebClient() {
 		return new StremioWebClient();
+	}
+
+	@Override
+	protected FermataChromeClient createChromeClient(FermataWebView webView,
+			ViewGroup fullScreenView) {
+		return new StremioChromeClient((StremioWebView) webView, fullScreenView);
+	}
+
+	@Override
+	protected boolean supportsManualFullscreen(FermataWebView web, FermataChromeClient chrome) {
+		return (web instanceof StremioWebView stremio) && stremio.supportsManualFullscreen();
 	}
 
 	@Override
