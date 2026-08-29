@@ -13,6 +13,11 @@ final class StremioWebSessionPolicy {
 		return homeRequired || !isPersistableRoute(persistedUrl) ? HOME_URL : persistedUrl;
 	}
 
+	static String replaceLegacyPlayerRoute(String persistedUrl, String previousDetailUrl) {
+		if (isPersistableRoute(persistedUrl)) return persistedUrl;
+		return isDetailRoute(previousDetailUrl) ? previousDetailUrl : HOME_URL;
+	}
+
 	static boolean isPersistableRoute(String url) {
 		if (url == null) return false;
 		try {
@@ -28,5 +33,15 @@ final class StremioWebSessionPolicy {
 
 	static boolean isHomeUrl(String url) {
 		return HOME_URL.equals(url);
+	}
+
+	static boolean isDetailRoute(String url) {
+		if (!isPersistableRoute(url)) return false;
+		try {
+			String fragment = URI.create(url).getFragment();
+			return (fragment != null) && fragment.startsWith("/detail/");
+		} catch (IllegalArgumentException ignored) {
+			return false;
+		}
 	}
 }

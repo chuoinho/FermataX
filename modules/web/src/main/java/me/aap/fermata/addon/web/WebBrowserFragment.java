@@ -168,6 +168,13 @@ public class WebBrowserFragment extends MainActivityFragment
 		return addon.getLastUrl();
 	}
 
+	protected boolean hasHomeButton() {
+		return false;
+	}
+
+	protected void goHome() {
+	}
+
 	protected void registerListeners(MainActivityDelegate a) {
 		a.addBroadcastListener(this, MainActivityListener.ACTIVITY_DESTROY);
 	}

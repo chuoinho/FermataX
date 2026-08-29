@@ -17,10 +17,19 @@ public class StremioWebSessionPolicyTest {
 	}
 
 	@Test
-	public void legacyPlayerRouteNormalizesToHome() {
+	public void legacyPlayerRouteRestoresPreviousDetailRoute() {
+		String detail = "https://web.stremio.com/#/detail/movie/example";
+		assertTrue(StremioWebSessionPolicy.isDetailRoute(detail));
+		assertEquals(detail, StremioWebSessionPolicy.replaceLegacyPlayerRoute(
+				"https://web.stremio.com/#/player/legacy-stream", detail));
+	}
+
+	@Test
+	public void legacyPlayerRouteWithoutDetailFallsBackToHome() {
 		assertEquals(StremioWebSessionPolicy.HOME_URL,
-				StremioWebSessionPolicy.entryUrl(false,
-						"https://web.stremio.com/#/player/legacy-stream"));
+				StremioWebSessionPolicy.replaceLegacyPlayerRoute(
+						"https://web.stremio.com/#/player/legacy-stream",
+						"https://web.stremio.com/#/search?search=example"));
 	}
 
 	@Test

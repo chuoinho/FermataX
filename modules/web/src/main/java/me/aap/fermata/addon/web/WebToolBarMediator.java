@@ -43,6 +43,9 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		int backSide = TopBarMediatorSupport.getBackButtonSide(tb);
 		addButton(tb, R.drawable.forward, v ->
 				requireNonNull(b.getWebView()).goForward(), R.id.browser_forward, backSide);
+		if (b.hasHomeButton()) {
+			addButton(tb, me.aap.fermata.R.drawable.home, v -> b.goHome(), R.id.browser_home, backSide);
+		}
 		TopBarMediatorSupport.installBackButton(tb, this);
 		addButton(tb, R.drawable.clear, v -> t.setText(""), R.id.browser_addr_clear);
 		addButton(tb, me.aap.fermata.R.drawable.bookmark_filled, v ->

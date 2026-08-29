@@ -10,6 +10,7 @@ import me.aap.fermata.addon.web.WebBrowserAddon;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.Supplier;
 
 /** Hosts the official Stremio Web UI; media playback remains inside its HTML5 player. */
 @Keep
@@ -17,6 +18,7 @@ import me.aap.utils.function.BooleanSupplier;
 public final class StremioWebAddon extends WebBrowserAddon {
 	static final String HOME_URL = StremioWebSessionPolicy.HOME_URL;
 	private static final Pref<BooleanSupplier> HOME_REQUIRED = Pref.b("HOME_REQUIRED", false);
+	private static final Pref<Supplier<String>> LAST_DETAIL_URL = Pref.s("LAST_DETAIL_URL", HOME_URL);
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(StremioWebAddon.class.getName());
 
@@ -58,6 +60,7 @@ public final class StremioWebAddon extends WebBrowserAddon {
 	@Override
 	public void onAutomotiveShutdown() {
 		requireHomeOnNextEntry();
+		super.setLastUrl(HOME_URL);
 		super.onAutomotiveShutdown();
 	}
 
@@ -89,14 +92,20 @@ public final class StremioWebAddon extends WebBrowserAddon {
 		String url = super.getLastUrl();
 		if (StremioWebSessionPolicy.isPersistableRoute(url)) return url;
 
-		// Replace legacy Player entries rather than merely hiding them at launch.
-		super.setLastUrl(HOME_URL);
-		return HOME_URL;
+		String replacement = StremioWebSessionPolicy.replaceLegacyPlayerRoute(url,
+				getPreferenceStore().getStringPref(LAST_DETAIL_URL));
+		// A Player URL created by older builds may survive an update. Prefer the last exact
+		// Stremio detail route; only use Home when that historical route no longer exists.
+		super.setLastUrl(replacement);
+		return replacement;
 	}
 
 	@Override
 	protected void setLastUrl(String url) {
-		if (StremioWebSessionPolicy.isPersistableRoute(url)) super.setLastUrl(url);
-		else super.setLastUrl(HOME_URL);
+		if (!StremioWebSessionPolicy.isPersistableRoute(url)) return;
+		super.setLastUrl(url);
+		if (StremioWebSessionPolicy.isDetailRoute(url)) {
+			getPreferenceStore().applyStringPref(LAST_DETAIL_URL, url);
+		}
 	}
 }

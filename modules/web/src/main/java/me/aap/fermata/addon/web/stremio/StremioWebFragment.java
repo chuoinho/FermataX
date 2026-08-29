@@ -61,6 +61,17 @@ public final class StremioWebFragment extends WebBrowserFragment {
 	}
 
 	@Override
+	protected boolean hasHomeButton() {
+		return true;
+	}
+
+	@Override
+	protected void goHome() {
+		FermataWebView web = getWebView();
+		if (web != null) web.loadUrl(StremioWebAddon.HOME_URL);
+	}
+
+	@Override
 	protected void onAutomotiveShutdown() {
 		FermataWebView web = getWebView();
 		if (web instanceof StremioWebView stremio) stremio.endAutomotiveSession();
