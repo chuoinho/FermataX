@@ -50,7 +50,6 @@ android {
             resValue "string", "media_service_name_auto", "@string/media_service_name_auto_release"
             resValue "string", "media_service_name_mobile", "@string/media_service_name_mobile_release"
             resValue "string", "mirror_service_name", "@string/mirror_service_name_release"
-            resValue "string", "mirror_fs_service_name", "@string/mirror_fs_service_name_release"
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     '../proguard-rules.pro', '../depends/utils/proguard-rules.pro'
             if (gradle.ext.releaseSigningConfigured) signingConfig = signingConfigs.release
@@ -65,7 +64,6 @@ android {
             resValue "string", "media_service_name_auto", "@string/media_service_name_auto_debug"
             resValue "string", "media_service_name_mobile", "@string/media_service_name_mobile_debug"
             resValue "string", "mirror_service_name", "@string/mirror_service_name_debug"
-            resValue "string", "mirror_fs_service_name", "@string/mirror_fs_service_name_debug"
             buildConfigField "boolean", 'D', 'true'
         }
     }

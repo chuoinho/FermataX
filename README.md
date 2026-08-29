@@ -74,6 +74,22 @@ Maintainers and coding agents should also read [MASTER_CONTEXT.md](MASTER_CONTEX
 
 If the installation is unsuccessful or FermataX does not appear in Android Auto, visit [FermataX on Ko-fi](https://ko-fi.com/fermatax) for the latest installation instructions and supported options.
 
+### Permissions and screen mirroring
+
+FermataX does not request every runtime permission when it starts. Grant a permission on the phone
+only when the feature that needs it asks. If Android Auto says a permission is required, safely stop
+the car, open FermataX on the unlocked phone, grant the requested permission in Android Settings,
+then reconnect Android Auto.
+
+Screen mirroring always requires Android's system screen-capture confirmation on the phone. FermataX
+cannot accept that confirmation automatically. The Android Auto launcher exposes the main FermataX
+entry and the supported `fermataX Mirror` projection entry; the experimental `FS fermataX Mirror`
+entry is intentionally hidden.
+
+YouTube audio follows the phone's **Media volume**, not its notification volume. If video audio is
+quiet while notifications are loud, play a video and adjust **Media volume** on the phone before
+changing the car volume.
+
 ## Disclaimer
 
 FermataX is a media player only. It does not provide, host, sell, or distribute media content, playlists, TV channels, IPTV services, Xtream accounts, Stremio addons, subtitles, or torrent sources.
