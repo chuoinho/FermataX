@@ -538,6 +538,10 @@ public class FermataWebClient extends WebViewClientCompat {
 	public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
 		handler.cancel();
 		String url = error.getUrl();
+		if (!isCurrentMainFrameSslError(view.getUrl(), url)) {
+			Log.w("Ignored Web SSL error for subresource");
+			return;
+		}
 		String reason = "SSL error";
 		Log.e("Web SSL error received: " + reason);
 		diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_SSL_ERROR,
@@ -546,6 +550,37 @@ public class FermataWebClient extends WebViewClientCompat {
 		failedMainFrameUrl = url;
 		completeLoading(view);
 		if (url != null) showLoadError(view, Uri.parse(url), reason);
+	}
+
+	/**
+	 * {@link WebViewClient#onReceivedSslError} does not identify whether the failing request is the
+	 * document or a subresource. A favicon must still be cancelled, but cannot fail the hosted page.
+	 */
+	static boolean isCurrentMainFrameSslError(String currentUrl, String errorUrl) {
+		if ((currentUrl == null) || (errorUrl == null)) return false;
+		try {
+			URI current = URI.create(currentUrl);
+			URI error = URI.create(errorUrl);
+			return equalIgnoreCase(current.getScheme(), error.getScheme()) &&
+					equalIgnoreCase(current.getHost(), error.getHost()) &&
+					(current.getPort() == error.getPort()) &&
+					equals(normalizePath(current.getPath()), normalizePath(error.getPath())) &&
+					equals(current.getQuery(), error.getQuery());
+		} catch (RuntimeException ignored) {
+			return false;
+		}
+	}
+
+	private static boolean equalIgnoreCase(String first, String second) {
+		return (first == null) ? (second == null) : first.equalsIgnoreCase(second);
+	}
+
+	private static boolean equals(String first, String second) {
+		return (first == null) ? (second == null) : first.equals(second);
+	}
+
+	private static String normalizePath(String path) {
+		return ((path == null) || path.isEmpty()) ? "/" : path;
 	}
 
 	@TargetApi(Build.VERSION_CODES.O)

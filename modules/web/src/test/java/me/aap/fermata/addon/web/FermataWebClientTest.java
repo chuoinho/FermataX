@@ -77,6 +77,16 @@ public class FermataWebClientTest {
 	}
 
 	@Test
+	public void sslErrorFromSubresourceDoesNotFailCurrentPage() {
+		assertFalse(FermataWebClient.isCurrentMainFrameSslError(
+				"https://web.stremio.com/#/addons",
+				"https://www.podnapisi.net/static/favicon.ico"));
+		assertTrue(FermataWebClient.isCurrentMainFrameSslError(
+				"https://web.stremio.com/#/addons",
+				"https://web.stremio.com/"));
+	}
+
+	@Test
 	public void mainFrameErrorsStillLogAndRecordDiagnostics() {
 		AtomicInteger legacyLogs = new AtomicInteger();
 		AtomicInteger diagnostics = new AtomicInteger();
