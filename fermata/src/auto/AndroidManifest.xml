@@ -68,10 +68,17 @@
 		<service
 			android:name="me.app.fermatax.auto.AutoFermataMediaService"
             android:enabled="true"
-            android:exported="false"
+            android:exported="true"
             android:foregroundServiceType="mediaPlayback"
             android:icon="@drawable/media_service_icon"
-            android:label="@string/media_service_name">
+			android:label="@string/media_service_name"
+			tools:ignore="ExportedService">
+			<intent-filter>
+				<action android:name="android.media.browse.MediaBrowserService" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+			</intent-filter>
 			<intent-filter>
 				<action android:name="android.intent.action.MEDIA_BUTTON" />
 			</intent-filter>

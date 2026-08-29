@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FermataX SmartTop refinement</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --canvas: #090d12;
+      --surface: #101925;
+      --surface-edge: #3c5f90;
+      --line: #2a3a4f;
+      --accent: #76a8ff;
+      --text: #f1f5fb;
+      --muted: #9aa9bd;
+      --faint: #68768a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 720px;
+      background: var(--canvas);
+      color: var(--text);
+      font: 16px/1.2 Arial, Helvetica, sans-serif;
+    }
+
+    .app-bar {
+      height: 10px;
+      border-bottom: 1px solid #26364b;
+      background: #080b10;
+    }
+
+    .dashboard { padding: 14px 16px 0; }
+
+    .smart-top {
+      display: grid;
+      grid-template-columns: 66px minmax(0, 1fr) 56px minmax(154px, 25%);
+      gap: 10px;
+      min-height: 152px;
+      padding: 12px;
+      border: 1px solid var(--surface-edge);
+      border-radius: 15px;
+      background: var(--surface);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+    }
+
+    .poster {
+      width: 66px;
+      height: 66px;
+      border-radius: 10px;
+      background: #202e42;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .poster-art {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      grid-template: repeat(4, 1fr) / repeat(4, 1fr);
+      border: 2px solid #111923;
+    }
+    .poster-art i:nth-child(4n + 1) { background: #214f8c; }
+    .poster-art i:nth-child(4n + 2) { background: #e0bb28; }
+    .poster-art i:nth-child(4n + 3) { background: #59a85d; }
+    .poster-art i:nth-child(4n) { background: #c9454a; }
+
+    .now-playing { min-width: 0; display: flex; flex-direction: column; }
+    .eyebrow, .recent h2 {
+      margin: 1px 0 5px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .title {
+      margin: 0;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      font-size: 22px;
+      line-height: 1.15;
+      font-weight: 700;
+    }
+    .source { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+    .progress-area { margin-top: auto; padding-top: 11px; }
+    .progress-track { height: 4px; border-radius: 4px; overflow: hidden; background: #354257; }
+    .progress-value { width: 35%; height: 100%; background: var(--accent); }
+    .timing { display: flex; justify-content: space-between; margin-top: 5px; color: var(--faint); font-size: 10px; }
+
+    .actions { display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .icon-button {
+      width: 52px;
+      height: 52px;
+      border: 0;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #071321;
+      background: var(--accent);
+    }
+    .play-icon {
+      width: 0;
+      height: 0;
+      margin-left: 3px;
+      border-top: 11px solid transparent;
+      border-bottom: 11px solid transparent;
+      border-left: 17px solid currentColor;
+    }
+
+    .recent {
+      min-width: 0;
+      margin: 0;
+      padding-left: 12px;
+      border-left: 1px solid var(--line);
+    }
+    .recent h2 { margin-bottom: 7px; }
+    .recent-list { margin: 0; padding: 0; list-style: none; }
+    .recent-item {
+      display: flex;
+      align-items: center;
+      height: 27px;
+      min-width: 0;
+      padding: 0 5px;
+      border-radius: 5px;
+      color: #dfe8f5;
+      font-size: 13px;
+    }
+    .recent-item:first-child { background: rgb(118 168 255 / 10%); }
+    .recent-item::before { content: ""; flex: 0 0 3px; height: 14px; margin-right: 7px; border-radius: 2px; background: #5677a4; }
+    .recent-item:first-child::before { background: var(--accent); }
+    .recent-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .dashboard-hint {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .addon { height: 88px; border: 1px solid #253850; border-radius: 12px 12px 0 0; background: #0c121b; }
+
+    @media (max-width: 760px) {
+      .smart-top { grid-template-columns: 66px minmax(0, 1fr) 52px; }
+      .recent { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-bar"></div>
+  <main class="dashboard">
+    <section class="smart-top" aria-label="Now playing">
+      <div class="poster" aria-hidden="true"><span class="poster-art"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+      <div class="now-playing">
+        <p class="eyebrow">NOW PLAYING</p>
+        <h1 class="title">214 AMAZING Minecraft Facts</h1>
+        <p class="source">ExtRoot</p>
+        <div class="progress-area">
+          <div class="progress-track"><div class="progress-value"></div></div>
+          <div class="timing"><span>32:10</span><span>1 hr 26 min left</span></div>
+        </div>
+      </div>
+      <div class="actions"><button class="icon-button" type="button" aria-label="Play"><span class="play-icon"></span></button></div>
+      <aside class="recent" aria-label="Recent">
+        <h2>RECENT</h2>
+        <ul class="recent-list">
+          <li class="recent-item"><span>56 Thứ HIẾM NHẤT Trong Minecraft</span></li>
+          <li class="recent-item"><span>74 Seed Minecraft KHÓ TIN</span></li>
+          <li class="recent-item"><span>50 Lỗi Game ĐIÊN RỒ</span></li>
+        </ul>
+      </aside>
+    </section>
+    <section class="dashboard-hint" aria-hidden="true"><div class="addon"></div><div class="addon"></div><div class="addon"></div><div class="addon"></div></section>
+  </main>
+</body>
+</html>

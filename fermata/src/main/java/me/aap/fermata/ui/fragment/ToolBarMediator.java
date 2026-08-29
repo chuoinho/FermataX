@@ -71,6 +71,11 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 					ToolBarMediator::onAddSourceButtonClick, R.id.tool_add_source);
 		}
 
+		if (f instanceof FoldersFragment) {
+			addButton(tb, R.drawable.add_folder, ToolBarMediator::onAddFolderButtonClick,
+					R.id.folders_add);
+		}
+
 		ImageButton voice = addButton(tb, R.drawable.voice_microphone,
 				ToolBarMediator::onVoiceButtonClick, R.id.tool_voice);
 		voice.setContentDescription(tb.getContext().getString(R.string.action_activate_voice_ctrl));
@@ -118,6 +123,11 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		if ((f != null) && f.isAddSourceSupported()) f.addSource();
 	}
 
+	private static void onAddFolderButtonClick(View v) {
+		ActivityFragment f = MainActivityDelegate.get(v.getContext()).getActiveFragment();
+		if ((f instanceof FoldersFragment folders) && folders.isRootFolder()) folders.addFolder();
+	}
+
 	private static void onVoiceButtonClick(View v) {
 		MainActivityDelegate.get(v.getContext()).startGlobalVoiceControl();
 	}
@@ -150,6 +160,8 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		MainActivityDelegate activity = MainActivityDelegate.get(tb.getContext());
 		setButtonVisibility(tb, R.id.tool_voice,
 				VoiceUiPolicy.showToolbarButton(activity) ? VISIBLE : GONE);
+		setButtonVisibility(tb, R.id.folders_add,
+				((f instanceof FoldersFragment folders) && folders.isRootFolder()) ? VISIBLE : GONE);
 		if (!(f instanceof MediaLibFragment)) return;
 		MediaLibFragment.ListAdapter a = ((MediaLibFragment) f).getAdapter();
 		if (a == null) return;

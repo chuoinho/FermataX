@@ -259,7 +259,7 @@ public class FoldersFragment extends MediaLibFragment {
 		return getLib().getFolders();
 	}
 
-	private boolean isRootFolder() {
+	public boolean isRootFolder() {
 		BrowsableItem p = getAdapter().getParent();
 		return (p == null) || (p instanceof Folders);
 	}

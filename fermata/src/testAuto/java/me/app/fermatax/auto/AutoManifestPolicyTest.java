@@ -25,7 +25,7 @@ public class AutoManifestPolicyTest {
 			"me.app.fermatax.auto.AutoFermataMediaService";
 
 	@Test
-	public void autoManifestKeepsPlaybackServiceInternalAndRemovesLegacyEntryPoints()
+	public void autoManifestExposesSingleMediaBrowserServiceAndRemovesLegacyEntryPoints()
 			throws Exception {
 		Document manifest = parse("src/auto/AndroidManifest.xml");
 		Element legacy = findNamed(manifest, "service", LEGACY_SERVICE);
@@ -34,10 +34,10 @@ public class AutoManifestPolicyTest {
 		assertNotNull(legacy);
 		assertEquals("remove", legacy.getAttributeNS(TOOLS_NS, "node"));
 		assertNotNull(internal);
-		assertEquals("false", internal.getAttributeNS(ANDROID_NS, "exported"));
+		assertEquals("true", internal.getAttributeNS(ANDROID_NS, "exported"));
 		assertTrue(hasNamed(internal, "action", "android.intent.action.MEDIA_BUTTON"));
-		assertFalse(hasNamed(internal, "action", "android.media.browse.MediaBrowserService"));
-		assertFalse(hasNamed(internal, "action",
+		assertTrue(hasNamed(internal, "action", "android.media.browse.MediaBrowserService"));
+		assertTrue(hasNamed(internal, "action",
 				"android.media.action.MEDIA_PLAY_FROM_SEARCH"));
 		assertFalse(hasNamed(manifest, "receiver",
 				"me.app.fermatax.auto.MediaServiceStarter"));
@@ -66,7 +66,7 @@ public class AutoManifestPolicyTest {
 	}
 
 	@Test
-	public void automotiveDescriptorDoesNotAdvertiseMediaBrowserCapability() throws Exception {
+	public void automotiveDescriptorAdvertisesMediaWithoutTemplateCapability() throws Exception {
 		Document descriptor = parse("src/auto/res/xml/automotive_app_desc.xml");
 		NodeList uses = descriptor.getElementsByTagName("uses");
 		Set<String> capabilities = new HashSet<>();
@@ -74,8 +74,8 @@ public class AutoManifestPolicyTest {
 			capabilities.add(((Element) uses.item(i)).getAttribute("name"));
 		}
 
-		assertFalse(capabilities.contains("media"));
-		assertTrue(capabilities.contains("template"));
+		assertTrue(capabilities.contains("media"));
+		assertFalse(capabilities.contains("template"));
 		assertTrue(capabilities.contains("service"));
 		assertTrue(capabilities.contains("projection"));
 	}
