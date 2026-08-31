@@ -49,4 +49,5 @@
 	<string name="xtream_error_api_not_found">A API Xtream não foi encontrada neste servidor (HTTP 404). Verifique a URL do portal, host e porta.</string>
 	<string name="xtream_error_server">Erro no servidor Xtream (HTTP %1$d%2$s). Tente novamente mais tarde.</string>
 	<string name="xtream_error_http">Falha na solicitação do Xtream (HTTP %1$d%2$s).</string>
+	<string name="err_failed_to_load_tv_sources">Não foi possível carregar as seguintes fontes:\\n%1$s</string>
 </resources>

@@ -166,6 +166,8 @@ public class AddonPolicyTest {
 				AddonCapability.AUDIOBOOK);
 		assertCapabilities("me.aap.fermata.addon.web.yt.YoutubeAddon", AddonCapability.YOUTUBE);
 		assertCapabilities("me.aap.fermata.addon.web.WebBrowserAddon", AddonCapability.WEB);
+		assertCapabilities("me.aap.fermata.addon.web.stremio.StremioWebAddon",
+				AddonCapability.STREMIO, AddonCapability.VOICE_SEARCH);
 		assertCapabilities("me.aap.fermata.addon.chat.ChatAddon", AddonCapability.CHATGPT,
 				AddonCapability.VOICE_SEARCH);
 		assertEquals("tv", AddonRegistry.get().require(

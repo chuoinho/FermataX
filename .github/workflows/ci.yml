@@ -18,6 +18,10 @@ jobs:
     name: Verify FermataX source, lint, architecture, and universal package
     runs-on: ubuntu-latest
     timeout-minutes: 75
+    env:
+      # Keep the module graph identical to build.sh, which always builds without
+      # optional Google-services features.
+      NO_GS: true
 
     steps:
       - name: Check out source and PR base history
@@ -73,6 +77,9 @@ jobs:
 
       - name: Validate universal build entry point
         run: sh -n build.sh
+
+      - name: Verify Web-only production graph
+        run: ./gradlew verifyWebOnlyProductionGraph --no-daemon --no-parallel --stacktrace
 
       - name: Mobile unit suite
         run: >-
@@ -148,10 +155,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew :fermata:packageAutoDebugUniversalApk --no-daemon --no-parallel --stacktrace
-          mkdir -p dist
-          rm -f dist/FermataX-debug-universal.apk
-          mapfile -t apks < <(find fermata/build/outputs/apk_from_bundle/autoDebug -maxdepth 1 -type f -name '*.apk' -print)
+          ./build.sh -d
+          mapfile -t apks < <(find dist -maxdepth 1 -type f -name 'FermataX-*.apk' -print)
           if [ "${#apks[@]}" -ne 1 ]; then
             echo "Expected exactly one universal APK, found ${#apks[@]}"
             exit 1

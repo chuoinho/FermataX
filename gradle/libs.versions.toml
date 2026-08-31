@@ -69,7 +69,6 @@ bouncycastle = "1.84"
 
 # VLC
 libvlc = "3.7.2"
-jlibtorrent = "2.0.12.9"
 
 # Desugar
 desugarJdkLibs = "2.1.5"
@@ -145,10 +144,6 @@ bouncycastlePkix                  = { group = "org.bouncycastle",               
 
 # VLC
 libvlc                            = { group = "org.videolan.android",               name = "libvlc-all",                    version.ref = "libvlc" }
-jlibtorrent                       = { group = "com.frostwire",                      name = "jlibtorrent",                   version.ref = "jlibtorrent" }
-jlibtorrentAndroidArm             = { group = "com.frostwire",                      name = "jlibtorrent-android-arm",       version.ref = "jlibtorrent" }
-jlibtorrentAndroidArm64           = { group = "com.frostwire",                      name = "jlibtorrent-android-arm64",     version.ref = "jlibtorrent" }
-jlibtorrentAndroidX8664           = { group = "com.frostwire",                      name = "jlibtorrent-android-x86_64",    version.ref = "jlibtorrent" }
 
 # Desugar
 desugarJdkLibs                    = { group = "com.android.tools",                  name = "desugar_jdk_libs",              version.ref = "desugarJdkLibs" }

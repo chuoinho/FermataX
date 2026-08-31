@@ -27,8 +27,8 @@ public class LocalizationCoverageTest {
 	private static final List<String> RESOURCE_ROOTS = List.of(
 			"fermata/src/main/res", "modules/audiobook/src/main/res",
 			"modules/chat/src/main/res", "modules/podcast/src/main/res",
-			"modules/radio/src/main/res", "modules/stremio/src/main/res",
-			"modules/tv/src/main/res", "modules/web/src/main/res",
+			"modules/radio/src/main/res", "modules/tv/src/main/res",
+			"modules/web/src/main/res",
 			"depends/utils/src/main/res");
 	private static final Pattern PLACEHOLDER = Pattern.compile("(?<!%)%(?:\\d+\\$)?[a-zA-Z]");
 

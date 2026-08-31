@@ -49,4 +49,5 @@
 	<string name="xtream_error_api_not_found">Xtream API មិនត្រូវបានរកឃើញនៅលើម៉ាស៊ីនមេនេះទេ (HTTP 404)។ ពិនិត្យវិបផតថល URL ម៉ាស៊ីន និងច្រក។</string>
 	<string name="xtream_error_server">កំហុសម៉ាស៊ីនមេ Xtream (HTTP %1$d%2$s)។ ព្យាយាមម្តងទៀតនៅពេលក្រោយ។</string>
 	<string name="xtream_error_http">សំណើ Xtream បានបរាជ័យ (HTTP %1$d%2$s)។</string>
+	<string name="err_failed_to_load_tv_sources">មិនអាចផ្ទុកប្រភពខាងក្រោមបានទេ៖\\n%1$s</string>
 </resources>

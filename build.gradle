@@ -185,6 +185,66 @@ tasks.register('clean', Delete) {
     delete rootProject.layout.buildDirectory
 }
 
+tasks.register('verifyWebOnlyProductionGraph') {
+    group = 'verification'
+    description = 'Verifies the Web-only Stremio graph contains no retired native feature or libtorrent dependency.'
+
+    doLast {
+        def violations = []
+        def retiredModules = gradle.ext.retiredProductionModules as Set
+        def configuredModules = gradle.ext.modules as Set
+
+        if (!configuredModules.contains(':web')) {
+            violations.add('The Web add-on is missing from the production graph.')
+        }
+        if (!file('modules/web/src/main/java/me/aap/fermata/addon/web/stremio/StremioWebAddon.java').isFile()) {
+            violations.add('The Web-only Stremio add-on source is missing.')
+        }
+        retiredModules.each { module ->
+            if (configuredModules.contains(module) || findProject(module) != null) {
+                violations.add("Retired native module ${module} is included in the production graph.")
+            }
+        }
+        if (file('modules/stremio').exists()) {
+            violations.add('Retired native modules/stremio is present in the source tree.')
+        }
+
+        def forbiddenDependency = { dependency ->
+            def coordinate = "${dependency.group ?: ''}:${dependency.name ?: ''}:${dependency.version ?: ''}"
+                    .toLowerCase(java.util.Locale.ROOT)
+            coordinate.contains('jlibtorrent') || coordinate.contains('libtorrent')
+        }
+        allprojects.each { project ->
+            project.configurations.each { configuration ->
+                configuration.allDependencies.findAll(forbiddenDependency).each { dependency ->
+                    violations.add("Forbidden declared dependency in ${project.path}:${configuration.name}: ${dependency.group}:${dependency.name}")
+                }
+            }
+        }
+
+        def productionConfigurations = [
+                'mobileDebugRuntimeClasspath', 'mobileReleaseRuntimeClasspath',
+                'autoDebugRuntimeClasspath', 'autoReleaseRuntimeClasspath'
+        ] as Set
+        ([project(':fermata')] + gradle.ext.modules.collect { project(it) }).each { project ->
+            project.configurations.findAll {
+                it.canBeResolved && productionConfigurations.contains(it.name)
+            }.each { configuration ->
+                configuration.incoming.resolutionResult.allComponents.each { component ->
+                    def module = component.moduleVersion
+                    if (module != null && forbiddenDependency(module)) {
+                        violations.add("Forbidden resolved dependency in ${project.path}:${configuration.name}: ${module.group}:${module.name}:${module.version}")
+                    }
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new GradleException('Web-only production graph verification failed:\n - ' + violations.join('\n - '))
+        }
+    }
+}
+
 if (file('build-custom.gradle').exists()) {
     apply from: 'build-custom.gradle'
 }

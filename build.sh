@@ -6,6 +6,7 @@ DEST_DIR="$DIR/dist"
 mkdir -p "$DEST_DIR"
 export NO_GS=true
 TASK='apk'
+BUILD_TYPE='Release'
 
 while [ "$1" != "" ]; do
     case "$1" in
@@ -14,6 +15,9 @@ while [ "$1" != "" ]; do
             ;;
         -b)
             TASK='aab'
+            ;;
+        -d)
+            BUILD_TYPE='Debug'
             ;;
         *)
             echo "Unknown argument: $1"
@@ -50,10 +54,10 @@ build() {
   local app_sfx=${APP_ID_SFX:-$(grep -oP "${TASK}IdSfx=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
   [ -z "$app_sfx" ] || local app_sfx="-PAPP_ID_SFX=$app_sfx"
   if [ "$TASK" = 'apk' ]; then
-    local task="package${app_flavor}AutoReleaseUniversalApk"
+    local task="package${app_flavor}Auto${BUILD_TYPE}UniversalApk"
     local output_root="fermata/build/outputs/apk_from_bundle"
   else
-    local task="bundle${app_flavor}AutoRelease"
+    local task="bundle${app_flavor}Auto${BUILD_TYPE}"
     local output_root="fermata/build/outputs/bundle"
   fi
 
@@ -63,7 +67,7 @@ build() {
     find "$output_root" -type f -name "fermata*.$ext" -delete
   fi
 
-  ./gradlew $CLEAN fermata:$task $app_sfx
+  ./gradlew $CLEAN verifyWebOnlyProductionGraph fermata:$task $app_sfx
 
   set -- $(find "$output_root" -type f -name "fermata*.$ext" -print)
   if [ "$#" -ne 1 ]; then
@@ -72,6 +76,16 @@ build() {
   fi
 
   local path="$1"
+  if [ "$TASK" = 'apk' ]; then
+    if ! command -v jar >/dev/null 2>&1; then
+      echo 'The JDK jar tool is required to inspect the universal APK'
+      exit 1
+    fi
+    if jar tf "$path" | grep -Eqi 'jlibtorrent|libtorrent'; then
+      echo 'Universal APK contains a forbidden libtorrent artifact'
+      exit 1
+    fi
+  fi
   local version=${path##*fermata-}
   version=${version%%-*}
   local dst="$DEST_DIR/FermataX-${version}.$ext"

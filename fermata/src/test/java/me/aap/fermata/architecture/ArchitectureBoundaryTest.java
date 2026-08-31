@@ -35,7 +35,6 @@ public class ArchitectureBoundaryTest {
 			Map.entry("radio", "me.aap.fermata.addon.radio."),
 			Map.entry("sftp", "me.aap.fermata.vfs.sftp."),
 			Map.entry("smb", "me.aap.fermata.vfs.smb."),
-			Map.entry("stremio", "me.aap.fermata.addon.stremio."),
 			Map.entry("tv", "me.aap.fermata.addon.tv."),
 			Map.entry("vlc", "me.aap.fermata.engine.vlc."),
 			Map.entry("web", "me.aap.fermata.addon.web."),

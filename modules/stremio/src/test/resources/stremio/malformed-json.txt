@@ -1,1 +1,0 @@
-{"metas":[{"id":"example.movie.malformed","type":"movie","name":"Missing terminators"}
