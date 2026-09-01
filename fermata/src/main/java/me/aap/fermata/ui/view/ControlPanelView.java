@@ -834,10 +834,6 @@ public class ControlPanelView extends ConstraintLayout
 				}
 			}
 
-			if (eng.getAudioEffects() != null) {
-				b.addItem(R.id.audio_effects_fragment, R.drawable.equalizer, R.string.audio_effects);
-			}
-
 			if (!stream) {
 				b.addItem(R.id.speed, R.drawable.speed, R.string.speed)
 						.setSubmenu(s -> new PlaybackSpeedMenu(a).build(s, getItem()));
@@ -860,12 +856,7 @@ public class ControlPanelView extends ConstraintLayout
 			PlayableItem pi;
 			MediaEngine eng;
 
-			if (id == R.id.audio_effects_fragment) {
-				eng = getActivity().getMediaSessionCallback().getEngine();
-				if ((eng != null) && (eng.getAudioEffects() != null))
-					getActivity().showFragment(R.id.audio_effects_fragment);
-				return true;
-			} else if (id == R.id.repeat_track || id == R.id.repeat_folder ||
+			if (id == R.id.repeat_track || id == R.id.repeat_folder ||
 					id == R.id.repeat_disable_all) {
 				pi = (PlayableItem) getItem();
 				pi.setRepeatItemEnabled(id == R.id.repeat_track);

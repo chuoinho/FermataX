@@ -1,7 +1,9 @@
 package me.aap.fermata.ui.fragment;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
@@ -15,6 +17,9 @@ final class PlaybackPrefsBuilder {
 	}
 
 	static void add(MainActivityDelegate activity, PreferenceSet parent, MediaLibPrefs mediaPrefs) {
+		AudioEffectsPrefsBuilder.add(parent, new AudioEffectsProfileRepository(
+				FermataApplication.get().getPreferenceStore()));
+
 		parent.addBooleanPref(o -> {
 			o.store = mediaPrefs;
 			o.pref = BrowsableItemPrefs.PLAY_NEXT;
