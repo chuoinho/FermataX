@@ -27,6 +27,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Build;
+import android.os.SystemClock;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -230,13 +231,48 @@ public class PreferenceView extends ConstraintLayout {
 		setPreference(layout, o);
 		EditText t = activityEditText(R.id.pref_footer);
 		boolean[] ignoreChange = new boolean[1];
+		// Endpoint fields are transactional by default. Publishing a partial URI can trigger
+		// listeners (for example a WebView reload) before the user has finished typing.
+		boolean storeOnSubmit = o.storeOnSubmit ||
+				((o.inputType & InputType.TYPE_MASK_VARIATION) == InputType.TYPE_TEXT_VARIATION_URI);
+		Runnable storeValue = () -> {
+			if (ignoreChange[0]) return;
+			ignoreChange[0] = true;
+			boolean stored = false;
+			try {
+				String value = t.getText().toString();
+				if (o.trim) value = value.trim();
+				if (o.removeBlank && isBlank(value)) {
+					o.store.removePref(o.pref);
+					t.setText(o.store.getStringPref(o.pref));
+				} else {
+					o.store.applyStringPref(o.removeDefault, o.pref, value);
+				}
+				stored = true;
+			} finally {
+				ignoreChange[0] = false;
+			}
+			if (stored) {
+				t.setTag(R.id.preference_input_draft, null);
+				if (storeOnSubmit) t.setTag(R.id.preference_input_submit_at, SystemClock.uptimeMillis());
+			}
+		};
 		setOnClickListener(v -> {
+			if (consumeRecentSubmit(t)) return;
 			if (o.clickListener != null) o.clickListener.onClick(v);
-			else focusTextInput(t, o.submitOnEnter);
+			else focusTextInput(t, o.submitOnEnter, storeOnSubmit ? storeValue : null);
 		});
-		t.setOnClickListener(v -> focusTextInput(t, o.submitOnEnter));
+		t.setOnClickListener(v -> {
+			if (!consumeRecentSubmit(t)) {
+				focusTextInput(t, o.submitOnEnter, storeOnSubmit ? storeValue : null);
+			}
+		});
 		t.setOnTouchListener((v, event) -> {
-			if (event.getAction() == MotionEvent.ACTION_UP) t.post(() -> focusTextInput(t, o.submitOnEnter));
+			if (event.getAction() == MotionEvent.ACTION_UP) {
+				if (consumeRecentSubmit(t)) return true;
+				t.post(() -> focusTextInput(t, o.submitOnEnter,
+						storeOnSubmit ? storeValue : null));
+			}
 			return false;
 		});
 		if (o.maxLines == 1) t.setSingleLine(true);
@@ -245,13 +281,11 @@ public class PreferenceView extends ConstraintLayout {
 		if (o.imeOptions != 0) t.setImeOptions(o.imeOptions);
 		t.setSelectAllOnFocus(o.selectAllOnFocus);
 		t.setOnKeyListener(UiUtils::dpadFocusHelper);
-		if (o.submitOnEnter) {
+		if (storeOnSubmit) {
 			t.setOnEditorActionListener((v, actionId, event) -> {
-				if ((actionId == EditorInfo.IME_ACTION_DONE) ||
-						(actionId == EditorInfo.IME_ACTION_GO) ||
-						((event != null) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) &&
-								(event.getAction() == KeyEvent.ACTION_UP))) {
-					return clickDialogOkIfVisible();
+				if (isInputCommitAction(actionId, event)) {
+					storeValue.run();
+					return !o.submitOnEnter || clickDialogOkIfVisible();
 				}
 				return false;
 			});
@@ -260,18 +294,7 @@ public class PreferenceView extends ConstraintLayout {
 		t.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				if (!ignoreChange[0]) {
-					ignoreChange[0] = true;
-					String v = s.toString();
-					if (o.trim) v = v.trim();
-					if (o.removeBlank && isBlank(v)) {
-						o.store.removePref(o.pref);
-						t.setText(o.store.getStringPref(o.pref));
-					} else {
-						o.store.applyStringPref(o.removeDefault, o.pref, v);
-					}
-					ignoreChange[0] = false;
-				}
+				if (!storeOnSubmit) storeValue.run();
 			}
 
 			@Override
@@ -307,6 +330,17 @@ public class PreferenceView extends ConstraintLayout {
 		return true;
 	}
 
+	/**
+	 * A projected keyboard submit may dismiss its overlay on DOWN and deliver the trailing UP to
+	 * the EditText underneath. Ignore only that stale touch; later user input is unaffected.
+	 */
+	private boolean consumeRecentSubmit(EditText t) {
+		Object tag = t.getTag(R.id.preference_input_submit_at);
+		if (!(tag instanceof Long at)) return false;
+		t.setTag(R.id.preference_input_submit_at, null);
+		return (SystemClock.uptimeMillis() - at) < 500;
+	}
+
 	private EditText activityEditText(int id) {
 		EditText old = findViewById(id);
 		EditText t = ActivityDelegate.get(getContext()).createEditText(getContext());
@@ -340,17 +374,23 @@ public class PreferenceView extends ConstraintLayout {
 	}
 
 	private void focusTextInput(EditText t, boolean submitOnEnter) {
+		focusTextInput(t, submitOnEnter, null);
+	}
+
+	private void focusTextInput(EditText t, boolean submitOnEnter, @Nullable Runnable onSubmit) {
+		if (onSubmit != null) t.setTag(R.id.preference_input_draft, t.getText().toString());
 		t.requestFocus();
 		t.post(() -> {
 			t.requestFocus();
-			if (startActivityTextInput(t, submitOnEnter)) return;
+			if (startActivityTextInput(t, submitOnEnter, onSubmit)) return;
 			if (getContext().getSystemService(Context.INPUT_METHOD_SERVICE) instanceof InputMethodManager imm) {
 				imm.showSoftInput(t, InputMethodManager.SHOW_IMPLICIT);
 			}
 		});
 	}
 
-	private boolean startActivityTextInput(EditText target, boolean submitOnEnter) {
+	private boolean startActivityTextInput(EditText target, boolean submitOnEnter,
+			@Nullable Runnable onSubmit) {
 		AppActivity activity = ActivityDelegate.get(getContext()).getAppActivity();
 		boolean[] settingInput = new boolean[1];
 		EditText input = activity.startInput(target, submitOnEnter, new TextWatcher() {
@@ -376,14 +416,12 @@ public class PreferenceView extends ConstraintLayout {
 		input.setInputType(target.getInputType());
 		input.setImeOptions(target.getImeOptions());
 		input.setSingleLine(target.getMaxLines() == 1);
-		if (submitOnEnter) {
+		if (submitOnEnter || (onSubmit != null)) {
 			input.setOnEditorActionListener((v, actionId, event) -> {
-				if ((actionId == EditorInfo.IME_ACTION_DONE) ||
-						(actionId == EditorInfo.IME_ACTION_GO) ||
-						((event != null) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) &&
-								(event.getAction() == KeyEvent.ACTION_UP))) {
+				if (isInputCommitAction(actionId, event)) {
+					if (onSubmit != null) onSubmit.run();
 					activity.stopInput();
-					return clickDialogOkIfVisible();
+					return !submitOnEnter || clickDialogOkIfVisible();
 				}
 				return false;
 			});
@@ -394,6 +432,16 @@ public class PreferenceView extends ConstraintLayout {
 		input.setSelection(input.getText().length());
 		settingInput[0] = false;
 		return true;
+	}
+
+	private static boolean isInputCommitAction(int actionId, @Nullable KeyEvent event) {
+		return (actionId == EditorInfo.IME_ACTION_DONE) ||
+				(actionId == EditorInfo.IME_ACTION_GO) ||
+				(actionId == EditorInfo.IME_ACTION_NEXT) ||
+				(actionId == EditorInfo.IME_ACTION_SEARCH) ||
+				(actionId == EditorInfo.IME_ACTION_SEND) ||
+				((event != null) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) &&
+						(event.getAction() == KeyEvent.ACTION_UP));
 	}
 
 	private void setFilePreference(FileOpts o) {
@@ -831,6 +879,11 @@ public class PreferenceView extends ConstraintLayout {
 		public boolean removeBlank;
 		public boolean selectAllOnFocus;
 		public boolean submitOnEnter;
+		/**
+		 * Keeps a draft in the editor until its IME action is invoked. This is needed for
+		 * endpoint preferences that do not otherwise use {@link #submitOnEnter}.
+		 */
+		public boolean storeOnSubmit;
 		public OnClickListener clickListener;
 	}
 

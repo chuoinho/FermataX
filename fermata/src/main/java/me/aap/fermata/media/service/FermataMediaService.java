@@ -143,6 +143,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private Action actionFavAdd;
 	private Action actionFavRm;
 	private volatile boolean hardShutdownRequested;
+	private boolean automotiveSuspended;
+	private int automotiveCallbackGeneration;
 	private int foregroundNotificationState = STATE_PLAYING;
 	private PlayableItem foregroundNotificationItem;
 	private Bitmap defaultAudioIcon;
@@ -161,9 +163,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		lib = new DefaultMediaLib(FermataApplication.get());
 		session = new MediaSessionCompat(this, "FermataMediaService");
 		setSessionToken(session.getSessionToken());
-		callback = new MediaSessionCallback(this, session, lib,
-				PlaybackControlPrefs.create(FermataApplication.get().getDefaultSharedPreferences()),
-				FermataApplication.get().getHandler());
+		callback = createCallback();
 		if (runtimeGate.takeAutomaticPrepare(BuildConfig.AUTO)) callback.onPrepare();
 		session.setCallback(callback);
 		activeInstance = this;
@@ -179,7 +179,10 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 			AddonManager.get().onServiceCreate(callback);
 		}
 		recordServiceDiagnostic("service_created", DiagnosticPriority.STATE, true, true, false);
-		if (!AutomotiveRuntimeGate.allowsNewWork()) shutdownImmediately();
+		// A new Auto service can be created for the next projected generation before
+		// MainCarActivity publishes that generation. Its internal bind below opens that generation;
+		// mobile retains the existing terminal behavior.
+		if (!BuildConfig.AUTO && !AutomotiveRuntimeGate.allowsNewWork()) shutdownImmediately();
 	}
 
 	@Override
@@ -219,6 +222,30 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		return true;
 	}
 
+	/**
+	 * Stops the disconnected Automotive generation while leaving a service that Android Auto still
+	 * holds bound capable of accepting the next, confirmed generation.
+	 */
+	public static boolean suspendActiveInstanceForAutomotiveDisconnect() {
+		FermataMediaService service = activeInstance;
+		return (service != null) && service.suspendForAutomotiveDisconnect();
+	}
+
+	private synchronized boolean suspendForAutomotiveDisconnect() {
+		if (!BuildConfig.AUTO || hardShutdownRequested || automotiveSuspended) return false;
+		automotiveSuspended = true;
+		MediaSessionCallback cb = callback;
+		if (cb != null) cleanup("terminal_playback", cb::stopImmediately);
+		MediaSessionCompat mediaSession = session;
+		if (mediaSession != null) cleanup("terminal_media_session", () -> {
+			mediaSession.setCallback(null);
+			mediaSession.setActive(false);
+		});
+		cleanup("terminal_foreground", () -> stopForeground(true));
+		stopSelf();
+		return true;
+	}
+
 	private void shutdownImmediately() {
 		if (hardShutdownRequested) return;
 		hardShutdownRequested = true;
@@ -245,12 +272,16 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@Override
 	public IBinder onBind(Intent intent) {
+		boolean mediaAction = (intent != null) && ACTION_MEDIA_SERVICE.equals(intent.getAction());
+		if (BuildConfig.AUTO && mediaAction && !AutomotiveRuntimeGate.allowsNewWork()) {
+			AutomotiveRuntimeGate.projectionConnected();
+		}
 		if (hardShutdownRequested || !AutomotiveRuntimeGate.allowsNewWork()) {
 			recordServiceDiagnostic("service_bind_rejected", DiagnosticPriority.WARN, false,
 					false, false);
 			return null;
 		}
-		boolean mediaAction = (intent != null) && ACTION_MEDIA_SERVICE.equals(intent.getAction());
+		if (BuildConfig.AUTO && mediaAction) resumeForAutomotiveSession();
 		recordServiceDiagnostic("service_bind_requested", DiagnosticPriority.STATE, mediaAction,
 				callback != null, false);
 		if (ACTION_MEDIA_SERVICE.equals(intent.getAction()) &&
@@ -266,6 +297,27 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		recordServiceDiagnostic("service_bind_delegated", DiagnosticPriority.STATE, false,
 				callback != null, false);
 		return super.onBind(intent);
+	}
+
+	private synchronized void resumeForAutomotiveSession() {
+		if (!automotiveSuspended) return;
+		automotiveSuspended = false;
+		MediaSessionCallback old = callback;
+		if (old != null) {
+			cleanup("suspended_callback", old::close);
+		}
+		callback = createCallback();
+		MediaSessionCompat mediaSession = session;
+		if (mediaSession != null) {
+			mediaSession.setCallback(callback);
+		}
+	}
+
+	private MediaSessionCallback createCallback() {
+		automotiveCallbackGeneration++;
+		return new MediaSessionCallback(this, session, lib,
+				PlaybackControlPrefs.create(FermataApplication.get().getDefaultSharedPreferences()),
+				FermataApplication.get().getHandler());
 	}
 
 	private void recordServiceDiagnostic(String name, DiagnosticPriority priority, boolean mediaAction,

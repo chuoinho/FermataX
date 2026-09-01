@@ -348,6 +348,16 @@ final class CarKeyboardOverlay {
 
 		Button action = primary(actionLabel(inputAction));
 		action.setOnClickListener(v -> performAction());
+		// Some projected touch transports can lose the final UP event while a submit
+		// changes the input surface. Submit on DOWN in that path; regular click and
+		// accessibility activation retain the listener above.
+		action.setOnTouchListener((v, event) -> {
+			if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+				performAction();
+				return true;
+			}
+			return true;
+		});
 		row.addView(action, keyParams(weights[4]));
 		focus.add(action, cursor + (weights[4] / 2));
 		addRow(row, focus);

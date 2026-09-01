@@ -57,7 +57,8 @@ final class AutoSessionShutdown {
 		List<String> failures;
 		try {
 			failures = AutoShutdownSequence.run(
-					new AutoShutdownSequence.Step("media", FermataMediaService::shutdownActiveInstance),
+					new AutoShutdownSequence.Step("media",
+							FermataMediaService::suspendActiveInstanceForAutomotiveDisconnect),
 					new AutoShutdownSequence.Step("mirror_surface",
 							MirrorServiceFS::shutdownForAutoDisconnect),
 					new AutoShutdownSequence.Step("mirror_display", MirrorDisplay::close),

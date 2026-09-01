@@ -648,6 +648,10 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public void setBarsHiddenNow(boolean barsHidden) {
+		// setBarsHidden() is posted to the main handler and may outlive a projection
+		// activity while Android Auto is tearing its virtual display down.
+		if (getAppActivity().isDestroyed() || getAppActivity().isFinishing()) return;
+
 		if (!barsHidden && getRuntimeHostMode().usesAutomotivePresentation() && videoMode &&
 				!isCurrentSplitMode()) {
 			ControlPanelView cp = getControlPanel();

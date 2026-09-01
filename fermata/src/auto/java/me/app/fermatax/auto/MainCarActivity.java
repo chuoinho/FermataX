@@ -449,6 +449,12 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private void stopInputView() {
 		if (keyboardOverlay != null) keyboardOverlay.dismiss();
 		if (activeInput != null) {
+			Object draft = activeInput.getTag(me.aap.utils.R.id.preference_input_draft);
+			if (draft instanceof CharSequence value) {
+				activeInput.setTag(me.aap.utils.R.id.preference_input_draft, null);
+				activeInput.setText(value);
+				activeInput.setSelection(activeInput.getText().length());
+			}
 			if (textWatcher != null) activeInput.removeTextChangedListener(textWatcher);
 			if (ownsEditorActionListener) activeInput.setOnEditorActionListener(null);
 		}
