@@ -44,19 +44,6 @@ import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPIN
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_STOPPED;
 import static me.aap.fermata.action.KeyEventHandler.handleKeyEvent;
 import static me.aap.fermata.media.engine.MediaEngine.NO_SUBTITLES;
-import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.BASS_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.BASS_STRENGTH;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_BANDS;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_PRESET;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_USER_PRESETS;
-import static me.aap.fermata.media.pref.MediaPrefs.VIRT_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.VIRT_MODE;
-import static me.aap.fermata.media.pref.MediaPrefs.VIRT_STRENGTH;
-import static me.aap.fermata.media.pref.MediaPrefs.VOL_BOOST_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.VOL_BOOST_STRENGTH;
-import static me.aap.fermata.media.pref.MediaPrefs.getUserPresetBands;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
@@ -73,10 +60,6 @@ import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.media.AudioManager;
-import android.media.audiofx.BassBoost;
-import android.media.audiofx.Equalizer;
-import android.media.audiofx.LoudnessEnhancer;
-import android.media.audiofx.Virtualizer;
 import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Bundle;
@@ -107,7 +90,6 @@ import java.util.Queue;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.EngineSelection;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
@@ -1330,7 +1312,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		PlayableItemPrefs prefs = target.getPrefs();
 		BrowsableItemPrefs parentPrefs = target.getParent().getPrefs();
 		PlaybackControlPrefs playbackPrefs = getPlaybackControlPrefs();
-		runWithRetry(() -> setAudiEffects(engine, prefs, parentPrefs, playbackPrefs));
+		runWithRetry(() -> AudioEffectsLegacyApplier.apply(engine, playbackPrefs, prefs,
+				parentPrefs));
 
 		boolean committed = playbackOwnership.commit(engine, target);
 		boolean alreadyCommitted = !committed && playbackOwnership.ownsCommitted(engine, target);
@@ -2322,104 +2305,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				engine.getClass().getSimpleName());
 		engine.setSpeed(speed);
 		engine.start();
-	}
-
-	private void setAudiEffects(MediaEngine engine, PreferenceStore... stores) {
-		AudioEffects ae = engine.getAudioEffects();
-		if (ae == null) return;
-
-		Equalizer eq = ae.getEqualizer();
-		Virtualizer virt = ae.getVirtualizer();
-		BassBoost bass = ae.getBassBoost();
-		LoudnessEnhancer le = ae.getLoudnessEnhancer();
-
-		for (PreferenceStore s : stores) {
-			if (!s.getBooleanPref(AE_ENABLED)) continue;
-
-			if (eq != null) {
-				if (s.getBooleanPref(EQ_ENABLED)) {
-					try {
-						short num = eq.getNumberOfPresets();
-						int p = s.getIntPref(EQ_PRESET);
-
-						if ((p > 0) && (p <= num)) {
-							eq.setEnabled(true);
-							eq.usePreset((short) (p - 1));
-						} else {
-							int[] bands = null;
-
-							if (p < 0) {
-								String[] u = getPlaybackControlPrefs().getStringArrayPref(EQ_USER_PRESETS);
-								if ((u.length > 0) && ((p = -p - 1) < u.length)) bands = getUserPresetBands(u[p]);
-							} else {
-								bands = s.getIntArrayPref(EQ_BANDS);
-							}
-
-							if (bands != null) {
-								eq.setEnabled(true);
-
-								for (short i = 0; (i < bands.length) && (i < num); i++) {
-									eq.setBandLevel(i, (short) bands[i]);
-								}
-							} else {
-								eq.setEnabled(false);
-							}
-						}
-					} catch (Exception ex) {
-						Log.e(ex, "Failed to configure Equalizer");
-					}
-				} else {
-					eq.setEnabled(false);
-				}
-			}
-
-			if (virt != null) {
-				if (s.getBooleanPref(VIRT_ENABLED)) {
-					try {
-						virt.setEnabled(true);
-						virt.setStrength((short) s.getIntPref(VIRT_STRENGTH));
-						virt.forceVirtualizationMode(s.getIntPref(VIRT_MODE));
-					} catch (Exception ex) {
-						Log.e(ex, "Failed to configure Virtualizer");
-					}
-				} else {
-					virt.setEnabled(false);
-				}
-			}
-
-			if (bass != null) {
-				if (bass.getStrengthSupported() && s.getBooleanPref(BASS_ENABLED)) {
-					try {
-						bass.setEnabled(true);
-						bass.setStrength((short) s.getIntPref(BASS_STRENGTH));
-					} catch (Exception ex) {
-						Log.e(ex, "Failed to configure BassBoost");
-					}
-				} else {
-					bass.setEnabled(false);
-				}
-			}
-
-			if (le != null) {
-				if (s.getBooleanPref(VOL_BOOST_ENABLED)) {
-					try {
-						le.setEnabled(true);
-						le.setTargetGain(s.getIntPref(VOL_BOOST_STRENGTH) * 10);
-					} catch (Exception ex) {
-						Log.e(ex, "Failed to configure LoudnessEnhancer");
-					}
-				} else {
-					le.setEnabled(false);
-				}
-			}
-
-			return;
-		}
-
-		if (eq != null) eq.setEnabled(false);
-		if (virt != null) virt.setEnabled(false);
-		if (bass != null) bass.setEnabled(false);
-		if (le != null) le.setEnabled(false);
 	}
 
 	private FutureSupplier<PlayableItem> prepareItem(PlayableItem i) {
