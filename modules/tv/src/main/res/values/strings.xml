@@ -20,6 +20,9 @@
 	<string name="stalker_device_id">Device ID</string>
 	<string name="stalker_source_subtitle">Live TV</string>
 	<string name="stalker_all_channels">All channels</string>
+	<string name="stalker_check_source">Check source</string>
+	<string name="stalker_health_pass">Source check passed: %1$d categories, %2$d channels, stream HTTP %3$d.</string>
+	<string name="stalker_health_degraded">Portal and catalog work (%1$d categories, %2$d channels), but no sampled stream could be opened.</string>
     <string name="xtream_live_tv">Live TV</string>
     <string name="xtream_movies">Movies</string>
     <string name="xtream_series">Series</string>
@@ -70,4 +73,7 @@
 	<string name="stalker_error_timeout">Stalker portal did not respond in time: %1$s.</string>
 	<string name="stalker_error_account_rejected">Stalker portal rejected this MAC address (HTTP %1$d).</string>
 	<string name="stalker_error_api_not_found">Stalker API was not found. Check the portal URL.</string>
+	<string name="stalker_error_no_categories">The Stalker portal returned no channel categories.</string>
+	<string name="stalker_error_no_channels">The Stalker portal returned no playable channels.</string>
+	<string name="stalker_error_no_working_stream">The portal and catalog work, but no sampled stream could be opened.</string>
 </resources>

@@ -64,4 +64,10 @@
 	<string name="xtream_error_api_not_found">Không tìm thấy API Xtream trên máy chủ này (HTTP 404). Kiểm tra URL cổng thông tin, máy chủ và cổng.</string>
 	<string name="xtream_error_server">Lỗi máy chủ Xtream (HTTP %1$d%2$s). Hãy thử lại sau.</string>
 	<string name="xtream_error_http">Yêu cầu Xtream không thành công (HTTP %1$d%2$s).</string>
+	<string name="stalker_check_source">Kiểm tra nguồn</string>
+	<string name="stalker_health_pass">Kiểm tra nguồn thành công: %1$d danh mục, %2$d kênh, luồng HTTP %3$d.</string>
+	<string name="stalker_health_degraded">Portal và danh mục hoạt động (%1$d danh mục, %2$d kênh), nhưng không mở được luồng mẫu nào.</string>
+	<string name="stalker_error_no_categories">Stalker Portal không trả về danh mục kênh nào.</string>
+	<string name="stalker_error_no_channels">Stalker Portal không trả về kênh có thể phát nào.</string>
+	<string name="stalker_error_no_working_stream">Portal và danh mục hoạt động, nhưng không mở được luồng mẫu nào.</string>
 </resources>

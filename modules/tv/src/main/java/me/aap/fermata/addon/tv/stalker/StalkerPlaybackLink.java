@@ -9,4 +9,10 @@ record StalkerPlaybackLink(URI uri, Map<String, String> headers) {
 	StalkerPlaybackLink {
 		headers = Collections.unmodifiableMap(new LinkedHashMap<>(headers));
 	}
+
+	@Override
+	public String toString() {
+		return "StalkerPlaybackLink{" + uri.getScheme() + "://" + uri.getHost() +
+				", headers=" + headers.size() + '}';
+	}
 }

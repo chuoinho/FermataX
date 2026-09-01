@@ -64,4 +64,10 @@
 	<string name="stalker_error_timeout">Portal Stalker nie odpowiedział na czas: %1$s.</string>
 	<string name="stalker_error_account_rejected">Portal Stalker odrzucił ten adres MAC (HTTP %1$d).</string>
 	<string name="stalker_error_api_not_found">Nie znaleziono interfejsu API Stalker. Sprawdź adres URL portalu.</string>
+	<string name="stalker_check_source">Sprawdź źródło</string>
+	<string name="stalker_health_pass">Sprawdzanie zakończone powodzeniem: %1$d kategorii, %2$d kanałów, strumień HTTP %3$d.</string>
+	<string name="stalker_health_degraded">Portal i katalog działają (%1$d kategorii, %2$d kanałów), ale nie udało się otworzyć żadnego testowanego strumienia.</string>
+	<string name="stalker_error_no_categories">Portal Stalker nie zwrócił kategorii kanałów.</string>
+	<string name="stalker_error_no_channels">Portal Stalker nie zwrócił kanałów możliwych do odtworzenia.</string>
+	<string name="stalker_error_no_working_stream">Portal i katalog działają, ale nie udało się otworzyć żadnego testowanego strumienia.</string>
 </resources>

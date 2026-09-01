@@ -257,7 +257,10 @@ public final class StalkerAccount {
 		if (value == null) return null;
 		String redacted = value.replace(mac, "**:**:**:**:**:**");
 		String encoded = Uri.encode(mac);
-		return isNullOrBlank(encoded) ? redacted : redacted.replace(encoded, "***");
+		if (!isNullOrBlank(encoded)) redacted = redacted.replace(encoded, "***");
+		if (!isNullOrBlank(serial)) redacted = redacted.replace(serial, "***");
+		if (!isNullOrBlank(deviceId)) redacted = redacted.replace(deviceId, "***");
+		return redacted.replaceAll("(?i)(https?://[^\\s?]+)\\?[^\\s]+", "$1?***");
 	}
 
 	private static String normalizePortal(String value) {

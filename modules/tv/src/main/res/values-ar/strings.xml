@@ -64,4 +64,10 @@
 	<string name="stalker_error_timeout">لم تستجب بوابة Stalker في الوقت المحدد: %1$s.</string>
 	<string name="stalker_error_account_rejected">رفضت بوابة Stalker عنوان MAC هذا (HTTP %1$d).</string>
 	<string name="stalker_error_api_not_found">لم يتم العثور على Stalker API. تحقق من عنوان URL للبوابة.</string>
+	<string name="stalker_check_source">فحص المصدر</string>
+	<string name="stalker_health_pass">نجح فحص المصدر: %1$d فئات، %2$d قنوات، البث HTTP %3$d.</string>
+	<string name="stalker_health_degraded">تعمل البوابة والدليل (%1$d فئات، %2$d قنوات)، ولكن تعذر فتح أي بث تم اختباره.</string>
+	<string name="stalker_error_no_categories">لم تُرجع بوابة Stalker أي فئات للقنوات.</string>
+	<string name="stalker_error_no_channels">لم تُرجع بوابة Stalker أي قنوات قابلة للتشغيل.</string>
+	<string name="stalker_error_no_working_stream">تعمل البوابة والدليل، ولكن تعذر فتح أي بث تم اختباره.</string>
 </resources>

@@ -64,4 +64,10 @@
 	<string name="stalker_error_timeout">Stalker portal nije odgovorio na vrijeme: %1$s.</string>
 	<string name="stalker_error_account_rejected">Stalker portal odbio je ovu MAC adresu (HTTP %1$d).</string>
 	<string name="stalker_error_api_not_found">Stalker API nije pronađen. Provjerite URL portala.</string>
+	<string name="stalker_check_source">Provjeri izvor</string>
+	<string name="stalker_health_pass">Provjera izvora uspjela: %1$d kategorija, %2$d kanala, stream HTTP %3$d.</string>
+	<string name="stalker_health_degraded">Portal i katalog rade (%1$d kategorija, %2$d kanala), ali nijedan testirani stream nije moguće otvoriti.</string>
+	<string name="stalker_error_no_categories">Stalker portal nije vratio kategorije kanala.</string>
+	<string name="stalker_error_no_channels">Stalker portal nije vratio kanale koji se mogu reproducirati.</string>
+	<string name="stalker_error_no_working_stream">Portal i katalog rade, ali nijedan testirani stream nije moguće otvoriti.</string>
 </resources>

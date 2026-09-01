@@ -64,4 +64,10 @@
 	<string name="stalker_error_timeout">Stalker 포털이 제시간에 응답하지 않았습니다: %1$s.</string>
 	<string name="stalker_error_account_rejected">Stalker 포털이 이 MAC 주소를 거부했습니다(HTTP %1$d).</string>
 	<string name="stalker_error_api_not_found">Stalker API를 찾을 수 없습니다. 포털 URL을 확인하세요.</string>
+	<string name="stalker_check_source">소스 확인</string>
+	<string name="stalker_health_pass">소스 확인 성공: 카테고리 %1$d개, 채널 %2$d개, 스트림 HTTP %3$d.</string>
+	<string name="stalker_health_degraded">포털과 카탈로그는 작동하지만(카테고리 %1$d개, 채널 %2$d개) 테스트한 스트림을 열 수 없습니다.</string>
+	<string name="stalker_error_no_categories">Stalker 포털에서 채널 카테고리를 반환하지 않았습니다.</string>
+	<string name="stalker_error_no_channels">Stalker 포털에서 재생 가능한 채널을 반환하지 않았습니다.</string>
+	<string name="stalker_error_no_working_stream">포털과 카탈로그는 작동하지만 테스트한 스트림을 열 수 없습니다.</string>
 </resources>

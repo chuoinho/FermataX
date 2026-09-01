@@ -42,4 +42,17 @@ public class StalkerAccountTest {
 		assertFalse(new StalkerAccount(0, null, "http://portal.invalid/c", "not-a-mac",
 				null, null, null, 30).isComplete());
 	}
+
+	@Test
+	public void redactsIdentityAndQueryBearingUrls() {
+		StalkerAccount account = new StalkerAccount(1, "Home", "https://portal.invalid/c/",
+				"00:1A:79:01:02:03", "serial-secret", "device-secret", null, 30);
+		String redacted = account.redact("MAC 00:1A:79:01:02:03 serial-secret device-secret " +
+				"https://stream.invalid/live.m3u8?token=secret");
+
+		assertFalse(redacted.contains("01:02:03"));
+		assertFalse(redacted.contains("serial-secret"));
+		assertFalse(redacted.contains("device-secret"));
+		assertFalse(redacted.contains("token=secret"));
+	}
 }

@@ -24,7 +24,9 @@ import me.aap.fermata.addon.tv.xtream.XtreamAccount;
 import me.aap.fermata.addon.tv.xtream.XtreamFileSystemProvider;
 import me.aap.fermata.addon.tv.xtream.XtreamSourceItem;
 import me.aap.fermata.addon.tv.stalker.StalkerAccount;
+import me.aap.fermata.addon.tv.stalker.StalkerApi;
 import me.aap.fermata.addon.tv.stalker.StalkerFileSystemProvider;
+import me.aap.fermata.addon.tv.stalker.StalkerHealth;
 import me.aap.fermata.addon.tv.stalker.StalkerSourceItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
@@ -163,6 +165,11 @@ public class TvFragment extends MediaLibFragment {
 		b.addItem(me.aap.fermata.R.id.refresh, me.aap.fermata.R.drawable.refresh,
 						me.aap.fermata.R.string.refresh).setData(h.getItem())
 				.setHandler(this::contextMenuItemSelected);
+		if (h.getItem() instanceof StalkerSourceItem) {
+			b.addItem(R.id.stalker_check_source, me.aap.fermata.R.drawable.refresh,
+						R.string.stalker_check_source).setData(h.getItem())
+					.setHandler(this::contextMenuItemSelected);
+		}
 		b.addItem(me.aap.fermata.R.id.edit, me.aap.fermata.R.drawable.edit,
 						me.aap.fermata.R.string.edit).setData(h.getItem())
 				.setHandler(this::contextMenuItemSelected);
@@ -176,6 +183,8 @@ public class TvFragment extends MediaLibFragment {
 		int id = item.getItemId();
 		if (id == me.aap.fermata.R.id.refresh) {
 			reloadSource(item.getData(), true);
+		} else if (id == R.id.stalker_check_source) {
+			checkStalkerSource(item.getData());
 		} else if (id == me.aap.fermata.R.id.edit) {
 			TvSourceItem source = item.getData();
 
@@ -236,6 +245,33 @@ public class TvFragment extends MediaLibFragment {
 			root.removeItem(item.getData()).onSuccess(v -> getAdapter().setParent(root));
 		}
 		return true;
+	}
+
+	private void checkStalkerSource(StalkerSourceItem source) {
+		new StalkerApi(source.getAccount(), getContext()).healthCheck().main()
+				.onCompletion((health, error) -> {
+					if (error != null) {
+						if (!isCancellation(error)) {
+							Log.e(error, "Failed to check Stalker source");
+							String message = error.getLocalizedMessage();
+							UiUtils.showAlert(getContext(), (message != null) ? message : error.toString());
+						}
+						return;
+					}
+					showStalkerHealth(health);
+				});
+	}
+
+	private void showStalkerHealth(StalkerHealth health) {
+		int message = health.isDegraded() ? R.string.stalker_health_degraded :
+				R.string.stalker_health_pass;
+		if (health.isDegraded()) {
+			UiUtils.showAlert(getContext(), getString(message, health.getCategoryCount(),
+					health.getChannelCount()));
+		} else {
+			UiUtils.showAlert(getContext(), getString(message, health.getCategoryCount(),
+					health.getChannelCount(), health.getStreamStatusCode()));
+		}
 	}
 
 	private FutureSupplier<?> reloadSource(TvSourceItem source, boolean showError) {

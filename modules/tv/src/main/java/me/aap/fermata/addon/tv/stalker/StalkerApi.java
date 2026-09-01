@@ -9,15 +9,21 @@ import me.aap.utils.async.FutureSupplier;
 
 public final class StalkerApi {
 	private final StalkerHttpClient http;
+	private final StalkerHealthChecker healthChecker;
 	private FutureSupplier<List<StalkerCategory>> categories;
 	private FutureSupplier<List<StalkerChannel>> channels;
 
 	public StalkerApi(StalkerAccount account, Context context) {
 		http = new StalkerHttpClient(account, context);
+		healthChecker = new StalkerHealthChecker(account, http, context);
 	}
 
 	public FutureSupplier<Void> validate() {
 		return observe(http.validate(), "stalker_validate");
+	}
+
+	public FutureSupplier<StalkerHealth> healthCheck() {
+		return observe(healthChecker.check(), "stalker_health");
 	}
 
 	public synchronized FutureSupplier<List<StalkerCategory>> getCategories() {

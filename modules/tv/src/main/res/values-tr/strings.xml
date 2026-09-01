@@ -64,4 +64,10 @@
 	<string name="stalker_error_timeout">Stalker portalı zamanında yanıt vermedi: %1$s.</string>
 	<string name="stalker_error_account_rejected">Stalker portalı bu MAC adresini reddetti (HTTP %1$d).</string>
 	<string name="stalker_error_api_not_found">Stalker API bulunamadı. Portal URL’sini kontrol edin.</string>
+	<string name="stalker_check_source">Kaynağı denetle</string>
+	<string name="stalker_health_pass">Kaynak denetimi başarılı: %1$d kategori, %2$d kanal, yayın HTTP %3$d.</string>
+	<string name="stalker_health_degraded">Portal ve katalog çalışıyor (%1$d kategori, %2$d kanal), ancak denenen hiçbir yayın açılamadı.</string>
+	<string name="stalker_error_no_categories">Stalker portalı kanal kategorisi döndürmedi.</string>
+	<string name="stalker_error_no_channels">Stalker portalı oynatılabilir kanal döndürmedi.</string>
+	<string name="stalker_error_no_working_stream">Portal ve katalog çalışıyor, ancak denenen hiçbir yayın açılamadı.</string>
 </resources>

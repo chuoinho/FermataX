@@ -64,4 +64,10 @@
 	<string name="stalker_error_timeout">Stalker ポータルが時間内に応答しませんでした: %1$s。</string>
 	<string name="stalker_error_account_rejected">Stalker ポータルがこの MAC アドレスを拒否しました (HTTP %1$d)。</string>
 	<string name="stalker_error_api_not_found">Stalker API が見つかりません。ポータル URL を確認してください。</string>
+	<string name="stalker_check_source">ソースを確認</string>
+	<string name="stalker_health_pass">ソース確認成功：%1$d カテゴリ、%2$d チャンネル、ストリーム HTTP %3$d。</string>
+	<string name="stalker_health_degraded">ポータルとカタログは動作しています（%1$d カテゴリ、%2$d チャンネル）が、テストしたストリームを開けませんでした。</string>
+	<string name="stalker_error_no_categories">Stalker ポータルからチャンネルカテゴリが返されませんでした。</string>
+	<string name="stalker_error_no_channels">Stalker ポータルから再生可能なチャンネルが返されませんでした。</string>
+	<string name="stalker_error_no_working_stream">ポータルとカタログは動作していますが、テストしたストリームを開けませんでした。</string>
 </resources>

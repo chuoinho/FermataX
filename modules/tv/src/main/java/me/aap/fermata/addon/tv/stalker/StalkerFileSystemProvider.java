@@ -22,6 +22,7 @@ import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.vfs.VirtualFileSystem;
 
@@ -67,7 +68,13 @@ public final class StalkerFileSystemProvider extends VfsProviderBase {
 			return failed(new IOException(context.getString(
 					R.string.stalker_error_incomplete_account)));
 		}
-		return new StalkerApi(account, context).validate().map(done -> account);
+		return new StalkerApi(account, context).healthCheck().main().map(health -> {
+			if (health.isDegraded()) {
+				UiUtils.showAlert(context, context.getString(R.string.stalker_health_degraded,
+						health.getCategoryCount(), health.getChannelCount()));
+			}
+			return account;
+		});
 	}
 
 	private StalkerAccount account(PreferenceStore store) {

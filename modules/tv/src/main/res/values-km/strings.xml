@@ -64,4 +64,10 @@
 	<string name="stalker_error_timeout">វិបផតថល Stalker មិនបានឆ្លើយតបទាន់ពេលទេ៖ %1$s។</string>
 	<string name="stalker_error_account_rejected">វិបផតថល Stalker បានបដិសេធអាសយដ្ឋាន MAC នេះ (HTTP %1$d)។</string>
 	<string name="stalker_error_api_not_found">រកមិនឃើញ Stalker API ទេ។ ពិនិត្យ URL វិបផតថល។</string>
+	<string name="stalker_check_source">ពិនិត្យប្រភព</string>
+	<string name="stalker_health_pass">ការពិនិត្យបានជោគជ័យ៖ %1$d ប្រភេទ, %2$d ប៉ុស្តិ៍, ស្ទ្រីម HTTP %3$d។</string>
+	<string name="stalker_health_degraded">ផតថល និងកាតាឡុកដំណើរការ (%1$d ប្រភេទ, %2$d ប៉ុស្តិ៍) ប៉ុន្តែមិនអាចបើកស្ទ្រីមដែលបានសាកល្បងបានទេ។</string>
+	<string name="stalker_error_no_categories">ផតថល Stalker មិនបានផ្តល់ប្រភេទប៉ុស្តិ៍ទេ។</string>
+	<string name="stalker_error_no_channels">ផតថល Stalker មិនបានផ្តល់ប៉ុស្តិ៍ដែលអាចចាក់បានទេ។</string>
+	<string name="stalker_error_no_working_stream">ផតថល និងកាតាឡុកដំណើរការ ប៉ុន្តែមិនអាចបើកស្ទ្រីមដែលបានសាកល្បងបានទេ។</string>
 </resources>

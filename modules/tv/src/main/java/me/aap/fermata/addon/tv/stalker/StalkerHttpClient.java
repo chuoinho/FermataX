@@ -7,11 +7,13 @@ import androidx.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -20,12 +22,18 @@ import me.aap.utils.async.FutureSupplier;
 
 final class StalkerHttpClient {
 	private static final String JS_REQUEST = "1-xml";
+	private static final int MAX_REDIRECTS = 5;
+	private static final Set<String> SENSITIVE_HEADERS = Set.of(
+			"authorization", "cookie", "origin", "referer");
 	private final StalkerAccount account;
 	private final StalkerJsonParser parser = new StalkerJsonParser();
 	private final StalkerErrorMapper errors;
 	private final Object sessionLock = new Object();
+	private final Object connectionLock = new Object();
 	private String endpoint;
 	private String token;
+	private HttpURLConnection activeConnection;
+	private volatile int lastStatusCode;
 
 	StalkerHttpClient(StalkerAccount account, android.content.Context context) {
 		this.account = account;
@@ -36,6 +44,13 @@ final class StalkerHttpClient {
 		return task(() -> {
 			ensureSession();
 			request("itv", "get_genres", Map.of(), parser::parseCategories);
+			return null;
+		});
+	}
+
+	FutureSupplier<Void> authenticate() {
+		return task(() -> {
+			ensureSession();
 			return null;
 		});
 	}
@@ -68,6 +83,14 @@ final class StalkerHttpClient {
 		});
 	}
 
+	FutureSupplier<StalkerProbeResult> probe(StalkerPlaybackLink link) {
+		return task(() -> executeProbe(link));
+	}
+
+	int getLastStatusCode() {
+		return lastStatusCode;
+	}
+
 	void resetSession() {
 		synchronized (sessionLock) {
 			token = null;
@@ -76,7 +99,7 @@ final class StalkerHttpClient {
 	}
 
 	private <T> FutureSupplier<T> task(Task<T> task) {
-		return App.get().getExecutor().submitTask(() -> {
+		FutureSupplier<T> future = App.get().getExecutor().submitTask(() -> {
 			synchronized (sessionLock) {
 				try {
 					return task.run();
@@ -85,6 +108,8 @@ final class StalkerHttpClient {
 				}
 			}
 		});
+		future.onCancel(this::cancelActiveRequest);
+		return future;
 	}
 
 	private void ensureSession() throws IOException {
@@ -197,25 +222,18 @@ final class StalkerHttpClient {
 		for (Map.Entry<String, String> param : params.entrySet()) {
 			builder.appendQueryParameter(param.getKey(), param.getValue());
 		}
-		HttpURLConnection connection = null;
+		Map<String, String> headers = new LinkedHashMap<>();
+		headers.put("Accept", "application/json, text/javascript, */*; q=0.01");
+		headers.put("Accept-Encoding", "gzip, deflate");
+		headers.put("User-Agent", account.getUserAgent());
+		headers.put("X-User-Agent", "Model: MAG254; Link: Ethernet");
+		headers.put("Cookie", account.cookie());
+		headers.put("Referer", account.getPortalReferer());
+		if (token != null) headers.put("Authorization", "Bearer " + token);
+
+		HttpURLConnection connection = open(URI.create(builder.build().toString()), headers);
 		try {
-			connection = (HttpURLConnection) new URL(builder.build().toString()).openConnection();
-			connection.setRequestMethod("GET");
-			connection.setInstanceFollowRedirects(true);
-			connection.setRequestProperty("Accept", "application/json, text/javascript, */*; q=0.01");
-			connection.setRequestProperty("Accept-Encoding", "gzip, deflate");
-			connection.setRequestProperty("User-Agent", account.getUserAgent());
-			connection.setRequestProperty("X-User-Agent", "Model: MAG254; Link: Ethernet");
-			connection.setRequestProperty("Cookie", account.cookie());
-			connection.setRequestProperty("Referer", account.getPortalReferer());
-			if (token != null) connection.setRequestProperty("Authorization", "Bearer " + token);
-			int timeout = account.getResponseTimeout();
-			if (timeout > 0) {
-				int millis = (int) Math.min(Integer.MAX_VALUE, timeout * 1000L);
-				connection.setConnectTimeout(millis);
-				connection.setReadTimeout(millis);
-			}
-			int status = connection.getResponseCode();
+			int status = lastStatusCode;
 			if (status != HttpURLConnection.HTTP_OK) {
 				close(connection.getErrorStream());
 				throw new StalkerErrorMapper.HttpStatusException(status,
@@ -227,7 +245,138 @@ final class StalkerHttpClient {
 				return responseParser.parse(input);
 			}
 		} finally {
-			if (connection != null) connection.disconnect();
+			disconnect(connection);
+		}
+	}
+
+	private StalkerProbeResult executeProbe(StalkerPlaybackLink link) throws IOException {
+		Map<String, String> headers = new LinkedHashMap<>(link.headers());
+		headers.putIfAbsent("User-Agent", account.getUserAgent());
+		headers.put("Accept", "*/*");
+		headers.put("Range", "bytes=0-0");
+		HttpURLConnection connection = open(link.uri(), headers);
+		try {
+			int status = lastStatusCode;
+			if ((status != HttpURLConnection.HTTP_OK) &&
+					(status != HttpURLConnection.HTTP_PARTIAL)) {
+				close(connection.getErrorStream());
+				throw new StalkerErrorMapper.HttpStatusException(status,
+						connection.getResponseMessage());
+			}
+			InputStream payload = connection.getInputStream();
+			if (payload == null) throw new IOException("Stalker stream returned an empty response");
+			try (InputStream input = payload) {
+				input.read();
+			}
+			return new StalkerProbeResult(status);
+		} finally {
+			disconnect(connection);
+		}
+	}
+
+	private HttpURLConnection open(URI initial, Map<String, String> headers)
+			throws IOException {
+		URI current = initial;
+		boolean includeSensitive = true;
+		for (int redirects = 0; ; redirects++) {
+			validateHttpUri(current);
+			HttpURLConnection connection = (HttpURLConnection) new URL(current.toString())
+					.openConnection();
+			track(connection);
+			try {
+				connection.setRequestMethod("GET");
+				connection.setInstanceFollowRedirects(false);
+				for (Map.Entry<String, String> header : headers.entrySet()) {
+					if (includeSensitive || !isSensitive(header.getKey())) {
+						connection.setRequestProperty(header.getKey(), header.getValue());
+					}
+				}
+				applyTimeout(connection);
+				int status = connection.getResponseCode();
+				lastStatusCode = status;
+				if (!isRedirect(status)) return connection;
+				if (redirects >= MAX_REDIRECTS) {
+					throw new IOException("Stalker request exceeded the redirect limit");
+				}
+				String location = connection.getHeaderField("Location");
+				if ((location == null) || location.isBlank()) {
+					throw new IOException("Stalker redirect did not include a destination");
+				}
+				URI next;
+				try {
+					next = current.resolve(location);
+				} catch (IllegalArgumentException ex) {
+					throw new IOException("Stalker redirect destination is invalid", ex);
+				}
+				validateHttpUri(next);
+				includeSensitive &= sameOrigin(current, next);
+				close(connection.getErrorStream());
+				close(connection.getInputStream());
+				disconnect(connection);
+				current = next;
+			} catch (IOException | RuntimeException ex) {
+				disconnect(connection);
+				throw ex;
+			}
+		}
+	}
+
+	private void applyTimeout(HttpURLConnection connection) {
+		int timeout = account.getResponseTimeout();
+		if (timeout <= 0) return;
+		int millis = (int) Math.min(Integer.MAX_VALUE, timeout * 1000L);
+		connection.setConnectTimeout(millis);
+		connection.setReadTimeout(millis);
+	}
+
+	private void track(HttpURLConnection connection) {
+		synchronized (connectionLock) {
+			activeConnection = connection;
+		}
+	}
+
+	private void disconnect(HttpURLConnection connection) {
+		synchronized (connectionLock) {
+			if (activeConnection == connection) activeConnection = null;
+		}
+		connection.disconnect();
+	}
+
+	private void cancelActiveRequest() {
+		HttpURLConnection connection;
+		synchronized (connectionLock) {
+			connection = activeConnection;
+			activeConnection = null;
+		}
+		if (connection != null) connection.disconnect();
+	}
+
+	private static boolean isRedirect(int status) {
+		return (status == HttpURLConnection.HTTP_MOVED_PERM) ||
+				(status == HttpURLConnection.HTTP_MOVED_TEMP) ||
+				(status == HttpURLConnection.HTTP_SEE_OTHER) || (status == 307) || (status == 308);
+	}
+
+	private static boolean isSensitive(String name) {
+		return SENSITIVE_HEADERS.contains(name.toLowerCase(Locale.ROOT));
+	}
+
+	private static boolean sameOrigin(URI first, URI second) {
+		return first.getScheme().equalsIgnoreCase(second.getScheme()) &&
+				first.getHost().equalsIgnoreCase(second.getHost()) &&
+				(effectivePort(first) == effectivePort(second));
+	}
+
+	private static int effectivePort(URI uri) {
+		if (uri.getPort() >= 0) return uri.getPort();
+		return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
+	}
+
+	private static void validateHttpUri(URI uri) throws IOException {
+		String scheme = uri.getScheme();
+		if ((uri.getHost() == null) || (uri.getRawUserInfo() != null) ||
+				(!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme))) {
+			throw new IOException("Stalker request destination is invalid");
 		}
 	}
 

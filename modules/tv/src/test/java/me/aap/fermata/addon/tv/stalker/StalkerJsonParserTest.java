@@ -2,6 +2,7 @@ package me.aap.fermata.addon.tv.stalker;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 
 import java.io.ByteArrayInputStream;
@@ -43,6 +44,8 @@ public class StalkerJsonParserTest {
 		assertEquals("Portal Agent", link.headers().get("User-Agent"));
 		assertEquals("https://portal.invalid/c/", link.headers().get("Referer"));
 		assertEquals("mac=redacted", link.headers().get("Cookie"));
+		assertFalse(link.toString().contains("live.m3u8"));
+		assertFalse(link.toString().contains("mac=redacted"));
 	}
 
 	@Test
