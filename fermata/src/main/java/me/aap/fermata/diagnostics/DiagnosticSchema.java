@@ -44,6 +44,7 @@ final class DiagnosticSchema {
 			"ownership_lost", "paused_signal", "phase_transition", "playback_owner_adopted",
 			"playback_owner_commit", "playback_owner_released", "playback_owner_rollback",
 			"playback_request_started", "playing_signal", "prepare_callback_rejected", "prepare_rejected",
+			"queue_candidate_rejected",
 			"prepare_started", "prepared", "presentation_released", "previous_process_exit",
 			"previous_session_without_shutdown_marker", "process_background", "process_foreground",
 			"process_started", "ready_signal", "renderer_gone", "report_create_failed",

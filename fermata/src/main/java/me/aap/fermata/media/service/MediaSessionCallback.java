@@ -143,7 +143,6 @@ import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.holder.Holder;
 import me.aap.utils.log.Log;
-import me.aap.utils.net.NetServer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
@@ -1074,10 +1073,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			getItem = completed(playbackQueueContext.navigationItem(i));
 		}
 
-		return getItem.then(
-				item -> (next ? getNextPlayable(item) : getPrevPlayable(item))
-						.then(candidate -> playbackQueueContext.prepareAdvance(
-								source, candidate, this::prepareItem))
+		return getItem.then(item -> playbackQueueContext.prepareAdjacent(source, item,
+						next ? this::getNextPlayable : this::getPrevPlayable, this::prepareItem,
+						PlayableItem::getId, 100)
 						.then(pi -> {
 							if ((pi != null) && !PlaybackTransportDispatcher.dispatch(pi, eng, getEngine()))
 								skipTo(next, pi);
@@ -1583,9 +1581,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 			PlayableItem source = i;
 			PlayableItem navigationItem = playbackQueueContext.navigationItem(source);
-			return getNextPlayable(navigationItem)
-					.then(candidate -> playbackQueueContext.prepareAdvance(
-							source, candidate, this::prepareItem)).then(next -> {
+			return playbackQueueContext.prepareAdjacent(source, navigationItem,
+					this::getNextPlayable, this::prepareItem, PlayableItem::getId, 100).then(next -> {
 				if (next != null) {
 					skipTo(true, next);
 				} else {
@@ -2427,21 +2424,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private FutureSupplier<PlayableItem> prepareItem(PlayableItem i) {
 		if (terminal || (i == null)) return completedNull();
-		i = PlayableItemResolver.unwrap(i);
-		PlayableItem target = i;
-		if (target.isPlaybackTransportCommand()) return completed(target).main();
-
-		FutureSupplier<Long> getDur = i.getDuration();
-
-		// Make sure HTTP server is started
-		if (target.isNetResource()) {
-			FutureSupplier<NetServer> start = lib.getVfsManager().getNetServer();
-			if (!start.isDone()) return start.and(getDur, (s, d) -> {
-			}).map(v -> target).main();
-		}
-
-		if (!getDur.isDone()) return getDur.map(d -> target).timeout(5000, () -> target).main();
-		return completed(target).main();
+		PlayableItem target = PlayableItemResolver.unwrap(i);
+		return PlayableItemPreparer.prepare(target, () -> terminal,
+				() -> lib.getVfsManager().getNetServer(), missing -> recordPlaybackDiagnostic(
+						"queue_candidate_rejected", DiagnosticScope.ESSENTIAL,
+						DiagnosticPriority.STATE, getEngine(), missing, playbackRequestRevision,
+						"local_resource_missing", null));
 	}
 
 	private void setLastPlayed(PlayableItem i, long position) {

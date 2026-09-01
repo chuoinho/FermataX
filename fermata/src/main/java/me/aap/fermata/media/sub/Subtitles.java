@@ -103,6 +103,22 @@ public class Subtitles extends AbstractCollection<Subtitles.Text> {
 		return idx == -1 ? null : get(idx);
 	}
 
+	/** Returns only the cue active at {@code time}; unlike {@link #getNext(long)}, never looks ahead. */
+	@Nullable
+	public Text getActive(long time) {
+		int low = 0;
+		int high = size() - 1;
+		while (low <= high) {
+			int middle = (low + high) >>> 1;
+			Text text = get(middle);
+			int comparison = text.compareTime(time);
+			if (comparison == 0) return text;
+			if (comparison < 0) high = middle - 1;
+			else low = middle + 1;
+		}
+		return null;
+	}
+
 	private int getNextIndex(long time) {
 		var low = 0;
 		var high = size() - 1;
@@ -238,6 +254,18 @@ public class Subtitles extends AbstractCollection<Subtitles.Text> {
 				next = t;
 			}
 			return next;
+		}
+
+		@Nullable
+		@Override
+		public Text getActive(long time) {
+			for (int i = size() - 1; i >= 0; i--) {
+				Text text = get(i);
+				int comparison = text.compareTime(time);
+				if (comparison == 0) return text;
+				if (comparison > 0) break;
+			}
+			return null;
 		}
 
 		@Override

@@ -262,6 +262,16 @@ public abstract class MediaEngineBase implements MediaEngine {
 			if (consumer == videoView) prepareDrawer(videoView);
 			if (sub == null) load();
 			else if ((state == STATE_PLAYING) && !sub.isStarted()) start();
+			else if (state == STATE_PAUSED) replayPaused(consumer, sub);
+		}
+
+		private void replayPaused(BiConsumer<SubGrid.Position, Subtitles.Text> consumer,
+				SubScheduler scheduler) {
+			getSubtitlePosition().main().onSuccess(position -> {
+				if ((state == STATE_PAUSED) && (sub == scheduler) && consumers.contains(consumer)) {
+					scheduler.replayAt(position, delay, consumer);
+				}
+			});
 		}
 
 		void removeSubtitleConsumer(@NonNull BiConsumer<SubGrid.Position, Subtitles.Text> consumer) {

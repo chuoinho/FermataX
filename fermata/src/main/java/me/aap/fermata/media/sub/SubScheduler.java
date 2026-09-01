@@ -66,6 +66,15 @@ public class SubScheduler {
 		return started;
 	}
 
+	/** Replays cues active at the supplied playback position without starting the scheduler. */
+	public void replayAt(long time, int delay,
+			BiConsumer<Position, Subtitles.Text> target) {
+		long subtitleTime = time + delay;
+		for (var worker : workers) {
+			target.accept(worker.pos, worker.subtitles.getActive(subtitleTime));
+		}
+	}
+
 	public void sync(long time, int delay, float speed) {
 		assert speed > 0;
 		if (!started) return;

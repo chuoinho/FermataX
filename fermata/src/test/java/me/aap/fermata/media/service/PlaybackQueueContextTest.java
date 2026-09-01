@@ -1,6 +1,9 @@
 package me.aap.fermata.media.service;
 
 import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -137,6 +140,38 @@ public class PlaybackQueueContextTest {
 
 		assertTrue(prepared.isFailed());
 		assertSame(favoriteFirst, context.navigationItem(first));
+	}
+
+	@Test
+	public void staleCandidateIsSkippedBeforePreparingNextValidItem() throws Exception {
+		Item first = new Item("first", null);
+		Item stale = new Item("stale", null);
+		Item valid = new Item("valid", null);
+		List<Item> queue = List.of(first, stale, valid);
+		PlaybackQueueContext<Item> context = new PlaybackQueueContext<>(Item::canonical);
+
+		Item prepared = context.prepareAdjacent(first, first,
+				item -> completed(next(queue, item)),
+				item -> item == stale ? completedNull() : completed(item), Item::id, 10).get();
+
+		assertSame(valid, prepared);
+	}
+
+	@Test
+	public void allStaleCandidatesStopWithoutLooping() throws Exception {
+		Item first = new Item("first", null);
+		Item stale = new Item("stale", null);
+		List<Item> queue = List.of(first, stale);
+		PlaybackQueueContext<Item> context = new PlaybackQueueContext<>(Item::canonical);
+
+		Item prepared = context.prepareAdjacent(first, first,
+				item -> completed(next(queue, item)), ignored -> completedNull(), Item::id, 10).get();
+
+		assertNull(prepared);
+	}
+
+	private static Item next(List<Item> queue, Item item) {
+		return queue.get((queue.indexOf(item) + 1) % queue.size());
 	}
 
 	private record Item(String id, Item original) {

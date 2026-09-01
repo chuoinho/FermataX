@@ -167,6 +167,29 @@ Multi line
 		assertArrayEquals(new String[]{"Current cue", "Next cue"}, received.toArray());
 	}
 
+	@Test
+	public void replayAtReturnsActiveCueWithoutStartingScheduler() throws Exception {
+		String source = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nCurrent cue\n";
+		SubGrid grid = FileSubtitles.load(new ByteArrayInputStream(source.getBytes()));
+		TestClock clock = new TestClock();
+		TestExecutor executor = new TestExecutor(clock);
+		List<Subtitles.Text> received = new ArrayList<>();
+		SubScheduler scheduler = new SubScheduler(executor, grid,
+				(position, text) -> {}, clock);
+
+		scheduler.replayAt(1_500L, 0, (position, text) -> received.add(text));
+
+		assertFalse(scheduler.isStarted());
+		assertEquals(1, received.size());
+		assertEquals("Current cue", received.get(0).getText());
+		assertTrue(executor.tasks.isEmpty());
+
+		received.clear();
+		scheduler.replayAt(500L, 0, (position, text) -> received.add(text));
+		assertEquals(1, received.size());
+		assertNull(received.get(0));
+	}
+
 	private static void assertSchedulerRun(SubScheduler scheduler, TestExecutor executor,
 														 TestClock clock, List<String> received, List<String> expected,
 														 int delay, float speed) {
