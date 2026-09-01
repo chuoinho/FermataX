@@ -57,7 +57,5 @@ capabilities that must not be advertised as FermataX features:
 - `PASS`: P8H observed a real DHU media-card pause/resume transition against the current active
   Stremio claim. It is not inferred from ADB key events.
 
-The legacy `modules/stremio` source tree remains in the repository for non-Web-only builds, but
-`-PWEB_STREMIO=true` excludes it from the Gradle graph and release APK. The web-only artifact has
-no legacy native torrent payload. This scope distinction is intentional and prevents an
-over-broad claim that the repository contains no legacy code at all.
+The repository contains only the hosted Web implementation. FermataX does not bundle a native
+Stremio player, torrent transport, or streaming server.

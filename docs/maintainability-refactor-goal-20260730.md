@@ -70,7 +70,7 @@ Result on 2026-07-30:
 | Runtime host attachment | `RuntimeSessionCoordinator` | Service UI binder |
 | Addon state and lifecycle | Addon state/loader/module/lifecycle components | Dashboard and settings |
 | YouTube fullscreen transaction | `YoutubeFullscreenCoordinator` | WebView, engine, fragment host |
-| Stremio playback session | `StremioSessionCoordinator` | Fermata playback adapters |
+| Stremio Web session | `StremioWebSessionPolicy` | WebView client and MediaSession bridge |
 
 No phase may introduce a second authority for any row.
 

@@ -1,9 +1,8 @@
 # 03 - Implementation Plan
 
-## Phase 1A - Hosted addon
+## Hosted addon
 
-- Register one `stremio_fragment` from `:web` only when `WEB_STREMIO=true`.
-- Exclude legacy `:stremio` from that build graph.
+- Register one `stremio_fragment` from `:web`.
 - Use a dedicated preference namespace and official hosted URL.
 - Reuse generic WebView fullscreen, renderer-recovery and Back behavior.
 

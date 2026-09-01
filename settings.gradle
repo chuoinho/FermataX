@@ -110,8 +110,6 @@ rootProject.name = 'Fermata Music Player'
 include ':fermata'
 include ':utils'
 project(':utils').projectDir = file('depends/utils')
-include ':coreprobe'
-project(':coreprobe').projectDir = file('modules-probe/coreprobe')
 
 file('modules').eachDir {
     def name = ':' + it.name

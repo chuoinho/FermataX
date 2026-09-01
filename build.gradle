@@ -54,10 +54,6 @@ allprojects {
 		google()
 		mavenCentral()
 		gradlePluginPortal()
-		maven {
-			url "https://dl.frostwire.com/maven"
-			content { includeGroup "com.frostwire" }
-		}
 	}
 }
 
