@@ -50,4 +50,18 @@
 	<string name="xtream_error_server">Xtream 伺服器錯誤 (HTTP %1$d%2$s)。稍後再試。</string>
 	<string name="xtream_error_http">Xtream 請求失敗 (HTTP %1$d%2$s)。</string>
 	<string name="err_failed_to_load_tv_sources">無法載入下列來源：\\n%1$s</string>
+	<string name="add_stalker_source">新增 Stalker 入口網站</string>
+	<string name="stalker_portal_url">入口網站 URL</string>
+	<string name="stalker_mac_address">MAC 位址</string>
+	<string name="stalker_device_identity">選填裝置識別資料</string>
+	<string name="stalker_serial_number">序號</string>
+	<string name="stalker_device_id">裝置 ID</string>
+	<string name="stalker_source_subtitle">直播電視</string>
+	<string name="stalker_all_channels">所有頻道</string>
+	<string name="stalker_error_incomplete_account">請輸入有效的入口網站 URL 和 MAC 位址。</string>
+	<string name="stalker_error_host_not_found">找不到 Stalker 入口網站 %1$s。</string>
+	<string name="stalker_error_connect">無法連線至 Stalker 入口網站 %1$s。</string>
+	<string name="stalker_error_timeout">Stalker 入口網站未及時回應：%1$s。</string>
+	<string name="stalker_error_account_rejected">Stalker 入口網站拒絕了此 MAC 位址 (HTTP %1$d)。</string>
+	<string name="stalker_error_api_not_found">找不到 Stalker API。請檢查入口網站 URL。</string>
 </resources>

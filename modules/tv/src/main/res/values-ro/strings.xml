@@ -50,4 +50,18 @@
 	<string name="xtream_error_server">Eroare de server Xtream (HTTP %1$d%2$s). Încercați din nou mai târziu.</string>
 	<string name="xtream_error_http">Solicitarea Xtream a eșuat (HTTP %1$d%2$s).</string>
 	<string name="err_failed_to_load_tv_sources">Nu s-au putut încărca următoarele surse:\\n%1$s</string>
+	<string name="add_stalker_source">Adăugați portal Stalker</string>
+	<string name="stalker_portal_url">Adresa URL a portalului</string>
+	<string name="stalker_mac_address">Adresa MAC</string>
+	<string name="stalker_device_identity">Identitate opțională a dispozitivului</string>
+	<string name="stalker_serial_number">Număr de serie</string>
+	<string name="stalker_device_id">ID dispozitiv</string>
+	<string name="stalker_source_subtitle">TV în direct</string>
+	<string name="stalker_all_channels">Toate canalele</string>
+	<string name="stalker_error_incomplete_account">Introduceți o adresă URL validă a portalului și o adresă MAC.</string>
+	<string name="stalker_error_host_not_found">Portalul Stalker %1$s nu a putut fi găsit.</string>
+	<string name="stalker_error_connect">Nu s-a putut realiza conexiunea la portalul Stalker %1$s.</string>
+	<string name="stalker_error_timeout">Portalul Stalker nu a răspuns la timp: %1$s.</string>
+	<string name="stalker_error_account_rejected">Portalul Stalker a respins această adresă MAC (HTTP %1$d).</string>
+	<string name="stalker_error_api_not_found">API-ul Stalker nu a fost găsit. Verificați adresa URL a portalului.</string>
 </resources>

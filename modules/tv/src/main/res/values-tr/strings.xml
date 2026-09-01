@@ -50,4 +50,18 @@
 	<string name="xtream_error_server">Xtream sunucu hatası (HTTP %1$d%2$s). Daha sonra tekrar deneyin.</string>
 	<string name="xtream_error_http">Xtream isteği başarısız oldu (HTTP %1$d%2$s).</string>
 	<string name="err_failed_to_load_tv_sources">Aşağıdaki kaynaklar yüklenemedi:\\n%1$s</string>
+	<string name="add_stalker_source">Stalker portalı ekle</string>
+	<string name="stalker_portal_url">Portal URL’si</string>
+	<string name="stalker_mac_address">MAC adresi</string>
+	<string name="stalker_device_identity">İsteğe bağlı cihaz kimliği</string>
+	<string name="stalker_serial_number">Seri numarası</string>
+	<string name="stalker_device_id">Cihaz kimliği</string>
+	<string name="stalker_source_subtitle">Canlı TV</string>
+	<string name="stalker_all_channels">Tüm kanallar</string>
+	<string name="stalker_error_incomplete_account">Geçerli bir portal URL’si ve MAC adresi girin.</string>
+	<string name="stalker_error_host_not_found">Stalker portalı %1$s bulunamadı.</string>
+	<string name="stalker_error_connect">Stalker portalı %1$s ile bağlantı kurulamadı.</string>
+	<string name="stalker_error_timeout">Stalker portalı zamanında yanıt vermedi: %1$s.</string>
+	<string name="stalker_error_account_rejected">Stalker portalı bu MAC adresini reddetti (HTTP %1$d).</string>
+	<string name="stalker_error_api_not_found">Stalker API bulunamadı. Portal URL’sini kontrol edin.</string>
 </resources>

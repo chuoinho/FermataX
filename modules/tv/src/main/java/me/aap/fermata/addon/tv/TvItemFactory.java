@@ -19,6 +19,9 @@ import me.aap.fermata.addon.tv.xtream.XtreamSourceItem;
 import me.aap.fermata.addon.tv.xtream.XtreamTrackItem;
 import me.aap.fermata.addon.tv.xtream.XtreamVodCategoryItem;
 import me.aap.fermata.addon.tv.xtream.XtreamWatchFromBeginningItem;
+import me.aap.fermata.addon.tv.stalker.StalkerCategoryItem;
+import me.aap.fermata.addon.tv.stalker.StalkerSourceItem;
+import me.aap.fermata.addon.tv.stalker.StalkerTrackItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 
@@ -70,6 +73,12 @@ final class TvItemFactory {
 				return XtreamSeasonItem.create(root, id);
 			case XtreamEpisodeItem.SCHEME:
 				return XtreamEpisodeItem.create(root, id);
+			case StalkerSourceItem.SCHEME:
+				return StalkerSourceItem.create(root, toStalkerSourceId(id));
+			case StalkerCategoryItem.SCHEME:
+				return StalkerCategoryItem.create(root, id);
+			case StalkerTrackItem.SCHEME:
+				return StalkerTrackItem.create(root, id);
 			default:
 				return null;
 		}
@@ -81,5 +90,9 @@ final class TvItemFactory {
 
 	private int toXtreamSourceId(String id) {
 		return Integer.parseInt(id.substring(XtreamSourceItem.SCHEME.length() + 1));
+	}
+
+	private int toStalkerSourceId(String id) {
+		return Integer.parseInt(id.substring(StalkerSourceItem.SCHEME.length() + 1));
 	}
 }

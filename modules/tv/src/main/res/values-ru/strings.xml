@@ -51,4 +51,18 @@
 	<string name="xtream_error_server">Ошибка сервера Xtream (HTTP %1$d%2$s). Повторите попытку позже.</string>
 	<string name="xtream_error_http">Запрос Xtream не выполнен (HTTP %1$d%2$s).</string>
 	<string name="err_failed_to_load_tv_sources">Не удалось загрузить следующие источники:\\n%1$s</string>
+	<string name="add_stalker_source">Добавить портал Stalker</string>
+	<string name="stalker_portal_url">URL-адрес портала</string>
+	<string name="stalker_mac_address">MAC-адрес</string>
+	<string name="stalker_device_identity">Необязательные данные устройства</string>
+	<string name="stalker_serial_number">Серийный номер</string>
+	<string name="stalker_device_id">Идентификатор устройства</string>
+	<string name="stalker_source_subtitle">Прямой эфир</string>
+	<string name="stalker_all_channels">Все каналы</string>
+	<string name="stalker_error_incomplete_account">Введите действительный URL-адрес портала и MAC-адрес.</string>
+	<string name="stalker_error_host_not_found">Не удалось найти портал Stalker %1$s.</string>
+	<string name="stalker_error_connect">Не удалось подключиться к порталу Stalker %1$s.</string>
+	<string name="stalker_error_timeout">Портал Stalker не ответил вовремя: %1$s.</string>
+	<string name="stalker_error_account_rejected">Портал Stalker отклонил этот MAC-адрес (HTTP %1$d).</string>
+	<string name="stalker_error_api_not_found">Stalker API не найден. Проверьте URL-адрес портала.</string>
 </resources>

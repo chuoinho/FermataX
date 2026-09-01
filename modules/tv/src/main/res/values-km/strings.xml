@@ -50,4 +50,18 @@
 	<string name="xtream_error_server">កំហុសម៉ាស៊ីនមេ Xtream (HTTP %1$d%2$s)។ ព្យាយាមម្តងទៀតនៅពេលក្រោយ។</string>
 	<string name="xtream_error_http">សំណើ Xtream បានបរាជ័យ (HTTP %1$d%2$s)។</string>
 	<string name="err_failed_to_load_tv_sources">មិនអាចផ្ទុកប្រភពខាងក្រោមបានទេ៖\\n%1$s</string>
+	<string name="add_stalker_source">បន្ថែមវិបផតថល Stalker</string>
+	<string name="stalker_portal_url">URL វិបផតថល</string>
+	<string name="stalker_mac_address">អាសយដ្ឋាន MAC</string>
+	<string name="stalker_device_identity">អត្តសញ្ញាណឧបករណ៍ជាជម្រើស</string>
+	<string name="stalker_serial_number">លេខសម្គាល់ស៊េរី</string>
+	<string name="stalker_device_id">លេខសម្គាល់ឧបករណ៍</string>
+	<string name="stalker_source_subtitle">ទូរទស្សន៍ផ្សាយផ្ទាល់</string>
+	<string name="stalker_all_channels">ប៉ុស្តិ៍ទាំងអស់</string>
+	<string name="stalker_error_incomplete_account">បញ្ចូល URL វិបផតថល និងអាសយដ្ឋាន MAC ដែលត្រឹមត្រូវ។</string>
+	<string name="stalker_error_host_not_found">មិនអាចរកឃើញវិបផតថល Stalker %1$s បានទេ។</string>
+	<string name="stalker_error_connect">មិនអាចភ្ជាប់ទៅវិបផតថល Stalker %1$s បានទេ។</string>
+	<string name="stalker_error_timeout">វិបផតថល Stalker មិនបានឆ្លើយតបទាន់ពេលទេ៖ %1$s។</string>
+	<string name="stalker_error_account_rejected">វិបផតថល Stalker បានបដិសេធអាសយដ្ឋាន MAC នេះ (HTTP %1$d)។</string>
+	<string name="stalker_error_api_not_found">រកមិនឃើញ Stalker API ទេ។ ពិនិត្យ URL វិបផតថល។</string>
 </resources>

@@ -23,6 +23,7 @@ import me.aap.fermata.addon.VoiceSearchAddon;
 import me.aap.fermata.backup.BackupContributor;
 import me.aap.fermata.backup.BackupIO;
 import me.aap.fermata.addon.tv.xtream.XtreamAccount;
+import me.aap.fermata.addon.tv.stalker.StalkerAccount;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
@@ -37,7 +38,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 public class TvAddon implements MediaLibAddon, VoiceSearchAddon, AutomotiveShutdownParticipant,
 		BackupContributor {
 	private static final String BACKUP_ID = "tv.sources";
-	private static final int BACKUP_VERSION = 1;
+	private static final int BACKUP_VERSION = 2;
 	private static final int MAX_BACKUP_SOURCES = 10_000;
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(TvAddon.class.getName());
@@ -142,6 +143,11 @@ public class TvAddon implements MediaLibAddon, VoiceSearchAddon, AutomotiveShutd
 					if (account == null) throw new IllegalStateException(
 							"Xtream source credentials are unavailable");
 					writeXtream(output, account);
+				} else if (TvSourceItem.TYPE_STALKER.equals(type)) {
+					StalkerAccount account = StalkerAccount.load(repository.getStore(), id);
+					if (account == null) throw new IllegalStateException(
+							"Stalker source identity is unavailable");
+					writeStalker(output, account);
 				} else {
 					BackupIO.writeNullableString(output, repository.getM3uId(id));
 				}
@@ -174,6 +180,11 @@ public class TvAddon implements MediaLibAddon, VoiceSearchAddon, AutomotiveShutd
 			if (source.account != null) {
 				XtreamAccount actual = XtreamAccount.load(repository.getStore(), source.id);
 				if ((actual == null) || !sameAccount(source.account, actual)) throw incomplete();
+			} else if (source.stalkerAccount != null) {
+				StalkerAccount actual = StalkerAccount.load(repository.getStore(), source.id);
+				if ((actual == null) || !sameStalkerAccount(source.stalkerAccount, actual)) {
+					throw incomplete();
+				}
 			} else if (!java.util.Objects.equals(source.m3uId,
 					repository.getM3uId(source.id))) throw incomplete();
 		}
@@ -200,8 +211,19 @@ public class TvAddon implements MediaLibAddon, VoiceSearchAddon, AutomotiveShutd
 		output.writeInt(account.getResponseTimeout());
 	}
 
+	private static void writeStalker(DataOutputStream output, StalkerAccount account)
+			throws Exception {
+		BackupIO.writeNullableString(output, account.getRawName());
+		BackupIO.writeString(output, account.getPortal());
+		BackupIO.writeString(output, account.getMac());
+		BackupIO.writeNullableString(output, account.getSerial());
+		BackupIO.writeNullableString(output, account.getDeviceId());
+		BackupIO.writeNullableString(output, account.getRawUserAgent());
+		output.writeInt(account.getResponseTimeout());
+	}
+
 	private static TvBackup readSources(int version, byte[] data) throws Exception {
-		if (version != BACKUP_VERSION) throw new IllegalArgumentException(
+		if ((version < 1) || (version > BACKUP_VERSION)) throw new IllegalArgumentException(
 				"Unsupported TV backup version");
 		try (DataInputStream input = new DataInputStream(new ByteArrayInputStream(data))) {
 			int counter = input.readInt();
@@ -234,12 +256,26 @@ public class TvAddon implements MediaLibAddon, VoiceSearchAddon, AutomotiveShutd
 							name, scheme, host, port, username, password, output, userAgent, timeout);
 					if (!account.isComplete()) throw new IllegalArgumentException(
 							"Incomplete Xtream source");
-					sources.add(new SourceBackup(id, type, null, account));
+					sources.add(new SourceBackup(id, type, null, account, null));
+				} else if (TvSourceItem.TYPE_STALKER.equals(type) && (version >= 2)) {
+					String name = BackupIO.readNullableString(input);
+					String portal = BackupIO.readString(input);
+					String mac = BackupIO.readString(input);
+					String serial = BackupIO.readNullableString(input);
+					String deviceId = BackupIO.readNullableString(input);
+					String userAgent = BackupIO.readNullableString(input);
+					int timeout = input.readInt();
+					StalkerAccount account = new StalkerAccount(id, name, portal, mac, serial,
+							deviceId, userAgent, timeout);
+					if ((timeout < 0) || !account.isComplete()) {
+						throw new IllegalArgumentException("Invalid Stalker source options");
+					}
+					sources.add(new SourceBackup(id, type, null, null, account));
 				} else if (TvSourceItem.TYPE_M3U.equals(type)) {
 					String m3uId = BackupIO.readNullableString(input);
 					if ((m3uId == null) || m3uId.isBlank()) throw new IllegalArgumentException(
 							"Missing M3U source reference");
-					sources.add(new SourceBackup(id, type, m3uId, null));
+					sources.add(new SourceBackup(id, type, m3uId, null, null));
 				} else {
 					throw new IllegalArgumentException("Unknown TV source type");
 				}
@@ -262,6 +298,16 @@ public class TvAddon implements MediaLibAddon, VoiceSearchAddon, AutomotiveShutd
 				(first.getResponseTimeout() == second.getResponseTimeout());
 	}
 
+	private static boolean sameStalkerAccount(StalkerAccount first, StalkerAccount second) {
+		return java.util.Objects.equals(first.getRawName(), second.getRawName()) &&
+				first.getPortal().equals(second.getPortal()) &&
+				first.getMac().equals(second.getMac()) &&
+				java.util.Objects.equals(first.getSerial(), second.getSerial()) &&
+				java.util.Objects.equals(first.getDeviceId(), second.getDeviceId()) &&
+				java.util.Objects.equals(first.getRawUserAgent(), second.getRawUserAgent()) &&
+				(first.getResponseTimeout() == second.getResponseTimeout());
+	}
+
 	private static IllegalStateException incomplete() {
 		return new IllegalStateException("TV sources did not restore completely");
 	}
@@ -274,12 +320,15 @@ public class TvAddon implements MediaLibAddon, VoiceSearchAddon, AutomotiveShutd
 		final String type;
 		final String m3uId;
 		final XtreamAccount account;
+		final StalkerAccount stalkerAccount;
 
-		SourceBackup(int id, String type, String m3uId, XtreamAccount account) {
+		SourceBackup(int id, String type, String m3uId, XtreamAccount account,
+				StalkerAccount stalkerAccount) {
 			this.id = id;
 			this.type = type;
 			this.m3uId = m3uId;
 			this.account = account;
+			this.stalkerAccount = stalkerAccount;
 		}
 	}
 }

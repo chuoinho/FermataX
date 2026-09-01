@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+	<string name="add_stalker_source">Thêm Stalker Portal</string>
+	<string name="stalker_portal_url">URL Portal</string>
+	<string name="stalker_mac_address">Địa chỉ MAC</string>
+	<string name="stalker_device_identity">Định danh thiết bị tùy chọn</string>
+	<string name="stalker_serial_number">Số sê-ri</string>
+	<string name="stalker_device_id">ID thiết bị</string>
+	<string name="stalker_source_subtitle">Truyền hình trực tiếp</string>
+	<string name="stalker_all_channels">Tất cả kênh</string>
+	<string name="stalker_error_incomplete_account">Nhập URL Portal và địa chỉ MAC hợp lệ.</string>
+	<string name="stalker_error_host_not_found">Không tìm thấy Stalker Portal %1$s.</string>
+	<string name="stalker_error_connect">Không thể kết nối tới Stalker Portal %1$s.</string>
+	<string name="stalker_error_timeout">Stalker Portal không phản hồi kịp thời: %1$s.</string>
+	<string name="stalker_error_account_rejected">Stalker Portal từ chối địa chỉ MAC này (HTTP %1$d).</string>
+	<string name="stalker_error_api_not_found">Không tìm thấy Stalker API. Hãy kiểm tra URL Portal.</string>
 	<string name="sub_ch">Các kênh: %1$d.</string>
 	<string name="sub_movies">Phim: %1$d.</string>
 	<string name="sub_series">Chuỗi: %1$d.</string>

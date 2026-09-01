@@ -50,4 +50,18 @@
 	<string name="xtream_error_server">خطأ في خادم Xtream (HTTP %1$d%2$s). حاول مرة أخرى لاحقًا.</string>
 	<string name="xtream_error_http">فشل طلب Xtream (HTTP %1$d%2$s).</string>
 	<string name="err_failed_to_load_tv_sources">تعذر تحميل المصادر التالية:\\n%1$s</string>
+	<string name="add_stalker_source">إضافة بوابة Stalker</string>
+	<string name="stalker_portal_url">عنوان URL للبوابة</string>
+	<string name="stalker_mac_address">عنوان MAC</string>
+	<string name="stalker_device_identity">هوية الجهاز الاختيارية</string>
+	<string name="stalker_serial_number">الرقم التسلسلي</string>
+	<string name="stalker_device_id">معرّف الجهاز</string>
+	<string name="stalker_source_subtitle">البث التلفزيوني المباشر</string>
+	<string name="stalker_all_channels">جميع القنوات</string>
+	<string name="stalker_error_incomplete_account">أدخل عنوان URL صالحًا للبوابة وعنوان MAC.</string>
+	<string name="stalker_error_host_not_found">تعذر العثور على بوابة Stalker %1$s.</string>
+	<string name="stalker_error_connect">تعذر الاتصال ببوابة Stalker %1$s.</string>
+	<string name="stalker_error_timeout">لم تستجب بوابة Stalker في الوقت المحدد: %1$s.</string>
+	<string name="stalker_error_account_rejected">رفضت بوابة Stalker عنوان MAC هذا (HTTP %1$d).</string>
+	<string name="stalker_error_api_not_found">لم يتم العثور على Stalker API. تحقق من عنوان URL للبوابة.</string>
 </resources>

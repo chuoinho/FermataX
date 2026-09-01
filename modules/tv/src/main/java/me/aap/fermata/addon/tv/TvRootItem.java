@@ -26,6 +26,10 @@ import me.aap.fermata.addon.tv.xtream.XtreamSourceItem;
 import me.aap.fermata.addon.tv.xtream.XtreamTrackItem;
 import me.aap.fermata.addon.tv.xtream.XtreamVodCategoryItem;
 import me.aap.fermata.addon.tv.xtream.XtreamWatchFromBeginningItem;
+import me.aap.fermata.addon.tv.stalker.StalkerAccount;
+import me.aap.fermata.addon.tv.stalker.StalkerCategoryItem;
+import me.aap.fermata.addon.tv.stalker.StalkerSourceItem;
+import me.aap.fermata.addon.tv.stalker.StalkerTrackItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ItemContainer;
 import me.aap.fermata.media.lib.MediaLib;
@@ -54,6 +58,7 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 	private final TvSourceRepository sources;
 	private final M3uSourceHandler m3uSources;
 	private final XtreamSourceHandler xtreamSources;
+	private final StalkerSourceHandler stalkerSources;
 	private final TvItemFactory itemFactory;
 	private List<String> failedSourceNames = List.of();
 
@@ -63,6 +68,7 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 		sources = new TvSourceRepository(this);
 		m3uSources = new M3uSourceHandler(this, sources);
 		xtreamSources = new XtreamSourceHandler(this, sources);
+		stalkerSources = new StalkerSourceHandler(this, sources);
 		itemFactory = new TvItemFactory(this);
 	}
 
@@ -168,6 +174,12 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 				if (!isNullOrBlank(name)) return name;
 				String host = store.getStringPref(XtreamAccount.hostPref(sourceId));
 				if (!isNullOrBlank(host)) return host;
+			} else if (TvSourceItem.TYPE_STALKER.equals(sources.getSourceType(sourceId))) {
+				PreferenceStore store = sources.getStore();
+				String name = store.getStringPref(StalkerAccount.namePref(sourceId));
+				if (!isNullOrBlank(name)) return name;
+				String portal = store.getStringPref(StalkerAccount.portalPref(sourceId));
+				if (!isNullOrBlank(portal)) return portal;
 			} else {
 				String m3uId = sources.getM3uId(sourceId);
 				if (!isNullOrBlank(m3uId)) {
@@ -223,7 +235,10 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 				|| id.startsWith(XtreamVodCategoryItem.SCHEME)
 				|| id.startsWith(XtreamCategoryItem.SCHEME)
 				|| id.startsWith(XtreamSectionItem.SCHEME)
-				|| id.startsWith(XtreamSourceItem.SCHEME);
+				|| id.startsWith(XtreamSourceItem.SCHEME)
+				|| id.startsWith(StalkerTrackItem.SCHEME)
+				|| id.startsWith(StalkerCategoryItem.SCHEME)
+				|| id.startsWith(StalkerSourceItem.SCHEME);
 	}
 
 	public void addSource(TvM3uFile m3u) {
@@ -243,6 +258,8 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 			m3uSources.sourceRemoved((TvM3uItem) i);
 		} else if (i instanceof XtreamSourceItem) {
 			xtreamSources.sourceRemoved((XtreamSourceItem) i);
+		} else if (i instanceof StalkerSourceItem) {
+			stalkerSources.sourceRemoved((StalkerSourceItem) i);
 		}
 		invalidateSearch();
 	}
@@ -255,6 +272,14 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 		xtreamSources.updateSource(account);
 	}
 
+	public void addSource(StalkerAccount account) {
+		stalkerSources.addSource(account);
+	}
+
+	public void updateSource(StalkerAccount account) {
+		stalkerSources.updateSource(account);
+	}
+
 	void invalidateSearch() {
 		SearchFolder.invalidate(this);
 	}
@@ -263,6 +288,9 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 		if (!sources.hasSource(srcId)) return null;
 		if (TvSourceItem.TYPE_XTREAM.equals(sources.getSourceType(srcId))) {
 			return xtreamSources.create(srcId);
+		}
+		if (TvSourceItem.TYPE_STALKER.equals(sources.getSourceType(srcId))) {
+			return stalkerSources.create(srcId);
 		}
 		return m3uSources.create(srcId);
 	}

@@ -50,4 +50,18 @@
 	<string name="xtream_error_server">Pogreška Xtream poslužitelja (HTTP %1$d%2$s). Pokušajte ponovno kasnije.</string>
 	<string name="xtream_error_http">Xtream zahtjev nije uspio (HTTP %1$d%2$s).</string>
 	<string name="err_failed_to_load_tv_sources">Nije moguće učitati sljedeće izvore:\\n%1$s</string>
+	<string name="add_stalker_source">Dodaj Stalker portal</string>
+	<string name="stalker_portal_url">URL portala</string>
+	<string name="stalker_mac_address">MAC adresa</string>
+	<string name="stalker_device_identity">Neobavezni identitet uređaja</string>
+	<string name="stalker_serial_number">Serijski broj</string>
+	<string name="stalker_device_id">ID uređaja</string>
+	<string name="stalker_source_subtitle">Televizija uživo</string>
+	<string name="stalker_all_channels">Svi kanali</string>
+	<string name="stalker_error_incomplete_account">Unesite valjani URL portala i MAC adresu.</string>
+	<string name="stalker_error_host_not_found">Nije moguće pronaći Stalker portal %1$s.</string>
+	<string name="stalker_error_connect">Nije moguće povezati se sa Stalker portalom %1$s.</string>
+	<string name="stalker_error_timeout">Stalker portal nije odgovorio na vrijeme: %1$s.</string>
+	<string name="stalker_error_account_rejected">Stalker portal odbio je ovu MAC adresu (HTTP %1$d).</string>
+	<string name="stalker_error_api_not_found">Stalker API nije pronađen. Provjerite URL portala.</string>
 </resources>

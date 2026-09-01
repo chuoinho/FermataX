@@ -24,6 +24,7 @@ import org.robolectric.annotation.Config;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.tv.xtream.XtreamAccount;
+import me.aap.fermata.addon.tv.stalker.StalkerAccount;
 import me.aap.fermata.backup.BackupIO;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
@@ -32,7 +33,9 @@ import me.aap.utils.pref.SharedPreferenceStore;
 @Config(application = FermataApplication.class)
 public class TvBackupRegressionTest {
 	private final Map<String, String> credentials = new LinkedHashMap<>();
+	private final Map<String, String> stalkerIdentity = new LinkedHashMap<>();
 	private Field credentialStore;
+	private Field stalkerCredentialStore;
 	private TvSourceRepository repository;
 
 	@Before
@@ -54,53 +57,76 @@ public class TvBackupRegressionTest {
 		credentialStore = credentialsClass.getDeclaredField("store");
 		credentialStore.setAccessible(true);
 		credentialStore.set(null, store);
+		Class<?> stalkerCredentialsClass = Class.forName(
+				"me.aap.fermata.addon.tv.stalker.StalkerCredentials");
+		Class<?> stalkerStoreClass = Class.forName(
+				"me.aap.fermata.addon.tv.stalker.StalkerCredentials$Store");
+		Object stalkerStore = Proxy.newProxyInstance(stalkerStoreClass.getClassLoader(),
+				new Class<?>[]{stalkerStoreClass}, (proxy, method, arguments) -> switch (method.getName()) {
+					case "getString" -> stalkerIdentity.get(arguments[0]);
+					case "putString" -> stalkerIdentity.put((String) arguments[0],
+							(String) arguments[1]);
+					case "remove" -> stalkerIdentity.remove(arguments[0]);
+					case "toString" -> "FixtureStalkerCredentialStore";
+					default -> throw new UnsupportedOperationException(method.getName());
+				});
+		stalkerCredentialStore = stalkerCredentialsClass.getDeclaredField("store");
+		stalkerCredentialStore.setAccessible(true);
+		stalkerCredentialStore.set(null, stalkerStore);
 		repository = new TvSourceRepository(SharedPreferenceStore.create(app, "medialib"));
 	}
 
 	@After
 	public void tearDown() throws Exception {
 		credentialStore.set(null, null);
+		stalkerCredentialStore.set(null, null);
 		FermataApplication.get().getSharedPreferences("medialib", Context.MODE_PRIVATE)
 				.edit().clear().commit();
 		credentials.clear();
+		stalkerIdentity.clear();
 	}
 
 	@Test
-	public void m3uAndTwoXtreamAccountsRestoreAndNextSourceRemainsUsable() throws Exception {
+	public void allTvSourceTypesRestoreAndNextSourceRemainsUsable() throws Exception {
 		XtreamAccount first = account(2, "First", "first-user", "first-password");
 		XtreamAccount second = account(3, "Second", "second-user", "second-password");
+		StalkerAccount stalker = new StalkerAccount(4, "Portal", "https://portal.invalid/c/",
+				"00:1A:79:01:02:03", "serial", "device", "Portal Agent", 25);
 		try (PreferenceStore.Edit edit = repository.getStore().editPreferenceStore()) {
 			repository.saveM3uSource(edit, 1, "m3u-source-id");
 			repository.saveXtreamSource(edit, 2, first);
 			repository.saveXtreamSource(edit, 3, second);
+			repository.saveStalkerSource(edit, 4, stalker);
 		}
-		repository.setSourceIds(new int[]{1, 2, 3});
+		repository.setSourceIds(new int[]{1, 2, 3, 4});
 		TvAddon addon = new TvAddon();
 		byte[] backup = addon.exportBackup();
 
 		FermataApplication.get().getSharedPreferences("medialib", Context.MODE_PRIVATE)
 				.edit().clear().commit();
 		credentials.clear();
+		stalkerIdentity.clear();
 		addon.restoreBackup(addon.getBackupVersion(), backup);
 		addon.verifyRestore(addon.getBackupVersion(), backup);
 
-		assertArrayEquals(new int[]{1, 2, 3}, repository.getSourceIds());
-		assertEquals(3, repository.getSourceCounter());
+		assertArrayEquals(new int[]{1, 2, 3, 4}, repository.getSourceIds());
+		assertEquals(4, repository.getSourceCounter());
 		assertEquals("m3u-source-id", repository.getM3uId(1));
 		assertAccount(first, XtreamAccount.load(repository.getStore(), 2));
 		assertAccount(second, XtreamAccount.load(repository.getStore(), 3));
+		assertStalkerAccount(stalker, StalkerAccount.load(repository.getStore(), 4));
 		int nextId = repository.nextSourceId();
-		assertEquals(4, nextId);
+		assertEquals(5, nextId);
 		assertFalse(repository.hasSource(nextId));
 
 		XtreamAccount third = account(nextId, "Third", "third-user", "third-password");
 		try (PreferenceStore.Edit edit = repository.getStore().editPreferenceStore()) {
 			repository.saveXtreamSource(edit, nextId, third);
 		}
-		repository.setSourceIds(new int[]{1, 2, 3, nextId});
+		repository.setSourceIds(new int[]{1, 2, 3, 4, nextId});
 
 		assertAccount(third, XtreamAccount.load(repository.getStore(), nextId));
-		assertEquals(5, repository.nextSourceId());
+		assertEquals(6, repository.nextSourceId());
 	}
 
 	@Test
@@ -134,6 +160,18 @@ public class TvBackupRegressionTest {
 		assertEquals(expected.getPassword(), actual.getPassword());
 		assertEquals(expected.getOutputIndex(), actual.getOutputIndex());
 		assertEquals(expected.getUserAgent(), actual.getUserAgent());
+		assertEquals(expected.getResponseTimeout(), actual.getResponseTimeout());
+	}
+
+	private static void assertStalkerAccount(StalkerAccount expected, StalkerAccount actual) {
+		assertNotNull(actual);
+		assertEquals(expected.getSourceId(), actual.getSourceId());
+		assertEquals(expected.getRawName(), actual.getRawName());
+		assertEquals(expected.getPortal(), actual.getPortal());
+		assertEquals(expected.getMac(), actual.getMac());
+		assertEquals(expected.getSerial(), actual.getSerial());
+		assertEquals(expected.getDeviceId(), actual.getDeviceId());
+		assertEquals(expected.getRawUserAgent(), actual.getRawUserAgent());
 		assertEquals(expected.getResponseTimeout(), actual.getResponseTimeout());
 	}
 }

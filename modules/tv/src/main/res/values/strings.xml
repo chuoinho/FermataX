@@ -11,6 +11,15 @@
     <string name="add_xtream_source">Add Xtream Codes source</string>
     <string name="tv_source_name">Source name</string>
     <string name="xtream_codes" translatable="false">Xtream Codes</string>
+	<string name="stalker_portal" translatable="false">Stalker Portal</string>
+	<string name="add_stalker_source">Add Stalker Portal</string>
+	<string name="stalker_portal_url">Portal URL</string>
+	<string name="stalker_mac_address">MAC address</string>
+	<string name="stalker_device_identity">Optional device identity</string>
+	<string name="stalker_serial_number">Serial number</string>
+	<string name="stalker_device_id">Device ID</string>
+	<string name="stalker_source_subtitle">Live TV</string>
+	<string name="stalker_all_channels">All channels</string>
     <string name="xtream_live_tv">Live TV</string>
     <string name="xtream_movies">Movies</string>
     <string name="xtream_series">Series</string>
@@ -55,4 +64,10 @@
 	<string name="xtream_error_api_not_found">Xtream API was not found on this server (HTTP 404). Check the portal URL, host and port.</string>
 	<string name="xtream_error_server">Xtream server error (HTTP %1$d%2$s). Try again later.</string>
 	<string name="xtream_error_http">Xtream request failed (HTTP %1$d%2$s).</string>
+	<string name="stalker_error_incomplete_account">Enter a valid portal URL and MAC address.</string>
+	<string name="stalker_error_host_not_found">Unable to find Stalker portal %1$s.</string>
+	<string name="stalker_error_connect">Unable to connect to Stalker portal %1$s.</string>
+	<string name="stalker_error_timeout">Stalker portal did not respond in time: %1$s.</string>
+	<string name="stalker_error_account_rejected">Stalker portal rejected this MAC address (HTTP %1$d).</string>
+	<string name="stalker_error_api_not_found">Stalker API was not found. Check the portal URL.</string>
 </resources>

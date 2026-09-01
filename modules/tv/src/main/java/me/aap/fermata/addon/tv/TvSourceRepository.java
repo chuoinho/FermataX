@@ -3,6 +3,7 @@ package me.aap.fermata.addon.tv;
 import static me.aap.utils.collection.CollectionUtils.contains;
 
 import me.aap.fermata.addon.tv.xtream.XtreamAccount;
+import me.aap.fermata.addon.tv.stalker.StalkerAccount;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
@@ -63,6 +64,17 @@ final class TvSourceRepository {
 		XtreamAccount.save(e, sourceId, account);
 	}
 
+	void saveStalkerSource(PreferenceStore.Edit e, int sourceId, StalkerAccount account) {
+		e.setIntPref(SOURCE_COUNTER, sourceId);
+		e.setStringPref(sourceTypePref(sourceId), TvSourceItem.TYPE_STALKER);
+		StalkerAccount.save(e, sourceId, account);
+	}
+
+	void updateStalkerSource(PreferenceStore.Edit e, int sourceId, StalkerAccount account) {
+		e.setStringPref(sourceTypePref(sourceId), TvSourceItem.TYPE_STALKER);
+		StalkerAccount.save(e, sourceId, account);
+	}
+
 	void removeM3uSourcePrefs(PreferenceStore.Edit e, int sourceId) {
 		e.removePref(sourceTypePref(sourceId));
 		e.removePref(m3uIdPref(sourceId));
@@ -73,9 +85,15 @@ final class TvSourceRepository {
 		XtreamAccount.remove(e, sourceId);
 	}
 
+	void removeStalkerSourcePrefs(PreferenceStore.Edit e, int sourceId) {
+		e.removePref(sourceTypePref(sourceId));
+		StalkerAccount.remove(e, sourceId);
+	}
+
 	void removeSourcePrefs(PreferenceStore.Edit e, int sourceId) {
 		removeM3uSourcePrefs(e, sourceId);
 		XtreamAccount.remove(e, sourceId);
+		StalkerAccount.remove(e, sourceId);
 	}
 
 	String getM3uId(int sourceId) {
@@ -93,7 +111,9 @@ final class TvSourceRepository {
 				TvAddon.SourceBackup source = sources.get(i);
 				ids[i] = source.id;
 				if (source.account != null) saveXtreamSource(edit, source.id, source.account);
-				else saveM3uSource(edit, source.id, source.m3uId);
+				else if (source.stalkerAccount != null) {
+					saveStalkerSource(edit, source.id, source.stalkerAccount);
+				} else saveM3uSource(edit, source.id, source.m3uId);
 			}
 			edit.setIntPref(SOURCE_COUNTER, counter);
 			edit.setIntArrayPref(SOURCE_IDS, ids);
@@ -124,7 +144,9 @@ final class TvSourceRepository {
 
 	static String getSourceType(PreferenceStore store, int sourceId) {
 		String type = store.getStringPref(sourceTypePref(sourceId));
-		return TvSourceItem.TYPE_XTREAM.equals(type) ? TvSourceItem.TYPE_XTREAM : TvSourceItem.TYPE_M3U;
+		if (TvSourceItem.TYPE_XTREAM.equals(type)) return TvSourceItem.TYPE_XTREAM;
+		if (TvSourceItem.TYPE_STALKER.equals(type)) return TvSourceItem.TYPE_STALKER;
+		return TvSourceItem.TYPE_M3U;
 	}
 
 	static Pref<Supplier<String>> sourceTypePref(int sourceId) {

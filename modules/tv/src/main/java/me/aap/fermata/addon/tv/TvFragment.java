@@ -23,6 +23,9 @@ import me.aap.fermata.addon.tv.m3u.TvM3uItem;
 import me.aap.fermata.addon.tv.xtream.XtreamAccount;
 import me.aap.fermata.addon.tv.xtream.XtreamFileSystemProvider;
 import me.aap.fermata.addon.tv.xtream.XtreamSourceItem;
+import me.aap.fermata.addon.tv.stalker.StalkerAccount;
+import me.aap.fermata.addon.tv.stalker.StalkerFileSystemProvider;
+import me.aap.fermata.addon.tv.stalker.StalkerSourceItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -108,6 +111,8 @@ public class TvFragment extends MediaLibFragment {
 					me.aap.fermata.R.string.m3u_playlist);
 			b.addItem(me.aap.fermata.R.id.xtream_source, me.aap.fermata.R.drawable.tv,
 					R.string.xtream_codes);
+			b.addItem(R.id.stalker_source, me.aap.fermata.R.drawable.tv,
+					R.string.stalker_portal);
 		});
 	}
 
@@ -117,6 +122,8 @@ public class TvFragment extends MediaLibFragment {
 			addM3uSource();
 		} else if (id == me.aap.fermata.R.id.xtream_source) {
 			addXtreamSource();
+		} else if (id == R.id.stalker_source) {
+			addStalkerSource();
 		}
 		return true;
 	}
@@ -130,6 +137,11 @@ public class TvFragment extends MediaLibFragment {
 	private void addXtreamSource() {
 		new XtreamFileSystemProvider().select(getMainActivity()).main()
 				.onFailure(this::failedToAddSource).onSuccess(this::addXtreamSource);
+	}
+
+	private void addStalkerSource() {
+		new StalkerFileSystemProvider().select(getMainActivity()).main()
+				.onFailure(this::failedToAddSource).onSuccess(this::addStalkerSource);
 	}
 
 	public TvRootItem getRootItem() {
@@ -196,6 +208,26 @@ public class TvFragment extends MediaLibFragment {
 								}
 								i.setAccount(account);
 								refreshEditedSource(i);
+							}
+						});
+			} else if (source instanceof StalkerSourceItem) {
+				StalkerSourceItem stalker = (StalkerSourceItem) source;
+				new StalkerFileSystemProvider().edit(getMainActivity(), stalker.getAccount())
+						.onCompletion((account, err) -> {
+							if ((err != null) && !(err instanceof CancellationException)) {
+								Log.e(err, "Failed to edit TV source ", stalker);
+								UiUtils.showAlert(getContext(), err.getLocalizedMessage());
+							}
+							getMainActivity().showFragment(getFragmentId());
+							if (account != null) {
+								try {
+									getRootItem().updateSource(account);
+								} catch (RuntimeException ex) {
+									failedToAddSource(ex);
+									return;
+								}
+								stalker.setAccount(account);
+								refreshEditedSource(stalker);
 							}
 						});
 			}
@@ -287,6 +319,8 @@ public class TvFragment extends MediaLibFragment {
 		BrowsableItem parent = getAdapter().getParent();
 		XtreamSourceItem source = getXtreamSource(parent);
 		if ((source != null) && (source != parent)) source.clearCache();
+		StalkerSourceItem stalker = getStalkerSource(parent);
+		if ((stalker != null) && (stalker != parent)) stalker.clearCache();
 		return super.refresh();
 	}
 
@@ -311,6 +345,20 @@ public class TvFragment extends MediaLibFragment {
 		a.showFragment(getFragmentId());
 	}
 
+	private void addStalkerSource(StalkerAccount account) {
+		MainActivityDelegate activity = getMainActivity();
+		if (account != null) {
+			try {
+				getRootItem().addSource(account);
+			} catch (RuntimeException ex) {
+				failedToAddSource(ex);
+				return;
+			}
+		}
+		getAdapter().setParent(getRootItem());
+		activity.showFragment(getFragmentId());
+	}
+
 	private void failedToAddSource(Throwable ex) {
 		getMainActivity().showFragment(me.aap.fermata.R.id.tv_fragment);
 		if (isCancellation(ex)) return;
@@ -330,6 +378,13 @@ public class TvFragment extends MediaLibFragment {
 	private XtreamSourceItem getXtreamSource(BrowsableItem item) {
 		for (BrowsableItem i = item; i != null; i = i.getParent()) {
 			if (i instanceof XtreamSourceItem) return (XtreamSourceItem) i;
+		}
+		return null;
+	}
+
+	private StalkerSourceItem getStalkerSource(BrowsableItem item) {
+		for (BrowsableItem current = item; current != null; current = current.getParent()) {
+			if (current instanceof StalkerSourceItem) return (StalkerSourceItem) current;
 		}
 		return null;
 	}

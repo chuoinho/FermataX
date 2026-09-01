@@ -50,4 +50,18 @@
 	<string name="xtream_error_server">Xtream-Serverfehler (HTTP %1$d%2$s). Versuchen Sie es später noch einmal.</string>
 	<string name="xtream_error_http">Xtream-Anfrage fehlgeschlagen (HTTP %1$d%2$s).</string>
 	<string name="err_failed_to_load_tv_sources">Die folgenden Quellen konnten nicht geladen werden:\\n%1$s</string>
+	<string name="add_stalker_source">Stalker-Portal hinzufügen</string>
+	<string name="stalker_portal_url">Portal-URL</string>
+	<string name="stalker_mac_address">MAC-Adresse</string>
+	<string name="stalker_device_identity">Optionale Geräteidentität</string>
+	<string name="stalker_serial_number">Seriennummer</string>
+	<string name="stalker_device_id">Geräte-ID</string>
+	<string name="stalker_source_subtitle">Live-TV</string>
+	<string name="stalker_all_channels">Alle Kanäle</string>
+	<string name="stalker_error_incomplete_account">Geben Sie eine gültige Portal-URL und MAC-Adresse ein.</string>
+	<string name="stalker_error_host_not_found">Das Stalker-Portal %1$s wurde nicht gefunden.</string>
+	<string name="stalker_error_connect">Verbindung zum Stalker-Portal %1$s nicht möglich.</string>
+	<string name="stalker_error_timeout">Das Stalker-Portal hat nicht rechtzeitig geantwortet: %1$s.</string>
+	<string name="stalker_error_account_rejected">Das Stalker-Portal hat diese MAC-Adresse abgelehnt (HTTP %1$d).</string>
+	<string name="stalker_error_api_not_found">Die Stalker-API wurde nicht gefunden. Überprüfen Sie die Portal-URL.</string>
 </resources>

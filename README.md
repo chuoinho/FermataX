@@ -22,7 +22,7 @@
 
 FermataX is a GPL-3.0 fork of [Fermata Media Player](https://github.com/AndreyPavlenko/Fermata), customized as a car-friendly media hub for Android Auto.
 
-It brings local media, IPTV and Xtream, Internet Radio, Podcasts, Audiobooks, Stremio-compatible services, YouTube and Web media together in one interface. Favorites, Recent, playback progress, voice control, and media controls are integrated across supported sources.
+It brings local media, IPTV, Xtream and Stalker Portal, Internet Radio, Podcasts, Audiobooks, Stremio-compatible services, YouTube and Web media together in one interface. Favorites, Recent, playback progress, voice control, and media controls are integrated across supported sources.
 
 ## Continuous integration
 
@@ -37,6 +37,7 @@ Maintainers and coding agents should also read [MASTER_CONTEXT.md](MASTER_CONTEX
 - **Adaptive SmartTopCard** on Android Auto/DHU with Now Playing, Continue/Recent, up to three Quick Recent rows, and width-aware Play/Pause and Favorite actions; phone keeps the ordinary Dashboard without SmartTop.
 - **Local audio and video** playback with folders and playlists.
 - **IPTV and Xtream Codes** with M3U, XMLTV EPG, Catchup, Live TV, Movies, and Series.
+- **Stalker / Ministra portals** with MAC-based authentication, Live TV categories, and playback links resolved on demand.
 - **Internet Radio** with user-added sources and online station discovery.
 - **Podcasts** with search, subscriptions, downloads, and playback progress.
 - **Audiobooks** from local storage, OPDS, LibriVox, and Audiobookshelf sources.

@@ -46,6 +46,16 @@ public class TvSourceRepositoryTest {
 	}
 
 	@Test
+	public void readsStalkerSourceTypeMarker() {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+		TvSourceRepository repo = new TvSourceRepository(store);
+		try (PreferenceStore.Edit edit = store.editPreferenceStore()) {
+			edit.setStringPref(TvSourceRepository.sourceTypePref(3), TvSourceItem.TYPE_STALKER);
+		}
+		assertEquals(TvSourceItem.TYPE_STALKER, repo.getSourceType(3));
+	}
+
+	@Test
 	public void removesSourcePrefs() {
 		BasicPreferenceStore store = new BasicPreferenceStore();
 		TvSourceRepository repo = new TvSourceRepository(store);

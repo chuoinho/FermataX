@@ -9,6 +9,7 @@ import me.aap.utils.async.FutureSupplier;
 public interface TvSourceItem extends TvItem, MediaLib.BrowsableItem {
 	String TYPE_M3U = "m3u";
 	String TYPE_XTREAM = "xtream";
+	String TYPE_STALKER = "stalker";
 
 	int getSourceId();
 
