@@ -20,8 +20,16 @@ import me.aap.fermata.addon.tv.xtream.XtreamTrackItem;
 import me.aap.fermata.addon.tv.xtream.XtreamVodCategoryItem;
 import me.aap.fermata.addon.tv.xtream.XtreamWatchFromBeginningItem;
 import me.aap.fermata.addon.tv.stalker.StalkerCategoryItem;
+import me.aap.fermata.addon.tv.stalker.StalkerCatchupFolder;
+import me.aap.fermata.addon.tv.stalker.StalkerContentCategoryItem;
+import me.aap.fermata.addon.tv.stalker.StalkerEpgItem;
+import me.aap.fermata.addon.tv.stalker.StalkerEpisodeItem;
+import me.aap.fermata.addon.tv.stalker.StalkerSeasonItem;
+import me.aap.fermata.addon.tv.stalker.StalkerSectionItem;
+import me.aap.fermata.addon.tv.stalker.StalkerSeriesItem;
 import me.aap.fermata.addon.tv.stalker.StalkerSourceItem;
 import me.aap.fermata.addon.tv.stalker.StalkerTrackItem;
+import me.aap.fermata.addon.tv.stalker.StalkerVodItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 
@@ -79,6 +87,22 @@ final class TvItemFactory {
 				return StalkerCategoryItem.create(root, id);
 			case StalkerTrackItem.SCHEME:
 				return StalkerTrackItem.create(root, id);
+			case StalkerEpgItem.SCHEME:
+				return StalkerEpgItem.create(root, id);
+			case StalkerCatchupFolder.SCHEME:
+				return StalkerCatchupFolder.create(root, id);
+			case StalkerSectionItem.SCHEME:
+				return StalkerSectionItem.create(root, id);
+			case StalkerContentCategoryItem.SCHEME:
+				return StalkerContentCategoryItem.create(root, id);
+			case StalkerVodItem.SCHEME:
+				return StalkerVodItem.create(root, id);
+			case StalkerSeriesItem.SCHEME:
+				return StalkerSeriesItem.create(root, id);
+			case StalkerSeasonItem.SCHEME:
+				return StalkerSeasonItem.create(root, id);
+			case StalkerEpisodeItem.SCHEME:
+				return StalkerEpisodeItem.create(root, id);
 			default:
 				return null;
 		}

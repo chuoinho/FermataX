@@ -9,6 +9,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -23,6 +27,7 @@ import me.aap.utils.async.FutureSupplier;
 final class StalkerHttpClient {
 	private static final String JS_REQUEST = "1-xml";
 	private static final int MAX_REDIRECTS = 5;
+	private static final int MAX_CATALOG_PAGES = 1000;
 	private static final Set<String> SENSITIVE_HEADERS = Set.of(
 			"authorization", "cookie", "origin", "referer");
 	private final StalkerAccount account;
@@ -69,18 +74,102 @@ final class StalkerHttpClient {
 		});
 	}
 
-	FutureSupplier<StalkerPlaybackLink> createLink(String command) {
+	FutureSupplier<List<StalkerCategory>> getVodCategories() {
 		return task(() -> {
 			ensureSession();
-			Map<String, String> params = new LinkedHashMap<>();
-			params.put("cmd", command);
-			params.put("series", "");
-			params.put("forced_storage", "");
-			params.put("disable_ad", "0");
-			params.put("download", "0");
-			return request("itv", "create_link", params,
-					input -> parser.parseLink(input, playbackHeaders()));
+			return request("vod", "get_categories", Map.of(), parser::parseCategories);
 		});
+	}
+
+	FutureSupplier<List<StalkerCategory>> getSeriesCategories() {
+		return task(() -> {
+			ensureSession();
+			try {
+				List<StalkerCategory> categories = request("series", "get_categories", Map.of(),
+						parser::parseCategories);
+				if (!categories.isEmpty()) return categories;
+			} catch (IOException unsupported) {
+				// Older Ministra portals expose series under the VOD category catalog.
+			}
+			return request("vod", "get_categories", Map.of(), parser::parseCategories);
+		});
+	}
+
+	FutureSupplier<List<StalkerVod>> getVod(String categoryId) {
+		return task(() -> {
+			ensureSession();
+			return loadPages(1, page -> request("vod", "get_ordered_list",
+					catalogParams(categoryId, page), parser::parseVodPage));
+		});
+	}
+
+	FutureSupplier<List<StalkerSeries>> getSeries(String categoryId) {
+		return task(() -> {
+			ensureSession();
+			return loadPages(1, page -> request("series", "get_ordered_list",
+					catalogParams(categoryId, page), parser::parseSeriesPage));
+		});
+	}
+
+	FutureSupplier<List<StalkerSeason>> getSeasons(String seriesId) {
+		return task(() -> {
+			ensureSession();
+			return loadPages(1, page -> {
+				Map<String, String> params = new LinkedHashMap<>();
+				params.put("movie_id", seriesId);
+				params.put("p", String.valueOf(page));
+				return request("series", "get_ordered_list", params, parser::parseSeasonPage);
+			});
+		});
+	}
+
+	FutureSupplier<List<StalkerEpgProgram>> getEpg(String channelId) {
+		return task(() -> {
+			ensureSession();
+			Map<String, StalkerEpgProgram> programs = new LinkedHashMap<>();
+			IOException failure = null;
+			boolean success = false;
+			Calendar day = Calendar.getInstance();
+			for (int offset = -1; offset <= 0; offset++) {
+				Calendar date = (Calendar) day.clone();
+				date.add(Calendar.DAY_OF_MONTH, offset);
+				try {
+					List<StalkerEpgProgram> values = loadEpgDate(channelId,
+							new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date.getTime()));
+					mergePrograms(programs, values);
+					success = true;
+				} catch (IOException error) {
+					failure = error;
+				}
+			}
+			try {
+				Map<String, String> params = new LinkedHashMap<>();
+				params.put("ch_id", channelId);
+				params.put("size", "32");
+				mergePrograms(programs, request("itv", "get_short_epg", params,
+						input -> parser.parseEpgPage(input, channelId)).items());
+				success = true;
+			} catch (IOException error) {
+				failure = error;
+			}
+			if (!success && (failure != null)) throw failure;
+			List<StalkerEpgProgram> result = new ArrayList<>(programs.values());
+			result.sort((first, second) -> Long.compare(first.startTime(), second.startTime()));
+			return result;
+		});
+	}
+
+	FutureSupplier<StalkerPlaybackLink> createLink(String command) {
+		return createLink("itv", command, "", "");
+	}
+
+	FutureSupplier<StalkerPlaybackLink> createVodLink(String command, String series) {
+		return createLink("vod", command, series, "undefined");
+	}
+
+	FutureSupplier<StalkerPlaybackLink> createArchiveLink(String programId) {
+		return createLink("tv_archive", "auto /media/" + programId + ".mpg", "",
+				"undefined");
 	}
 
 	FutureSupplier<StalkerProbeResult> probe(StalkerPlaybackLink link) {
@@ -172,6 +261,67 @@ final class StalkerHttpClient {
 		return "{\"mac\":\"" + json(account.getMac()) + "\",\"sn\":\"" +
 				json(account.getSerial()) + "\",\"model\":\"MAG254\",\"type\":\"STB\"," +
 				"\"uid\":\"" + json(account.getDeviceId()) + "\"}";
+	}
+
+	private FutureSupplier<StalkerPlaybackLink> createLink(String type, String command,
+			String series, String forcedStorage) {
+		return task(() -> {
+			ensureSession();
+			Map<String, String> params = new LinkedHashMap<>();
+			params.put("cmd", command);
+			params.put("series", series);
+			params.put("forced_storage", forcedStorage);
+			params.put("disable_ad", "0");
+			params.put("download", "0");
+			return request(type, "create_link", params,
+					input -> parser.parseLink(input, playbackHeaders()));
+		});
+	}
+
+	private List<StalkerEpgProgram> loadEpgDate(String channelId, String date)
+			throws IOException {
+		return loadPages(0, page -> {
+			Map<String, String> params = new LinkedHashMap<>();
+			params.put("ch_id", channelId);
+			params.put("date", date);
+			params.put("p", String.valueOf(page));
+			return request("epg", "get_simple_data_table", params,
+					input -> parser.parseEpgPage(input, channelId));
+		});
+	}
+
+	private static Map<String, String> catalogParams(String categoryId, int page) {
+		Map<String, String> params = new LinkedHashMap<>();
+		if ((categoryId != null) && !categoryId.isBlank()) params.put("category", categoryId);
+		params.put("p", String.valueOf(page));
+		return params;
+	}
+
+	private static <T> List<T> loadPages(int firstPage, PageLoader<T> loader)
+			throws IOException {
+		List<T> result = new ArrayList<>();
+		Set<T> seen = new HashSet<>();
+		for (int page = firstPage, count = 0; count < MAX_CATALOG_PAGES; page++, count++) {
+			StalkerPage<T> response = loader.load(page);
+			List<T> items = response.items();
+			if (items.isEmpty()) break;
+			int before = result.size();
+			for (T item : items) {
+				if (seen.add(item)) result.add(item);
+			}
+			if (result.size() == before) break;
+			if ((response.totalItems() > 0) && (result.size() >= response.totalItems())) break;
+			if ((response.maxPageItems() > 0) && (items.size() < response.maxPageItems())) break;
+		}
+		return result;
+	}
+
+	private static void mergePrograms(Map<String, StalkerEpgProgram> target,
+			List<StalkerEpgProgram> programs) {
+		for (StalkerEpgProgram program : programs) {
+			String key = program.id() + ':' + program.startTime() + ':' + program.endTime();
+			target.putIfAbsent(key, program);
+		}
 	}
 
 	private static String json(@Nullable String value) {
@@ -409,5 +559,10 @@ final class StalkerHttpClient {
 	@FunctionalInterface
 	private interface ResponseParser<T> {
 		T parse(InputStream input) throws IOException;
+	}
+
+	@FunctionalInterface
+	private interface PageLoader<T> {
+		StalkerPage<T> load(int page) throws IOException;
 	}
 }

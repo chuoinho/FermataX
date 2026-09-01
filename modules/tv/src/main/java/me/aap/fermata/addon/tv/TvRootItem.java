@@ -28,8 +28,16 @@ import me.aap.fermata.addon.tv.xtream.XtreamVodCategoryItem;
 import me.aap.fermata.addon.tv.xtream.XtreamWatchFromBeginningItem;
 import me.aap.fermata.addon.tv.stalker.StalkerAccount;
 import me.aap.fermata.addon.tv.stalker.StalkerCategoryItem;
+import me.aap.fermata.addon.tv.stalker.StalkerCatchupFolder;
+import me.aap.fermata.addon.tv.stalker.StalkerContentCategoryItem;
+import me.aap.fermata.addon.tv.stalker.StalkerEpgItem;
+import me.aap.fermata.addon.tv.stalker.StalkerEpisodeItem;
+import me.aap.fermata.addon.tv.stalker.StalkerSeasonItem;
+import me.aap.fermata.addon.tv.stalker.StalkerSectionItem;
+import me.aap.fermata.addon.tv.stalker.StalkerSeriesItem;
 import me.aap.fermata.addon.tv.stalker.StalkerSourceItem;
 import me.aap.fermata.addon.tv.stalker.StalkerTrackItem;
+import me.aap.fermata.addon.tv.stalker.StalkerVodItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ItemContainer;
 import me.aap.fermata.media.lib.MediaLib;
@@ -237,6 +245,14 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 				|| id.startsWith(XtreamSectionItem.SCHEME)
 				|| id.startsWith(XtreamSourceItem.SCHEME)
 				|| id.startsWith(StalkerTrackItem.SCHEME)
+				|| id.startsWith(StalkerEpgItem.SCHEME)
+				|| id.startsWith(StalkerCatchupFolder.SCHEME)
+				|| id.startsWith(StalkerEpisodeItem.SCHEME)
+				|| id.startsWith(StalkerSeasonItem.SCHEME)
+				|| id.startsWith(StalkerSeriesItem.SCHEME)
+				|| id.startsWith(StalkerVodItem.SCHEME)
+				|| id.startsWith(StalkerContentCategoryItem.SCHEME)
+				|| id.startsWith(StalkerSectionItem.SCHEME)
 				|| id.startsWith(StalkerCategoryItem.SCHEME)
 				|| id.startsWith(StalkerSourceItem.SCHEME);
 	}

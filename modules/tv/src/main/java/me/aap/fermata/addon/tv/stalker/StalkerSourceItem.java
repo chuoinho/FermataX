@@ -20,7 +20,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 
-public final class StalkerSourceItem extends ItemContainer<StalkerCategoryItem>
+public final class StalkerSourceItem extends ItemContainer<Item>
 		implements TvSourceItem, StalkerCatalogItem {
 	public static final String SCHEME = "tvs";
 	private StalkerAccount account;
@@ -84,6 +84,10 @@ public final class StalkerSourceItem extends ItemContainer<StalkerCategoryItem>
 				new StalkerCategory(categoryId, name)));
 	}
 
+	public FutureSupplier<StalkerSectionItem> getSection(String type) {
+		return completed(StalkerSectionItem.create(this, type));
+	}
+
 	public void warmUp() {
 		getApi().warmUp();
 	}
@@ -105,14 +109,14 @@ public final class StalkerSourceItem extends ItemContainer<StalkerCategoryItem>
 	}
 
 	@Override
-	protected void saveChildren(List<StalkerCategoryItem> children) {
+	protected void saveChildren(List<Item> children) {
 	}
 
 	@Override
 	protected FutureSupplier<List<Item>> listChildren() {
 		warmUp();
 		return getApi().getCategories().map(categories -> {
-			List<Item> children = new ArrayList<>(categories.size() + 1);
+			List<Item> children = new ArrayList<>(categories.size() + 3);
 			children.add(StalkerCategoryItem.create(this, new StalkerCategory(
 					StalkerCategoryItem.ALL, getLib().getContext().getString(
 							R.string.stalker_all_channels))));
@@ -121,6 +125,8 @@ public final class StalkerSourceItem extends ItemContainer<StalkerCategoryItem>
 					children.add(StalkerCategoryItem.create(this, category));
 				}
 			}
+			children.add(StalkerSectionItem.create(this, StalkerSectionItem.TYPE_VOD));
+			children.add(StalkerSectionItem.create(this, StalkerSectionItem.TYPE_SERIES));
 			return children;
 		});
 	}

@@ -1,12 +1,16 @@
 package me.aap.fermata.addon.tv.stalker;
 
+import me.aap.fermata.media.lib.MediaLib.Item;
+
 interface StalkerCatalogItem {
 	long getCatalogRevision();
 
 	default StalkerSourceItem getStalkerSource() {
-		if (this instanceof StalkerSourceItem source) return source;
-		if (this instanceof StalkerCategoryItem category) return category.getParent();
-		if (this instanceof StalkerTrackItem track) return track.getParent().getParent();
+		Item item = (Item) this;
+		while (item != null) {
+			if (item instanceof StalkerSourceItem source) return source;
+			item = item.getParent();
+		}
 		throw new IllegalStateException("Unknown Stalker catalog item");
 	}
 

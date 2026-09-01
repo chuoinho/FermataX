@@ -29,6 +29,61 @@ final class StalkerItemId {
 				decode(parts[3]));
 	}
 
+	static String section(String scheme, int sourceId, String type) {
+		return scheme + ':' + sourceId + ':' + encode(type);
+	}
+
+	static Section parseSection(String id, String scheme) {
+		String[] parts = split(id, scheme, 2);
+		return new Section(Integer.parseInt(parts[0]), decode(parts[1]));
+	}
+
+	static String contentCategory(String scheme, int sourceId, String type, String categoryId,
+			String name) {
+		return section(scheme, sourceId, type) + ':' + encode(categoryId) + ':' + encode(name);
+	}
+
+	static ContentCategory parseContentCategory(String id, String scheme) {
+		String[] parts = split(id, scheme, 4);
+		return new ContentCategory(Integer.parseInt(parts[0]), decode(parts[1]), decode(parts[2]),
+				decode(parts[3]));
+	}
+
+	static String content(String scheme, int sourceId, String type, String categoryId,
+			String categoryName, String contentId) {
+		return contentCategory(scheme, sourceId, type, categoryId, categoryName) + ':' +
+				encode(contentId);
+	}
+
+	static Content parseContent(String id, String scheme) {
+		String[] parts = split(id, scheme, 5);
+		return new Content(Integer.parseInt(parts[0]), decode(parts[1]), decode(parts[2]),
+				decode(parts[3]), decode(parts[4]));
+	}
+
+	static String season(String scheme, Content content, String seasonId) {
+		return content(scheme, content.sourceId(), content.type(), content.categoryId(),
+				content.categoryName(), content.contentId()) + ':' + encode(seasonId);
+	}
+
+	static Season parseSeason(String id, String scheme) {
+		String[] parts = split(id, scheme, 6);
+		return new Season(Integer.parseInt(parts[0]), decode(parts[1]), decode(parts[2]),
+				decode(parts[3]), decode(parts[4]), decode(parts[5]));
+	}
+
+	static String episode(String scheme, Season season, String episodeId) {
+		Content content = new Content(season.sourceId(), season.type(), season.categoryId(),
+				season.categoryName(), season.contentId());
+		return season(scheme, content, season.seasonId()) + ':' + encode(episodeId);
+	}
+
+	static Episode parseEpisode(String id, String scheme) {
+		String[] parts = split(id, scheme, 7);
+		return new Episode(Integer.parseInt(parts[0]), decode(parts[1]), decode(parts[2]),
+				decode(parts[3]), decode(parts[4]), decode(parts[5]), decode(parts[6]));
+	}
+
 	private static String encode(String value) {
 		return URLEncoder.encode(value, UTF_8).replace("+", "%20");
 	}
@@ -49,5 +104,23 @@ final class StalkerItemId {
 	}
 
 	record Channel(int sourceId, String categoryId, String categoryName, String channelId) {
+	}
+
+	record Section(int sourceId, String type) {
+	}
+
+	record ContentCategory(int sourceId, String type, String categoryId, String categoryName) {
+	}
+
+	record Content(int sourceId, String type, String categoryId, String categoryName,
+			String contentId) {
+	}
+
+	record Season(int sourceId, String type, String categoryId, String categoryName,
+			String contentId, String seasonId) {
+	}
+
+	record Episode(int sourceId, String type, String categoryId, String categoryName,
+			String contentId, String seasonId, String episodeId) {
 	}
 }

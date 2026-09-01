@@ -198,6 +198,119 @@ public class StalkerHttpClientTest {
 	}
 
 	@Test
+	public void loadsPagedVodSeriesAndBuildsPlaybackCommands() throws Exception {
+		AtomicReference<String> vodCategory = new AtomicReference<>();
+		AtomicReference<String> seriesCategory = new AtomicReference<>();
+		AtomicReference<String> movieId = new AtomicReference<>();
+		AtomicReference<String> vodSeries = new AtomicReference<>();
+		AtomicReference<String> episodeSeries = new AtomicReference<>();
+		AtomicReference<String> archiveCommand = new AtomicReference<>();
+		try (TestServer server = new TestServer()) {
+			server.handle(request -> {
+				Map<String, String> query = request.query();
+				String action = query.get("action");
+				String type = query.get("type");
+				if ("get_ordered_list".equals(action) && "vod".equals(type)) {
+					vodCategory.set(query.get("category"));
+					String page = query.get("p");
+					request.respond(200, "{\"js\":{\"total_items\":\"2\"," +
+							"\"max_page_items\":\"1\",\"data\":[{\"id\":\"" + page +
+							"\",\"name\":\"Movie " + page +
+							"\",\"cmd\":\"ffmpeg http://stream.invalid/movie/" + page +
+							"\"}]}}", null);
+				} else if ("get_ordered_list".equals(action) && "series".equals(type) &&
+						(query.get("movie_id") == null)) {
+					seriesCategory.set(query.get("category"));
+					request.respond(200, "{\"js\":{\"total_items\":\"1\"," +
+							"\"max_page_items\":\"1\",\"data\":[{\"id\":\"77\"," +
+							"\"name\":\"Series 77\"}]}}", null);
+				} else if ("get_ordered_list".equals(action) && "series".equals(type)) {
+					movieId.set(query.get("movie_id"));
+					request.respond(200, "{\"js\":{\"total_items\":\"1\"," +
+							"\"max_page_items\":\"1\",\"data\":[{\"id\":\"s1\"," +
+							"\"cmd\":\"ffmpeg http://stream.invalid/series/77\"," +
+							"\"series\":[1,2]}]}}", null);
+				} else if ("create_link".equals(action)) {
+					if ("tv_archive".equals(type)) archiveCommand.set(query.get("cmd"));
+					else if ("0".equals(query.get("series"))) vodSeries.set(query.get("series"));
+					else episodeSeries.set(query.get("series"));
+					request.respond(200, "{\"js\":{\"cmd\":\"ffmpeg " +
+							server.url("/stream/content.m3u8") + "\"}}", null);
+				} else {
+					defaultPortalResponse(request, action);
+				}
+			});
+			StalkerHttpClient client = new StalkerHttpClient(account(server.url("/"), 3), null);
+
+			assertEquals(2, await(client.getVod("*")).size());
+			assertEquals(1, await(client.getSeries("drama")).size());
+			List<StalkerSeason> seasons = await(client.getSeasons("77"));
+			assertEquals(2, seasons.get(0).episodes().size());
+			await(client.createVodLink("ffmpeg http://upstream.invalid/movie", "0"));
+			await(client.createVodLink("ffmpeg http://upstream.invalid/series", "2"));
+			await(client.createArchiveLink("900"));
+
+			assertEquals("*", vodCategory.get());
+			assertEquals("drama", seriesCategory.get());
+			assertEquals("77", movieId.get());
+			assertEquals("0", vodSeries.get());
+			assertEquals("2", episodeSeries.get());
+			assertEquals("auto /media/900.mpg", archiveCommand.get());
+		}
+	}
+
+	@Test
+	public void stopsCatalogPaginationWhenPortalRepeatsAPage() throws Exception {
+		AtomicInteger pages = new AtomicInteger();
+		try (TestServer server = new TestServer()) {
+			server.handle(request -> {
+				String action = request.query().get("action");
+				if ("get_ordered_list".equals(action)) {
+					pages.incrementAndGet();
+					request.respond(200, "{\"js\":{\"max_page_items\":\"1\"," +
+							"\"data\":[{\"id\":\"same\",\"name\":\"Same\"," +
+							"\"cmd\":\"ffmpeg http://stream.invalid/same\"}]}}", null);
+				} else {
+					defaultPortalResponse(request, action);
+				}
+			});
+			StalkerHttpClient client = new StalkerHttpClient(account(server.url("/"), 3), null);
+
+			assertEquals(1, await(client.getVod("*")).size());
+			assertEquals(2, pages.get());
+		}
+	}
+
+	@Test
+	public void fallsBackToShortEpgWhenHistoricalEndpointIsUnavailable() throws Exception {
+		AtomicInteger historical = new AtomicInteger();
+		AtomicInteger shortEpg = new AtomicInteger();
+		try (TestServer server = new TestServer()) {
+			server.handle(request -> {
+				String action = request.query().get("action");
+				if ("get_simple_data_table".equals(action)) {
+					historical.incrementAndGet();
+					request.respond(400, "", null);
+				} else if ("get_short_epg".equals(action)) {
+					shortEpg.incrementAndGet();
+					request.respond(200, "{\"js\":{\"data\":[{\"id\":\"901\"," +
+							"\"ch_id\":\"10\",\"start_timestamp\":\"1788200000\"," +
+							"\"stop_timestamp\":\"1788203600\",\"name\":\"News\"}]}}", null);
+				} else {
+					defaultPortalResponse(request, action);
+				}
+			});
+			StalkerHttpClient client = new StalkerHttpClient(account(server.url("/"), 3), null);
+
+			List<StalkerEpgProgram> epg = await(client.getEpg("10"));
+			assertEquals(1, epg.size());
+			assertEquals("901", epg.get(0).id());
+			assertEquals(2, historical.get());
+			assertEquals(1, shortEpg.get());
+		}
+	}
+
+	@Test
 	public void rejectsEmptyCategoryAndChannelCatalogs() throws Exception {
 		try (TestServer server = new TestServer()) {
 			server.handle(request -> {
