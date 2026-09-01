@@ -178,6 +178,7 @@
 
     <string name="speed">Geschwindigkeit</string>
     <string name="audio_effects">Audio Effekte</string>
+    <string name="audio_equalizer">Audio und Equalizer</string>
     <string name="equalier">Equalizer</string>
     <string name="preset_name">Name der Voreinstellung</string>
     <string name="virtualizer">Virtualisierer</string>

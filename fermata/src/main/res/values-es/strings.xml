@@ -179,6 +179,7 @@ Apagado: pausa</string>
 
     <string name="speed">Velocidad</string>
     <string name="audio_effects">Efectos de audio</string>
+    <string name="audio_equalizer">Audio y ecualizador</string>
     <string name="equalier">Igualador</string>
     <string name="preset_name">Nombre del preajuste</string>
     <string name="virtualizer">Virtualizador</string>
