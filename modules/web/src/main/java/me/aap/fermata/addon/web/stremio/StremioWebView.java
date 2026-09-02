@@ -27,8 +27,9 @@ public final class StremioWebView extends FermataWebView {
 				var request=video&&(video.webkitRequestFullscreen||video.requestFullscreen);
 				if(request) request.call(video);
 			})();
-			""";
+	""";
 	private StremioWebMediaSessionBridge mediaSessionBridge;
+	private StremioWebAudioBridge audioBridge;
 	@Nullable
 	private String pendingFreshDocumentUrl;
 	private boolean clearingFreshDocumentHistory;
@@ -51,6 +52,8 @@ public final class StremioWebView extends FermataWebView {
 		super.init(addon, webClient, chromeClient);
 		mediaSessionBridge = new StremioWebMediaSessionBridge(this);
 		mediaSessionBridge.install();
+		audioBridge = new StremioWebAudioBridge(this);
+		audioBridge.install();
 	}
 
 	@Override
@@ -58,6 +61,9 @@ public final class StremioWebView extends FermataWebView {
 		StremioWebMediaSessionBridge bridge = mediaSessionBridge;
 		if ((bridge != null) && ((url == null) || !url.regionMatches(true, 0,
 				"javascript:", 0, 11))) bridge.onDocumentNavigation(url);
+		StremioWebAudioBridge webAudio = audioBridge;
+		if ((webAudio != null) && ((url == null) || !url.regionMatches(true, 0,
+				"javascript:", 0, 11))) webAudio.onDocumentNavigation(url);
 		super.loadUrl(url);
 	}
 
@@ -99,6 +105,8 @@ public final class StremioWebView extends FermataWebView {
 		pendingFreshDocumentUrl = url;
 		StremioWebMediaSessionBridge bridge = mediaSessionBridge;
 		if (bridge != null) bridge.onDocumentNavigation(null);
+		StremioWebAudioBridge webAudio = audioBridge;
+		if (webAudio != null) webAudio.onDocumentNavigation(null);
 		stopLoading();
 		clearHistory();
 		super.loadUrl("about:blank");
@@ -107,6 +115,8 @@ public final class StremioWebView extends FermataWebView {
 	void endAutomotiveSession() {
 		StremioWebMediaSessionBridge bridge = mediaSessionBridge;
 		if (bridge != null) bridge.endAutomotiveSession();
+		StremioWebAudioBridge webAudio = audioBridge;
+		if (webAudio != null) webAudio.endAutomotiveSession();
 		stopLoading();
 		clearHistory();
 		super.loadUrl("about:blank");
@@ -146,6 +156,9 @@ public final class StremioWebView extends FermataWebView {
 		StremioWebMediaSessionBridge bridge = mediaSessionBridge;
 		mediaSessionBridge = null;
 		if (bridge != null) bridge.close();
+		StremioWebAudioBridge webAudio = audioBridge;
+		audioBridge = null;
+		if (webAudio != null) webAudio.close();
 		super.destroy();
 	}
 
