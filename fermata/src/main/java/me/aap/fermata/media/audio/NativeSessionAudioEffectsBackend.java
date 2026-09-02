@@ -18,12 +18,15 @@ import java.util.EnumSet;
 import me.aap.utils.log.Log;
 
 /** Applies the unified profile to one real native audio session. */
-final class NativeSessionAudioEffectsBackend implements AudioEffectsBackend {
+final class NativeSessionAudioEffectsBackend
+		implements AudioEffectsBackend, NativeEqualizerTopologyProvider {
 	private static final int EFFECT_PRIORITY = 0;
 	private final EnumSet<AudioEffectCapability> capabilities =
 			EnumSet.noneOf(AudioEffectCapability.class);
 	@Nullable
 	private Equalizer equalizer;
+	@Nullable
+	private final NativeEqualizerTopology equalizerTopology;
 	@Nullable
 	private BassBoost bassBoost;
 	@Nullable
@@ -46,6 +49,7 @@ final class NativeSessionAudioEffectsBackend implements AudioEffectsBackend {
 	private NativeSessionAudioEffectsBackend(int audioSessionId) {
 		equalizer = create(() -> new Equalizer(EFFECT_PRIORITY, audioSessionId));
 		if (equalizer != null) capabilities.add(AudioEffectCapability.EQUALIZER);
+		equalizerTopology = readTopology(equalizer);
 
 		bassBoost = create(() -> new BassBoost(EFFECT_PRIORITY, audioSessionId));
 		if ((bassBoost != null) && strengthSupported(bassBoost)) capabilities.add(AudioEffectCapability.BASS_BOOST);
@@ -67,6 +71,12 @@ final class NativeSessionAudioEffectsBackend implements AudioEffectsBackend {
 			dynamicsProcessing = create(() -> Api28.createDynamicsProcessing(audioSessionId));
 			if (dynamicsProcessing != null) capabilities.add(AudioEffectCapability.PREAMP);
 		}
+	}
+
+	@Override
+	@Nullable
+	public NativeEqualizerTopology getEqualizerTopology() {
+		return equalizerTopology;
 	}
 
 	@Override
@@ -131,6 +141,22 @@ final class NativeSessionAudioEffectsBackend implements AudioEffectsBackend {
 			effect.setEnabled(true);
 		} catch (RuntimeException error) {
 			fail(AudioEffectCapability.EQUALIZER, error, this::releaseEqualizer);
+		}
+	}
+
+	@Nullable
+	private static NativeEqualizerTopology readTopology(@Nullable Equalizer equalizer) {
+		if (equalizer == null) return null;
+		try {
+			short bandCount = equalizer.getNumberOfBands();
+			if (bandCount <= 0) return null;
+			int[] centerMillihertz = new int[bandCount];
+			for (short band = 0; band < bandCount; band++) {
+				centerMillihertz[band] = equalizer.getCenterFreq(band);
+			}
+			return NativeEqualizerTopology.create(centerMillihertz, equalizer.getBandLevelRange());
+		} catch (RuntimeException ignored) {
+			return null;
 		}
 	}
 

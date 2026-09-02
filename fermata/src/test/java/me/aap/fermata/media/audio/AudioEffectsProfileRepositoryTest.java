@@ -71,6 +71,122 @@ public class AudioEffectsProfileRepositoryTest {
 	}
 
 	@Test
+	public void matchingManualLegacyBandsMigrateOnceUsingTheLiveTopology() {
+		BasicPreferenceStore legacy = legacyWithManualBands(
+				new int[]{-500, -400, -300, -200, -100, 0, 100, 200, 300, 400});
+		AudioEffectsProfileRepository repository = new AudioEffectsProfileRepository(legacy);
+		int[] rawBeforeMigration = repository.getLegacySnapshot().rawEqualizerBands();
+
+		assertTrue(repository.migratePendingLegacyEqualizer(canonicalTopology()));
+		assertEquals(MigrationState.MIGRATED, repository.getMigrationState());
+		assertTrue(repository.load().equalizerEnabled());
+		assertArrayEquals(new int[]{-5, -4, -3, -2, -1, 0, 1, 2, 3, 4},
+				repository.load().canonicalCurveDb());
+		assertArrayEquals(rawBeforeMigration, repository.getLegacySnapshot().rawEqualizerBands());
+		assertFalse(repository.migratePendingLegacyEqualizer(canonicalTopology()));
+	}
+
+	@Test
+	public void mismatchedEmptyOrOutOfRangeBandsRemainPendingForAnotherNativeTopology() {
+		AudioEffectsProfileRepository mismatch = new AudioEffectsProfileRepository(
+				legacyWithManualBands(new int[]{-200, 0, 200}));
+		assertFalse(mismatch.migratePendingLegacyEqualizer(canonicalTopology()));
+		assertEquals(MigrationState.PENDING_NATIVE_TOPOLOGY, mismatch.getMigrationState());
+
+		AudioEffectsProfileRepository empty = new AudioEffectsProfileRepository(
+				legacyWithManualBands(new int[0]));
+		assertFalse(empty.migratePendingLegacyEqualizer(oneBandTopology()));
+		assertEquals(MigrationState.PENDING_NATIVE_TOPOLOGY, empty.getMigrationState());
+
+		AudioEffectsProfileRepository outOfRange = new AudioEffectsProfileRepository(
+				legacyWithManualBands(new int[]{-1_600, -1_600, -1_600, -1_600, -1_600,
+						-1_600, -1_600, -1_600, -1_600, -1_600}));
+		assertFalse(outOfRange.migratePendingLegacyEqualizer(canonicalTopology()));
+		assertEquals(MigrationState.PENDING_NATIVE_TOPOLOGY, outOfRange.getMigrationState());
+	}
+
+	@Test
+	public void selectedLegacyUserPresetCanMigrateButUnselectedPresetsRemainRawRollbackData() {
+		BasicPreferenceStore legacy = new BasicPreferenceStore();
+		legacy.applyBooleanPref(MediaPrefs.AE_ENABLED, true);
+		legacy.applyBooleanPref(MediaPrefs.EQ_ENABLED, true);
+		legacy.applyIntPref(MediaPrefs.EQ_PRESET, -1);
+		legacy.applyStringArrayPref(MediaPrefs.EQ_USER_PRESETS, new String[]{
+				"-500 -400 -300 -200 -100 0 100 200 300 400:Vehicle curve",
+				"0 0 0 0 0 0 0 0 0 0:Rollback only"
+		});
+		AudioEffectsProfileRepository repository = new AudioEffectsProfileRepository(legacy);
+
+		assertTrue(repository.migratePendingLegacyEqualizer(canonicalTopology()));
+		assertEquals(MigrationState.MIGRATED, repository.getMigrationState());
+		assertArrayEquals(new String[]{
+				"-500 -400 -300 -200 -100 0 100 200 300 400:Vehicle curve",
+				"0 0 0 0 0 0 0 0 0 0:Rollback only"
+		}, repository.getLegacySnapshot().rawUserPresets());
+	}
+
+	@Test
+	public void allNativeSystemPresetIndicesStayPendingWithoutMutatingTheLiveEffect() {
+		for (int preset : new int[]{1, 99}) {
+			BasicPreferenceStore legacy = new BasicPreferenceStore();
+			legacy.applyBooleanPref(MediaPrefs.AE_ENABLED, true);
+			legacy.applyBooleanPref(MediaPrefs.EQ_ENABLED, true);
+			legacy.applyIntPref(MediaPrefs.EQ_PRESET, preset);
+			AudioEffectsProfileRepository repository = new AudioEffectsProfileRepository(legacy);
+
+			assertFalse(repository.migratePendingLegacyEqualizer(canonicalTopology()));
+			assertEquals(MigrationState.PENDING_NATIVE_TOPOLOGY, repository.getMigrationState());
+			assertFalse(repository.load().equalizerEnabled());
+		}
+	}
+
+	@Test
+	public void explicitUnifiedProfileSaveOrSettingsEditWinsOverPendingLegacyData() {
+		AudioEffectsProfileRepository saved = new AudioEffectsProfileRepository(
+				legacyWithManualBands(new int[]{-500, -400, -300, -200, -100, 0, 100, 200, 300, 400}));
+		saved.save(AudioEffectsProfile.defaults());
+		assertTrue(saved.isProfileUserEstablished());
+		assertEquals(MigrationState.DORMANT, saved.getMigrationState());
+		assertFalse(saved.migratePendingLegacyEqualizer(canonicalTopology()));
+
+		AudioEffectsProfileRepository edited = new AudioEffectsProfileRepository(
+				legacyWithManualBands(new int[]{-500, -400, -300, -200, -100, 0, 100, 200, 300, 400}));
+		edited.getUserEditableStore().applyIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[0], 0);
+		assertTrue(edited.isProfileUserEstablished());
+		assertEquals(MigrationState.DORMANT, edited.getMigrationState());
+		assertFalse(edited.migratePendingLegacyEqualizer(canonicalTopology()));
+	}
+
+	@Test
+	public void unmarkedEq1ProfileIsConservativelyProtectedInsteadOfBeingGuessedAsGenerated() {
+		BasicPreferenceStore legacy = legacyWithManualBands(
+				new int[]{-500, -400, -300, -200, -100, 0, 100, 200, 300, 400});
+		AudioEffectsProfileRepository repository = new AudioEffectsProfileRepository(legacy);
+		assertEquals(MigrationState.PENDING_NATIVE_TOPOLOGY, repository.getMigrationState());
+		legacy.removePref(AudioEffectsProfileRepository.PROFILE_AUTHORITY);
+
+		assertFalse(repository.migratePendingLegacyEqualizer(canonicalTopology()));
+		assertEquals(MigrationState.PENDING_NATIVE_TOPOLOGY, repository.getMigrationState());
+		assertArrayEquals(AudioEffectsProfile.flatCurveDb(), repository.load().canonicalCurveDb());
+	}
+
+	@Test
+	public void malformedSelectedUserPresetRemainsPendingWithoutFallbackToManualBands() {
+		BasicPreferenceStore legacy = new BasicPreferenceStore();
+		legacy.applyBooleanPref(MediaPrefs.AE_ENABLED, true);
+		legacy.applyBooleanPref(MediaPrefs.EQ_ENABLED, true);
+		legacy.applyIntPref(MediaPrefs.EQ_PRESET, -1);
+		legacy.applyIntArrayPref(MediaPrefs.EQ_BANDS,
+				new int[]{-500, -400, -300, -200, -100, 0, 100, 200, 300, 400});
+		legacy.applyStringArrayPref(MediaPrefs.EQ_USER_PRESETS, new String[]{"not a preset"});
+		AudioEffectsProfileRepository repository = new AudioEffectsProfileRepository(legacy);
+
+		assertFalse(repository.migratePendingLegacyEqualizer(canonicalTopology()));
+		assertEquals(MigrationState.PENDING_NATIVE_TOPOLOGY, repository.getMigrationState());
+		assertArrayEquals(AudioEffectsProfile.flatCurveDb(), repository.load().canonicalCurveDb());
+	}
+
+	@Test
 	public void nativePresetIndexIsPreservedButNotAssumedPortable() {
 		BasicPreferenceStore legacy = new BasicPreferenceStore();
 		legacy.applyBooleanPref(MediaPrefs.AE_ENABLED, true);
@@ -179,5 +295,23 @@ public class AudioEffectsProfileRepositoryTest {
 		} catch (IllegalStateException expected) {
 			assertTrue(expected.getMessage().contains("newer"));
 		}
+	}
+
+	private static BasicPreferenceStore legacyWithManualBands(int[] bands) {
+		BasicPreferenceStore legacy = new BasicPreferenceStore();
+		legacy.applyBooleanPref(MediaPrefs.AE_ENABLED, true);
+		legacy.applyBooleanPref(MediaPrefs.EQ_ENABLED, true);
+		legacy.applyIntArrayPref(MediaPrefs.EQ_BANDS, bands);
+		return legacy;
+	}
+
+	private static NativeEqualizerTopology canonicalTopology() {
+		int[] centers = new int[AudioEffectsProfile.CANONICAL_FREQ_HZ.length];
+		for (int i = 0; i < centers.length; i++) centers[i] = AudioEffectsProfile.CANONICAL_FREQ_HZ[i] * 1_000;
+		return NativeEqualizerTopology.create(centers, new short[]{-1_500, 1_500});
+	}
+
+	private static NativeEqualizerTopology oneBandTopology() {
+		return NativeEqualizerTopology.create(new int[]{1_000_000}, new short[]{-1_500, 1_500});
 	}
 }

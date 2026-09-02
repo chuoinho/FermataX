@@ -132,6 +132,35 @@ public final class LegacyAudioEffectsSnapshot {
 		return rawUserPresets.clone();
 	}
 
+	/**
+	 * Returns only the raw levels that the legacy global Equalizer would have used. A native
+	 * system preset is intentionally not inspected because doing so would mutate the live effect.
+	 */
+	@Nullable
+	int[] activeRawEqualizerBands() {
+		if (equalizerPreset > 0) return null;
+		if (equalizerPreset == 0) return rawEqualizerBands();
+		if (!userPresetsDefined) return null;
+
+		long userPreset = -(long) equalizerPreset - 1;
+		if ((userPreset < 0) || (userPreset >= rawUserPresets.length)) return null;
+		String preset = rawUserPresets[(int) userPreset];
+		if (preset == null) return null;
+		int delimiter = preset.indexOf(':');
+		if (delimiter <= 0) return null;
+		String levels = preset.substring(0, delimiter).trim();
+		if (levels.isEmpty()) return new int[0];
+
+		try {
+			String[] values = levels.split("\\s+");
+			int[] bands = new int[values.length];
+			for (int band = 0; band < bands.length; band++) bands[band] = Integer.parseInt(values[band]);
+			return bands;
+		} catch (RuntimeException ignored) {
+			return null;
+		}
+	}
+
 	public boolean bassBoostEnabled() {
 		return bassBoostEnabled;
 	}

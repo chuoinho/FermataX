@@ -58,6 +58,16 @@ public class AudioEffectsProfileArchitectureTest {
 	}
 
 	@Test
+	public void topologyMigrationPersistsAProfileButNeverBecomesAnotherEffectAuthority() throws Exception {
+		assertFalse(source("media/audio/AudioEffectsProfileRepository.java")
+				.contains("AudioEffectsBackend"));
+		assertFalse(source("media/audio/NativeToCanonicalEqualizerMapper.java")
+				.contains("AudioEffectsBackend"));
+		assertTrue(source("media/audio/AudioEffectsController.java")
+				.contains("migratePendingLegacyEqualizer"));
+	}
+
+	@Test
 	public void audioEqualizerTitleIsTranslatedInEverySupportedLocale() throws Exception {
 		Path root = Path.of(System.getProperty("user.dir"));
 		Path resources = root.resolve("src/main/res");

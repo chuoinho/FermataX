@@ -19,7 +19,7 @@ final class AudioEffectsPrefsBuilder {
 	}
 
 	static void add(PreferenceSet parent, AudioEffectsProfileRepository profiles) {
-		PreferenceStore store = profiles.getStore();
+		PreferenceStore store = profiles.getUserEditableStore();
 		PreferenceSet effects = parent.subSet(o -> o.title = R.string.audio_equalizer);
 		effects.addBooleanPref(o -> {
 			o.store = store;
@@ -47,8 +47,8 @@ final class AudioEffectsPrefsBuilder {
 				o.store = store;
 				o.pref = AudioEffectsProfileRepository.CANONICAL_CURVE_DB[band];
 				o.ctitle = frequencyLabel(frequency);
-				o.seekMin = -15;
-				o.seekMax = 15;
+				o.seekMin = AudioEffectsProfile.MIN_CANONICAL_DB;
+				o.seekMax = AudioEffectsProfile.MAX_CANONICAL_DB;
 				o.visibility = equalizerEnabled.copy();
 			});
 		}

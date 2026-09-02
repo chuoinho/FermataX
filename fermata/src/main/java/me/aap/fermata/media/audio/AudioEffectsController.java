@@ -51,7 +51,11 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 		engine = nextEngine;
 		sessionId = nextSessionId;
 		try {
-			backend = backendFactory.create(nextSessionId);
+			AudioEffectsBackend nextBackend = backendFactory.create(nextSessionId);
+			if (nextBackend instanceof NativeEqualizerTopologyProvider topologyProvider) {
+				profiles.migratePendingLegacyEqualizer(topologyProvider.getEqualizerTopology());
+			}
+			backend = nextBackend;
 			applyCurrentProfile();
 		} catch (RuntimeException error) {
 			releaseBoundBackend();

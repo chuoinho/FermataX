@@ -83,6 +83,22 @@ public class AudioEffectsControllerTest {
 		assertEquals(1, fixture.backends[0].releaseCount);
 	}
 
+	@Test
+	public void migrationIsPersistedBeforeTheControllerAppliesTheCurrentProfileOnce() {
+		BasicPreferenceStore legacy = new BasicPreferenceStore();
+		legacy.applyBooleanPref(me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED, true);
+		legacy.applyBooleanPref(me.aap.fermata.media.pref.MediaPrefs.EQ_ENABLED, true);
+		legacy.applyIntArrayPref(me.aap.fermata.media.pref.MediaPrefs.EQ_BANDS,
+				new int[]{-500, -400, -300, -200, -100, 0, 100, 200, 300, 400});
+		Fixture fixture = new Fixture(legacy, canonicalTopology());
+
+		fixture.controller.bind(engine(41));
+
+		assertEquals(MigrationState.MIGRATED, fixture.repository.getMigrationState());
+		assertEquals(1, fixture.backends[0].applyCount);
+		assertEquals(0, fixture.backends[0].bypassCount);
+	}
+
 	private static AudioEffectsProfile enabledProfile(int preampDb) {
 		return new AudioEffectsProfile(AudioEffectsProfile.SCHEMA_VERSION, true, true,
 				AudioEffectsProfile.flatCurveDb(), preampDb, false, 0, false, 0, false, 0, 0);
@@ -98,19 +114,33 @@ public class AudioEffectsControllerTest {
 				});
 	}
 
-	private static final class Fixture {
-		final AudioEffectsProfileRepository repository =
-				new AudioEffectsProfileRepository(new BasicPreferenceStore());
-		final FakeBackend[] backends = new FakeBackend[2];
-		int created;
-		final AudioEffectsController controller = new AudioEffectsController(repository, sessionId -> {
-			FakeBackend backend = new FakeBackend();
-			backends[created++] = backend;
-			return backend;
-		});
+	private static NativeEqualizerTopology canonicalTopology() {
+		int[] centers = new int[AudioEffectsProfile.CANONICAL_FREQ_HZ.length];
+		for (int i = 0; i < centers.length; i++) centers[i] = AudioEffectsProfile.CANONICAL_FREQ_HZ[i] * 1_000;
+		return NativeEqualizerTopology.create(centers, new short[]{-1_500, 1_500});
 	}
 
-	private static final class FakeBackend implements AudioEffectsBackend {
+	private static final class Fixture {
+		final AudioEffectsProfileRepository repository;
+		final FakeBackend[] backends = new FakeBackend[2];
+		int created;
+		final AudioEffectsController controller;
+
+		Fixture() {
+			this(new BasicPreferenceStore(), null);
+		}
+
+		Fixture(BasicPreferenceStore store, NativeEqualizerTopology topology) {
+			repository = new AudioEffectsProfileRepository(store);
+			controller = new AudioEffectsController(repository, sessionId -> {
+				FakeBackend backend = (topology == null) ? new FakeBackend() : new TopologyBackend(topology);
+				backends[created++] = backend;
+				return backend;
+			});
+		}
+	}
+
+	private static class FakeBackend implements AudioEffectsBackend {
 		int applyCount;
 		int bypassCount;
 		int releaseCount;
@@ -133,6 +163,20 @@ public class AudioEffectsControllerTest {
 		@Override
 		public void release() {
 			releaseCount++;
+		}
+	}
+
+	private static final class TopologyBackend extends FakeBackend
+			implements NativeEqualizerTopologyProvider {
+		private final NativeEqualizerTopology topology;
+
+		TopologyBackend(NativeEqualizerTopology topology) {
+			this.topology = topology;
+		}
+
+		@Override
+		public NativeEqualizerTopology getEqualizerTopology() {
+			return topology;
 		}
 	}
 }
