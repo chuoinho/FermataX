@@ -65,9 +65,7 @@ validated, and merged to `main` through PR #18 on 2026-08-21. The accepted sourc
 automotive-only, preserves a stable two-line title and 1-3 valid Quick Recent rows, and removes
 Previous, Next, and Back/Open Context from SmartTop without changing those controls on full-player
 or MediaSession surfaces. Podcast/Audiobook SmartTop providers remain deferred until their
-cached-only ownership seams are characterized independently. A local
-`docs/smarttop/SMARTTOP_V2_GOAL.md` planning artifact may provide additional working notes, but it
-is ignored and is not part of the shared canonical repository until separately reviewed.
+cached-only ownership seams are characterized independently.
 
 ### Explicitly excluded or deferred
 
