@@ -31,6 +31,12 @@ public final class PlaybackUiPolicy {
 				(activeFragmentId != dashboardFragmentId);
 	}
 
+	/** Modal input suppresses rendering without changing the playback-owned presentation state. */
+	public static boolean shouldRenderPlayerBar(boolean presentationVisible,
+			boolean textInputActive) {
+		return presentationVisible && !textInputActive;
+	}
+
 	public static boolean goToCurrentAudioSource(MainActivityDelegate activity) {
 		PlayableItem source = getAudioSource(activity.getMediaServiceBinder().getCurrentEngine());
 		if ((source != null) && activity.goToItem(source)) return true;

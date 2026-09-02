@@ -17,6 +17,7 @@ public class MainActivityPrefsTest {
 	@Test
 	public void smartTopV2IsEnabledByDefaultAfterReleaseGatesPass() {
 		assertTrue(MainActivityPrefs.SMART_TOP_V2_ENABLED.getDefaultValue().getAsBoolean());
+		assertTrue(MainActivityPrefs.SMART_TOP_BACKGROUND_ENABLED.getDefaultValue().getAsBoolean());
 	}
 
 	@Test

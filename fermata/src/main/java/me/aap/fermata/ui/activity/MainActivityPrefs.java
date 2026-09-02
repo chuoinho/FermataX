@@ -67,6 +67,8 @@ public interface MainActivityPrefs
 	Pref<IntSupplier> VOICE_TRIGGER_KEY_CODE =
 			Pref.i("VOICE_TRIGGER_KEY_CODE", KEYCODE_UNKNOWN);
 	Pref<BooleanSupplier> SMART_TOP_V2_ENABLED = Pref.b("smart_top/v2_enabled", true);
+	Pref<BooleanSupplier> SMART_TOP_BACKGROUND_ENABLED =
+			Pref.b("smart_top/background_enabled", true);
 	Pref<Supplier<String>> SMART_TOP_RECENT_TITLE =
 			Pref.s("smart_top/recent_title", (String) null);
 	Pref<Supplier<String>> SMART_TOP_RECENT_SUBTITLE =
@@ -262,6 +264,10 @@ public interface MainActivityPrefs
 
 	default boolean isSmartTopV2Enabled() {
 		return getBooleanPref(SMART_TOP_V2_ENABLED);
+	}
+
+	default boolean isSmartTopBackgroundEnabled() {
+		return getBooleanPref(SMART_TOP_BACKGROUND_ENABLED);
 	}
 
 	default int getClockPosPref() {

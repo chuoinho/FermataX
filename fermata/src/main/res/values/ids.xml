@@ -33,6 +33,8 @@
     <item name="dashboard_smart_action_tag" type="id" />
     <item name="dashboard_smart_state_tag" type="id" />
     <item name="dashboard_smart_layout_token" type="id" />
+	<item name="dashboard_smart_background_bind_token" type="id" />
+	<item name="dashboard_smart_background_drawable_tag" type="id" />
     <item name="folders_fragment" type="id" />
     <item name="favorites_fragment" type="id" />
     <item name="recent_fragment" type="id" />

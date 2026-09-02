@@ -20,4 +20,11 @@ public class PlaybackUiPolicyTest {
 		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(
 				true, false, false, 20, dashboard));
 	}
+
+	@Test
+	public void modalTextInputSuppressesRenderingWithoutLosingPresentationVisibility() {
+		assertTrue(PlaybackUiPolicy.shouldRenderPlayerBar(true, false));
+		assertFalse(PlaybackUiPolicy.shouldRenderPlayerBar(true, true));
+		assertFalse(PlaybackUiPolicy.shouldRenderPlayerBar(false, false));
+	}
 }

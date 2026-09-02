@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FermataX SmartTop — repository-backed cases</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --canvas: #05080d;
+      --shell: #090e16;
+      --surface: #101925;
+      --surface-2: #0c131d;
+      --edge: #34547d;
+      --edge-strong: #6d9ce6;
+      --accent: #7aa7ff;
+      --text: #f2f6fc;
+      --muted: #98a6ba;
+      --faint: #68778c;
+      --rail: 88px;
+      --topbar: 62px;
+      --systembar: 70px;
+      font-family: Roboto, "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; background: #030508; color: var(--text); }
+
+    body {
+      min-width: 1580px;
+      min-height: 850px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    button { font: inherit; }
+
+    .studio {
+      display: grid;
+      grid-template-columns: 1280px 256px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .device {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      overflow: hidden;
+      border: 1px solid #26374e;
+      border-radius: 18px;
+      background: var(--shell);
+      box-shadow: 0 24px 70px rgb(0 0 0 / 55%);
+    }
+
+    .topbar {
+      position: absolute;
+      inset: 0 0 auto var(--rail);
+      height: var(--topbar);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      border-bottom: 1px solid #26364a;
+      background: #0a1019;
+      z-index: 5;
+    }
+
+    .topbar h1 { margin: 0; font-size: 24px; line-height: 1; font-weight: 500; letter-spacing: .01em; }
+    .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+    .plain-icon, .square-icon {
+      display: grid;
+      place-items: center;
+      color: #a8b7cb;
+    }
+
+    .plain-icon { width: 32px; height: 32px; }
+    .square-icon {
+      width: 44px;
+      height: 44px;
+      border: 1px solid #294365;
+      border-radius: 13px;
+      background: #14233a;
+      color: #a9c3ec;
+    }
+
+    .plain-icon svg, .square-icon svg { width: 25px; height: 25px; fill: currentColor; }
+
+    .navrail {
+      position: absolute;
+      inset: 0 auto var(--systembar) 0;
+      width: var(--rail);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0 10px;
+      border-right: 1px solid #26364a;
+      background: #0b111a;
+      z-index: 6;
+    }
+
+    .nav-item {
+      position: relative;
+      width: 68px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 14px;
+      color: #536074;
+      background: transparent;
+    }
+
+    .nav-item.active {
+      color: #b8cdf0;
+      background: #1b2b44;
+      box-shadow: inset 0 0 0 1px #365982;
+    }
+
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: -9px;
+      top: 10px;
+      width: 4px;
+      height: 38px;
+      border-radius: 4px;
+      background: var(--accent);
+    }
+
+    .nav-item svg { width: 35px; height: 35px; fill: currentColor; }
+    .nav-spacer { flex: 1; }
+
+    .dashboard {
+      position: absolute;
+      inset: var(--topbar) 0 var(--systembar) var(--rail);
+      padding: 12px 14px 16px;
+      background: radial-gradient(circle at 35% 0%, #101a28 0, transparent 32%), #070b11;
+    }
+
+    .smart-top {
+      position: relative;
+      height: 152px;
+      display: grid;
+      grid-template-columns: 80px minmax(0, 1fr) auto 196px;
+      gap: 10px;
+      padding: 14px;
+      overflow: hidden;
+      border: 1px solid #45698f;
+      border-radius: 15px;
+      background: linear-gradient(90deg, #141f2d 0%, #0c121c 100%);
+      isolation: isolate;
+    }
+
+    .smart-top > .media-visual,
+    .smart-top > .metadata,
+    .smart-top > .actions,
+    .smart-top > .recent { position: relative; z-index: 3; }
+
+    .backdrop-art,
+    .backdrop-tint,
+    .backdrop-spectrum,
+    .backdrop-watermark {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .backdrop-art {
+      background-image: var(--artwork-url);
+      background-size: cover;
+      background-position: 34% 38%;
+      filter: saturate(.9) brightness(.82);
+      transform: scale(1.01);
+      opacity: 0;
+    }
+
+    .backdrop-tint {
+      z-index: 1;
+      background:
+        linear-gradient(90deg, rgb(8 13 21 / 18%) 0%, rgb(8 13 21 / 68%) 46%, rgb(7 11 17 / 94%) 100%),
+        linear-gradient(180deg, rgb(7 10 16 / 10%), rgb(7 10 16 / 64%));
+    }
+
+    .smart-top[data-visual="artwork"] .backdrop-art { opacity: 1; }
+    .smart-top[data-visual="artwork"] .backdrop-tint {
+      background:
+        linear-gradient(90deg, rgb(8 13 21 / 18%) 0%, rgb(8 13 21 / 48%) 46%, rgb(7 11 17 / 88%) 100%),
+        linear-gradient(180deg, rgb(7 10 16 / 4%), rgb(7 10 16 / 48%));
+    }
+
+    .backdrop-spectrum {
+      z-index: 2;
+      width: 52%;
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      padding: 18px 22px;
+      opacity: 0;
+      mask-image: linear-gradient(90deg, #000 0%, transparent 92%);
+    }
+
+    .backdrop-spectrum i {
+      width: 18px;
+      height: var(--bar);
+      border-radius: 8px 8px 2px 2px;
+      background: linear-gradient(180deg, rgb(122 167 255 / 38%), rgb(78 126 204 / 3%));
+    }
+
+    .smart-top[data-visual="audio"] {
+      background: linear-gradient(90deg, #142239 0%, #0b121d 58%, #080d14 100%);
+    }
+
+    .smart-top[data-visual="audio"] .backdrop-spectrum { opacity: .34; }
+
+    .backdrop-watermark {
+      z-index: 2;
+      display: grid;
+      place-items: center end;
+      padding-right: 230px;
+      color: #7fa9e8;
+      opacity: 0;
+    }
+
+    .backdrop-watermark svg { width: 142px; height: 142px; fill: currentColor; }
+    .smart-top[data-visual="watermark"] .backdrop-watermark { opacity: .07; }
+
+    .media-visual {
+      width: 80px;
+      height: 80px;
+      align-self: start;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgb(126 170 232 / 20%);
+      border-radius: 12px;
+      background: rgb(42 64 96 / 78%);
+      color: var(--accent);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+    }
+
+    .media-visual img { width: 100%; height: 100%; display: none; object-fit: cover; }
+    .media-visual svg { width: 49px; height: 49px; fill: currentColor; }
+    .media-visual .source-mark { display: grid; place-items: center; opacity: .78; }
+
+    .metadata {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding-left: 1px;
+    }
+
+    .eyebrow,
+    .recent-title {
+      margin: 0;
+      color: #8eb6fa;
+      font-size: 13px;
+      line-height: 17px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .title {
+      min-height: 50px;
+      margin: 2px 0 0;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      font-size: 22px;
+      line-height: 25px;
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+    }
+
+    .subtitle {
+      margin: 1px 0 0;
+      color: #a2aec0;
+      font-size: 14px;
+      line-height: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .timeline { margin-top: auto; padding: 4px 8px 0 0; }
+    .progress { height: 5px; overflow: hidden; border-radius: 5px; background: #344156; }
+    .progress span { display: block; width: var(--progress); height: 100%; border-radius: inherit; background: var(--accent); }
+    .time-row { display: flex; justify-content: space-between; margin-top: 4px; color: #7d899b; font-size: 10px; }
+    .timeline.live .progress { visibility: hidden; }
+    .timeline.live .time-row { justify-content: flex-start; color: #9ebcf1; font-weight: 700; letter-spacing: .04em; }
+    .timeline.hidden { visibility: hidden; }
+
+    .actions {
+      align-self: center;
+      display: flex;
+      gap: 4px;
+      padding: 0 10px 0 2px;
+    }
+
+    .action {
+      width: 70px;
+      height: 70px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #2e4b71;
+      border-radius: 14px;
+      background: #101c2b;
+      color: #83aff8;
+    }
+
+    .action.primary { border-color: #7da9f3; background: var(--accent); color: #07111f; }
+    .action svg { width: 34px; height: 34px; fill: currentColor; }
+    .action.secondary svg { width: 30px; height: 30px; }
+    .action.labeled { width: 112px; padding: 0 16px; color: #081321; font-size: 14px; font-weight: 700; }
+
+    .recent {
+      min-width: 0;
+      padding-left: 12px;
+      border-left: 1px solid rgb(173 194 224 / 22%);
+    }
+
+    .recent-list { display: grid; gap: 0; margin-top: 5px; }
+    .recent-row {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      padding: 0 5px;
+      border-radius: 5px;
+      color: #dfe8f5;
+      font-size: 13px;
+    }
+
+    .recent-row:first-child { background: rgb(122 167 255 / 9%); }
+    .recent-row svg { flex: 0 0 17px; width: 17px; height: 17px; fill: #79a8f5; }
+    .recent-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .smart-top[data-empty="true"] { grid-template-columns: 80px minmax(0, 1fr) auto; }
+    .smart-top[data-empty="true"] .recent { display: none; }
+
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .tile {
+      height: 103px;
+      display: grid;
+      grid-template-columns: 68px minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      border: 1px solid #28405f;
+      border-radius: 14px;
+      background: #0b111a;
+    }
+
+    .tile-icon { display: grid; place-items: center; color: var(--accent); }
+    .tile-icon svg { width: 58px; height: 58px; fill: currentColor; }
+    .tile-copy { min-width: 0; }
+    .tile-copy strong { display: block; font-size: 21px; line-height: 25px; }
+    .tile-copy small { display: block; margin-top: 3px; overflow: hidden; color: #78869a; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+
+    .systembar {
+      position: absolute;
+      inset: auto 0 0 0;
+      height: var(--systembar);
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      background: #020303;
+      z-index: 10;
+    }
+
+    .system-left, .system-center, .system-right { display: flex; align-items: center; }
+    .system-left { gap: 26px; color: #f5f7fa; }
+    .system-left svg { width: 31px; height: 31px; fill: currentColor; }
+    .system-center { position: absolute; left: 50%; gap: 14px; transform: translateX(-50%); }
+    .app-dot { width: 53px; height: 53px; display: grid; place-items: center; border: 4px solid #d9d9d9; border-radius: 50%; background: #fff; color: #3764b3; font-size: 18px; font-weight: 800; }
+    .app-dot.fermata { overflow: hidden; padding: 5px; background: #25324b; }
+    .app-dot.fermata img { width: 100%; height: 100%; border-radius: 50%; }
+    .system-right { margin-left: auto; gap: 10px; color: #f4f6f9; font-size: 25px; }
+    .signal { font-size: 20px; letter-spacing: -3px; transform: translateY(-2px); }
+
+    .inspector {
+      height: 720px;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      border: 1px solid #26374e;
+      border-radius: 18px;
+      background: #0a0f17;
+      box-shadow: 0 24px 70px rgb(0 0 0 / 40%);
+    }
+
+    .inspector-kicker { margin: 0 0 6px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .inspector h2 { margin: 0; font-size: 22px; line-height: 26px; }
+    .inspector-sub { margin: 8px 0 16px; color: var(--muted); font-size: 13px; line-height: 18px; }
+
+    .case-list { display: grid; gap: 8px; }
+    .case-button {
+      width: 100%;
+      min-height: 62px;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 9px 10px;
+      border: 1px solid #263a56;
+      border-radius: 10px;
+      color: #cdd8e8;
+      text-align: left;
+      background: #0c131e;
+      cursor: pointer;
+    }
+
+    .case-button[aria-pressed="true"] { border-color: var(--edge-strong); background: #14233a; box-shadow: inset 3px 0 0 var(--accent); }
+    .case-number { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #172338; color: #9fc0f6; font-size: 12px; font-weight: 800; }
+    .case-button strong, .case-button small { display: block; }
+    .case-button strong { font-size: 13px; }
+    .case-button small { margin-top: 3px; color: #7f8ea3; font-size: 11px; line-height: 14px; }
+
+    .evidence {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid #24354c;
+    }
+
+    .evidence-label { margin: 0 0 5px; color: #77859a; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .evidence-value { margin: 0; color: #dfe7f2; font-size: 12px; line-height: 17px; overflow-wrap: anywhere; }
+    .evidence-value + .evidence-label { margin-top: 11px; }
+    .status { margin-top: auto; padding-top: 14px; border-top: 1px solid #24354c; color: #8190a4; font-size: 11px; line-height: 16px; }
+    .status b { color: #9dc0fb; }
+
+    /* Screenshot mode uses only DHU resolutions configured in open-dhu.bat. */
+    body[data-capture="true"] {
+      width: var(--demo-width);
+      height: var(--demo-height);
+      min-width: 0;
+      min-height: 0;
+      display: block;
+      background: #020303;
+    }
+
+    body[data-capture="true"] .studio {
+      width: var(--demo-width);
+      height: var(--demo-height);
+      display: block;
+    }
+
+    body[data-capture="true"] .device {
+      width: var(--demo-width);
+      height: var(--demo-height);
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    body[data-capture="true"] .inspector { display: none; }
+
+    body[data-screen="800x480"] {
+      --demo-width: 800px;
+      --demo-height: 480px;
+      --rail: 72px;
+      --topbar: 52px;
+      --systembar: 58px;
+    }
+
+    body[data-screen="1280x720"] {
+      --demo-width: 1280px;
+      --demo-height: 720px;
+    }
+
+    body[data-screen="1920x1080"] {
+      --demo-width: 1920px;
+      --demo-height: 1080px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .topbar {
+      gap: 8px;
+      padding: 0 12px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .topbar h1 { font-size: 20px; }
+    body[data-capture="true"][data-screen="800x480"] .topbar-actions { gap: 6px; }
+    body[data-capture="true"][data-screen="800x480"] .plain-icon { width: 28px; height: 28px; }
+    body[data-capture="true"][data-screen="800x480"] .square-icon { width: 40px; height: 40px; border-radius: 11px; }
+    body[data-capture="true"][data-screen="800x480"] .plain-icon svg,
+    body[data-capture="true"][data-screen="800x480"] .square-icon svg { width: 22px; height: 22px; }
+
+    body[data-capture="true"][data-screen="800x480"] .navrail {
+      gap: 4px;
+      padding: 4px 0 6px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .nav-item {
+      width: 58px;
+      height: 48px;
+      border-radius: 12px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .nav-item.active::before {
+      left: -7px;
+      top: 9px;
+      height: 30px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .nav-item svg { width: 28px; height: 28px; }
+    body[data-capture="true"][data-screen="800x480"] .dashboard { padding: 10px 12px; }
+
+    body[data-capture="true"][data-screen="800x480"] .smart-top {
+      height: 152px;
+      grid-template-columns: 72px minmax(0, 1fr) auto 160px;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 14px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .smart-top[data-empty="true"] {
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .media-visual { width: 72px; height: 72px; }
+    body[data-capture="true"][data-screen="800x480"] .media-visual svg { width: 44px; height: 44px; }
+    body[data-capture="true"][data-screen="800x480"] .eyebrow,
+    body[data-capture="true"][data-screen="800x480"] .recent-title { font-size: 11px; line-height: 15px; }
+    body[data-capture="true"][data-screen="800x480"] .title { min-height: 44px; font-size: 19px; line-height: 22px; }
+    body[data-capture="true"][data-screen="800x480"] .subtitle { font-size: 12px; line-height: 16px; }
+    body[data-capture="true"][data-screen="800x480"] .timeline { padding-right: 2px; }
+    body[data-capture="true"][data-screen="800x480"] .actions { gap: 2px; padding: 0; }
+
+    body[data-capture="true"][data-screen="800x480"] .action {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .action svg { width: 35px; height: 35px; }
+    body[data-capture="true"][data-screen="800x480"] .action.secondary svg { width: 28px; height: 28px; }
+    body[data-capture="true"][data-screen="800x480"] .action.labeled { width: 98px; padding: 0 12px; }
+    body[data-capture="true"][data-screen="800x480"] .recent { padding-left: 8px; }
+    body[data-capture="true"][data-screen="800x480"] .recent-list { margin-top: 3px; }
+    body[data-capture="true"][data-screen="800x480"] .recent-row { height: 28px; gap: 5px; padding: 0 3px; font-size: 11px; }
+    body[data-capture="true"][data-screen="800x480"] .recent-row svg { flex-basis: 15px; width: 15px; height: 15px; }
+    body[data-capture="true"][data-screen="800x480"] .backdrop-watermark { padding-right: 172px; }
+    body[data-capture="true"][data-screen="800x480"] .backdrop-watermark svg { width: 110px; height: 110px; }
+
+    body[data-capture="true"][data-screen="800x480"] .tile-grid {
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .tile {
+      height: 78px;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 8px;
+      padding: 0 10px;
+      border-radius: 12px;
+    }
+
+    body[data-capture="true"][data-screen="800x480"] .tile-icon svg { width: 43px; height: 43px; }
+    body[data-capture="true"][data-screen="800x480"] .tile-copy strong { font-size: 17px; line-height: 20px; }
+    body[data-capture="true"][data-screen="800x480"] .tile-copy small { margin-top: 2px; font-size: 11px; }
+    body[data-capture="true"][data-screen="800x480"] .systembar { padding: 0 18px; }
+    body[data-capture="true"][data-screen="800x480"] .system-left { gap: 18px; }
+    body[data-capture="true"][data-screen="800x480"] .system-left svg { width: 26px; height: 26px; }
+    body[data-capture="true"][data-screen="800x480"] .system-center { gap: 10px; }
+    body[data-capture="true"][data-screen="800x480"] .app-dot { width: 42px; height: 42px; border-width: 3px; font-size: 15px; }
+    body[data-capture="true"][data-screen="800x480"] .system-right { font-size: 20px; }
+    body[data-capture="true"][data-screen="800x480"] .signal { font-size: 17px; }
+
+    body[data-capture="true"][data-screen="1280x720"] .smart-top,
+    body[data-capture="true"][data-screen="1920x1080"] .smart-top {
+      grid-template-columns: 80px minmax(0, 1fr) auto 196px;
+      gap: 10px;
+      padding: 14px;
+    }
+
+    body[data-capture="true"][data-screen="1280x720"] .smart-top[data-empty="true"],
+    body[data-capture="true"][data-screen="1920x1080"] .smart-top[data-empty="true"] {
+      grid-template-columns: 80px minmax(0, 1fr) auto;
+    }
+
+    body[data-capture="true"][data-screen="1280x720"] .action,
+    body[data-capture="true"][data-screen="1920x1080"] .action { width: 76px; height: 76px; }
+    body[data-capture="true"][data-screen="1280x720"] .actions,
+    body[data-capture="true"][data-screen="1920x1080"] .actions { gap: 6px; padding-right: 10px; }
+    body[data-capture="true"][data-screen="1280x720"] .action.labeled,
+    body[data-capture="true"][data-screen="1920x1080"] .action.labeled { width: 112px; }
+    body[data-capture="true"][data-screen="1280x720"] .tile-grid,
+    body[data-capture="true"][data-screen="1920x1080"] .tile-grid { grid-template-columns: repeat(4, 1fr); }
+  </style>
+</head>
+<body>
+  <main class="studio">
+    <section class="device" aria-label="FermataX Android Auto Dashboard demo">
+      <header class="topbar">
+        <h1>Dashboard</h1>
+        <div class="topbar-actions" aria-hidden="true">
+          <span class="plain-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21H9v2h6v-2h-2v-3.08A7 7 0 0 0 19 11h-1.7Z"/></svg>
+          </span>
+          <span class="plain-icon">
+            <svg viewBox="0 0 24 24"><path d="m3 17.25 9.91-9.91 3.75 3.75L6.75 21H3v-3.75ZM19.71 8.04l-1.77 1.77-3.75-3.75 1.77-1.77a1 1 0 0 1 1.41 0l2.34 2.34a1 1 0 0 1 0 1.41Z"/></svg>
+          </span>
+          <span class="square-icon">
+            <svg viewBox="0 0 24 24"><path d="M6.21 13.97 7.41 16a.3.3 0 0 0 .37.13l1.49-.6c.31.24.64.44 1.01.59l.22 1.59c.03.18.15.29.3.29h2.4c.15 0 .27-.11.3-.26l.22-1.59c.36-.15.7-.35 1.01-.59l1.49.6c.14.05.29 0 .37-.13l1.2-2.07a.3.3 0 0 0-.07-.39l-1.27-.99c.03-.19.04-.39.04-.58s-.02-.39-.04-.59l1.27-.99a.3.3 0 0 0 .07-.39L16.59 8a.3.3 0 0 0-.37-.13l-1.49.6c-.31-.24-.64-.44-1.01-.59l-.22-1.59A.3.3 0 0 0 13.2 6h-2.4a.3.3 0 0 0-.3.26l-.22 1.59c-.36.15-.71.34-1.01.58l-1.49-.6a.3.3 0 0 0-.37.13l-1.2 2.07a.3.3 0 0 0 .07.39l1.27.99c-.03.2-.05.39-.05.59s.02.39.04.59l-1.27.99a.3.3 0 0 0-.06.39ZM12 10.29A1.71 1.71 0 1 1 12 13.71 1.71 1.71 0 0 1 12 10.29Z"/></svg>
+          </span>
+        </div>
+      </header>
+
+      <nav class="navrail" aria-label="Primary">
+        <button class="nav-item active" aria-label="Dashboard">
+          <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </button>
+        <button class="nav-item" aria-label="TV">
+          <svg viewBox="0 0 24 24"><path d="M21 17H3V5h18m0-2H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5v2h8v-2h5a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z"/></svg>
+        </button>
+        <button class="nav-item" aria-label="YouTube">
+          <svg viewBox="0 0 24 24"><path d="M12 5s-6.27 0-7.81.41A2.77 2.77 0 0 0 2.43 7.2C2.02 8.75 2.02 12 2.02 12s0 3.27.41 4.83c.23.85.91 1.51 1.77 1.74 1.54.41 7.81.41 7.81.41s6.27 0 7.81-.41c.86-.24 1.54-.88 1.77-1.75.41-1.55.41-4.82.41-4.82s0-3.26-.41-4.82a2.77 2.77 0 0 0-1.77-1.77C18.27 5 12 5 12 5ZM9.15 7.96 16.29 12l-7.14 4.06Z"/></svg>
+        </button>
+        <button class="nav-item" aria-label="Radio">
+          <svg viewBox="0 0 24 24"><path d="m4 8.5 13.1-3.4a1 1 0 1 1 .51 1.96L10.1 9H19a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7.58c0-.91.61-1.68 1-1.92ZM5 11v7h14v-7H5Zm2.5 1.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM12 13h5v1.5h-5V13Zm0 3h5v1.5h-5V16Z"/></svg>
+        </button>
+        <button class="nav-item" aria-label="Web">
+          <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm6.24 5.4H15.6a14.8 14.8 0 0 0-1.24-3.2 7.22 7.22 0 0 1 3.88 3.2ZM12 4.85a12.9 12.9 0 0 1 1.72 3.56h-3.44A12.9 12.9 0 0 1 12 4.85ZM5.05 13.8A7.3 7.3 0 0 1 4.82 12c0-.62.09-1.22.23-1.8H8.1A14.9 14.9 0 0 0 7.97 12c0 .61.05 1.2.13 1.8H5.05Zm.74 1.8h2.66c.29 1.13.7 2.2 1.24 3.2a7.2 7.2 0 0 1-3.9-3.2Zm2.66-7.2H5.79a7.2 7.2 0 0 1 3.9-3.2 14.8 14.8 0 0 0-1.24 3.2ZM12 19.17a12.9 12.9 0 0 1-1.72-3.56h3.44A12.9 12.9 0 0 1 12 19.17Zm2.1-5.36H9.9A13.3 13.3 0 0 1 9.77 12c0-.61.06-1.21.14-1.8h4.2c.08.59.15 1.19.15 1.8 0 .62-.06 1.21-.15 1.81Zm.25 5a14.8 14.8 0 0 0 1.24-3.2h2.66a7.22 7.22 0 0 1-3.9 3.2Zm4.64-5H15.9c.08-.6.13-1.19.13-1.81 0-.61-.05-1.2-.13-1.8h3.05c.14.58.23 1.18.23 1.8 0 .62-.09 1.22-.23 1.81Z"/></svg>
+        </button>
+        <button class="nav-item" aria-label="Podcasts">
+          <svg viewBox="0 0 24 24"><path d="M6.79 18.21C5.67 16.62 5 14.68 5 12s.67-4.62 1.79-6.21L5.38 4.38C4 6.41 3 9.07 3 12s1 5.59 2.38 7.62l1.41-1.41ZM9.62 15.38C9.23 14.42 9 13.25 9 12s.23-2.42.62-3.38L8.13 7.13C7.43 8.49 7 10.18 7 12s.43 3.51 1.13 4.87l1.49-1.49ZM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3.87-6.87-1.49 1.49c.39.96.62 2.13.62 3.38s-.23 2.42-.62 3.38l1.49 1.49C16.57 15.51 17 13.82 17 12s-.43-3.51-1.13-4.87Zm2.75-2.75-1.41 1.41C18.33 7.38 19 9.32 19 12s-.67 4.62-1.79 6.21l1.41 1.41C20 17.59 21 14.93 21 12s-1-5.59-2.38-7.62Z"/></svg>
+        </button>
+        <span class="nav-spacer"></span>
+      </nav>
+
+      <section class="dashboard">
+        <article class="smart-top" id="smartTop" data-visual="artwork" data-empty="false">
+          <div class="backdrop-art"></div>
+          <div class="backdrop-tint"></div>
+          <div class="backdrop-spectrum" aria-hidden="true">
+            <i style="--bar:44%"></i><i style="--bar:76%"></i><i style="--bar:58%"></i><i style="--bar:91%"></i><i style="--bar:67%"></i><i style="--bar:82%"></i><i style="--bar:48%"></i><i style="--bar:70%"></i><i style="--bar:38%"></i>
+          </div>
+          <div class="backdrop-watermark" id="backdropWatermark"></div>
+
+          <div class="media-visual">
+            <img id="artwork" alt="">
+            <div class="source-mark" id="sourceMark"></div>
+          </div>
+
+          <div class="metadata">
+            <p class="eyebrow" id="eyebrow">Now playing</p>
+            <h2 class="title" id="title">FermataX Showcase</h2>
+            <p class="subtitle" id="subtitle">FermataX Demo TV</p>
+            <div class="timeline" id="timeline">
+              <div class="progress"><span id="progress"></span></div>
+              <div class="time-row"><span id="timeStart"></span><span id="timeEnd">Almost done</span></div>
+            </div>
+          </div>
+
+          <div class="actions" id="actions"></div>
+
+          <aside class="recent" id="recent">
+            <p class="recent-title">Recent</p>
+            <div class="recent-list" id="recentList"></div>
+          </aside>
+        </article>
+
+        <section class="tile-grid" aria-label="Dashboard add-ons">
+          <article class="tile"><div class="tile-icon" data-icon="tv"></div><div class="tile-copy"><strong>TV</strong><small>Live TV, VOD and series</small></div></article>
+          <article class="tile"><div class="tile-icon" data-icon="youtube"></div><div class="tile-copy"><strong>Youtube</strong><small>Video search and playback</small></div></article>
+          <article class="tile"><div class="tile-icon" data-icon="radio"></div><div class="tile-copy"><strong>Radio</strong><small>Popular stations and countries</small></div></article>
+          <article class="tile"><div class="tile-icon" data-icon="podcast"></div><div class="tile-copy"><strong>Podcasts</strong><small>Shows, episodes and offline listening</small></div></article>
+          <article class="tile"><div class="tile-icon" data-icon="audiobook"></div><div class="tile-copy"><strong>Audiobooks</strong><small>Books, chapters and offline listening</small></div></article>
+          <article class="tile"><div class="tile-icon" data-icon="folder"></div><div class="tile-copy"><strong>Folders</strong><small>Local files and folders</small></div></article>
+        </section>
+      </section>
+
+      <footer class="systembar" aria-label="Android Auto system bar">
+        <div class="system-left">
+          <svg viewBox="0 0 24 24"><path d="M3 3h8v18H3V3Zm10 0h8v8h-8V3Zm0 10h8v8h-8v-8ZM5 5v14h4V5H5Zm10 0v4h4V5h-4Zm0 10v4h4v-4h-4Z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21H9v2h6v-2h-2v-3.08A7 7 0 0 0 19 11h-1.7Z"/></svg>
+        </div>
+        <div class="system-center">
+          <span class="app-dot">G</span>
+          <span class="app-dot">◖</span>
+          <span class="app-dot fermata"><img src="../promo/video/assets/fermatax-logo.png" alt=""></span>
+        </div>
+        <div class="system-right"><span class="signal">▂▄▆</span><span>22:19</span></div>
+      </footer>
+    </section>
+
+    <aside class="inspector" aria-label="Demo case selector">
+      <p class="inspector-kicker">Repository-backed demo</p>
+      <h2>SmartTop states</h2>
+      <p class="inspector-sub">Only the SmartTopCard background treatment changes. Source icon, metadata, timeline, actions and Quick Recent keep their existing geometry.</p>
+
+      <div class="case-list">
+        <button class="case-button" data-case="artwork" aria-pressed="true"><span class="case-number">01</span><span><strong>Square artwork background</strong><small>512×512 repository asset</small></span></button>
+        <button class="case-button" data-case="audio" aria-pressed="false"><span class="case-number">02</span><span><strong>Audio spectrum background</strong><small>Radio item, no cover</small></span></button>
+        <button class="case-button" data-case="wide" aria-pressed="false"><span class="case-number">03</span><span><strong>Wide artwork rejected</strong><small>1672×941 video image</small></span></button>
+        <button class="case-button" data-case="empty" aria-pressed="false"><span class="case-number">04</span><span><strong>No media</strong><small>Current EMPTY strings</small></span></button>
+      </div>
+
+      <section class="evidence">
+        <p class="evidence-label">Observed item</p>
+        <p class="evidence-value" id="evidenceItem">FermataX Showcase</p>
+        <p class="evidence-label">Source</p>
+        <p class="evidence-value" id="evidenceSource">promo/tv-demo/README.md</p>
+        <p class="evidence-label">Visual decision</p>
+        <p class="evidence-value" id="evidenceDecision">Artwork background + TV source icon retained</p>
+      </section>
+
+      <p class="status"><b>Background-only treatment.</b> Static audio spectrum, no FFT capture, and no foreground component substitution.</p>
+    </aside>
+  </main>
+
+  <script>
+    const icons = {
+      tv: '<svg viewBox="0 0 24 24"><path d="M21 17H3V5h18m0-2H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5v2h8v-2h5a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z"/></svg>',
+      radio: '<svg viewBox="0 0 24 24"><path d="m4 8.5 13.1-3.4a1 1 0 1 1 .51 1.96L10.1 9H19a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7.58c0-.91.61-1.68 1-1.92ZM5 11v7h14v-7H5Zm2.5 1.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM12 13h5v1.5h-5V13Zm0 3h5v1.5h-5V16Z"/></svg>',
+      youtube: '<svg viewBox="0 0 24 24"><path d="M12 5s-6.27 0-7.81.41A2.77 2.77 0 0 0 2.43 7.2C2.02 8.75 2.02 12 2.02 12s0 3.27.41 4.83c.23.85.91 1.51 1.77 1.74 1.54.41 7.81.41 7.81.41s6.27 0 7.81-.41c.86-.24 1.54-.88 1.77-1.75.41-1.55.41-4.82.41-4.82s0-3.26-.41-4.82a2.77 2.77 0 0 0-1.77-1.77C18.27 5 12 5 12 5ZM9.15 7.96 16.29 12l-7.14 4.06Z"/></svg>',
+      podcast: '<svg viewBox="0 0 24 24"><path d="M6.79 18.21C5.67 16.62 5 14.68 5 12s.67-4.62 1.79-6.21L5.38 4.38C4 6.41 3 9.07 3 12s1 5.59 2.38 7.62l1.41-1.41ZM9.62 15.38C9.23 14.42 9 13.25 9 12s.23-2.42.62-3.38L8.13 7.13C7.43 8.49 7 10.18 7 12s.43 3.51 1.13 4.87l1.49-1.49ZM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3.87-6.87-1.49 1.49c.39.96.62 2.13.62 3.38s-.23 2.42-.62 3.38l1.49 1.49C16.57 15.51 17 13.82 17 12s-.43-3.51-1.13-4.87Zm2.75-2.75-1.41 1.41C18.33 7.38 19 9.32 19 12s-.67 4.62-1.79 6.21l1.41 1.41C20 17.59 21 14.93 21 12s-1-5.59-2.38-7.62Z"/></svg>',
+      audiobook: '<svg viewBox="0 0 24 24"><path d="M21 4h-7c-.77 0-1.47.3-2 .78A2.96 2.96 0 0 0 10 4H3a2 2 0 0 0-2 2v13a1 1 0 0 0 1.47.88C3.62 19.31 5.18 19 7 19c2.05 0 3.7.4 4.71 1.06.18.12.4.12.58 0C13.3 19.4 14.95 19 17 19c1.82 0 3.38.31 4.53.88A1 1 0 0 0 23 19V6a2 2 0 0 0-2-2ZM11 17.5A13.9 13.9 0 0 0 7 17c-1.54 0-2.89.17-4 .5V6h7a1 1 0 0 1 1 1v10.5Zm10 0a13.9 13.9 0 0 0-4-.5c-1.55 0-2.9.17-4 .5V7a1 1 0 0 1 1-1h7v11.5Z"/></svg>',
+      folder: '<svg viewBox="0 0 24 24"><path d="M10 4H4a2 2 0 0 0-1.99 2L2 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2Z"/></svg>',
+      grid: '<svg viewBox="0 0 24 24"><path d="M4 20h4v-4H4v4Zm6 0h4v-4h-4v4Zm6 0h4v-4h-4v4ZM4 14h4v-4H4v4Zm6 0h4v-4h-4v4Zm6 0h4v-4h-4v4ZM4 8h4V4H4v4Zm6 0h4V4h-4v4Zm6 0h4V4h-4v4Z"/></svg>',
+      pause: '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7V5Zm6 0h4v14h-4V5Z"/></svg>',
+      play: '<svg viewBox="0 0 24 24"><path d="M5.78 4.21A1.6 1.6 0 0 0 5 5.59v12.82a1.6 1.6 0 0 0 2.34 1.38l10.88-6.41a1.6 1.6 0 0 0 0-2.76L7.34 4.21a1.6 1.6 0 0 0-1.56 0Z"/></svg>',
+      heart: '<svg viewBox="0 0 24 24"><path d="m12 21.35-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3A6 6 0 0 1 12 5.09 6 6 0 0 1 16.5 3C19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z"/></svg>'
+    };
+
+    const repoLogo = '../promo/video/assets/fermatax-logo.png';
+    const squareArtwork = '../promo/tv-demo/output/assets/scenic-channel.jpg';
+
+    const cases = {
+      artwork: {
+        visual: 'artwork', empty: false, art: squareArtwork, sourceIcon: 'tv',
+        eyebrow: 'Now playing', title: 'Scenic Drive', subtitle: 'FermataX Demo TV',
+        timeline: 'seekable', progress: '52%', timeEnd: 'Almost done', playing: true,
+        favorite: true, recent: ['FermataX Showcase', 'Feature Highlights'],
+        evidenceItem: 'Scenic Drive',
+        evidenceSource: 'promo/tv-demo/output/assets/scenic-channel.jpg · 512×512',
+        evidenceDecision: 'Artwork background + TV source icon retained'
+      },
+      audio: {
+        visual: 'audio', empty: false, art: '', sourceIcon: 'radio',
+        eyebrow: 'Now playing', title: 'RTL', subtitle: 'Popular',
+        timeline: 'live', progress: '0%', timeEnd: '', playing: true,
+        favorite: true, recent: ['FermataX Showcase', 'Scenic Drive', 'Feature Highlights'],
+        evidenceItem: 'RTL — observed in product_screenshots/Dashboard.png',
+        evidenceSource: 'RadioStationItem · no content artwork',
+        evidenceDecision: 'Static spectrum background + Radio source icon retained'
+      },
+      wide: {
+        visual: 'watermark', empty: false, art: '', sourceIcon: 'tv',
+        eyebrow: 'Now playing', title: 'Scenic Drive', subtitle: 'FermataX Demo TV',
+        timeline: 'seekable', progress: '34%', timeEnd: 'Almost done', playing: true,
+        favorite: true, recent: ['FermataX Showcase', 'Feature Highlights'],
+        evidenceItem: 'Scenic Drive',
+        evidenceSource: 'promo/tv-demo/assets/scenic-road.png · 1672×941',
+        evidenceDecision: 'Wide image rejected → TV source watermark'
+      },
+      empty: {
+        visual: 'watermark', empty: true, art: '', sourceIcon: 'grid',
+        eyebrow: 'Discover', title: 'Choose an add-on', subtitle: 'Start watching or listening',
+        timeline: 'hidden', progress: '0%', timeEnd: '', playing: false,
+        favorite: false, recent: [],
+        evidenceItem: 'SmartTopMode.EMPTY',
+        evidenceSource: 'fermata/src/main/res/values/strings.xml',
+        evidenceDecision: 'View-grid watermark + current Settings CTA'
+      }
+    };
+
+    const smartTop = document.querySelector('#smartTop');
+    const artwork = document.querySelector('#artwork');
+    const sourceMark = document.querySelector('#sourceMark');
+    const backdropWatermark = document.querySelector('#backdropWatermark');
+    const eyebrow = document.querySelector('#eyebrow');
+    const title = document.querySelector('#title');
+    const subtitle = document.querySelector('#subtitle');
+    const timeline = document.querySelector('#timeline');
+    const progress = document.querySelector('#progress');
+    const timeStart = document.querySelector('#timeStart');
+    const timeEnd = document.querySelector('#timeEnd');
+    const actions = document.querySelector('#actions');
+    const recentList = document.querySelector('#recentList');
+
+    function recentRow(label, iconName) {
+      return `<div class="recent-row">${icons[iconName]}<span>${label}</span></div>`;
+    }
+
+    function renderCase(name) {
+      const state = cases[name] || cases.artwork;
+      smartTop.dataset.visual = state.visual;
+      smartTop.dataset.empty = String(state.empty);
+      smartTop.style.setProperty('--artwork-url', state.art ? `url("${state.art}")` : 'none');
+      artwork.src = state.art || repoLogo;
+      artwork.alt = state.art ? `${state.title} artwork` : '';
+      sourceMark.innerHTML = icons[state.sourceIcon];
+      backdropWatermark.innerHTML = icons[state.sourceIcon];
+      eyebrow.textContent = state.eyebrow;
+      title.textContent = state.title;
+      subtitle.textContent = state.subtitle;
+      timeline.className = `timeline ${state.timeline}`;
+      progress.style.setProperty('--progress', state.progress);
+      timeStart.textContent = state.timeline === 'live' ? 'LIVE' : '';
+      timeEnd.textContent = state.timeEnd;
+
+      if (state.empty) {
+        actions.innerHTML = '<button class="action primary labeled" aria-label="Settings">Settings</button>';
+      } else {
+        actions.innerHTML = `<button class="action primary" aria-label="${state.playing ? 'Pause' : 'Play'}">${icons[state.playing ? 'pause' : 'play']}</button>${state.favorite ? `<button class="action secondary" aria-label="Favorite">${icons.heart}</button>` : ''}`;
+      }
+
+      const recentIcons = name === 'audio' ? ['tv', 'tv', 'tv'] : ['tv', 'tv', 'tv'];
+      recentList.innerHTML = state.recent.map((item, index) => recentRow(item, recentIcons[index])).join('');
+      document.querySelector('#evidenceItem').textContent = state.evidenceItem;
+      document.querySelector('#evidenceSource').textContent = state.evidenceSource;
+      document.querySelector('#evidenceDecision').textContent = state.evidenceDecision;
+      document.querySelectorAll('.case-button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.case === name)));
+      history.replaceState(null, '', `#${name}`);
+      document.body.dataset.case = name;
+    }
+
+    document.querySelectorAll('[data-icon]').forEach(node => { node.innerHTML = icons[node.dataset.icon]; });
+    document.querySelectorAll('.case-button').forEach(button => button.addEventListener('click', () => renderCase(button.dataset.case)));
+    window.renderSmartTopCase = renderCase;
+    const query = new URLSearchParams(location.search);
+    const screenSize = ['800x480', '1280x720', '1920x1080'].includes(query.get('screen')) ?
+      query.get('screen') : '1280x720';
+    document.body.dataset.capture = String(query.get('capture') === '1');
+    document.body.dataset.screen = screenSize;
+    renderCase(query.get('case') || location.hash.slice(1) || 'artwork');
+  </script>
+</body>
+</html>

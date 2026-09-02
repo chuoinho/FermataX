@@ -455,7 +455,8 @@ public class DashboardFragment extends MainActivityFragment
 			smartTopV2Enabled = activity.getPrefs().isSmartTopV2Enabled();
 			smartTopCoordinator = smartTopV2Enabled ?
 					new SmartTopCoordinator(activity, ctx, this) : null;
-			smartTopBinder = smartTopV2Enabled ? new SmartTopBinder(ctx, this) : null;
+			smartTopBinder = smartTopV2Enabled ? new SmartTopBinder(ctx, this,
+					activity.getPrefs().isSmartTopBackgroundEnabled()) : null;
 			reload();
 		}
 

@@ -148,6 +148,52 @@ public class BitmapCache {
 		return queue.enqueue(() -> loadBitmap(ctx, u, iconUri, cache, size));
 	}
 
+	/**
+	 * Loads an image only when it is already in memory/on disk or is backed by an explicitly local
+	 * Android URI. In particular, an HTTP(S) miss returns immediately without entering the generic
+	 * downloader or VFS fallback.
+	 */
+	@NonNull
+	public FutureSupplier<Bitmap> getBitmapIfCached(Context ctx, String uri, boolean resize) {
+		if ((uri == null) || uri.isBlank()) return completedNull();
+		String orig = FermataContentProvider.getOrigUri(uri);
+		String normalized = (orig == null) ? uri : orig;
+		Uri parsed = Uri.parse(normalized);
+		String scheme = parsed.getScheme();
+		if (scheme == null) return completedNull();
+
+		int size = resize ? getIconSize(ctx) : 0;
+		String iconUri = resize ? toIconUri(normalized, size) : null;
+		String memoryKey = resize ? iconUri : normalized;
+		Bitmap memory = getCachedBitmap(memoryKey);
+		if (memory != null) return completed(memory);
+
+		if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+			File iconFile = resize ? new File(iconsCache,
+					iconUri.substring(iconsCacheUri.length())) : null;
+			if ((iconFile != null) && iconFile.isFile()) {
+				return queue.enqueue(() -> loadBitmap(ctx, iconUri, memoryKey, 0));
+			}
+
+			File originalFile = toImageFile(normalized);
+			if (!originalFile.isFile()) return completedNull();
+			String localUri = Uri.fromFile(originalFile).toString();
+			return queue.enqueue(() -> {
+				Bitmap bitmap = loadBitmap(ctx, localUri, memoryKey, size);
+				if (resize && (bitmap != null) && (iconFile != null) && !iconFile.isFile()) {
+					saveIcon(bitmap, iconFile);
+				}
+				return bitmap;
+			});
+		}
+
+		boolean local = ContentResolver.SCHEME_FILE.equalsIgnoreCase(scheme) ||
+				ContentResolver.SCHEME_ANDROID_RESOURCE.equalsIgnoreCase(scheme) ||
+				ContentResolver.SCHEME_CONTENT.equalsIgnoreCase(scheme);
+		if (!local) return completedNull();
+		return queue.enqueue(() -> loadBitmap(ctx, normalized, iconUri, true, size));
+	}
+
 	@Nullable
 	private Bitmap getCachedBitmap(String uri) {
 		synchronized (cache) {

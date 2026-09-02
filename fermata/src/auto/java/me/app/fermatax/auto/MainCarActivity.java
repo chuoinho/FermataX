@@ -401,8 +401,13 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		getWindow().getDecorView().post(() -> {
 			if (input != activeInput) return;
 			input.requestFocus();
-			getKeyboardOverlay().show(input, submitOnEnter);
+			showKeyboardOverlay(input, submitOnEnter);
 		});
+	}
+
+	private void showKeyboardOverlay(EditText input, boolean submitOnEnter) {
+		getKeyboardOverlay().show(input, submitOnEnter);
+		notifyTextInputVisibilityChanged();
 	}
 
 	private CarKeyboardOverlay getKeyboardOverlay() {
@@ -448,6 +453,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	private void stopInputView() {
 		if (keyboardOverlay != null) keyboardOverlay.dismiss();
+		notifyTextInputVisibilityChanged();
 		if (activeInput != null) {
 			Object draft = activeInput.getTag(me.aap.utils.R.id.preference_input_draft);
 			if (draft instanceof CharSequence value) {
@@ -463,6 +469,11 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		textWatcher = null;
 		ownsEditorActionListener = false;
 		a().stopInput();
+	}
+
+	private void notifyTextInputVisibilityChanged() {
+		MainActivityDelegate delegate = createdDelegate;
+		if (delegate != null) delegate.onTextInputVisibilityChanged(isInputActive());
 	}
 
 	private void cancelTextInputSession() {
@@ -494,7 +505,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 				inputGeneration++;
 				setActiveEmbeddedInput(et);
 				et.requestFocus();
-				getKeyboardOverlay().show(et, false);
+				showKeyboardOverlay(et, false);
 			}
 		});
 		return et;

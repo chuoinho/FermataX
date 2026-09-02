@@ -36,6 +36,9 @@ fermatax-dhu-gallery-*/
 docs/*
 !docs/maintainability-refactor-goal-20260730.md
 !docs/package-identity.md
+!docs/smarttop/
+docs/smarttop/*
+!docs/smarttop/SMARTTOP_BACKGROUND_*.md
 !docs/stremio/
 !docs/stremio/**
 mockups/

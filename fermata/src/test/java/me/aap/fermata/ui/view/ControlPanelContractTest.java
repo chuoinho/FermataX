@@ -131,8 +131,23 @@ public class ControlPanelContractTest {
 		String presentation = source("ui/view/ControlPanelPresentationView.java");
 		assertTrue(presentation.contains("contentInsets.setPanelVisible"));
 		String panel = source("ui/view/ControlPanelView.java");
-		assertTrue(panel.contains("setPanelVisibility(state.controlsVisible() ? VISIBLE : GONE)"));
+		assertTrue(panel.contains("PlaybackUiPolicy.shouldRenderPlayerBar("));
+		assertTrue(panel.contains("state.controlsVisible(), textInputActive"));
 		assertFalse(panel.contains("setPanelVisibility(INVISIBLE)"));
+	}
+
+	@Test
+	public void projectedTextInputSuppressesEveryPlayerPresentationAndCoversToolbarInput()
+			throws Exception {
+		String panel = source("ui/view/ControlPanelView.java");
+		String activity = repositorySource(
+				"fermata/src/auto/java/me/app/fermatax/auto/MainCarActivity.java");
+		assertTrue(panel.contains("updatePanelVisibility(presentationCoordinator.getState())"));
+		assertFalse(panel.contains("if (isVideoModeActive(activity)) return;"));
+		assertTrue(activity.contains("showKeyboardOverlay(input, submitOnEnter)"));
+		assertTrue(activity.contains("showKeyboardOverlay(et, false)"));
+		assertTrue(activity.contains(
+				"delegate.onTextInputVisibilityChanged(isInputActive())"));
 	}
 
 	@Test
@@ -231,6 +246,10 @@ public class ControlPanelContractTest {
 	private static String resource(String relativePath) throws Exception {
 		return new String(Files.readAllBytes(repositoryRoot().resolve("fermata/src/main/res")
 				.resolve(relativePath)), UTF_8);
+	}
+
+	private static String repositorySource(String relativePath) throws Exception {
+		return new String(Files.readAllBytes(repositoryRoot().resolve(relativePath)), UTF_8);
 	}
 
 	private static Path repositoryRoot() {

@@ -75,6 +75,7 @@ public class ControlPanelView extends ConstraintLayout
 	private View gestureSource;
 	private long scrollStamp;
 	private boolean preparationControlsVisible;
+	private boolean textInputActive;
 
 	public ControlPanelView(Context context, AttributeSet attrs) {
 		super(context, attrs, R.attr.appControlPanelStyle);
@@ -277,6 +278,13 @@ public class ControlPanelView extends ConstraintLayout
 
 	private boolean isAudioPanelSupported(MainActivityDelegate a) {
 		return PlaybackUiPolicy.shouldShowAudioPlayerBar(a);
+	}
+
+	/** Suppresses only the rendered panel while modal input owns the automotive surface. */
+	public void onTextInputVisibilityChanged(boolean active) {
+		if (textInputActive == active) return;
+		textInputActive = active;
+		updatePanelVisibility(presentationCoordinator.getState());
 	}
 
 	private boolean isSplitModeSupported(MainActivityDelegate a) {
@@ -629,13 +637,19 @@ public class ControlPanelView extends ConstraintLayout
 
 	private void applyPresentation(State state) {
 		MainActivityDelegate a = getActivity();
-		setPanelVisibility(state.controlsVisible() ? VISIBLE : GONE);
+		updatePanelVisibility(state);
 		a.getFloatingButton().setVisibility(state.videoMode() || isAutoUi(a) ? GONE : VISIBLE);
 		a.setBarsHidden(state.barsHidden());
 		if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(state.barsHidden());
 		if (!state.barsHidden()) presentationView.updateVideoTitle(a);
 		setShowHideBarsIcon(a);
 		playbackTimerController.refresh(a);
+	}
+
+	private void updatePanelVisibility(State state) {
+		boolean visible = PlaybackUiPolicy.shouldRenderPlayerBar(
+				state.controlsVisible(), textInputActive);
+		setPanelVisibility(visible ? VISIBLE : GONE);
 	}
 
 	public void showMenu() {

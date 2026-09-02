@@ -2,7 +2,6 @@ package me.aap.fermata.ui.smarttop;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.net.Uri;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -33,7 +32,7 @@ public final class SmartTopBinder {
 
 	public record Views(
 			View root,
-			ImageView artwork,
+			ImageView sourceIcon,
 			TextView eyebrow,
 			TextView title,
 			TextView subtitle,
@@ -49,7 +48,7 @@ public final class SmartTopBinder {
 			List<TextView> recentItems) {
 		public Views {
 			Objects.requireNonNull(root, "root");
-			Objects.requireNonNull(artwork, "artwork");
+			Objects.requireNonNull(sourceIcon, "sourceIcon");
 			Objects.requireNonNull(eyebrow, "eyebrow");
 			Objects.requireNonNull(title, "title");
 			Objects.requireNonNull(subtitle, "subtitle");
@@ -68,17 +67,24 @@ public final class SmartTopBinder {
 
 	private final Context context;
 	private final Handler handler;
+	private final boolean backgroundEnabled;
 
 	public SmartTopBinder(Context context, Handler handler) {
+		this(context, handler, true);
+	}
+
+	public SmartTopBinder(Context context, Handler handler, boolean backgroundEnabled) {
 		this.context = Objects.requireNonNull(context, "context");
 		this.handler = Objects.requireNonNull(handler, "handler");
+		this.backgroundEnabled = backgroundEnabled;
 	}
 
 	public void bind(Views views, SmartTopViewState state, boolean editMode) {
 		views.root().setTag(R.id.dashboard_smart_state_tag, state);
 		views.root().setTag(R.id.dashboard_smart_bind_token,
 				new BindToken(state.generation(), itemId(state.presentedItem())));
-		bindArtwork(views, state);
+		bindSourceIcon(views, state);
+		bindBackground(views, state);
 		views.eyebrow().setVisibility(View.VISIBLE);
 		views.eyebrow().setText(state.eyebrow());
 		views.title().setText(state.title());
@@ -186,27 +192,47 @@ public final class SmartTopBinder {
 		}
 	}
 
-	private void bindArtwork(Views views, SmartTopViewState state) {
-		ImageView artwork = views.artwork();
+	private void bindSourceIcon(Views views, SmartTopViewState state) {
+		ImageView sourceIcon = views.sourceIcon();
 		ColorStateList tint = context.getColorStateList(R.color.dashboard_smart_action_v2_tint);
-		artwork.setImageTintList(tint);
-		artwork.setImageResource(state.icon());
-		artwork.setTag(R.id.dashboard_smart_bind_token, null);
-		PlayableItem item = state.presentedItem();
-		if (item == null) return;
-		BindToken token = new BindToken(state.generation(), itemId(item));
-		artwork.setTag(R.id.dashboard_smart_bind_token, token);
-		item.getIconUri().main().onSuccess(uri -> loadArtwork(artwork, item, token, uri));
+		sourceIcon.setImageTintList(tint);
+		sourceIcon.setImageResource(state.icon());
 	}
 
-	private void loadArtwork(ImageView artwork, PlayableItem item, BindToken token, Uri uri) {
-		if ((uri == null) || !token.equals(artwork.getTag(R.id.dashboard_smart_bind_token))) return;
-		item.getLib().getBitmap(uri.toString(), true, true).main().onSuccess(bitmap -> {
-			if ((bitmap == null) || !token.equals(
-					artwork.getTag(R.id.dashboard_smart_bind_token))) return;
-			artwork.setImageTintList(null);
-			artwork.setImageBitmap(bitmap);
-		});
+	private void bindBackground(Views views, SmartTopViewState state) {
+		View root = views.root();
+		if (!backgroundEnabled) {
+			root.setTag(R.id.dashboard_smart_background_bind_token, null);
+			root.setTag(R.id.dashboard_smart_background_drawable_tag, null);
+			root.setBackgroundResource(R.drawable.dashboard_smart_top_bg);
+			return;
+		}
+
+		SmartTopBackground background = state.background();
+		SmartTopCardBackgroundFactory.RenderedBackground rendered =
+				SmartTopCardBackgroundFactory.create(context, background.kind());
+		BackgroundBindToken token = new BackgroundBindToken(state.generation(),
+				itemId(state.presentedItem()), background.identity());
+		root.setTag(R.id.dashboard_smart_background_bind_token, token);
+		root.setTag(R.id.dashboard_smart_background_drawable_tag, rendered.content());
+		root.setBackground(rendered.ripple());
+
+		PlayableItem item = state.presentedItem();
+		if ((background.kind() != SmartTopBackground.Kind.ARTWORK) ||
+				(background.artworkUri() == null) || (item == null) ||
+				!SmartTopArtworkResolver.isAllowed(context, background.artworkUri())) return;
+
+		item.getLib().getBitmapCache()
+				.getBitmapIfCached(context, background.artworkUri().toString(), false)
+				.main().onSuccess(bitmap -> {
+					if ((bitmap == null) || bitmap.isRecycled() ||
+							!token.equals(root.getTag(
+									R.id.dashboard_smart_background_bind_token))) return;
+					if (!SmartTopBackgroundPolicy.eligibleDimensions(
+							bitmap.getWidth(), bitmap.getHeight(), false)) return;
+					Object current = root.getTag(R.id.dashboard_smart_background_drawable_tag);
+					if (current == rendered.content()) rendered.content().setArtwork(bitmap);
+				});
 	}
 
 	private void bindTimeline(Views views, SmartTopTimeline timeline) {
@@ -260,6 +286,8 @@ public final class SmartTopBinder {
 			view.setVisibility(View.VISIBLE);
 			view.setText(item.getName());
 			view.setCompoundDrawablesRelativeWithIntrinsicBounds(item.getIcon(), 0, 0, 0);
+			view.setCompoundDrawableTintList(
+					context.getColorStateList(R.color.dashboard_smart_recent_icon_tint));
 			view.setCompoundDrawablePadding(me.aap.utils.ui.UiUtils.toIntPx(context, 6));
 			view.setClickable(true);
 			view.setFocusable(true);
@@ -299,6 +327,7 @@ public final class SmartTopBinder {
 		view.setFocusable(false);
 		view.setTag(null);
 		view.setTag(R.id.dashboard_smart_bind_token, null);
+		view.setCompoundDrawableTintList(null);
 		view.setCompoundDrawablesRelative(null, null, null, null);
 		view.setCompoundDrawablePadding(0);
 	}
@@ -379,6 +408,9 @@ public final class SmartTopBinder {
 	}
 
 	public record BindToken(long generation, String itemId) {
+	}
+
+	record BackgroundBindToken(long generation, String itemId, String backgroundIdentity) {
 	}
 
 	public record RemainingTime(int hours, int minutes) {

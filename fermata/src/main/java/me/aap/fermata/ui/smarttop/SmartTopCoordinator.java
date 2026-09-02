@@ -1,6 +1,8 @@
 package me.aap.fermata.ui.smarttop;
 
 import android.content.Context;
+import android.net.Uri;
+import android.support.v4.media.MediaMetadataCompat;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
@@ -128,12 +130,15 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		List<SmartTopAction> actions =
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, layout, capabilities);
 		SmartTopTimeline timeline = activeTimeline(active);
+		SmartTopBackground background = currentBackground(current, active, snapshot.getMetadata());
 
 		SmartTopViewState next = new SmartTopViewState(current.generation(), SmartTopMode.CURRENT,
 				layout, active, PlayableItemResolver.unwrap(active), active.getIcon(),
+				background,
 				context.getString(R.string.dashboard_now_playing), title, subtitle, timeline,
 				capabilities, actions, favorite, current.quickRecent(), null);
 		boolean metadataStable = (current.icon() == next.icon()) &&
+				current.background().identity().equals(next.background().identity()) &&
 				TextUtils.equals(current.eyebrow(), next.eyebrow()) &&
 				TextUtils.equals(current.title(), next.title()) &&
 				TextUtils.equals(current.subtitle(), next.subtitle()) &&
@@ -161,11 +166,14 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		boolean favoriteSupported = !active.isExternal();
 		SmartTopCapabilities capabilities = SmartTopCapabilities.current(favoriteSupported);
 		SmartTopTimeline timeline = activeTimeline(active);
-		publish(new SmartTopViewState(generation, SmartTopMode.CURRENT, layout,
+		SmartTopViewState current = new SmartTopViewState(generation, SmartTopMode.CURRENT, layout,
 				active, PlayableItemResolver.unwrap(active), active.getIcon(),
+				backgroundFor(active, snapshot.getMetadata()),
 				context.getString(R.string.dashboard_now_playing), title, subtitle(active), timeline,
 				capabilities, SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, layout, capabilities),
-				favoriteSupported && active.isFavoriteItem(), List.of(), null));
+				favoriteSupported && active.isFavoriteItem(), List.of(), null);
+		publish(current);
+		loadItemMetadata(generation, active, false);
 	}
 
 	private void loadQuickRecent(int generation, PlayableItem active) {
@@ -256,26 +264,39 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(favoriteSupported);
 		CharSequence subtitle = subtitle(item);
 		SmartTopViewState viewState = new SmartTopViewState(generation, mode, layout,
-				item, PlayableItemResolver.unwrap(item), item.getIcon(), eyebrow(mode), item.getName(),
+				item, PlayableItemResolver.unwrap(item), item.getIcon(), fallbackBackground(item),
+				eyebrow(mode), item.getName(),
 				subtitle, timeline, capabilities,
 				SmartTopActionPolicy.resolve(mode, layout, capabilities),
 				favoriteSupported && item.isFavoriteItem(), List.of(), null);
 		publish(viewState);
 		loadQuickRecent(generation, item);
+		loadItemMetadata(generation, item, true);
+	}
+
+	private void loadItemMetadata(int generation, PlayableItem item, boolean updateTitle) {
 		item.getMediaData().main().onSuccess(metadata -> {
 			if (!owns(generation)) return;
 			SmartTopViewState current = state;
 			if ((current == null) || (current.generation() != generation) ||
-					(current.presentedItem() != item)) return;
-			CharSequence title = PlaybackSnapshot.resolveDisplayTitle(item, metadata);
-			publish(current.withTitle(title));
+					(current.presentedItem() == null) ||
+					!samePlayable(current.presentedItem(), item)) return;
+			if ((current.mode() == SmartTopMode.CURRENT) && !isCurrent(item)) return;
+			SmartTopViewState next = current;
+			if (updateTitle) {
+				CharSequence title = PlaybackSnapshot.resolveDisplayTitle(item, metadata);
+				if (!TextUtils.equals(current.title(), title)) next = next.withTitle(title);
+			}
+			SmartTopBackground background = backgroundFor(item, metadata);
+			if (!next.background().equals(background)) next = next.withBackground(background);
+			if (next != current) publish(next);
 		});
 	}
 
 	private SmartTopViewState empty(int generation, SmartTopLayoutMode layout) {
 		SmartTopCapabilities capabilities = SmartTopCapabilities.NONE;
 		return new SmartTopViewState(generation, SmartTopMode.EMPTY, layout,
-				null, null, R.drawable.view_grid,
+				null, null, R.drawable.view_grid, SmartTopBackground.empty(),
 				context.getString(R.string.dashboard_smart_discover),
 				context.getString(R.string.dashboard_smart_empty_title),
 				context.getString(R.string.dashboard_smart_empty_subtitle),
@@ -291,8 +312,16 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		SmartTopTimeline timeline = new SmartTopTimeline(
 				PlaybackTimelinePolicy.Mode.SEEKABLE, candidate.positionMillis(),
 				candidate.durationMillis(), false);
+		SmartTopBackground.Kind backgroundKind = SmartTopBackgroundPolicy.select(
+				false, false, SmartTopArtworkResolver.isProvenAudioAddon(
+						AddonManager.get().getAddonInfo(candidate.addonClass())));
+		SmartTopBackground background =
+				(backgroundKind == SmartTopBackground.Kind.AUDIO_SPECTRUM) ?
+						SmartTopBackground.audioSpectrum(candidate.addonClass()) :
+						SmartTopBackground.sourceFallback(candidate.addonClass());
 		publish(new SmartTopViewState(generation, SmartTopMode.RESUME, layout, null, null,
 				candidate.video() ? R.drawable.video : R.drawable.audiotrack,
+				background,
 				eyebrow(SmartTopMode.RESUME), candidate.title(), candidate.subtitle(), timeline, capabilities,
 				SmartTopActionPolicy.resolve(SmartTopMode.RESUME, layout, capabilities), false, List.of(),
 				providerResult));
@@ -327,6 +356,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		SmartTopCapabilities capabilities = SmartTopCapabilities.suggestion(false);
 		publish(new SmartTopViewState(failed.generation(), SmartTopMode.RECOVERY, layout,
 				null, null, R.drawable.refresh,
+				SmartTopBackground.sourceFallback("recovery"),
 				context.getString(R.string.dashboard_smart_recovery),
 				context.getString(R.string.dashboard_smart_recovery_title),
 				context.getString(R.string.dashboard_smart_recovery_subtitle),
@@ -434,6 +464,45 @@ public final class SmartTopCoordinator implements AutoCloseable {
 		if (item.getParent() == null) return "";
 		CharSequence subtitle = item.getParent().getName();
 		return TextUtils.isEmpty(subtitle) ? "" : subtitle;
+	}
+
+	private SmartTopBackground currentBackground(SmartTopViewState current, PlayableItem item,
+			@Nullable MediaMetadataCompat metadata) {
+		if ((metadata == null) &&
+				(current.background().kind() == SmartTopBackground.Kind.ARTWORK)) {
+			return current.background();
+		}
+		return backgroundFor(item, metadata);
+	}
+
+	private SmartTopBackground backgroundFor(PlayableItem item,
+			@Nullable MediaMetadataCompat metadata) {
+		Uri artwork = SmartTopArtworkResolver.directArtworkUri(metadata);
+		boolean eligibleArtwork = SmartTopArtworkResolver.isAllowed(context, artwork);
+		String rootId = item.getRoot().getId();
+		SmartTopBackground.Kind kind = SmartTopBackgroundPolicy.select(false, eligibleArtwork,
+				SmartTopArtworkResolver.isProvenAudioRoot(item.getRoot()));
+		return switch (kind) {
+			case ARTWORK -> {
+				String itemIdentity = TextUtils.isEmpty(item.getOrigId()) ?
+						item.getId() : item.getOrigId();
+				yield SmartTopBackground.artwork(Objects.requireNonNull(artwork), itemIdentity);
+			}
+			case AUDIO_SPECTRUM -> SmartTopBackground.audioSpectrum(rootId);
+			case SOURCE_FALLBACK -> SmartTopBackground.sourceFallback(
+					TextUtils.isEmpty(rootId) ? item.getClass().getName() : rootId);
+			case EMPTY -> throw new IllegalStateException("Concrete item selected Empty background");
+		};
+	}
+
+	private static SmartTopBackground fallbackBackground(PlayableItem item) {
+		String rootId = item.getRoot().getId();
+		SmartTopBackground.Kind kind = SmartTopBackgroundPolicy.select(false, false,
+				SmartTopArtworkResolver.isProvenAudioRoot(item.getRoot()));
+		return (kind == SmartTopBackground.Kind.AUDIO_SPECTRUM) ?
+				SmartTopBackground.audioSpectrum(rootId) :
+				SmartTopBackground.sourceFallback(
+						TextUtils.isEmpty(rootId) ? item.getClass().getName() : rootId);
 	}
 
 	@Nullable

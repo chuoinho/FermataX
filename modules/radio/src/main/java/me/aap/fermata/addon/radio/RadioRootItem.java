@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.aap.fermata.addon.AddonCapability;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.MediaLib;
@@ -22,7 +23,7 @@ public class RadioRootItem extends ExtRoot implements RadioItem {
 	private final RadioSourceStore sourceStore;
 
 	public RadioRootItem(DefaultMediaLib lib) {
-		super(ID, lib);
+		super(ID, lib, AddonCapability.RADIO);
 		api = new RadioBrowserApi();
 		sourceStore = new RadioSourceStore(lib.getContext());
 	}

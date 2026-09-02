@@ -41,19 +41,19 @@ public final class SmartTopLayoutController {
 		}
 		root.setMinimumHeight(height);
 
-		ImageView artwork = root.findViewById(R.id.dashboard_item_icon);
+		ImageView sourceIcon = root.findViewById(R.id.dashboard_item_icon);
 		int artworkSize = px(root, spec.artworkSizeDp());
 		ConstraintLayout.LayoutParams artworkParams =
-				(ConstraintLayout.LayoutParams) artwork.getLayoutParams();
+				(ConstraintLayout.LayoutParams) sourceIcon.getLayoutParams();
 		if ((artworkParams.width != artworkSize) || (artworkParams.height != artworkSize)) {
 			artworkParams.width = artworkSize;
 			artworkParams.height = artworkSize;
 		}
 		artworkParams.bottomToBottom = ConstraintLayout.LayoutParams.UNSET;
 		artworkParams.verticalBias = 0.5F;
-		artwork.setLayoutParams(artworkParams);
+		sourceIcon.setLayoutParams(artworkParams);
 		int artworkPadding = px(root, spec.artworkPaddingDp());
-		artwork.setPadding(artworkPadding, artworkPadding, artworkPadding, artworkPadding);
+		sourceIcon.setPadding(artworkPadding, artworkPadding, artworkPadding, artworkPadding);
 
 		View guide = root.findViewById(R.id.dashboard_smart_context_guide);
 		ConstraintLayout.LayoutParams guideParams =

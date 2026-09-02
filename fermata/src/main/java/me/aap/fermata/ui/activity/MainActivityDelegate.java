@@ -630,6 +630,12 @@ public class MainActivityDelegate extends ActivityDelegate
 		return controlPanel;
 	}
 
+	/** Applies modal text-input policy while preserving the playback state behind the modal UI. */
+	public void onTextInputVisibilityChanged(boolean inputActive) {
+		ControlPanelView panel = controlPanel;
+		if (panel != null) panel.onTextInputVisibilityChanged(inputActive);
+	}
+
 	public FloatingButton getFloatingButton() {
 		return floatingButton;
 	}

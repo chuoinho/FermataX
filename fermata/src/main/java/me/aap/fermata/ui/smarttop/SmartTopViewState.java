@@ -17,6 +17,7 @@ public record SmartTopViewState(
 		@Nullable PlayableItem presentedItem,
 		@Nullable PlayableItem canonicalItem,
 		@DrawableRes int icon,
+		SmartTopBackground background,
 		CharSequence eyebrow,
 		CharSequence title,
 		CharSequence subtitle,
@@ -31,6 +32,7 @@ public record SmartTopViewState(
 	public SmartTopViewState {
 		Objects.requireNonNull(mode, "mode");
 		Objects.requireNonNull(layout, "layout");
+		Objects.requireNonNull(background, "background");
 		Objects.requireNonNull(eyebrow, "eyebrow");
 		Objects.requireNonNull(title, "title");
 		Objects.requireNonNull(subtitle, "subtitle");
@@ -50,13 +52,20 @@ public record SmartTopViewState(
 	public SmartTopViewState withLayout(SmartTopLayoutMode nextLayout) {
 		if (layout == nextLayout) return this;
 		return new SmartTopViewState(generation, mode, nextLayout, presentedItem, canonicalItem,
-				icon, eyebrow, title, subtitle, timeline, capabilities, actions, favorite,
+				icon, background, eyebrow, title, subtitle, timeline, capabilities, actions, favorite,
 				quickRecent, providerResult);
 	}
 
 	public SmartTopViewState withTitle(CharSequence nextTitle) {
 		return new SmartTopViewState(generation, mode, layout, presentedItem, canonicalItem,
-				icon, eyebrow, nextTitle, subtitle, timeline, capabilities, actions,
+				icon, background, eyebrow, nextTitle, subtitle, timeline, capabilities, actions,
+				favorite, quickRecent, providerResult);
+	}
+
+	public SmartTopViewState withBackground(SmartTopBackground nextBackground) {
+		if (background.equals(nextBackground)) return this;
+		return new SmartTopViewState(generation, mode, layout, presentedItem, canonicalItem,
+				icon, nextBackground, eyebrow, title, subtitle, timeline, capabilities, actions,
 				favorite, quickRecent, providerResult);
 	}
 
@@ -64,13 +73,13 @@ public record SmartTopViewState(
 		List<PlayableItem> bounded = recent.isEmpty() ? List.of() :
 				List.copyOf(recent.subList(0, Math.min(MAX_QUICK_RECENT, recent.size())));
 		return new SmartTopViewState(generation, mode, layout, presentedItem, canonicalItem,
-				icon, eyebrow, title, subtitle, timeline, capabilities, actions,
+				icon, background, eyebrow, title, subtitle, timeline, capabilities, actions,
 				favorite, bounded, providerResult);
 	}
 
 	public SmartTopViewState withTimeline(SmartTopTimeline nextTimeline) {
 		return new SmartTopViewState(generation, mode, layout, presentedItem, canonicalItem,
-				icon, eyebrow, title, subtitle, nextTimeline, capabilities, actions,
+				icon, background, eyebrow, title, subtitle, nextTimeline, capabilities, actions,
 				favorite, quickRecent, providerResult);
 	}
 }
