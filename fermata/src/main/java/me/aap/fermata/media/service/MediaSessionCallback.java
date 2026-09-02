@@ -48,7 +48,6 @@ import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.function.CheckedRunnable.runWithRetry;
 import static me.aap.utils.misc.Assert.assertNotNull;
 import static me.aap.utils.misc.MiscUtils.ifNotNull;
 
@@ -90,6 +89,7 @@ import java.util.Queue;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.audio.AudioEffectsController;
 import me.aap.fermata.media.engine.EngineSelection;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
@@ -179,6 +179,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			});
 	private final RemotePlaybackLifecycleController playbackLifecycle;
 	private final PlaybackTransition playbackTransition = new PlaybackTransition();
+	private final AudioEffectsController audioEffectsController = new AudioEffectsController(FermataApplication.get().getPreferenceStore());
 	private final PlaybackPreparationStatus preparationStatus = new PlaybackPreparationStatus();
 	private final DeferredInitialSeek deferredInitialSeek = new DeferredInitialSeek();
 	private final PlaybackProgressPolicy progressPolicy = new PlaybackProgressPolicy();
@@ -699,6 +700,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public void close() {
 		hardwareInputRouter.close();
 		stopImmediately();
+		audioEffectsController.close();
 		progressCoordinator.cancelCheckpoint();
 		progressPolicy.clear();
 		session.setActive(false);
@@ -963,6 +965,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				}
 			}
 
+			audioEffectsController.unbind(eng);
 			MediaEngineShutdown.release(eng, audioManager, audioFocusReq);
 		}
 
@@ -1311,11 +1314,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 
 		float speed = getSpeed(target);
-		PlayableItemPrefs prefs = target.getPrefs();
-		BrowsableItemPrefs parentPrefs = target.getParent().getPrefs();
-		PlaybackControlPrefs playbackPrefs = getPlaybackControlPrefs();
-		runWithRetry(() -> AudioEffectsLegacyApplier.apply(engine, playbackPrefs, prefs,
-				parentPrefs));
+		audioEffectsController.bind(engine);
 
 		boolean committed = playbackOwnership.commit(engine, target);
 		boolean alreadyCommitted = !committed && playbackOwnership.ownsCommitted(engine, target);
@@ -1336,6 +1335,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onEngineStarted(MediaEngine engine) {
 		if (!acceptsEngineCallback(engine)) return;
+		audioEffectsController.bind(engine);
 		notifyPlaybackLifecycle((l, revision) -> l.onPlaybackAttemptStarted(revision));
 		long requestRevision = playbackRequestRevision;
 		PlaybackOwnership.StateToken stateOwner = playbackOwnership.captureState();

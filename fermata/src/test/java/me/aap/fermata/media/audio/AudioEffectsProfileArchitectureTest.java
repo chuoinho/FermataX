@@ -32,6 +32,32 @@ public class AudioEffectsProfileArchitectureTest {
 	}
 
 	@Test
+	public void nativeSessionControllerIsTheOnlyNormalPlaybackAuthority() throws Exception {
+		String callback = source("media/service/MediaSessionCallback.java");
+		assertTrue(callback.contains("AudioEffectsController"));
+		assertFalse(callback.contains("AudioEffectsLegacyApplier.apply"));
+		assertTrue(source("media/audio/AudioEffectsController.java").contains("getAudioSessionId()"));
+	}
+
+	@Test
+	public void nativeEnginesOnlyExposeTheirAudioSession() throws Exception {
+		assertFalse(source("media/engine/MediaPlayerEngine.java").contains("AudioEffects.create"));
+		assertFalse(moduleSource("exoplayer/src/main/java/me/aap/fermata/engine/exoplayer/ExoPlayerEngine.java")
+				.contains("AudioEffects.create"));
+		assertFalse(moduleSource("vlc/src/main/java/me/aap/fermata/engine/vlc/VlcEngine.java")
+				.contains("AudioEffects.create"));
+	}
+
+	@Test
+	public void nativeSessionBackendCannotAttachEffectsToSessionZero() throws Exception {
+		String backend = source("media/audio/NativeSessionAudioEffectsBackend.java");
+		assertTrue(backend.contains("return audioSessionId > 0"));
+		assertFalse(backend.contains("new Equalizer(EFFECT_PRIORITY, 0)"));
+		assertFalse(backend.contains("new DynamicsProcessing(0)"));
+		assertFalse(backend.contains("new android.media.audiofx.DynamicsProcessing(0)"));
+	}
+
+	@Test
 	public void audioEqualizerTitleIsTranslatedInEverySupportedLocale() throws Exception {
 		Path root = Path.of(System.getProperty("user.dir"));
 		Path resources = root.resolve("src/main/res");
@@ -58,5 +84,11 @@ public class AudioEffectsProfileArchitectureTest {
 		if (!Files.isRegularFile(file)) file = root.resolve("fermata/src/main/java/me/aap/fermata")
 				.resolve(relativePath);
 		return new String(Files.readAllBytes(file), UTF_8);
+	}
+
+	private static String moduleSource(String relativePath) throws Exception {
+		Path root = Path.of(System.getProperty("user.dir"));
+		if (!Files.isDirectory(root.resolve("modules"))) root = root.getParent();
+		return new String(Files.readAllBytes(root.resolve("modules").resolve(relativePath)), UTF_8);
 	}
 }

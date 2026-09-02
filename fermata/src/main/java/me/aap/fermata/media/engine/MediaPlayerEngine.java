@@ -40,7 +40,6 @@ public class MediaPlayerEngine extends MediaEngineBase
 	private static final long PREPARE_TIMEOUT_MILLIS = 20_000L;
 	private final Context ctx;
 	private final MediaPlayer player;
-	private final AudioEffects audioEffects;
 	private final EnginePrepareWatchdog prepareWatchdog;
 	private PlayableItem source;
 
@@ -48,8 +47,6 @@ public class MediaPlayerEngine extends MediaEngineBase
 		super(listener);
 		this.ctx = ctx;
 		player = new MediaPlayer();
-		int sessionId = player.getAudioSessionId();
-		audioEffects = AudioEffects.create(0, sessionId);
 		AudioAttributes attrs = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
 				.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
 		player.setAudioAttributes(attrs);
@@ -215,10 +212,9 @@ public class MediaPlayerEngine extends MediaEngineBase
 		return new VideoFormatSnapshot(width, height, width, height, 1f);
 	}
 
-	@NonNull
 	@Override
-	public AudioEffects getAudioEffects() {
-		return audioEffects;
+	public int getAudioSessionId() {
+		return player.getAudioSessionId();
 	}
 
 	@Override
@@ -272,7 +268,6 @@ public class MediaPlayerEngine extends MediaEngineBase
 		} catch (IllegalStateException ignore) {
 		}
 
-		if (audioEffects != null) audioEffects.release();
 		player.release();
 		source = null;
 	}

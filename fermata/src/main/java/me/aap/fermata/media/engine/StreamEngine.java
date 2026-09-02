@@ -364,9 +364,8 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	}
 
 	@Override
-	@Nullable
-	public AudioEffects getAudioEffects() {
-		return eng.getAudioEffects();
+	public int getAudioSessionId() {
+		return eng.getAudioSessionId();
 	}
 
 	public boolean isSubtitlesSupported() {

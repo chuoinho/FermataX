@@ -2,6 +2,8 @@ package me.aap.fermata.media.audio;
 
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 
+import java.util.List;
+
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
@@ -102,6 +104,26 @@ public final class AudioEffectsProfileRepository {
 	public LegacyAudioEffectsSnapshot getLegacySnapshot() {
 		ensureInitialized();
 		return readLegacySnapshot();
+	}
+
+	/** True when a preference update changes the profile that native playback must apply. */
+	public static boolean isProfilePreference(Pref<?> pref) {
+		if ((pref == ENABLED) || (pref == EQUALIZER_ENABLED) || (pref == PREAMP_DB) ||
+				(pref == BASS_BOOST_ENABLED) || (pref == BASS_BOOST_STRENGTH) ||
+				(pref == LOUDNESS_ENABLED) || (pref == LOUDNESS_GAIN) ||
+				(pref == VIRTUALIZER_ENABLED) || (pref == VIRTUALIZER_STRENGTH) ||
+				(pref == VIRTUALIZER_MODE)) return true;
+		for (Pref<?> band : CANONICAL_CURVE_DB) {
+			if (pref == band) return true;
+		}
+		return false;
+	}
+
+	public static boolean containsProfilePreference(List<Pref<?>> prefs) {
+		for (Pref<?> pref : prefs) {
+			if (isProfilePreference(pref)) return true;
+		}
+		return false;
 	}
 
 	private void ensureInitialized() {
