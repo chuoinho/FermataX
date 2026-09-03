@@ -2,12 +2,12 @@
 
 ## Status
 
-`NATIVE_EQ_A3_PARTIAL_RUNTIME_VALIDATION`
+`NATIVE_EQ_A_PHONE_PARTIAL_AUDIBLE_DSP_EVIDENCE`
 
 Accepted A2 baseline: `0c0cc26e` (`docs(audio): record native EQ A2
 acceptance`).  A3 adds the user-facing negative-only Preamp control and its
-input contract.  The implementation is still uncommitted while A3 remains
-partial.
+input contract.  The A3 implementation and this earlier report checkpoint are
+committed in `89ad0940` (`feat(audio): expose negative preamp control`).
 
 The phone session/lifecycle evidence is strong.  The phase remains partial
 because clean per-engine DSP-output acceptance (including audible or measured
@@ -110,13 +110,12 @@ row was a test procedure defect: the installed package was
 the original direct preference row renders correctly
 (`a3-preamp-visible.*`).
 
-The profile was restored through the normal UI after test navigation: master
-and Equalizer are enabled; Preamp is `0`; visible values are `31=0`, `62=0`,
-`125=-12`, `250=0`, `500=0`, `1k=0`, `2k=0`, `4k=-3`, `8k=0`, and `16k=0`.
-Bass boost, Volume boost, and Virtualizer remain disabled.  No measured signal
-capture or human listening record was performed.  Consequently this report
-makes no claim that a `-10 dB` edit or the `-6 dB` preamp edit produced an
-audible or measured output delta; a future subjective run must be labelled
+The earlier profile-restoration observation is retained as historical
+evidence only. The current exact profile snapshot and its status are recorded
+in the A3 fast-closure section below. No measured signal capture or human
+listening record was performed. Consequently this report makes no claim that
+a `-10 dB` edit or the `-6 dB` preamp edit produced an audible or measured
+output delta; a future subjective run must be labelled
 `AUDIBLE_DSP_ACCEPTANCE`, and instrumented signal capture is required for a
 measured-DSP claim.
 
@@ -190,3 +189,103 @@ was empty.  Native EQ-A2 introduced no WebAudio, YouTube, generic WebView, or
 3. Only after these gates pass, remove `.native-eq-a-temp/` and
    `/sdcard/Download/FermataX-NativeEQ-A/`, verify no ADB forwarding/reverse
    resources remain, and update this report to a final closed status.
+
+## Native EQ-A3 Fast DSP Closure
+
+### Baseline And Scope
+
+This closure checkpoint used `89ad0940d7e052fad3b1485554d1750eaa90b98c` on
+`15c36230` (`me.app.fermataX.auto.test`, Android API 36 / Android 16). There
+was no production or test-source diff after that commit; only the deliberately
+untracked `.native-eq-a-temp/` evidence directory existed before this report
+update. The accepted A2 lifecycle/session matrix was not repeated.
+
+The device's `screenrecord --help` exposes display capture only and has no
+audio-capture option. No trusted PCM capture route is available and no human
+listener supplied controlled A/B confirmation. Therefore this checkpoint did
+not alter the profile, start playback, or claim `AUDIBLE_DSP_ACCEPTANCE` from
+UI, AudioFlinger, or effect-session evidence alone.
+
+### Original And Restored Profile
+
+The visible normal-UI snapshot is stored locally as
+`a3sprint-profile-main-current.*`, `a3sprint-eq-top-current.*`, and
+`a3sprint-eq-bottom-current.*`. It records the following exact profile before
+any test action:
+
+| Setting | Observed value |
+| --- | --- |
+| Master | `ON` |
+| Equalizer | `ON` |
+| Preamp | `0 dB` |
+| 31, 62, 125, 250, 500 Hz | all `0 dB` |
+| 1, 2, 4, 8, 16 kHz | all `0 dB` |
+| Bass boost | `OFF` |
+| Volume boost | `OFF` |
+| Virtualizer | `OFF` |
+
+Because a valid audible observer was unavailable, no setting was changed. The
+restored profile is therefore exactly the original profile; this is visibly
+verified by the same snapshot set, including all ten bands and the three
+optional effects.
+
+### Shared Native Backend Audit
+
+The normal native path is source-proven without adding instrumentation:
+
+`MediaPlayerEngine`, `ExoPlayerEngine`, and `VlcEngine` each expose their
+current engine-owned session through `getAudioSessionId()`; `StreamEngine`
+delegates that session. `MediaSessionCallback` calls
+`AudioEffectsController.bind(...)` at prepare/start and rebinds on a changed
+session. The controller creates the single
+`NativeSessionAudioEffectsBackend`, which applies EQ, preamp, BassBoost,
+LoudnessEnhancer, and Virtualizer only to a positive session ID. This proves
+one shared native backend authority, not functional DSP output on every route.
+
+On this Android 16 device, the backend deliberately does not construct a
+`Virtualizer` on API 35 or newer. It is consequently
+`UNSUPPORTED_DEVICE_CAPABILITY` for this phone-side run, rather than a failed
+effect.
+
+### Final Phone DSP Matrix At This Checkpoint
+
+| Check | MediaPlayer | ExoPlayer | VLC |
+| --- | --- | --- | --- |
+| Session sanity | `PASS` (accepted A2 physical evidence) | `PASS` (accepted A2 physical evidence) | `PASS` (accepted A2 physical evidence) |
+| EQ 1 kHz `0 -> -10 -> 0` | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| DSP evidence type | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Preamp `0 -> -6 -> 0` | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Master `OFF -> ON` | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| BassBoost | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Loudness | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Virtualizer | `UNSUPPORTED_DEVICE_CAPABILITY` | `UNSUPPORTED_DEVICE_CAPABILITY` | `UNSUPPORTED_DEVICE_CAPABILITY` |
+| Playback regression | `PASS` (accepted A2 lifecycle matrix) | `PASS` (accepted A2 lifecycle matrix) | `PASS` (accepted A2 lifecycle matrix) |
+
+`COVERED_BY_SHARED_NATIVE_BACKEND` in the optional-effect rows is an
+architecture coverage classification, not a functional acceptance result. It
+must not be promoted until one representative engine has an audible
+ON/OFF/ON observation.
+
+### Automated, Release, And Cleanup Evidence
+
+On this checkpoint, `:fermata:testAutoDebugUnitTest`,
+`:exoplayer:testAutoDebugUnitTest`, and `:vlc:testAutoDebugUnitTest` completed
+successfully (all tasks up-to-date; no failures). `ArchitectureBoundaryTest`
+remains included by the Fermata focused suite. There was no production/test
+source change, so the previously verified universal release evidence is reused:
+APK Signature Scheme v3 is `true` and the immutable `aauto.aar` SHA-256 remains
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+`adb forward --list` and `adb reverse --list` were both empty at cleanup. No
+AA/DHU attempt was made; its independent status remains
+`AA_NATIVE_EQ_BLOCKED_ENVIRONMENT`. The untracked local evidence remains in
+place until a final audio-observer checkpoint can close the phone gate.
+
+### Verdict And Narrow Next Checkpoint
+
+Phone status remains `NATIVE_EQ_A_PHONE_PARTIAL_AUDIBLE_DSP_EVIDENCE`.
+`NATIVE_EQ_A_PHONE_FULL_PASS` cannot be claimed without controlled human
+audible confirmation (or an objective output capture) for EQ, preamp, and
+master on all three accepted engine paths, plus one representative optional
+effect run where supported. No product defect was demonstrated, so no source
+change was made. AA/DHU remains `AA_NATIVE_EQ_BLOCKED_ENVIRONMENT`.
