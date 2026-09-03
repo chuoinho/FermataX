@@ -289,3 +289,55 @@ audible confirmation (or an objective output capture) for EQ, preamp, and
 master on all three accepted engine paths, plus one representative optional
 effect run where supported. No product defect was demonstrated, so no source
 change was made. AA/DHU remains `AA_NATIVE_EQ_BLOCKED_ENVIRONMENT`.
+
+## Native EQ-A4 Manual Audible Final Closure
+
+### Checkpoint Result
+
+Baseline was `49a7e0c8`. This was a manual-listening checkpoint on
+`15c36230` using the retained local 45-second tone files. Production and test
+source remained unchanged. The existing A2 lifecycle and session-replacement
+matrices were not repeated, and AA/DHU was not retried.
+
+MediaPlayer was selected as the preferred audio engine. A live FermataX media
+session was observed in `PLAYING` state and the A2 session-match evidence
+remains the accepted quick-sanity evidence. With the tone playing, the user
+explicitly confirmed that 1 kHz at `-10 dB` was clearly quieter than `0 dB`,
+then explicitly confirmed the return to the baseline loudness after restoring
+1 kHz to `0 dB`. This is `AUDIBLE_DSP_ACCEPTANCE`, not a measured claim.
+
+The user was unavailable for further listening before Preamp, Master,
+ExoPlayer, VLC, BassBoost, and Loudness checks could be completed. Those rows
+remain `NOT_OBSERVED`; no result is inferred from UI or AudioFlinger state.
+
+| Check | MediaPlayer | ExoPlayer | VLC |
+| --- | --- | --- | --- |
+| Session sanity | `PASS` (accepted A2 physical evidence) | `PASS` (accepted A2 physical evidence) | `PASS` (accepted A2 physical evidence) |
+| EQ 1 kHz `0 -> -10 -> 0` | `AUDIBLE_DSP_ACCEPTANCE` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Preamp `0 -> -6 -> 0` | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Master `ON -> OFF -> ON` | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| BassBoost | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Loudness | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Virtualizer | `UNSUPPORTED_DEVICE_CAPABILITY` | `UNSUPPORTED_DEVICE_CAPABILITY` | `UNSUPPORTED_DEVICE_CAPABILITY` |
+| Playback regression | `PASS` (accepted A2 lifecycle matrix) | `PASS` (accepted A2 lifecycle matrix) | `PASS` (accepted A2 lifecycle matrix) |
+
+### Profile Restoration And Cleanup
+
+The phase-start profile was Master `ON`, EQ enabled with all ten canonical
+bands at `0 dB`, Preamp `0 dB`, BassBoost enabled at strength `148`, and
+Volume boost/Virtualizer disabled. Before ending the checkpoint, visible UI
+verification restored Master `ON`, Preamp `0 dB`, and all ten EQ bands
+including 1 kHz to `0 dB`. BassBoost, Volume boost, and Virtualizer were not
+modified during A4, so their initial state remains intact. Playback was
+stopped. `adb forward --list` and `adb reverse --list` were empty.
+
+The verified universal-release evidence is reused: APK Signature Scheme v3 is
+`true` and `aauto.aar` is
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+### Final Status
+
+Phone status remains `NATIVE_EQ_A_PHONE_PARTIAL_AUDIBLE_DSP_EVIDENCE`.
+The only next Native EQ task is to resume the short human-listening matrix at
+MediaPlayer Preamp; no architecture, code, lifecycle, release, or AA/DHU work
+is required. AA/DHU remains `AA_NATIVE_EQ_BLOCKED_ENVIRONMENT`.
