@@ -160,3 +160,96 @@ test material remains.
   method that is both non-invasive and does not expose player or account data.
 - Current fullscreen acceptance relies on the earlier physical HLS evidence;
   A3's attempted fullscreen retest was inconclusive.
+
+## A3R Final Runtime Acceptance
+
+### Baseline And Method
+
+- Baseline: `d63dfeb03d8f4147ad38f2a5ea17e328eaccf8bc`
+  (`feat(audio): add safe Stremio WebAudio bridge`).
+- Device: physical Android device `15c36230`; package
+  `me.app.fermataX.auto.test`.
+- A temporary document-start DevTools observer wrapped only WebAudio node
+  constructors. It retained node identity and inspected only context state and
+  permitted `AudioParam` values. It did not read media addresses, DOM content,
+  cookies, credentials, account state, audio samples, buffers, or network data;
+  it did not create a graph or alter network handling.
+
+### Live Profile Propagation
+
+The observer saw the production bridge's single live graph: one running
+`AudioContext`, one `MediaElementAudioSourceNode`, two gains, and ten peaking
+filters. The 1 kHz filter had identity `66` across the complete UI sequence:
+
+| Normal FermataX UI action | Observed 1 kHz `gain.value` | Graph identity |
+| --- | --- | --- |
+| Baseline | `0 dB` | unchanged |
+| Set 1 kHz to `-10 dB` | `-10 dB` | unchanged |
+| Restore 1 kHz to `0 dB` | `0 dB` | unchanged |
+
+No additional media source, context, or filter set appeared during that
+sequence. This is direct runtime evidence for the full UI -> repository ->
+native bridge -> document shim -> live `AudioParam` path.
+
+The master and nested Equalizer switches were operated through the normal
+FermataX settings UI. The final master-page operation retained the same graph
+and produced unity filter and gain values while disabled, then restored the
+stored profile without source reattachment. Earlier switch operations touched
+the nested Equalizer control first; they are not used as evidence for the
+master-page control.
+
+### Runtime Regression Evidence
+
+- HLS A visibly played for several minutes. During a fresh replay, the
+  production graph was running and Fermata's MediaSession was `PLAYING`.
+- Leaving HLS A Player for Detail closed that graph's context and source. The
+  MediaSession then returned to `NONE`; no active context was left behind.
+- Fresh HLS B playback produced a distinct running context/source/filter set
+  only after HLS A had closed. Each observed HLS generation had one source and
+  ten filters.
+- Fresh Direct MP4 playback visibly advanced and put MediaSession in
+  `PLAYING`, while the observer recorded no new MediaElement source. The
+  intentional direct-source bypass remains intact.
+- Fullscreen remains the historical physical PASS recorded above; no new A3R
+  fullscreen claim is made.
+
+### Automated And Release Validation
+
+The required JVM command completed successfully:
+
+```text
+.\\gradlew.bat :web:testAutoDebugUnitTest :web:testMobileDebugUnitTest verifyWebOnlyProductionGraph --console=plain
+```
+
+The signed universal release APK was built and verified:
+
+- Artifact:
+  `fermata/build/outputs/apk_from_bundle/autoRelease/fermata-2.0.1-me.app.fermataX.auto-auto-release-universal.apk`
+- Size: `330,452,195` bytes.
+- SHA-256:
+  `0B4A32677DBDEEEB9FB4D60D24D2593978BC5532DF08AD8242071A0CD1765E24`.
+- APK Signature Scheme v3: `true`.
+- `aauto.aar` SHA-256:
+  `99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+### Cleanup And Status
+
+The temporary addon was uninstalled through Stremio's visible confirmation
+dialog. The resulting visible inventory contains only the original seven
+addons: Cinemeta, YouTube, WatchHub, Public Domain Movies, OpenSubtitles v3,
+Local Files (without catalog support), and K20 Phim Tong Hop.
+
+The temporary server and tunnel processes were stopped. The phase-created ADB
+reverse and DevTools forward were removed; the fixture port is closed.
+This execution environment rejected deletion of the already-verified temporary
+fixture directory outside the workspace, so that inert directory and
+phase-named screenshots are not claimed removed here. No fixture process,
+mapping, or installed addon remains.
+
+**Final A3 status: `A3R_PARTIAL_INSTRUMENTATION_LIMIT`.** The live AudioParam,
+node-identity, bypass, lifecycle, JVM, release, signature, and immutable-AAR
+gates have direct evidence. `WEBEQ_A3_FULL_PASS` is intentionally withheld
+because a same-instant observation of master OFF playback continuity with
+MediaSession still `PLAYING` was not captured, and the external temporary file
+cleanup is incomplete under the current execution policy. Production source
+diff: `0`; test source diff: `0`.
