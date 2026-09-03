@@ -1346,7 +1346,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				.onSuccess(h -> {
 					if (ownsEngineState(engine, source, requestRevision, stateOwner))
 						setPlayingState(engine, true, h.value1, h.value2, stateOwner);
-				});
+		});
+	}
+
+	@Override
+	public void onEngineAudioSessionIdChanged(MediaEngine engine, int audioSessionId) {
+		if (acceptsEngineCallback(engine)) audioEffectsController.bind(engine, audioSessionId);
 	}
 
 	@Override

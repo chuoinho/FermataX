@@ -6,6 +6,7 @@ import static org.junit.Assert.assertSame;
 
 import android.content.Context;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 import org.junit.Test;
@@ -24,14 +25,37 @@ public class StreamEngineTest {
 		assertNotSame(provider.engine, outer.firstFrameEngine);
 	}
 
+	@Test
+	public void forwardsInnerAudioSessionChangesAsWrapperEngine() throws Exception {
+		FakeProvider provider = new FakeProvider();
+		RecordingListener outer = new RecordingListener();
+		StreamEngine wrapper = new StreamEngine(provider, outer);
+
+		provider.emitAudioSessionIdChanged(42);
+
+		assertEquals(1, outer.audioSessionChangeCount);
+		assertEquals(42, outer.audioSessionId);
+		assertSame(wrapper, outer.audioSessionChangeEngine);
+		assertNotSame(provider.engine, outer.audioSessionChangeEngine);
+	}
+
 	private static final class RecordingListener implements MediaEngine.Listener {
 		private int firstFrameCount;
 		private MediaEngine firstFrameEngine;
+		private int audioSessionChangeCount;
+		private int audioSessionId;
+		private MediaEngine audioSessionChangeEngine;
 
 		@Override
 		public void onVideoFirstFrame(MediaEngine engine) {
 			firstFrameCount++;
 			firstFrameEngine = engine;
+		}
+
+		public void onEngineAudioSessionIdChanged(MediaEngine engine, int audioSessionId) {
+			audioSessionChangeCount++;
+			audioSessionChangeEngine = engine;
+			this.audioSessionId = audioSessionId;
 		}
 	}
 
@@ -53,6 +77,12 @@ public class StreamEngineTest {
 
 		private void emitFirstFrame() {
 			listener.onVideoFirstFrame(engine);
+		}
+
+		private void emitAudioSessionIdChanged(int audioSessionId) throws Exception {
+			Method callback = MediaEngine.Listener.class.getMethod(
+					"onEngineAudioSessionIdChanged", MediaEngine.class, int.class);
+			callback.invoke(listener, engine, audioSessionId);
 		}
 	}
 

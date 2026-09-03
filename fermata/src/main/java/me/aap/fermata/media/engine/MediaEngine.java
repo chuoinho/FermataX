@@ -328,6 +328,9 @@ public interface MediaEngine extends Closeable {
 
 		default void onEngineStarted(MediaEngine engine) {}
 
+		/** Fired when an engine replaces its current Android audio session. */
+		default void onEngineAudioSessionIdChanged(MediaEngine engine, int audioSessionId) {}
+
 		default void onEngineEnded(MediaEngine engine) {}
 
 		default void onEngineBuffering(MediaEngine engine, int percent) {}

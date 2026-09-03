@@ -4,7 +4,6 @@ import static me.aap.utils.async.Completed.completed;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -153,11 +152,6 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 						.build();
 			}
 		}).setMediaSourceFactory(msFactory).build();
-		AudioManager audioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-		if (audioManager != null) {
-			int audioSessionId = audioManager.generateAudioSessionId();
-			if (audioSessionId != AudioManager.ERROR) player.setAudioSessionId(audioSessionId);
-		}
 		player.addListener(this);
 		Handler handler = new Handler(Looper.getMainLooper());
 		prepareWatchdog = new EnginePrepareWatchdog(handler::postDelayed,
@@ -431,6 +425,11 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	@Override
 	public int getAudioSessionId() {
 		return player.getAudioSessionId();
+	}
+
+	@Override
+	public void onAudioSessionIdChanged(int audioSessionId) {
+		listener.onEngineAudioSessionIdChanged(this, audioSessionId);
 	}
 
 	@Override

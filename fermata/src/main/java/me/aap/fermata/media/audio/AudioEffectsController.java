@@ -40,7 +40,10 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 	}
 
 	public synchronized void bind(MediaEngine nextEngine) {
-		int nextSessionId = nextEngine.getAudioSessionId();
+		bind(nextEngine, nextEngine.getAudioSessionId());
+	}
+
+	public synchronized void bind(MediaEngine nextEngine, int nextSessionId) {
 		if (!NativeSessionAudioEffectsBackend.isValidSessionId(nextSessionId)) {
 			releaseBoundBackend();
 			return;

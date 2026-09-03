@@ -479,6 +479,11 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	}
 
 	@Override
+	public void onEngineAudioSessionIdChanged(MediaEngine engine, int audioSessionId) {
+		listener.onEngineAudioSessionIdChanged(this, audioSessionId);
+	}
+
+	@Override
 	public void onEngineEnded(MediaEngine engine) {
 		if (!isPlaying()) return;
 		state = STATE_STOPPED;
