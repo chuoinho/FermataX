@@ -1,18 +1,19 @@
-# Native EQ-A2 Runtime Acceptance
+# Native EQ-A3 Runtime Acceptance
 
 ## Status
 
-`NATIVE_EQ_A_PARTIAL_RUNTIME_VALIDATION`
+`NATIVE_EQ_A3_PARTIAL_RUNTIME_VALIDATION`
 
-Baseline: `d77e88264f0a4755fe317d2eaf0c0287049ea8ef`
-(`fix(audio): bind native effects to ExoPlayer sessions`).  No production or
-test source was changed during this acceptance pass.  The only proposed commit
-is this report (`production/test LOC: 0`).
+Accepted A2 baseline: `0c0cc26e` (`docs(audio): record native EQ A2
+acceptance`).  A3 adds the user-facing negative-only Preamp control and its
+input contract.  The implementation is still uncommitted while A3 remains
+partial.
 
 The phone session/lifecycle evidence is strong.  The phase remains partial
-because a clean per-engine DSP-output acceptance run (including negative
-preamp and optional effects) was not observed, and DHU failed before a
-projection session was established.  Neither gap is presented as a pass.
+because clean per-engine DSP-output acceptance (including audible or measured
+negative-preamp and optional-effect evidence) was not observed, and DHU failed
+before a projection session was established.  Neither gap is presented as a
+pass.
 
 ## Root Cause And Remediation
 
@@ -69,13 +70,19 @@ Representative evidence files:
 | Source A -> B | `PASS` | `PASS` | `PASS` |
 | Session replacement | Reuse observed; current session remained valid | `PASS`; replacement IDs observed | Reuse observed; `22321` remained valid |
 | Stop: no active FermataX track | `PASS` | `PASS` | `PASS` |
-| Repeated A -> stop -> B -> stop -> A | `NOT_OBSERVED` | `PASS` | `PASS` |
+| Repeated A -> stop -> B -> stop -> A | `PASS` | `PASS` | `PASS` |
 
 The stop snapshots show no active FermataX `AudioTrack`.  VLC keeps a disabled
 `Dynamics Processing` object registered to its provider-owned reusable session
 while the application remains alive; it has no active track and is not an
 active/stale playback chain.  It must still be rechecked during terminal
 service teardown in the remaining AA/lifecycle phase.
+
+The MediaPlayer repeated sequence is physically evidenced by
+`a3-mp-cycle-b-validated-*`, `a3-mp-cycle-stop-b-validated-*`,
+`a3-mp-cycle-a2-validated-*`, and `a3-mp-cycle-stop-a2-validated-*`.  Each
+playing snapshot has one active FermataX track and five effects on its current
+session; each stop snapshot has no active FermataX track.
 
 Cross-engine evidence is also physical:
 `MediaPlayer 24073` -> `ExoPlayer 24081` -> `VLC 22321`.  Each running stage
@@ -88,16 +95,29 @@ FermataX track.  This is a `PASS` for no active stale controller ownership.
 | --- | --- | --- | --- |
 | Equalizer UI profile/session binding | `PASS` | `PASS` | `PASS` |
 | 1 kHz `0 -> -10 -> 0` with clean engine-specific acceptance | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
-| Negative preamp `0 -> -6 -> 0` | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Negative preamp `0 -> -6 -> 0` profile/UI | `PASS` | `PASS` | `PASS` |
 | Master off/on | `NOT_OBSERVED` | `NOT_OBSERVED` | `UI_STATE_AND_SESSION_ONLY` |
 | Bass boost, loudness, virtualizer functional acceptance | `NOT_OBSERVED` | `NOT_OBSERVED` | `NOT_OBSERVED` |
 
+The normalized `Preamp` row is visible between `Enable` and `Equalizer` in the
+correct signed test package.  The normal UI was observed at `0`, changed to
+`-6` through the signed numeric input, and restored to `0`
+(`a3-preamp-signed-input.*`, `a3-preamp-signed-restored.*`).  Its range is
+`-15..0`, so positive preamp remains fail-closed.  An earlier apparent missing
+row was a test procedure defect: the installed package was
+`me.app.fermataX.auto.test`, while the rebuilt APK was
+`me.app.fermataX.auto.debug`.  Installing the signed `.test` release proved
+the original direct preference row renders correctly
+(`a3-preamp-visible.*`).
+
 The profile was restored through the normal UI after test navigation: master
-and Equalizer are enabled; visible values are `31=0`, `62=0`, `125=-12`,
-`250=0`, `500=0`, `1k=0`, `2k=0`, and `16k=0`.  No measured signal capture was
-performed.  Consequently this report makes no claim that a `-10 dB` edit
-produced a measured output delta; a future subjective run must be labelled
-`AUDIBLE_DSP_ACCEPTANCE`, and an instrumented signal capture is required for a
+and Equalizer are enabled; Preamp is `0`; visible values are `31=0`, `62=0`,
+`125=-12`, `250=0`, `500=0`, `1k=0`, `2k=0`, `4k=-3`, `8k=0`, and `16k=0`.
+Bass boost, Volume boost, and Virtualizer remain disabled.  No measured signal
+capture or human listening record was performed.  Consequently this report
+makes no claim that a `-10 dB` edit or the `-6 dB` preamp edit produced an
+audible or measured output delta; a future subjective run must be labelled
+`AUDIBLE_DSP_ACCEPTANCE`, and instrumented signal capture is required for a
 measured-DSP claim.
 
 ## Addon Coverage
@@ -118,11 +138,18 @@ inspection showed Android Auto components but no DHU host activity.  No AA
 playback, session-match, DSP, pause/resume, disconnect, or reconnect claim was
 made.  This is `BLOCKED_ENVIRONMENT`, not an application failure.
 
+On 2026-09-03 a controlled retry used the local 720p DHU configuration and an
+ADB `tcp:5277` forward.  The DHU process remained live, but the phone exposed
+only Android Auto's `Material3SettingsActivity`, not a projection host/session.
+The DHU process was stopped and both `adb forward --list` and `adb reverse
+--list` were empty after cleanup.  The final classification remains
+`BLOCKED_ENVIRONMENT`.
+
 ## Automated And Release Validation
 
-* `:fermata:testAutoDebugUnitTest`: 864 tests, 0 failures, 0 errors, 2 skipped.
-* `:exoplayer:testAutoDebugUnitTest`: 7 tests, 0 failures, 0 errors.
-* `:vlc:testAutoDebugUnitTest`: 9 tests, 0 failures, 0 errors.
+* `:fermata:testAutoDebugUnitTest`: `PASS` after the A3 Preamp UI change.
+* `:exoplayer:testAutoDebugUnitTest`: `PASS` after the A3 Preamp UI change.
+* `:vlc:testAutoDebugUnitTest`: `PASS` after the A3 Preamp UI change.
 * `ArchitectureBoundaryTest`: included in the fresh Fermata suite; 0 failures.
 * Release tasks: `:fermata:assembleAutoRelease`
   `:fermata:packageAutoReleaseUniversalApk`; current universal artifact is
@@ -158,9 +185,8 @@ was empty.  Native EQ-A2 introduced no WebAudio, YouTube, generic WebView, or
 1. Run the controlled `0 -> -10 -> 0`, negative-preamp, master, and optional
    effect acceptance for each engine; preserve a clean UI/profile restoration
    record and classify sound only as `AUDIBLE_DSP_ACCEPTANCE` without capture.
-2. Complete MediaPlayer's repeated-cycle observation.
-3. Restore a functioning AA/DHU host, then perform representative native
+2. Restore a functioning AA/DHU host, then perform representative native
    session match, pause/resume, disconnect, and reconnect checks.
-4. Only after these gates pass, remove `.native-eq-a-temp/` and
+3. Only after these gates pass, remove `.native-eq-a-temp/` and
    `/sdcard/Download/FermataX-NativeEQ-A/`, verify no ADB forwarding/reverse
    resources remain, and update this report to a final closed status.

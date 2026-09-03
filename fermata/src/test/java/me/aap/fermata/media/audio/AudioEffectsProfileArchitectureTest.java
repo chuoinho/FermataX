@@ -81,11 +81,31 @@ public class AudioEffectsProfileArchitectureTest {
 						try {
 							String strings = new String(Files.readAllBytes(path), UTF_8);
 							assertTrue(path.toString(), strings.contains("name=\"audio_equalizer\""));
+							assertTrue(path.toString(), strings.contains("name=\"preamp\""));
 						} catch (Exception error) {
 							throw new AssertionError(path.toString(), error);
 						}
 					});
 		}
+	}
+
+	@Test
+	public void unifiedSettingsExposeNegativeOnlyPreampThroughTheProfileRepository()
+			throws Exception {
+		String builder = source("ui/fragment/AudioEffectsPrefsBuilder.java");
+
+		assertFalse(builder.contains("PreferenceSet preamp"));
+		assertTrue(builder.contains("AudioEffectsProfileRepository.PREAMP_DB"));
+		assertTrue(builder.contains("R.string.preamp"));
+		assertTrue(builder.contains("o.seekMin = AudioEffectsProfile.MIN_CANONICAL_DB"));
+		assertTrue(builder.contains("o.seekMax = 0"));
+	}
+
+	@Test
+	public void preampAcceptsSignedNumericInput() throws Exception {
+		String builder = source("ui/fragment/AudioEffectsPrefsBuilder.java");
+
+		assertTrue(builder.contains("InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED"));
 	}
 
 	private static String source(String relativePath) throws Exception {

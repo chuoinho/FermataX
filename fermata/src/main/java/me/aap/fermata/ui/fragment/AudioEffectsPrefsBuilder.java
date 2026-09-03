@@ -4,6 +4,8 @@ import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_BINAURAL;
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_TRANSAURAL;
 
+import android.text.InputType;
+
 import me.aap.fermata.R;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
@@ -26,9 +28,16 @@ final class AudioEffectsPrefsBuilder {
 			o.pref = AudioEffectsProfileRepository.ENABLED;
 			o.title = R.string.enable;
 		});
-
 		PrefCondition<BooleanSupplier> profileEnabled = PrefCondition.create(store,
 				AudioEffectsProfileRepository.ENABLED);
+		effects.addIntPref(o -> {
+			o.store = store;
+			o.pref = AudioEffectsProfileRepository.PREAMP_DB;
+			o.title = R.string.preamp;
+			o.seekMin = AudioEffectsProfile.MIN_CANONICAL_DB;
+			o.seekMax = 0;
+			o.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED;
+		});
 		PreferenceSet equalizer = effects.subSet(o -> {
 			o.title = R.string.equalier;
 			o.visibility = profileEnabled.copy();
