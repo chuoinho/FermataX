@@ -11,11 +11,10 @@ Every other source class, including direct HTTP(S), remains on the existing
 browser-owned playback path.
 
 The runtime graph and its HLS replacement behaviour were observed on a physical
-Android device. Exact live propagation of a `-10 dB` UI setting to the active
-WebAudio `AudioParam` remains **PARTIAL**: DevTools provides graph topology, not
-the current value of a live `AudioParam`. The UI mutation and the rebuilt graph
-were both observed, but that is not sufficient to promote the parameter-value
-claim to PASS.
+Android device. The original A3 observation could inspect topology only, so it
+left live `AudioParam` propagation PARTIAL. A3R subsequently used a narrowly
+scoped passive observer and directly proved `1 kHz` `0 -> -10 -> 0 dB` on the
+same production filter; that later evidence supersedes the original limit.
 
 ## Scope And Ownership
 
@@ -253,3 +252,43 @@ because a same-instant observation of master OFF playback continuity with
 MediaSession still `PLAYING` was not captured, and the external temporary file
 cleanup is incomplete under the current execution policy. Production source
 diff: `0`; test source diff: `0`.
+
+## A3F Final Closure
+
+### Baseline And Source State
+
+- Baseline/report HEAD: `87fb0df9d1574234599d2faaa5acfc4630489446`.
+- Production implementation retained: `d63dfeb0`.
+- No production or test source changed; this report is the only intended
+  tracked change.
+
+### Controlled Fixture And Playback Entry Attempt
+
+A self-owned temporary addon was installed and removed exclusively through the
+visible Stremio Addons UI. Its HLS catalog, metadata, and stream endpoints were
+requested successfully. The selected HLS detail then remained on Stremio's
+`Install addons` empty-stream surface: no media playlist/segment request,
+HTML5 playback, active MediaSession, or new production WebAudio graph occurred.
+
+The run therefore stopped before the A3F master-off gate. This is not evidence
+of a bridge defect: no eligible player graph existed. The coherent master-OFF
+observation (unity parameters, `PLAYING`, advancing `currentTime`, unchanged
+context/source/filter identities) and the companion master-ON restoration were
+not obtained. The accepted A3R evidence remains unchanged.
+
+### Cleanup And Status
+
+- The fixture was visibly uninstalled; the list returned to the original seven
+  addons recorded by A3R.
+- The temporary Node server and Cloudflare tunnel were stopped.
+- `adb reverse tcp:18081` and `adb forward tcp:9222` were removed; port `18081`
+  was verified closed.
+- The temporary observer disconnected. No EQ profile was changed in this run.
+- External deletion policy rejected the exact owned fixture directory
+  `C:\\Users\\ttanh\\AppData\\Local\\Temp\\fermatax-webeq-a3r-fixture`.
+  It is inert: no addon, server, tunnel, listener, or ADB mapping references it.
+  Manual cleanup: `Remove-Item -LiteralPath 'C:\\Users\\ttanh\\AppData\\Local\\Temp\\fermatax-webeq-a3r-fixture' -Recurse -Force`.
+
+**A3F status: `NOT_OBSERVED`.** `A3R_PARTIAL_INSTRUMENTATION_LIMIT` remains the
+honest functional status; external cleanup is
+`BLOCKED_EXTERNAL_TEMP_DELETE`, not a production defect.
