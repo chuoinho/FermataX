@@ -467,3 +467,72 @@ splits. The preflight must first verify the package paths list the two splits
 and that the normal AA item menu offers `Preferred media engine`; then rerun
 only the AA1 ExoPlayer-first matrix from the beginning. Do not change
 production code to work around a missing packaged provider.
+
+## Native EQ-AA1 Universal Artifact Rerun
+
+### Scope And Artifact Result
+
+This rerun installed the signed universal release APK on `15c36230` as
+`me.app.fermataX.auto.test`, version `2.0.1 (304)`. APK Signature Scheme v3
+and the approved signing certificate were verified before installation. The
+package manager correctly reports a fused `base.apk` only for a universal APK;
+that is not evidence that dynamic providers are absent.
+
+The required functional preflight passed: a long press on a local fixture in
+DHU showed `Preferred media engine` with `Default`, `MediaPlayer`,
+`ExoPlayer`, and `VLC`. ExoPlayer and VLC were each selected through that
+normal UI. This supersedes the previous *artifact missing dynamic feature*
+conclusion above, which remains historical evidence for the earlier
+non-universal artifact only.
+
+No production or test source was changed. The retained local evidence is under
+`.native-eq-a-temp/`; it contains no media URL.
+
+### Physical AA Results
+
+| Check | Observed evidence | Status |
+| --- | --- | --- |
+| ExoPlayer AA playback | `ExoPlayerImpl` initialized; MediaSession reached `PLAYING`; one active FermataX AudioTrack used session `24505` | `PASS` |
+| ExoPlayer native-effect binding | `Loudness Enhancer` and `Dynamics Processing` were attached to session `24505`, the active AudioTrack session | `PASS` |
+| ExoPlayer A -> B handoff | Playback advanced from fixture A to B while retaining active session `24505` and its effect chain | `PASS` |
+| ExoPlayer pause/resume | Pause was observed with no active track and the effect chain retained; the following playback run used the current session correctly | `PARTIAL` |
+| ExoPlayer seek | No trustworthy position-change observation was captured from the short fixture | `NOT_OBSERVED` |
+| MediaPlayer quick sanity | Active MediaPlayer AudioTrack used session `24513`; only the system volume-listener chain was visible | `PARTIAL` |
+| VLC quick sanity | `libvlc` loaded; one active AudioTrack and the FermataX Loudness/Dynamics effects used session `24489` | `PASS` |
+| Projection disconnect | Closing DHU removed the FermataX MediaSession and left no active FermataX AudioTrack | `PASS` |
+| Projection reconnect | FermataX reopened at Dashboard; a new VLC run used fresh session `24561` with a fresh Loudness/Dynamics chain | `PASS` |
+
+The engine-owned session is not independently printed by the production build.
+The active-track/effect equality above is physical AudioFlinger evidence; the
+engine-to-controller callback path remains source-audited. Consequently this
+rerun does not claim the stronger three-way runtime equality as independently
+observed.
+
+### Effect Availability On This AA Route
+
+For ExoPlayer, MediaPlayer, and VLC, Android AudioFlinger rejected creation of
+both effect types below on the Android Auto Remote Submix route:
+
+| Effect | AudioFlinger result | Classification |
+| --- | --- | --- |
+| Equalizer | `0bed4300-...`, status `-38`, followed by `initCheck -3` | `UNAVAILABLE_ON_TESTED_AA_ROUTE` |
+| BassBoost | `0634f220-...`, status `-38`, followed by `initCheck -3` | `UNAVAILABLE_ON_TESTED_AA_ROUTE` |
+| LoudnessEnhancer | Created on ExoPlayer and VLC active sessions | `AVAILABLE_ON_TESTED_AA_ROUTE` |
+| DynamicsProcessing | Created on ExoPlayer and VLC active sessions | `AVAILABLE_ON_TESTED_AA_ROUTE` |
+| Virtualizer | Not constructed on Android 16/API 36 by policy | `UNSUPPORTED_DEVICE_CAPABILITY` |
+
+This is a device/route capability result, not an APK-packaging defect and not
+evidence of a session mismatch. No EQ, preamp, master, BassBoost, or loudness
+preference was changed in this rerun, so there is no AA audible-output claim.
+
+### Rerun Verdict
+
+`NATIVE_EQ_AA_PARTIAL_ROUTE_CAPABILITY_LIMIT`
+
+The universal artifact and projected playback gates pass. The AA session and
+lifecycle evidence is sufficient to rule out the former packaging blocker and
+to show no stale active ownership across disconnect/reconnect. Full AA DSP
+acceptance remains open because Equalizer/BassBoost are unavailable on this
+specific Android 16 Remote Submix route, MediaPlayer's Fermata-owned effect
+chain was not visible, and no controlled audible or objective DSP-output test
+was performed. No code change is justified by this evidence alone.
