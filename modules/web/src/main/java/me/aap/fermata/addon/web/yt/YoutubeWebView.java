@@ -121,6 +121,7 @@ public class YoutubeWebView extends FermataWebView {
 	public void init(WebBrowserAddon addon, FermataWebClient webClient,
 			FermataChromeClient chromeClient) {
 		super.init(addon, webClient, chromeClient);
+		YoutubeWebAudioBridge.install(this);
 		navigation.open(getAddon());
 		initialPlaybackNavigationClaimed = false;
 		MainActivityDelegate activity = MainActivityDelegate.get(getContext());
@@ -166,6 +167,7 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	public void loadUrl(@NonNull String url) {
 		Log.d("Loading URL: " + url);
+		YoutubeWebAudioBridge.onDocumentNavigation(this, url);
 		super.loadUrl(url);
 	}
 
@@ -484,8 +486,7 @@ public class YoutubeWebView extends FermataWebView {
 				notifyToolbarPageChanged();
 			});
 		}
-		attachListeners((mediaEngine == null) ? 0L : mediaEngine.playbackGenerationSeed(),
-				generation);
+		attachListeners((mediaEngine == null) ? 0L : mediaEngine.playbackGenerationSeed(), generation);
 		if (mediaEngine != null) mediaEngine.onPageLoaded(uri);
 		injectSponsorBlock();
 		configureAdSkip();
@@ -1105,12 +1106,8 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	@Override
-	protected void onDetachedFromWindow() {
-		super.onDetachedFromWindow();
-	}
-
-	@Override
 	public void destroy() {
+		YoutubeWebAudioBridge.close(this);
 		setFullscreenTapEnabled(false);
 		if (mediaEngine != null) {
 			getAddon().getRuntime().unregisterHost(this, mediaEngine);
