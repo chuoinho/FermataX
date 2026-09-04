@@ -536,3 +536,82 @@ acceptance remains open because Equalizer/BassBoost are unavailable on this
 specific Android 16 Remote Submix route, MediaPlayer's Fermata-owned effect
 chain was not visible, and no controlled audible or objective DSP-output test
 was performed. No code change is justified by this evidence alone.
+
+## Native EQ-AA2 DynamicsProcessing EQ Fallback Feasibility
+
+### Scope And Safety Boundaries
+
+AA2 evaluated only a temporary, uncommitted `DynamicsProcessing` pre-EQ probe
+on the existing Android Auto Remote Submix route. The probe mapped the
+canonical 1 kHz control to the closest pre-EQ cutoff and read the applied gain
+back from the framework. It did not alter `aauto.aar`, WebView, Stremio,
+YouTube, the product UI contract, or permanent production/test source. The
+probe and its unit test were removed after the experiment; this report is the
+only tracked result. No audible or acoustic-output claim is made.
+
+The tested device was `15c36230` (Redmi Note 8, Android 16/API 36), with the
+signed universal `me.app.fermataX.auto.test` v304 package projected through
+DHU. The retained local evidence is under `.native-eq-a-temp/aa2/`. The
+fixture was local and no reverse mapping or local server was used.
+
+### New-Session Capability
+
+`DynamicsProcessing` can be instantiated on the active FermataX session after
+the ordinary Equalizer creation fails on this route. A fresh session accepted
+and reported the requested pre-EQ value in both directions:
+
+| Fresh session | Requested 1 kHz | Read-back | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| `24729` | `-10 dB` | `-10.0 dB` | `live-transition-logcat.txt` | `PASS` |
+| `24753` | `0 dB` | `0.0 dB` | `restore0-logcat.txt` | `PASS` |
+
+For both observations the MediaSession was `PLAYING`, and AudioFlinger showed
+the `Dynamics Processing` effect on the FermataX session. This establishes
+only that a newly created Remote Submix session can accept an initial pre-EQ
+configuration.
+
+### Live-Reapply Result
+
+The required dynamic behavior did not pass. While session `24729` remained
+`PLAYING`, changing the normal Equalizer UI caused
+`AudioEffectsController.onPreferenceChanged -> applyCurrentProfile` to run.
+The first write to `DynamicsProcessing.setPreEqBandAllChannelsTo` after the
+session's initial configuration threw:
+
+```text
+UnsupportedOperationException: AudioEffect: invalid parameter operation
+```
+
+The same rejection was observed for both the `-10 -> 0` and `0 -> -10`
+attempts. FermataX did not crash and its MediaSession remained `PLAYING`, but
+the framework did not provide a successful applied-gain read-back for either
+live update. The relevant stack and non-fatal result are retained in
+`live-reapply-failure-logcat.txt`.
+
+| Requirement | Result |
+| --- | --- |
+| Initial `-10 dB` write/read-back | `PASS` |
+| Initial `0 dB` write/read-back | `PASS` |
+| Live `-10 -> 0` write/read-back | `FAIL_FRAMEWORK_INVALID_PARAMETER` |
+| Live `0 -> -10` write/read-back | `FAIL_FRAMEWORK_INVALID_PARAMETER` |
+| Playback survives rejected write | `PASS` |
+| Stop releases the DP session effect | `PASS` |
+| Audible/objective acoustic validation | `NOT_OBSERVED` |
+
+### Cleanup And Verdict
+
+The visible 1 kHz control was restored to `0 dB`. A new 0 dB session applied
+and read back `0.0 dB`; after standard media stop, the MediaSession was no
+longer playing and AudioFlinger no longer listed effects for session `24753`
+(`cleanup-media-session.txt`, `cleanup-audioflinger.txt`). No ADB reverse
+mapping was created.
+
+`AA_DP_EQ_FEASIBILITY_FAIL_LIVE_REAPPLY`
+
+This result does not justify adding a `DynamicsProcessing` EQ fallback to the
+product. AA remains `NATIVE_EQ_AA_PARTIAL_ROUTE_CAPABILITY_LIMIT`: standard
+Equalizer/BassBoost remain unavailable on the tested Remote Submix route, and
+the candidate fallback is not safe for live profile changes. The smallest
+permitted next step is AA3 design work for a separately auditable route-aware
+fallback with explicit live-update capability gating; AA2 makes no production
+implementation recommendation and does not implement AA3.
