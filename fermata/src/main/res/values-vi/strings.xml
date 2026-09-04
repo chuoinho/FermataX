@@ -515,4 +515,5 @@
 	<string name="retry">Thử lại</string>
 	<string name="media_list_empty">Chưa có mục nào</string>
 	<string name="media_list_load_failed">Không thể tải các mục.</string>
+	<string name="equalizer_apply_next_session">Các thay đổi EQ đã được lưu. Chúng sẽ được áp dụng trong phiên phát tiếp theo.</string>
 </resources>

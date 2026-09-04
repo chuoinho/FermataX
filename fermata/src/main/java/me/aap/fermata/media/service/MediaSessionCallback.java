@@ -71,6 +71,7 @@ import android.support.v4.media.session.MediaSessionCompat.QueueItem;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
 import android.view.KeyEvent;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -179,7 +180,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			});
 	private final RemotePlaybackLifecycleController playbackLifecycle;
 	private final PlaybackTransition playbackTransition = new PlaybackTransition();
-	private final AudioEffectsController audioEffectsController = new AudioEffectsController(FermataApplication.get().getPreferenceStore());
+	private final AudioEffectsController audioEffectsController = new AudioEffectsController(
+			FermataApplication.get().getPreferenceStore(),
+			() -> Toast.makeText(getContext(), R.string.equalizer_apply_next_session,
+					Toast.LENGTH_LONG).show());
 	private final PlaybackPreparationStatus preparationStatus = new PlaybackPreparationStatus();
 	private final DeferredInitialSeek deferredInitialSeek = new DeferredInitialSeek();
 	private final PlaybackProgressPolicy progressPolicy = new PlaybackProgressPolicy();

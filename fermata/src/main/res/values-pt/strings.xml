@@ -520,4 +520,5 @@
 	<string name="voice_trigger_clear">Limpar atribuição do botão de voz</string>
 	<string name="voice_trigger_cleared">A atribuição do botão de voz do veículo foi removida.</string>
 	<string name="voice_selection_prompt">Diga número um, dois ou três</string>
+    <string name="equalizer_apply_next_session">As alterações do equalizador foram guardadas. Serão aplicadas na próxima sessão de reprodução.</string>
 </resources>

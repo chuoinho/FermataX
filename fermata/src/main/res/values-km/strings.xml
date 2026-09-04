@@ -515,4 +515,5 @@
 	<string name="voice_trigger_clear">លុបការកំណត់ប៊ូតុងសំឡេង</string>
 	<string name="voice_trigger_cleared">បានលុបការកំណត់ប៊ូតុងសំឡេងក្នុងរថយន្ត។</string>
 	<string name="voice_selection_prompt">និយាយលេខមួយ ពីរ ឬបី</string>
+    <string name="equalizer_apply_next_session">ការផ្លាស់ប្តូរ EQ ត្រូវបានរក្សាទុក។ វានឹងត្រូវបានអនុវត្តក្នុងវគ្គចាក់បន្ទាប់។</string>
 </resources>

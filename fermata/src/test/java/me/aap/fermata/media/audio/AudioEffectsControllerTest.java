@@ -1,6 +1,8 @@
 package me.aap.fermata.media.audio;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import android.media.AudioManager;
 
@@ -46,6 +48,90 @@ public class AudioEffectsControllerTest {
 
 		assertEquals(1, fixture.created);
 		assertEquals(2, fixture.backends[0].applyCount);
+	}
+
+	@Test
+	public void standardLiveEqualizerChangesApplyImmediately() {
+		Fixture fixture = new Fixture();
+		fixture.repository.save(enabledProfile(0));
+		fixture.controller.bind(engine(41));
+
+		fixture.repository.getStore().applyIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[5], -6);
+
+		assertEquals(2, fixture.backends[0].applyCount);
+		assertEquals(2, fixture.backends[0].equalizerApplyCount);
+		assertFalse(fixture.controller.isEqualizerPendingForNextSession());
+		assertEquals(0, fixture.deferredNotifications);
+	}
+
+	@Test
+	public void initialOnlyEqualizerDefersActiveSessionEditsAndCoalescesNotification() {
+		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, true);
+		fixture.repository.save(enabledProfile(0));
+		fixture.controller.bind(engine(41));
+
+		fixture.repository.getStore().applyIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[5], -3);
+		fixture.repository.getStore().applyIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[5], -6);
+
+		assertEquals(3, fixture.backends[0].applyCount);
+		assertEquals(1, fixture.backends[0].equalizerApplyCount);
+		assertTrue(fixture.controller.isEqualizerPendingForNextSession());
+		assertEquals(1, fixture.deferredNotifications);
+	}
+
+	@Test
+	public void successfulNewInitialOnlySessionConsumesLatestProfileAndClearsPending() {
+		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, true, true);
+		fixture.repository.save(enabledProfile(0));
+		fixture.controller.bind(engine(41));
+		fixture.repository.getStore().applyIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[5], -10);
+
+		fixture.controller.bind(engine(42));
+
+		assertEquals(-10, fixture.backends[1].lastProfile.canonicalCurveDb()[5]);
+		assertEquals(1, fixture.backends[1].equalizerApplyCount);
+		assertFalse(fixture.controller.isEqualizerPendingForNextSession());
+	}
+
+	@Test
+	public void failedNewInitialOnlySessionDoesNotClearPending() {
+		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, true, false);
+		fixture.repository.save(enabledProfile(0));
+		fixture.controller.bind(engine(41));
+		fixture.repository.getStore().applyIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[5], -10);
+
+		fixture.controller.bind(engine(42));
+
+		assertTrue(fixture.controller.isEqualizerPendingForNextSession());
+		assertEquals(1, fixture.deferredNotifications);
+	}
+
+	@Test
+	public void disablingMasterBypassesInitialOnlyBackendWithoutCreatingPendingWork() {
+		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, true);
+		fixture.repository.save(enabledProfile(0));
+		fixture.controller.bind(engine(41));
+
+		fixture.repository.getStore().applyBooleanPref(AudioEffectsProfileRepository.ENABLED, false);
+
+		assertEquals(1, fixture.backends[0].bypassCount);
+		assertFalse(fixture.controller.isEqualizerPendingForNextSession());
+		assertEquals(0, fixture.deferredNotifications);
+	}
+
+	@Test
+	public void initialOnlyPreampChangesAreDeferredUntilTheNextSession() {
+		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, true, true);
+		fixture.repository.save(enabledProfile(0));
+		fixture.controller.bind(engine(41));
+
+		fixture.repository.getStore().applyIntPref(AudioEffectsProfileRepository.PREAMP_DB, -6);
+		fixture.controller.bind(engine(42));
+
+		assertEquals(1, fixture.backends[0].equalizerApplyCount);
+		assertEquals(-6, fixture.backends[1].lastProfile.preampDb());
+		assertFalse(fixture.controller.isEqualizerPendingForNextSession());
+		assertEquals(1, fixture.deferredNotifications);
 	}
 
 	@Test
@@ -122,8 +208,9 @@ public class AudioEffectsControllerTest {
 
 	private static final class Fixture {
 		final AudioEffectsProfileRepository repository;
-		final FakeBackend[] backends = new FakeBackend[2];
+		final FakeBackend[] backends = new FakeBackend[3];
 		int created;
+		int deferredNotifications;
 		final AudioEffectsController controller;
 
 		Fixture() {
@@ -131,19 +218,38 @@ public class AudioEffectsControllerTest {
 		}
 
 		Fixture(BasicPreferenceStore store, NativeEqualizerTopology topology) {
+			this(store, topology, null);
+		}
+
+		Fixture(EqualizerUpdateMode mode, boolean... applyEqualizerResults) {
+			this(new BasicPreferenceStore(), null, sessionId -> {
+				int index = Math.min(sessionId - 41, applyEqualizerResults.length - 1);
+				return new InitialOnlyBackend(mode, applyEqualizerResults[index]);
+			});
+		}
+
+		Fixture(BasicPreferenceStore store, NativeEqualizerTopology topology,
+				AudioEffectsController.BackendFactory factory) {
 			repository = new AudioEffectsProfileRepository(store);
 			controller = new AudioEffectsController(repository, sessionId -> {
+				if (factory != null) {
+					FakeBackend backend = (FakeBackend) factory.create(sessionId);
+					backends[created++] = backend;
+					return backend;
+				}
 				FakeBackend backend = (topology == null) ? new FakeBackend() : new TopologyBackend(topology);
 				backends[created++] = backend;
 				return backend;
-			});
+			}, () -> deferredNotifications++);
 		}
 	}
 
 	private static class FakeBackend implements AudioEffectsBackend {
 		int applyCount;
+		int equalizerApplyCount;
 		int bypassCount;
 		int releaseCount;
+		AudioEffectsProfile lastProfile;
 
 		@Override
 		public EnumSet<AudioEffectCapability> getCapabilities() {
@@ -151,8 +257,13 @@ public class AudioEffectsControllerTest {
 		}
 
 		@Override
-		public void apply(AudioEffectsProfile profile) {
+		public boolean apply(AudioEffectsProfile profile, boolean applyEqualizer) {
 			applyCount++;
+			lastProfile = profile;
+			if (applyEqualizer || (getEqualizerUpdateMode() == EqualizerUpdateMode.STANDARD_LIVE)) {
+				equalizerApplyCount++;
+			}
+			return true;
 		}
 
 		@Override
@@ -163,6 +274,27 @@ public class AudioEffectsControllerTest {
 		@Override
 		public void release() {
 			releaseCount++;
+		}
+	}
+
+	private static final class InitialOnlyBackend extends FakeBackend {
+		private final EqualizerUpdateMode mode;
+		private final boolean applyEqualizerResult;
+
+		InitialOnlyBackend(EqualizerUpdateMode mode, boolean applyEqualizerResult) {
+			this.mode = mode;
+			this.applyEqualizerResult = applyEqualizerResult;
+		}
+
+		@Override
+		public EqualizerUpdateMode getEqualizerUpdateMode() {
+			return mode;
+		}
+
+		@Override
+		public boolean apply(AudioEffectsProfile profile, boolean applyEqualizer) {
+			super.apply(profile, applyEqualizer);
+			return !applyEqualizer || applyEqualizerResult;
 		}
 	}
 

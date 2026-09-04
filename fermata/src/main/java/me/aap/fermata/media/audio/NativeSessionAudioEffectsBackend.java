@@ -35,6 +35,9 @@ final class NativeSessionAudioEffectsBackend
 	private Virtualizer virtualizer;
 	@Nullable
 	private AudioEffect dynamicsProcessing;
+	private final int audioSessionId;
+	private final boolean initialOnlyDynamicsEqualizer;
+	private boolean dynamicsEqualizerInitialized;
 	private boolean released;
 
 	@Nullable
@@ -47,9 +50,11 @@ final class NativeSessionAudioEffectsBackend
 	}
 
 	private NativeSessionAudioEffectsBackend(int audioSessionId) {
+		this.audioSessionId = audioSessionId;
 		equalizer = create(() -> new Equalizer(EFFECT_PRIORITY, audioSessionId));
 		if (equalizer != null) capabilities.add(AudioEffectCapability.EQUALIZER);
 		equalizerTopology = readTopology(equalizer);
+		initialOnlyDynamicsEqualizer = (equalizer == null) && (SDK_INT >= P);
 
 		bassBoost = create(() -> new BassBoost(EFFECT_PRIORITY, audioSessionId));
 		if ((bassBoost != null) && strengthSupported(bassBoost)) capabilities.add(AudioEffectCapability.BASS_BOOST);
@@ -67,10 +72,17 @@ final class NativeSessionAudioEffectsBackend
 			}
 		}
 
-		if (SDK_INT >= P) {
+		if ((SDK_INT >= P) && !initialOnlyDynamicsEqualizer) {
 			dynamicsProcessing = create(() -> Api28.createDynamicsProcessing(audioSessionId));
 			if (dynamicsProcessing != null) capabilities.add(AudioEffectCapability.PREAMP);
 		}
+	}
+
+	@Override
+	public EqualizerUpdateMode getEqualizerUpdateMode() {
+		if (equalizer != null) return EqualizerUpdateMode.STANDARD_LIVE;
+		if (dynamicsEqualizerInitialized) return EqualizerUpdateMode.INITIAL_ONLY;
+		return EqualizerUpdateMode.UNAVAILABLE;
 	}
 
 	@Override
@@ -85,19 +97,20 @@ final class NativeSessionAudioEffectsBackend
 	}
 
 	@Override
-	public void apply(AudioEffectsProfile profile) {
+	public boolean apply(AudioEffectsProfile profile, boolean newSession) {
 		if (released || !profile.enabled()) {
 			bypass();
-			return;
+			return false;
 		}
 
 		GainSafetyPolicy.Decision gainSafety = GainSafetyPolicy.evaluate(profile,
 				capabilities.contains(AudioEffectCapability.LIMITER));
-		applyEqualizer(profile);
+		boolean equalizerApplied = applyEqualizer(profile, newSession);
 		applyBassBoost(profile);
 		applyLoudness(profile, gainSafety);
 		applyVirtualizer(profile);
 		applyPreamp(profile, gainSafety);
+		return equalizerApplied;
 	}
 
 	@Override
@@ -121,11 +134,12 @@ final class NativeSessionAudioEffectsBackend
 		capabilities.clear();
 	}
 
-	private void applyEqualizer(AudioEffectsProfile profile) {
+	private boolean applyEqualizer(AudioEffectsProfile profile, boolean newSession) {
+		if (initialOnlyDynamicsEqualizer) return applyInitialOnlyDynamicsEqualizer(profile, newSession);
 		Equalizer effect = equalizer;
 		if ((effect == null) || !profile.equalizerEnabled()) {
 			disable(AudioEffectCapability.EQUALIZER, effect, this::releaseEqualizer);
-			return;
+			return effect != null;
 		}
 
 		try {
@@ -139,8 +153,32 @@ final class NativeSessionAudioEffectsBackend
 					centerHz, effect.getBandLevelRange());
 			for (short band = 0; band < bandCount; band++) effect.setBandLevel(band, levels[band]);
 			effect.setEnabled(true);
+			return true;
 		} catch (RuntimeException error) {
 			fail(AudioEffectCapability.EQUALIZER, error, this::releaseEqualizer);
+			return false;
+		}
+	}
+
+	/** DP accepts the complete pre-EQ config at construction on the tested AA route, not later. */
+	private boolean applyInitialOnlyDynamicsEqualizer(AudioEffectsProfile profile, boolean newSession) {
+		AudioEffect effect = dynamicsProcessing;
+		if (!dynamicsEqualizerInitialized) {
+			if (!newSession) return false;
+			effect = create(() -> Api28.createDynamicsProcessingWithEqualizer(audioSessionId, profile));
+			if (effect == null) return false;
+			dynamicsProcessing = effect;
+			dynamicsEqualizerInitialized = true;
+			capabilities.add(AudioEffectCapability.EQUALIZER);
+			capabilities.add(AudioEffectCapability.PREAMP);
+		}
+
+		try {
+			effect.setEnabled(profile.equalizerEnabled() || (profile.preampDb() != 0));
+			return true;
+		} catch (RuntimeException error) {
+			fail(AudioEffectCapability.EQUALIZER, error, this::releaseDynamicsProcessing);
+			return false;
 		}
 	}
 
@@ -210,6 +248,7 @@ final class NativeSessionAudioEffectsBackend
 
 	private void applyPreamp(AudioEffectsProfile profile, GainSafetyPolicy.Decision gainSafety) {
 		AudioEffect effect = dynamicsProcessing;
+		if (initialOnlyDynamicsEqualizer && dynamicsEqualizerInitialized) return;
 		if ((effect == null) || (profile.preampDb() == 0) || !gainSafety.isPreampAllowed()) {
 			disable(AudioEffectCapability.PREAMP, effect, this::releaseDynamicsProcessing);
 			return;
@@ -267,6 +306,7 @@ final class NativeSessionAudioEffectsBackend
 	private void releaseDynamicsProcessing() {
 		AudioEffect effect = dynamicsProcessing;
 		dynamicsProcessing = null;
+		dynamicsEqualizerInitialized = false;
 		release(effect);
 	}
 
@@ -321,6 +361,28 @@ final class NativeSessionAudioEffectsBackend
 
 		static void setInputGain(AudioEffect effect, float gainDb) {
 			((android.media.audiofx.DynamicsProcessing) effect).setInputGainAllChannelsTo(gainDb);
+		}
+
+		static AudioEffect createDynamicsProcessingWithEqualizer(int audioSessionId,
+				AudioEffectsProfile profile) {
+			int[] frequencies = AudioEffectsProfile.CANONICAL_FREQ_HZ;
+			int[] curve = profile.canonicalCurveDb();
+			android.media.audiofx.DynamicsProcessing.Eq equalizer =
+					new android.media.audiofx.DynamicsProcessing.Eq(true,
+							profile.equalizerEnabled(), frequencies.length);
+			for (int band = 0; band < frequencies.length; band++) {
+				float gainDb = NativeEqualizerCurveMapper.interpolateDb(frequencies[band], frequencies,
+						curve);
+				equalizer.setBand(band, new android.media.audiofx.DynamicsProcessing.EqBand(
+						profile.equalizerEnabled(), frequencies[band], gainDb));
+			}
+			android.media.audiofx.DynamicsProcessing.Config config =
+					new android.media.audiofx.DynamicsProcessing.Config.Builder(
+							android.media.audiofx.DynamicsProcessing.VARIANT_FAVOR_FREQUENCY_RESOLUTION,
+							1, true, frequencies.length, false, 0, false, 0, false)
+							.setPreEqAllChannelsTo(equalizer)
+							.setInputGainAllChannelsTo(profile.preampDb()).build();
+			return new android.media.audiofx.DynamicsProcessing(EFFECT_PRIORITY, audioSessionId, config);
 		}
 	}
 }

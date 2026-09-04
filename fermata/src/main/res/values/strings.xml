@@ -208,6 +208,7 @@
     <string name="audio_equalizer">Audio &amp; Equalizer</string>
     <string name="preamp">Preamp</string>
     <string name="equalier">Equalizer</string>
+	<string name="equalizer_apply_next_session">EQ changes saved. They will apply to the next playback session.</string>
     <string name="preset_name">Preset name</string>
     <string name="virtualizer">Virtualizer</string>
     <string name="auto">Auto</string>

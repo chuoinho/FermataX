@@ -18,23 +18,38 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 	private final AudioEffectsProfileRepository profiles;
 	private final PreferenceStore store;
 	private final BackendFactory backendFactory;
+	private final Runnable deferredEqualizerNotification;
 	@Nullable
 	private MediaEngine engine;
 	private int sessionId = ERROR;
 	@Nullable
 	private AudioEffectsBackend backend;
+	private boolean equalizerPendingForNextSession;
 
 	public AudioEffectsController(PreferenceStore store) {
 		this(new AudioEffectsProfileRepository(store));
 	}
 
+	public AudioEffectsController(PreferenceStore store, Runnable deferredEqualizerNotification) {
+		this(new AudioEffectsProfileRepository(store), NativeSessionAudioEffectsBackend::create,
+				deferredEqualizerNotification);
+	}
+
 	public AudioEffectsController(AudioEffectsProfileRepository profiles) {
-		this(profiles, NativeSessionAudioEffectsBackend::create);
+		this(profiles, NativeSessionAudioEffectsBackend::create, () -> {
+		});
 	}
 
 	AudioEffectsController(AudioEffectsProfileRepository profiles, BackendFactory backendFactory) {
+		this(profiles, backendFactory, () -> {
+		});
+	}
+
+	AudioEffectsController(AudioEffectsProfileRepository profiles, BackendFactory backendFactory,
+			Runnable deferredEqualizerNotification) {
 		this.profiles = profiles;
 		this.backendFactory = backendFactory;
+		this.deferredEqualizerNotification = deferredEqualizerNotification;
 		store = profiles.getStore();
 		store.addBroadcastListener(this);
 	}
@@ -59,7 +74,8 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 				profiles.migratePendingLegacyEqualizer(topologyProvider.getEqualizerTopology());
 			}
 			backend = nextBackend;
-			applyCurrentProfile();
+			boolean applied = applyCurrentProfile(true);
+			if (applied) equalizerPendingForNextSession = false;
 		} catch (RuntimeException error) {
 			releaseBoundBackend();
 		}
@@ -72,7 +88,31 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 	@Override
 	public synchronized void onPreferenceChanged(PreferenceStore ignored,
 			List<PreferenceStore.Pref<?>> changed) {
-		if (AudioEffectsProfileRepository.containsProfilePreference(changed)) applyCurrentProfile();
+		if (!AudioEffectsProfileRepository.containsProfilePreference(changed)) return;
+		AudioEffectsBackend current = backend;
+		boolean deferEqualizer = (current != null) &&
+				(current.getEqualizerUpdateMode() == EqualizerUpdateMode.INITIAL_ONLY) &&
+				AudioEffectsProfileRepository.containsEqualizerPreference(changed);
+		if (!deferEqualizer) {
+			applyCurrentProfile(true);
+			return;
+		}
+
+		if (!profiles.load().enabled()) {
+			current.bypass();
+			equalizerPendingForNextSession = false;
+			return;
+		}
+
+		applyCurrentProfile(false);
+		if (!equalizerPendingForNextSession) {
+			equalizerPendingForNextSession = true;
+			deferredEqualizerNotification.run();
+		}
+	}
+
+	boolean isEqualizerPendingForNextSession() {
+		return equalizerPendingForNextSession;
 	}
 
 	@Override
@@ -81,12 +121,13 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 		releaseBoundBackend();
 	}
 
-	private void applyCurrentProfile() {
+	private boolean applyCurrentProfile(boolean applyEqualizer) {
 		AudioEffectsBackend current = backend;
-		if (current == null) return;
+		if (current == null) return false;
 		AudioEffectsProfile profile = profiles.load();
-		if (profile.enabled()) current.apply(profile);
-		else current.bypass();
+		if (profile.enabled()) return current.apply(profile, applyEqualizer);
+		current.bypass();
+		return true;
 	}
 
 	private void releaseBoundBackend() {

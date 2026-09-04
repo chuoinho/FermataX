@@ -520,4 +520,5 @@
 	<string name="voice_trigger_clear">音声ボタンの割り当てを解除</string>
 	<string name="voice_trigger_cleared">車両の音声ボタンの割り当てを解除しました。</string>
 	<string name="voice_selection_prompt">1、2、3のいずれかを言ってください</string>
+    <string name="equalizer_apply_next_session">イコライザーの変更を保存しました。次の再生セッションで適用されます。</string>
 </resources>

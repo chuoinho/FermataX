@@ -515,4 +515,5 @@
 	<string name="voice_trigger_clear">Șterge atribuirea butonului vocal</string>
 	<string name="voice_trigger_cleared">Atribuirea butonului vocal al vehiculului a fost ștearsă.</string>
 	<string name="voice_selection_prompt">Spune numărul unu, doi sau trei</string>
+    <string name="equalizer_apply_next_session">Modificările egalizatorului au fost salvate. Acestea vor fi aplicate în următoarea sesiune de redare.</string>
 </resources>

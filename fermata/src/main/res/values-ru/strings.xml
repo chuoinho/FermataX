@@ -515,4 +515,5 @@
 	<string name="voice_trigger_clear">Удалить назначение голосовой кнопки</string>
 	<string name="voice_trigger_cleared">Назначение голосовой кнопки автомобиля удалено.</string>
 	<string name="voice_selection_prompt">Скажите номер один, два или три</string>
+    <string name="equalizer_apply_next_session">Изменения эквалайзера сохранены. Они будут применены в следующем сеансе воспроизведения.</string>
 </resources>

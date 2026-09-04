@@ -520,4 +520,5 @@
 	<string name="voice_trigger_clear">Zuweisung der Sprachtaste löschen</string>
 	<string name="voice_trigger_cleared">Zuweisung der Sprachtaste wurde gelöscht.</string>
 	<string name="voice_selection_prompt">Sage Nummer eins, zwei oder drei</string>
+    <string name="equalizer_apply_next_session">EQ-Änderungen wurden gespeichert. Sie werden in der nächsten Wiedergabesitzung angewendet.</string>
 </resources>

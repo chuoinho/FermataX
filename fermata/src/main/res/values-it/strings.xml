@@ -515,4 +515,5 @@
 	<string name="voice_trigger_clear">Cancella assegnazione del pulsante vocale</string>
 	<string name="voice_trigger_cleared">Assegnazione del pulsante vocale del veicolo cancellata.</string>
 	<string name="voice_selection_prompt">Di’ numero uno, due o tre</string>
+    <string name="equalizer_apply_next_session">Le modifiche dell\'equalizzatore sono state salvate. Verranno applicate nella prossima sessione di riproduzione.</string>
 </resources>

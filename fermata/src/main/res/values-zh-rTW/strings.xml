@@ -520,4 +520,5 @@
 	<string name="voice_trigger_clear">清除語音按鈕指派</string>
 	<string name="voice_trigger_cleared">已清除車輛語音按鈕指派。</string>
 	<string name="voice_selection_prompt">請說一、二或三</string>
+    <string name="equalizer_apply_next_session">等化器變更已儲存。將在下一個播放工作階段套用。</string>
 </resources>

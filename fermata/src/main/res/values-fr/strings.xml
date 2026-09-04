@@ -520,4 +520,5 @@
 	<string name="voice_trigger_clear">Effacer l’attribution du bouton vocal</string>
 	<string name="voice_trigger_cleared">L’attribution du bouton vocal du véhicule a été effacée.</string>
 	<string name="voice_selection_prompt">Dites numéro un, deux ou trois</string>
+    <string name="equalizer_apply_next_session">Les modifications de l\'égaliseur sont enregistrées. Elles seront appliquées à la prochaine session de lecture.</string>
 </resources>

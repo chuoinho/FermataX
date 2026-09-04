@@ -6,7 +6,12 @@ import java.util.EnumSet;
 interface AudioEffectsBackend {
 	EnumSet<AudioEffectCapability> getCapabilities();
 
-	void apply(AudioEffectsProfile profile);
+	default EqualizerUpdateMode getEqualizerUpdateMode() {
+		return EqualizerUpdateMode.STANDARD_LIVE;
+	}
+
+	/** Returns whether the current Equalizer profile was accepted by this session. */
+	boolean apply(AudioEffectsProfile profile, boolean applyEqualizer);
 
 	void bypass();
 

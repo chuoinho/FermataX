@@ -1,6 +1,7 @@
 package me.aap.fermata.media.audio;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -32,6 +33,14 @@ public class AudioEffectsProfileArchitectureTest {
 	}
 
 	@Test
+	public void deferredEqualizerNoticeUsesANonBlockingServiceSafeToast() throws Exception {
+		String callback = source("media/service/MediaSessionCallback.java");
+
+		assertTrue(callback.contains("Toast.makeText(getContext(), R.string.equalizer_apply_next_session,"));
+		assertFalse(callback.contains("UiUtils.showInfo(getContext(), R.string.equalizer_apply_next_session)"));
+	}
+
+	@Test
 	public void nativeSessionControllerIsTheOnlyNormalPlaybackAuthority() throws Exception {
 		String callback = source("media/service/MediaSessionCallback.java");
 		assertTrue(callback.contains("AudioEffectsController"));
@@ -55,6 +64,15 @@ public class AudioEffectsProfileArchitectureTest {
 		assertFalse(backend.contains("new Equalizer(EFFECT_PRIORITY, 0)"));
 		assertFalse(backend.contains("new DynamicsProcessing(0)"));
 		assertFalse(backend.contains("new android.media.audiofx.DynamicsProcessing(0)"));
+	}
+
+	@Test
+	public void initialOnlyEqualizerCapabilityRequiresASuccessfulDynamicsProcessingBind()
+			throws Exception {
+		String backend = source("media/audio/NativeSessionAudioEffectsBackend.java");
+
+		assertTrue(backend.contains("if (dynamicsEqualizerInitialized) return " +
+				"EqualizerUpdateMode.INITIAL_ONLY;"));
 	}
 
 	@Test
@@ -102,10 +120,15 @@ public class AudioEffectsProfileArchitectureTest {
 	}
 
 	@Test
-	public void preampAcceptsSignedNumericInput() throws Exception {
+	public void gainControlsAcceptSignedNumericInput() throws Exception {
 		String builder = source("ui/fragment/AudioEffectsPrefsBuilder.java");
 
-		assertTrue(builder.contains("InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED"));
+		assertEquals(2, occurrences(builder,
+				"InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED"));
+	}
+
+	private static int occurrences(String value, String needle) {
+		return value.split(java.util.regex.Pattern.quote(needle), -1).length - 1;
 	}
 
 	private static String source(String relativePath) throws Exception {

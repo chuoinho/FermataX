@@ -515,4 +515,5 @@
 	<string name="voice_trigger_clear">Ukloni dodjelu glasovne tipke</string>
 	<string name="voice_trigger_cleared">Dodjela glasovne tipke vozila je uklonjena.</string>
 	<string name="voice_selection_prompt">Recite broj jedan, dva ili tri</string>
+    <string name="equalizer_apply_next_session">Promjene ekvilizatora su spremljene. Primijenit će se u sljedećoj sesiji reprodukcije.</string>
 </resources>

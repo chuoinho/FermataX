@@ -515,4 +515,5 @@
 	<string name="voice_trigger_clear">Usuń przypisanie przycisku głosowego</string>
 	<string name="voice_trigger_cleared">Usunięto przypisanie przycisku głosowego pojazdu.</string>
 	<string name="voice_selection_prompt">Powiedz numer jeden, dwa lub trzy</string>
+    <string name="equalizer_apply_next_session">Zmiany korektora zostały zapisane. Zostaną zastosowane w następnej sesji odtwarzania.</string>
 </resources>

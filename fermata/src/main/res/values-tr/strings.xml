@@ -515,4 +515,5 @@
 	<string name="voice_trigger_clear">Ses düğmesi atamasını temizle</string>
 	<string name="voice_trigger_cleared">Araç ses düğmesi ataması temizlendi.</string>
 	<string name="voice_selection_prompt">Bir, iki veya üç numara deyin</string>
+    <string name="equalizer_apply_next_session">Ekolayzır değişiklikleri kaydedildi. Bir sonraki oynatma oturumunda uygulanacak.</string>
 </resources>

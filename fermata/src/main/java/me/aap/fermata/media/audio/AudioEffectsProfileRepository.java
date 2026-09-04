@@ -170,6 +170,17 @@ public final class AudioEffectsProfileRepository {
 		return false;
 	}
 
+	/** True when a change requires an initial-only processor to be initialized again. */
+	public static boolean containsEqualizerPreference(List<Pref<?>> prefs) {
+		for (Pref<?> pref : prefs) {
+			if ((pref == ENABLED) || (pref == EQUALIZER_ENABLED) || (pref == PREAMP_DB)) return true;
+			for (Pref<?> band : CANONICAL_CURVE_DB) {
+				if (pref == band) return true;
+			}
+		}
+		return false;
+	}
+
 	private void ensureInitialized() {
 		if (store.hasPref(SCHEMA_VERSION, false)) {
 			int version = store.getIntPref(SCHEMA_VERSION);

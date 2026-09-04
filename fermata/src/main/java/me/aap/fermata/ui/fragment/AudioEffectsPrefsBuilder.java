@@ -58,6 +58,7 @@ final class AudioEffectsPrefsBuilder {
 				o.ctitle = frequencyLabel(frequency);
 				o.seekMin = AudioEffectsProfile.MIN_CANONICAL_DB;
 				o.seekMax = AudioEffectsProfile.MAX_CANONICAL_DB;
+				o.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED;
 				o.visibility = equalizerEnabled.copy();
 			});
 		}

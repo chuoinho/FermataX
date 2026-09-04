@@ -515,4 +515,5 @@
 	<string name="voice_trigger_clear">مسح تعيين زر الصوت في السيارة</string>
 	<string name="voice_trigger_cleared">تم مسح تعيين زر الصوت في السيارة.</string>
 	<string name="voice_selection_prompt">قل الرقم واحد أو اثنين أو ثلاثة</string>
+    <string name="equalizer_apply_next_session">تم حفظ تغييرات المعادل. سيتم تطبيقها في جلسة التشغيل التالية.</string>
 </resources>

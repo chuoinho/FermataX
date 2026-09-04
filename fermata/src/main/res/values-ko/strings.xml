@@ -520,4 +520,5 @@
 	<string name="voice_trigger_clear">음성 버튼 할당 지우기</string>
 	<string name="voice_trigger_cleared">차량 음성 버튼 할당을 지웠습니다.</string>
 	<string name="voice_selection_prompt">1번, 2번 또는 3번이라고 말하세요</string>
+    <string name="equalizer_apply_next_session">이퀄라이저 변경 사항이 저장되었습니다. 다음 재생 세션에 적용됩니다.</string>
 </resources>
