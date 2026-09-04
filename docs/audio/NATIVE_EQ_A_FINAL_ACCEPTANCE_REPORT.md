@@ -726,3 +726,135 @@ direct runtime observation of pending consumption. The smallest future gate is
 a narrow diagnostic-free physical checkpoint that can expose those two states,
 or a deliberately approved test-only observability seam. Do not re-open AA2
 live-reapply feasibility.
+
+## Native EQ-AA4 Deferred Apply Observability Closure
+
+### Baseline, Scope, And Method
+
+AA4 started from `00efc37d` (`docs(audio): record deferred AA EQ acceptance`)
+with AA3 implementation `5a223f56`. The test target was the signed universal
+`me.app.fermataX.auto` artifact on physical device `15c36230` (Redmi Note 8,
+Android 16/API 36), projected through the retained 720p DHU configuration and
+its pre-existing `tcp:5277` forward.
+
+AA4 used a temporary, uncommitted log-only observability seam. It emitted only
+the DP construction session ID, capability mode, canonical 1 kHz gain and the
+runtime pending flag. It did not expose media content, URLs, account data,
+audio samples, or any user-facing diagnostic. The seam and its framework
+read-back helper were removed before this report was committed; production and
+test source therefore remain byte-for-byte at the AA3 feature state.
+
+The retained untracked evidence is under `.native-eq-a-temp/aa4/`. It contains
+the device logcat, MediaSession, AudioFlinger, and UI snapshots used below. The
+temporary long local audio fixture was removed from the device at cleanup.
+
+### Session A: Active Edit Is Deferred
+
+ExoPlayer playback was started through the normal Fermata Folders path. The
+temporary construction observation recorded DP initialization on session
+`25185` with `1 kHz = 0.0`, then a successful bind in `INITIAL_ONLY` mode with
+`pending=false`. The MediaSession was `PLAYING`, and AudioFlinger showed the
+active Fermata AudioTrack and its Dynamics Processing effect on that session.
+
+The normal numeric preference UI then committed `1 kHz` through `-3`, `-6`,
+and `-10 dB`. The final direct observation was:
+
+```text
+AA4_OBS deferred session=25185 mode=INITIAL_ONLY oneKhz=-10 pending=true
+```
+
+At that point the MediaSession was still `PLAYING`; AudioFlinger still showed
+the active session-A track. No live `DynamicsProcessing` write was attempted,
+and post-edit logcat contained no Fermata `UnsupportedOperationException`.
+This satisfies the active-session safety gate: profile saved, pending set, and
+the current playback chain left untouched.
+
+### Session B: Fresh Initialization Consumes Latest Profile
+
+Playback was stopped normally and the active Fermata AudioTrack disappeared.
+Reopening the same media through the real player path constructed a new DP
+backend. Android reused numeric session ID `25185`; AA4 does not treat that
+reuse as a false new-session proof. Instead, the fresh `dp-initial` event is
+direct evidence of backend construction:
+
+```text
+AA4_OBS dp-initial session=25185 oneKhz=-10.0
+AA4_OBS bind session=25185 mode=INITIAL_ONLY oneKhz=-10 applied=true pending=false
+```
+
+The configured DP read-back exactly matched the latest saved profile, and the
+successful bind cleared pending. This closes both AA3 evidence gaps without
+reopening the rejected AA2 live-reapply path.
+
+### Disconnect And Reconnect
+
+While projected playback was active, the normal UI changed the canonical 1 kHz
+profile to `-6 dB`; direct observation recorded `pending=true`. Closing DHU
+paused then stopped playback, and both the MediaSession and AudioFlinger
+snapshots show no active old Fermata track. The existing DHU configuration was
+reopened without changing its forward.
+
+New projected playback created a fresh DP backend (again with framework reuse
+of numeric session ID `25185`) and directly reported:
+
+```text
+AA4_OBS dp-initial session=25185 oneKhz=-6.0
+AA4_OBS bind session=25185 mode=INITIAL_ONLY oneKhz=-6 applied=true pending=false
+```
+
+This is a physical lifecycle pass: the latest deferred profile survives the
+projection boundary, the old active track is released, and a successful fresh
+backend consumes the profile and clears pending.
+
+### Scope Limits And Route Classifications
+
+The same-session track-change negative control was not separately reproduced;
+it is `NOT_OBSERVED` and does not weaken the direct stop/start and
+disconnect/reconnect proof. VLC remains
+`COVERED_BY_SHARED_NATIVE_BACKEND` because AA4 touched no engine-specific
+source. MediaPlayer's AA effect chain remains
+`MEDIAPLAYER_AA_EFFECT_CHAIN_NOT_OBSERVED`.
+
+The accepted route limits remain unchanged:
+
+| Capability | Status |
+| --- | --- |
+| Framework Equalizer | `UNAVAILABLE_ON_TESTED_AA_ROUTE` |
+| DP live EQ update | `UNSUPPORTED_ON_TESTED_AA_ROUTE` |
+| DP fresh-session initialization | `SUPPORTED` |
+| BassBoost | `UNAVAILABLE_ON_TESTED_AA_ROUTE` |
+| Virtualizer | `UNSUPPORTED_DEVICE_CAPABILITY` |
+
+### Cleanup And Regression Validation
+
+The temporary log calls, DP read-back helper and all `AA4_OBS` source residue
+were removed. There is no production call to
+`setPreEqBandAllChannelsTo(...)`. The AA4 long fixture was removed; playback
+was stopped. The `.auto` profile was restored to its observed baseline (Master
+off, Equalizer off, Preamp `0 dB`), and the unrelated `.test` package retained
+its independent baseline (Master on, Equalizer on, Preamp `0 dB`, flat bands).
+The existing DHU `tcp:5277` forward was preserved and `adb reverse --list` is
+empty.
+
+After observability removal, the focused Fermata, ExoPlayer and VLC unit
+suites were rerun successfully. `ArchitectureBoundaryTest` is included in the
+Fermata suite. `fermata/lib/auto/aauto.aar` remains SHA-256
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+### AA4 Audit And Verdict
+
+1. **State machine:** direct runtime evidence proves `false -> true -> false`
+   across an active `INITIAL_ONLY` edit and a successful fresh bind.
+2. **DP value:** a production-equivalent newly constructed DP backend read back
+   `-10.0 dB` after the `-10 dB` edit; the reconnect run independently read
+   back `-6.0 dB`.
+3. **Safety and scope:** no live DP write, framework exception, playback
+   restart, session-0 fallback, WebView/add-on change, `aauto.aar` change, or
+   permanent observability remains.
+
+`AA_DEFERRED_EQ_APPLY_PASS`
+
+`NATIVE_EQ_AA_PASS_WITH_ROUTE_CAPABILITY_LIMITS`
+
+The next planned audio checkpoint is `WEBEQ-B YouTube`; it is outside this
+closed Native EQ AA evidence phase.
