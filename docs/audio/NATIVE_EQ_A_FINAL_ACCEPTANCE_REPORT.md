@@ -615,3 +615,114 @@ the candidate fallback is not safe for live profile changes. The smallest
 permitted next step is AA3 design work for a separately auditable route-aware
 fallback with explicit live-update capability gating; AA2 makes no production
 implementation recommendation and does not implement AA3.
+
+## Native EQ-AA3 Deferred EQ Apply On Next Session
+
+### Baseline, Constraint, And Policy
+
+AA3 began from `74d29b0035471fc4f649d2339a168a4b1ed1f948`. AA2 remains
+historical evidence that this Android 16 Remote Submix route accepts a
+`DynamicsProcessing` pre-EQ configuration when a fresh effect is created, but
+rejects `setPreEqBandAllChannelsTo(...)` while that effect is live with
+`UnsupportedOperationException: AudioEffect: invalid parameter operation`.
+AA3 does not retry that failing call as control flow.
+
+The product policy is capability based. A conventional framework `Equalizer`
+is `STANDARD_LIVE`; a successfully initialized DP fallback is `INITIAL_ONLY`;
+a route where neither succeeds is `UNAVAILABLE`. On `INITIAL_ONLY`, an
+Equalizer, preamp, or master-profile change saves the one global
+`AudioEffectsProfile`, leaves the active playback chain untouched, and marks a
+runtime-only pending state. The first such edit displays the localized
+non-blocking message: `EQ changes saved. They will apply to the next playback
+session.` Further edits update the same profile without another notification.
+Only a successful new backend bind clears pending. There is no AA-specific
+profile, session-0 fallback, playback restart, or WebView/Stremio/YouTube
+change.
+
+`NativeSessionAudioEffectsBackend` builds the complete deterministic canonical
+curve and negative preamp into DP's construction configuration. It reports
+`INITIAL_ONLY` only after that construction actually succeeds; it otherwise
+reports `UNAVAILABLE`. This closes the prior false-capability edge case where
+a failed DP construction could have misleadingly promised a next-session
+apply.
+
+### Automated Evidence
+
+`AudioEffectsControllerTest` covers standard-phone live updates, deferred
+active-session updates, notification coalescing, latest-profile consumption by
+a successful new backend, retention of pending after a failed bind, master
+bypass, and deferred preamp. `AudioEffectsProfileArchitectureTest` includes a
+source-contract check that `INITIAL_ONLY` requires a successful DP bind.
+
+The fresh focused suite completed after the final capability correction:
+
+* `:fermata:testAutoDebugUnitTest`: `PASS`.
+* `:exoplayer:testAutoDebugUnitTest`: `PASS`.
+* `:vlc:testAutoDebugUnitTest`: `PASS`.
+
+The production-tree search contains no live
+`setPreEqBandAllChannelsTo` call. `aauto.aar` remains SHA-256
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+### Universal Artifact And Physical AA Evidence
+
+The signed universal artifact installed on `15c36230` is
+`fermata-2.0.1-me.app.fermataX.auto-auto-release-universal.apk`, package
+`me.app.fermataX.auto.test`, version `2.0.1 (304)`, SHA-256
+`30821C05497EF1D95D863DEE37A01D1A7F4756C89736B628E90A284A80502CF1`.
+APK Signature Scheme v3 verified. DHU projection used the retained
+`tcp:5277` forward and explicit ExoPlayer selection.
+
+The first 45-second fixture attempt is deliberately excluded from acceptance:
+it finished before the edit snapshot. A later 10-minute local copy of the same
+fixture made the timing unambiguous and was removed/restored after the run.
+The retained untracked evidence is under `.native-eq-a-temp/aa3/rerun/`.
+
+| Physical check | Observation | Status |
+| --- | --- | --- |
+| Session A before edit | ExoPlayer AA `PLAYING`; active track session `25065` with DP effect | `PASS` |
+| Active edits | UI committed `1 kHz: 0 -> -3 -> -6 -> -10` while `PLAYING` | `PASS` |
+| User explanation | Visible toast on first edit; no toast in later `-6` capture | `PASS` |
+| Playback safety | MediaSession remained `PLAYING`; no DP live-write exception or process crash in post-edit logcat | `PASS` |
+| Session B after normal stop/start | New active track/effect session `25073`, DP present, latest profile still visible as `-10` | `PARTIAL` |
+| Disconnect/reconnect | Closing DHU removed the active track; reconnect resumed a projected session | `PARTIAL` |
+| DP numeric read-back in production AA3 artifact | No permanent production read-back seam | `NOT_OBSERVED` |
+| Pending clear observed directly | Runtime-only state has no public diagnostic | `NOT_OBSERVED` |
+| Same-session track-change pending behavior | Not separately observed | `NOT_OBSERVED` |
+| VLC AA sanity | Shared backend only; no AA3 runtime rerun | `COVERED_BY_SHARED_NATIVE_BACKEND` |
+| MediaPlayer AA effect chain | Not rerun | `MEDIAPLAYER_AA_EFFECT_CHAIN_NOT_OBSERVED` |
+
+AA3 does not claim that the DP curve's `-10 dB` value was read back in the
+production build, nor that an audible output delta was measured. The former
+AA2 probe remains the accepted fresh-session read-back evidence, but it was
+not retained as production code.
+
+### Cleanup And Audit
+
+The exact profile was restored through the normal UI: Master and Equalizer
+remain enabled, Preamp is `0 dB`, and every visible canonical band including
+31 Hz, 62 Hz, 125 Hz, 250 Hz, 500 Hz, 1 kHz, and 2 kHz was rechecked at
+`0 dB`. The temporary ten-minute fixture was removed from the device and the
+original 45-second fixture restored; its local copy is retained only in the
+untracked evidence directory. Playback was stopped before cleanup.
+No reverse mapping was created. The projection forward is retained because it
+pre-existed AA3 and is required to reopen DHU.
+
+Audit round 1 confirms phone `STANDARD_LIVE` behavior is covered by focused
+tests and the AA route never attempts the known-invalid live DP operation.
+Audit round 2 confirms coalescing and bind-success/failure ownership in unit
+tests, while physical pending-clear and same-session reuse remain open.
+Audit round 3 finds no `aauto.aar`, WebView, Stremio, YouTube, generic web, or
+playback-restart change.
+
+### AA3 Verdict
+
+`NATIVE_EQ_AA_PARTIAL_ROUTE_CAPABILITY_LIMIT`
+
+`AA_DEFERRED_EQ_APPLY_PASS` is not claimed yet. The implementation has a
+physical safe active-session edit, visible one-time explanation, and a new DP
+effect session after stop/start, but lacks production numeric DP read-back and
+direct runtime observation of pending consumption. The smallest future gate is
+a narrow diagnostic-free physical checkpoint that can expose those two states,
+or a deliberately approved test-only observability seam. Do not re-open AA2
+live-reapply feasibility.
