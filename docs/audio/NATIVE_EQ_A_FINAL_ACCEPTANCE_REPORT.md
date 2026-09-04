@@ -341,3 +341,129 @@ Phone status remains `NATIVE_EQ_A_PHONE_PARTIAL_AUDIBLE_DSP_EVIDENCE`.
 The only next Native EQ task is to resume the short human-listening matrix at
 MediaPlayer Preamp; no architecture, code, lifecycle, release, or AA/DHU work
 is required. AA/DHU remains `AA_NATIVE_EQ_BLOCKED_ENVIRONMENT`.
+
+## Native EQ-AA1 DHU Runtime Acceptance
+
+### Baseline And Scope
+
+The AA-only checkpoint used `f1f98018` on `15c36230` (Redmi Note 8, Android
+16). The required historical baseline `49a7e0c8` is an ancestor of that
+checkpoint. The projected DHU host was already working: `desktop-head-unit.exe`
+was live and the device retained its `tcp:5277` forward. FermataX opened in the
+DHU and showed the two local NativeEQ-A tone fixtures. No phone audible work,
+source edit, test edit, fixture-content edit, reverse mapping, or temporary
+server was performed.
+
+The exact initial profile remains the retained A4 baseline: Master `ON`, EQ
+enabled, all ten bands `0 dB`, Preamp `0 dB`, BassBoost enabled at strength
+`148`, and Volume boost and Virtualizer disabled. This checkpoint did not
+change an EQ, preamp, master, or optional-effect preference.
+
+### AA Entry Gates
+
+| Gate | Physical evidence | Status |
+| --- | --- | --- |
+| AA projection connected | Live DHU window and Android Auto projection processes | `PASS` |
+| FermataX launch in AA | DHU displayed `FermataX-NativeEQ-A` and both fixture items | `PASS` |
+| Native test content visible | Two MediaStore-backed local tone items rendered in DHU | `PASS` |
+
+### Artifact Gate: Dynamic Engine Providers Are Absent
+
+Before any DSP or lifecycle operation, AA1 required an explicit normal-UI
+selection of ExoPlayer. A long press on a fixture item in DHU opened its normal
+context menu. The menu contains Repeat, favorites, playlist, bookmark, and
+subtitle entries, but has no `Preferred media engine` entry. This is a runtime
+observation, not an inference from the source tree.
+
+The installed package confirms why that UI is absent:
+
+| Evidence | Observed value |
+| --- | --- |
+| Installed package | `me.app.fermataX.auto.test` |
+| Installed APK paths | one `base.apk` only |
+| Package split list | `splits=[base]` |
+| ExoPlayer dynamic-feature split | absent |
+| VLC dynamic-feature split | absent |
+
+`MediaItemMenuHandler` intentionally shows `Preferred media engine` only when
+`MediaEngineManager.isAdditionalPlayerSupported()` is true. That predicate is
+the disjunction of its non-null ExoPlayer and VLC providers. The observed menu
+therefore agrees with the installed-package evidence: this test artifact has
+only the built-in MediaPlayer route available. It cannot launch ExoPlayer or
+VLC through normal UI.
+
+The context-menu screenshot, current DHU screenshot, package-path output, and
+the source-condition audit are retained locally in `.native-eq-a-temp/` as
+AA1 evidence. The package contains no sensitive media URL in this report.
+
+### ExoPlayer AA Gate
+
+| Check | Result |
+| --- | --- |
+| Explicit UI selection of ExoPlayer | `BLOCKED_ARTIFACT_MISSING_DYNAMIC_FEATURE` |
+| ExoPlayer playback under AA | `NOT_OBSERVED` |
+| Active AudioTrack == engine session == effect session | `NOT_OBSERVED` |
+| EQ `0 -> -10 -> 0` | `NOT_OBSERVED` |
+| Preamp `0 -> -6 -> 0` | `NOT_OBSERVED` |
+| Master `ON -> OFF -> ON` | `NOT_OBSERVED` |
+| Pause/resume, seek, A -> B | `NOT_OBSERVED` |
+| Disconnect/reconnect ownership | `NOT_OBSERVED` |
+
+This is not an ExoPlayer session mismatch and not evidence of an AA-specific
+production defect. The required provider simply is not present in the
+installed artifact. AA1 therefore did not substitute a MediaPlayer result for
+the required ExoPlayer proof, and did not run any DSP/lifecycle matrix on the
+wrong engine.
+
+### MediaPlayer And VLC AA Sanity
+
+The built-in MediaPlayer path is available, but the AA1 sequence makes the
+ExoPlayer real-session gate mandatory before running the quick MediaPlayer
+sanity or the VLC sanity. They are consequently both `NOT_OBSERVED`, rather
+than treated as failed.
+
+| Check | MediaPlayer | VLC |
+| --- | --- | --- |
+| Explicit provider available in current artifact | built-in only | `BLOCKED_ARTIFACT_MISSING_DYNAMIC_FEATURE` |
+| AA active-track/session/effect equality | `NOT_OBSERVED` | `NOT_OBSERVED` |
+| Shared-backend coverage classification | not applicable until AA session proof | not applicable until provider is installed |
+
+### Optional Effects And Audible Output
+
+No optional effect was toggled. Virtualizer remains
+`UNSUPPORTED_DEVICE_CAPABILITY` on Android 16/API 36. No human listener or
+objective output capture was available, so no AA DSP-output claim is made.
+
+### Cleanup, Scope, And Release Evidence
+
+No test-specific process was started. `adb reverse --list` is empty; the
+pre-existing working DHU forward remains `15c36230 tcp:5277 tcp:5277` as
+required for projection and was deliberately preserved. No test server is
+listening on port 7000. The pre-existing immutable artifact evidence is reused:
+the universal release APK verified APK Signature Scheme v3 and
+`fermata/lib/auto/aauto.aar` remains
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+All production and test LOC changes for AA1 are `0`.
+
+### Audit Rounds
+
+1. **AA session authority:** AA projection and FermataX visibility pass, but
+   the absent ExoPlayer provider prevents the required active-track/engine/
+   effect equality check. No non-zero session was promoted to a pass.
+2. **DSP and lifecycle:** not started. This avoids producing lifecycle or DSP
+   evidence for MediaPlayer while labelling it ExoPlayer coverage.
+3. **Scope and regression:** no WebView, Stremio, YouTube, projection-library,
+   `aauto.aar`, production, or test modification was made. The visible profile
+   was not changed and the working DHU connection was preserved.
+
+### AA1 Verdict And Smallest Next Checkpoint
+
+`NATIVE_EQ_AA_BLOCKED_ARTIFACT_MISSING_DYNAMIC_FEATURES`
+
+AA1 can resume only after installing an otherwise identical signed test or
+universal artifact that includes both `exoplayer` and `vlc` dynamic-feature
+splits. The preflight must first verify the package paths list the two splits
+and that the normal AA item menu offers `Preferred media engine`; then rerun
+only the AA1 ExoPlayer-first matrix from the beginning. Do not change
+production code to work around a missing packaged provider.
