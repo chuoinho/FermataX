@@ -277,3 +277,176 @@ not prove a WebAudio-specific lifecycle regression and therefore made no
 production fix. It also did not earn the broader `WEBEQ_B_YOUTUBE_PASS`: clean
 fullscreen/back, a continuous A -> B -> A graph test, and visible DHU control
 acceptance remain outstanding.
+
+## WEBEQ-B3 Final Physical Closure
+
+### Baseline and scope
+
+This is an acceptance-only pass on physical device `15c36230`, signed release
+package `me.app.fermataX.auto`, and commit `1c5cf89d`. The tracked production
+and test source trees were clean before testing and remain unchanged. The only
+new evidence is untracked under `.webeq-b-temp/b3/`; it contains screenshots
+and bounded state only. No URL, media address, DOM, cookie, header, account
+data, token, sample, or temporary production diagnostic was retained.
+
+The temporary controlled profile was observed through the normal FermataX UI
+and the existing bounded bridge status object only:
+
+```text
+Master = ON
+Equalizer = ON
+Preamp = 0 dB
+1 kHz = -6 dB
+```
+
+The starting and restored release profile was Master on, Equalizer off, with
+zero preamp. The mobile release's legacy Equalizer presentation exposed its
+native backend control rather than a ten-band canonical editor, so the bridge
+read-back, not an inferred UI label, is the evidence for the controlled 1 kHz
+value.
+
+### Continuous A -> B -> A
+
+Video A was a public, non-EME Charlie Chaplin title. With A visibly playing,
+the bounded status was:
+
+```text
+bridge = SUPPORTED_ACTIVE
+Master = true
+Equalizer = true
+Preamp = 0
+1 kHz = -6
+MediaSession = PLAYING
+```
+
+Video B was selected once from the visible normal YouTube recommended-content
+tile, not by URL injection, JavaScript navigation, Dashboard navigation, or an
+Android Back return. B was a distinct public Charlie Chaplin title and visibly
+started in the FermataX playback surface. Its bounded bridge status remained
+`SUPPORTED_ACTIVE` with Master and Equalizer true, preamp zero, and 1 kHz
+`-6`; `FermataMediaService` was `PLAYING`.
+
+The B3 bounded surface intentionally does not reveal media-element identity or
+graph count. It therefore does not prove whether YouTube reused A's element or
+created a new one, and it does not elevate that fact to a physical graph-count
+pass. It does prove that the current document retained one active bridge owner
+and the controlled profile across the A -> B selection.
+
+The filtered B3 device-log audit found no
+`InvalidStateError`, `MediaElementSource`, `createMediaElementSource`,
+`already connected`, `already created`, `AudioContext`, or `WebAudio bridge
+failure` entry. Console exception collection was not required to access media
+data and was not expanded beyond the existing bounded probe; it is therefore
+`NOT OBSERVED` in B3. B2's prior filtered console evidence remains historical
+support for its A -> B attempt.
+
+The required uninterrupted B -> A leg was not honestly obtainable. After B
+selection FermataX entered its playback surface, where the visible previous
+control did not select A. The normal YouTube content-selection surface was no
+longer available. Android Back, Dashboard navigation, injected URLs, and
+JavaScript navigation were forbidden for this acceptance experiment and were
+not used for the accepted chain. An earlier exploratory fullscreen-exit Back
+was not counted as A -> B -> A evidence.
+
+**Verdict:** `YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY`.
+
+This is a YouTube/FermataX surface-flow limitation, not a reproduced
+WebAudio-specific defect. A -> B retained bridge eligibility and the controlled
+profile, and no duplicate-source or AudioContext failure was observed. No
+source change is justified by this evidence.
+
+### DHU visible acceptance
+
+The established `open-dhu.bat` workflow launched DHU at the 1280x720 preset.
+It created the B3-owned `tcp:5277 -> tcp:5277` forward, the DHU process had a
+visible Windows window handle, and the phone transitioned to Android Auto
+`GhostActivity`. These are setup observations only.
+
+The available CUA surface did not expose any native app window, including the
+DHU window, for direct viewing or interaction. Consequently B3 could not
+visibly confirm FermataX in DHU, YouTube in DHU, projected playback, a single
+active projected host, live `0 -> -10 -> 0` EQ, Master neutralisation, EQ
+neutralisation, or the DHU pause/resume controls. Passive CDP was deliberately
+not substituted for those visible gates.
+
+DHU was stopped after this preflight blocker. The phone returned to FermataX
+without a crash. A new reconnect/ownership result is not claimed because the
+visible-DHU preflight gate failed first.
+
+**Verdict:** `BLOCKED_DHU_VISIBLE_UI_ENVIRONMENT` and
+`WEBEQ_B_YOUTUBE_DHU_PARTIAL_PHYSICAL_ACCEPTANCE`.
+
+### Fullscreen disposition
+
+No fullscreen investigation was performed in B3. The B2 disposition remains
+unchanged:
+
+`YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE`
+
+No B3 observation directly attributes a fullscreen or Back presentation issue
+to WebAudio.
+
+### Validation and immutable boundaries
+
+- Production LOC changed: `0`.
+- Test LOC changed: `0`.
+- Focused Fermata and web unit-suite command completed successfully in this
+  worktree; the final rerun is recorded with this closure commit.
+- `git diff --check` passed with the report as the only tracked change.
+- Nonblank hotspot counts are unchanged from B2:
+
+  ```text
+  YoutubeWebView = 1246
+  YoutubeMediaEngine = 1121
+  MediaSessionCallback = 2182
+  MainActivityDelegate = 1142
+  ControlPanelView = 758
+  ```
+
+- `fermata/lib/auto/aauto.aar` SHA-256 remains
+  `99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+- Source did not change, so the previously verified signed universal WEBEQ-B
+  APK remains applicable. No rebuild was performed.
+- No Stremio, generic browser, native EQ, Auto manifest, or `aauto.aar` source
+  was changed.
+
+### Cleanup and audits
+
+- The release profile was restored and visually verified as Master on,
+  Equalizer off, preamp zero; the bounded bridge returned the expected neutral
+  profile (`m=true`, `e=false`, `b=0`).
+- Playback was left paused and the test surface was exited to settings.
+- B3-created DHU was stopped.
+- The B3 DHU forward and the bounded-CDP forward were removed. Final
+  `adb forward --list` and `adb reverse --list` were empty.
+- The temporary bounded-status reader was removed before this report.
+- `.webeq-b-temp/b3/` remains untracked evidence only.
+
+Audit round 1: A and B each produced `SUPPORTED_ACTIVE`, retained the `-6`
+profile across their visible transition, and produced no filtered device-log
+duplicate-source or AudioContext failure. The continuous return to A is
+`NOT OBSERVED RELIABLY` rather than inferred.
+
+Audit round 2: DHU setup and projection transition were observed, but direct
+DHU controls were not available to the test surface. Every visible-control
+claim is therefore blocked rather than inferred from passive observation.
+
+Audit round 3: scope remained report-only; source, architecture ceilings,
+`aauto.aar`, profile cleanup, ADB cleanup, and DHU cleanup were checked.
+
+### Final B3 verdict
+
+`WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE`
+
+```text
+A -> B = PASS for visible selection, playback, bounded active bridge,
+         profile retention, and filtered device-log error gate.
+A -> B -> A = YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY.
+DHU visible control = BLOCKED_DHU_VISIBLE_UI_ENVIRONMENT.
+Fullscreen = retain B2 non-WebAudio attribution.
+Production/test LOC = 0.
+```
+
+The remaining work is not a code-fix task. It requires a test environment that
+can directly display and operate the DHU window, plus a normal YouTube surface
+that permits a B -> A selection without Android Back or Dashboard navigation.
