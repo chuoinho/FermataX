@@ -622,3 +622,104 @@ acceptance gap is a normal UI selection of a known eligible non-EME YouTube
 `BLOB_MSE` video, followed by the live graph test. The untracked bounded
 evidence is under `.webeq-b-temp/b4-dhu-test/` and contains no URL, media,
 cookie, token, or account data.
+
+## WEBEQ-B5 DHU Source Topology And WebAudio Capability Discovery
+
+### Baseline and boundaries
+
+This discovery pass ran against `a86f786e` plus an uncommitted, temporary
+probe in the signed physical test package `me.app.fermataX.auto.test`, version
+`2.0.1` / version code `304`, on device `15c36230`. The requested release
+package was not used. DHU remained open throughout and its user-owned
+`tcp:5277 -> tcp:5277` forward was preserved; `adb reverse --list` was empty.
+
+The temporary document-start probe exposed only bounded topology and graph
+fields. It had no URL, title, media, cookie, header, credential, token,
+account, or media-byte output. Its one experimental attach entry point was
+never invoked. The temporary APK installed on the device was verified byte for
+byte against the locally built universal test APK before the probe was removed.
+
+The effective profile was not changed in this pass: Master on, Equalizer off,
+and preamp `0 dB`. Playback was stopped safely at cleanup.
+
+### Observation and gating result
+
+Normal UI navigation opened YouTube and normal UI playback reached
+`FermataMediaService = PLAYING`. A fresh FermataX process was then started and
+the same normal Dashboard -> YouTube route was repeated, eliminating a
+pre-probe document as the explanation.
+
+Passive CDP discovered one debuggable WebView document. The document did not
+contain `window.__fermataYoutubeWebAudioV1`; consequently no probe method was
+available and no media-element inspection, source classification, EME query,
+or attach was performed. This is deliberately not treated as `NO_MEDIA`.
+
+The static installation path makes the applicable gate explicit:
+
+```text
+YoutubeWebView.loadUrl
+  -> YoutubeWebAudioBridge.onDocumentNavigation
+      -> installed && allowed YouTube document && preferred playback host
+          -> document-start shim
+```
+
+The runtime observation proves this gate did not produce a shim for the tested
+projected document. It does not safely distinguish feature availability,
+exact hosted-document form, or preferred-host ownership without adding another
+diagnostic seam. B5 does not weaken that gate, inject into a non-owner document,
+or infer media topology from the policy result.
+
+### Source capability matrix
+
+| Source class | DHU observed | EME | Experimental attach | Signal | Playback after attach | Live EQ | Production candidate |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Unclassified active YouTube document | NOT OBSERVED | NOT OBSERVED | NOT ATTEMPTED | NOT MEASURED | NOT APPLICABLE | NOT APPLICABLE | NO |
+
+No observed source class earned `WEBAUDIO_TRANSPORT_SUPPORTED`. In particular,
+no conclusion is made about `BLOB_MSE`, direct HTTPS, direct HTTP, iframe, or
+EME capability on this DHU session.
+
+### Production decision
+
+`YoutubeWebAudioCandidatePolicy` remains unchanged: only the pre-existing
+YouTube main-document, preferred-host, non-EME `BLOB_MSE` route is eligible.
+There is no production or test source change, no generic direct-HTTPS support,
+no Stremio policy change, and no native EQ/AA change.
+
+The capability probe was removed from source and the device was rebuilt and
+reinstalled from the clean source state. A future B5 retry must first expose a
+normal, preferred YouTube document with the bounded shim available; it may then
+observe topology before making exactly one non-EME source claim.
+
+### Validation, cleanup, and audits
+
+- `aauto.aar` SHA-256:
+  `99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+- The B5-created `tcp:9224` CDP forward was removed. DHU and `tcp:5277` remain
+  untouched.
+- The temporary probe source and its focused test were removed before the
+  clean rebuild. B5 evidence remains untracked under
+  `.webeq-b-temp/b5-source-capability/`.
+
+Audit round 1: the current production candidate policy did not decide the
+experiment; the missing bounded shim prevented topology observation before
+policy filtering.
+
+Audit round 2: no non-owner injection, EME bypass, URL exposure, generic
+browser broadening, or Stremio change occurred.
+
+Audit round 3: normal YouTube playback reached the media session before the
+probe boundary, then was stopped; no attach, duplicate-source,
+`AudioContext`, renderer, or crash failure was observed. The temporary
+instrumentation was removed.
+
+### Final B5 verdict
+
+```text
+YOUTUBE_DHU_SOURCE_TOPOLOGY_NOT_OBSERVED
+YOUTUBE_DHU_WEBAUDIO_TRANSPORT_NOT_TESTED
+WEBEQ_B_DHU_SOURCE_CAPABILITY_UNRESOLVED
+```
+
+This is a host/document observability blocker, not evidence that WebAudio is
+unsupported and not grounds for a production policy expansion.
