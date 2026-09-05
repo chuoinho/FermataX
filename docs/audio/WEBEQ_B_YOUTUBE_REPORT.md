@@ -521,3 +521,104 @@ surface. The already-running DHU session is preserved, not treated as failed.
 
 WEBEQ-B remains open solely for direct visible DHU interaction and a valid
 normal-YouTube B -> A content-selection path. No code change is indicated.
+
+## WEBEQ-B4 DHU Eligible-Media Acceptance On .test
+
+### Scope and package preflight
+
+This report-only continuation ran on physical device `15c36230` at tracked
+HEAD `1cfa639c76601f7c4e14ce893fcfcec7ee256741`. The requested literal
+package `e.app.fermataX.auto.test` was not installed. The actual physical test
+package was `me.app.fermataX.auto.test`, version `2.0.1` / version code `304`.
+The mismatch is recorded rather than silently normalised. The release package
+was not launched, installed, or used as evidence.
+
+`desktop-head-unit` and its pre-existing `15c36230 tcp:5277 -> tcp:5277`
+forward were preserved. `adb reverse --list` was empty. The user directly
+observed the projected YouTube surface playing in DHU; the available automation
+surface still could not expose the native DHU window, so it was not used as a
+negative projection signal.
+
+Production LOC changed: `0`. Test LOC changed: `0`.
+
+### Playback and media-control baseline
+
+The already accepted test-package results remain: projected playback,
+pause/play, resume position, Next across multiple videos, fresh playback after
+Next, and no app crash or renderer loss. This checkpoint performed one bounded
+sanity cycle only. A paused session at position `1916215` accepted a system
+MediaSession Play command, reached `PLAYING` at `1916229`, and then returned to
+`PAUSED` at `1917642`. This proves playback/control continuity without
+repeating the historical matrix.
+
+### Eligible-media search and fail-open result
+
+Earlier WEBEQ-B evidence proves that a public non-EME YouTube `BLOB_MSE`
+source has reached `SUPPORTED_ACTIVE`, but deliberately retains neither title
+nor video id. The historical image is insufficient to recover a precise normal
+UI selection without guessing. Accordingly this checkpoint did not inject a
+URL, inspect media/DOM data, or continue random Next cycling.
+
+One controlled current projected YouTube candidate was classified using only
+the bounded `{ r, m, e, p, b }` bridge status. While the MediaSession was
+`PLAYING`, both YouTube documents reported:
+
+```text
+r = NO_MEDIA
+m = true
+e = false
+p = 0
+b = null
+```
+
+No eligible processing host was observed. This is an intentional fail-open
+outcome: normal projected playback and media controls continued, while the
+bridge made no source claim. Since no `SUPPORTED_ACTIVE` graph existed, the
+live `0 -> -10 -> 0`, Master Off, Equalizer Off, and graph-active
+pause/resume gates were not run and are not inferred from the no-media path.
+
+### Error audit, validation, and boundaries
+
+The filtered test-package audit found no `InvalidStateError`,
+`MediaElementSource`, duplicate-source, `AudioContext`, WebAudio bridge,
+renderer, crash, or `FATAL EXCEPTION` entry. The temporary CDP forward used for
+the bounded status was removed; only the user's DHU `tcp:5277` forward remains.
+The audio profile was not changed, so the observed starting `Master on`,
+`Equalizer off`, `0 dB` state was preserved. Playback was left paused.
+
+Fresh validation completed:
+
+```text
+:fermata:testAutoDebugUnitTest = 874 tests, 0 failures, 0 errors
+:web:testAutoDebugUnitTest     = 217 tests, 0 failures, 0 errors
+ArchitectureBoundaryTest       = 8 tests, 0 failures, 0 errors
+git diff --check               = PASS
+aauto.aar SHA-256              = 99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B
+```
+
+The older hotspot figures in the B4 prompt do not match this HEAD. Current
+pre-report baseline counts are `YoutubeWebView=1369`,
+`YoutubeMediaEngine=1250`, `MediaSessionCallback=2463`,
+`MainActivityDelegate=1312`, and `ControlPanelView=884`; this checkpoint made
+no source change and therefore did not cause the difference.
+
+### Final B4 eligible-media verdict
+
+```text
+PHYSICAL TEST PACKAGE = me.app.fermataX.auto.test
+PHYSICAL_TEST_PACKAGE_PASS = playback/control and fail-open safety only
+COVERED_BY_IDENTICAL_SOURCE = release source scope only; not a physical release PASS
+
+YOUTUBE_DHU_PLAYBACK_CONTROL_PASS
+YOUTUBE_DHU_FAIL_OPEN_PASS
+YOUTUBE_DHU_WEBAUDIO_ELIGIBLE_MEDIA_NOT_OBSERVED
+YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY
+YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE
+WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE
+```
+
+No production policy change is justified. The only remaining WebEQ DHU
+acceptance gap is a normal UI selection of a known eligible non-EME YouTube
+`BLOB_MSE` video, followed by the live graph test. The untracked bounded
+evidence is under `.webeq-b-temp/b4-dhu-test/` and contains no URL, media,
+cookie, token, or account data.
