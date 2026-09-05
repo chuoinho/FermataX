@@ -450,3 +450,74 @@ Production/test LOC = 0.
 The remaining work is not a code-fix task. It requires a test environment that
 can directly display and operate the DHU window, plus a normal YouTube surface
 that permits a B -> A selection without Android Back or Dashboard navigation.
+
+## WEBEQ-B4 Final Full Physical Closure Checkpoint
+
+### Baseline and starting environment
+
+This B4 checkpoint began at `47b119361dc75215cafa551870f4c6293c0b3970` with
+no tracked production or test source diff. The historical untracked evidence
+directories `.native-eq-a-temp/` and `.webeq-b-temp/` were preserved.
+
+An existing DHU process was already running and owned the pre-existing
+`tcp:5277 -> tcp:5277` ADB forward. The physical device entered Android Auto
+`GhostActivity`; no reverse mapping existed. B4 did not restart DHU, create a
+second DHU process, change the existing forward, or change the current release
+audio profile.
+
+### Visible-DHU preflight
+
+The required direct-control preflight could not be satisfied by the available
+automation environment. It reported no native application surface at all,
+including no DHU window, despite the running DHU process and Android Auto
+projection. Therefore the agent could not visually inspect or operate the
+already-open DHU window.
+
+This is not evidence that the user-visible DHU window is absent or unusable;
+it is evidence that it is not exposed to the available direct automation
+surface. The B4 rules forbid substituting process state, `GhostActivity`, ADB,
+or passive CDP for visible DHU interaction. The checkpoint stopped before
+altering projection, profile, playback, or YouTube navigation.
+
+### Gates not run
+
+The following were not run in B4 because the mandatory visible-DHU preflight
+failed for this automation surface:
+
+- continuous A -> B -> A selection;
+- visible projected FermataX/YouTube playback;
+- live `0 -> -10 -> 0` WebAudio EQ read-back;
+- Master/EQ neutralisation;
+- visible DHU pause/resume;
+- projected-host ownership;
+- DHU disconnect/reconnect.
+
+No product failure, WebAudio failure, duplicate-source error, or AudioContext
+failure was reproduced. B4 does not revise any B2 or B3 conclusion.
+
+### Scope and cleanup
+
+- Production LOC changed: `0`.
+- Test LOC changed: `0`.
+- No temporary diagnostic, source, test, ADB mapping, profile, playback, or
+  DHU process was changed by B4.
+- The pre-existing DHU process and its `tcp:5277` forward were deliberately
+  left intact for a future session with direct visible control.
+- B3's focused-suite and `ArchitectureBoundaryTest` evidence remains the most
+  recent source-validation evidence; B4 did not rerun tests because it made no
+  source change and did not reach a physical acceptance action.
+
+### Final B4 verdict
+
+`WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE`
+
+```text
+A -> B -> A = not run in B4; retain B3
+YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY.
+
+DHU visible control = BLOCKED_DHU_VISIBLE_UI_ENVIRONMENT for this agent
+surface. The already-running DHU session is preserved, not treated as failed.
+```
+
+WEBEQ-B remains open solely for direct visible DHU interaction and a valid
+normal-YouTube B -> A content-selection path. No code change is indicated.
