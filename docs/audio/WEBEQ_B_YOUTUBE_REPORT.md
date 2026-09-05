@@ -865,3 +865,101 @@ The next phase may resume **only** DHU source-topology/WebAudio capability
 discovery against `wv#2`, now that the projected owner and shim-installation
 gate are proven. It must separately observe source topology and preserve the
 existing fail-closed policy before attempting any attach or EQ experiment.
+
+## WEBEQ-B7 DHU Projected Host Source Capability
+
+### Baseline, package, and privacy boundary
+
+This phase used baseline `d731b4ba210246731b2158c245579df71a4844b6` on
+physical device `15c36230`, package `me.app.fermataX.auto.test`, version
+`2.0.1` / version code `304`. DHU remained running. Its user-owned
+`15c36230 tcp:5277 -> tcp:5277` forward was preserved, no ADB reverse mapping
+was present, and no release package was used.
+
+B6's ownership result was accepted unchanged: the projected automotive
+preferred WebView was the only eligible bridge host. The temporary probe ran
+only there. It emitted opaque element/document tokens and bounded topology,
+EME, graph, and gain state. It never logged or retained a URL, media address,
+video identity, title, channel, cookie, header, account data, token, sample,
+or DRM material. Its untracked safe summary is in
+`.webeq-b-temp/b7-dhu-source-capability/`.
+
+### Observed topology and transport
+
+Normal projected YouTube playback produced one connected, playing, ready, and
+advancing candidate. The observed source was `BLOB_MSE`, EME was `CLEAR`, and
+the opaque candidate was `media#1`. Passive topology observations occurred
+before the temporary experiment. The experiment attempted the media source
+claim once per opaque element; repeated page callbacks did not create a second
+claim. The existing supported BLOB/MSE bridge also exercised the same graph
+when Master and Equalizer were enabled.
+
+The attach succeeded; `AudioContext` reached `running`; bounded analyser
+observations reached `NON_ZERO`; MediaSession remained `PLAYING`; position
+continued advancing; and no WebAudio, duplicate-source, renderer, or crash
+error was observed. Intermittent `SILENT` analyser samples were followed by
+`NON_ZERO` while playback continued, so they are treated as sampling timing,
+not a silent graph verdict.
+
+| Source class | Observed projected DHU | EME | Attach | Signal | Playback survives | EQ | Lifecycle | Production decision |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `BLOB_MSE` | yes | `CLEAR` | PASS | `NON_ZERO` | PASS | PASS | PASS | existing narrow support retained |
+
+No direct HTTP, direct HTTPS, media-stream, iframe, EME, or unknown source was
+observed in B7. None is enabled or inferred from this result.
+
+### EQ, controls, and lifecycle
+
+On the same active graph, the app's standard Audio & Equalizer UI produced the
+bounded 1 kHz read-back sequence `0 -> -10 -> 0` without restart. Master Off
+neutralised the active 1 kHz filter to `0` while playback continued; Master
+restore retained the graph. Equalizer Off likewise neutralised the filter
+without detaching the graph. The profile was restored to Master on, Equalizer
+off, preamp `0 dB`, and 1 kHz `0 dB`.
+
+The real MediaSession path paused at retained position `246829`, then resumed
+from that position and advanced to `246868`. One Next action reached
+`SKIPPING_TO_NEXT` and resumed `PLAYING` in a new document generation. The
+new document exposed its own opaque `media#1`, `BLOB_MSE`, `CLEAR` candidate
+with one successful graph claim. Element tokens are document-local, so the
+generation transition, rather than a reused label, establishes the fresh
+lifecycle boundary. No double active owner was observed.
+
+### Production decision
+
+`YOUTUBE_DHU_BLOB_MSE_WEBAUDIO_SUPPORTED`
+
+The only observed class was already the sole production-supported class in
+`YoutubeWebAudioCandidatePolicy`. Therefore production source change: `0` LOC;
+test source change: `0` LOC. There is no direct-HTTPS expansion, no generic
+WebView change, no Stremio/native-EQ/EME change, and no `aauto.aar` change.
+
+### Cleanup, validation, and audits
+
+The bounded temporary probe and its temporary tests were removed before the
+clean rebuild. The final signed `.test` build contains no `WEBEQ-B7`,
+`b7Status`, `b7Experiment`, or `one_khz` marker. Playback was paused safely.
+DHU remains open; its `tcp:5277` forward remains; no B7 CDP/ADB forward was
+created or retained.
+
+Current hotspot counts are `YoutubeWebView=1369`, `YoutubeMediaEngine=1250`,
+`MediaSessionCallback=2463`, `MainActivityDelegate=1312`, and
+`ControlPanelView=884`. The immutable `aauto.aar` SHA-256 remains
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+Audit round 1: projected preferred ownership, clear BLOB/MSE topology, one
+claim per element, signal, continuity, EQ read-back, and lifecycle were
+physically observed. Audit round 2: no non-owner processing, URL/media
+exposure, DRM bypass, generic policy expansion, or unrelated addon change
+occurred. Audit round 3: no production change was required; probe removal,
+clean `.test` installation, test suite, architecture boundary, diff check,
+and immutable artifact check are recorded with the phase closure.
+
+### Final B7 verdict
+
+`WEBEQ_B_DHU_SOURCE_CAPABILITY_PASS`
+
+`WEBEQ-B` has a physical projected-host WebAudio PASS for the existing,
+fail-closed YouTube `BLOB_MSE` class only. Historical independent gaps remain:
+`YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY` and
+`YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE`.
