@@ -157,3 +157,123 @@ No Stremio, generic browser, native player, MediaSession ownership,
   `.webeq-b-temp/`; it is not included in either commit.
 - The temporary CDP forward must be removed after the runtime session is no
   longer needed.
+
+## WEBEQ-B2 YouTube Lifecycle & DHU Closure
+
+### Scope and baseline
+
+This acceptance pass used the signed release package on physical device
+`15c36230` at commit `70db79ad`. It was observation-first: production and test
+source changes are zero. The only newly created runtime evidence is untracked
+under `.webeq-b-temp/b2/`; it contains screenshots and bounded bridge results,
+not URLs, media identities, account information, cookies, headers, or samples.
+
+The bridge boundary remained the existing bounded status object `{ r, m, e, p,
+b }`. No player DOM, stream address, or WebView content was inspected.
+
+### Fullscreen -> Back
+
+Two physical comparisons were run against ordinary non-EME YouTube playback:
+
+| Run | Starting state | Observation after one Android Back | Result |
+| --- | --- | --- | --- |
+| Bridge-active | `SUPPORTED_ACTIVE`, Master on, EQ off/unity, MediaSession playing | The normal YouTube page remained visible, but playback/session stopped and the page presentation was not a clean continuation. No blank page was observed in this run. | Not a clean pass. |
+| No-claim control | Fresh app process; Master and EQ were both off before starting an eligible video; `NO_MEDIA`, MediaSession playing | Playback started normally with no graph. Back also left the expected player presentation and returned to Dashboard rather than a stable watch surface. | Reproduced without a graph. |
+
+The no-claim control proves that the observed Back/presentation instability is
+not caused by a claimed WebAudio graph. This checkpoint therefore makes no
+production change to WEBEQ-B. It does not establish a clean fullscreen/back
+pass and does not reproduce the earlier blank page.
+
+**Verdict:** `YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE` for the observed
+navigation/presentation behavior; `WEBEQ-B` is not attributed as its cause.
+
+### Explicit A -> B -> A
+
+An explicit A -> B selection was made through a normal recommended-content
+tile. B reached playback presentation and no filtered console/logcat evidence
+reported `InvalidStateError`, `MediaElementSource`, duplicate-source, or
+`AudioContext` failures. A separate active A run also showed
+`SUPPORTED_ACTIVE` with the retained controlled 1 kHz value of `-6`.
+
+The full A -> B -> A proof was not obtained. After Back, the current YouTube
+surface returned to Dashboard instead of preserving a stable user-selectable
+watch surface, so returning explicitly from B to A would not be the required
+continuous content-replacement experiment. Some selections also began in a
+previous no-claim document, which correctly remained `NO_MEDIA` until a new
+eligible active playback was started. That is not evidence of a duplicate
+claim or a graph lifecycle defect.
+
+**Verdict:** `YOUTUBE_A_B_A_LIFECYCLE_PARTIAL`. No WebAudio-specific
+regression was reproduced, but the mandatory uninterrupted A -> B -> A
+acceptance chain remains unobserved.
+
+### DHU / Android Auto
+
+DHU was launched through the repository's existing `open-dhu.bat` workflow
+with the 1280x720 preset. This created the B2-owned forward
+`tcp:5277 -> tcp:5277`; no reverse mapping was created. The DHU process was
+responsive and Android Auto's `GhostActivity` appeared on the physical device.
+
+Passive bounded CDP observation found two YouTube WebView documents while
+projection was connected. Exactly one reported `SUPPORTED_ACTIVE`; the other
+reported `NO_MEDIA`. That supports the single-active-graph ownership invariant
+for this snapshot, but it does not identify either document or substitute for
+visible DHU interaction.
+
+The B2-created DHU process was stopped and restarted. The phone returned to
+the FermataX activity on disconnect and Android Auto `GhostActivity` returned
+after reconnect. The inactive document did not claim a second graph. The
+available automation surface could not expose the DHU window controls, so the
+following were **not observed** and are not claimed as PASS: visual FermataX
+launch in DHU, live `0 -> -10 -> 0` DHU EQ update, DHU pause/resume controls,
+or a visible DHU fullscreen/back flow.
+
+**Verdict:** `WEBEQ_B_YOUTUBE_DHU_PARTIAL_PHYSICAL_ACCEPTANCE`.
+
+### Direct / EME / iframe
+
+No suitable direct, EME, or iframe source appeared naturally in this pass.
+Existing policy unit coverage remains `UNIT PASS / PHYSICAL NOT OBSERVED`.
+
+### Audit rounds
+
+1. **Fullscreen/navigation:** no blank page in the new active run; the failed
+   presentation order also happened in the no-claim control, so no WebAudio
+   causality was assigned.
+2. **Media-element lifecycle:** one active graph was observed when eligible;
+   no duplicate-source exception was found in the bounded filtered logs. The
+   continuous A -> B -> A path remains incomplete.
+3. **DHU/scope:** one active graph across the two observed documents; no native
+   AA EQ, Stremio, generic browser, `aauto.aar`, or hotspot source changed.
+
+### Validation and artifact state
+
+- Production LOC: `0`; test LOC: `0`.
+- Hotspot counts remained unchanged: `YoutubeWebView=1246`,
+  `YoutubeMediaEngine=1121`, `MediaSessionCallback=2182`,
+  `MainActivityDelegate=1142`, and `ControlPanelView=758`.
+- `aauto.aar` SHA-256 remained
+  `99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+- The existing signed universal artifact from the prior accepted source state
+  remains applicable because this pass did not change source.
+
+### Cleanup state
+
+The effective release profile was restored to Master on and Equalizer off
+(unity). An unrelated `.test` activity surfaced after the release process was
+force-stopped; its temporarily touched Equalizer checkbox was restored off and
+that activity contributed no acceptance evidence. B2-created DHU and CDP
+forwards and the DHU process were removed after the focused unit-suite
+recheck. Playback was left paused. Final device checks reported empty
+`adb forward --list` and `adb reverse --list` output.
+
+### Final B2 verdict
+
+`WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE`
+
+WEBEQ-B remains safe on the previously accepted supported path. This pass did
+not prove a WebAudio-specific lifecycle regression and therefore made no
+production fix. It also did not earn the broader `WEBEQ_B_YOUTUBE_PASS`: clean
+fullscreen/back, a continuous A -> B -> A graph test, and visible DHU control
+acceptance remain outstanding.
