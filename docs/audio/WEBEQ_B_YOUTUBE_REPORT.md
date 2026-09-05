@@ -723,3 +723,145 @@ WEBEQ_B_DHU_SOURCE_CAPABILITY_UNRESOLVED
 
 This is a host/document observability blocker, not evidence that WebAudio is
 unsupported and not grounds for a production policy expansion.
+
+## WEBEQ-B6 DHU Shim Installation Gate Diagnosis
+
+### Baseline and scope
+
+This diagnosis used required baseline `0e3fb55649098d7070521b08bae6945e79f379e1`
+on physical device `15c36230`, package `me.app.fermataX.auto.test`, version
+`2.0.1` / version code `304`. DHU was already running and remained running;
+its user-owned `tcp:5277 -> tcp:5277` forward was preserved. There was no ADB
+reverse mapping and B6 did not create a CDP forward.
+
+The B5 result is retained as historical evidence: the document sampled there
+did not expose the shim. B6 narrowed that observation to the actual WebView
+host and installation gates. It did not inspect a source address, video id,
+title, DOM, cookie, header, token, account state, EME, or media data. It did
+not attach WebAudio, change an EQ setting, or change candidate policy.
+
+### Source-derived installation path
+
+The current source path is:
+
+```text
+YoutubeFragment.onViewCreated
+  -> YoutubeWebView.init
+      -> YoutubeWebAudioBridge.install
+      -> YoutubeRuntime.registerHost
+  -> YoutubeWebView.loadUrl
+      -> YoutubeWebAudioBridge.onDocumentNavigation
+          -> installed
+          -> isHostedDocument
+          -> YoutubePlaybackHostPolicy.isPreferredHost
+          -> WebViewCompat.addDocumentStartJavaScript
+  -> document creates and runs the bounded shim
+```
+
+`YoutubePlaybackHostPolicy` delegates to
+`YoutubeAddon.isPreferredPlaybackActivity`. When an automotive activity is
+live, only that activity is preferred. This is the deliberate ownership gate
+that prevents the phone and projected WebViews from both becoming active
+processing hosts.
+
+### Gate matrix and bounded trace
+
+Temporary, uncommitted observability assigned runtime-only opaque labels to
+each bridge/WebView. It emitted only lifecycle state, document class,
+generation, preferred-host state, registration outcome, and the boolean shim
+global. Release shrinking initially removed the custom utility-log calls; the
+probe was therefore changed to temporary platform log calls and rebuilt before
+any conclusion. No content data was logged.
+
+| Gate | Phone host `wv#1` | Projected host `wv#2` | Result |
+| --- | --- | --- | --- |
+| Bridge created and installed | yes | yes | PASS |
+| Document-start feature available | yes | yes | PASS |
+| Navigation observed | yes | yes | PASS |
+| Document class | `ALLOWED_YOUTUBE` | `ALLOWED_YOUTUBE` | PASS |
+| Preferred playback host | `false` | `true` | expected split |
+| Document-start requested | no | yes | PASS on owner |
+| Registration result | not requested | success | PASS on owner |
+| Page committed | yes | yes | PASS |
+| Shim visible | `false` | `true` | PASS on owner |
+
+The projected host also reached `FermataMediaService = PLAYING` after normal
+Dashboard -> YouTube interaction. A second fresh-process run reproduced the
+same ordering: `wv#1` was non-automotive and non-preferred; `wv#2` was
+automotive and preferred, obtained successful document-start registration, and
+reported the shim visible before the media session became playing.
+
+### First failed gate and root cause
+
+```text
+FIRST_FAILED_GATE = preferred_playback_host_false on phone host wv#1
+```
+
+This is not a product failure. B5's absent-shim document was the non-preferred
+phone WebView, not the projected playback owner. The source-defined ownership
+gate correctly prevented injection there. The actual projected owner was
+identified by the runtime's automotive/preferred-host registration and
+independently reached successful registration and a visible shim.
+
+The earlier B5 verdict is superseded only with respect to shim observability:
+
+```text
+YOUTUBE_DHU_SHIM_OBSERVABILITY_RESOLVED
+YOUTUBE_DHU_WEBAUDIO_SHIM_INSTALLATION_PASS
+```
+
+These verdicts do **not** establish source topology, WebAudio attachment,
+analyser signal, or live YouTube EQ on DHU. Those remain out of scope and
+unobserved in B6.
+
+### Production decision and ownership safety
+
+Production source change: `0` LOC. Test source change: `0` LOC.
+
+No ownership rule was weakened. The phone host had no document-start request
+and no shim; the projected owner had the shim. Therefore B6 did not introduce
+phone/DHU double-processing or a second active processing host. There is no
+source-classification, EME, generic-browser, Stremio, native-EQ, Android Auto
+manifest, or `aauto.aar` change.
+
+### Clean rebuild, validation, and cleanup
+
+All temporary source/test probes were removed before the clean signed `.test`
+rebuild and reinstall. The clean APK was signature-verified (v3), and a binary
+marker check confirmed `WEBEQ-B6` was absent. The clean package was then
+started successfully. Playback was paused. The profile was not edited in B6,
+so the pre-existing restored state remains Master on, Equalizer off, preamp
+`0 dB`.
+
+```text
+:fermata:testAutoDebugUnitTest = PASS (874 tests, 0 failures, 0 errors)
+:web:testAutoDebugUnitTest     = PASS (217 tests, 0 failures, 0 errors)
+ArchitectureBoundaryTest       = PASS (8 tests, 0 failures, 0 errors)
+git diff --check               = PASS
+aauto.aar SHA-256              = 99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B
+```
+
+Temporary diagnostic logs and screenshots remain untracked under
+`.webeq-b-temp/b6-shim-gates/`; they are not committed. No temporary CDP
+forward existed to remove. DHU remains open and `tcp:5277` remains preserved.
+
+### Audit rounds
+
+1. **Gate trace:** every gate was derived from the current source path. The
+   first failed gate was directly observed on `wv#1`; no conclusion came from
+   a missing shim alone.
+2. **Ownership:** the projected owner was distinguished by automotive and
+   preferred-host state, and it alone received document-start registration.
+   No non-owner injection or double-processing path was introduced.
+3. **Scope and regression:** no media topology, source policy, EME, DRM,
+   generic browser, Stremio, native EQ, or Auto artifact was changed. All
+   temporary instrumentation was removed before the clean rebuild.
+
+### Final B6 verdict and next step
+
+`YOUTUBE_DHU_SHIM_OBSERVABILITY_RESOLVED`
+
+The next phase may resume **only** DHU source-topology/WebAudio capability
+discovery against `wv#2`, now that the projected owner and shim-installation
+gate are proven. It must separately observe source topology and preserve the
+existing fail-closed policy before attempting any attach or EQ experiment.
