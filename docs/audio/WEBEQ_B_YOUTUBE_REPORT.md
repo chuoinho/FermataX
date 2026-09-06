@@ -963,3 +963,99 @@ and immutable artifact check are recorded with the phase closure.
 fail-closed YouTube `BLOB_MSE` class only. Historical independent gaps remain:
 `YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY` and
 `YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE`.
+
+## WEBEQ-B8 Final Lifecycle Closure
+
+### Scope, baseline, and package
+
+This was an acceptance-only attempt at baseline `c268c60078e4ae4a4119304400feed4a0ef943f0`
+on physical device `15c36230`, using `me.app.fermataX.auto.test` version `2.0.1`
+(version code `304`). Production source changed: `0` LOC. Test source changed:
+`0` LOC. B7's projected-host `BLOB_MSE` capability PASS was accepted as closed;
+no B5/B7 probe, source-policy change, fullscreen/back change, or diagnostic
+source was added.
+
+The user-owned `tcp:5277 -> tcp:5277` forward was preserved. `adb reverse --list`
+was empty. B8-created temporary evidence is untracked under
+`.webeq-b-temp/b8-final-lifecycle/` and contains no stream address, media
+address, cookie, token, or account material.
+
+### Precondition result
+
+The phone WebView was first observed with media playing while projection was
+active. Its production bounded bridge status was `null`, which is consistent
+with B7's closed preferred-host policy and is not a new failure. A phone-host
+session after the projected session ended reached the existing bounded bridge
+state `SUPPORTED_ACTIVE`; this confirms that an already claimed graph can
+continue normally on the phone path.
+
+The mandatory controlled B8 profile could not be established reliably through
+the physical device's standard numeric editor. Android input injection while
+the landscape activity was active produced transformed numeric edits rather
+than the requested `1 kHz = -6` value. This is an input-automation limitation,
+not evidence of a WebAudio defect, and no production conclusion is drawn from
+it. The profile was returned to its effective starting state, Master on and
+Equalizer off, so the active bridge was neutral (`b = 0`). The exact persisted
+curve value was not re-certified after the failed numeric-edit attempt; this
+checkpoint therefore does not claim exact-profile cleanup.
+
+### A -> B -> A
+
+No valid A -> B -> A acceptance chain was recorded. The required active-graph
+precondition with the controlled profile was not obtained, so selecting B and
+then returning to A would not have answered the B8 lifecycle question. No
+Android Back, Dashboard return, URL injection, JavaScript navigation, or
+direct URL editing was used as an A -> B -> A substitute.
+
+**Verdict:** `YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY`.
+
+### Fullscreen / Back comparison
+
+The active-graph versus no-claim comparison was not run. Neither control arm
+would have been valid after the controlled active-profile setup failed, so B8
+does not reclassify the historical fullscreen issue and does not attribute it
+to WebAudio.
+
+**Verdict retained:** `YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE`.
+It remains outside WEBEQ-B unless a future valid differential comparison proves
+otherwise.
+
+### Validation and cleanup
+
+Fresh source validation completed without source changes:
+
+```text
+:fermata:testAutoDebugUnitTest + :web:testAutoDebugUnitTest = 1091 tests,
+0 failures, 0 errors (2 skipped)
+ArchitectureBoundaryTest = 8 tests, 0 failures, 0 errors
+git diff --check = PASS
+aauto.aar SHA-256 = 99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B
+```
+
+Playback was paused. The temporary `tcp:9225` CDP forward was removed. The
+user-owned `tcp:5277` forward remains. The temporary system IME preference was
+restored to its original disabled value.
+
+### Audit rounds
+
+1. **Lifecycle:** no A -> B -> A PASS is inferred from prior A -> B evidence,
+   a source read, or a neutral graph.
+2. **Fullscreen:** no causal conclusion is inferred without both valid active
+   and no-claim control arms.
+3. **Scope:** B7 remains closed; no candidate-policy expansion, DRM change,
+   generic browser change, Stremio change, native EQ change, or Auto artifact
+   change occurred.
+
+### Final B8 verdict
+
+```text
+WEBEQ_B8_ACCEPTANCE_INCOMPLETE
+YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY
+YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE
+WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE
+```
+
+The next attempt must begin by restoring and visibly verifying the exact audio
+profile through normal device touch input, then run the two B8 gates without
+using ADB text injection as profile evidence. No WebAudio code change is
+justified by this checkpoint.
