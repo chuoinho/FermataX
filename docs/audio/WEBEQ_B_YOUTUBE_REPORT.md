@@ -2,13 +2,15 @@
 
 ## Status
 
-`IMPLEMENTED_WITH_PARTIAL_PHYSICAL_ACCEPTANCE`
+`WEBEQ_B_YOUTUBE_PASS`
 
 This change adds a narrow, YouTube-only WebAudio equalizer path.  It is not a
 generic WebView hook and it does not alter native-player EQ ownership.  The
 physical device proved the supported MSE path, live profile propagation, and
-safe neutralisation.  A clean full-screen/back and explicit A-to-B selection
-run was not obtained in this checkpoint, so neither is represented as a pass.
+safe neutralisation. Later B7 and B8R physical acceptance closed the projected
+BLOB/MSE, A -> B -> A, and fullscreen-causality gates. The historical
+checkpoint details below remain evidence; their incomplete statuses are
+superseded where B7/B8R records final observed results.
 
 ## Scope and ownership
 
@@ -139,16 +141,22 @@ Tests:
 No Stremio, generic browser, native player, MediaSession ownership,
 `aauto.aar`, manifest, or Auto/DHU code is changed.
 
-## Remaining acceptance work
+## Historical acceptance work superseded by B7/B8R
 
-1. Re-run full-screen -> Back against a stable public YouTube video and record
-   the player and FermataMediaService state before and after each transition.
-2. Run a controlled explicit A -> B selection, then an A -> B -> A sequence,
-   proving that a fresh content element is handled without stale graph reuse.
-3. On an available Auto/DHU host, repeat Master/EQ neutralisation and the
-   control/lifecycle checks.  Do not infer those results from phone evidence.
-4. If an EME or direct-source physical fixture becomes available through a
-   normal YouTube session, verify bypass without collecting the media address.
+The following former open items are **HISTORICAL — SUPERSEDED BY B7/B8R**:
+
+1. Projected DHU BLOB/MSE WebAudio, neutralisation, and lifecycle evidence:
+   closed by B7.
+2. Controlled A -> B -> A lifecycle with retained active bridge state: closed
+   by B8R.
+3. Fullscreen active-graph versus no-claim causality: closed by B8R as
+   `YOUTUBE_FULLSCREEN_NOT_WEBAUDIO_CAUSED`.
+
+`YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE` remains a separate
+navigation/presentation classification and is **not a WEBEQ-B blocker**.
+Physical direct HTTP(S), EME, and iframe bypasses remain fail-closed policy
+coverage unless separately observed; they are not required for accepted narrow
+BLOB/MSE support.
 
 ## Cleanup
 
