@@ -10,7 +10,9 @@ import android.content.Context;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
+import me.aap.fermata.media.audio.AudioEffectsDraft;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
+import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
@@ -23,12 +25,15 @@ final class AudioEffectsPrefsBuilder {
 	private AudioEffectsPrefsBuilder() {
 	}
 
-	static void add(Context context, PreferenceSet parent, AudioEffectsProfileRepository profiles) {
+	static void add(Context context, PreferenceSet parent, AudioEffectsProfileRepository profiles,
+			AudioEffectsDraft draft, MediaSessionCallback callback) {
 		if (profiles.consumeLegacyNativePresetMigrationNotice()) {
 			UiUtils.showInfo(context, R.string.legacy_preset_migration_notice);
 		}
-		PreferenceStore store = profiles.getUserEditableStore();
+		PreferenceStore store = draft.getStore();
 		PreferenceSet effects = parent.subSet(o -> o.title = R.string.audio_equalizer);
+		effects.addView(o -> o.view = () -> new me.aap.fermata.ui.view.AudioEffectsApplyView(
+				context, draft, callback));
 		effects.addBooleanPref(o -> {
 			o.store = store;
 			o.pref = AudioEffectsProfileRepository.ENABLED;

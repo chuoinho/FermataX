@@ -48,6 +48,7 @@ import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.misc.Assert.assertNotNull;
 import static me.aap.utils.misc.MiscUtils.ifNotNull;
 
@@ -81,6 +82,7 @@ import androidx.media.AudioManagerCompat;
 
 import java.io.Closeable;
 import java.util.Collection;
+import java.util.concurrent.CancellationException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -90,6 +92,7 @@ import java.util.Queue;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsController;
 import me.aap.fermata.media.engine.EngineSelection;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -121,6 +124,7 @@ import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Async;
+import me.aap.utils.async.Promise;
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Consumer;
@@ -168,6 +172,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private PlaybackSnapshot playbackSnapshot;
 	private long playbackSnapshotRevision;
 	private long playbackRequestRevision;
+	private long audioEffectsApplyGeneration; @Nullable private AudioEffectsApplyRequest audioEffectsApply;
+	private boolean audioEffectsRestarting;
 	private final PlaybackOwnership playbackOwnership = new PlaybackOwnership();
 	private final PlaybackEngineLeaseController playbackEngineLease =
 			new PlaybackEngineLeaseController(playbackOwnership, new PlaybackEngineLeaseController.Access() {
@@ -284,6 +290,62 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return engine;
 	}
 
+	public void deferAudioEffectsProfile(@NonNull AudioEffectsProfile profile) { audioEffectsController.deferExplicitProfileBroadcast(profile); }
+	public void cancelDeferredAudioEffectsProfile() { audioEffectsController.cancelExplicitProfileBroadcast(); }
+	public void disableAudioEffectsEmergency() { if (terminal) return; invalidateAudioEffectsApply(); audioEffectsController.cancelExplicitProfileBroadcast(); audioEffectsController.emergencyDisable(); }
+
+	public FutureSupplier<Void> applyAudioEffects(@NonNull AudioEffectsProfile profile) {
+		if (terminal) { audioEffectsController.cancelExplicitProfileBroadcast(); return failed(new IllegalStateException("Media session is closed")); }
+		invalidateAudioEffectsApply();
+		audioEffectsController.cancelExplicitProfileBroadcast();
+		MediaEngine current = engine;
+		PlayableItem source = (current == null) ? null : current.getSource();
+		if (!audioEffectsController.requiresFreshBackend(profile) || (current == null) || (source == null) || source.isExternal()) return applyAudioEffectsDirect(profile);
+
+		source = PlayableItemResolver.unwrap(source);
+		AudioEffectsApplyRequest request = new AudioEffectsApplyRequest(audioEffectsApplyGeneration, current, source, playbackRequestRevision, isPlayingIntent(getPlaybackState().getState()));
+		audioEffectsApply = request;
+		if (source.isLiveStream()) restartForAudioEffects(request, 0L); else try {
+			current.getPosition().main().onSuccess(position -> { if (acceptsAudioEffectsPosition(request)) restartForAudioEffects(request, position); }).onFailure(error -> failAudioEffectsApply(request, error));
+		} catch (Throwable error) { failAudioEffectsApply(request, error); }
+		return request.result;
+	}
+
+	private FutureSupplier<Void> applyAudioEffectsDirect(AudioEffectsProfile profile) { try { return audioEffectsController.applyExplicit(profile) ? completedVoid() : failed(new IllegalStateException("Audio effects were not accepted")); } catch (Throwable error) { return failed(error); } }
+
+	static boolean isPlayingIntent(int state) { return (state == STATE_PLAYING) || (state == STATE_BUFFERING) || (state == STATE_CONNECTING); }
+
+	private boolean acceptsAudioEffectsPosition(AudioEffectsApplyRequest request) {
+		if ((request != audioEffectsApply) || (request.generation != audioEffectsApplyGeneration) || terminal || (request.engine != engine) || (request.requestRevision != playbackRequestRevision)) return false;
+		PlayableItem source = engine.getSource();
+		return (source != null) && (PlayableItemResolver.unwrap(source) == request.item) && playbackOwnership.owns(engine, request.item);
+	}
+
+	private void restartForAudioEffects(AudioEffectsApplyRequest request, long position) {
+		if (!acceptsAudioEffectsPosition(request)) return; PlayableItem target = request.item; onStop(false);
+		if ((audioEffectsApply != request) || terminal) return;
+		request.requestRevision = beginPlaybackRequestForAudioEffects(target);
+		playPreparedItem(target, position, STATE_CONNECTING, request.requestRevision, request.playWhenPrepared);
+	}
+
+	private long beginPlaybackRequestForAudioEffects(@NonNull PlayableItem target) { audioEffectsRestarting = true; try { return beginPlaybackRequest(target, null); } finally { audioEffectsRestarting = false; } }
+
+	private void completeAudioEffectsApply(MediaEngine current, PlayableItem item, long requestRevision, boolean applied) {
+		AudioEffectsApplyRequest request = audioEffectsApply;
+		if ((request == null) || (request.generation != audioEffectsApplyGeneration) || (request.requestRevision != requestRevision) || (request.item != item) || (current != engine) || !isPlaybackRequestCurrent(requestRevision, item)) return;
+		audioEffectsApply = null; audioEffectsController.cancelExplicitProfileBroadcast();
+		if (applied) request.result.complete(null);
+		else request.result.completeExceptionally(new IllegalStateException("Fresh audio-effects backend was not accepted"));
+	}
+
+	private void failAudioEffectsApply(AudioEffectsApplyRequest request, Throwable error) {
+		if ((request == audioEffectsApply) && (request.generation == audioEffectsApplyGeneration)) { audioEffectsApply = null; audioEffectsController.cancelExplicitProfileBroadcast(); request.result.completeExceptionally(error); }
+	}
+
+	private void failAudioEffectsApplyForTarget(long requestRevision, PlayableItem item, Throwable error) { AudioEffectsApplyRequest request = audioEffectsApply; if ((request != null) && (request.requestRevision == requestRevision) && (request.item == item)) failAudioEffectsApply(request, error); }
+
+	private void invalidateAudioEffectsApply() { audioEffectsApplyGeneration++; AudioEffectsApplyRequest request = audioEffectsApply; audioEffectsApply = null; if (request != null) request.result.completeExceptionally(new CancellationException("Audio-effects Apply was superseded")); }
+
 	/**
 	 * A short-lived transport owner for renderers which remain outside Fermata's media-engine
 	 * pipeline. It cannot supply a source, decoder, audio focus, position, or stream URL.
@@ -357,6 +419,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	public void setEngine(MediaEngine engine) {
 		if (terminal) { MediaEngineShutdown.release(engine, audioManager, audioFocusReq); return; }
+		invalidateAudioEffectsApply();
 		switchEngine(engine);
 	}
 
@@ -481,6 +544,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void switchEngine(@NonNull MediaEngine engine) {
+		invalidateAudioEffectsApply();
 		if (this.engine == engine) {
 			session.setActive(true);
 			return;
@@ -507,6 +571,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private long beginPlaybackRequest(@NonNull PlayableItem item,
 			@Nullable MediaEngine requestEngine) {
+		if (!audioEffectsRestarting) invalidateAudioEffectsApply();
 		item = PlayableItemResolver.unwrap(item);
 		if (item.isPlaybackTransportCommand()) {
 			playbackOwnership.reviseState();
@@ -719,6 +784,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	 * progress checkpoint.
 	 */
 	public void stopImmediately() {
+		invalidateAudioEffectsApply();
 		terminal = true;
 		permanentFocusLoss.cancel();
 		playbackQueueContext.clear();
@@ -777,6 +843,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public void onPlay() {
 		if (dispatchControlOnlyAction(ControlOnlyAction.PLAY)) return;
 		if (terminal) return; permanentFocusLoss.cancel();
+		invalidateAudioEffectsApply();
 		playerTask.cancel();
 		playerTask = play();
 	}
@@ -823,6 +890,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onPlayFromMediaId(String mediaId, Bundle extras) {
 		if (terminal) return; permanentFocusLoss.cancel();
+		invalidateAudioEffectsApply();
 		playerTask.cancel();
 		playerTask = playFromMediaId(mediaId, extras);
 	}
@@ -858,6 +926,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onPlayFromSearch(String query, Bundle extras) {
 		if (terminal) return; permanentFocusLoss.cancel();
+		invalidateAudioEffectsApply();
 		Log.i("Search query received: " + query);
 		MediaSessionCallbackAssistant assistant = getAssistant();
 		if ((assistant != this) && assistant.handleVoiceSearch(query)) {
@@ -878,6 +947,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public void onPause() {
 		if (dispatchControlOnlyAction(ControlOnlyAction.PAUSE)) return;
 		if (terminal) return;
+		invalidateAudioEffectsApply();
 		PlayableItem i;
 		MediaEngine eng = getEngine();
 		if ((eng == null) || ((i = eng.getSource()) == null)) return;
@@ -921,6 +991,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onStop() {
+		invalidateAudioEffectsApply();
 		playbackQueueContext.clear();
 		playbackOwnership.reviseState();
 		playerTask.cancel();
@@ -1002,6 +1073,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onSeekTo(long position) {
 		if (terminal) return;
+		invalidateAudioEffectsApply();
 		MediaEngine eng = getEngine();
 		if ((eng == null) || (eng.getSource() == null)) return;
 
@@ -1020,12 +1092,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onSkipToPrevious() {
 		if (terminal) return; permanentFocusLoss.cancel();
+		invalidateAudioEffectsApply();
 		playerTask.cancel();
 		playerTask = skipTo(false, false);
 	}
 
 	public void onSkipToPreviousFolder() {
 		if (terminal) return; permanentFocusLoss.cancel();
+		invalidateAudioEffectsApply();
 		playerTask.cancel();
 		playerTask = skipTo(false, true);
 	}
@@ -1034,12 +1108,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public void onSkipToNext() {
 		if (dispatchControlOnlyAction(ControlOnlyAction.NEXT_TRACK)) return;
 		if (terminal) return; permanentFocusLoss.cancel();
+		invalidateAudioEffectsApply();
 		playerTask.cancel();
 		playerTask = skipTo(true, false);
 	}
 
 	public void onSkipToNextFolder() {
 		if (terminal) return; permanentFocusLoss.cancel();
+		invalidateAudioEffectsApply();
 		playerTask.cancel();
 		playerTask = skipTo(true, true);
 	}
@@ -1211,6 +1287,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onSkipToQueueItem(long queueId) {
 		if (terminal) return;
+		invalidateAudioEffectsApply();
 		permanentFocusLoss.cancel();
 		PlayableItem pi = getCurrentItem();
 		if (pi == null) return;
@@ -1316,11 +1393,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 
 		float speed = getSpeed(target);
-		audioEffectsController.bind(engine);
+		boolean audioEffectsApplied = audioEffectsController.bind(engine);
 
 		boolean committed = playbackOwnership.commit(engine, target);
 		boolean alreadyCommitted = !committed && playbackOwnership.ownsCommitted(engine, target);
-		if (!committed && !alreadyCommitted) return;
+		if (!committed && !alreadyCommitted) {
+			failAudioEffectsApplyForTarget(requestRevision, target,
+					new IllegalStateException("Audio-effects Apply lost playback ownership"));
+			return;
+		}
+		completeAudioEffectsApply(engine, target, requestRevision, audioEffectsApplied);
 		recordPlaybackDiagnostic("playback_owner_commit", DiagnosticScope.ESSENTIAL,
 				DiagnosticPriority.STATE, engine, target, requestRevision,
 				alreadyCommitted ? "already_committed" : "committed", null);
@@ -1648,6 +1730,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		if (!acceptsEngineCallback(engine)) return;
 		String msg;
 		PlayableItem i = engine.getSource();
+		if (i != null) {
+			failAudioEffectsApplyForTarget(playbackRequestRevision,
+					PlayableItemResolver.unwrap(i), (ex == null) ?
+							new IllegalStateException("Audio-effects Apply failed") : ex);
+		}
 		recordPlaybackDiagnostic("engine_error", DiagnosticScope.ESSENTIAL,
 				DiagnosticPriority.ERROR, engine, i, playbackRequestRevision, null,
 				(ex == null) ? "unknown" : ex.getClass().getSimpleName());
@@ -1813,6 +1900,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public void playItem(PlayableItem i, long pos) {
 		if (terminal) return;
 		permanentFocusLoss.cancel();
+		invalidateAudioEffectsApply();
 		i = selectPlaybackItem(i);
 		playerTask.cancel();
 		resetStreamRetry();
@@ -2004,6 +2092,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private void playPreparedItem(PlayableItem i, long pos, int transitionState,
 			long requestRevision) {
+		playPreparedItem(i, pos, transitionState, requestRevision, true);
+	}
+
+	private void playPreparedItem(PlayableItem i, long pos, int transitionState,
+			long requestRevision, boolean playWhenPrepared) {
 		PlayableItem target = PlayableItemResolver.unwrap(i);
 		if (!isPlaybackRequestCurrent(requestRevision, target)) return;
 		activatePlaybackLifecycle(target, requestRevision);
@@ -2015,14 +2108,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			if ((current != null) && !current.isExternal()) {
 				if (current instanceof StreamItem) {
 					playPreparedItem(eng, target, pos, current, 0, transitionState,
-							requestRevision);
+							requestRevision, playWhenPrepared);
 				} else {
 					eng.getPosition().main()
 							.onSuccess(currentPos -> {
 								if (isPlaybackRequestCurrent(requestRevision, target) &&
 										(eng == getEngine())) {
 									playPreparedItem(eng, target, pos, current, currentPos,
-											transitionState, requestRevision);
+											transitionState, requestRevision, playWhenPrepared);
 								}
 							});
 				}
@@ -2030,7 +2123,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			}
 		}
 
-		playPreparedItem(eng, target, pos, null, -1, transitionState, requestRevision);
+		playPreparedItem(eng, target, pos, null, -1, transitionState, requestRevision,
+				playWhenPrepared);
 	}
 
 	private void activatePlaybackLifecycle(@NonNull PlayableItem item, long requestRevision) {
@@ -2058,6 +2152,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return claim.consume(); }
 
 	private void playPreparedItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current, long currentPos, int transitionState, long requestRevision) {
+		playPreparedItem(eng, i, pos, current, currentPos, transitionState, requestRevision, true);
+	}
+
+	private void playPreparedItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current, long currentPos, int transitionState, long requestRevision, boolean playWhenPrepared) {
 		i = PlayableItemResolver.unwrap(i); if (!isPlaybackRequestCurrent(requestRevision, i)) return;
 		if (current != null) current = PlayableItemResolver.unwrap(current); boolean clearPlaybackSurfaces = shouldClearPlaybackSurfaces(i.isVideo(), current, i);
 		if ((current != null) && !playbackTransition.isPending(i)) publishOutgoingPosition(current, currentPos, null);
@@ -2068,6 +2166,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (selected.candidate() == null) {
 			PlaybackEngineLease.FailureClaim claim = playbackEngineLease.tryClaimUnsupported(selected); if (claim == null) return;
+			failAudioEffectsApplyForTarget(requestRevision, i,
+					new IllegalStateException("No playback engine accepted the audio-effects Apply"));
 			videoOutput.clearIfBound(eng); retireResolvedEngine(eng, engineSelection);
 			String msg = lib.getContext().getResources().getString(R.string.err_unsupported_source_type, i);
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
@@ -2103,13 +2203,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		videoOutput.bind(candidate, i.isVideo());
 		if (!playbackEngineLease.isCurrent(accepted)) return;
 
-		playOnPrepared = true;
+		playOnPrepared = playWhenPrepared;
 		tryAnotherEngine = true;
 
 		if (!playbackEngineLease.isCurrent(accepted)) return;
 		if (!service.requestPlaybackAudioFocus(candidate, audioManager, audioFocusReq,
 				transitionState, accepted.target())) {
 			Log.i("Audio focus request failed");
+			failAudioEffectsApplyForTarget(requestRevision, i,
+					new IllegalStateException("Audio focus request failed during audio-effects Apply"));
 			PlaybackEngineLease.FailureClaim claim = playbackEngineLease.tryClaimFailure(accepted); if (claim == null) return;
 			videoOutput.clearIfBound(candidate);
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
@@ -2121,7 +2223,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 		if (!playbackEngineLease.isCurrent(accepted)) return;
 
-		if (!publishPlaybackTransition(i, current, transitionState, pos, accepted.requestRevision(), accepted)) return;
+		if (!publishPlaybackTransition(i, current, transitionState, pos, accepted.requestRevision(), accepted)) {
+			failAudioEffectsApplyForTarget(requestRevision, i,
+					new IllegalStateException("Audio-effects Apply lost playback ownership"));
+			return;
+		}
 		if (!playbackEngineLease.isCurrent(accepted)) return; candidate.prepare(accepted.target());
 
 		if (updateQueue) {
@@ -2413,6 +2519,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 																 @Nullable SubtitleStreamInfo info) {}
 
 		default void onSubtitleLoadFailed(MediaSessionCallback cb, String message) {}
+	}
+
+	private static final class AudioEffectsApplyRequest {
+		final long generation; final MediaEngine engine; final PlayableItem item;
+		final boolean playWhenPrepared; final Promise<Void> result = new Promise<>(); long requestRevision;
+		AudioEffectsApplyRequest(long generation, MediaEngine engine, PlayableItem item, long requestRevision,
+				boolean playWhenPrepared) { this.generation = generation; this.engine = engine; this.item = item;
+			this.requestRevision = requestRevision; this.playWhenPrepared = playWhenPrepared; }
 	}
 
 	private static final class Prioritized<T> implements Comparable<Prioritized<T>> {

@@ -27,9 +27,11 @@ public class AudioEffectsProfileArchitectureTest {
 	}
 
 	@Test
-	public void mediaSessionCallbackDoesNotReferenceTheUnifiedProfile() throws Exception {
+	public void mediaSessionCallbackUsesTheControllerForExplicitProfileApplication() throws Exception {
 		assertFalse(source("media/service/MediaSessionCallback.java")
-				.contains("AudioEffectsProfile"));
+				.contains("AudioEffectsLegacyApplier.apply"));
+		assertTrue(source("media/service/MediaSessionCallback.java")
+				.contains("applyAudioEffects"));
 	}
 
 	@Test

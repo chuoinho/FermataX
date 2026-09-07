@@ -26,6 +26,8 @@ import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonRegistry;
+import me.aap.fermata.media.audio.AudioEffectsDraft;
+import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
@@ -54,6 +56,8 @@ public class SettingsFragment extends MainActivityFragment
 	private boolean viewActive;
 	private long viewGeneration;
 	private DiagnosticsPreferences diagnosticsPreferences;
+	private AudioEffectsDraft audioEffectsDraft;
+	private AudioEffectsProfileRepository audioEffectsProfiles;
 
 	@Override
 	public int getFragmentId() {
@@ -126,6 +130,12 @@ public class SettingsFragment extends MainActivityFragment
 		activityDelegate = null;
 		for (AddonPrefsBuilder builder : addonPrefsBuilders) builder.close();
 		addonPrefsBuilders.clear();
+		if (audioEffectsDraft != null) {
+			audioEffectsDraft.discard();
+			audioEffectsDraft.close();
+		}
+		audioEffectsDraft = null;
+		audioEffectsProfiles = null;
 		if (adapter != null) adapter.onDestroy();
 		adapter = null;
 		diagnosticsPreferences = null;
@@ -288,7 +298,10 @@ public class SettingsFragment extends MainActivityFragment
 		KeyBindingPrefsBuilder.add(sub1);
 
 		PreferenceSet playback = set.subSet(o -> o.title = R.string.playback_settings);
-		PlaybackPrefsBuilder.add(a, playback, mediaPrefs);
+		audioEffectsProfiles = new AudioEffectsProfileRepository(
+				FermataApplication.get().getPreferenceStore());
+		audioEffectsDraft = new AudioEffectsDraft(audioEffectsProfiles);
+		PlaybackPrefsBuilder.add(a, playback, mediaPrefs, audioEffectsProfiles, audioEffectsDraft);
 		MediaEnginePrefsBuilder.add(a, playback, mediaPrefs, isCar);
 
 		VoicePrefsBuilder.add(a, set);

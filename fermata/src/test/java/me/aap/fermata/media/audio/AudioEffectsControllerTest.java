@@ -120,6 +120,23 @@ public class AudioEffectsControllerTest {
 	}
 
 	@Test
+	public void emergencyDisablePersistsOnlyMasterOffAndLeavesReenableForFreshApply() {
+		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, true);
+		AudioEffectsProfile initial = enabledProfile(-7);
+		fixture.repository.save(initial);
+		fixture.controller.bind(engine(41));
+
+		fixture.controller.emergencyDisable();
+
+		AudioEffectsProfile saved = fixture.repository.load();
+		assertFalse(saved.enabled());
+		assertEquals(initial.preampDb(), saved.preampDb());
+		assertEquals(initial.canonicalCurveDb()[5], saved.canonicalCurveDb()[5]);
+		assertEquals(1, fixture.backends[0].bypassCount);
+		assertTrue(fixture.controller.requiresFreshBackend(initial));
+	}
+
+	@Test
 	public void initialOnlyPreampChangesAreDeferredUntilTheNextSession() {
 		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, true, true);
 		fixture.repository.save(enabledProfile(0));
@@ -183,6 +200,31 @@ public class AudioEffectsControllerTest {
 		assertEquals(MigrationState.MIGRATED, fixture.repository.getMigrationState());
 		assertEquals(1, fixture.backends[0].applyCount);
 		assertEquals(0, fixture.backends[0].bypassCount);
+	}
+
+	@Test
+	public void explicitProfileSuppressesItsPersistenceBroadcastUntilRuntimeApply() {
+		Fixture fixture = new Fixture();
+		fixture.repository.save(enabledProfile(0));
+		fixture.controller.bind(engine(41));
+		AudioEffectsProfile next = enabledProfile(-7);
+
+		fixture.controller.deferExplicitProfileBroadcast(next);
+		fixture.repository.save(next);
+
+		assertEquals(1, fixture.backends[0].applyCount);
+		assertTrue(fixture.controller.applyExplicit(next));
+		assertEquals(2, fixture.backends[0].applyCount);
+		assertEquals(-7, fixture.backends[0].lastProfile.preampDb());
+	}
+
+	@Test
+	public void enabledInitialOnlyExplicitProfileRequiresFreshBackend() {
+		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, true);
+		fixture.repository.save(enabledProfile(0));
+		fixture.controller.bind(engine(41));
+
+		assertTrue(fixture.controller.requiresFreshBackend(enabledProfile(-5)));
 	}
 
 	private static AudioEffectsProfile enabledProfile(int preampDb) {

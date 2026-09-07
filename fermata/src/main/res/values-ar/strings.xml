@@ -516,6 +516,11 @@
 	<string name="voice_trigger_cleared">تم مسح تعيين زر الصوت في السيارة.</string>
 	<string name="voice_selection_prompt">قل الرقم واحد أو اثنين أو ثلاثة</string>
     <string name="equalizer_apply_next_session">تم حفظ تغييرات المعادل. سيتم تطبيقها في جلسة التشغيل التالية.</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">تعذر تحويل إعداد معادل الصوت السابق لجهازك تلقائيًا. يرجى اختيار المعادل أو ضبطه مرة واحدة.</string>
 </resources>

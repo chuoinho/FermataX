@@ -25,6 +25,8 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 	@Nullable
 	private AudioEffectsBackend backend;
 	private boolean equalizerPendingForNextSession;
+	@Nullable
+	private AudioEffectsProfile deferredExplicitProfile;
 
 	public AudioEffectsController(PreferenceStore store) {
 		this(new AudioEffectsProfileRepository(store));
@@ -54,16 +56,16 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 		store.addBroadcastListener(this);
 	}
 
-	public synchronized void bind(MediaEngine nextEngine) {
-		bind(nextEngine, nextEngine.getAudioSessionId());
+	public synchronized boolean bind(MediaEngine nextEngine) {
+		return bind(nextEngine, nextEngine.getAudioSessionId());
 	}
 
-	public synchronized void bind(MediaEngine nextEngine, int nextSessionId) {
+	public synchronized boolean bind(MediaEngine nextEngine, int nextSessionId) {
 		if (!NativeSessionAudioEffectsBackend.isValidSessionId(nextSessionId)) {
 			releaseBoundBackend();
-			return;
+			return false;
 		}
-		if ((engine == nextEngine) && (sessionId == nextSessionId) && (backend != null)) return;
+		if ((engine == nextEngine) && (sessionId == nextSessionId) && (backend != null)) return true;
 
 		releaseBoundBackend();
 		engine = nextEngine;
@@ -78,8 +80,10 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 			backend = nextBackend;
 			boolean applied = applyCurrentProfile(true);
 			if (applied) equalizerPendingForNextSession = false;
+			return applied;
 		} catch (RuntimeException error) {
 			releaseBoundBackend();
+			return false;
 		}
 	}
 
@@ -91,6 +95,7 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 	public synchronized void onPreferenceChanged(PreferenceStore ignored,
 			List<PreferenceStore.Pref<?>> changed) {
 		if (!AudioEffectsProfileRepository.containsProfilePreference(changed)) return;
+		if (deferredExplicitProfile != null) return;
 		AudioEffectsBackend current = backend;
 		boolean deferEqualizer = (current != null) &&
 				(current.getEqualizerUpdateMode() == EqualizerUpdateMode.INITIAL_ONLY) &&
@@ -115,6 +120,55 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 
 	boolean isEqualizerPendingForNextSession() {
 		return equalizerPendingForNextSession;
+	}
+
+	/** Prevents the persistence broadcast from applying before the explicit runtime transaction. */
+	public synchronized void deferExplicitProfileBroadcast(AudioEffectsProfile profile) {
+		deferredExplicitProfile = profile;
+	}
+
+	public synchronized void cancelExplicitProfileBroadcast() {
+		deferredExplicitProfile = null;
+	}
+
+	public synchronized boolean requiresFreshBackend(AudioEffectsProfile profile) {
+		return (backend != null) && profile.enabled() &&
+				(backend.getEqualizerUpdateMode() == EqualizerUpdateMode.INITIAL_ONLY);
+	}
+
+	public synchronized boolean applyExplicit(AudioEffectsProfile profile) {
+		deferredExplicitProfile = null;
+		AudioEffectsBackend current = backend;
+		if (current == null) return true;
+		if (!profile.enabled()) {
+			current.bypass();
+			equalizerPendingForNextSession = false;
+			return true;
+		}
+		boolean applied = current.apply(profile, true);
+		if (applied) equalizerPendingForNextSession = false;
+		return applied;
+	}
+
+	/** Emergency bypass: persist only master-off, then silence the bound chain immediately. */
+	public synchronized void emergencyDisable() {
+		AudioEffectsProfile currentProfile = profiles.load();
+		if (currentProfile.enabled()) {
+			deferredExplicitProfile = currentProfile;
+			try {
+				profiles.save(new AudioEffectsProfile(currentProfile.schemaVersion(), false,
+						currentProfile.equalizerEnabled(), currentProfile.canonicalCurveDb(),
+						currentProfile.preampDb(), currentProfile.bassBoostEnabled(),
+						currentProfile.bassBoostStrength(), currentProfile.loudnessEnabled(),
+						currentProfile.loudnessGain(), currentProfile.virtualizerEnabled(),
+						currentProfile.virtualizerStrength(), currentProfile.virtualizerMode()));
+			} finally {
+				deferredExplicitProfile = null;
+			}
+		}
+		AudioEffectsBackend current = backend;
+		if (current != null) current.bypass();
+		equalizerPendingForNextSession = false;
 	}
 
 	@Override

@@ -84,6 +84,10 @@ public final class AudioEffectsProfileRepository {
 
 	public AudioEffectsProfile load() {
 		ensureInitialized();
+		return loadProfile(store);
+	}
+
+	static AudioEffectsProfile loadProfile(PreferenceStore store) {
 		int[] curve = new int[AudioEffectsProfile.CANONICAL_FREQ_HZ.length];
 		for (int i = 0; i < curve.length; i++) curve[i] = store.getIntPref(CANONICAL_CURVE_DB[i]);
 		return new AudioEffectsProfile(AudioEffectsProfile.SCHEMA_VERSION,
@@ -274,7 +278,7 @@ public final class AudioEffectsProfileRepository {
 		return getProfileAuthority() == ProfileAuthority.USER_ESTABLISHED;
 	}
 
-	private static void writeProfile(PreferenceStore.Edit edit, AudioEffectsProfile profile) {
+	static void writeProfile(PreferenceStore.Edit edit, AudioEffectsProfile profile) {
 		edit.setIntPref(SCHEMA_VERSION, AudioEffectsProfile.SCHEMA_VERSION);
 		edit.setBooleanPref(ENABLED, profile.enabled());
 		edit.setBooleanPref(EQUALIZER_ENABLED, profile.equalizerEnabled());

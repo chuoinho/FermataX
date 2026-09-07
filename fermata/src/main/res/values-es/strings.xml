@@ -524,6 +524,11 @@ Por favor, reinicie la aplicación.</string>
 	<string name="voice_trigger_cleared">Se borró la asignación del botón de voz del vehículo.</string>
 	<string name="voice_selection_prompt">Di número uno, dos o tres</string>
     <string name="equalizer_apply_next_session">Los cambios de EQ se han guardado. Se aplicarán en la próxima sesión de reproducción.</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">No se pudo convertir automáticamente el preajuste del ecualizador de tu dispositivo anterior. Elige o ajusta el ecualizador una vez.</string>
 </resources>

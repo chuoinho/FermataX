@@ -516,6 +516,11 @@
 	<string name="voice_trigger_cleared">Assegnazione del pulsante vocale del veicolo cancellata.</string>
 	<string name="voice_selection_prompt">Di’ numero uno, due o tre</string>
     <string name="equalizer_apply_next_session">Le modifiche dell\'equalizzatore sono state salvate. Verranno applicate nella prossima sessione di riproduzione.</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">Il preset dell\'equalizzatore precedente del dispositivo non può essere convertito automaticamente. Scegli o regola l\'equalizzatore una volta.</string>
 </resources>

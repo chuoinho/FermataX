@@ -516,6 +516,11 @@
 	<string name="voice_trigger_cleared">Dodjela glasovne tipke vozila je uklonjena.</string>
 	<string name="voice_selection_prompt">Recite broj jedan, dva ili tri</string>
     <string name="equalizer_apply_next_session">Promjene ekvilizatora su spremljene. Primijenit će se u sljedećoj sesiji reprodukcije.</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">Prethodna postavka ekvilizatora uređaja nije se mogla automatski pretvoriti. Jednom odaberite ili prilagodite ekvilizator.</string>
 </resources>

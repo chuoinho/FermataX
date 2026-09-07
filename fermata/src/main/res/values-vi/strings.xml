@@ -516,6 +516,11 @@
 	<string name="media_list_empty">Chưa có mục nào</string>
 	<string name="media_list_load_failed">Không thể tải các mục.</string>
 	<string name="equalizer_apply_next_session">Các thay đổi EQ đã được lưu. Chúng sẽ được áp dụng trong phiên phát tiếp theo.</string>
+	<string name="audio_effects_apply">Áp dụng</string>
+	<string name="audio_effects_draft">Thay đổi EQ chưa lưu</string>
+	<string name="audio_effects_applying">Đang áp dụng thay đổi EQ...</string>
+	<string name="audio_effects_applied">Đã áp dụng thay đổi EQ</string>
+	<string name="audio_effects_apply_failed">Đã lưu thay đổi EQ nhưng không thể áp dụng</string>
 
     <string name="legacy_preset_migration_notice">Không thể tự động chuyển đổi cấu hình bộ chỉnh âm trước đó của thiết bị. Hãy chọn hoặc điều chỉnh bộ chỉnh âm một lần.</string>
 </resources>

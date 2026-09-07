@@ -521,6 +521,11 @@
 	<string name="voice_trigger_cleared">車両の音声ボタンの割り当てを解除しました。</string>
 	<string name="voice_selection_prompt">1、2、3のいずれかを言ってください</string>
     <string name="equalizer_apply_next_session">イコライザーの変更を保存しました。次の再生セッションで適用されます。</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">以前の端末のイコライザープリセットを自動変換できませんでした。一度イコライザーを選択または調整してください。</string>
 </resources>

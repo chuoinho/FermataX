@@ -521,6 +521,11 @@
 	<string name="voice_trigger_cleared">차량 음성 버튼 할당을 지웠습니다.</string>
 	<string name="voice_selection_prompt">1번, 2번 또는 3번이라고 말하세요</string>
     <string name="equalizer_apply_next_session">이퀄라이저 변경 사항이 저장되었습니다. 다음 재생 세션에 적용됩니다.</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">이전 기기의 이퀄라이저 프리셋을 자동으로 변환할 수 없습니다. 이퀄라이저를 한 번 선택하거나 조정하세요.</string>
 </resources>

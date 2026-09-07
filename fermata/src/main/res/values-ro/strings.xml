@@ -516,6 +516,11 @@
 	<string name="voice_trigger_cleared">Atribuirea butonului vocal al vehiculului a fost ștearsă.</string>
 	<string name="voice_selection_prompt">Spune numărul unu, doi sau trei</string>
     <string name="equalizer_apply_next_session">Modificările egalizatorului au fost salvate. Acestea vor fi aplicate în următoarea sesiune de redare.</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">Presetarea anterioară a egalizatorului dispozitivului nu a putut fi convertită automat. Alegeți sau ajustați egalizatorul o dată.</string>
 </resources>

@@ -516,6 +516,11 @@
 	<string name="voice_trigger_cleared">Araç ses düğmesi ataması temizlendi.</string>
 	<string name="voice_selection_prompt">Bir, iki veya üç numara deyin</string>
     <string name="equalizer_apply_next_session">Ekolayzır değişiklikleri kaydedildi. Bir sonraki oynatma oturumunda uygulanacak.</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">Cihazınızın önceki ekolayzır ön ayarı otomatik olarak dönüştürülemedi. Ekolayzırı bir kez seçin veya ayarlayın.</string>
 </resources>

@@ -521,6 +521,11 @@
 	<string name="voice_trigger_cleared">已清除車輛語音按鈕指派。</string>
 	<string name="voice_selection_prompt">請說一、二或三</string>
     <string name="equalizer_apply_next_session">等化器變更已儲存。將在下一個播放工作階段套用。</string>
+    <string name="audio_effects_apply">Apply</string>
+    <string name="audio_effects_draft">Unsaved EQ changes</string>
+    <string name="audio_effects_applying">Applying EQ changes...</string>
+    <string name="audio_effects_applied">EQ changes applied</string>
+    <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 
     <string name="legacy_preset_migration_notice">無法自動轉換您先前裝置的等化器預設值。請選擇或調整一次等化器。</string>
 </resources>
