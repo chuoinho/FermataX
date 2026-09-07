@@ -86,7 +86,6 @@ public final class AudioEffectsDraft {
 	public AudioEffectsProfile beginApply() {
 		if (applying) return null;
 		AudioEffectsProfile next = snapshot();
-		if (committed.equals(next)) return null;
 		try {
 			repository.save(next);
 		} catch (RuntimeException error) {

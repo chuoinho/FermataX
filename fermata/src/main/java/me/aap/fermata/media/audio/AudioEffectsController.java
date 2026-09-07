@@ -24,6 +24,7 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 	private int sessionId = ERROR;
 	@Nullable
 	private AudioEffectsBackend backend;
+	private boolean backendProfileApplied;
 	private boolean equalizerPendingForNextSession;
 	@Nullable
 	private AudioEffectsProfile deferredExplicitProfile;
@@ -65,7 +66,8 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 			releaseBoundBackend();
 			return false;
 		}
-		if ((engine == nextEngine) && (sessionId == nextSessionId) && (backend != null)) return true;
+		if ((engine == nextEngine) && (sessionId == nextSessionId) && (backend != null))
+			return backendProfileApplied;
 
 		releaseBoundBackend();
 		engine = nextEngine;
@@ -107,6 +109,7 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 
 		if (!profiles.load().enabled()) {
 			current.bypass();
+			backendProfileApplied = true;
 			equalizerPendingForNextSession = false;
 			return;
 		}
@@ -142,10 +145,13 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 		if (current == null) return true;
 		if (!profile.enabled()) {
 			current.bypass();
+			backendProfileApplied = true;
 			equalizerPendingForNextSession = false;
 			return true;
 		}
+		backendProfileApplied = false;
 		boolean applied = current.apply(profile, true);
+		backendProfileApplied = applied;
 		if (applied) equalizerPendingForNextSession = false;
 		return applied;
 	}
@@ -179,16 +185,26 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 
 	private boolean applyCurrentProfile(boolean applyEqualizer) {
 		AudioEffectsBackend current = backend;
-		if (current == null) return false;
+		if (current == null) {
+			backendProfileApplied = false;
+			return false;
+		}
 		AudioEffectsProfile profile = profiles.load();
-		if (profile.enabled()) return current.apply(profile, applyEqualizer);
-		current.bypass();
-		return true;
+		if (profile.enabled()) {
+			backendProfileApplied = false;
+			backendProfileApplied = current.apply(profile, applyEqualizer);
+		}
+		else {
+			current.bypass();
+			backendProfileApplied = true;
+		}
+		return backendProfileApplied;
 	}
 
 	private void releaseBoundBackend() {
 		AudioEffectsBackend current = backend;
 		backend = null;
+		backendProfileApplied = false;
 		engine = null;
 		sessionId = ERROR;
 		if (current != null) current.release();

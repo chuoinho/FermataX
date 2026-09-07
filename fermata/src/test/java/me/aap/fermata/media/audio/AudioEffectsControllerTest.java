@@ -39,6 +39,17 @@ public class AudioEffectsControllerTest {
 	}
 
 	@Test
+	public void sameSessionBindDoesNotHideAnEarlierApplyFailure() {
+		Fixture fixture = new Fixture(EqualizerUpdateMode.INITIAL_ONLY, false);
+		fixture.repository.save(enabledProfile(0));
+		MediaEngine engine = engine(41);
+
+		assertFalse(fixture.controller.bind(engine));
+		assertFalse(fixture.controller.bind(engine));
+		assertEquals(1, fixture.backends[0].applyCount);
+	}
+
+	@Test
 	public void profileChangesReapplyWithoutRecreatingTheBackend() {
 		Fixture fixture = new Fixture();
 		fixture.repository.save(enabledProfile(-3));

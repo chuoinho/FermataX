@@ -35,6 +35,16 @@ physical playback operation was performed.
   backend and persists only master-off. Re-enable is draft-only until explicit
   Apply, so a stale Dynamics Processing chain is never silently re-enabled.
 
+### Review fixes
+
+- `AudioEffectsDraft.beginApply()` now permits an unchanged snapshot. This makes
+  explicit Apply useful for forcing a saved flat/zero profile into an already
+  running initial-only backend and allows an unchanged retry after a runtime
+  failure.
+- `AudioEffectsController` now records whether the current backend actually
+  accepted its profile. Rebinding the same engine/session returns that result
+  instead of reporting success after an earlier failed apply.
+
 ## Scoped Files
 
 - Runtime: `AudioEffectsController.java`, `AudioEffectsProfileRepository.java`,
@@ -54,8 +64,8 @@ Exact full gate:
 
 ```text
 .\gradlew.bat :fermata:testAutoDebugUnitTest :web:testAutoDebugUnitTest --no-daemon
-BUILD SUCCESSFUL in 29s
-176 actionable tasks: 5 executed, 171 up-to-date
+BUILD SUCCESSFUL in 32s
+176 actionable tasks: 2 executed, 174 up-to-date
 ```
 
 Focused affected tests, including callback, controller, draft, architecture, and
@@ -66,6 +76,12 @@ localization coverage:
 BUILD SUCCESSFUL in 37s
 157 actionable tasks: 12 executed, 145 up-to-date
 ```
+
+Review regression cycle:
+
+- RED: the two draft regressions and same-session bind regression failed (`24
+  tests completed, 3 failed`) before the production fix.
+- GREEN: the focused draft/controller command passed in `30s` after the fix.
 
 Additional checks:
 

@@ -77,6 +77,24 @@ public class AudioEffectsDraftTest {
 	}
 
 	@Test
+	public void unchangedDraftCanBeExplicitlyApplied() {
+		AudioEffectsDraft draft = new AudioEffectsDraft(repository());
+
+		assertEquals(AudioEffectsProfile.defaults(), draft.beginApply());
+	}
+
+	@Test
+	public void failedApplyCanBeRetriedWithoutChangingTheDraft() {
+		AudioEffectsDraft draft = new AudioEffectsDraft(repository());
+		draft.getStore().applyIntPref(AudioEffectsProfileRepository.PREAMP_DB, -4);
+
+		assertEquals(-4, draft.beginApply().preampDb());
+		draft.finishApply(false);
+
+		assertEquals(-4, draft.beginApply().preampDb());
+	}
+
+	@Test
 	public void repeatedApplyKeepsLatestEditsPendingWhileFirstApplyIsWorking() {
 		AudioEffectsProfileRepository repository = repository();
 		AudioEffectsDraft draft = new AudioEffectsDraft(repository);
