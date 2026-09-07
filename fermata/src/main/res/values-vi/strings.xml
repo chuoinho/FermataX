@@ -521,6 +521,17 @@
 	<string name="audio_effects_applying">Đang áp dụng thay đổi EQ...</string>
 	<string name="audio_effects_applied">Đã áp dụng thay đổi EQ</string>
 	<string name="audio_effects_apply_failed">Đã lưu thay đổi EQ nhưng không thể áp dụng</string>
+	<string name="audio_effects_flat">Phẳng</string>
+	<string name="audio_effects_custom">Tùy chỉnh</string>
+	<string name="audio_effects_set_flat">Đặt phẳng</string>
+	<string name="audio_effects_scale">Mức dB, từ -15 đến +15 (0 dB ở giữa)</string>
+	<string name="audio_effects_band_scroll">Các dải cân bằng</string>
+	<string name="audio_effects_band_format">%1$s Hz, %2$s dB</string>
+	<string name="audio_effects_additional">Hiệu ứng bổ sung</string>
+	<string name="audio_effects_expand">Hiện hiệu ứng bổ sung</string>
+	<string name="audio_effects_collapse">Ẩn hiệu ứng bổ sung</string>
+	<string name="audio_effects_disabled">Đã tắt</string>
+	<string name="audio_effects_range_error">Nhập giá trị từ %1$d đến %2$d.</string>
 
     <string name="legacy_preset_migration_notice">Không thể tự động chuyển đổi cấu hình bộ chỉnh âm trước đó của thiết bị. Hãy chọn hoặc điều chỉnh bộ chỉnh âm một lần.</string>
 </resources>

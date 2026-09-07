@@ -521,6 +521,17 @@
     <string name="audio_effects_applying">Applying EQ changes...</string>
     <string name="audio_effects_applied">EQ changes applied</string>
     <string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
+    <string name="audio_effects_flat">Flat</string>
+    <string name="audio_effects_custom">Custom</string>
+    <string name="audio_effects_set_flat">Set flat</string>
+    <string name="audio_effects_scale">dB gain, -15 to +15 (0 dB center)</string>
+    <string name="audio_effects_band_scroll">Equalizer bands</string>
+    <string name="audio_effects_band_format">%1$s Hz, %2$s dB</string>
+    <string name="audio_effects_additional">Additional effects</string>
+    <string name="audio_effects_expand">Show additional effects</string>
+    <string name="audio_effects_collapse">Hide additional effects</string>
+    <string name="audio_effects_disabled">Disabled</string>
+    <string name="audio_effects_range_error">Enter a value from %1$d to %2$d.</string>
 
     <string name="legacy_preset_migration_notice">Не удалось автоматически преобразовать предыдущий пресет эквалайзера устройства. Выберите или настройте эквалайзер один раз.</string>
 </resources>

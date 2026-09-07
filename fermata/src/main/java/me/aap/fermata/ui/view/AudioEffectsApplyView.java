@@ -23,6 +23,7 @@ import me.aap.utils.pref.PreferenceStore;
 public final class AudioEffectsApplyView extends LinearLayout implements AudioEffectsDraft.Listener {
 	private final AudioEffectsDraft draft;
 	private final MediaSessionCallback callback;
+	private final Button cancel;
 	private final Button apply;
 	private final TextView status;
 	private final PreferenceStore.Listener masterDisable = this::onDraftChanged;
@@ -33,14 +34,29 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		this.draft = draft;
 		this.callback = callback;
 		setOrientation(VERTICAL);
-		setGravity(Gravity.START);
-		apply = new Button(context);
-		apply.setText(R.string.audio_effects_apply);
-		apply.setOnClickListener(v -> startApply());
-		addView(apply, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+		setGravity(Gravity.CENTER_VERTICAL);
+		setBackgroundColor(resolveColor(context, android.R.attr.colorBackground, Color.TRANSPARENT));
 		status = new TextView(context);
 		status.setTextColor(Color.GRAY);
+		status.setGravity(Gravity.CENTER_VERTICAL);
+		status.setMinHeight(dp(40));
 		addView(status, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+		LinearLayout buttons = new LinearLayout(context);
+		buttons.setOrientation(HORIZONTAL);
+		buttons.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+		cancel = new Button(context);
+		cancel.setText(R.string.cancel);
+		cancel.setAllCaps(false);
+		cancel.setMinHeight(dp(48));
+		cancel.setOnClickListener(v -> draft.discard());
+		buttons.addView(cancel, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+		apply = new Button(context);
+		apply.setText(R.string.audio_effects_apply);
+		apply.setAllCaps(false);
+		apply.setMinHeight(dp(48));
+		apply.setOnClickListener(v -> startApply());
+		buttons.addView(apply, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+		addView(buttons, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		setPadding(0, 0, 0, dp(4));
 	}
 
@@ -70,6 +86,7 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 	@Override
 	public void onStateChanged(AudioEffectsDraft.State state) {
 		apply.setEnabled(!draft.isApplying());
+		cancel.setEnabled(!draft.isApplying());
 		int message = switch (state) {
 			case CLEAN -> 0;
 			case DRAFT -> R.string.audio_effects_draft;
@@ -79,6 +96,13 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		};
 		status.setVisibility((message == 0) ? GONE : VISIBLE);
 		if (message != 0) status.setText(message);
+	}
+
+	private static int resolveColor(Context context, int attribute, int fallback) {
+		android.util.TypedValue value = new android.util.TypedValue();
+		if (!context.getTheme().resolveAttribute(attribute, value, true)) return fallback;
+		return (value.resourceId == 0) ? value.data :
+				androidx.core.content.ContextCompat.getColor(context, value.resourceId);
 	}
 
 	private void startApply() {

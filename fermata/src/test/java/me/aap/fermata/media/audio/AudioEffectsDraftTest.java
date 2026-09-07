@@ -95,6 +95,41 @@ public class AudioEffectsDraftTest {
 	}
 
 	@Test
+	public void setFlatChangesOnlyTheTenEqualizerBands() {
+		AudioEffectsDraft draft = new AudioEffectsDraft(repository());
+		draft.getStore().applyBooleanPref(AudioEffectsProfileRepository.ENABLED, true);
+		draft.getStore().applyBooleanPref(AudioEffectsProfileRepository.EQUALIZER_ENABLED, true);
+		draft.getStore().applyIntPref(AudioEffectsProfileRepository.PREAMP_DB, -4);
+		draft.getStore().applyBooleanPref(AudioEffectsProfileRepository.BASS_BOOST_ENABLED, true);
+		draft.getStore().applyIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[2], 8);
+
+		draft.setFlat();
+
+		AudioEffectsProfile profile = draft.snapshot();
+		assertEquals(0, profile.canonicalCurveDb()[2]);
+		assertEquals(-4, profile.preampDb());
+		assertTrue(profile.enabled());
+		assertTrue(profile.equalizerEnabled());
+		assertTrue(profile.bassBoostEnabled());
+	}
+
+	@Test
+	public void restoreRehydratesTheWorkingProfileWithoutChangingTheRepository() {
+		AudioEffectsProfileRepository repository = repository();
+		AudioEffectsDraft draft = new AudioEffectsDraft(repository);
+		AudioEffectsProfile restored = new AudioEffectsProfile(AudioEffectsProfile.SCHEMA_VERSION,
+				true, true, new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, -3,
+				false, 0, false, 0, false, 0,
+				android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO);
+
+		draft.restore(restored);
+
+		assertEquals(restored, draft.snapshot());
+		assertEquals(AudioEffectsProfile.defaults(), repository.load());
+		assertTrue(draft.isDirty());
+	}
+
+	@Test
 	public void repeatedApplyKeepsLatestEditsPendingWhileFirstApplyIsWorking() {
 		AudioEffectsProfileRepository repository = repository();
 		AudioEffectsDraft draft = new AudioEffectsDraft(repository);

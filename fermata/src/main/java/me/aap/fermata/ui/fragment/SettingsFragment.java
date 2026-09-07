@@ -27,6 +27,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonRegistry;
 import me.aap.fermata.media.audio.AudioEffectsDraft;
+import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
@@ -86,6 +87,9 @@ public class SettingsFragment extends MainActivityFragment
 	@Override
 	public void onSaveInstanceState(@NonNull Bundle outState) {
 		if (adapter != null) outState.putInt("id", adapter.getPreferenceSet().getId());
+		if (audioEffectsDraft != null) {
+			outState.putBundle("audio_effects_draft", audioEffectsState(audioEffectsDraft.snapshot()));
+		}
 	}
 
 	@Override
@@ -98,6 +102,7 @@ public class SettingsFragment extends MainActivityFragment
 					(getView() != view)) return;
 			activityDelegate = a;
 			adapter = createAdapter(a);
+			restoreAudioEffectsDraft(state);
 			a.addBroadcastListener(this);
 			a.getPrefs().addBroadcastListener(this);
 
@@ -163,8 +168,14 @@ public class SettingsFragment extends MainActivityFragment
 		if (adapter == null) return false;
 		PreferenceSet p = adapter.getPreferenceSet().getParent();
 		if (p == null) return false;
+		discardSelection();
 		adapter.setPreferenceSet(p);
 		return true;
+	}
+
+	@Override
+	public void discardSelection() {
+		if (audioEffectsDraft != null) audioEffectsDraft.discard();
 	}
 
 	public static void addDelayPrefs(PreferenceSet set, PreferenceStore store,
@@ -376,6 +387,36 @@ public class SettingsFragment extends MainActivityFragment
 
 	private void refreshPrefs(PreferenceSet set) {
 		if (adapter != null) adapter.setPreferenceSet(set);
+	}
+
+	private void restoreAudioEffectsDraft(Bundle state) {
+		if ((state == null) || (audioEffectsDraft == null)) return;
+		Bundle saved = state.getBundle("audio_effects_draft");
+		if (saved == null) return;
+		int[] curve = saved.getIntArray("curve");
+		if ((curve == null) || (curve.length != AudioEffectsProfile.CANONICAL_FREQ_HZ.length)) return;
+		audioEffectsDraft.restore(new AudioEffectsProfile(AudioEffectsProfile.SCHEMA_VERSION,
+			saved.getBoolean("enabled"), saved.getBoolean("equalizer_enabled"), curve,
+			saved.getInt("preamp"), saved.getBoolean("bass_enabled"), saved.getInt("bass_strength"),
+			saved.getBoolean("loudness_enabled"), saved.getInt("loudness_gain"),
+			saved.getBoolean("virtualizer_enabled"), saved.getInt("virtualizer_strength"),
+			saved.getInt("virtualizer_mode")));
+	}
+
+	private static Bundle audioEffectsState(AudioEffectsProfile profile) {
+		Bundle state = new Bundle();
+		state.putBoolean("enabled", profile.enabled());
+		state.putBoolean("equalizer_enabled", profile.equalizerEnabled());
+		state.putIntArray("curve", profile.canonicalCurveDb());
+		state.putInt("preamp", profile.preampDb());
+		state.putBoolean("bass_enabled", profile.bassBoostEnabled());
+		state.putInt("bass_strength", profile.bassBoostStrength());
+		state.putBoolean("loudness_enabled", profile.loudnessEnabled());
+		state.putInt("loudness_gain", profile.loudnessGain());
+		state.putBoolean("virtualizer_enabled", profile.virtualizerEnabled());
+		state.putInt("virtualizer_strength", profile.virtualizerStrength());
+		state.putInt("virtualizer_mode", profile.virtualizerMode());
+		return state;
 	}
 
 	private void addAddons(PreferenceSet set) {

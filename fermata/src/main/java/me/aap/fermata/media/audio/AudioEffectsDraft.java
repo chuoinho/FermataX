@@ -72,6 +72,22 @@ public final class AudioEffectsDraft {
 		}
 	}
 
+	/** Resets only the canonical equalizer bands in the working profile. */
+	public void setFlat() {
+		if (applying) throw new IllegalStateException("Audio-effects Apply is already running");
+		try (PreferenceStore.Edit edit = store.editPreferenceStore(true)) {
+			for (PreferenceStore.Pref<?> pref : AudioEffectsProfileRepository.CANONICAL_CURVE_DB) {
+				setFlatBand(edit, pref);
+			}
+		}
+	}
+
+	/** Restores a working snapshot after a settings host recreation. */
+	public void restore(AudioEffectsProfile profile) {
+		if (applying) throw new IllegalStateException("Audio-effects Apply is already running");
+		write(store, profile);
+	}
+
 	public AudioEffectsProfile commit() {
 		if (applying) throw new IllegalStateException("Audio-effects Apply is already running");
 		AudioEffectsProfile next = snapshot();
@@ -120,5 +136,12 @@ public final class AudioEffectsDraft {
 		try (PreferenceStore.Edit edit = target.editPreferenceStore(false)) {
 			AudioEffectsProfileRepository.writeProfile(edit, profile);
 		}
+	}
+
+	private static void setFlatBand(PreferenceStore.Edit edit, PreferenceStore.Pref<?> pref) {
+		@SuppressWarnings("unchecked")
+		PreferenceStore.Pref<me.aap.utils.function.IntSupplier> band =
+				(PreferenceStore.Pref<me.aap.utils.function.IntSupplier>) pref;
+		edit.setIntPref(band, 0);
 	}
 }

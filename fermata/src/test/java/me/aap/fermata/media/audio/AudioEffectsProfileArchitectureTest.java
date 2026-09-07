@@ -126,29 +126,25 @@ public class AudioEffectsProfileArchitectureTest {
 	}
 
 	@Test
-	public void unifiedSettingsExposeNegativeOnlyPreampThroughTheProfileRepository()
+	public void unifiedSettingsExposeTheSharedNativeScreenAndValidatedPreamp()
 			throws Exception {
 		String builder = source("ui/fragment/AudioEffectsPrefsBuilder.java");
+		String screen = source("ui/view/AudioEffectsScreenView.java");
 
-		assertFalse(builder.contains("PreferenceSet preamp"));
-		assertTrue(builder.contains("AudioEffectsProfileRepository.PREAMP_DB"));
-		assertTrue(builder.contains("R.string.preamp"));
-		assertTrue(builder.contains("R.string.equalizer"));
+		assertTrue(builder.contains("AudioEffectsScreenView"));
+		assertTrue(screen.contains("AudioEffectsProfileRepository.PREAMP_DB"));
+		assertTrue(screen.contains("AudioEffectsProfile.MIN_CANONICAL_DB"));
+		assertTrue(screen.contains("R.string.preamp"));
+		assertTrue(screen.contains("R.string.equalizer"));
 		assertFalse(builder.contains("R.string.equalier"));
-		assertTrue(builder.contains("o.seekMin = AudioEffectsProfile.MIN_CANONICAL_DB"));
-		assertTrue(builder.contains("o.seekMax = 0"));
 	}
 
 	@Test
 	public void gainControlsAcceptSignedNumericInput() throws Exception {
-		String builder = source("ui/fragment/AudioEffectsPrefsBuilder.java");
+		String screen = source("ui/view/AudioEffectsScreenView.java");
 
-		assertEquals(2, occurrences(builder,
-				"InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED"));
-	}
-
-	private static int occurrences(String value, String needle) {
-		return value.split(java.util.regex.Pattern.quote(needle), -1).length - 1;
+		assertTrue(screen.contains("InputType.TYPE_NUMBER_FLAG_SIGNED"));
+		assertTrue(screen.contains("AudioEffectsProfile.MAX_CANONICAL_DB"));
 	}
 
 	private static String source(String relativePath) throws Exception {

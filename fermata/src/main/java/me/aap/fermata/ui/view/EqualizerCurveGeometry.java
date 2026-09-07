@@ -22,4 +22,12 @@ final class EqualizerCurveGeometry {
 		return (float) (AudioEffectsProfile.MAX_CANONICAL_DB - clamped) /
 				(AudioEffectsProfile.MAX_CANONICAL_DB - AudioEffectsProfile.MIN_CANONICAL_DB);
 	}
+
+	static int gainDb(float position) {
+		float clamped = Math.max(0f, Math.min(1f, position));
+		int range = AudioEffectsProfile.MAX_CANONICAL_DB - AudioEffectsProfile.MIN_CANONICAL_DB;
+		return Math.max(AudioEffectsProfile.MIN_CANONICAL_DB, Math.min(
+				AudioEffectsProfile.MAX_CANONICAL_DB,
+				Math.round(AudioEffectsProfile.MAX_CANONICAL_DB - (clamped * range))));
+	}
 }
