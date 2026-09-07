@@ -108,9 +108,19 @@ public interface MediaEngine extends Closeable {
 	@Override
 	void close();
 
+	/**
+	 * Legacy low-level effect handle retained for dormant UI and rollback compatibility.
+	 * Runtime profile application is owned by AudioEffectsController.
+	 */
+	@Deprecated
 	@Nullable
 	default AudioEffects getAudioEffects() {
 		return null;
+	}
+
+	/** Returns the current engine-owned session, or {@link AudioManager#ERROR} when unavailable. */
+	default int getAudioSessionId() {
+		return AudioManager.ERROR;
 	}
 
 	default List<AudioStreamInfo> getAudioStreamInfo() {
@@ -317,6 +327,9 @@ public interface MediaEngine extends Closeable {
 		default void onEnginePrepared(MediaEngine engine) {}
 
 		default void onEngineStarted(MediaEngine engine) {}
+
+		/** Fired when an engine replaces its current Android audio session. */
+		default void onEngineAudioSessionIdChanged(MediaEngine engine, int audioSessionId) {}
 
 		default void onEngineEnded(MediaEngine engine) {}
 

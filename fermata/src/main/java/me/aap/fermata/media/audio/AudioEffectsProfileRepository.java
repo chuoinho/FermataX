@@ -2,9 +2,13 @@ package me.aap.fermata.media.audio;
 
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 
+import java.util.Collection;
+import java.util.List;
+
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.event.EventBroadcaster.ListenerRef;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 
@@ -30,6 +34,8 @@ public final class AudioEffectsProfileRepository {
 
 	private static final Pref<IntSupplier> MIGRATION_STATE = intPref("MIGRATION_STATE",
 			MigrationState.NONE.ordinal());
+	static final Pref<IntSupplier> PROFILE_AUTHORITY = intPref("PROFILE_AUTHORITY",
+			ProfileAuthority.UNKNOWN.ordinal());
 	private static final Pref<BooleanSupplier> LEGACY_PRESENT = booleanPref("LEGACY_PRESENT", false);
 	private static final Pref<BooleanSupplier> LEGACY_AE_DEFINED = booleanPref("LEGACY_AE_DEFINED", false);
 	private static final Pref<BooleanSupplier> LEGACY_AE_ENABLED = booleanPref("LEGACY_AE_ENABLED", false);
@@ -68,6 +74,12 @@ public final class AudioEffectsProfileRepository {
 		return store;
 	}
 
+	/** The Settings-only store records an explicit user edit together with the profile change. */
+	public PreferenceStore getUserEditableStore() {
+		ensureInitialized();
+		return new UserEditableStore(store);
+	}
+
 	public AudioEffectsProfile load() {
 		ensureInitialized();
 		int[] curve = new int[AudioEffectsProfile.CANONICAL_FREQ_HZ.length];
@@ -88,8 +100,42 @@ public final class AudioEffectsProfileRepository {
 		LegacyAudioEffectsSnapshot legacy = readLegacySnapshot();
 		try (PreferenceStore.Edit edit = store.editPreferenceStore(false)) {
 			writeProfile(edit, profile);
+			edit.setIntPref(PROFILE_AUTHORITY, ProfileAuthority.USER_ESTABLISHED.ordinal());
 			if (legacy.isPresent()) edit.setIntPref(MIGRATION_STATE, MigrationState.DORMANT.ordinal());
 		}
+	}
+
+	/**
+	 * Converts only a reconstructable pending global legacy curve. The topology is read by the
+	 * native backend; this repository neither creates effects nor applies them.
+	 */
+	boolean migratePendingLegacyEqualizer(NativeEqualizerTopology topology) {
+		ensureInitialized();
+		if ((topology == null) || (getMigrationState() != MigrationState.PENDING_NATIVE_TOPOLOGY) ||
+				(getProfileAuthority() != ProfileAuthority.GENERATED)) return false;
+
+		LegacyAudioEffectsSnapshot legacy = readLegacySnapshot();
+		int[] rawBands = legacy.activeRawEqualizerBands();
+		if ((rawBands == null) || !topology.containsLevels(rawBands)) return false;
+
+		final int[] canonical;
+		try {
+			canonical = NativeToCanonicalEqualizerMapper.map(rawBands, topology);
+		} catch (IllegalArgumentException ignored) {
+			return false;
+		}
+
+		AudioEffectsProfile current = load();
+		AudioEffectsProfile migrated = new AudioEffectsProfile(AudioEffectsProfile.SCHEMA_VERSION,
+				current.enabled(), legacy.equalizerEnabled(), canonical, current.preampDb(),
+				current.bassBoostEnabled(), current.bassBoostStrength(), current.loudnessEnabled(),
+				current.loudnessGain(), current.virtualizerEnabled(), current.virtualizerStrength(),
+				current.virtualizerMode());
+		try (PreferenceStore.Edit edit = store.editPreferenceStore(false)) {
+			writeProfile(edit, migrated);
+			edit.setIntPref(MIGRATION_STATE, MigrationState.MIGRATED.ordinal());
+		}
+		return true;
 	}
 
 	public MigrationState getMigrationState() {
@@ -102,6 +148,37 @@ public final class AudioEffectsProfileRepository {
 	public LegacyAudioEffectsSnapshot getLegacySnapshot() {
 		ensureInitialized();
 		return readLegacySnapshot();
+	}
+
+	/** True when a preference update changes the profile that native playback must apply. */
+	public static boolean isProfilePreference(Pref<?> pref) {
+		if ((pref == ENABLED) || (pref == EQUALIZER_ENABLED) || (pref == PREAMP_DB) ||
+				(pref == BASS_BOOST_ENABLED) || (pref == BASS_BOOST_STRENGTH) ||
+				(pref == LOUDNESS_ENABLED) || (pref == LOUDNESS_GAIN) ||
+				(pref == VIRTUALIZER_ENABLED) || (pref == VIRTUALIZER_STRENGTH) ||
+				(pref == VIRTUALIZER_MODE)) return true;
+		for (Pref<?> band : CANONICAL_CURVE_DB) {
+			if (pref == band) return true;
+		}
+		return false;
+	}
+
+	public static boolean containsProfilePreference(List<Pref<?>> prefs) {
+		for (Pref<?> pref : prefs) {
+			if (isProfilePreference(pref)) return true;
+		}
+		return false;
+	}
+
+	/** True when a change requires an initial-only processor to be initialized again. */
+	public static boolean containsEqualizerPreference(List<Pref<?>> prefs) {
+		for (Pref<?> pref : prefs) {
+			if ((pref == ENABLED) || (pref == EQUALIZER_ENABLED) || (pref == PREAMP_DB)) return true;
+			for (Pref<?> band : CANONICAL_CURVE_DB) {
+				if (pref == band) return true;
+			}
+		}
+		return false;
 	}
 
 	private void ensureInitialized() {
@@ -119,6 +196,7 @@ public final class AudioEffectsProfileRepository {
 			writeLegacySnapshot(edit, legacy);
 			edit.setIntPref(SCHEMA_VERSION, AudioEffectsProfile.SCHEMA_VERSION);
 			edit.setIntPref(MIGRATION_STATE, state.ordinal());
+			edit.setIntPref(PROFILE_AUTHORITY, ProfileAuthority.GENERATED.ordinal());
 		}
 	}
 
@@ -136,6 +214,17 @@ public final class AudioEffectsProfileRepository {
 		if (!legacy.isPresent()) return MigrationState.NONE;
 		return legacy.requiresNativeTopology() ? MigrationState.PENDING_NATIVE_TOPOLOGY :
 				MigrationState.DORMANT;
+	}
+
+	private ProfileAuthority getProfileAuthority() {
+		int value = store.getIntPref(PROFILE_AUTHORITY);
+		ProfileAuthority[] values = ProfileAuthority.values();
+		return ((value >= 0) && (value < values.length)) ? values[value] : ProfileAuthority.UNKNOWN;
+	}
+
+	boolean isProfileUserEstablished() {
+		ensureInitialized();
+		return getProfileAuthority() == ProfileAuthority.USER_ESTABLISHED;
 	}
 
 	private static void writeProfile(PreferenceStore.Edit edit, AudioEffectsProfile profile) {
@@ -234,5 +323,164 @@ public final class AudioEffectsProfileRepository {
 
 	private static Pref<Supplier<String[]>> stringArrayPref(String name) {
 		return Pref.sa(PREFIX + name, new String[0]).withInheritance(false);
+	}
+
+	private enum ProfileAuthority {
+		UNKNOWN,
+		GENERATED,
+		USER_ESTABLISHED
+	}
+
+	private static final class UserEditableStore implements PreferenceStore {
+		private final PreferenceStore delegate;
+
+		UserEditableStore(PreferenceStore delegate) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public boolean getBooleanPref(Pref<? extends BooleanSupplier> pref) {
+			return delegate.getBooleanPref(pref);
+		}
+
+		@Override
+		public int getIntPref(Pref<? extends IntSupplier> pref) {
+			return delegate.getIntPref(pref);
+		}
+
+		@Override
+		public int[] getIntArrayPref(Pref<? extends Supplier<int[]>> pref) {
+			return delegate.getIntArrayPref(pref);
+		}
+
+		@Override
+		public long getLongPref(Pref<? extends me.aap.utils.function.LongSupplier> pref) {
+			return delegate.getLongPref(pref);
+		}
+
+		@Override
+		public long[] getLongArrayPref(Pref<? extends Supplier<long[]>> pref) {
+			return delegate.getLongArrayPref(pref);
+		}
+
+		@Override
+		public float getFloatPref(Pref<? extends me.aap.utils.function.DoubleSupplier> pref) {
+			return delegate.getFloatPref(pref);
+		}
+
+		@Override
+		public String getStringPref(Pref<? extends Supplier<String>> pref) {
+			return delegate.getStringPref(pref);
+		}
+
+		@Override
+		public String[] getStringArrayPref(Pref<? extends Supplier<String[]>> pref) {
+			return delegate.getStringArrayPref(pref);
+		}
+
+		@Override
+		public boolean hasPref(Pref<?> pref, boolean checkParent) {
+			return delegate.hasPref(pref, checkParent);
+		}
+
+		@Override
+		public Edit editPreferenceStore(boolean removeDefault) {
+			return new UserEditableEdit(delegate.editPreferenceStore(removeDefault), delegate);
+		}
+
+		@Override
+		public PreferenceStore getRootPreferenceStore() {
+			return delegate.getRootPreferenceStore();
+		}
+
+		@Override
+		public PreferenceStore getParentPreferenceStore() {
+			return delegate.getParentPreferenceStore();
+		}
+
+		@Override
+		public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
+			return delegate.getBroadcastEventListeners();
+		}
+	}
+
+	private static final class UserEditableEdit implements PreferenceStore.Edit {
+		private final PreferenceStore.Edit edit;
+		private final PreferenceStore store;
+		private boolean profileChanged;
+
+		UserEditableEdit(PreferenceStore.Edit edit, PreferenceStore store) {
+			this.edit = edit;
+			this.store = store;
+		}
+
+		@Override
+		public void setBooleanPref(Pref<? extends BooleanSupplier> pref, boolean value) {
+			edit.setBooleanPref(pref, value);
+			markProfileChange(pref);
+		}
+
+		@Override
+		public void setIntPref(Pref<? extends IntSupplier> pref, int value) {
+			edit.setIntPref(pref, value);
+			markProfileChange(pref);
+		}
+
+		@Override
+		public void setIntArrayPref(Pref<? extends Supplier<int[]>> pref, int[] value) {
+			edit.setIntArrayPref(pref, value);
+			markProfileChange(pref);
+		}
+
+		@Override
+		public void setLongPref(Pref<? extends me.aap.utils.function.LongSupplier> pref, long value) {
+			edit.setLongPref(pref, value);
+			markProfileChange(pref);
+		}
+
+		@Override
+		public void setFloatPref(Pref<? extends me.aap.utils.function.DoubleSupplier> pref,
+				float value) {
+			edit.setFloatPref(pref, value);
+			markProfileChange(pref);
+		}
+
+		@Override
+		public void setStringPref(Pref<? extends Supplier<String>> pref, String value) {
+			edit.setStringPref(pref, value);
+			markProfileChange(pref);
+		}
+
+		@Override
+		public void setStringArrayPref(Pref<? extends Supplier<String[]>> pref, String[] value) {
+			edit.setStringArrayPref(pref, value);
+			markProfileChange(pref);
+		}
+
+		@Override
+		public void removePref(Pref<?> pref) {
+			edit.removePref(pref);
+			markProfileChange(pref);
+		}
+
+		@Override
+		public boolean isRemoveDefault() {
+			return edit.isRemoveDefault();
+		}
+
+		@Override
+		public void apply() {
+			if (profileChanged) {
+				edit.setIntPref(PROFILE_AUTHORITY, ProfileAuthority.USER_ESTABLISHED.ordinal());
+				if (store.getIntPref(MIGRATION_STATE) == MigrationState.PENDING_NATIVE_TOPOLOGY.ordinal()) {
+					edit.setIntPref(MIGRATION_STATE, MigrationState.DORMANT.ordinal());
+				}
+			}
+			edit.apply();
+		}
+
+		private void markProfileChange(Pref<?> pref) {
+			profileChanged |= isProfilePreference(pref);
+		}
 	}
 }

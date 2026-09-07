@@ -1,0 +1,1159 @@
+# WEBEQ-B YouTube WebAudio Bridge
+
+## Status
+
+`WEBEQ_B_YOUTUBE_PASS`
+
+This change adds a narrow, YouTube-only WebAudio equalizer path.  It is not a
+generic WebView hook and it does not alter native-player EQ ownership.  The
+physical device proved the supported MSE path, live profile propagation, and
+safe neutralisation. Later B7 and B8R physical acceptance closed the projected
+BLOB/MSE, A -> B -> A, and fullscreen-causality gates. The historical
+checkpoint details below remain evidence; their incomplete statuses are
+superseded where B7/B8R records final observed results.
+
+## Scope and ownership
+
+```text
+YoutubeWebView
+  -> YoutubeWebAudioBridge
+      -> exact-origin document-start shim
+          -> one MediaElementAudioSourceNode
+          -> preamp -> ten canonical peaking filters -> destination
+```
+
+- `YoutubeWebView` owns its existing navigation and destruction boundaries.
+- `YoutubeWebAudioBridge` owns a document generation, bounded profile updates,
+  and best-effort document teardown.
+- The document shim owns only one local `AudioContext` and graph per claimed
+  content `HTMLVideoElement`.
+- `AudioEffectsProfileRepository` remains the sole profile authority.  The
+  bridge receives only master/EQ flags, ten bounded band gains, and a bounded
+  non-positive preamp.
+
+No JavaScript interface was added.  The bridge does not send URLs, media
+addresses, headers, cookies, credentials, account state, tokens, samples, or
+player DOM data to Java or logging.
+
+## Attachment policy
+
+The graph may attach only when all of the following are true:
+
+- the top-level document is exactly `https://m.youtube.com` or
+  `https://www.youtube.com`, with default HTTPS port;
+- the existing YouTube playback host is preferred;
+- the existing content-video selector returns a connected, playing,
+  ready-to-play video;
+- the source is `blob:`/MSE; and
+- the media has no `mediaKeys` and has not emitted `encrypted` or
+  `webkitneedkey`.
+
+Direct HTTP/HTTPS sources, unknown sources, iframes, EME/DRM, paused
+placeholders, and non-YouTube origins bypass the graph.  Critically, when both
+Master and Equalizer are off, a newly discovered media element is not claimed.
+Once a graph was validly claimed, Master Off or Equalizer Off changes it to
+unity rather than making a second source claim possible.
+
+## Physical evidence
+
+Environment:
+
+- device `15c36230`, Android 16 / API 36;
+- signed package `me.app.fermataX.auto`;
+- public YouTube MSE playback;
+- temporary screenshots and bounded CDP output are untracked under
+  `.webeq-b-temp/`.
+
+The CDP query read only the shim's bounded status object:
+
+```text
+{ r, m, e, p, b }
+```
+
+It contains no content identity or media data.  `b` is the live 1 kHz filter
+gain.  The following observations were made through the normal FermataX UI:
+
+| Check | Observed result | Status |
+| --- | --- | --- |
+| Capability | Current content was `BLOB_MSE`, non-EME, its graph was attached, `AudioContext` was running, playback advanced, and an earlier controlled read-back showed 1 kHz `0 -> -10 -> 0`. | PASS |
+| Profile propagation | With Master and EQ enabled, a normal Equalizer edit updated a live graph to 1 kHz `-6`; the graph did not need a restart. | PASS |
+| Equalizer Off | A live claimed graph reported `SUPPORTED_ACTIVE`, `m=true`, `e=false`, `b=0`. | PASS |
+| Master Off | A live claimed graph reported `SUPPORTED_ACTIVE`, `m=false`, `e=false`, `b=0`; the UI checkbox was visibly off. | PASS |
+| No-claim gate | With Master and EQ disabled before attachment, the bridge reported `NO_MEDIA`, `m=false`, `e=false`, `b=null`. | PASS |
+| Media-session pause/resume | A real media key changed FermataMediaService from `PLAYING` to `PAUSED` and back to `PLAYING`; the bridge remained neutral and attached. | PASS |
+| Leave/re-enter YouTube | Normal Dashboard -> YouTube navigation retained a safe neutral bridge state and did not crash or expose data. | PASS |
+| Fullscreen then Back | The visible page temporarily became blank and the session stopped. Refresh subsequently returned visible YouTube content, but this did not provide a stable transition proof. No attribution to the bridge is made from this evidence. | NOT OBSERVED |
+| Explicit content A -> B | A second distinct user-selected playback transition was not reliably produced by the current YouTube surface. | NOT OBSERVED |
+| Direct HTTP/HTTPS, EME, iframe bypass | Covered by focused unit policy tests only in this checkpoint. | UNIT PASS / PHYSICAL NOT OBSERVED |
+| Android Auto/DHU | Not run for this YouTube-specific checkpoint. | NOT OBSERVED |
+
+The device was left with Master enabled and Equalizer disabled, yielding an
+effective unity graph.  A temporary curve used for propagation was therefore
+not left audibly active.
+
+## Automated and immutable-artifact validation
+
+Completed successfully on this worktree:
+
+```text
+.\gradlew.bat :fermata:testAutoDebugUnitTest :web:testAutoDebugUnitTest --no-daemon --console=plain
+```
+
+`git diff --check` passed before this report was added.  The approved immutable
+Auto archive was rechecked:
+
+```text
+fermata/lib/auto/aauto.aar
+SHA-256 99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B
+```
+
+A signed universal release was also rebuilt and verified:
+
+```text
+fermata/build/outputs/apk_from_bundle/autoRelease/
+  fermata-2.0.1-me.app.fermataX.auto-auto-release-universal.apk
+SHA-256 8708274379590F1E820657017AF1ABF6F239666FD17A8CF3F5F8E24DCB9BB04D
+APK Signature Scheme v2: true
+APK Signature Scheme v3: true
+```
+
+Focused tests cover exact origins and port rejection, bounded profile
+projection, invalid profile fallback, single source claim, generation-bound
+update/teardown, direct-source bypass, and EME rejection.  The temporary
+capability probe used before production implementation was removed; no probe
+identifier remains in tracked source.
+
+## Change inventory
+
+Production:
+
+- `modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeWebView.java`
+- `modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeWebAudioBridge.java`
+- `modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeWebAudioCandidatePolicy.java`
+- `modules/web/src/main/java/me/aap/fermata/addon/web/yt/YoutubeWebAudioProfile.java`
+
+Tests:
+
+- `YoutubeWebAudioBridgeTest.java`
+- `YoutubeWebAudioCandidatePolicyTest.java`
+- `YoutubeWebAudioProfileTest.java`
+
+No Stremio, generic browser, native player, MediaSession ownership,
+`aauto.aar`, manifest, or Auto/DHU code is changed.
+
+## Historical acceptance work superseded by B7/B8R
+
+The following former open items are **HISTORICAL — SUPERSEDED BY B7/B8R**:
+
+1. Projected DHU BLOB/MSE WebAudio, neutralisation, and lifecycle evidence:
+   closed by B7.
+2. Controlled A -> B -> A lifecycle with retained active bridge state: closed
+   by B8R.
+3. Fullscreen active-graph versus no-claim causality: closed by B8R as
+   `YOUTUBE_FULLSCREEN_NOT_WEBAUDIO_CAUSED`.
+
+`YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE` remains a separate
+navigation/presentation classification and is **not a WEBEQ-B blocker**.
+Physical direct HTTP(S), EME, and iframe bypasses remain fail-closed policy
+coverage unless separately observed; they are not required for accepted narrow
+BLOB/MSE support.
+
+## Cleanup
+
+- No fixture server, reverse mapping, addon, or account mutation was used.
+- The only temporary evidence is the untracked workspace directory
+  `.webeq-b-temp/`; it is not included in either commit.
+- The temporary CDP forward must be removed after the runtime session is no
+  longer needed.
+
+## WEBEQ-B2 YouTube Lifecycle & DHU Closure
+
+### Scope and baseline
+
+This acceptance pass used the signed release package on physical device
+`15c36230` at commit `70db79ad`. It was observation-first: production and test
+source changes are zero. The only newly created runtime evidence is untracked
+under `.webeq-b-temp/b2/`; it contains screenshots and bounded bridge results,
+not URLs, media identities, account information, cookies, headers, or samples.
+
+The bridge boundary remained the existing bounded status object `{ r, m, e, p,
+b }`. No player DOM, stream address, or WebView content was inspected.
+
+### Fullscreen -> Back
+
+Two physical comparisons were run against ordinary non-EME YouTube playback:
+
+| Run | Starting state | Observation after one Android Back | Result |
+| --- | --- | --- | --- |
+| Bridge-active | `SUPPORTED_ACTIVE`, Master on, EQ off/unity, MediaSession playing | The normal YouTube page remained visible, but playback/session stopped and the page presentation was not a clean continuation. No blank page was observed in this run. | Not a clean pass. |
+| No-claim control | Fresh app process; Master and EQ were both off before starting an eligible video; `NO_MEDIA`, MediaSession playing | Playback started normally with no graph. Back also left the expected player presentation and returned to Dashboard rather than a stable watch surface. | Reproduced without a graph. |
+
+The no-claim control proves that the observed Back/presentation instability is
+not caused by a claimed WebAudio graph. This checkpoint therefore makes no
+production change to WEBEQ-B. It does not establish a clean fullscreen/back
+pass and does not reproduce the earlier blank page.
+
+**Verdict:** `YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE` for the observed
+navigation/presentation behavior; `WEBEQ-B` is not attributed as its cause.
+
+### Explicit A -> B -> A
+
+An explicit A -> B selection was made through a normal recommended-content
+tile. B reached playback presentation and no filtered console/logcat evidence
+reported `InvalidStateError`, `MediaElementSource`, duplicate-source, or
+`AudioContext` failures. A separate active A run also showed
+`SUPPORTED_ACTIVE` with the retained controlled 1 kHz value of `-6`.
+
+The full A -> B -> A proof was not obtained. After Back, the current YouTube
+surface returned to Dashboard instead of preserving a stable user-selectable
+watch surface, so returning explicitly from B to A would not be the required
+continuous content-replacement experiment. Some selections also began in a
+previous no-claim document, which correctly remained `NO_MEDIA` until a new
+eligible active playback was started. That is not evidence of a duplicate
+claim or a graph lifecycle defect.
+
+**Verdict:** `YOUTUBE_A_B_A_LIFECYCLE_PARTIAL`. No WebAudio-specific
+regression was reproduced, but the mandatory uninterrupted A -> B -> A
+acceptance chain remains unobserved.
+
+### DHU / Android Auto
+
+DHU was launched through the repository's existing `open-dhu.bat` workflow
+with the 1280x720 preset. This created the B2-owned forward
+`tcp:5277 -> tcp:5277`; no reverse mapping was created. The DHU process was
+responsive and Android Auto's `GhostActivity` appeared on the physical device.
+
+Passive bounded CDP observation found two YouTube WebView documents while
+projection was connected. Exactly one reported `SUPPORTED_ACTIVE`; the other
+reported `NO_MEDIA`. That supports the single-active-graph ownership invariant
+for this snapshot, but it does not identify either document or substitute for
+visible DHU interaction.
+
+The B2-created DHU process was stopped and restarted. The phone returned to
+the FermataX activity on disconnect and Android Auto `GhostActivity` returned
+after reconnect. The inactive document did not claim a second graph. The
+available automation surface could not expose the DHU window controls, so the
+following were **not observed** and are not claimed as PASS: visual FermataX
+launch in DHU, live `0 -> -10 -> 0` DHU EQ update, DHU pause/resume controls,
+or a visible DHU fullscreen/back flow.
+
+**Verdict:** `WEBEQ_B_YOUTUBE_DHU_PARTIAL_PHYSICAL_ACCEPTANCE`.
+
+### Direct / EME / iframe
+
+No suitable direct, EME, or iframe source appeared naturally in this pass.
+Existing policy unit coverage remains `UNIT PASS / PHYSICAL NOT OBSERVED`.
+
+### Audit rounds
+
+1. **Fullscreen/navigation:** no blank page in the new active run; the failed
+   presentation order also happened in the no-claim control, so no WebAudio
+   causality was assigned.
+2. **Media-element lifecycle:** one active graph was observed when eligible;
+   no duplicate-source exception was found in the bounded filtered logs. The
+   continuous A -> B -> A path remains incomplete.
+3. **DHU/scope:** one active graph across the two observed documents; no native
+   AA EQ, Stremio, generic browser, `aauto.aar`, or hotspot source changed.
+
+### Validation and artifact state
+
+- Production LOC: `0`; test LOC: `0`.
+- Hotspot counts remained unchanged: `YoutubeWebView=1246`,
+  `YoutubeMediaEngine=1121`, `MediaSessionCallback=2182`,
+  `MainActivityDelegate=1142`, and `ControlPanelView=758`.
+- `aauto.aar` SHA-256 remained
+  `99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+- The existing signed universal artifact from the prior accepted source state
+  remains applicable because this pass did not change source.
+
+### Cleanup state
+
+The effective release profile was restored to Master on and Equalizer off
+(unity). An unrelated `.test` activity surfaced after the release process was
+force-stopped; its temporarily touched Equalizer checkbox was restored off and
+that activity contributed no acceptance evidence. B2-created DHU and CDP
+forwards and the DHU process were removed after the focused unit-suite
+recheck. Playback was left paused. Final device checks reported empty
+`adb forward --list` and `adb reverse --list` output.
+
+### Final B2 verdict
+
+`WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE`
+
+WEBEQ-B remains safe on the previously accepted supported path. This pass did
+not prove a WebAudio-specific lifecycle regression and therefore made no
+production fix. It also did not earn the broader `WEBEQ_B_YOUTUBE_PASS`: clean
+fullscreen/back, a continuous A -> B -> A graph test, and visible DHU control
+acceptance remain outstanding.
+
+## WEBEQ-B3 Final Physical Closure
+
+### Baseline and scope
+
+This is an acceptance-only pass on physical device `15c36230`, signed release
+package `me.app.fermataX.auto`, and commit `1c5cf89d`. The tracked production
+and test source trees were clean before testing and remain unchanged. The only
+new evidence is untracked under `.webeq-b-temp/b3/`; it contains screenshots
+and bounded state only. No URL, media address, DOM, cookie, header, account
+data, token, sample, or temporary production diagnostic was retained.
+
+The temporary controlled profile was observed through the normal FermataX UI
+and the existing bounded bridge status object only:
+
+```text
+Master = ON
+Equalizer = ON
+Preamp = 0 dB
+1 kHz = -6 dB
+```
+
+The starting and restored release profile was Master on, Equalizer off, with
+zero preamp. The mobile release's legacy Equalizer presentation exposed its
+native backend control rather than a ten-band canonical editor, so the bridge
+read-back, not an inferred UI label, is the evidence for the controlled 1 kHz
+value.
+
+### Continuous A -> B -> A
+
+Video A was a public, non-EME Charlie Chaplin title. With A visibly playing,
+the bounded status was:
+
+```text
+bridge = SUPPORTED_ACTIVE
+Master = true
+Equalizer = true
+Preamp = 0
+1 kHz = -6
+MediaSession = PLAYING
+```
+
+Video B was selected once from the visible normal YouTube recommended-content
+tile, not by URL injection, JavaScript navigation, Dashboard navigation, or an
+Android Back return. B was a distinct public Charlie Chaplin title and visibly
+started in the FermataX playback surface. Its bounded bridge status remained
+`SUPPORTED_ACTIVE` with Master and Equalizer true, preamp zero, and 1 kHz
+`-6`; `FermataMediaService` was `PLAYING`.
+
+The B3 bounded surface intentionally does not reveal media-element identity or
+graph count. It therefore does not prove whether YouTube reused A's element or
+created a new one, and it does not elevate that fact to a physical graph-count
+pass. It does prove that the current document retained one active bridge owner
+and the controlled profile across the A -> B selection.
+
+The filtered B3 device-log audit found no
+`InvalidStateError`, `MediaElementSource`, `createMediaElementSource`,
+`already connected`, `already created`, `AudioContext`, or `WebAudio bridge
+failure` entry. Console exception collection was not required to access media
+data and was not expanded beyond the existing bounded probe; it is therefore
+`NOT OBSERVED` in B3. B2's prior filtered console evidence remains historical
+support for its A -> B attempt.
+
+The required uninterrupted B -> A leg was not honestly obtainable. After B
+selection FermataX entered its playback surface, where the visible previous
+control did not select A. The normal YouTube content-selection surface was no
+longer available. Android Back, Dashboard navigation, injected URLs, and
+JavaScript navigation were forbidden for this acceptance experiment and were
+not used for the accepted chain. An earlier exploratory fullscreen-exit Back
+was not counted as A -> B -> A evidence.
+
+**Verdict:** `YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY`.
+
+This is a YouTube/FermataX surface-flow limitation, not a reproduced
+WebAudio-specific defect. A -> B retained bridge eligibility and the controlled
+profile, and no duplicate-source or AudioContext failure was observed. No
+source change is justified by this evidence.
+
+### DHU visible acceptance
+
+The established `open-dhu.bat` workflow launched DHU at the 1280x720 preset.
+It created the B3-owned `tcp:5277 -> tcp:5277` forward, the DHU process had a
+visible Windows window handle, and the phone transitioned to Android Auto
+`GhostActivity`. These are setup observations only.
+
+The available CUA surface did not expose any native app window, including the
+DHU window, for direct viewing or interaction. Consequently B3 could not
+visibly confirm FermataX in DHU, YouTube in DHU, projected playback, a single
+active projected host, live `0 -> -10 -> 0` EQ, Master neutralisation, EQ
+neutralisation, or the DHU pause/resume controls. Passive CDP was deliberately
+not substituted for those visible gates.
+
+DHU was stopped after this preflight blocker. The phone returned to FermataX
+without a crash. A new reconnect/ownership result is not claimed because the
+visible-DHU preflight gate failed first.
+
+**Verdict:** `BLOCKED_DHU_VISIBLE_UI_ENVIRONMENT` and
+`WEBEQ_B_YOUTUBE_DHU_PARTIAL_PHYSICAL_ACCEPTANCE`.
+
+### Fullscreen disposition
+
+No fullscreen investigation was performed in B3. The B2 disposition remains
+unchanged:
+
+`YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE`
+
+No B3 observation directly attributes a fullscreen or Back presentation issue
+to WebAudio.
+
+### Validation and immutable boundaries
+
+- Production LOC changed: `0`.
+- Test LOC changed: `0`.
+- Focused Fermata and web unit-suite command completed successfully in this
+  worktree; the final rerun is recorded with this closure commit.
+- `git diff --check` passed with the report as the only tracked change.
+- Nonblank hotspot counts are unchanged from B2:
+
+  ```text
+  YoutubeWebView = 1246
+  YoutubeMediaEngine = 1121
+  MediaSessionCallback = 2182
+  MainActivityDelegate = 1142
+  ControlPanelView = 758
+  ```
+
+- `fermata/lib/auto/aauto.aar` SHA-256 remains
+  `99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+- Source did not change, so the previously verified signed universal WEBEQ-B
+  APK remains applicable. No rebuild was performed.
+- No Stremio, generic browser, native EQ, Auto manifest, or `aauto.aar` source
+  was changed.
+
+### Cleanup and audits
+
+- The release profile was restored and visually verified as Master on,
+  Equalizer off, preamp zero; the bounded bridge returned the expected neutral
+  profile (`m=true`, `e=false`, `b=0`).
+- Playback was left paused and the test surface was exited to settings.
+- B3-created DHU was stopped.
+- The B3 DHU forward and the bounded-CDP forward were removed. Final
+  `adb forward --list` and `adb reverse --list` were empty.
+- The temporary bounded-status reader was removed before this report.
+- `.webeq-b-temp/b3/` remains untracked evidence only.
+
+Audit round 1: A and B each produced `SUPPORTED_ACTIVE`, retained the `-6`
+profile across their visible transition, and produced no filtered device-log
+duplicate-source or AudioContext failure. The continuous return to A is
+`NOT OBSERVED RELIABLY` rather than inferred.
+
+Audit round 2: DHU setup and projection transition were observed, but direct
+DHU controls were not available to the test surface. Every visible-control
+claim is therefore blocked rather than inferred from passive observation.
+
+Audit round 3: scope remained report-only; source, architecture ceilings,
+`aauto.aar`, profile cleanup, ADB cleanup, and DHU cleanup were checked.
+
+### Final B3 verdict
+
+`WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE`
+
+```text
+A -> B = PASS for visible selection, playback, bounded active bridge,
+         profile retention, and filtered device-log error gate.
+A -> B -> A = YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY.
+DHU visible control = BLOCKED_DHU_VISIBLE_UI_ENVIRONMENT.
+Fullscreen = retain B2 non-WebAudio attribution.
+Production/test LOC = 0.
+```
+
+The remaining work is not a code-fix task. It requires a test environment that
+can directly display and operate the DHU window, plus a normal YouTube surface
+that permits a B -> A selection without Android Back or Dashboard navigation.
+
+## WEBEQ-B4 Final Full Physical Closure Checkpoint
+
+### Baseline and starting environment
+
+This B4 checkpoint began at `47b119361dc75215cafa551870f4c6293c0b3970` with
+no tracked production or test source diff. The historical untracked evidence
+directories `.native-eq-a-temp/` and `.webeq-b-temp/` were preserved.
+
+An existing DHU process was already running and owned the pre-existing
+`tcp:5277 -> tcp:5277` ADB forward. The physical device entered Android Auto
+`GhostActivity`; no reverse mapping existed. B4 did not restart DHU, create a
+second DHU process, change the existing forward, or change the current release
+audio profile.
+
+### Visible-DHU preflight
+
+The required direct-control preflight could not be satisfied by the available
+automation environment. It reported no native application surface at all,
+including no DHU window, despite the running DHU process and Android Auto
+projection. Therefore the agent could not visually inspect or operate the
+already-open DHU window.
+
+This is not evidence that the user-visible DHU window is absent or unusable;
+it is evidence that it is not exposed to the available direct automation
+surface. The B4 rules forbid substituting process state, `GhostActivity`, ADB,
+or passive CDP for visible DHU interaction. The checkpoint stopped before
+altering projection, profile, playback, or YouTube navigation.
+
+### Gates not run
+
+The following were not run in B4 because the mandatory visible-DHU preflight
+failed for this automation surface:
+
+- continuous A -> B -> A selection;
+- visible projected FermataX/YouTube playback;
+- live `0 -> -10 -> 0` WebAudio EQ read-back;
+- Master/EQ neutralisation;
+- visible DHU pause/resume;
+- projected-host ownership;
+- DHU disconnect/reconnect.
+
+No product failure, WebAudio failure, duplicate-source error, or AudioContext
+failure was reproduced. B4 does not revise any B2 or B3 conclusion.
+
+### Scope and cleanup
+
+- Production LOC changed: `0`.
+- Test LOC changed: `0`.
+- No temporary diagnostic, source, test, ADB mapping, profile, playback, or
+  DHU process was changed by B4.
+- The pre-existing DHU process and its `tcp:5277` forward were deliberately
+  left intact for a future session with direct visible control.
+- B3's focused-suite and `ArchitectureBoundaryTest` evidence remains the most
+  recent source-validation evidence; B4 did not rerun tests because it made no
+  source change and did not reach a physical acceptance action.
+
+### Final B4 verdict
+
+`WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE`
+
+```text
+A -> B -> A = not run in B4; retain B3
+YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY.
+
+DHU visible control = BLOCKED_DHU_VISIBLE_UI_ENVIRONMENT for this agent
+surface. The already-running DHU session is preserved, not treated as failed.
+```
+
+WEBEQ-B remains open solely for direct visible DHU interaction and a valid
+normal-YouTube B -> A content-selection path. No code change is indicated.
+
+## WEBEQ-B4 DHU Eligible-Media Acceptance On .test
+
+### Scope and package preflight
+
+This report-only continuation ran on physical device `15c36230` at tracked
+HEAD `1cfa639c76601f7c4e14ce893fcfcec7ee256741`. The requested literal
+package `e.app.fermataX.auto.test` was not installed. The actual physical test
+package was `me.app.fermataX.auto.test`, version `2.0.1` / version code `304`.
+The mismatch is recorded rather than silently normalised. The release package
+was not launched, installed, or used as evidence.
+
+`desktop-head-unit` and its pre-existing `15c36230 tcp:5277 -> tcp:5277`
+forward were preserved. `adb reverse --list` was empty. The user directly
+observed the projected YouTube surface playing in DHU; the available automation
+surface still could not expose the native DHU window, so it was not used as a
+negative projection signal.
+
+Production LOC changed: `0`. Test LOC changed: `0`.
+
+### Playback and media-control baseline
+
+The already accepted test-package results remain: projected playback,
+pause/play, resume position, Next across multiple videos, fresh playback after
+Next, and no app crash or renderer loss. This checkpoint performed one bounded
+sanity cycle only. A paused session at position `1916215` accepted a system
+MediaSession Play command, reached `PLAYING` at `1916229`, and then returned to
+`PAUSED` at `1917642`. This proves playback/control continuity without
+repeating the historical matrix.
+
+### Eligible-media search and fail-open result
+
+Earlier WEBEQ-B evidence proves that a public non-EME YouTube `BLOB_MSE`
+source has reached `SUPPORTED_ACTIVE`, but deliberately retains neither title
+nor video id. The historical image is insufficient to recover a precise normal
+UI selection without guessing. Accordingly this checkpoint did not inject a
+URL, inspect media/DOM data, or continue random Next cycling.
+
+One controlled current projected YouTube candidate was classified using only
+the bounded `{ r, m, e, p, b }` bridge status. While the MediaSession was
+`PLAYING`, both YouTube documents reported:
+
+```text
+r = NO_MEDIA
+m = true
+e = false
+p = 0
+b = null
+```
+
+No eligible processing host was observed. This is an intentional fail-open
+outcome: normal projected playback and media controls continued, while the
+bridge made no source claim. Since no `SUPPORTED_ACTIVE` graph existed, the
+live `0 -> -10 -> 0`, Master Off, Equalizer Off, and graph-active
+pause/resume gates were not run and are not inferred from the no-media path.
+
+### Error audit, validation, and boundaries
+
+The filtered test-package audit found no `InvalidStateError`,
+`MediaElementSource`, duplicate-source, `AudioContext`, WebAudio bridge,
+renderer, crash, or `FATAL EXCEPTION` entry. The temporary CDP forward used for
+the bounded status was removed; only the user's DHU `tcp:5277` forward remains.
+The audio profile was not changed, so the observed starting `Master on`,
+`Equalizer off`, `0 dB` state was preserved. Playback was left paused.
+
+Fresh validation completed:
+
+```text
+:fermata:testAutoDebugUnitTest = 874 tests, 0 failures, 0 errors
+:web:testAutoDebugUnitTest     = 217 tests, 0 failures, 0 errors
+ArchitectureBoundaryTest       = 8 tests, 0 failures, 0 errors
+git diff --check               = PASS
+aauto.aar SHA-256              = 99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B
+```
+
+The older hotspot figures in the B4 prompt do not match this HEAD. Current
+pre-report baseline counts are `YoutubeWebView=1369`,
+`YoutubeMediaEngine=1250`, `MediaSessionCallback=2463`,
+`MainActivityDelegate=1312`, and `ControlPanelView=884`; this checkpoint made
+no source change and therefore did not cause the difference.
+
+### Final B4 eligible-media verdict
+
+```text
+PHYSICAL TEST PACKAGE = me.app.fermataX.auto.test
+PHYSICAL_TEST_PACKAGE_PASS = playback/control and fail-open safety only
+COVERED_BY_IDENTICAL_SOURCE = release source scope only; not a physical release PASS
+
+YOUTUBE_DHU_PLAYBACK_CONTROL_PASS
+YOUTUBE_DHU_FAIL_OPEN_PASS
+YOUTUBE_DHU_WEBAUDIO_ELIGIBLE_MEDIA_NOT_OBSERVED
+YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY
+YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE
+WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE
+```
+
+No production policy change is justified. The only remaining WebEQ DHU
+acceptance gap is a normal UI selection of a known eligible non-EME YouTube
+`BLOB_MSE` video, followed by the live graph test. The untracked bounded
+evidence is under `.webeq-b-temp/b4-dhu-test/` and contains no URL, media,
+cookie, token, or account data.
+
+## WEBEQ-B5 DHU Source Topology And WebAudio Capability Discovery
+
+### Baseline and boundaries
+
+This discovery pass ran against `a86f786e` plus an uncommitted, temporary
+probe in the signed physical test package `me.app.fermataX.auto.test`, version
+`2.0.1` / version code `304`, on device `15c36230`. The requested release
+package was not used. DHU remained open throughout and its user-owned
+`tcp:5277 -> tcp:5277` forward was preserved; `adb reverse --list` was empty.
+
+The temporary document-start probe exposed only bounded topology and graph
+fields. It had no URL, title, media, cookie, header, credential, token,
+account, or media-byte output. Its one experimental attach entry point was
+never invoked. The temporary APK installed on the device was verified byte for
+byte against the locally built universal test APK before the probe was removed.
+
+The effective profile was not changed in this pass: Master on, Equalizer off,
+and preamp `0 dB`. Playback was stopped safely at cleanup.
+
+### Observation and gating result
+
+Normal UI navigation opened YouTube and normal UI playback reached
+`FermataMediaService = PLAYING`. A fresh FermataX process was then started and
+the same normal Dashboard -> YouTube route was repeated, eliminating a
+pre-probe document as the explanation.
+
+Passive CDP discovered one debuggable WebView document. The document did not
+contain `window.__fermataYoutubeWebAudioV1`; consequently no probe method was
+available and no media-element inspection, source classification, EME query,
+or attach was performed. This is deliberately not treated as `NO_MEDIA`.
+
+The static installation path makes the applicable gate explicit:
+
+```text
+YoutubeWebView.loadUrl
+  -> YoutubeWebAudioBridge.onDocumentNavigation
+      -> installed && allowed YouTube document && preferred playback host
+          -> document-start shim
+```
+
+The runtime observation proves this gate did not produce a shim for the tested
+projected document. It does not safely distinguish feature availability,
+exact hosted-document form, or preferred-host ownership without adding another
+diagnostic seam. B5 does not weaken that gate, inject into a non-owner document,
+or infer media topology from the policy result.
+
+### Source capability matrix
+
+| Source class | DHU observed | EME | Experimental attach | Signal | Playback after attach | Live EQ | Production candidate |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Unclassified active YouTube document | NOT OBSERVED | NOT OBSERVED | NOT ATTEMPTED | NOT MEASURED | NOT APPLICABLE | NOT APPLICABLE | NO |
+
+No observed source class earned `WEBAUDIO_TRANSPORT_SUPPORTED`. In particular,
+no conclusion is made about `BLOB_MSE`, direct HTTPS, direct HTTP, iframe, or
+EME capability on this DHU session.
+
+### Production decision
+
+`YoutubeWebAudioCandidatePolicy` remains unchanged: only the pre-existing
+YouTube main-document, preferred-host, non-EME `BLOB_MSE` route is eligible.
+There is no production or test source change, no generic direct-HTTPS support,
+no Stremio policy change, and no native EQ/AA change.
+
+The capability probe was removed from source and the device was rebuilt and
+reinstalled from the clean source state. A future B5 retry must first expose a
+normal, preferred YouTube document with the bounded shim available; it may then
+observe topology before making exactly one non-EME source claim.
+
+### Validation, cleanup, and audits
+
+- `aauto.aar` SHA-256:
+  `99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+- The B5-created `tcp:9224` CDP forward was removed. DHU and `tcp:5277` remain
+  untouched.
+- The temporary probe source and its focused test were removed before the
+  clean rebuild. B5 evidence remains untracked under
+  `.webeq-b-temp/b5-source-capability/`.
+
+Audit round 1: the current production candidate policy did not decide the
+experiment; the missing bounded shim prevented topology observation before
+policy filtering.
+
+Audit round 2: no non-owner injection, EME bypass, URL exposure, generic
+browser broadening, or Stremio change occurred.
+
+Audit round 3: normal YouTube playback reached the media session before the
+probe boundary, then was stopped; no attach, duplicate-source,
+`AudioContext`, renderer, or crash failure was observed. The temporary
+instrumentation was removed.
+
+### Final B5 verdict
+
+```text
+YOUTUBE_DHU_SOURCE_TOPOLOGY_NOT_OBSERVED
+YOUTUBE_DHU_WEBAUDIO_TRANSPORT_NOT_TESTED
+WEBEQ_B_DHU_SOURCE_CAPABILITY_UNRESOLVED
+```
+
+This is a host/document observability blocker, not evidence that WebAudio is
+unsupported and not grounds for a production policy expansion.
+
+## WEBEQ-B6 DHU Shim Installation Gate Diagnosis
+
+### Baseline and scope
+
+This diagnosis used required baseline `0e3fb55649098d7070521b08bae6945e79f379e1`
+on physical device `15c36230`, package `me.app.fermataX.auto.test`, version
+`2.0.1` / version code `304`. DHU was already running and remained running;
+its user-owned `tcp:5277 -> tcp:5277` forward was preserved. There was no ADB
+reverse mapping and B6 did not create a CDP forward.
+
+The B5 result is retained as historical evidence: the document sampled there
+did not expose the shim. B6 narrowed that observation to the actual WebView
+host and installation gates. It did not inspect a source address, video id,
+title, DOM, cookie, header, token, account state, EME, or media data. It did
+not attach WebAudio, change an EQ setting, or change candidate policy.
+
+### Source-derived installation path
+
+The current source path is:
+
+```text
+YoutubeFragment.onViewCreated
+  -> YoutubeWebView.init
+      -> YoutubeWebAudioBridge.install
+      -> YoutubeRuntime.registerHost
+  -> YoutubeWebView.loadUrl
+      -> YoutubeWebAudioBridge.onDocumentNavigation
+          -> installed
+          -> isHostedDocument
+          -> YoutubePlaybackHostPolicy.isPreferredHost
+          -> WebViewCompat.addDocumentStartJavaScript
+  -> document creates and runs the bounded shim
+```
+
+`YoutubePlaybackHostPolicy` delegates to
+`YoutubeAddon.isPreferredPlaybackActivity`. When an automotive activity is
+live, only that activity is preferred. This is the deliberate ownership gate
+that prevents the phone and projected WebViews from both becoming active
+processing hosts.
+
+### Gate matrix and bounded trace
+
+Temporary, uncommitted observability assigned runtime-only opaque labels to
+each bridge/WebView. It emitted only lifecycle state, document class,
+generation, preferred-host state, registration outcome, and the boolean shim
+global. Release shrinking initially removed the custom utility-log calls; the
+probe was therefore changed to temporary platform log calls and rebuilt before
+any conclusion. No content data was logged.
+
+| Gate | Phone host `wv#1` | Projected host `wv#2` | Result |
+| --- | --- | --- | --- |
+| Bridge created and installed | yes | yes | PASS |
+| Document-start feature available | yes | yes | PASS |
+| Navigation observed | yes | yes | PASS |
+| Document class | `ALLOWED_YOUTUBE` | `ALLOWED_YOUTUBE` | PASS |
+| Preferred playback host | `false` | `true` | expected split |
+| Document-start requested | no | yes | PASS on owner |
+| Registration result | not requested | success | PASS on owner |
+| Page committed | yes | yes | PASS |
+| Shim visible | `false` | `true` | PASS on owner |
+
+The projected host also reached `FermataMediaService = PLAYING` after normal
+Dashboard -> YouTube interaction. A second fresh-process run reproduced the
+same ordering: `wv#1` was non-automotive and non-preferred; `wv#2` was
+automotive and preferred, obtained successful document-start registration, and
+reported the shim visible before the media session became playing.
+
+### First failed gate and root cause
+
+```text
+FIRST_FAILED_GATE = preferred_playback_host_false on phone host wv#1
+```
+
+This is not a product failure. B5's absent-shim document was the non-preferred
+phone WebView, not the projected playback owner. The source-defined ownership
+gate correctly prevented injection there. The actual projected owner was
+identified by the runtime's automotive/preferred-host registration and
+independently reached successful registration and a visible shim.
+
+The earlier B5 verdict is superseded only with respect to shim observability:
+
+```text
+YOUTUBE_DHU_SHIM_OBSERVABILITY_RESOLVED
+YOUTUBE_DHU_WEBAUDIO_SHIM_INSTALLATION_PASS
+```
+
+These verdicts do **not** establish source topology, WebAudio attachment,
+analyser signal, or live YouTube EQ on DHU. Those remain out of scope and
+unobserved in B6.
+
+### Production decision and ownership safety
+
+Production source change: `0` LOC. Test source change: `0` LOC.
+
+No ownership rule was weakened. The phone host had no document-start request
+and no shim; the projected owner had the shim. Therefore B6 did not introduce
+phone/DHU double-processing or a second active processing host. There is no
+source-classification, EME, generic-browser, Stremio, native-EQ, Android Auto
+manifest, or `aauto.aar` change.
+
+### Clean rebuild, validation, and cleanup
+
+All temporary source/test probes were removed before the clean signed `.test`
+rebuild and reinstall. The clean APK was signature-verified (v3), and a binary
+marker check confirmed `WEBEQ-B6` was absent. The clean package was then
+started successfully. Playback was paused. The profile was not edited in B6,
+so the pre-existing restored state remains Master on, Equalizer off, preamp
+`0 dB`.
+
+```text
+:fermata:testAutoDebugUnitTest = PASS (874 tests, 0 failures, 0 errors)
+:web:testAutoDebugUnitTest     = PASS (217 tests, 0 failures, 0 errors)
+ArchitectureBoundaryTest       = PASS (8 tests, 0 failures, 0 errors)
+git diff --check               = PASS
+aauto.aar SHA-256              = 99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B
+```
+
+Temporary diagnostic logs and screenshots remain untracked under
+`.webeq-b-temp/b6-shim-gates/`; they are not committed. No temporary CDP
+forward existed to remove. DHU remains open and `tcp:5277` remains preserved.
+
+### Audit rounds
+
+1. **Gate trace:** every gate was derived from the current source path. The
+   first failed gate was directly observed on `wv#1`; no conclusion came from
+   a missing shim alone.
+2. **Ownership:** the projected owner was distinguished by automotive and
+   preferred-host state, and it alone received document-start registration.
+   No non-owner injection or double-processing path was introduced.
+3. **Scope and regression:** no media topology, source policy, EME, DRM,
+   generic browser, Stremio, native EQ, or Auto artifact was changed. All
+   temporary instrumentation was removed before the clean rebuild.
+
+### Final B6 verdict and next step
+
+`YOUTUBE_DHU_SHIM_OBSERVABILITY_RESOLVED`
+
+The next phase may resume **only** DHU source-topology/WebAudio capability
+discovery against `wv#2`, now that the projected owner and shim-installation
+gate are proven. It must separately observe source topology and preserve the
+existing fail-closed policy before attempting any attach or EQ experiment.
+
+## WEBEQ-B7 DHU Projected Host Source Capability
+
+### Baseline, package, and privacy boundary
+
+This phase used baseline `d731b4ba210246731b2158c245579df71a4844b6` on
+physical device `15c36230`, package `me.app.fermataX.auto.test`, version
+`2.0.1` / version code `304`. DHU remained running. Its user-owned
+`15c36230 tcp:5277 -> tcp:5277` forward was preserved, no ADB reverse mapping
+was present, and no release package was used.
+
+B6's ownership result was accepted unchanged: the projected automotive
+preferred WebView was the only eligible bridge host. The temporary probe ran
+only there. It emitted opaque element/document tokens and bounded topology,
+EME, graph, and gain state. It never logged or retained a URL, media address,
+video identity, title, channel, cookie, header, account data, token, sample,
+or DRM material. Its untracked safe summary is in
+`.webeq-b-temp/b7-dhu-source-capability/`.
+
+### Observed topology and transport
+
+Normal projected YouTube playback produced one connected, playing, ready, and
+advancing candidate. The observed source was `BLOB_MSE`, EME was `CLEAR`, and
+the opaque candidate was `media#1`. Passive topology observations occurred
+before the temporary experiment. The experiment attempted the media source
+claim once per opaque element; repeated page callbacks did not create a second
+claim. The existing supported BLOB/MSE bridge also exercised the same graph
+when Master and Equalizer were enabled.
+
+The attach succeeded; `AudioContext` reached `running`; bounded analyser
+observations reached `NON_ZERO`; MediaSession remained `PLAYING`; position
+continued advancing; and no WebAudio, duplicate-source, renderer, or crash
+error was observed. Intermittent `SILENT` analyser samples were followed by
+`NON_ZERO` while playback continued, so they are treated as sampling timing,
+not a silent graph verdict.
+
+| Source class | Observed projected DHU | EME | Attach | Signal | Playback survives | EQ | Lifecycle | Production decision |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `BLOB_MSE` | yes | `CLEAR` | PASS | `NON_ZERO` | PASS | PASS | PASS | existing narrow support retained |
+
+No direct HTTP, direct HTTPS, media-stream, iframe, EME, or unknown source was
+observed in B7. None is enabled or inferred from this result.
+
+### EQ, controls, and lifecycle
+
+On the same active graph, the app's standard Audio & Equalizer UI produced the
+bounded 1 kHz read-back sequence `0 -> -10 -> 0` without restart. Master Off
+neutralised the active 1 kHz filter to `0` while playback continued; Master
+restore retained the graph. Equalizer Off likewise neutralised the filter
+without detaching the graph. The profile was restored to Master on, Equalizer
+off, preamp `0 dB`, and 1 kHz `0 dB`.
+
+The real MediaSession path paused at retained position `246829`, then resumed
+from that position and advanced to `246868`. One Next action reached
+`SKIPPING_TO_NEXT` and resumed `PLAYING` in a new document generation. The
+new document exposed its own opaque `media#1`, `BLOB_MSE`, `CLEAR` candidate
+with one successful graph claim. Element tokens are document-local, so the
+generation transition, rather than a reused label, establishes the fresh
+lifecycle boundary. No double active owner was observed.
+
+### Production decision
+
+`YOUTUBE_DHU_BLOB_MSE_WEBAUDIO_SUPPORTED`
+
+The only observed class was already the sole production-supported class in
+`YoutubeWebAudioCandidatePolicy`. Therefore production source change: `0` LOC;
+test source change: `0` LOC. There is no direct-HTTPS expansion, no generic
+WebView change, no Stremio/native-EQ/EME change, and no `aauto.aar` change.
+
+### Cleanup, validation, and audits
+
+The bounded temporary probe and its temporary tests were removed before the
+clean rebuild. The final signed `.test` build contains no `WEBEQ-B7`,
+`b7Status`, `b7Experiment`, or `one_khz` marker. Playback was paused safely.
+DHU remains open; its `tcp:5277` forward remains; no B7 CDP/ADB forward was
+created or retained.
+
+Current hotspot counts are `YoutubeWebView=1369`, `YoutubeMediaEngine=1250`,
+`MediaSessionCallback=2463`, `MainActivityDelegate=1312`, and
+`ControlPanelView=884`. The immutable `aauto.aar` SHA-256 remains
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+Audit round 1: projected preferred ownership, clear BLOB/MSE topology, one
+claim per element, signal, continuity, EQ read-back, and lifecycle were
+physically observed. Audit round 2: no non-owner processing, URL/media
+exposure, DRM bypass, generic policy expansion, or unrelated addon change
+occurred. Audit round 3: no production change was required; probe removal,
+clean `.test` installation, test suite, architecture boundary, diff check,
+and immutable artifact check are recorded with the phase closure.
+
+### Final B7 verdict
+
+`WEBEQ_B_DHU_SOURCE_CAPABILITY_PASS`
+
+`WEBEQ-B` has a physical projected-host WebAudio PASS for the existing,
+fail-closed YouTube `BLOB_MSE` class only. Historical independent gaps remain:
+`YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY` and
+`YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE`.
+
+## WEBEQ-B8 Final Lifecycle Closure
+
+### Scope, baseline, and package
+
+This was an acceptance-only attempt at baseline `c268c60078e4ae4a4119304400feed4a0ef943f0`
+on physical device `15c36230`, using `me.app.fermataX.auto.test` version `2.0.1`
+(version code `304`). Production source changed: `0` LOC. Test source changed:
+`0` LOC. B7's projected-host `BLOB_MSE` capability PASS was accepted as closed;
+no B5/B7 probe, source-policy change, fullscreen/back change, or diagnostic
+source was added.
+
+The user-owned `tcp:5277 -> tcp:5277` forward was preserved. `adb reverse --list`
+was empty. B8-created temporary evidence is untracked under
+`.webeq-b-temp/b8-final-lifecycle/` and contains no stream address, media
+address, cookie, token, or account material.
+
+### Precondition result
+
+The phone WebView was first observed with media playing while projection was
+active. Its production bounded bridge status was `null`, which is consistent
+with B7's closed preferred-host policy and is not a new failure. A phone-host
+session after the projected session ended reached the existing bounded bridge
+state `SUPPORTED_ACTIVE`; this confirms that an already claimed graph can
+continue normally on the phone path.
+
+The mandatory controlled B8 profile could not be established reliably through
+the physical device's standard numeric editor. Android input injection while
+the landscape activity was active produced transformed numeric edits rather
+than the requested `1 kHz = -6` value. This is an input-automation limitation,
+not evidence of a WebAudio defect, and no production conclusion is drawn from
+it. The profile was returned to its effective starting state, Master on and
+Equalizer off, so the active bridge was neutral (`b = 0`). The exact persisted
+curve value was not re-certified after the failed numeric-edit attempt; this
+checkpoint therefore does not claim exact-profile cleanup.
+
+### A -> B -> A
+
+No valid A -> B -> A acceptance chain was recorded. The required active-graph
+precondition with the controlled profile was not obtained, so selecting B and
+then returning to A would not have answered the B8 lifecycle question. No
+Android Back, Dashboard return, URL injection, JavaScript navigation, or
+direct URL editing was used as an A -> B -> A substitute.
+
+**Verdict:** `YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY`.
+
+### Fullscreen / Back comparison
+
+The active-graph versus no-claim comparison was not run. Neither control arm
+would have been valid after the controlled active-profile setup failed, so B8
+does not reclassify the historical fullscreen issue and does not attribute it
+to WebAudio.
+
+**Verdict retained:** `YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE`.
+It remains outside WEBEQ-B unless a future valid differential comparison proves
+otherwise.
+
+### Validation and cleanup
+
+Fresh source validation completed without source changes:
+
+```text
+:fermata:testAutoDebugUnitTest + :web:testAutoDebugUnitTest = 1091 tests,
+0 failures, 0 errors (2 skipped)
+ArchitectureBoundaryTest = 8 tests, 0 failures, 0 errors
+git diff --check = PASS
+aauto.aar SHA-256 = 99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B
+```
+
+Playback was paused. The temporary `tcp:9225` CDP forward was removed. The
+user-owned `tcp:5277` forward remains. The temporary system IME preference was
+restored to its original disabled value.
+
+### Audit rounds
+
+1. **Lifecycle:** no A -> B -> A PASS is inferred from prior A -> B evidence,
+   a source read, or a neutral graph.
+2. **Fullscreen:** no causal conclusion is inferred without both valid active
+   and no-claim control arms.
+3. **Scope:** B7 remains closed; no candidate-policy expansion, DRM change,
+   generic browser change, Stremio change, native EQ change, or Auto artifact
+   change occurred.
+
+### Final B8 verdict
+
+```text
+WEBEQ_B8_ACCEPTANCE_INCOMPLETE
+YOUTUBE_A_B_A_LIFECYCLE_NOT_OBSERVED_RELIABLY
+YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE
+WEBEQ_B_YOUTUBE_PARTIAL_PHYSICAL_ACCEPTANCE
+```
+
+The next attempt must begin by restoring and visibly verifying the exact audio
+profile through normal device touch input, then run the two B8 gates without
+using ADB text injection as profile evidence. No WebAudio code change is
+justified by this checkpoint.
+
+## WEBEQ-B8R Direct-Touch Final Lifecycle Closure
+
+### Scope and physical baseline
+
+This closure supersedes the *final status* of the preceding B8 attempt; that
+attempt remains historical evidence of an invalid numeric-input precondition.
+The work ran at `045d1537` on physical device `15c36230`, using only
+`me.app.fermataX.auto.test` version `2.0.1` / version code `304` on the phone
+host. Production source changed: `0` LOC. Test source changed: `0` LOC.
+
+All acceptance-critical profile edits were made by direct device touch. No ADB
+text, IME, clipboard, URL, DOM, or media-source injection was used. The only
+CDP read was the existing bounded production bridge status `{ r, m, e, p, b }`.
+No URL, media location, token, cookie, account data, or title is retained in
+this report.
+
+### Profile preconditions and A -> B -> A
+
+The direct-touch controlled profile was visibly established as Master on,
+Equalizer on, preamp `0 dB`, and `1 kHz = -6 dB`. Before A, on B, and after
+returning to A through normal visible YouTube selection, the bounded bridge
+reported:
+
+```text
+r = SUPPORTED_ACTIVE
+m = true
+e = true
+p = 0
+b = -6
+```
+
+MediaSession was `PLAYING` throughout the accepted A -> B -> A chain. The
+returned A kept the same bounded profile. The filtered physical-device audit
+contained no `InvalidStateError`, duplicate `MediaElementSource`,
+`AudioContext`, renderer, crash, or fatal-exception event.
+
+**Verdict:** `YOUTUBE_A_B_A_LIFECYCLE_PASS`.
+
+### Verified fullscreen differential
+
+Both arms used the same visible FermataX fullscreen button, whose normal UI
+node was observed as `Fullscreen mode`, and each used exactly one Android Back
+event.
+
+| Arm | Valid precondition | After fullscreen + one Back | MediaSession | Bridge / errors |
+| --- | --- | --- | --- | --- |
+| Active graph | `SUPPORTED_ACTIVE`, `m=true`, `e=true`, `b=-6`, playing | Dashboard, non-blank | `PLAYING` | active state retained; no attributable errors |
+| No claim | `NO_MEDIA`, `m=false`, `e=false`, `b=null`, playing | Dashboard, non-blank | `PLAYING` | no-claim state retained; no attributable errors |
+
+The visible fullscreen and Back behavior was materially equivalent. The
+expected difference was only the intentionally different bridge ownership
+state. Thus no active-graph-only failure and no no-claim-only recovery was
+observed.
+
+```text
+YOUTUBE_FULLSCREEN_NOT_WEBAUDIO_CAUSED
+YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE
+NOT A WEBEQ-B BLOCKER
+```
+
+No fullscreen, Back, YouTube, or WebAudio production code change is justified
+by this differential.
+
+### Cleanup and validation
+
+The final direct-touch profile was visually certified as Master on, Equalizer
+off, preamp `0 dB`, and `1 kHz = 0 dB`. Playback was paused. The temporary
+`tcp:9225` CDP forward was removed; the user-owned `tcp:5277` forward was
+preserved. The untracked, redacted evidence is retained under
+`.webeq-b-temp/b8r-direct-touch/`.
+
+`git diff --check` passed and `aauto.aar` remained
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+### Audit rounds and final B8R verdict
+
+1. **Profile integrity:** every acceptance-critical numeric edit and final
+   cleanup was direct-touch and visually observed; bridge confirmation was
+   obtained before lifecycle execution.
+2. **Lifecycle and fullscreen:** A -> B -> A used normal YouTube UI; active
+   and no-claim fullscreen arms used the same verified host control and a
+   single Back event.
+3. **Scope:** no B5-B7 probe was reopened, no candidate-policy, DRM, generic
+   browser, Stremio, native-EQ, or `aauto.aar` change occurred.
+
+```text
+WEBEQ_B8R_PASS
+WEBEQ_B_YOUTUBE_PASS
+```

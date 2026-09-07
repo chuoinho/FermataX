@@ -542,6 +542,7 @@ public class PreferenceView extends ConstraintLayout {
 		setPreference(R.layout.number_pref_layout, o);
 		EditText t = activityEditText(R.id.pref_value);
 		SeekBar sb = findViewById(R.id.pref_footer);
+		if (o.inputType != 0) t.setInputType(o.inputType);
 		boolean[] ignoreChange = new boolean[1];
 		String initValue = get.get();
 		setOnClickListener(v -> focusTextInput(t, o.submitOnEnter));
@@ -888,6 +889,7 @@ public class PreferenceView extends ConstraintLayout {
 	}
 
 	public static class NumberOpts<S> extends PrefOpts<S> {
+		public int inputType;
 		public int seekMin = 0;
 		public int seekMax = 100;
 		public int seekScale = 1;

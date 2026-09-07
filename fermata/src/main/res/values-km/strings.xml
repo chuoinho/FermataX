@@ -172,6 +172,7 @@
     <string name="speed">ល្បឿន</string>
     <string name="audio_effects">បែបផែន​សំឡេង</string>
     <string name="audio_equalizer">សំឡេង និង​កម្មវិធីកំណត់សំឡេង</string>
+    <string name="preamp">ឧបករណ៍ពង្រីកមុន</string>
     <string name="equalier">អេក្វាទ័រ</string>
     <string name="preset_name">ឈ្មោះ​កំណត់​ជាមុន</string>
     <string name="virtualizer">Spatialization</string>
@@ -514,4 +515,5 @@
 	<string name="voice_trigger_clear">លុបការកំណត់ប៊ូតុងសំឡេង</string>
 	<string name="voice_trigger_cleared">បានលុបការកំណត់ប៊ូតុងសំឡេងក្នុងរថយន្ត។</string>
 	<string name="voice_selection_prompt">និយាយលេខមួយ ពីរ ឬបី</string>
+    <string name="equalizer_apply_next_session">ការផ្លាស់ប្តូរ EQ ត្រូវបានរក្សាទុក។ វានឹងត្រូវបានអនុវត្តក្នុងវគ្គចាក់បន្ទាប់។</string>
 </resources>

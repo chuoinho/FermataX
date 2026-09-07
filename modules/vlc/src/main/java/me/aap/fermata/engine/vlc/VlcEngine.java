@@ -14,7 +14,6 @@ import static me.aap.utils.async.Completed.completedEmptyList;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.view.SurfaceView;
@@ -46,7 +45,6 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.diagnostics.DiagnosticEvent;
 import me.aap.fermata.diagnostics.DiagnosticPriority;
 import me.aap.fermata.diagnostics.DiagnosticScope;
-import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineBase;
@@ -79,7 +77,6 @@ public class VlcEngine extends MediaEngineBase
 	private final VlcEngineProvider provider;
 	private final LibVLC vlc;
 	private final MediaPlayer player;
-	private final AudioEffects effects;
 	@NonNull
 	private Source source = Source.NULL;
 	private long pendingPosition = -1;
@@ -114,8 +111,6 @@ public class VlcEngine extends MediaEngineBase
 	public VlcEngine(VlcEngineProvider provider, Listener listener) {
 		super(listener);
 		LibVLC vlc = provider.getVlc();
-		int sessionId = provider.getAudioSessionId();
-		effects = (sessionId != AudioManager.ERROR) ? AudioEffects.create(0, sessionId) : null;
 		this.provider = provider;
 		this.vlc = vlc;
 		player = new MediaPlayer(vlc);
@@ -484,8 +479,8 @@ public class VlcEngine extends MediaEngineBase
 	}
 
 	@Override
-	public AudioEffects getAudioEffects() {
-		return effects;
+	public int getAudioSessionId() {
+		return provider.getAudioSessionId();
 	}
 
 	@Override
@@ -621,7 +616,6 @@ public class VlcEngine extends MediaEngineBase
 		stop();
 		super.close();
 		player.release();
-		if (effects != null) effects.release();
 	}
 
 	@Override

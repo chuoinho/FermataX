@@ -172,6 +172,7 @@
     <string name="speed">Hız</string>
     <string name="audio_effects">Ses efekti</string>
     <string name="audio_equalizer">Ses ve ekolayzır</string>
+    <string name="preamp">Ön yükseltici</string>
     <string name="equalier">Ekolayzer</string>
     <string name="preset_name">Ön ayar adı</string>
     <string name="virtualizer">Sanallaştırıcı</string>
@@ -514,4 +515,5 @@
 	<string name="voice_trigger_clear">Ses düğmesi atamasını temizle</string>
 	<string name="voice_trigger_cleared">Araç ses düğmesi ataması temizlendi.</string>
 	<string name="voice_selection_prompt">Bir, iki veya üç numara deyin</string>
+    <string name="equalizer_apply_next_session">Ekolayzır değişiklikleri kaydedildi. Bir sonraki oynatma oturumunda uygulanacak.</string>
 </resources>

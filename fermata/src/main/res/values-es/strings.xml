@@ -180,6 +180,7 @@ Apagado: pausa</string>
     <string name="speed">Velocidad</string>
     <string name="audio_effects">Efectos de audio</string>
     <string name="audio_equalizer">Audio y ecualizador</string>
+    <string name="preamp">Preamplificador</string>
     <string name="equalier">Igualador</string>
     <string name="preset_name">Nombre del preajuste</string>
     <string name="virtualizer">Virtualizador</string>
@@ -522,4 +523,5 @@ Por favor, reinicie la aplicación.</string>
 	<string name="voice_trigger_clear">Borrar asignación del botón de voz</string>
 	<string name="voice_trigger_cleared">Se borró la asignación del botón de voz del vehículo.</string>
 	<string name="voice_selection_prompt">Di número uno, dos o tres</string>
+    <string name="equalizer_apply_next_session">Los cambios de EQ se han guardado. Se aplicarán en la próxima sesión de reproducción.</string>
 </resources>

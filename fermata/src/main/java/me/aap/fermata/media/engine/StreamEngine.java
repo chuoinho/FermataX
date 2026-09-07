@@ -364,9 +364,8 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	}
 
 	@Override
-	@Nullable
-	public AudioEffects getAudioEffects() {
-		return eng.getAudioEffects();
+	public int getAudioSessionId() {
+		return eng.getAudioSessionId();
 	}
 
 	public boolean isSubtitlesSupported() {
@@ -477,6 +476,11 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 		startStamp = currentTimeMillis();
 		startTimer();
 		listener.onEngineStarted(this);
+	}
+
+	@Override
+	public void onEngineAudioSessionIdChanged(MediaEngine engine, int audioSessionId) {
+		listener.onEngineAudioSessionIdChanged(this, audioSessionId);
 	}
 
 	@Override

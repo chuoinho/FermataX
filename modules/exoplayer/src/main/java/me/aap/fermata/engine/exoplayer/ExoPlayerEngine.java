@@ -50,7 +50,6 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.diagnostics.DiagnosticEvent;
 import me.aap.fermata.diagnostics.DiagnosticPriority;
 import me.aap.fermata.diagnostics.DiagnosticScope;
-import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.EnginePrepareWatchdog;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -99,7 +98,6 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	private final Context context;
 	private final Timeline.Period period = new Timeline.Period();
 	private final ExoPlayer player;
-	private final AudioEffects audioEffects;
 	private final EnginePrepareWatchdog prepareWatchdog;
 	private volatile PlayableItem source;
 	private FutureSupplier<RemotePlaybackRequest> remotePrepare;
@@ -155,7 +153,6 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 			}
 		}).setMediaSourceFactory(msFactory).build();
 		player.addListener(this);
-		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
 		Handler handler = new Handler(Looper.getMainLooper());
 		prepareWatchdog = new EnginePrepareWatchdog(handler::postDelayed,
 				this::onPrepareTimeout);
@@ -426,8 +423,13 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	@Override
-	public AudioEffects getAudioEffects() {
-		return audioEffects;
+	public int getAudioSessionId() {
+		return player.getAudioSessionId();
+	}
+
+	@Override
+	public void onAudioSessionIdChanged(int audioSessionId) {
+		listener.onEngineAudioSessionIdChanged(this, audioSessionId);
 	}
 
 	@Override
@@ -488,7 +490,6 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		player.removeListener(this);
 		player.release();
 		source = null;
-		if (audioEffects != null) audioEffects.release();
 	}
 
 	@Override

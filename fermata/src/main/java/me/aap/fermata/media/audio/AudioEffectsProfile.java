@@ -11,6 +11,8 @@ import java.util.Objects;
  */
 public final class AudioEffectsProfile {
 	public static final int SCHEMA_VERSION = 1;
+	public static final int MIN_CANONICAL_DB = -15;
+	public static final int MAX_CANONICAL_DB = 15;
 	public static final int[] CANONICAL_FREQ_HZ = {
 			31, 62, 125, 250, 500, 1_000, 2_000, 4_000, 8_000, 16_000
 	};
