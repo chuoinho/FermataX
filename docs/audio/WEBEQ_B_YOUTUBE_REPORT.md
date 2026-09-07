@@ -1059,3 +1059,93 @@ The next attempt must begin by restoring and visibly verifying the exact audio
 profile through normal device touch input, then run the two B8 gates without
 using ADB text injection as profile evidence. No WebAudio code change is
 justified by this checkpoint.
+
+## WEBEQ-B8R Direct-Touch Final Lifecycle Closure
+
+### Scope and physical baseline
+
+This closure supersedes the *final status* of the preceding B8 attempt; that
+attempt remains historical evidence of an invalid numeric-input precondition.
+The work ran at `045d1537` on physical device `15c36230`, using only
+`me.app.fermataX.auto.test` version `2.0.1` / version code `304` on the phone
+host. Production source changed: `0` LOC. Test source changed: `0` LOC.
+
+All acceptance-critical profile edits were made by direct device touch. No ADB
+text, IME, clipboard, URL, DOM, or media-source injection was used. The only
+CDP read was the existing bounded production bridge status `{ r, m, e, p, b }`.
+No URL, media location, token, cookie, account data, or title is retained in
+this report.
+
+### Profile preconditions and A -> B -> A
+
+The direct-touch controlled profile was visibly established as Master on,
+Equalizer on, preamp `0 dB`, and `1 kHz = -6 dB`. Before A, on B, and after
+returning to A through normal visible YouTube selection, the bounded bridge
+reported:
+
+```text
+r = SUPPORTED_ACTIVE
+m = true
+e = true
+p = 0
+b = -6
+```
+
+MediaSession was `PLAYING` throughout the accepted A -> B -> A chain. The
+returned A kept the same bounded profile. The filtered physical-device audit
+contained no `InvalidStateError`, duplicate `MediaElementSource`,
+`AudioContext`, renderer, crash, or fatal-exception event.
+
+**Verdict:** `YOUTUBE_A_B_A_LIFECYCLE_PASS`.
+
+### Verified fullscreen differential
+
+Both arms used the same visible FermataX fullscreen button, whose normal UI
+node was observed as `Fullscreen mode`, and each used exactly one Android Back
+event.
+
+| Arm | Valid precondition | After fullscreen + one Back | MediaSession | Bridge / errors |
+| --- | --- | --- | --- | --- |
+| Active graph | `SUPPORTED_ACTIVE`, `m=true`, `e=true`, `b=-6`, playing | Dashboard, non-blank | `PLAYING` | active state retained; no attributable errors |
+| No claim | `NO_MEDIA`, `m=false`, `e=false`, `b=null`, playing | Dashboard, non-blank | `PLAYING` | no-claim state retained; no attributable errors |
+
+The visible fullscreen and Back behavior was materially equivalent. The
+expected difference was only the intentionally different bridge ownership
+state. Thus no active-graph-only failure and no no-claim-only recovery was
+observed.
+
+```text
+YOUTUBE_FULLSCREEN_NOT_WEBAUDIO_CAUSED
+YOUTUBE_FULLSCREEN_EXISTING_OR_UPSTREAM_ISSUE
+NOT A WEBEQ-B BLOCKER
+```
+
+No fullscreen, Back, YouTube, or WebAudio production code change is justified
+by this differential.
+
+### Cleanup and validation
+
+The final direct-touch profile was visually certified as Master on, Equalizer
+off, preamp `0 dB`, and `1 kHz = 0 dB`. Playback was paused. The temporary
+`tcp:9225` CDP forward was removed; the user-owned `tcp:5277` forward was
+preserved. The untracked, redacted evidence is retained under
+`.webeq-b-temp/b8r-direct-touch/`.
+
+`git diff --check` passed and `aauto.aar` remained
+`99337C3B591AC9670C12B508DA38886AEDBA61DD494F39F5F166F02580EC584B`.
+
+### Audit rounds and final B8R verdict
+
+1. **Profile integrity:** every acceptance-critical numeric edit and final
+   cleanup was direct-touch and visually observed; bridge confirmation was
+   obtained before lifecycle execution.
+2. **Lifecycle and fullscreen:** A -> B -> A used normal YouTube UI; active
+   and no-claim fullscreen arms used the same verified host control and a
+   single Back event.
+3. **Scope:** no B5-B7 probe was reopened, no candidate-policy, DRM, generic
+   browser, Stremio, native-EQ, or `aauto.aar` change occurred.
+
+```text
+WEBEQ_B8R_PASS
+WEBEQ_B_YOUTUBE_PASS
+```
