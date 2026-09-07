@@ -180,7 +180,7 @@
     <string name="audio_effects">音場效果</string>
     <string name="audio_equalizer">音訊與等化器</string>
     <string name="preamp">前級增益</string>
-    <string name="equalier">等化器</string>
+    <string name="equalizer">等化器</string>
     <string name="preset_name">預設名稱</string>
     <string name="virtualizer">虛擬效果</string>
     <string name="auto">自動</string>
@@ -521,4 +521,6 @@
 	<string name="voice_trigger_cleared">已清除車輛語音按鈕指派。</string>
 	<string name="voice_selection_prompt">請說一、二或三</string>
     <string name="equalizer_apply_next_session">等化器變更已儲存。將在下一個播放工作階段套用。</string>
+
+    <string name="legacy_preset_migration_notice">無法自動轉換您先前裝置的等化器預設值。請選擇或調整一次等化器。</string>
 </resources>

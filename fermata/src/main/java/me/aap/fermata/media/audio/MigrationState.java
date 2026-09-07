@@ -4,6 +4,7 @@ package me.aap.fermata.media.audio;
 public enum MigrationState {
 	NONE,
 	PENDING_NATIVE_TOPOLOGY,
+	FALLBACK_NOTICE_PENDING,
 	MIGRATED,
 	DORMANT
 }

@@ -71,7 +71,9 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 		try {
 			AudioEffectsBackend nextBackend = backendFactory.create(nextSessionId);
 			if (nextBackend instanceof NativeEqualizerTopologyProvider topologyProvider) {
-				profiles.migratePendingLegacyEqualizer(topologyProvider.getEqualizerTopology());
+				LegacyEqualizerPresetResolver resolver = (nextBackend instanceof
+						LegacyEqualizerPresetResolver presetResolver) ? presetResolver : null;
+				profiles.migratePendingLegacyEqualizer(topologyProvider.getEqualizerTopology(), resolver);
 			}
 			backend = nextBackend;
 			boolean applied = applyCurrentProfile(true);

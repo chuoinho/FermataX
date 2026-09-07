@@ -180,7 +180,7 @@
     <string name="audio_effects">음향 효과</string>
     <string name="audio_equalizer">오디오 및 이퀄라이저</string>
     <string name="preamp">프리앰프</string>
-    <string name="equalier">이퀄라이저</string>
+    <string name="equalizer">이퀄라이저</string>
     <string name="preset_name">프레셋 이름</string>
     <string name="virtualizer">현장감</string>
     <string name="auto">자동</string>
@@ -521,4 +521,6 @@
 	<string name="voice_trigger_cleared">차량 음성 버튼 할당을 지웠습니다.</string>
 	<string name="voice_selection_prompt">1번, 2번 또는 3번이라고 말하세요</string>
     <string name="equalizer_apply_next_session">이퀄라이저 변경 사항이 저장되었습니다. 다음 재생 세션에 적용됩니다.</string>
+
+    <string name="legacy_preset_migration_notice">이전 기기의 이퀄라이저 프리셋을 자동으로 변환할 수 없습니다. 이퀄라이저를 한 번 선택하거나 조정하세요.</string>
 </resources>

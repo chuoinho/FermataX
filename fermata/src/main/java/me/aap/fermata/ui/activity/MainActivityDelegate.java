@@ -87,7 +87,6 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaServiceRuntimeGate;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.MediaSessionCallbackAssistant;
-import me.aap.fermata.ui.fragment.AudioEffectsFragment;
 import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
@@ -893,8 +892,6 @@ public class MainActivityDelegate extends ActivityDelegate
 			return new SettingsFragment();
 		} else if (id == R.id.initial_setup_fragment) {
 			return new InitialSetupFragment();
-		} else if (id == R.id.audio_effects_fragment) {
-			return new AudioEffectsFragment();
 		} else if (id == R.id.subtitles_fragment) {
 			return new SubtitlesFragment();
 		}

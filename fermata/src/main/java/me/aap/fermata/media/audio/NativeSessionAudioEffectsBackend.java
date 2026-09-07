@@ -19,7 +19,7 @@ import me.aap.utils.log.Log;
 
 /** Applies the unified profile to one real native audio session. */
 final class NativeSessionAudioEffectsBackend
-		implements AudioEffectsBackend, NativeEqualizerTopologyProvider {
+		implements AudioEffectsBackend, LegacyEqualizerPresetResolver, NativeEqualizerTopologyProvider {
 	private static final int EFFECT_PRIORITY = 0;
 	private final EnumSet<AudioEffectCapability> capabilities =
 			EnumSet.noneOf(AudioEffectCapability.class);
@@ -89,6 +89,32 @@ final class NativeSessionAudioEffectsBackend
 	@Nullable
 	public NativeEqualizerTopology getEqualizerTopology() {
 		return equalizerTopology;
+	}
+
+	@Override
+	@Nullable
+	public int[] resolveSystemPreset(int legacyPreset) {
+		Equalizer effect = equalizer;
+		if ((effect == null) || (legacyPreset <= 0)) return null;
+		try {
+			if (effect.getEnabled() || (legacyPreset > effect.getNumberOfPresets())) return null;
+			effect.setEnabled(false);
+			effect.usePreset((short) (legacyPreset - 1));
+			short bandCount = effect.getNumberOfBands();
+			if (bandCount <= 0) return null;
+			int[] levels = new int[bandCount];
+			for (short band = 0; band < bandCount; band++) levels[band] = effect.getBandLevel(band);
+			return levels;
+		} catch (RuntimeException error) {
+			Log.w(error, "Failed to resolve legacy native equalizer preset");
+			return null;
+		} finally {
+			try {
+				effect.setEnabled(false);
+			} catch (RuntimeException ignored) {
+				// A failed disabled scratch effect must not interrupt playback.
+			}
+		}
 	}
 
 	@Override

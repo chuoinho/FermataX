@@ -3,6 +3,11 @@ package me.aap.fermata.ui.fragment;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
 
+import static android.view.View.VISIBLE;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+
+import android.view.View;
+import androidx.recyclerview.widget.RecyclerView;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -12,6 +17,7 @@ import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceView;
 
 @RunWith(RobolectricTestRunner.class)
 public class DynamicPreferenceVisibilityTest {
@@ -40,5 +46,21 @@ public class DynamicPreferenceVisibilityTest {
 
 		assertEquals(1, notifications[0]);
 		assertEquals(1, notifications[1]);
+	}
+
+	@Test
+	public void readOnlyViewRestoresRowHeightAfterReuseOfHiddenPreference() {
+		PreferenceView preference = new PreferenceView(RuntimeEnvironment.getApplication());
+		preference.setLayoutParams(new RecyclerView.LayoutParams(1, 0));
+		preference.setVisibility(View.GONE);
+
+		preference.setPreference(null, () -> {
+			PreferenceView.ViewOpts opts = new PreferenceView.ViewOpts();
+			opts.view = () -> new View(RuntimeEnvironment.getApplication());
+			return opts;
+		});
+
+		assertEquals(VISIBLE, preference.getVisibility());
+		assertEquals(WRAP_CONTENT, preference.getLayoutParams().height);
 	}
 }
