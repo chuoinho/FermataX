@@ -173,7 +173,7 @@
     <string name="audio_effects">បែបផែន​សំឡេង</string>
     <string name="audio_equalizer">សំឡេង និង​កម្មវិធីកំណត់សំឡេង</string>
     <string name="preamp">ឧបករណ៍ពង្រីកមុន</string>
-    <string name="equalier">អេក្វាទ័រ</string>
+    <string name="equalizer">អេក្វាទ័រ</string>
     <string name="preset_name">ឈ្មោះ​កំណត់​ជាមុន</string>
     <string name="virtualizer">Spatialization</string>
     <string name="auto">ស្វ័យប្រវត្តិ</string>
@@ -516,4 +516,6 @@
 	<string name="voice_trigger_cleared">បានលុបការកំណត់ប៊ូតុងសំឡេងក្នុងរថយន្ត។</string>
 	<string name="voice_selection_prompt">និយាយលេខមួយ ពីរ ឬបី</string>
     <string name="equalizer_apply_next_session">ការផ្លាស់ប្តូរ EQ ត្រូវបានរក្សាទុក។ វានឹងត្រូវបានអនុវត្តក្នុងវគ្គចាក់បន្ទាប់។</string>
+
+    <string name="legacy_preset_migration_notice">មិនអាចបម្លែង​ការកំណត់ជាមុន​នៃ​កម្មវិធីកំណត់សំឡេង​របស់ឧបករណ៍មុន​ដោយស្វ័យប្រវត្តិបានទេ។ សូមជ្រើសរើស ឬកែតម្រូវកម្មវិធីកំណត់សំឡេងម្តង។</string>
 </resources>

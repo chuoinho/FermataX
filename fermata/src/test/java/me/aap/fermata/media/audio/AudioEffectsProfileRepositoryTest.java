@@ -141,6 +141,69 @@ public class AudioEffectsProfileRepositoryTest {
 	}
 
 	@Test
+	public void nativeSystemPresetMigratesOnlyFromResolverLevels() {
+		AudioEffectsProfileRepository repository = new AudioEffectsProfileRepository(
+				legacyWithSystemPreset(2));
+		LegacyEqualizerPresetResolver resolver = preset -> {
+			assertEquals(2, preset);
+			return new int[]{-500, -400, -300, -200, -100, 0, 100, 200, 300, 400};
+		};
+
+		assertTrue(repository.migratePendingLegacyEqualizer(canonicalTopology(), resolver));
+		assertEquals(MigrationState.MIGRATED, repository.getMigrationState());
+		assertTrue(repository.load().equalizerEnabled());
+		assertArrayEquals(new int[]{-5, -4, -3, -2, -1, 0, 1, 2, 3, 4},
+				repository.load().canonicalCurveDb());
+	}
+
+	@Test
+	public void unavailableNativeSystemPresetResolverRetainsSnapshotAndShowsOneFallbackNotice() {
+		AudioEffectsProfileRepository repository = new AudioEffectsProfileRepository(
+				legacyWithSystemPreset(3));
+
+		assertFalse(repository.migratePendingLegacyEqualizer(canonicalTopology(), preset -> null));
+		assertEquals(MigrationState.FALLBACK_NOTICE_PENDING, repository.getMigrationState());
+		assertEquals(3, repository.getLegacySnapshot().equalizerPreset());
+		assertFalse(repository.load().equalizerEnabled());
+		assertTrue(repository.consumeLegacyNativePresetMigrationNotice());
+		assertEquals(MigrationState.DORMANT, repository.getMigrationState());
+		assertFalse(repository.consumeLegacyNativePresetMigrationNotice());
+	}
+
+	@Test
+	public void invalidOrFailingNativeSystemPresetResolutionShowsTheSameFallbackOnce() {
+		AudioEffectsProfileRepository invalid = new AudioEffectsProfileRepository(
+				legacyWithSystemPreset(1));
+		assertFalse(invalid.migratePendingLegacyEqualizer(canonicalTopology(), preset ->
+				new int[]{-2_000, -2_000, -2_000, -2_000, -2_000, -2_000, -2_000, -2_000,
+						-2_000, -2_000}));
+		assertEquals(MigrationState.FALLBACK_NOTICE_PENDING, invalid.getMigrationState());
+		assertTrue(invalid.consumeLegacyNativePresetMigrationNotice());
+
+		AudioEffectsProfileRepository failing = new AudioEffectsProfileRepository(
+				legacyWithSystemPreset(1));
+		assertFalse(failing.migratePendingLegacyEqualizer(canonicalTopology(), preset -> {
+			throw new IllegalStateException("unavailable");
+		}));
+		assertEquals(MigrationState.FALLBACK_NOTICE_PENDING, failing.getMigrationState());
+		assertTrue(failing.consumeLegacyNativePresetMigrationNotice());
+	}
+
+	@Test
+	public void userEstablishedOverrideOfUnresolvedNativePresetStillRequiresOneNotice() {
+		AudioEffectsProfileRepository repository = new AudioEffectsProfileRepository(
+				legacyWithSystemPreset(1));
+
+		repository.getUserEditableStore().applyIntPref(
+				AudioEffectsProfileRepository.CANONICAL_CURVE_DB[0], -6);
+
+		assertTrue(repository.isProfileUserEstablished());
+		assertEquals(MigrationState.FALLBACK_NOTICE_PENDING, repository.getMigrationState());
+		assertTrue(repository.consumeLegacyNativePresetMigrationNotice());
+		assertEquals(MigrationState.DORMANT, repository.getMigrationState());
+	}
+
+	@Test
 	public void explicitUnifiedProfileSaveOrSettingsEditWinsOverPendingLegacyData() {
 		AudioEffectsProfileRepository saved = new AudioEffectsProfileRepository(
 				legacyWithManualBands(new int[]{-500, -400, -300, -200, -100, 0, 100, 200, 300, 400}));
@@ -302,6 +365,14 @@ public class AudioEffectsProfileRepositoryTest {
 		legacy.applyBooleanPref(MediaPrefs.AE_ENABLED, true);
 		legacy.applyBooleanPref(MediaPrefs.EQ_ENABLED, true);
 		legacy.applyIntArrayPref(MediaPrefs.EQ_BANDS, bands);
+		return legacy;
+	}
+
+	private static BasicPreferenceStore legacyWithSystemPreset(int preset) {
+		BasicPreferenceStore legacy = new BasicPreferenceStore();
+		legacy.applyBooleanPref(MediaPrefs.AE_ENABLED, true);
+		legacy.applyBooleanPref(MediaPrefs.EQ_ENABLED, true);
+		legacy.applyIntPref(MediaPrefs.EQ_PRESET, preset);
 		return legacy;
 	}
 

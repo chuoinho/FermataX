@@ -173,7 +173,7 @@
     <string name="audio_effects">Effetti audio</string>
     <string name="audio_equalizer">Audio ed equalizzatore</string>
     <string name="preamp">Preamplificatore</string>
-    <string name="equalier">Equalizzatore</string>
+    <string name="equalizer">Equalizzatore</string>
     <string name="preset_name">Nome preset</string>
     <string name="virtualizer">Virtualizzatore</string>
     <string name="auto">Auto</string>
@@ -516,4 +516,6 @@
 	<string name="voice_trigger_cleared">Assegnazione del pulsante vocale del veicolo cancellata.</string>
 	<string name="voice_selection_prompt">Di’ numero uno, due o tre</string>
     <string name="equalizer_apply_next_session">Le modifiche dell\'equalizzatore sono state salvate. Verranno applicate nella prossima sessione di riproduzione.</string>
+
+    <string name="legacy_preset_migration_notice">Il preset dell\'equalizzatore precedente del dispositivo non può essere convertito automaticamente. Scegli o regola l\'equalizzatore una volta.</string>
 </resources>

@@ -173,7 +173,7 @@
     <string name="audio_effects">Audio efekti</string>
     <string name="audio_equalizer">Zvuk i ekvilizator</string>
     <string name="preamp">Pretpojačalo</string>
-    <string name="equalier">Izjednačivač</string>
+    <string name="equalizer">Izjednačivač</string>
     <string name="preset_name">Ime predloška</string>
     <string name="virtualizer">Virtualizator</string>
     <string name="auto">Automatski</string>
@@ -516,4 +516,6 @@
 	<string name="voice_trigger_cleared">Dodjela glasovne tipke vozila je uklonjena.</string>
 	<string name="voice_selection_prompt">Recite broj jedan, dva ili tri</string>
     <string name="equalizer_apply_next_session">Promjene ekvilizatora su spremljene. Primijenit će se u sljedećoj sesiji reprodukcije.</string>
+
+    <string name="legacy_preset_migration_notice">Prethodna postavka ekvilizatora uređaja nije se mogla automatski pretvoriti. Jednom odaberite ili prilagodite ekvilizator.</string>
 </resources>

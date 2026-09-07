@@ -17,7 +17,7 @@ final class PlaybackPrefsBuilder {
 	}
 
 	static void add(MainActivityDelegate activity, PreferenceSet parent, MediaLibPrefs mediaPrefs) {
-		AudioEffectsPrefsBuilder.add(parent, new AudioEffectsProfileRepository(
+		AudioEffectsPrefsBuilder.add(activity.getContext(), parent, new AudioEffectsProfileRepository(
 				FermataApplication.get().getPreferenceStore()));
 
 		parent.addBooleanPref(o -> {

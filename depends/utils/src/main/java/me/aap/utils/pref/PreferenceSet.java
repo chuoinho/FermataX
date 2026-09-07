@@ -222,6 +222,15 @@ public class PreferenceSet implements Supplier<PreferenceView.Opts> {
 		});
 	}
 
+	/** Adds a read-only custom row while retaining the standard preference recycler lifecycle. */
+	public void addView(Consumer<PreferenceView.ViewOpts> builder) {
+		add(() -> {
+			PreferenceView.ViewOpts o = new PreferenceView.ViewOpts();
+			builder.accept(o);
+			return o;
+		});
+	}
+
 	public PreferenceSet subSet(Consumer<PreferenceView.Opts> builder) {
 		PreferenceSet sub = new PreferenceSet(this, builder);
 		add(sub);

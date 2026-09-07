@@ -183,6 +183,8 @@ public class PreferenceView extends ConstraintLayout {
 			setListPreference((ListOpts) opts);
 		} else if (opts instanceof ButtonOpts) {
 			setButtonPreference((ButtonOpts) opts);
+		} else if (opts instanceof ViewOpts) {
+			setViewPreference((ViewOpts) opts);
 		} else {
 			throw new IllegalArgumentException();
 		}
@@ -708,6 +710,17 @@ public class PreferenceView extends ConstraintLayout {
 		setOnClickListener(v -> o.onClick.run());
 	}
 
+	private void setViewPreference(ViewOpts o) {
+		removeAllViews();
+		addView(o.view.get(), new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+				ViewGroup.LayoutParams.WRAP_CONTENT));
+		setVisibility(VISIBLE);
+		if (getLayoutParams().height != WRAP_CONTENT) {
+			getLayoutParams().height = WRAP_CONTENT;
+			requestLayout();
+		}
+	}
+
 	private void formatListTitle(ListOpts o, Supplier<TextView> text, @StringRes int resId) {
 		Resources res = getContext().getResources();
 		int value = o.store.getIntPref(o.pref);
@@ -970,5 +983,9 @@ public class PreferenceView extends ConstraintLayout {
 
 	public static class ButtonOpts extends Opts {
 		public Runnable onClick;
+	}
+
+	public static class ViewOpts extends Opts {
+		public Supplier<View> view;
 	}
 }

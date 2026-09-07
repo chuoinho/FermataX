@@ -49,6 +49,20 @@ public class AudioEffectsProfileArchitectureTest {
 	}
 
 	@Test
+	public void legacyAudioEffectsRuntimeAndUiStackAreAbsent() throws Exception {
+		assertFalse(mainSourceExists("media/engine/AudioEffects.java"));
+		assertFalse(mainSourceExists("media/service/AudioEffectsLegacyApplier.java"));
+		assertFalse(mainSourceExists("ui/fragment/AudioEffectsFragment.java"));
+		assertFalse(mainSourceExists("ui/view/AudioEffectsView.java"));
+		assertFalse(source("media/engine/MediaEngine.java").contains("getAudioEffects()"));
+		assertFalse(source("ui/activity/MainActivityDelegate.java")
+				.contains("audio_effects_fragment"));
+		assertFalse(resourceExists("layout/audio_effects.xml"));
+		assertFalse(resourceExists("layout/equalizer_band.xml"));
+		assertFalse(resource("values/ids.xml").contains("audio_effects_fragment"));
+	}
+
+	@Test
 	public void nativeEnginesOnlyExposeTheirAudioSession() throws Exception {
 		assertFalse(source("media/engine/MediaPlayerEngine.java").contains("AudioEffects.create"));
 		assertFalse(moduleSource("exoplayer/src/main/java/me/aap/fermata/engine/exoplayer/ExoPlayerEngine.java")
@@ -99,6 +113,8 @@ public class AudioEffectsProfileArchitectureTest {
 						try {
 							String strings = new String(Files.readAllBytes(path), UTF_8);
 							assertTrue(path.toString(), strings.contains("name=\"audio_equalizer\""));
+							assertTrue(path.toString(), strings.contains("name=\"equalizer\""));
+							assertFalse(path.toString(), strings.contains("name=\"equalier\""));
 							assertTrue(path.toString(), strings.contains("name=\"preamp\""));
 						} catch (Exception error) {
 							throw new AssertionError(path.toString(), error);
@@ -115,6 +131,8 @@ public class AudioEffectsProfileArchitectureTest {
 		assertFalse(builder.contains("PreferenceSet preamp"));
 		assertTrue(builder.contains("AudioEffectsProfileRepository.PREAMP_DB"));
 		assertTrue(builder.contains("R.string.preamp"));
+		assertTrue(builder.contains("R.string.equalizer"));
+		assertFalse(builder.contains("R.string.equalier"));
 		assertTrue(builder.contains("o.seekMin = AudioEffectsProfile.MIN_CANONICAL_DB"));
 		assertTrue(builder.contains("o.seekMax = 0"));
 	}
@@ -143,5 +161,26 @@ public class AudioEffectsProfileArchitectureTest {
 		Path root = Path.of(System.getProperty("user.dir"));
 		if (!Files.isDirectory(root.resolve("modules"))) root = root.getParent();
 		return new String(Files.readAllBytes(root.resolve("modules").resolve(relativePath)), UTF_8);
+	}
+
+	private static boolean mainSourceExists(String relativePath) {
+		Path root = Path.of(System.getProperty("user.dir"));
+		Path main = root.resolve("src/main/java/me/aap/fermata");
+		if (!Files.isDirectory(main)) main = root.resolve("fermata/src/main/java/me/aap/fermata");
+		return Files.exists(main.resolve(relativePath));
+	}
+
+	private static boolean resourceExists(String relativePath) {
+		Path root = Path.of(System.getProperty("user.dir"));
+		Path resources = root.resolve("src/main/res");
+		if (!Files.isDirectory(resources)) resources = root.resolve("fermata/src/main/res");
+		return Files.exists(resources.resolve(relativePath));
+	}
+
+	private static String resource(String relativePath) throws Exception {
+		Path root = Path.of(System.getProperty("user.dir"));
+		Path resources = root.resolve("src/main/res");
+		if (!Files.isDirectory(resources)) resources = root.resolve("fermata/src/main/res");
+		return new String(Files.readAllBytes(resources.resolve(relativePath)), UTF_8);
 	}
 }

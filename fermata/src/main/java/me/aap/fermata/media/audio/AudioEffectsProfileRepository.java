@@ -5,6 +5,8 @@ import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 import java.util.Collection;
 import java.util.List;
 
+import androidx.annotation.Nullable;
+
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
@@ -110,18 +112,47 @@ public final class AudioEffectsProfileRepository {
 	 * native backend; this repository neither creates effects nor applies them.
 	 */
 	boolean migratePendingLegacyEqualizer(NativeEqualizerTopology topology) {
+		return migratePendingLegacyEqualizer(topology, null);
+	}
+
+	/**
+	 * Commits a resolved native system preset only after the runtime has supplied its raw levels.
+	 * The resolver is deliberately outside this repository so storage stays Android-independent.
+	 */
+	boolean migratePendingLegacyEqualizer(NativeEqualizerTopology topology,
+			@Nullable LegacyEqualizerPresetResolver resolver) {
 		ensureInitialized();
-		if ((topology == null) || (getMigrationState() != MigrationState.PENDING_NATIVE_TOPOLOGY) ||
+		if ((getMigrationState() != MigrationState.PENDING_NATIVE_TOPOLOGY) ||
 				(getProfileAuthority() != ProfileAuthority.GENERATED)) return false;
 
 		LegacyAudioEffectsSnapshot legacy = readLegacySnapshot();
+		if (topology == null) {
+			if (legacy.hasNativeSystemPreset() && (resolver != null)) {
+				markNativePresetFallbackNoticePending();
+			}
+			return false;
+		}
 		int[] rawBands = legacy.activeRawEqualizerBands();
+		if ((rawBands == null) && legacy.hasNativeSystemPreset() && (resolver != null)) {
+			try {
+				rawBands = resolver.resolveSystemPreset(legacy.equalizerPreset());
+			} catch (RuntimeException ignored) {
+				rawBands = null;
+			}
+			if ((rawBands == null) || !topology.containsLevels(rawBands)) {
+				markNativePresetFallbackNoticePending();
+				return false;
+			}
+		}
 		if ((rawBands == null) || !topology.containsLevels(rawBands)) return false;
 
 		final int[] canonical;
 		try {
 			canonical = NativeToCanonicalEqualizerMapper.map(rawBands, topology);
 		} catch (IllegalArgumentException ignored) {
+			if (legacy.hasNativeSystemPreset() && (resolver != null)) {
+				markNativePresetFallbackNoticePending();
+			}
 			return false;
 		}
 
@@ -134,6 +165,16 @@ public final class AudioEffectsProfileRepository {
 		try (PreferenceStore.Edit edit = store.editPreferenceStore(false)) {
 			writeProfile(edit, migrated);
 			edit.setIntPref(MIGRATION_STATE, MigrationState.MIGRATED.ordinal());
+		}
+		return true;
+	}
+
+	/** Consumes the visible fallback only once, after a native system preset could not be rebuilt. */
+	public boolean consumeLegacyNativePresetMigrationNotice() {
+		ensureInitialized();
+		if (getMigrationState() != MigrationState.FALLBACK_NOTICE_PENDING) return false;
+		try (PreferenceStore.Edit edit = store.editPreferenceStore(false)) {
+			edit.setIntPref(MIGRATION_STATE, MigrationState.DORMANT.ordinal());
 		}
 		return true;
 	}
@@ -220,6 +261,12 @@ public final class AudioEffectsProfileRepository {
 		int value = store.getIntPref(PROFILE_AUTHORITY);
 		ProfileAuthority[] values = ProfileAuthority.values();
 		return ((value >= 0) && (value < values.length)) ? values[value] : ProfileAuthority.UNKNOWN;
+	}
+
+	private void markNativePresetFallbackNoticePending() {
+		try (PreferenceStore.Edit edit = store.editPreferenceStore(false)) {
+			edit.setIntPref(MIGRATION_STATE, MigrationState.FALLBACK_NOTICE_PENDING.ordinal());
+		}
 	}
 
 	boolean isProfileUserEstablished() {
@@ -473,7 +520,10 @@ public final class AudioEffectsProfileRepository {
 			if (profileChanged) {
 				edit.setIntPref(PROFILE_AUTHORITY, ProfileAuthority.USER_ESTABLISHED.ordinal());
 				if (store.getIntPref(MIGRATION_STATE) == MigrationState.PENDING_NATIVE_TOPOLOGY.ordinal()) {
-					edit.setIntPref(MIGRATION_STATE, MigrationState.DORMANT.ordinal());
+					MigrationState state = store.getBooleanPref(LEGACY_EQ_PRESET_DEFINED) &&
+							(store.getIntPref(LEGACY_EQ_PRESET) > 0) ?
+							MigrationState.FALLBACK_NOTICE_PENDING : MigrationState.DORMANT;
+					edit.setIntPref(MIGRATION_STATE, state.ordinal());
 				}
 			}
 			edit.apply();

@@ -123,6 +123,10 @@ public final class LegacyAudioEffectsSnapshot {
 		return equalizerPreset;
 	}
 
+	boolean hasNativeSystemPreset() {
+		return equalizerPresetDefined && (equalizerPreset > 0);
+	}
+
 	@Nullable
 	public int[] rawEqualizerBands() {
 		return (rawEqualizerBands == null) ? null : rawEqualizerBands.clone();

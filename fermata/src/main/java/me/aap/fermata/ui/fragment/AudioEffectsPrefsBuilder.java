@@ -6,6 +6,8 @@ import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_TRANSAURAL;
 
 import android.text.InputType;
 
+import android.content.Context;
+
 import me.aap.fermata.R;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
@@ -14,13 +16,17 @@ import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.UiUtils;
 
 /** Builds the engine-independent Settings entry for the unified audio profile. */
 final class AudioEffectsPrefsBuilder {
 	private AudioEffectsPrefsBuilder() {
 	}
 
-	static void add(PreferenceSet parent, AudioEffectsProfileRepository profiles) {
+	static void add(Context context, PreferenceSet parent, AudioEffectsProfileRepository profiles) {
+		if (profiles.consumeLegacyNativePresetMigrationNotice()) {
+			UiUtils.showInfo(context, R.string.legacy_preset_migration_notice);
+		}
 		PreferenceStore store = profiles.getUserEditableStore();
 		PreferenceSet effects = parent.subSet(o -> o.title = R.string.audio_equalizer);
 		effects.addBooleanPref(o -> {
@@ -28,6 +34,7 @@ final class AudioEffectsPrefsBuilder {
 			o.pref = AudioEffectsProfileRepository.ENABLED;
 			o.title = R.string.enable;
 		});
+		effects.addView(o -> o.view = () -> new me.aap.fermata.ui.view.EqualizerCurveView(context, store));
 		PrefCondition<BooleanSupplier> profileEnabled = PrefCondition.create(store,
 				AudioEffectsProfileRepository.ENABLED);
 		effects.addIntPref(o -> {
@@ -39,7 +46,7 @@ final class AudioEffectsPrefsBuilder {
 			o.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED;
 		});
 		PreferenceSet equalizer = effects.subSet(o -> {
-			o.title = R.string.equalier;
+			o.title = R.string.equalizer;
 			o.visibility = profileEnabled.copy();
 		});
 		equalizer.addBooleanPref(o -> {
