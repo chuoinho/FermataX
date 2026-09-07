@@ -229,7 +229,8 @@ public class PreferenceSet implements Supplier<PreferenceView.Opts> {
 	}
 
 	public void addToView(RecyclerView v) {
-		v.setHasFixedSize(true);
+		// Preference visibility can change at runtime.
+		v.setHasFixedSize(false);
 		v.setLayoutManager(new LinearLayoutManager(v.getContext()));
 		v.setAdapter((adapter != null) ? adapter : new PreferenceViewAdapter(this));
 	}

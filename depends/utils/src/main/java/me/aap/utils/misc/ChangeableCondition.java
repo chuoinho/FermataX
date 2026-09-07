@@ -40,7 +40,7 @@ public interface ChangeableCondition {
 
 			@Override
 			public ChangeableCondition copy() {
-				return this.and(condition.copy());
+				return ChangeableCondition.this.copy().and(condition.copy());
 			}
 
 			@Override
@@ -75,7 +75,7 @@ public interface ChangeableCondition {
 
 			@Override
 			public ChangeableCondition copy() {
-				return this.or(condition.copy());
+				return ChangeableCondition.this.copy().or(condition.copy());
 			}
 
 			@Override
