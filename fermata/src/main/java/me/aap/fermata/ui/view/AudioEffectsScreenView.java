@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -74,7 +75,7 @@ public final class AudioEffectsScreenView extends FrameLayout
 		setFocusable(false);
 		setBackgroundColor(Color.TRANSPARENT);
 
-		verticalScroll = new ScrollView(context);
+		verticalScroll = new BandPageScrollView(context);
 		verticalScroll.setFillViewport(true);
 		verticalScroll.setClipToPadding(false);
 		content = new LinearLayout(context);
@@ -103,10 +104,10 @@ public final class AudioEffectsScreenView extends FrameLayout
 		scaleLabel.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
 		content.addView(scaleLabel, new LinearLayout.LayoutParams(MATCH_PARENT, dp(32)));
 
-		HorizontalScrollView bandScroll = new HorizontalScrollView(context);
+		HorizontalScrollView bandScroll = new BandScrollView(context);
 		bandScroll.setHorizontalScrollBarEnabled(true);
 		bandScroll.setScrollbarFadingEnabled(false);
-		bandScroll.setFillViewport(true);
+		bandScroll.setFillViewport(false);
 		bandScroll.setContentDescription(context.getString(R.string.audio_effects_band_scroll));
 		LinearLayout bandStrip = new LinearLayout(context);
 		bandStrip.setOrientation(LinearLayout.HORIZONTAL);
@@ -377,6 +378,55 @@ public final class AudioEffectsScreenView extends FrameLayout
 
 	private int dp(int value) {
 		return Math.round(value * getResources().getDisplayMetrics().density);
+	}
+
+	/** Lets the vertical page own drags in the viewport beside the narrower band strip. */
+	private static final class BandScrollView extends HorizontalScrollView {
+		BandScrollView(Context context) {
+			super(context);
+		}
+
+		@Override
+		public boolean onInterceptTouchEvent(MotionEvent event) {
+			if ((event.getActionMasked() == MotionEvent.ACTION_DOWN) && !isInChild(event)) {
+				return false;
+			}
+			return super.onInterceptTouchEvent(event);
+		}
+
+		@Override
+		public boolean onTouchEvent(MotionEvent event) {
+			if ((event.getActionMasked() == MotionEvent.ACTION_DOWN) && !isInChild(event)) {
+				return false;
+			}
+			return super.onTouchEvent(event);
+		}
+
+		private boolean isInChild(MotionEvent event) {
+			View child = getChildAt(0);
+			if (child == null) return false;
+			float x = event.getX() + getScrollX();
+			float y = event.getY();
+			return (x >= child.getLeft()) && (x < child.getRight()) &&
+					(y >= child.getTop()) && (y < child.getBottom());
+		}
+	}
+
+	private static final class BandPageScrollView extends ScrollView {
+		BandPageScrollView(Context context) {
+			super(context);
+		}
+
+		@Override
+		public boolean onInterceptTouchEvent(MotionEvent event) {
+			if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+				requestDisallowInterceptTouchEvent(true);
+			} else if ((event.getActionMasked() == MotionEvent.ACTION_UP) ||
+					(event.getActionMasked() == MotionEvent.ACTION_CANCEL)) {
+				requestDisallowInterceptTouchEvent(false);
+			}
+			return super.onInterceptTouchEvent(event);
+		}
 	}
 
 	private static int resolveColor(Context context, int attribute, int fallback) {
