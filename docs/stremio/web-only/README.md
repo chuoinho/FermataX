@@ -15,5 +15,4 @@ completed the independent Android Auto/DHU media-card control gate. The user-con
 streaming-server/torrent boundary passed with the local-only physical P8G fixture. Multi-audio
 selection remains unadvertised by the observed upstream Player, and episode `nexttrack` remains
 conditionally unadvertised by the observed MediaSession; neither is represented as a FermataX
-feature. See `05_TEST_ACCEPTANCE.md` and
-`reports/PHASE_8H_DHU_HOST_CONTROL_REPORT.md` for the final evidence.
+feature. See `05_TEST_ACCEPTANCE.md` for the maintained acceptance baseline.

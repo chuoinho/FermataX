@@ -16,9 +16,7 @@
 | User-configured torrent boundary | External Stremio streaming server, not FermataX | PASS: P8G local-only self-owned torrent, ranged server transfer and hosted Player rendering |
 
 The historical Phase 0B external-player requirements are intentionally not included here.
-The reconciled physical acceptance baseline and remaining independent gaps are
-recorded in `05_TEST_ACCEPTANCE.md` and
-`reports/PHASE_8G_LOCAL_ONLY_TORRENT_PLAYBACK_REPORT.md`.
+The reconciled physical acceptance baseline is recorded in `05_TEST_ACCEPTANCE.md`.
 
 The Stremio bridge uses an origin-scoped document-start MediaSession compatibility shim and
 dispatches only approved control actions. It does not scrape DOM content, extract stream URLs, read

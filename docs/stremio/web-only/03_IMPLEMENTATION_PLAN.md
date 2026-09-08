@@ -24,18 +24,14 @@ Do not add native playback, transport, torrent or DOM-automation code to satisfy
 ## Current Acceptance Baseline
 
 The Phase 1 implementation and direct playback/lifecycle acceptance work are
-complete. The reconciled physical evidence and the remaining independent
-acceptance phases are maintained in `05_TEST_ACCEPTANCE.md` and
-`reports/PHASE_6A_ACCEPTANCE_RECONCILIATION_REPORT.md`. They do not change the
-Web-only architecture defined above.
+complete. The maintained acceptance baseline is in `05_TEST_ACCEPTANCE.md`.
+It does not change the Web-only architecture defined above.
 
 Phase 8E re-verified the signed universal sideload artifact and hosted entry on
 the physical device. P8G later closed the separately governed
 streaming-server/torrent boundary with a self-owned loopback-only fixture.
 P8H completed the DHU host-control acceptance gate with a real host media-card
-pause/resume transition. The current torrent record is
-`reports/PHASE_8G_LOCAL_ONLY_TORRENT_PLAYBACK_REPORT.md`; the final DHU record
-is `reports/PHASE_8H_DHU_HOST_CONTROL_REPORT.md`. The observed upstream Player
-does not advertise a multi-audio selector, and the observed episode session did
-not advertise `nexttrack`; neither is a Web-only FermataX capability to add or
-claim without an upstream-advertised surface.
+pause/resume transition. The observed upstream Player does not advertise a
+multi-audio selector, and the observed episode session did not advertise
+`nexttrack`; neither is a Web-only FermataX capability to add or claim without
+an upstream-advertised surface.
