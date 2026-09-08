@@ -11,8 +11,7 @@ final class AudioEffectsScreenLayoutPolicy {
 	private static final int BAND_GAP_DP = 4;
 	private static final int BAND_TRAILING_PADDING_DP = 0;
 	static final int BANK_SIZE = 5;
-	static final int EFFECTS_SIDE_WIDTH_DP = 204;
-	private static final int SHORT_WIDE_MAX_HEIGHT_DP = 360;
+	static final int EQ_SCALE_WIDTH_DP = 28;
 
 	private AudioEffectsScreenLayoutPolicy() {
 	}
@@ -37,16 +36,14 @@ final class AudioEffectsScreenLayoutPolicy {
 		if ((bandCount <= 0) || (bandCount > AudioEffectsProfile.CANONICAL_FREQ_HZ.length)) {
 			throw new IllegalArgumentException("Unexpected EQ band count");
 		}
-		return bandWidthDp(automotive);
+		int minimum = bandWidthDp(automotive);
+		int gaps = (bandCount - 1) * BAND_GAP_DP;
+		return Math.max(minimum, (Math.max(0, availableWidthDp) - gaps) / bandCount);
 	}
 
 	static int bandStripWidthDp(int bandCount, boolean automotive) {
 		return (bandCount * bandWidthDp(automotive)) +
 				((bandCount - 1) * BAND_GAP_DP) + BAND_TRAILING_PADDING_DP;
-	}
-
-	static boolean effectsBesideEqualizer(int availableWidthDp, int availableHeightDp) {
-		return (availableWidthDp >= 600) && (availableHeightDp <= SHORT_WIDE_MAX_HEIGHT_DP);
 	}
 
 	static int contentHeightDp(int availableHeightDp, int actionHeightDp) {

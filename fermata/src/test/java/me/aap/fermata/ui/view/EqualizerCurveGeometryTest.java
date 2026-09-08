@@ -53,14 +53,6 @@ public class EqualizerCurveGeometryTest {
 	}
 
 	@Test
-	public void shortWideContentPlacesEffectsBesideTheEqualizerBank() {
-		assertTrue(AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(640, 320));
-		assertFalse(AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(360, 640));
-		assertFalse(AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(800, 400));
-		assertFalse(AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(1024, 600));
-	}
-
-	@Test
 	public void fixedActionsRemainInsideShortContentBounds() {
 		assertEquals(264, AudioEffectsScreenLayoutPolicy.contentHeightDp(320, 56));
 		assertEquals(0, AudioEffectsScreenLayoutPolicy.contentHeightDp(48, 56));

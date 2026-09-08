@@ -9,7 +9,6 @@ import android.view.Gravity;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.text.TextUtils;
 
 import java.util.List;
 
@@ -35,23 +34,27 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		super(context);
 		this.draft = draft;
 		this.callback = callback;
-		setOrientation(HORIZONTAL);
+		setOrientation(VERTICAL);
 		setGravity(Gravity.CENTER_VERTICAL);
 		setBackgroundColor(resolveColor(context, android.R.attr.colorBackground, Color.TRANSPARENT));
 		status = new TextView(context);
 		status.setTextColor(resolveColor(context, android.R.attr.textColorSecondary, 0xff808080));
 		status.setGravity(Gravity.CENTER_VERTICAL);
-		status.setSingleLine(true);
-		status.setEllipsize(TextUtils.TruncateAt.END);
-		addView(status, new LayoutParams(0, LayoutParams.MATCH_PARENT, 1f));
+		status.setSingleLine(false);
+		status.setEllipsize(null);
+		addView(status, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+		LinearLayout buttons = new LinearLayout(context);
+		buttons.setOrientation(HORIZONTAL);
+		buttons.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
+		addView(buttons, new LayoutParams(LayoutParams.MATCH_PARENT, dp(48)));
 		cancel = button(context, R.string.cancel);
 		cancel.setOnClickListener(v -> draft.discard());
 		cancel.setMinWidth(dp(72));
-		addView(cancel, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
+		buttons.addView(cancel, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
 		apply = button(context, R.string.audio_effects_apply);
 		apply.setOnClickListener(v -> startApply());
 		apply.setMinWidth(dp(72));
-		addView(apply, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
+		buttons.addView(apply, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
 		setMinimumHeight(dp(56));
 		setPadding(dp(8), dp(4), dp(8), dp(4));
 	}
@@ -106,6 +109,7 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		button.setText(text);
 		button.setAllCaps(false);
 		button.setMinHeight(Math.round(48 * context.getResources().getDisplayMetrics().density));
+		AudioEffectsScreenView.styleButton(context, button);
 		return button;
 	}
 

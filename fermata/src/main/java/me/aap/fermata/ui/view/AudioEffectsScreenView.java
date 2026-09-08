@@ -7,10 +7,13 @@ import static android.view.View.VISIBLE;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.res.Configuration;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.text.InputType;
-import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -36,9 +39,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.IntConsumer;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.media.audio.AudioEffectCapability;
 import me.aap.fermata.media.audio.AudioEffectsDraft;
@@ -46,6 +49,7 @@ import me.aap.fermata.media.audio.AudioEffectsPreset;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
 import me.aap.fermata.media.service.MediaSessionCallback;
+import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.utils.pref.PreferenceStore;
 
 /** Shared native EQ editor used by the phone and projected settings surfaces. */
@@ -54,13 +58,13 @@ public final class AudioEffectsScreenView extends FrameLayout
 	private static final int BAND_HEIGHT_DP = 168;
 	private static final int ACTION_MIN_HEIGHT_DP = 56;
 	private static final int CONTENT_PADDING_DP = 8;
-	private static final int BODY_GAP_DP = 8;
 	private final AudioEffectsDraft draft;
 	private final PreferenceStore store;
 	private final LinearLayout content;
 	private final LinearLayout body;
 	private final LinearLayout equalizerColumn;
 	private final LinearLayout effectsColumn;
+	private final EqualizerScaleView equalizerScale;
 	private final LinearLayout bankTabs;
 	private final ScrollView verticalScroll;
 	private final AudioEffectsApplyView actions;
@@ -78,6 +82,7 @@ public final class AudioEffectsScreenView extends FrameLayout
 	private final float density;
 	private final int primaryColor;
 	private final int secondaryColor;
+	private final int surfaceColor;
 	private final boolean automotive;
 	private boolean updating;
 	private int selectedBank;
@@ -90,9 +95,11 @@ public final class AudioEffectsScreenView extends FrameLayout
 		density = getResources().getDisplayMetrics().density;
 		primaryColor = resolveColor(context, android.R.attr.textColorPrimary, Color.WHITE);
 		secondaryColor = resolveColor(context, android.R.attr.textColorSecondary, 0xffa0a0a0);
+		surfaceColor = resolveColor(context, com.google.android.material.R.attr.colorSurface,
+				resolveColor(context, android.R.attr.colorBackground, 0xff202124));
 		setFocusable(false);
 		setBackgroundColor(Color.TRANSPARENT);
-		automotive = BuildConfig.AUTO;
+		automotive = isAutomotiveContext(context);
 
 		verticalScroll = new BandPageScrollView(context);
 		verticalScroll.setFillViewport(true);
@@ -113,13 +120,6 @@ public final class AudioEffectsScreenView extends FrameLayout
 		TextView title = textView(16);
 		title.setText(R.string.audio_effects);
 		topRow.addView(title, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
-		preset = new Spinner(context);
-		preset.setContentDescription(context.getString(R.string.preset_name));
-		ArrayAdapter<String> presetAdapter = new ArrayAdapter<>(context,
-				android.R.layout.simple_spinner_item, presetLabels());
-		presetAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-		preset.setAdapter(presetAdapter);
-		topRow.addView(preset, new LinearLayout.LayoutParams(dp(116), MATCH_PARENT));
 		masterSwitch = new SwitchCompat(context);
 		masterSwitch.setText(null);
 		masterSwitch.setMinWidth(dp(64));
@@ -129,6 +129,18 @@ public final class AudioEffectsScreenView extends FrameLayout
 		masterSwitch.setOnCheckedChangeListener((button, checked) -> {
 			if (!updating) store.applyBooleanPref(AudioEffectsProfileRepository.ENABLED, checked);
 		});
+		content.addView(topRow);
+
+		LinearLayout presetRow = createRow();
+		TextView presetLabel = textView(16);
+		presetLabel.setText(R.string.preset_name);
+		presetRow.addView(presetLabel, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
+		preset = new Spinner(context);
+		preset.setContentDescription(context.getString(R.string.preset_name));
+		preset.setPopupBackgroundDrawable(new ColorDrawable(surfaceColor));
+		preset.setAdapter(new PresetAdapter(context, presetLabels()));
+		presetRow.addView(preset, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
+		content.addView(presetRow);
 		preset.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 			@Override
 			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -140,8 +152,6 @@ public final class AudioEffectsScreenView extends FrameLayout
 			public void onNothingSelected(AdapterView<?> parent) {
 			}
 		});
-		content.addView(topRow);
-
 		equalizerColumn = new LinearLayout(context);
 		equalizerColumn.setOrientation(LinearLayout.VERTICAL);
 		effectsColumn = new LinearLayout(context);
@@ -149,6 +159,7 @@ public final class AudioEffectsScreenView extends FrameLayout
 		body = new LinearLayout(context);
 		body.setOrientation(LinearLayout.VERTICAL);
 		body.setBaselineAligned(false);
+		equalizerScale = new EqualizerScaleView(context);
 
 		bankTabs = new LinearLayout(context);
 		bankTabs.setOrientation(LinearLayout.HORIZONTAL);
@@ -162,11 +173,6 @@ public final class AudioEffectsScreenView extends FrameLayout
 			bankTabs.addView(bankButtons[i], new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
 		}
 
-		TextView scaleLabel = textView(13);
-		scaleLabel.setText(R.string.audio_effects_scale);
-		scaleLabel.setTextColor(secondaryColor);
-		scaleLabel.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-		equalizerColumn.addView(scaleLabel, new LinearLayout.LayoutParams(MATCH_PARENT, dp(24)));
 		equalizerColumn.addView(bankTabs, new LinearLayout.LayoutParams(MATCH_PARENT, dp(48)));
 
 		bandScroll = new BandScrollView(context);
@@ -195,27 +201,26 @@ public final class AudioEffectsScreenView extends FrameLayout
 			bandStrip.addView(bands[i], bandParams);
 		}
 		bandScroll.addView(bandStrip, new ViewGroup.LayoutParams(WRAP_CONTENT, dp(BAND_HEIGHT_DP)));
-		equalizerColumn.addView(bandScroll, new LinearLayout.LayoutParams(MATCH_PARENT,
+		LinearLayout bandArea = new LinearLayout(context);
+		bandArea.setOrientation(LinearLayout.HORIZONTAL);
+		bandArea.addView(equalizerScale, new LinearLayout.LayoutParams(dp(
+				AudioEffectsScreenLayoutPolicy.EQ_SCALE_WIDTH_DP), dp(BAND_HEIGHT_DP)));
+		bandArea.addView(bandScroll, new LinearLayout.LayoutParams(0, dp(BAND_HEIGHT_DP), 1f));
+		equalizerColumn.addView(bandArea, new LinearLayout.LayoutParams(MATCH_PARENT,
 				dp(BAND_HEIGHT_DP)));
 
 		addGainControl(effectsColumn, R.string.preamp, AudioEffectsProfileRepository.PREAMP_DB,
 				AudioEffectsProfile.MIN_CANONICAL_DB, 0);
-		bassBoostSwitch = addSwitchRow(effectsColumn, R.string.bass_boost,
-				AudioEffectsProfileRepository.BASS_BOOST_ENABLED);
-		addGainControl(effectsColumn, R.string.strength,
+		bassBoostSwitch = addGainControl(effectsColumn, R.string.bass_boost,
 				AudioEffectsProfileRepository.BASS_BOOST_STRENGTH, 0, 1_000,
-				AudioEffectsProfileRepository.BASS_BOOST_ENABLED);
-		loudnessSwitch = addSwitchRow(effectsColumn, R.string.vol_boost,
-				AudioEffectsProfileRepository.LOUDNESS_ENABLED);
-		addGainControl(effectsColumn, R.string.strength,
+				AudioEffectsProfileRepository.BASS_BOOST_ENABLED, true);
+		loudnessSwitch = addGainControl(effectsColumn, R.string.vol_boost,
 				AudioEffectsProfileRepository.LOUDNESS_GAIN, 0, 1_000,
-				AudioEffectsProfileRepository.LOUDNESS_ENABLED);
+				AudioEffectsProfileRepository.LOUDNESS_ENABLED, true);
 		if (callback.getAudioEffectsCapabilities().contains(AudioEffectCapability.VIRTUALIZER)) {
-			virtualizerSwitch = addSwitchRow(effectsColumn, R.string.virtualizer,
-					AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
-			addGainControl(effectsColumn, R.string.strength,
+			virtualizerSwitch = addGainControl(effectsColumn, R.string.virtualizer,
 					AudioEffectsProfileRepository.VIRTUALIZER_STRENGTH, 0, 1_000,
-					AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
+					AudioEffectsProfileRepository.VIRTUALIZER_ENABLED, true);
 			addVirtualizerMode(effectsColumn, AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
 		} else {
 			virtualizerSwitch = null;
@@ -285,6 +290,8 @@ public final class AudioEffectsScreenView extends FrameLayout
 	private Button buttonText(String text) {
 		AppCompatButton button = (AppCompatButton) button(R.string.audio_effects);
 		button.setText(text);
+		button.setSingleLine(false);
+		button.setEllipsize(null);
 		return button;
 	}
 
@@ -301,29 +308,9 @@ public final class AudioEffectsScreenView extends FrameLayout
 
 	private void updateLayoutForSize(int widthPx, int heightPx) {
 		int widthDp = Math.max(0, Math.round(widthPx / density));
-		int heightDp = Math.max(0, Math.round(heightPx / density));
-		boolean beside = AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(widthDp, heightDp);
-		body.setOrientation(beside ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
-		LinearLayout.LayoutParams eqParams = (LinearLayout.LayoutParams) equalizerColumn.getLayoutParams();
-		LinearLayout.LayoutParams effectsParams = (LinearLayout.LayoutParams) effectsColumn.getLayoutParams();
-		int contentWidthDp = Math.max(0, widthDp - (CONTENT_PADDING_DP * 2));
-		if (beside) {
-			eqParams.width = 0;
-			eqParams.weight = 1f;
-			effectsParams.width = dp(AudioEffectsScreenLayoutPolicy.EFFECTS_SIDE_WIDTH_DP);
-			effectsParams.weight = 0f;
-			effectsParams.leftMargin = dp(BODY_GAP_DP);
-			contentWidthDp = Math.max(0, contentWidthDp -
-					AudioEffectsScreenLayoutPolicy.EFFECTS_SIDE_WIDTH_DP - BODY_GAP_DP);
-		} else {
-			eqParams.width = MATCH_PARENT;
-			eqParams.weight = 0f;
-			effectsParams.width = MATCH_PARENT;
-			effectsParams.weight = 0f;
-			effectsParams.leftMargin = 0;
-		}
-		equalizerColumn.setLayoutParams(eqParams);
-		effectsColumn.setLayoutParams(effectsParams);
+		body.setOrientation(LinearLayout.VERTICAL);
+		int contentWidthDp = Math.max(0, widthDp - (CONTENT_PADDING_DP * 2) -
+				AudioEffectsScreenLayoutPolicy.EQ_SCALE_WIDTH_DP);
 		int count = AudioEffectsScreenLayoutPolicy.needsBandBanks(contentWidthDp, automotive) ?
 				AudioEffectsScreenLayoutPolicy.BANK_SIZE : bands.length;
 		int width = AudioEffectsScreenLayoutPolicy.bandWidthDp(contentWidthDp, automotive, count);
@@ -341,27 +328,6 @@ public final class AudioEffectsScreenView extends FrameLayout
 		showBank(selectedBank);
 	}
 
-	private SwitchCompat addSwitchRow(LinearLayout parent, int title,
-			PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> pref) {
-		LinearLayout row = createRow();
-		TextView label = textView(16);
-		label.setText(title);
-		label.setSingleLine(true);
-		label.setEllipsize(TextUtils.TruncateAt.END);
-		row.addView(label, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
-		SwitchCompat toggle = new SwitchCompat(getContext());
-		toggle.setText(null);
-		toggle.setMinWidth(dp(64));
-		toggle.setMinHeight(dp(48));
-		toggle.setContentDescription(getContext().getString(title));
-		row.addView(toggle, new LinearLayout.LayoutParams(WRAP_CONTENT, MATCH_PARENT));
-		toggle.setOnCheckedChangeListener((button, checked) -> {
-			if (!updating) store.applyBooleanPref(pref, checked);
-		});
-		parent.addView(row);
-		return toggle;
-	}
-
 	private void refreshSwitch(SwitchCompat toggle,
 			PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> pref, boolean master) {
 		toggle.setEnabled(master);
@@ -370,22 +336,28 @@ public final class AudioEffectsScreenView extends FrameLayout
 
 	private void addGainControl(LinearLayout parent, int title,
 			PreferenceStore.Pref<me.aap.utils.function.IntSupplier> pref, int min, int max) {
-		addGainControl(parent, title, pref, min, max, null);
+		addGainControl(parent, title, pref, min, max, null, false);
 	}
 
-	private void addGainControl(LinearLayout parent, int title,
+	@androidx.annotation.Nullable
+	private SwitchCompat addGainControl(LinearLayout parent, int title,
 			PreferenceStore.Pref<me.aap.utils.function.IntSupplier> pref, int min, int max,
-			PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> enabledPref) {
-		GainControl control = new GainControl(parent, title, pref, min, max, enabledPref);
+			PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> enabledPref,
+			boolean showSwitch) {
+		GainControl control = new GainControl(parent, title, pref, min, max, enabledPref,
+				showSwitch);
 		gainControls.add(control);
+		return control.toggle;
 	}
 
 	private void addVirtualizerMode(LinearLayout parent,
 			PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> enabledPref) {
 		LinearLayout row = createRow();
 		TextView label = textView(16);
-		label.setText(R.string.string_format);
-		row.addView(label, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
+		label.setText(R.string.audio_effects_mode);
+		label.setSingleLine(false);
+		label.setEllipsize(null);
+		row.addView(label, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f));
 		Button value = button(R.string.auto);
 		row.addView(value, new LinearLayout.LayoutParams(WRAP_CONTENT, MATCH_PARENT));
 		value.setOnClickListener(v -> showVirtualizerMode(value));
@@ -421,12 +393,20 @@ public final class AudioEffectsScreenView extends FrameLayout
 
 	private void showNumericEditor(String title, int current, int min, int max,
 			IntConsumer setter) {
+		showNumericEditor(title, String.valueOf(current), InputType.TYPE_CLASS_NUMBER |
+				((min < 0) ? InputType.TYPE_NUMBER_FLAG_SIGNED : 0), min, max,
+				getContext().getString(R.string.audio_effects_range_error, min, max),
+				text -> Integer.parseInt(text.trim()), setter);
+	}
+
+	private void showNumericEditor(String title, String current, int inputType,
+			double min, double max, String rangeError, Function<String, Integer> parser,
+			IntConsumer setter) {
 		EditText input = new EditText(getContext());
-		input.setInputType(InputType.TYPE_CLASS_NUMBER |
-				((min < 0) ? InputType.TYPE_NUMBER_FLAG_SIGNED : 0));
+		input.setInputType(inputType);
 		input.setSingleLine(true);
 		input.setSelectAllOnFocus(true);
-		input.setText(String.valueOf(current));
+		input.setText(current);
 		input.setSelection(input.length());
 		int padding = dp(8);
 		input.setPadding(padding, 0, padding, 0);
@@ -436,13 +416,15 @@ public final class AudioEffectsScreenView extends FrameLayout
 		dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
 				.setOnClickListener(v -> {
 					try {
-						int value = Integer.parseInt(input.getText().toString().trim());
-						if ((value < min) || (value > max)) throw new NumberFormatException();
+						String text = input.getText().toString().trim();
+						double displayed = Double.parseDouble(text.replace(',', '.'));
+						if (!Double.isFinite(displayed) || (displayed < min) ||
+								(displayed > max)) throw new NumberFormatException();
+						int value = parser.apply(text);
 						setter.accept(value);
 						dialog.dismiss();
 					} catch (NumberFormatException error) {
-						input.setError(getContext().getString(R.string.audio_effects_range_error,
-								min, max));
+						input.setError(rangeError);
 					}
 				}));
 		dialog.show();
@@ -471,7 +453,119 @@ public final class AudioEffectsScreenView extends FrameLayout
 		button.setAllCaps(false);
 		button.setMinHeight(dp(48));
 		button.setMinWidth(dp(48));
+		styleButton(getContext(), button);
 		return button;
+	}
+
+	static void styleButton(Context context, Button button) {
+		int surface = resolveColor(context, com.google.android.material.R.attr.colorSurface,
+				resolveColor(context, android.R.attr.colorBackground, 0xff202124));
+		int selectedSurface = stateSurface(surface);
+		int disabledSurface = resolveColor(context, com.google.android.material.R.attr.colorSecondary,
+				surface);
+		int[][] states = new int[][]{
+				new int[]{-android.R.attr.state_enabled},
+				new int[]{android.R.attr.state_pressed},
+				new int[]{android.R.attr.state_selected},
+				new int[]{android.R.attr.state_focused},
+				new int[]{}
+		};
+		button.setTextColor(new ColorStateList(states, new int[]{
+				readableText(disabledSurface), readableText(selectedSurface),
+				readableText(selectedSurface), readableText(selectedSurface), readableText(surface)}));
+		button.setBackgroundTintList(new ColorStateList(states, new int[]{
+				disabledSurface, selectedSurface, selectedSurface, selectedSurface, surface}));
+	}
+
+	private final class PresetAdapter extends ArrayAdapter<String> {
+		PresetAdapter(Context context, String[] labels) {
+			super(context, android.R.layout.simple_spinner_item, labels);
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			return createView(position, false);
+		}
+
+		@Override
+		public View getDropDownView(int position, View convertView, ViewGroup parent) {
+			View view = createView(position, true);
+			view.setSelected(position == preset.getSelectedItemPosition());
+			return view;
+		}
+
+		private TextView createView(int position, boolean dropDown) {
+			TextView view = new TextView(AudioEffectsScreenView.this.getContext());
+			view.setText(getItem(position));
+			view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+			int normalText = readableText(surfaceColor);
+			int selectedText = readableText(stateSurface(surfaceColor));
+			view.setTextColor(new ColorStateList(new int[][]{
+					new int[]{-android.R.attr.state_enabled},
+					new int[]{android.R.attr.state_selected},
+					new int[]{android.R.attr.state_pressed},
+					new int[]{android.R.attr.state_focused},
+					new int[]{}
+			}, new int[]{normalText, selectedText, selectedText, selectedText, normalText}));
+			view.setGravity(Gravity.CENTER_VERTICAL);
+			view.setMinHeight(dp(48));
+			view.setPadding(dp(12), 0, dp(12), 0);
+			GradientDrawable background = new GradientDrawable();
+			background.setColor(Color.WHITE);
+			view.setBackground(background);
+			view.setBackgroundTintList(new ColorStateList(new int[][]{
+					new int[]{-android.R.attr.state_enabled},
+					new int[]{android.R.attr.state_selected},
+					new int[]{android.R.attr.state_pressed},
+					new int[]{android.R.attr.state_focused},
+					new int[]{}
+			}, new int[]{surfaceColor, stateSurface(surfaceColor), stateSurface(surfaceColor),
+					stateSurface(surfaceColor), surfaceColor}));
+			if (!dropDown) view.setSelected(false);
+			return view;
+		}
+	}
+
+	private static final class EqualizerScaleView extends View {
+		private final float density;
+		private final float scaledDensity;
+		private final int color;
+		private final android.graphics.Paint paint = new android.graphics.Paint(
+				android.graphics.Paint.ANTI_ALIAS_FLAG);
+
+		EqualizerScaleView(Context context) {
+			super(context);
+			density = getResources().getDisplayMetrics().density;
+			scaledDensity = getResources().getDisplayMetrics().scaledDensity;
+			color = resolveColor(context, android.R.attr.textColorSecondary, 0xffa0a0a0);
+			setContentDescription(context.getString(R.string.audio_effects_scale));
+		}
+
+		@Override
+		protected void onDraw(android.graphics.Canvas canvas) {
+			paint.setColor(color);
+			paint.setTextSize(10 * scaledDensity);
+			paint.setTextAlign(android.graphics.Paint.Align.RIGHT);
+			canvas.drawText("+15", getWidth() - dp(2), dp(25), paint);
+			float center = (dp(30) + Math.max(dp(110), getHeight() - dp(30))) / 2F;
+			canvas.drawText("0", getWidth() - dp(2), center + dp(4), paint);
+			canvas.drawText("-15", getWidth() - dp(2), getHeight() - dp(13), paint);
+		}
+
+		private int dp(float value) {
+			return Math.round(value * density);
+		}
+	}
+
+	private static boolean isAutomotiveContext(Context context) {
+		Context current = context;
+		while (true) {
+			if (current instanceof FermataActivity activity) return activity.isCarActivity();
+			if (!(current instanceof ContextWrapper wrapper)) return false;
+			Context base = wrapper.getBaseContext();
+			if (base == current) return false;
+			current = base;
+		}
 	}
 
 	private int findViewportHeight() {
@@ -574,40 +668,91 @@ public final class AudioEffectsScreenView extends FrameLayout
 		return (value.resourceId == 0) ? value.data : ContextCompat.getColor(context, value.resourceId);
 	}
 
+	private static int stateSurface(int color) {
+		int amount = luminance(color) > 0.5f ? -24 : 24;
+		return Color.rgb(adjust(Color.red(color), amount), adjust(Color.green(color), amount),
+				adjust(Color.blue(color), amount));
+	}
+
+	private static int adjust(int value, int amount) {
+		return Math.max(0, Math.min(255, value + amount));
+	}
+
+	private static int readableText(int background) {
+		return contrast(background, Color.WHITE) >= contrast(background, Color.BLACK) ?
+				Color.WHITE : Color.BLACK;
+	}
+
+	private static float luminance(int color) {
+		return 0.2126f * linear(Color.red(color)) + 0.7152f * linear(Color.green(color)) +
+				0.0722f * linear(Color.blue(color));
+	}
+
+	private static float linear(int channel) {
+		float value = channel / 255f;
+		return (value <= 0.03928f) ? value / 12.92f : (float) Math.pow(
+				(value + 0.055f) / 1.055f, 2.4f);
+	}
+
+	private static float contrast(int background, int foreground) {
+		float backgroundLuminance = luminance(background);
+		float foregroundLuminance = luminance(foreground);
+		float lighter = Math.max(backgroundLuminance, foregroundLuminance);
+		float darker = Math.min(backgroundLuminance, foregroundLuminance);
+		return (lighter + 0.05f) / (darker + 0.05f);
+	}
+
 	private final class GainControl {
 		private final PreferenceStore.Pref<me.aap.utils.function.IntSupplier> pref;
+		private final int title;
 		private final int min;
 		private final int max;
 		private final TextView value;
 		private final SeekBar seek;
 		private final Button mode;
+		@androidx.annotation.Nullable
+		private final SwitchCompat toggle;
 		private final PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> enabledPref;
 
 		GainControl(LinearLayout parent, int title,
 				PreferenceStore.Pref<me.aap.utils.function.IntSupplier> pref, int min, int max,
-				PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> enabledPref) {
+				PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> enabledPref,
+				boolean showSwitch) {
 			this.pref = pref;
+			this.title = title;
 			this.min = min;
 			this.max = max;
 			this.mode = null;
 			this.enabledPref = enabledPref;
-			LinearLayout row = new LinearLayout(getContext());
-		row.setOrientation(LinearLayout.HORIZONTAL);
-			row.setGravity(Gravity.CENTER_VERTICAL);
-			row.setMinimumHeight(dp(48));
+			LinearLayout control = new LinearLayout(getContext());
+			control.setOrientation(LinearLayout.VERTICAL);
+			LinearLayout header = createRow();
 			TextView label = textView(15);
 			label.setText(title);
-			label.setSingleLine(true);
-			label.setEllipsize(TextUtils.TruncateAt.END);
-			row.addView(label, new LinearLayout.LayoutParams(0, MATCH_PARENT, 0.32f));
-			seek = new SeekBar(getContext());
-			seek.setPadding(0, 0, 0, 0);
-			row.addView(seek, new LinearLayout.LayoutParams(0, dp(48), 1f));
+			label.setSingleLine(false);
+			label.setEllipsize(null);
+			header.addView(label, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f));
 			value = textView(15);
 			value.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
 			value.setSingleLine(true);
-			value.setEllipsize(TextUtils.TruncateAt.END);
-			row.addView(value, new LinearLayout.LayoutParams(dp(52), MATCH_PARENT));
+			value.setMinHeight(dp(48));
+			value.setPadding(dp(8), 0, dp(4), 0);
+			header.addView(value, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
+			toggle = showSwitch ? new SwitchCompat(getContext()) : null;
+			if (toggle != null) {
+				toggle.setText(null);
+				toggle.setMinWidth(dp(64));
+				toggle.setMinHeight(dp(48));
+				toggle.setContentDescription(getContext().getString(title));
+				header.addView(toggle, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
+				toggle.setOnCheckedChangeListener((button, checked) -> {
+					if (!updating) store.applyBooleanPref(enabledPref, checked);
+				});
+			}
+			control.addView(header, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+			seek = new SeekBar(getContext());
+			seek.setPadding(0, 0, 0, 0);
+			control.addView(seek, new LinearLayout.LayoutParams(MATCH_PARENT, dp(48)));
 			seek.setMax(max - min);
 			seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 				@Override
@@ -623,20 +768,44 @@ public final class AudioEffectsScreenView extends FrameLayout
 				public void onStopTrackingTouch(SeekBar bar) {
 				}
 			});
-			value.setOnClickListener(v -> showNumericEditor(getResources().getString(title),
-					store.getIntPref(pref), min, max, next -> store.applyIntPref(pref, next)));
-			parent.addView(row, new LinearLayout.LayoutParams(MATCH_PARENT, dp(48)));
+			value.setOnClickListener(v -> showGainEditor());
+			parent.addView(control, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
 			refresh();
 		}
 
 		GainControl(Button mode, PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> enabledPref) {
 			this.pref = null;
+			this.title = 0;
 			this.min = 0;
 			this.max = 0;
 			this.value = null;
 			this.seek = null;
 			this.mode = mode;
+			this.toggle = null;
 			this.enabledPref = enabledPref;
+		}
+
+		private void showGainEditor() {
+			int current = store.getIntPref(pref);
+			String titleText = getResources().getString(title);
+			if (pref == AudioEffectsProfileRepository.LOUDNESS_GAIN) {
+				showNumericEditor(titleText, AudioEffectsDisplayUnits.loudnessInput(current),
+						InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL,
+						0D, 10D, getResources().getString(R.string.audio_effects_range_error, 0, 10),
+						AudioEffectsDisplayUnits::parseLoudnessGain,
+						next -> store.applyIntPref(pref, next));
+				return;
+			}
+			if ((pref == AudioEffectsProfileRepository.BASS_BOOST_STRENGTH) ||
+					(pref == AudioEffectsProfileRepository.VIRTUALIZER_STRENGTH)) {
+				showNumericEditor(titleText, AudioEffectsDisplayUnits.bassInput(current),
+						InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL,
+						0D, 100D, getResources().getString(R.string.audio_effects_range_error, 0, 100),
+						AudioEffectsDisplayUnits::parseBassStrength,
+						next -> store.applyIntPref(pref, next));
+				return;
+			}
+			showNumericEditor(titleText, current, min, max, next -> store.applyIntPref(pref, next));
 		}
 
 		void refresh() {
@@ -649,11 +818,26 @@ public final class AudioEffectsScreenView extends FrameLayout
 				return;
 			}
 			int current = store.getIntPref(pref);
-			value.setText(String.valueOf(current) + ((min < 0) ? " dB" : "%"));
+			value.setText(formatGain(current));
 			seek.setProgress(Math.max(0, Math.min(max - min, current - min)));
 			boolean enabled = isEnabled();
 			value.setEnabled(enabled);
 			seek.setEnabled(enabled);
+			if (toggle != null) {
+				toggle.setEnabled(store.getBooleanPref(AudioEffectsProfileRepository.ENABLED));
+				toggle.setChecked(store.getBooleanPref(enabledPref));
+			}
+		}
+
+		private String formatGain(int current) {
+			if (pref == AudioEffectsProfileRepository.LOUDNESS_GAIN) {
+				return AudioEffectsDisplayUnits.formatLoudnessGain(current);
+			}
+			if ((pref == AudioEffectsProfileRepository.BASS_BOOST_STRENGTH) ||
+					(pref == AudioEffectsProfileRepository.VIRTUALIZER_STRENGTH)) {
+				return AudioEffectsDisplayUnits.formatBassStrength(current);
+			}
+			return String.valueOf(current) + ((min < 0) ? " dB" : "%");
 		}
 
 		private boolean isEnabled() {

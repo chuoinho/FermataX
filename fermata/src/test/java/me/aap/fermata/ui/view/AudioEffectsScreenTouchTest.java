@@ -15,6 +15,7 @@ import android.view.ViewParent;
 import android.widget.SeekBar;
 import android.widget.ScrollView;
 import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
 
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,28 +42,26 @@ import me.aap.utils.pref.PreferenceView;
 public class AudioEffectsScreenTouchTest {
 	@Test
 	public void emptyBandStripSwipeScrollsTheNestedPageAndKeepsActionsInBounds() throws Exception {
-		for (int x : new int[]{760, 700}) {
-			Fixture fixture = fixture(800, 400);
-			HorizontalScrollView bandScroll = find(fixture.screen, HorizontalScrollView.class);
-			AudioEffectsBandView band = find(fixture.screen, AudioEffectsBandView.class);
-			int before = band.getValueDb();
-			int y = top(bandScroll, fixture.recycler) + bandScroll.getHeight() - 30;
+		Fixture fixture = fixture(800, 400);
+		HorizontalScrollView bandScroll = find(fixture.screen, HorizontalScrollView.class);
+		AudioEffectsBandView band = find(fixture.screen, AudioEffectsBandView.class);
+		int before = band.getValueDb();
+		int y = top(bandScroll, fixture.recycler) + bandScroll.getHeight() - 30;
 
-			swipe(fixture.recycler, x, y, x, y - 350, 8);
+		swipe(fixture.recycler, 20, y, 20, y - 350, 8);
 
-			assertTrue("empty band strip should scroll the page at x=" + x + ": scrollY=" +
-					fixture.vertical.getScrollY() + ", bandScroll=" + bounds(bandScroll, fixture.recycler),
-					fixture.vertical.getScrollY() > 0);
-			assertEquals(before, band.getValueDb());
-			ViewGroup actions = (ViewGroup) fixture.screen.getChildAt(1);
-			assertTrue(actions.getTop() >= 0);
-			assertTrue(actions.getBottom() <= fixture.screen.getHeight());
-			assertEquals(fixture.screen.getHeight(), actions.getBottom());
-			for (int i = 0; i < actions.getChildCount(); i++) {
-				View child = actions.getChildAt(i);
-				assertTrue(child.getTop() >= 0);
-				assertTrue(child.getBottom() <= actions.getHeight());
-			}
+		assertTrue("scale area should scroll the page: scrollY=" + fixture.vertical.getScrollY() +
+				", bandScroll=" + bounds(bandScroll, fixture.recycler),
+				fixture.vertical.getScrollY() > 0);
+		assertEquals(before, band.getValueDb());
+		ViewGroup actions = (ViewGroup) fixture.screen.getChildAt(1);
+		assertTrue(actions.getTop() >= 0);
+		assertTrue(actions.getBottom() <= fixture.screen.getHeight());
+		assertEquals(fixture.screen.getHeight(), actions.getBottom());
+		for (int i = 0; i < actions.getChildCount(); i++) {
+			View child = actions.getChildAt(i);
+			assertTrue(child.getTop() >= 0);
+			assertTrue(child.getBottom() <= actions.getHeight());
 		}
 	}
 
@@ -127,7 +126,37 @@ public class AudioEffectsScreenTouchTest {
 				fixture.store.getIntPref(AudioEffectsProfileRepository.PREAMP_DB) + ", seek=" +
 				bounds(seek, fixture.recycler),
 				fixture.store.getIntPref(
-						AudioEffectsProfileRepository.PREAMP_DB) < 0);
+					AudioEffectsProfileRepository.PREAMP_DB) < 0);
+	}
+
+	@Test
+	public void editorUsesOneColumnAndShowsAllBandsWhenTheMeasuredContentFits() throws Exception {
+		Fixture fixture = fixture(800, 400);
+		LinearLayout body = (LinearLayout) fixture.content.getChildAt(2);
+
+		assertEquals(LinearLayout.VERTICAL, body.getOrientation());
+		assertEquals(2, body.getChildCount());
+		assertEquals(10, visibleBands(fixture.screen));
+	}
+
+	@Test
+	public void narrowEditorUsesTwoReadableBandGroupsAndScrollsToTheLastEffect() throws Exception {
+		Fixture fixture = fixture(320, 240);
+
+		assertEquals(5, visibleBands(fixture.screen));
+		fixture.vertical.fullScroll(View.FOCUS_DOWN);
+		SeekBar lastSeek = findAll(fixture.screen, SeekBar.class).get(
+				findAll(fixture.screen, SeekBar.class).size() - 1);
+		assertTrue(lastSeek.getBottom() - fixture.vertical.getScrollY() <= fixture.vertical.getHeight());
+	}
+
+	@Test
+	public void narrowDraftActionsPlaceStatusAboveButtons() throws Exception {
+		Fixture fixture = fixture(320, 240);
+		LinearLayout actions = (LinearLayout) fixture.screen.getChildAt(1);
+
+		assertEquals(LinearLayout.VERTICAL, actions.getOrientation());
+		assertTrue(actions.getChildAt(0).getBottom() <= actions.getChildAt(1).getTop());
 	}
 
 	private static Fixture fixture(int width, int height) throws Exception {
@@ -320,6 +349,30 @@ public class AudioEffectsScreenTouchTest {
 		T found = findOrNull(root, type);
 		if (found == null) throw new AssertionError("missing " + type.getSimpleName());
 		return found;
+	}
+
+	private static int visibleBands(View root) {
+		int visible = 0;
+		for (AudioEffectsBandView band : findAll(root, AudioEffectsBandView.class)) {
+			if (band.getVisibility() == View.VISIBLE) visible++;
+		}
+		return visible;
+	}
+
+	private static <T extends View> java.util.List<T> findAll(View root, Class<T> type) {
+		java.util.List<T> found = new java.util.ArrayList<>();
+		collect(root, type, found);
+		return found;
+	}
+
+	private static <T extends View> void collect(View root, Class<T> type,
+			java.util.List<T> found) {
+		if (type.isInstance(root)) found.add(type.cast(root));
+		if (root instanceof ViewGroup group) {
+			for (int i = 0; i < group.getChildCount(); i++) {
+				collect(group.getChildAt(i), type, found);
+			}
+		}
 	}
 
 	private static <T extends View> T findOrNull(View root, Class<T> type) {

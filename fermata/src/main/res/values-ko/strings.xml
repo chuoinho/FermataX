@@ -530,6 +530,7 @@
     <string name="audio_effects_custom">Custom</string>
     <string name="audio_effects_set_flat">Reset EQ to 0</string>
     <string name="audio_effects_scale">dB gain, -15 to +15 (0 dB center)</string>
+    <string name="audio_effects_mode">Mode</string>
     <string name="audio_effects_band_scroll">Equalizer bands</string>
     <string name="audio_effects_band_format">%1$s Hz, %2$s dB</string>
     <string name="audio_effects_additional">Additional effects</string>

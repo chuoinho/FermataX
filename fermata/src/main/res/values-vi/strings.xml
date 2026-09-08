@@ -525,6 +525,7 @@
 	<string name="audio_effects_custom">Tùy chỉnh</string>
 	<string name="audio_effects_set_flat">Đặt EQ về 0</string>
 	<string name="audio_effects_scale">Mức dB, từ -15 đến +15 (0 dB ở giữa)</string>
+	<string name="audio_effects_mode">Chế độ</string>
 	<string name="audio_effects_band_scroll">Các dải cân bằng</string>
 	<string name="audio_effects_band_format">%1$s Hz, %2$s dB</string>
 	<string name="audio_effects_additional">Hiệu ứng bổ sung</string>
