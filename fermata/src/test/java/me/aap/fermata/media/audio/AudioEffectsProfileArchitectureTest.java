@@ -155,9 +155,9 @@ public class AudioEffectsProfileArchitectureTest {
 		assertFalse(screen.contains("additionalToggle"));
 		assertFalse(screen.contains("curveMode"));
 		assertTrue(screen.contains("band.setEnabled(master)"));
-		assertTrue(screen.contains("addGainControl(content, R.string.preamp"));
-		assertTrue(screen.contains("addSwitchRow(content, R.string.bass_boost"));
-		assertTrue(screen.contains("addSwitchRow(content, R.string.vol_boost"));
+		assertTrue(screen.contains("addGainControl(effectsColumn, R.string.preamp"));
+		assertTrue(screen.contains("addSwitchRow(effectsColumn, R.string.bass_boost"));
+		assertTrue(screen.contains("addSwitchRow(effectsColumn, R.string.vol_boost"));
 		assertTrue(screen.contains("AudioEffectCapability.VIRTUALIZER"));
 		assertTrue(screen.contains("getAudioEffectsCapabilities()"));
 		assertTrue(screen.contains("virtualizerSwitch = null"));

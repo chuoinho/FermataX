@@ -1,6 +1,7 @@
 package me.aap.fermata.media.audio;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -135,6 +136,20 @@ public class AudioEffectsDraftTest {
 		assertTrue(profile.enabled());
 		assertTrue(profile.equalizerEnabled());
 		assertTrue(profile.bassBoostEnabled());
+	}
+
+	@Test
+	public void presetSelectionIsDraftOnlyAndCancelRestoresTheCommittedProfile() {
+		AudioEffectsProfileRepository repository = repository();
+		AudioEffectsDraft draft = new AudioEffectsDraft(repository);
+		draft.applyPreset(AudioEffectsPreset.POP);
+
+		assertArrayEquals(AudioEffectsProfile.flatCurveDb(), repository.load().canonicalCurveDb());
+		assertArrayEquals(AudioEffectsPreset.POP.curveDb(), draft.snapshot().canonicalCurveDb());
+		assertEquals(-AudioEffectsPreset.POP.maximumBoostDb(), draft.snapshot().preampDb());
+
+		draft.discard();
+		assertEquals(AudioEffectsProfile.defaults(), draft.snapshot());
 	}
 
 	@Test

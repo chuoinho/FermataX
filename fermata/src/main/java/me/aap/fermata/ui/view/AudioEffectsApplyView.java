@@ -9,6 +9,7 @@ import android.view.Gravity;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.text.TextUtils;
 
 import java.util.List;
 
@@ -34,25 +35,25 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		super(context);
 		this.draft = draft;
 		this.callback = callback;
-		setOrientation(VERTICAL);
+		setOrientation(HORIZONTAL);
 		setGravity(Gravity.CENTER_VERTICAL);
 		setBackgroundColor(resolveColor(context, android.R.attr.colorBackground, Color.TRANSPARENT));
 		status = new TextView(context);
 		status.setTextColor(resolveColor(context, android.R.attr.textColorSecondary, 0xff808080));
 		status.setGravity(Gravity.CENTER_VERTICAL);
-		status.setMinHeight(dp(40));
-		addView(status, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-		LinearLayout buttons = new LinearLayout(context);
-		buttons.setOrientation(HORIZONTAL);
-		buttons.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+		status.setSingleLine(true);
+		status.setEllipsize(TextUtils.TruncateAt.END);
+		addView(status, new LayoutParams(0, LayoutParams.MATCH_PARENT, 1f));
 		cancel = button(context, R.string.cancel);
 		cancel.setOnClickListener(v -> draft.discard());
-		buttons.addView(cancel, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+		cancel.setMinWidth(dp(72));
+		addView(cancel, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
 		apply = button(context, R.string.audio_effects_apply);
 		apply.setOnClickListener(v -> startApply());
-		buttons.addView(apply, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
-		addView(buttons, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-		setPadding(0, 0, 0, dp(4));
+		apply.setMinWidth(dp(72));
+		addView(apply, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
+		setMinimumHeight(dp(56));
+		setPadding(dp(8), dp(4), dp(8), dp(4));
 	}
 
 	@Override

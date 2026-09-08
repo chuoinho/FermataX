@@ -41,20 +41,31 @@ public class EqualizerCurveGeometryTest {
 	}
 
 	@Test
-	public void responsiveBandSizingScrollsOnlyWhenTheAvailableWidthCannotFitTheBands() {
-		assertTrue(AudioEffectsScreenLayoutPolicy.needsHorizontalScroll(320, false));
-		assertTrue(AudioEffectsScreenLayoutPolicy.needsHorizontalScroll(640, true));
-		assertEquals(640, AudioEffectsScreenLayoutPolicy.bandStripWidthDp(false));
-		assertEquals(800, AudioEffectsScreenLayoutPolicy.bandStripWidthDp(true));
-		assertFalse(AudioEffectsScreenLayoutPolicy.needsHorizontalScroll(640, false));
+	public void responsiveBandSizingUsesTwoBanksBelowTenBandHitWidth() {
+		assertTrue(AudioEffectsScreenLayoutPolicy.needsBandBanks(360, false));
+		assertTrue(AudioEffectsScreenLayoutPolicy.needsBandBanks(640, true));
+		assertFalse(AudioEffectsScreenLayoutPolicy.needsBandBanks(640, false));
+		assertFalse(AudioEffectsScreenLayoutPolicy.needsBandBanks(800, true));
+		assertEquals(516, AudioEffectsScreenLayoutPolicy.bandStripWidthDp(false));
+		assertEquals(676, AudioEffectsScreenLayoutPolicy.bandStripWidthDp(true));
+		assertTrue(AudioEffectsScreenLayoutPolicy.bandWidthDp(344, false, 5) >= 48);
+		assertTrue(AudioEffectsScreenLayoutPolicy.bandWidthDp(584, true, 10) >= 64);
+	}
+
+	@Test
+	public void shortWideContentPlacesEffectsBesideTheEqualizerBank() {
+		assertTrue(AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(640, 320));
+		assertFalse(AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(360, 640));
+		assertFalse(AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(800, 400));
+		assertFalse(AudioEffectsScreenLayoutPolicy.effectsBesideEqualizer(1024, 600));
 	}
 
 	@Test
 	public void fixedActionsRemainInsideShortContentBounds() {
-		assertEquals(256, AudioEffectsScreenLayoutPolicy.contentHeightDp(320, 64));
-		assertEquals(0, AudioEffectsScreenLayoutPolicy.contentHeightDp(48, 64));
-		assertTrue(AudioEffectsScreenLayoutPolicy.actionIsWithinBounds(320, 256, 64));
-		assertFalse(AudioEffectsScreenLayoutPolicy.actionIsWithinBounds(320, 257, 64));
+		assertEquals(264, AudioEffectsScreenLayoutPolicy.contentHeightDp(320, 56));
+		assertEquals(0, AudioEffectsScreenLayoutPolicy.contentHeightDp(48, 56));
+		assertTrue(AudioEffectsScreenLayoutPolicy.actionIsWithinBounds(320, 264, 56));
+		assertFalse(AudioEffectsScreenLayoutPolicy.actionIsWithinBounds(320, 265, 56));
 	}
 
 	@Test

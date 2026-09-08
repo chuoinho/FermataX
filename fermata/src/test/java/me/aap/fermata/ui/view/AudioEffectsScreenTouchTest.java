@@ -33,6 +33,7 @@ import me.aap.fermata.media.audio.AudioEffectsController;
 import me.aap.fermata.media.audio.AudioEffectsDraft;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
 import me.aap.fermata.media.service.MediaSessionCallback;
+import me.aap.fermata.R;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceView;
 
@@ -40,8 +41,8 @@ import me.aap.utils.pref.PreferenceView;
 public class AudioEffectsScreenTouchTest {
 	@Test
 	public void emptyBandStripSwipeScrollsTheNestedPageAndKeepsActionsInBounds() throws Exception {
-		for (int x : new int[]{2100, 1850}) {
-			Fixture fixture = fixture(2340, 1080);
+		for (int x : new int[]{760, 700}) {
+			Fixture fixture = fixture(800, 400);
 			HorizontalScrollView bandScroll = find(fixture.screen, HorizontalScrollView.class);
 			AudioEffectsBandView band = find(fixture.screen, AudioEffectsBandView.class);
 			int before = band.getValueDb();
@@ -82,16 +83,34 @@ public class AudioEffectsScreenTouchTest {
 	}
 
 	@Test
-	public void horizontalBandStripSwipeStillScrollsTheBands() throws Exception {
+	public void horizontalBandGestureDoesNotChangeBandValueWhenBandsUseBankPaging() throws Exception {
 		Fixture fixture = fixture(480, 1080);
 		HorizontalScrollView bandScroll = find(fixture.screen, HorizontalScrollView.class);
 		AudioEffectsBandView band = find(fixture.screen, AudioEffectsBandView.class);
+		int before = band.getValueDb();
 		int x = left(band, fixture.recycler) + band.getWidth() / 2;
 		int y = top(band, fixture.recycler) + band.getHeight() / 2;
 
 		swipe(fixture.recycler, x, y, x - 220, y, 8);
 
-		assertTrue("horizontal drag should scroll the band strip", bandScroll.getScrollX() > 0);
+		assertEquals(before, band.getValueDb());
+		assertEquals(0, bandScroll.getScrollX());
+	}
+
+	@Test
+	public void compactViewportSizesKeepFixedActionsInsideTheScreen() throws Exception {
+		for (int[] size : new int[][]{{360, 640}, {640, 320}, {800, 400}, {1024, 600}}) {
+			Fixture fixture = fixture(size[0], size[1]);
+			ViewGroup actions = (ViewGroup) fixture.screen.getChildAt(1);
+			assertEquals("actions should stay fixed to the bottom at " + size[0] + "x" + size[1],
+					size[1], actions.getBottom());
+			assertTrue(actions.getTop() >= 0);
+			for (int i = 0; i < actions.getChildCount(); i++) {
+				View child = actions.getChildAt(i);
+				assertTrue(child.getTop() >= 0);
+				assertTrue(child.getBottom() <= actions.getHeight());
+			}
+		}
 	}
 
 	@Test
@@ -197,6 +216,17 @@ public class AudioEffectsScreenTouchTest {
 					if (isFermataString(id)) return "test";
 					return source.getString(id, formatArgs);
 				}
+
+				@Override
+				public String[] getStringArray(int id) throws NotFoundException {
+					if (id == R.array.audio_effects_presets) {
+						return new String[]{"Flat", "Pop", "Rock", "Classical", "Dance", "Custom"};
+					}
+					if (id == R.array.audio_effects_band_banks) {
+						return new String[]{"31-500 Hz", "1-16 kHz"};
+					}
+					return source.getStringArray(id);
+				}
 			};
 		}
 
@@ -206,7 +236,7 @@ public class AudioEffectsScreenTouchTest {
 		}
 
 		private static boolean isFermataString(int id) {
-			return (id & 0xffff0000) == 0x7f0e0000;
+			return (id & 0xffff0000) == (R.string.cancel & 0xffff0000);
 		}
 	}
 

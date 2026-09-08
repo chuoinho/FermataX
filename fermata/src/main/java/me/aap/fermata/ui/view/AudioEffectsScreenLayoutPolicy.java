@@ -6,34 +6,55 @@ import me.aap.fermata.media.audio.AudioEffectsProfile;
 final class AudioEffectsScreenLayoutPolicy {
 	enum GestureAxis { UNDECIDED, VERTICAL, HORIZONTAL }
 
-	private static final int PHONE_BAND_WIDTH_DP = 56;
-	private static final int AUTO_BAND_WIDTH_DP = 72;
-	private static final int BAND_GAP_DP = 8;
-	private static final int BAND_TRAILING_PADDING_DP = 8;
+	private static final int PHONE_MIN_BAND_WIDTH_DP = 48;
+	private static final int AUTO_MIN_BAND_WIDTH_DP = 64;
+	private static final int BAND_GAP_DP = 4;
+	private static final int BAND_TRAILING_PADDING_DP = 0;
+	static final int BANK_SIZE = 5;
+	static final int EFFECTS_SIDE_WIDTH_DP = 204;
+	private static final int SHORT_WIDE_MAX_HEIGHT_DP = 360;
 
 	private AudioEffectsScreenLayoutPolicy() {
 	}
 
 	static int bandWidthDp(boolean automotive) {
-		return automotive ? AUTO_BAND_WIDTH_DP : PHONE_BAND_WIDTH_DP;
+		return automotive ? AUTO_MIN_BAND_WIDTH_DP : PHONE_MIN_BAND_WIDTH_DP;
 	}
 
 	static int bandStripWidthDp(boolean automotive) {
-		return (AudioEffectsProfile.CANONICAL_FREQ_HZ.length * bandWidthDp(automotive)) +
-				((AudioEffectsProfile.CANONICAL_FREQ_HZ.length - 1) * BAND_GAP_DP) +
-				BAND_TRAILING_PADDING_DP;
+		return bandStripWidthDp(AudioEffectsProfile.CANONICAL_FREQ_HZ.length, automotive);
 	}
 
 	static boolean needsHorizontalScroll(int availableWidthDp, boolean automotive) {
-		return bandStripWidthDp(automotive) > availableWidthDp;
+		return needsBandBanks(availableWidthDp, automotive);
+	}
+
+	static boolean needsBandBanks(int availableWidthDp, boolean automotive) {
+		return bandStripWidthDp(automotive) > Math.max(0, availableWidthDp);
+	}
+
+	static int bandWidthDp(int availableWidthDp, boolean automotive, int bandCount) {
+		if ((bandCount <= 0) || (bandCount > AudioEffectsProfile.CANONICAL_FREQ_HZ.length)) {
+			throw new IllegalArgumentException("Unexpected EQ band count");
+		}
+		return bandWidthDp(automotive);
+	}
+
+	static int bandStripWidthDp(int bandCount, boolean automotive) {
+		return (bandCount * bandWidthDp(automotive)) +
+				((bandCount - 1) * BAND_GAP_DP) + BAND_TRAILING_PADDING_DP;
+	}
+
+	static boolean effectsBesideEqualizer(int availableWidthDp, int availableHeightDp) {
+		return (availableWidthDp >= 600) && (availableHeightDp <= SHORT_WIDE_MAX_HEIGHT_DP);
 	}
 
 	static int contentHeightDp(int availableHeightDp, int actionHeightDp) {
-		return Math.max(0, availableHeightDp - Math.max(64, actionHeightDp));
+		return Math.max(0, availableHeightDp - Math.max(56, actionHeightDp));
 	}
 
 	static boolean actionIsWithinBounds(int totalHeightDp, int actionTopDp, int actionHeightDp) {
-		return actionTopDp >= 0 && actionHeightDp >= 64 &&
+		return actionTopDp >= 0 && actionHeightDp >= 56 &&
 				actionTopDp + actionHeightDp <= totalHeightDp;
 	}
 

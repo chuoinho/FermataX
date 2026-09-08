@@ -25,9 +25,9 @@ final class AudioEffectsBandView extends View implements PreferenceStore.Listene
 
 	private static final int PHONE_TOUCH_WIDTH_DP = 48;
 	private static final int AUTO_TOUCH_WIDTH_DP = 64;
-	private static final int MIN_HEIGHT_DP = 224;
-	private static final int VALUE_HEIGHT_DP = 44;
-	private static final int FREQUENCY_HEIGHT_DP = 42;
+	private static final int MIN_HEIGHT_DP = 160;
+	private static final int VALUE_HEIGHT_DP = 30;
+	private static final int FREQUENCY_HEIGHT_DP = 30;
 	private final PreferenceStore store;
 	private final PreferenceStore.Pref<me.aap.utils.function.IntSupplier> pref;
 	private final int frequencyHz;
@@ -140,10 +140,10 @@ final class AudioEffectsBandView extends View implements PreferenceStore.Listene
 
 		paint.setTextAlign(Paint.Align.CENTER);
 		paint.setTypeface(android.graphics.Typeface.DEFAULT);
-		paint.setTextSize(sp(16));
+		paint.setTextSize(sp(14));
 		paint.setColor(isEnabled() ? primaryColor : secondaryColor);
 		canvas.drawText(formatDb(getValueDb()), x, dp(25), paint);
-		paint.setTextSize(sp(14));
+		paint.setTextSize(sp(12));
 		canvas.drawText(frequencyLabel(frequencyHz), x,
 				getHeight() - dp(13), paint);
 	}

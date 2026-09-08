@@ -82,6 +82,25 @@ public final class AudioEffectsDraft {
 		}
 	}
 
+	/** Applies a built-in curve to the working profile without touching other effects. */
+	public void applyPreset(AudioEffectsPreset preset) {
+		if (applying) throw new IllegalStateException("Audio-effects Apply is already running");
+		if ((preset == null) || !preset.hasCurve()) {
+			throw new IllegalArgumentException("A concrete audio-effects preset is required");
+		}
+		int[] curve = preset.curveDb();
+		int preamp = snapshot().preampDb();
+		if (preset.maximumBoostDb() > 0) preamp = Math.min(preamp, -preset.maximumBoostDb());
+		try (PreferenceStore.Edit edit = store.editPreferenceStore(true)) {
+			for (int i = 0; i < curve.length; i++) {
+				edit.setIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[i], curve[i]);
+			}
+			if (preset.maximumBoostDb() > 0) {
+				edit.setIntPref(AudioEffectsProfileRepository.PREAMP_DB, preamp);
+			}
+		}
+	}
+
 	/** Restores a working snapshot after a settings host recreation. */
 	public void restore(AudioEffectsProfile profile) {
 		if (applying) throw new IllegalStateException("Audio-effects Apply is already running");

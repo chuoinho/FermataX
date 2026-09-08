@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="audio_effects_presets">
+        <item>@string/eq_flat</item>
+        <item>@string/eq_pop</item>
+        <item>@string/eq_rock</item>
+        <item>@string/eq_classical</item>
+        <item>@string/eq_dance</item>
+        <item>@string/audio_effects_custom</item>
+    </string-array>
+    <string-array name="audio_effects_band_banks">
+        <item>31-500 Hz</item>
+        <item>1-16 kHz</item>
+    </string-array>
+</resources>
