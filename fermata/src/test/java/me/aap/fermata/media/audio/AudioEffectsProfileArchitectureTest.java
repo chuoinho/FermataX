@@ -184,6 +184,20 @@ public class AudioEffectsProfileArchitectureTest {
 		assertFalse(actions.contains("Color.GRAY"));
 	}
 
+	@Test
+	public void loudnessUiUsesRelativePercentWhileNativeBackendKeepsMillibelConversion()
+			throws Exception {
+		String screen = source("ui/view/AudioEffectsScreenView.java");
+		String units = source("ui/view/AudioEffectsDisplayUnits.java");
+		String backend = source("media/audio/NativeSessionAudioEffectsBackend.java");
+
+		assertTrue(backend.contains("effect.setTargetGain(clampStrength(profile.loudnessGain()) * 10)"));
+		assertTrue(units.contains("formatRelativeLevel"));
+		assertTrue(screen.contains("AudioEffectsDisplayUnits.formatRelativeLevel(current)"));
+		assertTrue(screen.contains("0D, 100D"));
+		assertFalse(screen.contains("formatLoudnessGain"));
+	}
+
 	private static String source(String relativePath) throws Exception {
 		Path root = Path.of(System.getProperty("user.dir"));
 		Path file = root.resolve("src/main/java/me/aap/fermata").resolve(relativePath);

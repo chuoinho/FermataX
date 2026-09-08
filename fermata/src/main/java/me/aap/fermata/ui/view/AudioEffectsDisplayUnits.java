@@ -7,28 +7,16 @@ final class AudioEffectsDisplayUnits {
 	private AudioEffectsDisplayUnits() {
 	}
 
-	static String formatBassStrength(int raw) {
+	static String formatRelativeLevel(int raw) {
 		return format(raw / 10D, 1) + "%";
 	}
 
-	static int parseBassStrength(String displayed) {
+	static int parseRelativeLevel(String displayed) {
 		return parse(displayed, 0D, 100D, 10D);
 	}
 
-	static String bassInput(int raw) {
+	static String relativeInput(int raw) {
 		return format(raw / 10D, 1);
-	}
-
-	static String formatLoudnessGain(int raw) {
-		return format(raw / 100D, 2) + " dB";
-	}
-
-	static int parseLoudnessGain(String displayed) {
-		return parse(displayed, 0D, 10D, 100D);
-	}
-
-	static String loudnessInput(int raw) {
-		return format(raw / 100D, 2);
 	}
 
 	private static int parse(String displayed, double min, double max, double scale) {

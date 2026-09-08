@@ -788,20 +788,13 @@ public final class AudioEffectsScreenView extends FrameLayout
 		private void showGainEditor() {
 			int current = store.getIntPref(pref);
 			String titleText = getResources().getString(title);
-			if (pref == AudioEffectsProfileRepository.LOUDNESS_GAIN) {
-				showNumericEditor(titleText, AudioEffectsDisplayUnits.loudnessInput(current),
-						InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL,
-						0D, 10D, getResources().getString(R.string.audio_effects_range_error, 0, 10),
-						AudioEffectsDisplayUnits::parseLoudnessGain,
-						next -> store.applyIntPref(pref, next));
-				return;
-			}
-			if ((pref == AudioEffectsProfileRepository.BASS_BOOST_STRENGTH) ||
+			if ((pref == AudioEffectsProfileRepository.LOUDNESS_GAIN) ||
+					(pref == AudioEffectsProfileRepository.BASS_BOOST_STRENGTH) ||
 					(pref == AudioEffectsProfileRepository.VIRTUALIZER_STRENGTH)) {
-				showNumericEditor(titleText, AudioEffectsDisplayUnits.bassInput(current),
+				showNumericEditor(titleText, AudioEffectsDisplayUnits.relativeInput(current),
 						InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL,
 						0D, 100D, getResources().getString(R.string.audio_effects_range_error, 0, 100),
-						AudioEffectsDisplayUnits::parseBassStrength,
+						AudioEffectsDisplayUnits::parseRelativeLevel,
 						next -> store.applyIntPref(pref, next));
 				return;
 			}
@@ -830,12 +823,10 @@ public final class AudioEffectsScreenView extends FrameLayout
 		}
 
 		private String formatGain(int current) {
-			if (pref == AudioEffectsProfileRepository.LOUDNESS_GAIN) {
-				return AudioEffectsDisplayUnits.formatLoudnessGain(current);
-			}
-			if ((pref == AudioEffectsProfileRepository.BASS_BOOST_STRENGTH) ||
+			if ((pref == AudioEffectsProfileRepository.LOUDNESS_GAIN) ||
+					(pref == AudioEffectsProfileRepository.BASS_BOOST_STRENGTH) ||
 					(pref == AudioEffectsProfileRepository.VIRTUALIZER_STRENGTH)) {
-				return AudioEffectsDisplayUnits.formatBassStrength(current);
+				return AudioEffectsDisplayUnits.formatRelativeLevel(current);
 			}
 			return String.valueOf(current) + ((min < 0) ? " dB" : "%");
 		}

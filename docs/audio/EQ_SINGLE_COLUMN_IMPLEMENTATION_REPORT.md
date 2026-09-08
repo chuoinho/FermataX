@@ -65,25 +65,32 @@ their existing integer scales.
 | Preamp | integer dB, `-15..0` | integer dB | existing preamp mapping |
 | Bass Boost | `raw / 10`, `0..100%` | integer `0..1000` | `BassBoost.setStrength(raw)` |
 | Virtualizer strength | `raw / 10`, `0..100%` | integer `0..1000` | `Virtualizer.setStrength(raw)` |
-| Loudness | `raw / 100`, `0..10 dB` | integer `0..1000` | `LoudnessEnhancer.setTargetGain(raw * 10)` mB |
+| Loudness | `raw / 10`, `0..100%` relative level | integer `0..1000` | `LoudnessEnhancer.setTargetGain(raw * 10)` mB |
 
-Numeric editors validate the displayed range before converting back. Bass and
-Virtualizer input uses percent and rounds `displayed * 10`; Loudness input uses
-dB and rounds `displayed * 100`. Tested endpoints and intermediates include
-`0`, `320 -> 32%`, `1000 -> 100%`, `180 -> 1.8 dB`, and `1000 -> 10 dB`.
+Numeric editors validate the displayed range before converting back. Bass Boost,
+Loudness, and Virtualizer input uses explicit relative level percent and rounds
+`displayed * 10`. The UI does not claim acoustic dB for Loudness: the native
+backend still receives millibels from the unchanged `raw * 10` mapping. For
+example, stored raw `180` becomes `1800 mB` and displays `18%`; stored raw
+`1000` becomes `10000 mB` and displays `100%`. Tested endpoints and
+intermediates include `0`, `320 -> 32%`, `180 -> 18%`, and `1000 -> 100%`,
+with round-trips back to the same stored raw values.
 
 ## Verification
 
-Fresh verification results:
+Post-audit verification for the unit-only follow-up:
 
-- Focused EQ AutoDebug suite: BUILD SUCCESSFUL, 32 tests, 0 failures or errors.
-- Affected EQ MobileDebug suite: BUILD SUCCESSFUL, 32 tests, 0 failures or
-  errors.
-- `:fermata:testAutoDebugUnitTest :web:testAutoDebugUnitTest`: BUILD SUCCESSFUL.
-- `verifyWebOnlyProductionGraph`: BUILD SUCCESSFUL.
+- `:fermata:testMobileDebugUnitTest --tests
+  "me.aap.fermata.ui.view.AudioEffectsDisplayUnitsTest" --tests
+  "me.aap.fermata.media.audio.AudioEffectsProfileArchitectureTest"`:
+  BUILD SUCCESSFUL, 19 tests, 0 failures or errors.
 - `git diff --check`: clean.
 - `Get-FileHash fermata/lib/auto/aauto.aar -Algorithm SHA256`: required hash
   matched.
+
+The broader implementation gates and native view coverage remain recorded from
+the prior implementation verification. No new build, APK, device, DHU, or
+sideload work was performed for this follow-up, per scope.
 
 The native view tests cover responsive sizing, one-column view-tree layout,
 action bounds, nested RecyclerView touch dispatch, vertical band drags, bank
