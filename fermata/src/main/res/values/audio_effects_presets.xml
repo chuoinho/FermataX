@@ -8,8 +8,4 @@
         <item>@string/eq_dance</item>
         <item>@string/audio_effects_custom</item>
     </string-array>
-    <string-array name="audio_effects_band_banks">
-        <item>31-500 Hz</item>
-        <item>1-16 kHz</item>
-    </string-array>
 </resources>

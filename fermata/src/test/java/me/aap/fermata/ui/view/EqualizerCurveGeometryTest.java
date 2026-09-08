@@ -41,15 +41,9 @@ public class EqualizerCurveGeometryTest {
 	}
 
 	@Test
-	public void responsiveBandSizingUsesTwoBanksBelowTenBandHitWidth() {
-		assertTrue(AudioEffectsScreenLayoutPolicy.needsBandBanks(360, false));
-		assertTrue(AudioEffectsScreenLayoutPolicy.needsBandBanks(640, true));
-		assertFalse(AudioEffectsScreenLayoutPolicy.needsBandBanks(640, false));
-		assertFalse(AudioEffectsScreenLayoutPolicy.needsBandBanks(800, true));
-		assertEquals(516, AudioEffectsScreenLayoutPolicy.bandStripWidthDp(false));
-		assertEquals(676, AudioEffectsScreenLayoutPolicy.bandStripWidthDp(true));
-		assertTrue(AudioEffectsScreenLayoutPolicy.bandWidthDp(344, false, 5) >= 48);
-		assertTrue(AudioEffectsScreenLayoutPolicy.bandWidthDp(584, true, 10) >= 64);
+	public void responsiveBandSizingFitsAllBandsWithoutPaging() {
+		assertEquals(32, AudioEffectsScreenLayoutPolicy.bandWidthDp(344, 10));
+		assertEquals(58, AudioEffectsScreenLayoutPolicy.bandWidthDp(600, 10));
 	}
 
 	@Test

@@ -14,7 +14,6 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.SeekBar;
 import android.widget.ScrollView;
-import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 
 import androidx.appcompat.widget.SwitchCompat;
@@ -43,15 +42,13 @@ public class AudioEffectsScreenTouchTest {
 	@Test
 	public void emptyBandStripSwipeScrollsTheNestedPageAndKeepsActionsInBounds() throws Exception {
 		Fixture fixture = fixture(800, 400);
-		HorizontalScrollView bandScroll = find(fixture.screen, HorizontalScrollView.class);
 		AudioEffectsBandView band = find(fixture.screen, AudioEffectsBandView.class);
 		int before = band.getValueDb();
-		int y = top(bandScroll, fixture.recycler) + bandScroll.getHeight() - 30;
+		int y = top(band, fixture.recycler) + band.getHeight() - 30;
 
 		swipe(fixture.recycler, 20, y, 20, y - 350, 8);
 
-		assertTrue("scale area should scroll the page: scrollY=" + fixture.vertical.getScrollY() +
-				", bandScroll=" + bounds(bandScroll, fixture.recycler),
+		assertTrue("scale area should scroll the page: scrollY=" + fixture.vertical.getScrollY(),
 				fixture.vertical.getScrollY() > 0);
 		assertEquals(before, band.getValueDb());
 		ViewGroup actions = (ViewGroup) fixture.screen.getChildAt(1);
@@ -82,9 +79,8 @@ public class AudioEffectsScreenTouchTest {
 	}
 
 	@Test
-	public void horizontalBandGestureDoesNotChangeBandValueWhenBandsUseBankPaging() throws Exception {
+	public void equalizerUsesOneNonScrollingBandStrip() throws Exception {
 		Fixture fixture = fixture(480, 1080);
-		HorizontalScrollView bandScroll = find(fixture.screen, HorizontalScrollView.class);
 		AudioEffectsBandView band = find(fixture.screen, AudioEffectsBandView.class);
 		int before = band.getValueDb();
 		int x = left(band, fixture.recycler) + band.getWidth() / 2;
@@ -93,7 +89,14 @@ public class AudioEffectsScreenTouchTest {
 		swipe(fixture.recycler, x, y, x - 220, y, 8);
 
 		assertEquals(before, band.getValueDb());
-		assertEquals(0, bandScroll.getScrollX());
+		assertEquals(0, findAll(fixture.screen, android.widget.HorizontalScrollView.class).size());
+		java.util.List<AudioEffectsBandView> bands = findAll(fixture.screen,
+				AudioEffectsBandView.class);
+		ViewGroup strip = (ViewGroup) bands.get(0).getParent();
+		assertEquals(10, bands.size());
+		assertTrue(bands.get(bands.size() - 1).getRight() <= strip.getWidth());
+		assertTrue(bands.get(1).getLeft() - bands.get(0).getRight() <=
+				Math.round(2 * fixture.screen.getResources().getDisplayMetrics().density));
 	}
 
 	@Test
@@ -140,10 +143,10 @@ public class AudioEffectsScreenTouchTest {
 	}
 
 	@Test
-	public void narrowEditorUsesTwoReadableBandGroupsAndScrollsToTheLastEffect() throws Exception {
+	public void narrowEditorShowsAllBandsAndScrollsToTheLastEffect() throws Exception {
 		Fixture fixture = fixture(320, 240);
 
-		assertEquals(5, visibleBands(fixture.screen));
+		assertEquals(10, visibleBands(fixture.screen));
 		fixture.vertical.fullScroll(View.FOCUS_DOWN);
 		SeekBar lastSeek = findAll(fixture.screen, SeekBar.class).get(
 				findAll(fixture.screen, SeekBar.class).size() - 1);
@@ -250,9 +253,6 @@ public class AudioEffectsScreenTouchTest {
 				public String[] getStringArray(int id) throws NotFoundException {
 					if (id == R.array.audio_effects_presets) {
 						return new String[]{"Flat", "Pop", "Rock", "Classical", "Dance", "Custom"};
-					}
-					if (id == R.array.audio_effects_band_banks) {
-						return new String[]{"31-500 Hz", "1-16 kHz"};
 					}
 					return source.getStringArray(id);
 				}

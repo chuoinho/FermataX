@@ -6,44 +6,22 @@ import me.aap.fermata.media.audio.AudioEffectsProfile;
 final class AudioEffectsScreenLayoutPolicy {
 	enum GestureAxis { UNDECIDED, VERTICAL, HORIZONTAL }
 
-	private static final int PHONE_MIN_BAND_WIDTH_DP = 48;
-	private static final int AUTO_MIN_BAND_WIDTH_DP = 64;
-	private static final int BAND_GAP_DP = 4;
-	private static final int BAND_TRAILING_PADDING_DP = 0;
-	static final int BANK_SIZE = 5;
+	private static final int BAND_GAP_DP = 2;
 	static final int EQ_SCALE_WIDTH_DP = 28;
 
 	private AudioEffectsScreenLayoutPolicy() {
 	}
 
-	static int bandWidthDp(boolean automotive) {
-		return automotive ? AUTO_MIN_BAND_WIDTH_DP : PHONE_MIN_BAND_WIDTH_DP;
-	}
-
-	static int bandStripWidthDp(boolean automotive) {
-		return bandStripWidthDp(AudioEffectsProfile.CANONICAL_FREQ_HZ.length, automotive);
-	}
-
-	static boolean needsHorizontalScroll(int availableWidthDp, boolean automotive) {
-		return needsBandBanks(availableWidthDp, automotive);
-	}
-
-	static boolean needsBandBanks(int availableWidthDp, boolean automotive) {
-		return bandStripWidthDp(automotive) > Math.max(0, availableWidthDp);
-	}
-
-	static int bandWidthDp(int availableWidthDp, boolean automotive, int bandCount) {
+	static int bandWidthDp(int availableWidthDp, int bandCount) {
 		if ((bandCount <= 0) || (bandCount > AudioEffectsProfile.CANONICAL_FREQ_HZ.length)) {
 			throw new IllegalArgumentException("Unexpected EQ band count");
 		}
-		int minimum = bandWidthDp(automotive);
 		int gaps = (bandCount - 1) * BAND_GAP_DP;
-		return Math.max(minimum, (Math.max(0, availableWidthDp) - gaps) / bandCount);
+		return Math.max(1, (Math.max(0, availableWidthDp) - gaps) / bandCount);
 	}
 
-	static int bandStripWidthDp(int bandCount, boolean automotive) {
-		return (bandCount * bandWidthDp(automotive)) +
-				((bandCount - 1) * BAND_GAP_DP) + BAND_TRAILING_PADDING_DP;
+	static int bandGapDp() {
+		return BAND_GAP_DP;
 	}
 
 	static int contentHeightDp(int availableHeightDp, int actionHeightDp) {

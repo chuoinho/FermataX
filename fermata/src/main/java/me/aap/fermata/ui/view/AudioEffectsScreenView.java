@@ -2,8 +2,6 @@ package me.aap.fermata.ui.view;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -11,7 +9,6 @@ import android.content.ContextWrapper;
 import android.content.res.Configuration;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.text.InputType;
 import android.util.TypedValue;
@@ -20,16 +17,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.appcompat.widget.AppCompatButton;
@@ -50,7 +43,9 @@ import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.FermataActivity;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.UiUtils;
 
 /** Shared native EQ editor used by the phone and projected settings surfaces. */
 public final class AudioEffectsScreenView extends FrameLayout
@@ -65,13 +60,10 @@ public final class AudioEffectsScreenView extends FrameLayout
 	private final LinearLayout equalizerColumn;
 	private final LinearLayout effectsColumn;
 	private final EqualizerScaleView equalizerScale;
-	private final LinearLayout bankTabs;
 	private final ScrollView verticalScroll;
 	private final AudioEffectsApplyView actions;
-	private final HorizontalScrollView bandScroll;
 	private final LinearLayout bandStrip;
-	private final Spinner preset;
-	private final Button[] bankButtons;
+	private final Button preset;
 	private final SwitchCompat masterSwitch;
 	private final SwitchCompat bassBoostSwitch;
 	private final SwitchCompat loudnessSwitch;
@@ -85,7 +77,6 @@ public final class AudioEffectsScreenView extends FrameLayout
 	private final int surfaceColor;
 	private final boolean automotive;
 	private boolean updating;
-	private int selectedBank;
 
 	public AudioEffectsScreenView(Context context, AudioEffectsDraft draft,
 			MediaSessionCallback callback) {
@@ -135,23 +126,11 @@ public final class AudioEffectsScreenView extends FrameLayout
 		TextView presetLabel = textView(16);
 		presetLabel.setText(R.string.preset_name);
 		presetRow.addView(presetLabel, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
-		preset = new Spinner(context);
+		preset = buttonText("");
 		preset.setContentDescription(context.getString(R.string.preset_name));
-		preset.setPopupBackgroundDrawable(new ColorDrawable(surfaceColor));
-		preset.setAdapter(new PresetAdapter(context, presetLabels()));
 		presetRow.addView(preset, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
 		content.addView(presetRow);
-		preset.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-			@Override
-			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-				AudioEffectsPreset selected = AudioEffectsPreset.values()[position];
-				if (!updating && selected.hasCurve()) draft.applyPreset(selected);
-			}
-
-			@Override
-			public void onNothingSelected(AdapterView<?> parent) {
-			}
-		});
+		preset.setOnClickListener(v -> showPresetMenu());
 		equalizerColumn = new LinearLayout(context);
 		equalizerColumn.setOrientation(LinearLayout.VERTICAL);
 		effectsColumn = new LinearLayout(context);
@@ -161,31 +140,13 @@ public final class AudioEffectsScreenView extends FrameLayout
 		body.setBaselineAligned(false);
 		equalizerScale = new EqualizerScaleView(context);
 
-		bankTabs = new LinearLayout(context);
-		bankTabs.setOrientation(LinearLayout.HORIZONTAL);
-		bankTabs.setVisibility(GONE);
-		bankButtons = new Button[2];
-		String[] bankLabels = getResources().getStringArray(R.array.audio_effects_band_banks);
-		for (int i = 0; i < bankButtons.length; i++) {
-			final int bank = i;
-			bankButtons[i] = buttonText(bankLabels[i]);
-			bankButtons[i].setOnClickListener(v -> showBank(bank));
-			bankTabs.addView(bankButtons[i], new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
-		}
-
-		equalizerColumn.addView(bankTabs, new LinearLayout.LayoutParams(MATCH_PARENT, dp(48)));
-
-		bandScroll = new BandScrollView(context);
-		bandScroll.setHorizontalScrollBarEnabled(true);
-		bandScroll.setScrollbarFadingEnabled(false);
-		bandScroll.setFillViewport(false);
-		bandScroll.setContentDescription(context.getString(R.string.audio_effects_band_scroll));
 		bandStrip = new LinearLayout(context);
 		bandStrip.setOrientation(LinearLayout.HORIZONTAL);
 		bandStrip.setGravity(Gravity.CENTER_VERTICAL);
 		bandStrip.setPadding(0, 0, 0, 0);
+		bandStrip.setContentDescription(context.getString(R.string.audio_effects_band_scroll));
 		bands = new AudioEffectsBandView[AudioEffectsProfile.CANONICAL_FREQ_HZ.length];
-		int bandWidth = dp(AudioEffectsScreenLayoutPolicy.bandWidthDp(automotive));
+		int bandWidth = dp(1);
 		for (int i = 0; i < bands.length; i++) {
 			bands[i] = new AudioEffectsBandView(context, store,
 					AudioEffectsProfileRepository.CANONICAL_CURVE_DB[i],
@@ -197,15 +158,14 @@ public final class AudioEffectsScreenView extends FrameLayout
 			}
 			LinearLayout.LayoutParams bandParams = new LinearLayout.LayoutParams(bandWidth,
 					dp(BAND_HEIGHT_DP));
-			bandParams.setMargins(i == 0 ? 0 : dp(8), 0, 0, 0);
+			bandParams.setMargins(i == 0 ? 0 : dp(AudioEffectsScreenLayoutPolicy.bandGapDp()), 0, 0, 0);
 			bandStrip.addView(bands[i], bandParams);
 		}
-		bandScroll.addView(bandStrip, new ViewGroup.LayoutParams(WRAP_CONTENT, dp(BAND_HEIGHT_DP)));
 		LinearLayout bandArea = new LinearLayout(context);
 		bandArea.setOrientation(LinearLayout.HORIZONTAL);
 		bandArea.addView(equalizerScale, new LinearLayout.LayoutParams(dp(
 				AudioEffectsScreenLayoutPolicy.EQ_SCALE_WIDTH_DP), dp(BAND_HEIGHT_DP)));
-		bandArea.addView(bandScroll, new LinearLayout.LayoutParams(0, dp(BAND_HEIGHT_DP), 1f));
+		bandArea.addView(bandStrip, new LinearLayout.LayoutParams(0, dp(BAND_HEIGHT_DP), 1f));
 		equalizerColumn.addView(bandArea, new LinearLayout.LayoutParams(MATCH_PARENT,
 				dp(BAND_HEIGHT_DP)));
 
@@ -276,11 +236,33 @@ public final class AudioEffectsScreenView extends FrameLayout
 		}
 		for (AudioEffectsBandView band : bands) band.setEnabled(master);
 		for (GainControl control : gainControls) control.refresh();
-		int[] curve = new int[bands.length];
-		for (int i = 0; i < bands.length; i++) curve[i] = bands[i].getValueDb();
-		preset.setSelection(AudioEffectsPreset.match(curve).ordinal(), false);
+		preset.setText(presetLabels()[currentPreset().ordinal()]);
 		preset.setEnabled(!draft.isApplying());
 		updating = false;
+	}
+
+	private void showPresetMenu() {
+		MainActivityDelegate.get(getContext()).getContextMenu().show(b -> {
+			b.setTitle(R.string.preset_name);
+			b.setSelectionHandler(item -> {
+				AudioEffectsPreset selected = item.getData();
+				if (selected.hasCurve()) draft.applyPreset(selected);
+				return true;
+			});
+			AudioEffectsPreset current = currentPreset();
+			String[] labels = presetLabels();
+			for (int i = 0; i < labels.length; i++) {
+				var item = b.addItem(UiUtils.getArrayItemId(i), labels[i])
+						.setData(AudioEffectsPreset.values()[i]);
+				if (item.getData() == current) b.setSelectedItem(item);
+			}
+		});
+	}
+
+	private AudioEffectsPreset currentPreset() {
+		int[] curve = new int[bands.length];
+		for (int i = 0; i < bands.length; i++) curve[i] = bands[i].getValueDb();
+		return AudioEffectsPreset.match(curve);
 	}
 
 	private String[] presetLabels() {
@@ -295,37 +277,21 @@ public final class AudioEffectsScreenView extends FrameLayout
 		return button;
 	}
 
-	private void showBank(int bank) {
-		selectedBank = bank;
-		for (int i = 0; i < bands.length; i++) {
-			bands[i].setVisibility((bankTabs.getVisibility() == VISIBLE) &&
-					i / AudioEffectsScreenLayoutPolicy.BANK_SIZE != selectedBank ? GONE : VISIBLE);
-		}
-		for (int i = 0; i < bankButtons.length; i++) bankButtons[i].setSelected(i == selectedBank);
-		bandScroll.scrollTo(0, 0);
-		bandStrip.requestLayout();
-	}
-
 	private void updateLayoutForSize(int widthPx, int heightPx) {
 		int widthDp = Math.max(0, Math.round(widthPx / density));
 		body.setOrientation(LinearLayout.VERTICAL);
 		int contentWidthDp = Math.max(0, widthDp - (CONTENT_PADDING_DP * 2) -
 				AudioEffectsScreenLayoutPolicy.EQ_SCALE_WIDTH_DP);
-		int count = AudioEffectsScreenLayoutPolicy.needsBandBanks(contentWidthDp, automotive) ?
-				AudioEffectsScreenLayoutPolicy.BANK_SIZE : bands.length;
-		int width = AudioEffectsScreenLayoutPolicy.bandWidthDp(contentWidthDp, automotive, count);
+		int width = AudioEffectsScreenLayoutPolicy.bandWidthDp(contentWidthDp, bands.length);
 		for (int i = 0; i < bands.length; i++) {
 			ViewGroup.LayoutParams raw = bands[i].getLayoutParams();
 			LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) raw;
 			params.width = dp(width);
 			params.height = dp(BAND_HEIGHT_DP);
-			params.leftMargin = (i % AudioEffectsScreenLayoutPolicy.BANK_SIZE == 0) ? 0 :
-					dp(4);
+			params.leftMargin = i == 0 ? 0 : dp(AudioEffectsScreenLayoutPolicy.bandGapDp());
 			bands[i].setLayoutParams(params);
 		}
-		bankTabs.setVisibility(count == AudioEffectsScreenLayoutPolicy.BANK_SIZE ? VISIBLE : GONE);
-		if (count == bands.length) selectedBank = 0;
-		showBank(selectedBank);
+		bandStrip.requestLayout();
 	}
 
 	private void refreshSwitch(SwitchCompat toggle,
@@ -477,55 +443,6 @@ public final class AudioEffectsScreenView extends FrameLayout
 				disabledSurface, selectedSurface, selectedSurface, selectedSurface, surface}));
 	}
 
-	private final class PresetAdapter extends ArrayAdapter<String> {
-		PresetAdapter(Context context, String[] labels) {
-			super(context, android.R.layout.simple_spinner_item, labels);
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			return createView(position, false);
-		}
-
-		@Override
-		public View getDropDownView(int position, View convertView, ViewGroup parent) {
-			View view = createView(position, true);
-			view.setSelected(position == preset.getSelectedItemPosition());
-			return view;
-		}
-
-		private TextView createView(int position, boolean dropDown) {
-			TextView view = new TextView(AudioEffectsScreenView.this.getContext());
-			view.setText(getItem(position));
-			view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-			int normalText = readableText(surfaceColor);
-			int selectedText = readableText(stateSurface(surfaceColor));
-			view.setTextColor(new ColorStateList(new int[][]{
-					new int[]{-android.R.attr.state_enabled},
-					new int[]{android.R.attr.state_selected},
-					new int[]{android.R.attr.state_pressed},
-					new int[]{android.R.attr.state_focused},
-					new int[]{}
-			}, new int[]{normalText, selectedText, selectedText, selectedText, normalText}));
-			view.setGravity(Gravity.CENTER_VERTICAL);
-			view.setMinHeight(dp(48));
-			view.setPadding(dp(12), 0, dp(12), 0);
-			GradientDrawable background = new GradientDrawable();
-			background.setColor(Color.WHITE);
-			view.setBackground(background);
-			view.setBackgroundTintList(new ColorStateList(new int[][]{
-					new int[]{-android.R.attr.state_enabled},
-					new int[]{android.R.attr.state_selected},
-					new int[]{android.R.attr.state_pressed},
-					new int[]{android.R.attr.state_focused},
-					new int[]{}
-			}, new int[]{surfaceColor, stateSurface(surfaceColor), stateSurface(surfaceColor),
-					stateSurface(surfaceColor), surfaceColor}));
-			if (!dropDown) view.setSelected(false);
-			return view;
-		}
-	}
-
 	private static final class EqualizerScaleView extends View {
 		private final float density;
 		private final float scaledDensity;
@@ -611,38 +528,6 @@ public final class AudioEffectsScreenView extends FrameLayout
 
 	private int dp(int value) {
 		return Math.round(value * getResources().getDisplayMetrics().density);
-	}
-
-	/** Lets the vertical page own drags in the viewport beside the narrower band strip. */
-	private static final class BandScrollView extends HorizontalScrollView {
-		BandScrollView(Context context) {
-			super(context);
-		}
-
-		@Override
-		public boolean onInterceptTouchEvent(MotionEvent event) {
-			if ((event.getActionMasked() == MotionEvent.ACTION_DOWN) && !isInChild(event)) {
-				return false;
-			}
-			return super.onInterceptTouchEvent(event);
-		}
-
-		@Override
-		public boolean onTouchEvent(MotionEvent event) {
-			if ((event.getActionMasked() == MotionEvent.ACTION_DOWN) && !isInChild(event)) {
-				return false;
-			}
-			return super.onTouchEvent(event);
-		}
-
-		private boolean isInChild(MotionEvent event) {
-			View child = getChildAt(0);
-			if (child == null) return false;
-			float x = event.getX() + getScrollX();
-			float y = event.getY();
-			return (x >= child.getLeft()) && (x < child.getRight()) &&
-					(y >= child.getTop()) && (y < child.getBottom());
-		}
 	}
 
 	private static final class BandPageScrollView extends ScrollView {
