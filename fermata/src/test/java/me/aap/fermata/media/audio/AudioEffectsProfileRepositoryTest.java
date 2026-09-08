@@ -54,6 +54,16 @@ public class AudioEffectsProfileRepositoryTest {
 	}
 
 	@Test
+	public void invalidVirtualizerModeFallsBackToAuto() {
+		AudioEffectsProfile profile = new AudioEffectsProfile(AudioEffectsProfile.SCHEMA_VERSION,
+				true, false, AudioEffectsProfile.flatCurveDb(), 0, false, 0,
+				false, 0, true, 500, Integer.MAX_VALUE);
+
+		assertEquals(android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO,
+				profile.virtualizerMode());
+	}
+
+	@Test
 	public void rawLegacyBandsRemainPendingAndAreNeverFabricatedIntoTheCanonicalCurve() {
 		BasicPreferenceStore legacy = new BasicPreferenceStore();
 		legacy.applyBooleanPref(MediaPrefs.AE_ENABLED, true);

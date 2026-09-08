@@ -2,6 +2,7 @@ package me.aap.fermata.addon.tv.stalker;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 
@@ -85,11 +86,19 @@ final class StalkerItemId {
 	}
 
 	private static String encode(String value) {
-		return URLEncoder.encode(value, UTF_8).replace("+", "%20");
+		try {
+			return URLEncoder.encode(value, UTF_8.name()).replace("+", "%20");
+		} catch (UnsupportedEncodingException impossible) {
+			throw new AssertionError(impossible);
+		}
 	}
 
 	private static String decode(String value) {
-		return URLDecoder.decode(value, UTF_8);
+		try {
+			return URLDecoder.decode(value, UTF_8.name());
+		} catch (UnsupportedEncodingException impossible) {
+			throw new AssertionError(impossible);
+		}
 	}
 
 	private static String[] split(String id, String scheme, int expected) {

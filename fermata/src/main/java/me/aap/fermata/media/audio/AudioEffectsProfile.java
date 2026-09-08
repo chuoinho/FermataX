@@ -1,7 +1,13 @@
 package me.aap.fermata.media.audio;
 
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
+import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_BINAURAL;
+import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_TRANSAURAL;
 
+import androidx.annotation.IntDef;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -10,6 +16,12 @@ import java.util.Objects;
  * frequencies; mapping it to a device Equalizer belongs to a later playback phase.
  */
 public final class AudioEffectsProfile {
+	@IntDef({VIRTUALIZATION_MODE_AUTO, VIRTUALIZATION_MODE_BINAURAL,
+			VIRTUALIZATION_MODE_TRANSAURAL})
+	@Retention(RetentionPolicy.SOURCE)
+	public @interface VirtualizationMode {
+	}
+
 	public static final int SCHEMA_VERSION = 1;
 	public static final int MIN_CANONICAL_DB = -15;
 	public static final int MAX_CANONICAL_DB = 15;
@@ -48,7 +60,7 @@ public final class AudioEffectsProfile {
 		this.loudnessGain = loudnessGain;
 		this.virtualizerEnabled = virtualizerEnabled;
 		this.virtualizerStrength = virtualizerStrength;
-		this.virtualizerMode = virtualizerMode;
+		this.virtualizerMode = sanitizeVirtualizerMode(virtualizerMode);
 	}
 
 	public static AudioEffectsProfile defaults() {
@@ -104,8 +116,18 @@ public final class AudioEffectsProfile {
 		return virtualizerStrength;
 	}
 
+	@VirtualizationMode
 	public int virtualizerMode() {
 		return virtualizerMode;
+	}
+
+	@VirtualizationMode
+	private static int sanitizeVirtualizerMode(int mode) {
+		return switch (mode) {
+			case VIRTUALIZATION_MODE_BINAURAL -> VIRTUALIZATION_MODE_BINAURAL;
+			case VIRTUALIZATION_MODE_TRANSAURAL -> VIRTUALIZATION_MODE_TRANSAURAL;
+			default -> VIRTUALIZATION_MODE_AUTO;
+		};
 	}
 
 	@Override
