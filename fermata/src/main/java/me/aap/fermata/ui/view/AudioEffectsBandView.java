@@ -8,6 +8,7 @@ import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewParent;
 
 import androidx.core.content.ContextCompat;
 
@@ -38,8 +39,10 @@ final class AudioEffectsBandView extends View implements PreferenceStore.Listene
 	private final int touchSlop;
 	private final ValueClickListener valueClickListener;
 	private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+	private float downX;
 	private float downY;
-	private boolean dragging;
+	private AudioEffectsScreenLayoutPolicy.GestureAxis gestureAxis =
+			AudioEffectsScreenLayoutPolicy.GestureAxis.UNDECIDED;
 
 	AudioEffectsBandView(Context context, PreferenceStore store,
 			PreferenceStore.Pref<me.aap.utils.function.IntSupplier> pref, int frequencyHz,
@@ -150,25 +153,39 @@ final class AudioEffectsBandView extends View implements PreferenceStore.Listene
 		if (!isEnabled()) return true;
 		switch (event.getActionMasked()) {
 			case MotionEvent.ACTION_DOWN -> {
+				downX = event.getX();
 				downY = event.getY();
-				dragging = false;
+				gestureAxis = AudioEffectsScreenLayoutPolicy.GestureAxis.UNDECIDED;
+				disallowParentIntercept(true);
 				return true;
 			}
 			case MotionEvent.ACTION_MOVE -> {
-				if (Math.abs(event.getY() - downY) > touchSlop) dragging = true;
-				if (dragging) setValueFromY(event.getY());
-				return true;
-			}
-			case MotionEvent.ACTION_UP -> {
-				if (dragging) {
+				if (gestureAxis == AudioEffectsScreenLayoutPolicy.GestureAxis.UNDECIDED) {
+					gestureAxis = AudioEffectsScreenLayoutPolicy.resolveBandGestureAxis(
+							event.getX() - downX, event.getY() - downY, touchSlop);
+					if (gestureAxis == AudioEffectsScreenLayoutPolicy.GestureAxis.HORIZONTAL) {
+						disallowParentIntercept(false);
+						return true;
+					}
+				}
+				if (gestureAxis == AudioEffectsScreenLayoutPolicy.GestureAxis.VERTICAL) {
 					setValueFromY(event.getY());
-				} else if (event.getY() <= dp(VALUE_HEIGHT_DP)) {
-					performClick();
 				}
 				return true;
 			}
+			case MotionEvent.ACTION_UP -> {
+				if (gestureAxis == AudioEffectsScreenLayoutPolicy.GestureAxis.VERTICAL) {
+					setValueFromY(event.getY());
+				} else if ((gestureAxis == AudioEffectsScreenLayoutPolicy.GestureAxis.UNDECIDED) &&
+						event.getY() <= dp(VALUE_HEIGHT_DP)) {
+					performClick();
+				}
+				disallowParentIntercept(false);
+				return true;
+			}
 			case MotionEvent.ACTION_CANCEL -> {
-				dragging = false;
+				gestureAxis = AudioEffectsScreenLayoutPolicy.GestureAxis.UNDECIDED;
+				disallowParentIntercept(false);
 				return true;
 			}
 			default -> {
@@ -220,6 +237,11 @@ final class AudioEffectsBandView extends View implements PreferenceStore.Listene
 		float bottom = Math.max(top + dp(80), getHeight() - dp(FREQUENCY_HEIGHT_DP));
 		float position = (y - top) / Math.max(1f, bottom - top);
 		setValueDb(EqualizerCurveGeometry.gainDb(position));
+	}
+
+	private void disallowParentIntercept(boolean disallow) {
+		ViewParent parent = getParent();
+		if (parent != null) parent.requestDisallowInterceptTouchEvent(disallow);
 	}
 
 	private String accessibilityText() {

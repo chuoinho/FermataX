@@ -1,7 +1,5 @@
 package me.aap.fermata.ui.view;
 
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
@@ -24,6 +22,7 @@ import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
@@ -34,6 +33,7 @@ import java.util.function.IntConsumer;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
+import me.aap.fermata.media.audio.AudioEffectCapability;
 import me.aap.fermata.media.audio.AudioEffectsDraft;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
@@ -50,14 +50,11 @@ public final class AudioEffectsScreenView extends FrameLayout
 	private final LinearLayout content;
 	private final ScrollView verticalScroll;
 	private final AudioEffectsApplyView actions;
-	private final TextView curveMode;
 	private final Button setFlat;
-	private final TextView additionalToggle;
-	private final LinearLayout additionalBody;
 	private final SwitchCompat masterSwitch;
-	private final SwitchCompat equalizerSwitch;
 	private final SwitchCompat bassBoostSwitch;
 	private final SwitchCompat loudnessSwitch;
+	@androidx.annotation.Nullable
 	private final SwitchCompat virtualizerSwitch;
 	private final List<GainControl> gainControls = new ArrayList<>();
 	private final AudioEffectsBandView[] bands;
@@ -92,12 +89,9 @@ public final class AudioEffectsScreenView extends FrameLayout
 		addView(actions, actionParams);
 
 		masterSwitch = addSwitchRow(content, R.string.audio_effects, AudioEffectsProfileRepository.ENABLED);
-		equalizerSwitch = addSwitchRow(content, R.string.equalizer,
-				AudioEffectsProfileRepository.EQUALIZER_ENABLED);
 
 		LinearLayout modeRow = createRow();
-		curveMode = textView(16);
-		modeRow.addView(curveMode, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
+		modeRow.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
 		setFlat = button(R.string.audio_effects_set_flat);
 		modeRow.addView(setFlat, new LinearLayout.LayoutParams(WRAP_CONTENT, MATCH_PARENT));
 		content.addView(modeRow);
@@ -139,38 +133,28 @@ public final class AudioEffectsScreenView extends FrameLayout
 		content.addView(bandScroll, new LinearLayout.LayoutParams(MATCH_PARENT,
 				dp(BAND_HEIGHT_DP)));
 
-		additionalToggle = textView(16);
-		additionalToggle.setTextColor(primaryColor);
-		additionalToggle.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-		additionalToggle.setPadding(dp(8), 0, dp(8), 0);
-		additionalToggle.setFocusable(true);
-		additionalToggle.setClickable(true);
-		additionalToggle.setMinHeight(dp(56));
-		content.addView(additionalToggle, new LinearLayout.LayoutParams(MATCH_PARENT, dp(56)));
-		additionalBody = new LinearLayout(context);
-		additionalBody.setOrientation(LinearLayout.VERTICAL);
-		additionalBody.setVisibility(GONE);
-		content.addView(additionalBody, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
-		additionalToggle.setOnClickListener(v -> setAdditionalExpanded(additionalBody.getVisibility() != VISIBLE));
-
-		addGainControl(additionalBody, R.string.preamp, AudioEffectsProfileRepository.PREAMP_DB,
+		addGainControl(content, R.string.preamp, AudioEffectsProfileRepository.PREAMP_DB,
 				AudioEffectsProfile.MIN_CANONICAL_DB, 0);
-		bassBoostSwitch = addSwitchRow(additionalBody, R.string.bass_boost,
+		bassBoostSwitch = addSwitchRow(content, R.string.bass_boost,
 				AudioEffectsProfileRepository.BASS_BOOST_ENABLED);
-		addGainControl(additionalBody, R.string.strength,
+		addGainControl(content, R.string.strength,
 				AudioEffectsProfileRepository.BASS_BOOST_STRENGTH, 0, 1_000,
 				AudioEffectsProfileRepository.BASS_BOOST_ENABLED);
-		loudnessSwitch = addSwitchRow(additionalBody, R.string.vol_boost,
+		loudnessSwitch = addSwitchRow(content, R.string.vol_boost,
 				AudioEffectsProfileRepository.LOUDNESS_ENABLED);
-		addGainControl(additionalBody, R.string.strength,
+		addGainControl(content, R.string.strength,
 				AudioEffectsProfileRepository.LOUDNESS_GAIN, 0, 1_000,
 				AudioEffectsProfileRepository.LOUDNESS_ENABLED);
-		virtualizerSwitch = addSwitchRow(additionalBody, R.string.virtualizer,
-				AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
-		addGainControl(additionalBody, R.string.strength,
-				AudioEffectsProfileRepository.VIRTUALIZER_STRENGTH, 0, 1_000,
-				AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
-		addVirtualizerMode(additionalBody, AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
+		if (callback.getAudioEffectsCapabilities().contains(AudioEffectCapability.VIRTUALIZER)) {
+			virtualizerSwitch = addSwitchRow(content, R.string.virtualizer,
+					AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
+			addGainControl(content, R.string.strength,
+					AudioEffectsProfileRepository.VIRTUALIZER_STRENGTH, 0, 1_000,
+					AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
+			addVirtualizerMode(content, AudioEffectsProfileRepository.VIRTUALIZER_ENABLED);
+		} else {
+			virtualizerSwitch = null;
+		}
 
 		refreshFromStore();
 	}
@@ -211,28 +195,16 @@ public final class AudioEffectsScreenView extends FrameLayout
 		if (updating) return;
 		updating = true;
 		boolean master = store.getBooleanPref(AudioEffectsProfileRepository.ENABLED);
-		boolean equalizer = store.getBooleanPref(AudioEffectsProfileRepository.EQUALIZER_ENABLED);
 		masterSwitch.setChecked(master);
-		equalizerSwitch.setEnabled(master);
-		equalizerSwitch.setChecked(equalizer);
 		refreshSwitch(bassBoostSwitch, AudioEffectsProfileRepository.BASS_BOOST_ENABLED, master);
 		refreshSwitch(loudnessSwitch, AudioEffectsProfileRepository.LOUDNESS_ENABLED, master);
-		refreshSwitch(virtualizerSwitch, AudioEffectsProfileRepository.VIRTUALIZER_ENABLED, master);
-		for (AudioEffectsBandView band : bands) band.setEnabled(master && equalizer);
+		if (virtualizerSwitch != null) {
+			refreshSwitch(virtualizerSwitch, AudioEffectsProfileRepository.VIRTUALIZER_ENABLED, master);
+		}
+		for (AudioEffectsBandView band : bands) band.setEnabled(master);
 		for (GainControl control : gainControls) control.refresh();
-		curveMode.setText(isFlat() ? R.string.audio_effects_flat : R.string.audio_effects_custom);
-		additionalToggle.setText(additionalBody.getVisibility() == VISIBLE ?
-				R.string.audio_effects_collapse : R.string.audio_effects_additional);
 		setFlat.setEnabled(!draft.isApplying());
 		updating = false;
-	}
-
-	private boolean isFlat() {
-		for (PreferenceStore.Pref<me.aap.utils.function.IntSupplier> pref :
-				AudioEffectsProfileRepository.CANONICAL_CURVE_DB) {
-			if (store.getIntPref(pref) != 0) return false;
-		}
-		return true;
 	}
 
 	private SwitchCompat addSwitchRow(LinearLayout parent, int title,
@@ -340,12 +312,6 @@ public final class AudioEffectsScreenView extends FrameLayout
 		dialog.show();
 	}
 
-	private void setAdditionalExpanded(boolean expanded) {
-		additionalBody.setVisibility(expanded ? VISIBLE : GONE);
-		refreshFromStore();
-		requestLayout();
-	}
-
 	private LinearLayout createRow() {
 		LinearLayout row = new LinearLayout(getContext());
 		row.setOrientation(LinearLayout.HORIZONTAL);
@@ -363,7 +329,8 @@ public final class AudioEffectsScreenView extends FrameLayout
 	}
 
 	private Button button(int text) {
-		Button button = new Button(getContext());
+		AppCompatButton button = new AppCompatButton(getContext(), null,
+				androidx.appcompat.R.attr.buttonStyle);
 		button.setText(text);
 		button.setAllCaps(false);
 		button.setMinHeight(dp(48));

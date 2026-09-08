@@ -102,6 +102,12 @@ public final class AudioEffectsDraft {
 	public AudioEffectsProfile beginApply() {
 		if (applying) return null;
 		AudioEffectsProfile next = snapshot();
+		if (!next.equalizerEnabled()) {
+			try (PreferenceStore.Edit edit = store.editPreferenceStore(false)) {
+				edit.setBooleanPref(AudioEffectsProfileRepository.EQUALIZER_ENABLED, true);
+			}
+			next = snapshot();
+		}
 		try {
 			repository.save(next);
 		} catch (RuntimeException error) {

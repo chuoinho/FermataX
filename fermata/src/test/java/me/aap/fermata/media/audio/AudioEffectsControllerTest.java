@@ -238,6 +238,22 @@ public class AudioEffectsControllerTest {
 		assertTrue(fixture.controller.requiresFreshBackend(enabledProfile(-5)));
 	}
 
+	@Test
+	public void exposesCapabilitiesOnlyFromTheActiveBackend() {
+		Fixture fixture = new Fixture(new BasicPreferenceStore(), null,
+				sessionId -> new VirtualizerBackend());
+		fixture.repository.save(enabledProfile(0));
+
+		assertTrue(fixture.controller.getCapabilities().isEmpty());
+		MediaEngine engine = engine(41);
+		fixture.controller.bind(engine);
+
+		assertEquals(EnumSet.of(AudioEffectCapability.VIRTUALIZER),
+				fixture.controller.getCapabilities());
+		fixture.controller.unbind(engine);
+		assertTrue(fixture.controller.getCapabilities().isEmpty());
+	}
+
 	private static AudioEffectsProfile enabledProfile(int preampDb) {
 		return new AudioEffectsProfile(AudioEffectsProfile.SCHEMA_VERSION, true, true,
 				AudioEffectsProfile.flatCurveDb(), preampDb, false, 0, false, 0, false, 0, 0);
@@ -348,6 +364,13 @@ public class AudioEffectsControllerTest {
 		public boolean apply(AudioEffectsProfile profile, boolean applyEqualizer) {
 			super.apply(profile, applyEqualizer);
 			return !applyEqualizer || applyEqualizerResult;
+		}
+	}
+
+	private static final class VirtualizerBackend extends FakeBackend {
+		@Override
+		public EnumSet<AudioEffectCapability> getCapabilities() {
+			return EnumSet.of(AudioEffectCapability.VIRTUALIZER);
 		}
 	}
 

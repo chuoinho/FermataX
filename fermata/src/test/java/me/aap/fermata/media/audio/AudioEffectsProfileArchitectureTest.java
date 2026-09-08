@@ -147,6 +147,43 @@ public class AudioEffectsProfileArchitectureTest {
 		assertTrue(screen.contains("AudioEffectsProfile.MAX_CANONICAL_DB"));
 	}
 
+	@Test
+	public void simplifiedScreenUsesMasterOnlyForBandsAndKeepsEffectsOpen() throws Exception {
+		String screen = source("ui/view/AudioEffectsScreenView.java");
+
+		assertFalse(screen.contains("equalizerSwitch"));
+		assertFalse(screen.contains("additionalToggle"));
+		assertFalse(screen.contains("curveMode"));
+		assertTrue(screen.contains("band.setEnabled(master)"));
+		assertTrue(screen.contains("addGainControl(content, R.string.preamp"));
+		assertTrue(screen.contains("addSwitchRow(content, R.string.bass_boost"));
+		assertTrue(screen.contains("addSwitchRow(content, R.string.vol_boost"));
+		assertTrue(screen.contains("AudioEffectCapability.VIRTUALIZER"));
+		assertTrue(screen.contains("getAudioEffectsCapabilities()"));
+		assertTrue(screen.contains("virtualizerSwitch = null"));
+	}
+
+	@Test
+	public void bandTouchArbitrationCanReleaseHorizontalStripScrolling() throws Exception {
+		String band = source("ui/view/AudioEffectsBandView.java");
+
+		assertTrue(band.contains("resolveBandGestureAxis"));
+		assertTrue(band.contains("disallowParentIntercept(true)"));
+		assertTrue(band.contains("disallowParentIntercept(false)"));
+	}
+
+	@Test
+	public void effectsButtonsUseThemedAppCompatStyling() throws Exception {
+		String screen = source("ui/view/AudioEffectsScreenView.java");
+		String actions = source("ui/view/AudioEffectsApplyView.java");
+
+		assertTrue(screen.contains("AppCompatButton"));
+		assertTrue(actions.contains("AppCompatButton"));
+		assertTrue(screen.contains("androidx.appcompat.R.attr.buttonStyle"));
+		assertTrue(actions.contains("androidx.appcompat.R.attr.buttonStyle"));
+		assertFalse(actions.contains("Color.GRAY"));
+	}
+
 	private static String source(String relativePath) throws Exception {
 		Path root = Path.of(System.getProperty("user.dir"));
 		Path file = root.resolve("src/main/java/me/aap/fermata").resolve(relativePath);

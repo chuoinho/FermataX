@@ -82,6 +82,7 @@ import androidx.media.AudioManagerCompat;
 
 import java.io.Closeable;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.concurrent.CancellationException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -92,6 +93,7 @@ import java.util.Queue;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.audio.AudioEffectCapability;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsController;
 import me.aap.fermata.media.engine.EngineSelection;
@@ -289,6 +291,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public MediaEngine getEngine() {
 		return engine;
 	}
+
+	public EnumSet<AudioEffectCapability> getAudioEffectsCapabilities() { return audioEffectsController.getCapabilities(); }
 
 	public void deferAudioEffectsProfile(@NonNull AudioEffectsProfile profile) { audioEffectsController.deferExplicitProfileBroadcast(profile); }
 	public void cancelDeferredAudioEffectsProfile() { audioEffectsController.cancelExplicitProfileBroadcast(); }

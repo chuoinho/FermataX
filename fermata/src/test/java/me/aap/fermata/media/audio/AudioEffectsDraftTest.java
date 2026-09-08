@@ -80,7 +80,31 @@ public class AudioEffectsDraftTest {
 	public void unchangedDraftCanBeExplicitlyApplied() {
 		AudioEffectsDraft draft = new AudioEffectsDraft(repository());
 
-		assertEquals(AudioEffectsProfile.defaults(), draft.beginApply());
+		AudioEffectsProfile applied = draft.beginApply();
+		assertTrue(applied.equalizerEnabled());
+		assertFalse(applied.enabled());
+		assertEquals(AudioEffectsProfile.defaults().canonicalCurveDb()[0], applied.canonicalCurveDb()[0]);
+	}
+
+	@Test
+	public void applyNormalizesLegacyEqualizerOffEvenWhenMasterIsOff() {
+		AudioEffectsProfileRepository repository = repository();
+		int[] curve = AudioEffectsProfile.flatCurveDb();
+		curve[4] = 9;
+		repository.save(new AudioEffectsProfile(AudioEffectsProfile.SCHEMA_VERSION, false, false,
+				curve, -2, false, 0, false, 0, false, 0, 0));
+		AudioEffectsDraft draft = new AudioEffectsDraft(repository);
+
+		assertFalse(draft.snapshot().equalizerEnabled());
+		assertFalse(repository.load().equalizerEnabled());
+
+		AudioEffectsProfile applied = draft.beginApply();
+
+		assertTrue(applied.equalizerEnabled());
+		assertFalse(applied.enabled());
+		assertTrue(draft.snapshot().equalizerEnabled());
+		assertTrue(repository.load().equalizerEnabled());
+		assertEquals(9, repository.load().canonicalCurveDb()[4]);
 	}
 
 	@Test

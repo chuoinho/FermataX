@@ -56,4 +56,15 @@ public class EqualizerCurveGeometryTest {
 		assertTrue(AudioEffectsScreenLayoutPolicy.actionIsWithinBounds(320, 256, 64));
 		assertFalse(AudioEffectsScreenLayoutPolicy.actionIsWithinBounds(320, 257, 64));
 	}
+
+	@Test
+	public void bandGestureArbitrationClaimsVerticalDragsAndYieldsHorizontalDrags() {
+		assertEquals(AudioEffectsScreenLayoutPolicy.GestureAxis.VERTICAL,
+				AudioEffectsScreenLayoutPolicy.resolveBandGestureAxis(2, 18, 8));
+		assertEquals(AudioEffectsScreenLayoutPolicy.GestureAxis.HORIZONTAL,
+				AudioEffectsScreenLayoutPolicy.resolveBandGestureAxis(18, 2, 8));
+		assertEquals(AudioEffectsScreenLayoutPolicy.GestureAxis.UNDECIDED,
+				AudioEffectsScreenLayoutPolicy.resolveBandGestureAxis(4, 5, 8));
+	}
+
 }

@@ -18,6 +18,7 @@ import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.utils.pref.PreferenceStore;
+import androidx.appcompat.widget.AppCompatButton;
 
 /** Standard preference-row action for committing and applying the shared EQ draft. */
 public final class AudioEffectsApplyView extends LinearLayout implements AudioEffectsDraft.Listener {
@@ -37,23 +38,17 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		setGravity(Gravity.CENTER_VERTICAL);
 		setBackgroundColor(resolveColor(context, android.R.attr.colorBackground, Color.TRANSPARENT));
 		status = new TextView(context);
-		status.setTextColor(Color.GRAY);
+		status.setTextColor(resolveColor(context, android.R.attr.textColorSecondary, 0xff808080));
 		status.setGravity(Gravity.CENTER_VERTICAL);
 		status.setMinHeight(dp(40));
 		addView(status, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		LinearLayout buttons = new LinearLayout(context);
 		buttons.setOrientation(HORIZONTAL);
 		buttons.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-		cancel = new Button(context);
-		cancel.setText(R.string.cancel);
-		cancel.setAllCaps(false);
-		cancel.setMinHeight(dp(48));
+		cancel = button(context, R.string.cancel);
 		cancel.setOnClickListener(v -> draft.discard());
 		buttons.addView(cancel, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
-		apply = new Button(context);
-		apply.setText(R.string.audio_effects_apply);
-		apply.setAllCaps(false);
-		apply.setMinHeight(dp(48));
+		apply = button(context, R.string.audio_effects_apply);
 		apply.setOnClickListener(v -> startApply());
 		buttons.addView(apply, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
 		addView(buttons, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
@@ -103,6 +98,14 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		if (!context.getTheme().resolveAttribute(attribute, value, true)) return fallback;
 		return (value.resourceId == 0) ? value.data :
 				androidx.core.content.ContextCompat.getColor(context, value.resourceId);
+	}
+
+	private static Button button(Context context, int text) {
+		AppCompatButton button = new AppCompatButton(context, null, androidx.appcompat.R.attr.buttonStyle);
+		button.setText(text);
+		button.setAllCaps(false);
+		button.setMinHeight(Math.round(48 * context.getResources().getDisplayMetrics().density));
+		return button;
 	}
 
 	private void startApply() {

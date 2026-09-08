@@ -4,6 +4,7 @@ import static android.media.AudioManager.ERROR;
 
 import androidx.annotation.Nullable;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import me.aap.fermata.media.engine.MediaEngine;
@@ -123,6 +124,13 @@ public final class AudioEffectsController implements PreferenceStore.Listener, A
 
 	boolean isEqualizerPendingForNextSession() {
 		return equalizerPendingForNextSession;
+	}
+
+	/** Returns capabilities reported by the currently bound native session backend. */
+	public synchronized EnumSet<AudioEffectCapability> getCapabilities() {
+		AudioEffectsBackend current = backend;
+		return (current == null) ? EnumSet.noneOf(AudioEffectCapability.class) :
+				current.getCapabilities().clone();
 	}
 
 	/** Prevents the persistence broadcast from applying before the explicit runtime transaction. */

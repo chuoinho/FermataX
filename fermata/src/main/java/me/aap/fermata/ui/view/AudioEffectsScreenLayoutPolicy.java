@@ -4,6 +4,8 @@ import me.aap.fermata.media.audio.AudioEffectsProfile;
 
 /** Pure responsive sizing rules for the shared EQ screen. */
 final class AudioEffectsScreenLayoutPolicy {
+	enum GestureAxis { UNDECIDED, VERTICAL, HORIZONTAL }
+
 	private static final int PHONE_BAND_WIDTH_DP = 56;
 	private static final int AUTO_BAND_WIDTH_DP = 72;
 	private static final int BAND_GAP_DP = 8;
@@ -34,4 +36,13 @@ final class AudioEffectsScreenLayoutPolicy {
 		return actionTopDp >= 0 && actionHeightDp >= 64 &&
 				actionTopDp + actionHeightDp <= totalHeightDp;
 	}
+
+	static GestureAxis resolveBandGestureAxis(float dx, float dy, int touchSlop) {
+		dx = Math.abs(dx);
+		dy = Math.abs(dy);
+		int slop = Math.max(1, touchSlop);
+		if (Math.max(dx, dy) <= slop) return GestureAxis.UNDECIDED;
+		return (dy >= dx) ? GestureAxis.VERTICAL : GestureAxis.HORIZONTAL;
+	}
+
 }
