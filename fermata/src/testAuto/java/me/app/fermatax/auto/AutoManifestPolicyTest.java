@@ -80,6 +80,16 @@ public class AutoManifestPolicyTest {
 		assertTrue(capabilities.contains("projection"));
 	}
 
+	@Test
+	public void autoManifestDoesNotRequestNavigationOnlyPermissions() throws Exception {
+		Document manifest = parse("src/auto/AndroidManifest.xml");
+
+		assertFalse(hasNamed(manifest, "uses-permission",
+				"androidx.car.app.ACCESS_SURFACE"));
+		assertFalse(hasNamed(manifest, "uses-permission",
+				"androidx.car.app.NAVIGATION_TEMPLATES"));
+	}
+
 	private static Document parse(String path) throws Exception {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setNamespaceAware(true);
