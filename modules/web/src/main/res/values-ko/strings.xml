@@ -17,6 +17,7 @@
 	<string name="video_quality">비디오 품질</string>
 	<string name="open_on_start">시작 시 열기</string>
 	<string name="auto_highest_video_quality">최고 비디오 품질 자동 선택</string>
+	<string name="yt_auto_fullscreen">자동 전체 화면</string>
 	<string name="try_to_skip_ad">광고를 스킵해 보세요</string>
 	<string name="sponsorblock_sub">YouTube를 시청하는 동안 크라우드 소싱 세그먼트를 건너뛰세요.</string>
 	<string name="sponsorblock_enable">SponsorBlock 활성화</string>

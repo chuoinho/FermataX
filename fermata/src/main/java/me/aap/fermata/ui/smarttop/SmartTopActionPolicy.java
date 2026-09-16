@@ -13,6 +13,7 @@ public final class SmartTopActionPolicy {
 		if (mode == SmartTopMode.EMPTY) return List.of(SmartTopAction.OPEN_ADDONS);
 		if (mode == SmartTopMode.RECOVERY) return List.of(SmartTopAction.RETRY);
 		if (mode == SmartTopMode.CURRENT) return current(capabilities);
+		if (mode == SmartTopMode.CURRENT_WEB) return capabilities.canPlayPause() ? List.of(SmartTopAction.PLAY_PAUSE) : List.of();
 
 		List<SmartTopAction> actions = new ArrayList<>(2);
 		actions.add(SmartTopAction.PLAY);

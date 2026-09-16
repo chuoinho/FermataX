@@ -17,6 +17,16 @@ public class TopBarPolicyTest {
 	}
 
 	@Test
+	public void hiddenBarsCannotBeResurrectedByAShellRefresh() {
+		assertEquals(GONE,
+				TopBarPolicy.resolveTopBarVisibility(R.id.youtube_fragment, true));
+		assertEquals(GONE,
+				TopBarPolicy.resolveTopBarVisibility(R.id.dashboard_fragment, true));
+		assertEquals(VISIBLE,
+				TopBarPolicy.resolveTopBarVisibility(R.id.youtube_fragment, false));
+	}
+
+	@Test
 	public void backFollowsRouteOnEveryHost() {
 		assertEquals(GONE, TopBarPolicy.resolve(RuntimeHostMode.PHONE,
 				true, 1, 0, "Dashboard", "", "").backVisibility());

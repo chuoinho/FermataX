@@ -195,6 +195,64 @@ public class YoutubeFullscreenCoordinatorTest {
 	}
 
 	@Test
+	public void disabledAutomaticEntryDoesNotRequestBrowserFullscreen() {
+		FakeHost host = new FakeHost();
+		host.autoEnabled = false;
+		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);
+
+		coordinator.requestAutoEntry(PAGE, MEDIA);
+		host.runPosted();
+		host.runDelayed();
+
+		assertEquals(NO_REQUEST, host.lastBrowserRequest);
+		assertEquals(0, host.enterFallbackPresentationCount);
+	}
+
+	@Test
+	public void disablingPreferenceCancelsQueuedAutomaticRequest() {
+		FakeHost host = new FakeHost();
+		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);
+
+		coordinator.requestAutoEntry(PAGE, MEDIA);
+		host.autoEnabled = false;
+		coordinator.onAutomaticEntryPreferenceChanged();
+		host.runPosted();
+		host.runDelayed();
+
+		assertEquals(NO_REQUEST, host.lastBrowserRequest);
+		assertEquals(0, host.enterFallbackPresentationCount);
+	}
+
+	@Test
+	public void enablingAgainRequiresFreshExplicitSelection() {
+		FakeHost host = new FakeHost();
+		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);
+
+		host.autoEnabled = false;
+		coordinator.onAutomaticEntryPreferenceChanged();
+		host.autoEnabled = true;
+		coordinator.onAutomaticEntryPreferenceChanged();
+		coordinator.requestAutoEntry(PAGE, MEDIA);
+		host.runPosted();
+		assertEquals(NO_REQUEST, host.lastBrowserRequest);
+
+		coordinator.authorizeExplicitSelection();
+		coordinator.requestAutoEntry(PAGE, MEDIA);
+		host.runPosted();
+		assertTrue(host.lastBrowserRequest != NO_REQUEST);
+	}
+
+	@Test
+	public void manualFullscreenRemainsAvailableWhenAutomaticEntryIsDisabled() {
+		FakeHost host = new FakeHost();
+		host.autoEnabled = false;
+		YoutubeFullscreenCoordinator coordinator = new YoutubeFullscreenCoordinator(host);
+
+		assertTrue(coordinator.enterManualAppFullscreen());
+		assertEquals(1, host.enterFallbackPresentationCount);
+	}
+
+	@Test
 	public void recentSelectionWaitsForYoutubeFragmentToResume() {
 		FakeHost host = new FakeHost();
 		host.canEnter = false;
@@ -300,6 +358,7 @@ public class YoutubeFullscreenCoordinatorTest {
 		private final List<Runnable> posted = new ArrayList<>();
 		private final List<Runnable> delayed = new ArrayList<>();
 		private boolean canEnter = true;
+		private boolean autoEnabled = true;
 		private boolean browserFullScreen;
 		private boolean browserRequestSupported = true;
 		private boolean ownsPlaybackPresentation = true;
@@ -314,6 +373,11 @@ public class YoutubeFullscreenCoordinatorTest {
 		@Override
 		public boolean canEnterFullscreen() {
 			return canEnter;
+		}
+
+		@Override
+		public boolean isAutomaticEntryEnabled() {
+			return autoEnabled;
 		}
 
 		@Override

@@ -24,6 +24,7 @@ import com.google.android.play.core.splitcompat.SplitCompat;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.auto.PhoneConnectionObservation;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.view.UiShellController;
 import me.aap.utils.async.FutureSupplier;
@@ -94,6 +95,7 @@ public class MainActivity extends SplitCompatActivityBase
 			}
 		});
 		super.onCreate(savedInstanceState);
+		PhoneConnectionObservation.observe(this, this);
 	}
 
 	@Override

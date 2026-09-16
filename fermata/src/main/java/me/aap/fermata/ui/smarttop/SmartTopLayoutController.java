@@ -52,6 +52,18 @@ public final class SmartTopLayoutController {
 		artworkParams.bottomToBottom = ConstraintLayout.LayoutParams.UNSET;
 		artworkParams.verticalBias = 0.5F;
 		sourceIcon.setLayoutParams(artworkParams);
+		ImageView thumbnail = root.findViewById(R.id.dashboard_smart_thumbnail);
+		ConstraintLayout.LayoutParams thumbnailParams =
+				(ConstraintLayout.LayoutParams) thumbnail.getLayoutParams();
+		thumbnailParams.width = artworkSize;
+		thumbnailParams.height = artworkSize;
+		thumbnailParams.startToStart = R.id.dashboard_item_icon;
+		thumbnailParams.startToEnd = ConstraintLayout.LayoutParams.UNSET;
+		thumbnailParams.topToTop = R.id.dashboard_item_icon;
+		thumbnailParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
+		thumbnailParams.bottomToBottom = ConstraintLayout.LayoutParams.UNSET;
+		thumbnailParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
+		thumbnail.setLayoutParams(thumbnailParams);
 		int artworkPadding = px(root, spec.artworkPaddingDp());
 		sourceIcon.setPadding(artworkPadding, artworkPadding, artworkPadding, artworkPadding);
 

@@ -156,6 +156,8 @@ public class YoutubeWebView extends FermataWebView {
 			if (getAddon().autoHighestQuality()) setHighestVideoQuality();
 			else clearHighestVideoQuality();
 		}
+		if (getAddon().autoFullscreenChanged(prefs) && (mediaEngine != null))
+			mediaEngine.onAutomaticEntryPreferenceChanged();
 
 		if (YoutubeSponsorBlock.isPreferenceChanged(prefs)) {
 			cancelSponsorBlock();

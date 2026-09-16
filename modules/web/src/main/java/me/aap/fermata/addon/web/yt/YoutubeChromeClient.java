@@ -46,6 +46,11 @@ public class YoutubeChromeClient extends FermataChromeClient {
 		return new YoutubeChromeClient(web, getFullScreenView());
 	}
 
+	@Override
+	protected boolean shouldAttachVideoScale() {
+		return false;
+	}
+
 	protected void addCustomView(View view) {
 		VideoView vv = getFullScreenView();
 		vv.getContentView().addView(view, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));

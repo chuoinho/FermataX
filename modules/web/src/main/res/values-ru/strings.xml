@@ -18,6 +18,7 @@
 	<string name="web_page_load_failed">Не удалось загрузить страницу</string>
 	<string name="web_page_load_failed_msg">Не удалось загрузить:\n%1$s\n\nПричина: %2$s\n\nWebView: %3$s</string>
 	<string name="auto_highest_video_quality">Автоматический выбор самого высокого качества видео</string>
+	<string name="yt_auto_fullscreen">Автоматический полноэкранный режим</string>
 	<string name="sponsorblock_sub">Пропускайте краудсорсинговые сегменты при просмотре YouTube.</string>
 	<string name="sponsorblock_enable">Включить спонсорский блок</string>
 	<string name="sponsorblock_enable_sub">Получает данные сегмента из спонсора.ajay.app для текущего видео.</string>

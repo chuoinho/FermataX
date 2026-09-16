@@ -4,6 +4,7 @@ import android.view.View;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.policy.PhoneRootPolicy;
 import me.aap.utils.ui.view.NavBarView;
 
 /** Single renderer for the selected top-level navigation destination. */
@@ -14,6 +15,8 @@ public final class NavBarController {
 	public static void refresh(MainActivityDelegate activity) {
 		NavBarView navBar = activity.getNavBar();
 		if (navBar == null) return;
+		navBar.setVisibility(PhoneRootPolicy.showAddonNavBar(activity.getRuntimeHostMode(),
+				activity.getPhoneRootId(), activity.isBarsHidden()) ? View.VISIBLE : View.GONE);
 		applySelection(navBar, activity.getActiveNavItemId());
 	}
 

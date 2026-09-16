@@ -1,6 +1,8 @@
 package me.aap.fermata.addon.web.stremio;
 
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_NONE;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PAUSED;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
@@ -43,6 +45,7 @@ public class StremioWebMediaSessionBridgeTest {
 		assertTrue(state.canDispatch("nexttrack"));
 		assertEquals(STATE_PLAYING, state.playbackState());
 		assertEquals(ACTION_SKIP_TO_NEXT, state.actions());
+		assertEquals(ACTION_PLAY | ACTION_SKIP_TO_NEXT, state.controlOnlyActions());
 
 		state.setPlayback("stale", "paused");
 		state.setHandler("stale", "pause", true);

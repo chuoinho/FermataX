@@ -27,6 +27,16 @@ public class TopBarAuthorityContractTest {
 	}
 
 	@Test
+	public void controllerUsesTheHostSpecificPrimaryRoot() throws Exception {
+		String controller = coreSource("ui/view/TopBarController.java");
+		assertTrue(controller.contains("PhoneRootPolicy.isPrimaryRoot("));
+		assertTrue(controller.contains("activity.getPhoneRootId(), fragment.getFragmentId()"));
+
+		String chrome = coreSource("ui/policy/ChromePolicy.java");
+		assertTrue(chrome.contains("PhoneRootPolicy.isPrimaryRoot("));
+	}
+
+	@Test
 	public void structuralInstallerNeverResolvesTitleOrRouteBackVisibility() throws Exception {
 		String support = coreSource("ui/view/TopBarMediatorSupport.java");
 		assertTrue(support.contains("installBackTitle("));

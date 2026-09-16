@@ -35,7 +35,9 @@ public final class DashboardItems {
 	static final Pref<IntSupplier> LAYOUT_VERSION =
 			Pref.i("DASHBOARD_LAYOUT_VERSION", 0);
 	private static final int UI_REFRESH_LAYOUT_VERSION = 2;
+	public static final String CONTROL = "control";
 	public static final String DASHBOARD = "dashboard";
+	public static final String SETTINGS = "settings";
 	public static final String FOLDERS = "folders";
 	public static final String FAVORITES = "favorites";
 	public static final String RECENT = "recent";
@@ -88,6 +90,39 @@ public final class DashboardItems {
 			if (item != null) items.add(item);
 		}
 		return items;
+	}
+
+	@NonNull
+	public static List<Item> getControlAddonItems(Context ctx) {
+		List<Item> items = new ArrayList<>();
+		AddonManager manager = AddonManager.get();
+		for (AddonInfo info : manager.getAddonInfos()) {
+			AddonState state = manager.getAddonState(info);
+			if (!isControlAddon(info, state)) continue;
+			int statusRes = getControlAddonStatusRes(state);
+			String subtitle = (statusRes == 0) ? getAddonSubtitle(ctx, info) :
+					ctx.getString(statusRes);
+			items.add(new Item(info.className, info.addonId, info.icon,
+					getAddonTitle(ctx, info), subtitle, info));
+		}
+		return items;
+	}
+
+	static boolean isControlAddon(AddonInfo info, AddonState state) {
+		return AddonUiMetadata.isNavigationItem(info) && (state != AddonState.DISABLED);
+	}
+
+	@StringRes
+	static int getControlAddonStatusRes(AddonState state) {
+		return switch (state) {
+			case LOADING -> R.string.control_addon_loading;
+			case FAILED -> R.string.control_addon_failed;
+			default -> 0;
+		};
+	}
+
+	static boolean isControlAddonOpenEnabled(AddonState state) {
+		return (state == AddonState.LOADED) || (state == AddonState.ENABLED_PENDING);
 	}
 
 	@NonNull
@@ -150,7 +185,9 @@ public final class DashboardItems {
 
 	@Nullable
 	public static String idToName(@IdRes int id) {
+		if (id == R.id.control_fragment) return CONTROL;
 		if (id == R.id.dashboard_fragment) return DASHBOARD;
+		if (id == R.id.settings_fragment) return SETTINGS;
 		if (id == R.id.folders_fragment) return FOLDERS;
 		if (id == R.id.favorites_fragment) return FAVORITES;
 		if (id == R.id.recent_fragment) return RECENT;

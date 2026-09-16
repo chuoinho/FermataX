@@ -18,6 +18,7 @@
 	<string name="web_page_load_failed">Impossibile caricare la pagina</string>
 	<string name="web_page_load_failed_msg">Impossibile caricare:\n%1$s\n\nMotivo: %2$s\n\nWebView: %3$s</string>
 	<string name="auto_highest_video_quality">Seleziona automaticamente la qualità video più alta</string>
+	<string name="yt_auto_fullscreen">Schermo intero automatico</string>
 	<string name="sponsorblock_sub">Salta i segmenti di crowdsourcing mentre guardi YouTube.</string>
 	<string name="sponsorblock_enable">Abilita SponsorBlock</string>
 	<string name="sponsorblock_enable_sub">Recupera i dati del segmento da sponsor.ajay.app per il video corrente.</string>

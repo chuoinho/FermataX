@@ -2,11 +2,15 @@ package me.aap.fermata.ui.smarttop;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import androidx.annotation.Nullable;
 
 import com.google.android.material.button.MaterialButton;
 
@@ -14,9 +18,12 @@ import java.util.List;
 import java.util.Objects;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.engine.BitmapCache;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.policy.PlaybackTimelinePolicy;
+import me.aap.utils.app.App;
+import me.aap.utils.async.FutureSupplier;
 
 /** Binds immutable SmartTop semantics into the adaptive layout already resolved by the controller. */
 public final class SmartTopBinder {
@@ -33,6 +40,7 @@ public final class SmartTopBinder {
 	public record Views(
 			View root,
 			ImageView sourceIcon,
+			ImageView thumbnail,
 			TextView eyebrow,
 			TextView title,
 			TextView subtitle,
@@ -49,6 +57,7 @@ public final class SmartTopBinder {
 		public Views {
 			Objects.requireNonNull(root, "root");
 			Objects.requireNonNull(sourceIcon, "sourceIcon");
+			Objects.requireNonNull(thumbnail, "thumbnail");
 			Objects.requireNonNull(eyebrow, "eyebrow");
 			Objects.requireNonNull(title, "title");
 			Objects.requireNonNull(subtitle, "subtitle");
@@ -68,15 +77,27 @@ public final class SmartTopBinder {
 	private final Context context;
 	private final Handler handler;
 	private final boolean backgroundEnabled;
+	@Nullable
+	private final BitmapCache bitmapCache;
+	@Nullable
+	private Bitmap directArtworkSource;
+	@Nullable
+	private FutureSupplier<Bitmap> directArtworkNormalization;
 
 	public SmartTopBinder(Context context, Handler handler) {
-		this(context, handler, true);
+		this(context, handler, true, null);
 	}
 
 	public SmartTopBinder(Context context, Handler handler, boolean backgroundEnabled) {
+		this(context, handler, backgroundEnabled, null);
+	}
+
+	public SmartTopBinder(Context context, Handler handler, boolean backgroundEnabled,
+			@Nullable BitmapCache bitmapCache) {
 		this.context = Objects.requireNonNull(context, "context");
 		this.handler = Objects.requireNonNull(handler, "handler");
 		this.backgroundEnabled = backgroundEnabled;
+		this.bitmapCache = bitmapCache;
 	}
 
 	public void bind(Views views, SmartTopViewState state, boolean editMode) {
@@ -84,6 +105,7 @@ public final class SmartTopBinder {
 		views.root().setTag(R.id.dashboard_smart_bind_token,
 				new BindToken(state.generation(), itemId(state.presentedItem())));
 		bindSourceIcon(views, state);
+		bindThumbnail(views, state);
 		bindBackground(views, state);
 		views.eyebrow().setVisibility(View.VISIBLE);
 		views.eyebrow().setText(state.eyebrow());
@@ -194,9 +216,63 @@ public final class SmartTopBinder {
 
 	private void bindSourceIcon(Views views, SmartTopViewState state) {
 		ImageView sourceIcon = views.sourceIcon();
+		sourceIcon.setVisibility(View.VISIBLE);
 		ColorStateList tint = context.getColorStateList(R.color.dashboard_smart_action_v2_tint);
 		sourceIcon.setImageTintList(tint);
 		sourceIcon.setImageResource(state.icon());
+	}
+
+	private void bindThumbnail(Views views, SmartTopViewState state) {
+		ImageView thumbnailView = views.thumbnail();
+		thumbnailView.setImageDrawable(null);
+		thumbnailView.setVisibility(View.GONE);
+		thumbnailView.setTag(R.id.dashboard_smart_thumbnail_bind_token, null);
+		SmartTopThumbnail thumbnail = state.thumbnail();
+		if (thumbnail == null) return;
+		ThumbnailBindToken token = new ThumbnailBindToken(state.generation(),
+				itemId(state.presentedItem()), thumbnail.identity());
+		thumbnailView.setTag(R.id.dashboard_smart_thumbnail_bind_token, token);
+		Bitmap direct = thumbnail.bitmap();
+		if (direct != null) {
+			normalizedDirectArtwork(direct).main().onSuccess(bitmap -> {
+				if ((bitmap == null) || bitmap.isRecycled() ||
+						!token.equals(thumbnailView.getTag(
+								R.id.dashboard_smart_thumbnail_bind_token))) return;
+				showThumbnail(views, thumbnailView, bitmap);
+			});
+			return;
+		}
+		Uri uri = thumbnail.uri();
+		if ((uri == null) || !SmartTopArtworkResolver.isAllowed(context, uri) ||
+				(bitmapCache == null)) return;
+		bitmapCache.getBitmapIfCached(context, uri.toString(), true).main().onSuccess(bitmap -> {
+			if ((bitmap == null) || bitmap.isRecycled() ||
+					!token.equals(thumbnailView.getTag(
+							R.id.dashboard_smart_thumbnail_bind_token)) ||
+					(SmartTopThumbnail.fromSource(thumbnail.identity(), bitmap) == null)) return;
+			normalizedDirectArtwork(bitmap).main().onSuccess(normalized -> {
+				if ((normalized == null) || normalized.isRecycled() ||
+						!token.equals(thumbnailView.getTag(
+								R.id.dashboard_smart_thumbnail_bind_token))) return;
+				showThumbnail(views, thumbnailView, normalized);
+			});
+		});
+	}
+
+	private FutureSupplier<Bitmap> normalizedDirectArtwork(Bitmap source) {
+		FutureSupplier<Bitmap> current = directArtworkNormalization;
+		if ((source == directArtworkSource) && (current != null)) return current;
+		directArtworkSource = source;
+		return directArtworkNormalization = App.get().execute(() -> SmartTopThumbnail.fromBitmap(
+				"bound-artwork", source)).map(thumbnail ->
+					(thumbnail == null) ? null : thumbnail.bitmap());
+	}
+
+	private static void showThumbnail(Views views, ImageView thumbnail, Bitmap bitmap) {
+		thumbnail.setImageTintList(null);
+		thumbnail.setImageBitmap(bitmap);
+		thumbnail.setVisibility(View.VISIBLE);
+		views.sourceIcon().setVisibility(View.INVISIBLE);
 	}
 
 	private void bindBackground(Views views, SmartTopViewState state) {
@@ -217,12 +293,26 @@ public final class SmartTopBinder {
 		root.setTag(R.id.dashboard_smart_background_drawable_tag, rendered.content());
 		root.setBackground(rendered.ripple());
 
+		if (background.kind() != SmartTopBackground.Kind.ARTWORK) return;
+		Bitmap direct = background.artworkBitmap();
+		if (direct != null) {
+			normalizedDirectArtwork(direct).main().onSuccess(bitmap -> {
+				if ((bitmap == null) || bitmap.isRecycled() ||
+						!token.equals(root.getTag(R.id.dashboard_smart_background_bind_token)) ||
+						!SmartTopBackgroundPolicy.eligibleDimensions(
+								bitmap.getWidth(), bitmap.getHeight(), false)) return;
+				Object current = root.getTag(R.id.dashboard_smart_background_drawable_tag);
+				if (current == rendered.content()) rendered.content().setArtwork(bitmap);
+			});
+			return;
+		}
+
 		PlayableItem item = state.presentedItem();
-		if ((background.kind() != SmartTopBackground.Kind.ARTWORK) ||
-				(background.artworkUri() == null) || (item == null) ||
+		BitmapCache cache = (item == null) ? bitmapCache : item.getLib().getBitmapCache();
+		if ((background.artworkUri() == null) || (cache == null) ||
 				!SmartTopArtworkResolver.isAllowed(context, background.artworkUri())) return;
 
-		item.getLib().getBitmapCache()
+		cache
 				.getBitmapIfCached(context, background.artworkUri().toString(), false)
 				.main().onSuccess(bitmap -> {
 					if ((bitmap == null) || bitmap.isRecycled() ||
@@ -411,6 +501,9 @@ public final class SmartTopBinder {
 	}
 
 	record BackgroundBindToken(long generation, String itemId, String backgroundIdentity) {
+	}
+
+	record ThumbnailBindToken(long generation, String itemId, String thumbnailIdentity) {
 	}
 
 	public record RemainingTime(int hours, int minutes) {

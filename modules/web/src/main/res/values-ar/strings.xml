@@ -17,6 +17,7 @@
 	<string name="web_page_load_failed">فشل تحميل الصفحة</string>
 	<string name="web_page_load_failed_msg">تعذر التحميل:\n%1$s\n\nالسبب: %2$s\n\nعرض الويب: %3$s</string>
 	<string name="auto_highest_video_quality">التحديد التلقائي لأعلى جودة للفيديو</string>
+	<string name="yt_auto_fullscreen">ملء الشاشة تلقائيًا</string>
 	<string name="sponsorblock_sub">تخطي المقاطع ذات المصادر الجماعية أثناء مشاهدة YouTube.</string>
 	<string name="sponsorblock_enable">تمكين SponsorBlock</string>
 	<string name="sponsorblock_enable_sub">جلب بيانات المقطع من Sponsored.ajay.app للفيديو الحالي.</string>

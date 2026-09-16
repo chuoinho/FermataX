@@ -1,5 +1,9 @@
 package me.aap.fermata.ui.smarttop;
 
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_PAUSED;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -9,6 +13,7 @@ import java.util.List;
 import org.junit.Test;
 
 import me.aap.fermata.ui.policy.PlaybackTimelinePolicy;
+import me.aap.fermata.media.service.ControlOnlyPresentation;
 
 public class SmartTopPolicyTest {
 	@Test
@@ -26,6 +31,16 @@ public class SmartTopPolicyTest {
 	}
 
 	@Test
+	public void canonicalCurrentWinsOverLiveWebAndWebWinsOverFallbacks() {
+		assertEquals(SmartTopMode.CURRENT,
+				SmartTopSelectionPolicy.select(true, true, false, true, false));
+		assertEquals(SmartTopMode.CURRENT_WEB,
+				SmartTopSelectionPolicy.select(false, true, false, true, false));
+		assertEquals(SmartTopMode.RECENT,
+				SmartTopSelectionPolicy.select(false, false, false, true, false));
+	}
+
+	@Test
 	public void smartTopUsesOnlyRemainingPlaybackControls() {
 		SmartTopCapabilities current = SmartTopCapabilities.current(true);
 		assertEquals(List.of(SmartTopAction.PLAY_PAUSE, SmartTopAction.FAVORITE),
@@ -38,6 +53,49 @@ public class SmartTopPolicyTest {
 				SmartTopActionPolicy.resolve(SmartTopMode.RECOVERY, suggestion));
 		assertEquals(List.of(SmartTopAction.OPEN_ADDONS),
 				SmartTopActionPolicy.resolve(SmartTopMode.EMPTY, SmartTopCapabilities.NONE));
+		assertEquals(List.of(SmartTopAction.PLAY_PAUSE),
+				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT_WEB, SmartTopCapabilities.web(true)));
+		assertEquals(List.of(),
+				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT_WEB, SmartTopCapabilities.web(false)));
+	}
+
+	@Test
+	public void webActionRequiresTheCommandForItsLiveState() {
+		assertTrue(SmartTopCapabilities.web(ACTION_PLAY, STATE_PAUSED).canPlayPause());
+		assertFalse(SmartTopCapabilities.web(ACTION_PLAY, STATE_PLAYING).canPlayPause());
+		assertTrue(SmartTopCapabilities.web(ACTION_PAUSE, STATE_PLAYING).canPlayPause());
+		assertFalse(SmartTopCapabilities.web(ACTION_PAUSE, STATE_PAUSED).canPlayPause());
+	}
+
+	@Test
+	public void hiddenWebTimelineRetainsPlayingForThePlayPauseIcon() {
+		assertTrue(SmartTopTimeline.hidden(true).playing());
+		assertFalse(SmartTopTimeline.HIDDEN.playing());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void currentWebCannotUseCanonicalOrProviderFields() {
+		new SmartTopViewState(1L, SmartTopMode.CURRENT_WEB, SmartTopLayoutMode.STANDARD,
+				null, null, 0, SmartTopBackground.sourceFallback("web"), "Now", "Clip", "",
+				SmartTopTimeline.HIDDEN, SmartTopCapabilities.web(true), List.of(), false, List.of(),
+				null);
+	}
+
+	@Test
+	public void currentWebCopiesRetainItsLiveLease() {
+		ControlOnlyPresentation lease = new ControlOnlyPresentation(1L, "addon", 3, 0L, null);
+		SmartTopViewState state = new SmartTopViewState(1L, SmartTopMode.CURRENT_WEB,
+				SmartTopLayoutMode.STANDARD, null, null, 0,
+				SmartTopBackground.sourceFallback("web"), "Now", "Clip", "",
+				SmartTopTimeline.hidden(true), SmartTopCapabilities.web(false), List.of(), false,
+				List.of(), null, lease);
+		assertEquals(lease, state.withTitle("New clip").controlOnly());
+	}
+
+	@Test
+	public void currentWebFallsBackToTheRegisteredAddonName() {
+		assertEquals("Stremio", SmartTopCoordinator.webTitle("", "Stremio"));
+		assertEquals("Clip", SmartTopCoordinator.webTitle("Clip", "Stremio"));
 	}
 
 	@Test

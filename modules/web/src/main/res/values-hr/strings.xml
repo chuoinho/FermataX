@@ -17,6 +17,7 @@
 	<string name="video_quality">Kvaliteta videa</string>
 	<string name="open_on_start">Otvoreno na početku</string>
 	<string name="auto_highest_video_quality">Automatski odaberite najvišu kvalitetu videa</string>
+	<string name="yt_auto_fullscreen">Automatski cijeli zaslon</string>
 	<string name="try_to_skip_ad">Pokušajte preskočiti oglašavanje</string>
 	<string name="sponsorblock_sub">Preskočite segmente s mnoštvom dok gledate YouTube.</string>
 	<string name="sponsorblock_enable">Omogući SponsorBlock</string>

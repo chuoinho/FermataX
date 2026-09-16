@@ -17,6 +17,7 @@
 	<string name="video_quality">គុណភាពវីដេអូ</string>
 	<string name="open_on_start">បើកនៅពេលចាប់ផ្តើម</string>
 	<string name="auto_highest_video_quality">ជ្រើសរើសគុណភាពវីដេអូខ្ពស់បំផុតដោយស្វ័យប្រវត្តិ</string>
+	<string name="yt_auto_fullscreen">ពេញអេក្រង់ដោយស្វ័យប្រវត្តិ</string>
 	<string name="try_to_skip_ad">ព្យាយាមរំលងការផ្សាយពាណិជ្ជកម្ម</string>
 	<string name="sponsorblock_sub">រំលងផ្នែកដែលមានប្រភពពីហ្វូងមនុស្ស ពេលកំពុងមើល YouTube ។</string>
 	<string name="sponsorblock_enable">បើក SponsorBlock</string>

@@ -17,6 +17,7 @@
 	<string name="video_quality">ビデオ品質</string>
 	<string name="open_on_start">開始時に開く</string>
 	<string name="auto_highest_video_quality">最高のビデオ品質を自動選択</string>
+	<string name="yt_auto_fullscreen">自動全画面表示</string>
 	<string name="try_to_skip_ad">広告をスキップしてみてください</string>
 	<string name="sponsorblock_sub">YouTube の視聴中にクラウドソーシングのセグメントをスキップします。</string>
 	<string name="sponsorblock_enable">スポンサーブロックを有効にする</string>

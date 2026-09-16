@@ -1,0 +1,27 @@
+<resources>
+	<string name="readiness_title">Kiểm tra kết nối và quyền</string>
+	<string name="readiness_subtitle">Xem trạng thái Android Auto và các cài đặt hệ thống tùy chọn.</string>
+	<string name="readiness_refresh">Kiểm tra lại</string>
+	<string name="readiness_refresh_subtitle">Cập nhật trạng thái mà không thay đổi cài đặt.</string>
+	<string name="readiness_connection">Kết nối Android Auto</string>
+	<string name="readiness_control_session">Phiên Điều khiển</string>
+	<string name="readiness_notifications">Thông báo</string>
+	<string name="readiness_overlay">Hiển thị trên ứng dụng khác</string>
+	<string name="readiness_screen_capture">Chia sẻ màn hình</string>
+	<string name="readiness_battery">Tối ưu pin</string>
+	<string name="readiness_unknown">Chưa xác minh</string>
+	<string name="readiness_not_applicable">Không áp dụng</string>
+	<string name="readiness_connection_disconnected">Android Auto chưa kết nối.</string>
+	<string name="readiness_connection_connected">Android Auto đã kết nối; FermataX chưa mở trên màn hình xe.</string>
+	<string name="readiness_connection_visible">FermataX đang hiện trên màn hình xe.</string>
+	<string name="readiness_control_available">Kênh Điều khiển đã sẵn sàng.</string>
+	<string name="readiness_control_unavailable">Kênh Điều khiển chưa sẵn sàng.</string>
+	<string name="readiness_notifications_enabled">Thông báo đang bật.</string>
+	<string name="readiness_notifications_disabled">Thông báo đang tắt. Bạn có thể quản lý tại đây.</string>
+	<string name="readiness_overlay_granted">Đã cho phép. Chỉ cần cho các chức năng dùng lớp phủ.</string>
+	<string name="readiness_overlay_not_granted">Chưa cho phép. Chỉ cần cho các chức năng dùng lớp phủ.</string>
+	<string name="readiness_screen_capture_info">Android sẽ yêu cầu xác nhận khi bắt đầu chia sẻ màn hình.</string>
+	<string name="readiness_battery_exempt">Đã được miễn tối ưu pin.</string>
+	<string name="readiness_battery_managed">Android đang quản lý pin; riêng trạng thái này không cho thấy có lỗi.</string>
+	<string name="readiness_settings_unavailable">Trang Cài đặt này không có trên thiết bị.</string>
+</resources>

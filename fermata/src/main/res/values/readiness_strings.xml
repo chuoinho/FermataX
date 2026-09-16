@@ -1,0 +1,27 @@
+<resources>
+	<string name="readiness_title">Connection and permissions check</string>
+	<string name="readiness_subtitle">View Android Auto connection and optional system settings.</string>
+	<string name="readiness_refresh">Check again</string>
+	<string name="readiness_refresh_subtitle">Refresh status without changing any settings.</string>
+	<string name="readiness_connection">Android Auto connection</string>
+	<string name="readiness_control_session">Control session</string>
+	<string name="readiness_notifications">Notifications</string>
+	<string name="readiness_overlay">Display over other apps</string>
+	<string name="readiness_screen_capture">Screen capture</string>
+	<string name="readiness_battery">Battery optimization</string>
+	<string name="readiness_unknown">Not verified</string>
+	<string name="readiness_not_applicable">Not applicable</string>
+	<string name="readiness_connection_disconnected">Android Auto is not connected.</string>
+	<string name="readiness_connection_connected">Android Auto is connected; FermataX is not open on the car screen.</string>
+	<string name="readiness_connection_visible">FermataX is visible on the car screen.</string>
+	<string name="readiness_control_available">The Control channel is ready.</string>
+	<string name="readiness_control_unavailable">The Control channel is not ready.</string>
+	<string name="readiness_notifications_enabled">Notifications are enabled.</string>
+	<string name="readiness_notifications_disabled">Notifications are disabled. You can manage them here.</string>
+	<string name="readiness_overlay_granted">Allowed. Only needed by features that use an overlay.</string>
+	<string name="readiness_overlay_not_granted">Not allowed. Only needed by features that use an overlay.</string>
+	<string name="readiness_screen_capture_info">Android will ask for confirmation when screen sharing starts.</string>
+	<string name="readiness_battery_exempt">Excluded from battery optimization.</string>
+	<string name="readiness_battery_managed">Android is managing battery use; this does not by itself indicate a problem.</string>
+	<string name="readiness_settings_unavailable">This settings page is not available on this device.</string>
+</resources>

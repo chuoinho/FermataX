@@ -7,7 +7,6 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
 import static android.util.Base64.URL_SAFE;
 import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
 import static android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
@@ -61,12 +60,14 @@ import androidx.fragment.app.Fragment;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BooleanSupplier;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.action.Key;
 import me.aap.fermata.addon.AddonInfo;
+import me.aap.fermata.addon.AddonCapability;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.addon.FermataAddon;
@@ -88,6 +89,7 @@ import me.aap.fermata.media.service.MediaServiceRuntimeGate;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.MediaSessionCallbackAssistant;
 import me.aap.fermata.ui.fragment.DashboardFragment;
+import me.aap.fermata.ui.fragment.ControlFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
 import me.aap.fermata.ui.fragment.InitialSetupFragment;
@@ -103,10 +105,13 @@ import me.aap.fermata.ui.policy.BackNavigationPolicy;
 import me.aap.fermata.ui.policy.HostRelaunchPolicy;
 import me.aap.fermata.ui.policy.ItemRoutePolicy;
 import me.aap.fermata.ui.policy.PlaybackLayoutPolicy;
+import me.aap.fermata.ui.policy.PhoneRootPolicy;
 import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
+import me.aap.fermata.ui.view.PhoneBottomMenuController;
+import me.aap.fermata.ui.view.UiShellController;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
@@ -148,10 +153,12 @@ public class MainActivityDelegate extends ActivityDelegate
 	private ControlPanelView controlPanel;
 	private FloatingButton floatingButton;
 	private ContentLoadingProgressBar progressBar;
+	private PhoneBottomMenuController phoneBottomMenuController;
 	private FutureSupplier<?> contentLoading;
 	private final AsyncOperationController contentOperations =
 			new AsyncOperationController(this::onContentOperationChanged);
 	private boolean barsHidden;
+	private int phoneRootId = R.id.control_fragment;
 	private boolean videoMode;
 	private int brightness = 255;
 	private final VoiceInteractionCoordinator voiceInteraction;
@@ -245,6 +252,8 @@ public class MainActivityDelegate extends ActivityDelegate
 		if ((state != null) && state.getBoolean("restoreFragment", false)) {
 			navId = state.getInt("navId", ID_NULL);
 			fragmentId = state.getInt("fragmentId", ID_NULL);
+			phoneRootId = PhoneRootPolicy.resolvePhoneRoot(
+					state.getInt("phoneRootId", R.id.control_fragment), fragmentId);
 		} else {
 			navId = ID_NULL;
 			fragmentId = ID_NULL;
@@ -364,17 +373,62 @@ public class MainActivityDelegate extends ActivityDelegate
 			setActiveNavItemId(ID_NULL);
 			showFragment(R.id.initial_setup_fragment);
 		} else {
-			showDashboard();
+			showPrimaryRoot();
 		}
 	}
 
+	public void showPrimaryRoot() {
+		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) showPhoneRoot(phoneRootId);
+		else showDashboard();
+	}
+
+	public void showControl() {
+		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
+			showPhoneRoot(R.id.control_fragment);
+			return;
+		}
+		hideActiveMenu();
+		BodyLayout body = getBody();
+		if (!body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
+		showFragment(R.id.control_fragment);
+	}
+
 	public void showDashboard() {
+		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
+			showPhoneRoot(R.id.dashboard_fragment);
+			return;
+		}
 		hideActiveMenu();
 		BodyLayout body = getBody();
 		if (!body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
 		int previous = getActiveNavItemId();
 		setActiveNavItemId(R.id.dashboard_fragment);
 		if (showFragment(R.id.dashboard_fragment) == null) setActiveNavItemId(previous);
+	}
+
+	public int getPhoneRootId() {
+		return phoneRootId;
+	}
+
+	public void setPhoneRootId(int rootId) {
+		if (!PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) return;
+		int normalized = PhoneRootPolicy.normalizePhoneRoot(rootId);
+		if (phoneRootId == normalized) return;
+		phoneRootId = normalized;
+		UiShellController.onRouteChanged(this);
+	}
+
+	public boolean showPhoneRoot(int rootId) {
+		if (!PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode()) ||
+				!PhoneRootPolicy.isPhoneRoot(rootId)) return false;
+		phoneRootId = rootId;
+		hideActiveMenu();
+		BodyLayout body = getBody();
+		if (!body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
+		if (rootId == R.id.dashboard_fragment) setActiveNavItemId(R.id.dashboard_fragment);
+		showFragment(rootId);
+		UiShellController.onRouteChanged(this);
+		return true;
 	}
 
 	@Override
@@ -389,6 +443,7 @@ public class MainActivityDelegate extends ActivityDelegate
 			outState.putBoolean("restoreFragment", true);
 			outState.putInt("navId", getActiveNavItemId());
 			outState.putInt("fragmentId", getActiveFragmentId());
+			outState.putInt("phoneRootId", phoneRootId);
 		}
 	}
 
@@ -664,11 +719,14 @@ public class MainActivityDelegate extends ActivityDelegate
 		}
 
 		this.barsHidden = barsHidden;
-		int visibility = barsHidden ? GONE : VISIBLE;
 		ToolBarView tb = getToolBar();
 		if (barsHidden) tb.setVisibility(GONE);
 		else tb.refreshMediatorVisibility();
-		getNavBar().setVisibility(visibility);
+		UiShellController.onRouteChanged(this);
+	}
+
+	public void refreshPhoneBottomMenu() {
+		if (phoneBottomMenuController != null) phoneBottomMenuController.refresh();
 	}
 
 	private boolean isCurrentSplitMode() {
@@ -883,8 +941,32 @@ public class MainActivityDelegate extends ActivityDelegate
 		return true;
 	}
 
+	public FutureSupplier<Boolean> showFragmentWhenReadyGuarded(int id,
+			@Nullable Object input, BooleanSupplier stillCurrent) {
+		if (!stillCurrent.getAsBoolean()) return completed(false);
+		AddonManager manager = FermataApplication.get().getAddonManager();
+		AddonInfo info = manager.getAddonInfo(id);
+		if ((info == null) || !info.hasFragment ||
+				!info.hasCapability(AddonCapability.NAVIGATION)) return completed(false);
+		AddonState state = manager.getAddonState(info);
+		if ((state == AddonState.DISABLED) || (state == AddonState.FAILED)) {
+			return completed(false);
+		}
+		java.util.function.Supplier<Boolean> route = () -> {
+			if (!stillCurrent.getAsBoolean() ||
+					(manager.getAddonState(info) != AddonState.LOADED)) return false;
+			ActivityFragment opened = showFragment(id, input);
+			return (opened != null) && (getActiveFragmentId() == id);
+		};
+		if (state == AddonState.LOADED) return completed(route.get());
+		return manager.getOrInstallAddon(info.className).main(getHandler())
+				.map(addon -> (addon != null) && route.get());
+	}
+
 	protected ActivityFragment createFragment(int id) {
-		if (id == R.id.dashboard_fragment) {
+		if (id == R.id.control_fragment) {
+			return new ControlFragment();
+		} else if (id == R.id.dashboard_fragment) {
 			return new DashboardFragment();
 		} else if (id == R.id.folders_fragment) {
 			return new FoldersFragment();
@@ -1190,9 +1272,12 @@ public class MainActivityDelegate extends ActivityDelegate
 		body = a.findViewById(R.id.body_layout);
 		controlPanel = a.findViewById(R.id.control_panel);
 		floatingButton = a.findViewById(R.id.floating_button);
+		phoneBottomMenuController = new PhoneBottomMenuController(this,
+				a.findViewById(R.id.phone_bottom_menu));
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		if (getRuntimeHostMode().usesAutomotivePresentation()) floatingButton.setVisibility(GONE);
 		controlPanel.bind(getMediaServiceBinder());
+		phoneBottomMenuController.refresh();
 
 		if (VERSION.SDK_INT >= VERSION_CODES.VANILLA_ICE_CREAM && !a.isCarActivity()) {
 			ViewCompat.setOnApplyWindowInsetsListener(toolBar, (v, insets) -> {

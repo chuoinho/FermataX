@@ -26,6 +26,8 @@
     <item name="menu" type="id" />
 
     <item name="dashboard_fragment" type="id" />
+    <item name="control_fragment" type="id" />
+    <item name="phone_bottom_menu" type="id" />
     <item name="dashboard_settings" type="id" />
     <item name="dashboard_edit" type="id" />
     <item name="dashboard_menu" type="id" />
@@ -35,6 +37,7 @@
     <item name="dashboard_smart_layout_token" type="id" />
 	<item name="dashboard_smart_background_bind_token" type="id" />
 	<item name="dashboard_smart_background_drawable_tag" type="id" />
+	<item name="dashboard_smart_thumbnail_bind_token" type="id" />
     <item name="folders_fragment" type="id" />
     <item name="favorites_fragment" type="id" />
     <item name="recent_fragment" type="id" />
@@ -45,9 +48,9 @@
     <item name="tv_fragment" type="id" />
     <item name="radio_fragment" type="id" />
     <item name="podcast_fragment" type="id" />
-    <item name="audiobook_fragment" type="id" />
+	<item name="audiobook_fragment" type="id" />
 	<item name="stremio_fragment" type="id" />
-    <item name="youtube_fragment" type="id" />
+	<item name="youtube_fragment" type="id" />
     <item name="web_browser_fragment" type="id" />
     <item name="cast_addon" type="id" />
     <item name="chat_addon" type="id" />

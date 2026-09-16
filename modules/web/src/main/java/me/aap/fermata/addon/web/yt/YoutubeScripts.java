@@ -174,7 +174,7 @@ final class YoutubeScripts {
 				    const source = video && (video.currentSrc || video.src) || location.href;
 				    return source + ':' + Math.floor((video && video.duration || 0) * 10);
 				  }
-			  function emit(phase, pod, ad) {
+				  function emit(phase, pod, ad) {
 			    if (!state.eventCode) return;
 				    var generation = (activeVideo() && activeVideo().__fermataGeneration) ||
 				      window.__fermataPlaybackGeneration || 0;
@@ -186,8 +186,8 @@ final class YoutubeScripts {
 				      encodeURIComponent(phase) + '|' + encodeURIComponent(pod || '') + '|' +
 				      encodeURIComponent(ad || '') + '|' + encodeURIComponent(location.href || '') + '|' +
 				      String(generation)); }
-			    catch (err) {}
-			  }
+				    catch (err) {}
+				  }
 				  function attempt() {
 				    if (!state.skipEnabled || !adShowing()) return false;
 				    const now = Date.now();

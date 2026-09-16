@@ -19,6 +19,7 @@ public final class UiShellController {
 	public static void onRouteChanged(MainActivityDelegate activity) {
 		TopBarController.refresh(activity);
 		NavBarController.refresh(activity);
+		activity.refreshPhoneBottomMenu();
 	}
 
 	/**
@@ -32,5 +33,6 @@ public final class UiShellController {
 		}
 		TopBarController.refresh(activity);
 		NavBarController.refresh(activity);
+		activity.refreshPhoneBottomMenu();
 	}
 }

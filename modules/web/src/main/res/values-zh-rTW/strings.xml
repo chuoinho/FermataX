@@ -17,6 +17,7 @@
 	<string name="video_quality">視訊品質</string>
 	<string name="open_on_start">啟動時打開</string>
 	<string name="auto_highest_video_quality">自動選擇最高視訊質量</string>
+	<string name="yt_auto_fullscreen">自動全螢幕</string>
 	<string name="try_to_skip_ad">嘗試跳過廣告</string>
 	<string name="sponsorblock_sub">觀看 YouTube 時跳過眾包片段。</string>
 	<string name="sponsorblock_enable">啟用贊助商區塊</string>

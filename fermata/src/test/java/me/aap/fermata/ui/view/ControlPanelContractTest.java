@@ -174,15 +174,32 @@ public class ControlPanelContractTest {
 			String layout = resource("layout/" + name);
 			String body = viewBlock(layout, "body_layout");
 			String controls = viewBlock(layout, "control_panel");
-			assertTrue(body.contains("app:layout_constraintBottom_toBottomOf=\"parent\""));
+			assertTrue(body.contains(
+					"app:layout_constraintBottom_toTopOf=\"@id/phone_bottom_menu\""));
 			assertFalse(body.contains("layout_constraintBottom_toTopOf=\"@id/control_panel\""));
-			assertTrue(controls.contains("app:layout_constraintBottom_toBottomOf=\"parent\""));
+			assertTrue(controls.contains(
+					"app:layout_constraintBottom_toTopOf=\"@id/phone_bottom_menu\""));
 			assertFalse(controls.contains("layout_constraintTop_toBottomOf=\"@id/body_layout\""));
 			assertTrue(controls.contains("android:translationZ=\"4dp\""));
 			assertTrue(layout.contains("@+id/control_panel_scrim"));
 			assertTrue(layout.contains("android:clickable=\"false\""));
 			assertTrue(layout.contains("android:visibility=\"gone\""));
 		}
+	}
+
+	@Test
+	public void phoneBottomMenuDoesNotDependOnMaterialThemeDefaultTints() throws Exception {
+		for (String name : new String[]{"main_activity_left.xml", "main_activity_right.xml"}) {
+			String menu = existingIdViewBlock(resource("layout/" + name), "phone_bottom_menu");
+			assertTrue(name, menu.contains(
+					"android:theme=\"@style/PhoneBottomMenuThemeOverlay\""));
+			assertTrue(name, menu.contains("app:itemIconTint=\"@color/aa_nav_icon_tint\""));
+			assertTrue(name, menu.contains("app:itemTextColor=\"@color/aa_nav_icon_tint\""));
+		}
+		assertTrue(resource("values/theme.xml").contains(
+				"<style name=\"PhoneBottomMenuThemeOverlay\" parent=\"\">"));
+		assertTrue(resource("values/theme.xml").contains(
+				"<item name=\"android:textColorSecondary\">@color/aa_nav_icon_tint</item>"));
 	}
 
 	@Test
@@ -232,6 +249,14 @@ public class ControlPanelContractTest {
 
 	private static String viewBlock(String layout, String id) {
 		int from = layout.indexOf("@+id/" + id + "\"");
+		int to = layout.indexOf("/>", from);
+		assertTrue("Missing " + id, from >= 0);
+		assertTrue("Unterminated " + id, to > from);
+		return layout.substring(from, to);
+	}
+
+	private static String existingIdViewBlock(String layout, String id) {
+		int from = layout.indexOf("android:id=\"@id/" + id + "\"");
 		int to = layout.indexOf("/>", from);
 		assertTrue("Missing " + id, from >= 0);
 		assertTrue("Unterminated " + id, to > from);

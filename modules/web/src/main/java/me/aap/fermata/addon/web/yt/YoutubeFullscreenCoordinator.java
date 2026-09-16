@@ -19,6 +19,7 @@ final class YoutubeFullscreenCoordinator {
 	private long activeRequest = NO_REQUEST;
 	private long generation;
 	private boolean appPresentationActive;
+	private boolean automaticEntryNeedsSelection;
 
 	YoutubeFullscreenCoordinator(Host host) {
 		this(host, FermataWebClient.diagnosticsObserver());
@@ -28,6 +29,7 @@ final class YoutubeFullscreenCoordinator {
 		this.host = host;
 		this.diagnosticsObserver = (diagnosticsObserver == null) ?
 				FermataWebClient.diagnosticsObserver() : diagnosticsObserver;
+		automaticEntryNeedsSelection = !host.isAutomaticEntryEnabled();
 	}
 
 	State getState() {
@@ -39,6 +41,10 @@ final class YoutubeFullscreenCoordinator {
 	}
 
 	void requestAutoEntry(String pageUrl, String mediaUrl) {
+		if (!isAutomaticEntryAllowed()) {
+			emit(FullscreenEvent.REQUEST_REJECTED, state, NO_REQUEST, false);
+			return;
+		}
 		// A host interruption (for example an OEM reversing-camera overlay) may leave the
 		// page running and emitting playback callbacks. Do not let those callbacks replace
 		// the suspension transaction while the projected UI is unavailable.
@@ -65,9 +71,23 @@ final class YoutubeFullscreenCoordinator {
 
 	void authorizeExplicitSelection() {
 		gate.authorizeExplicitSelection();
+		if (host.isAutomaticEntryEnabled()) automaticEntryNeedsSelection = false;
+	}
+
+	void onAutomaticEntryPreferenceChanged() {
+		if (host.isAutomaticEntryEnabled()) return;
+		automaticEntryNeedsSelection = true;
+		if ((state != State.ENTRY_REQUESTED) && (state != State.ENTRY_DEFERRED) &&
+				(state != State.BROWSER_ACCEPTED)) return;
+		cancelRequestedAutomaticEntry();
 	}
 
 	boolean acceptBrowserEntry(long request) {
+		if ((request != NO_REQUEST) && !isAutomaticEntryAllowed()) {
+			cancelRequestedAutomaticEntry();
+			emit(FullscreenEvent.REQUEST_REJECTED, state, request, false);
+			return false;
+		}
 		if (appPresentationActive || (state == State.APP_FULLSCREEN)) {
 			emit(FullscreenEvent.REQUEST_REJECTED, state, request, false);
 			return false;
@@ -250,6 +270,10 @@ final class YoutubeFullscreenCoordinator {
 
 	private void beginBrowserEntry(long generation, long request, int attempt) {
 		if (!isCurrent(generation, request)) return;
+		if (!isAutomaticEntryAllowed()) {
+			cancelRequestedAutomaticEntry();
+			return;
+		}
 		if (!host.canEnterFullscreen()) {
 			if (attempt < HOST_READY_MAX_ATTEMPTS) {
 				host.postDelayed(() -> beginBrowserEntry(generation, request, attempt + 1),
@@ -271,6 +295,10 @@ final class YoutubeFullscreenCoordinator {
 
 	private void deferRequestedEntry(long generation, long request) {
 		if (!isCurrent(generation, request)) return;
+		if (!isAutomaticEntryAllowed()) {
+			cancelRequestedAutomaticEntry();
+			return;
+		}
 		state = State.ENTRY_DEFERRED;
 		emit(FullscreenEvent.STATE_CHANGED, state, request, true);
 		// A request initiated from Recent/voice has no browser user activation on some WebView
@@ -293,6 +321,21 @@ final class YoutubeFullscreenCoordinator {
 		emit(FullscreenEvent.STATE_CHANGED, state, activeRequest, false);
 		host.cancelPendingBrowserFullscreen();
 		leaveOwnedPresentation();
+	}
+
+	private void cancelRequestedAutomaticEntry() {
+		if ((state != State.ENTRY_REQUESTED) && (state != State.ENTRY_DEFERRED) &&
+				(state != State.BROWSER_ACCEPTED)) return;
+		gate.cancelCurrentPlayback();
+		state = State.CANCELLED;
+		activeRequest = NO_REQUEST;
+		generation++;
+		emit(FullscreenEvent.STATE_CHANGED, state, activeRequest, false);
+		host.cancelPendingBrowserFullscreen();
+	}
+
+	private boolean isAutomaticEntryAllowed() {
+		return host.isAutomaticEntryEnabled() && !automaticEntryNeedsSelection;
 	}
 
 	private void enterFallbackVideoMode(long generation, long request) {
@@ -354,6 +397,8 @@ final class YoutubeFullscreenCoordinator {
 
 	interface Host {
 		boolean canEnterFullscreen();
+
+		boolean isAutomaticEntryEnabled();
 
 		boolean requestBrowserFullscreen(long request);
 

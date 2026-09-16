@@ -4,6 +4,8 @@ import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_NONE;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PAUSED;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
@@ -104,13 +106,24 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	}
 
 	@Override
+	public String controlOnlyAddonClass() {
+		return StremioWebAddon.class.getName();
+	}
+
+	@Override
+	public long controlOnlyActions() {
+		return state.controlOnlyActions();
+	}
+
+	@Override
 	public boolean dispatchControlOnlyAction(MediaSessionCallback.ControlOnlyAction action) {
 		String command = switch (action) {
 			case PLAY -> "play";
 			case PAUSE -> "pause";
 			case NEXT_TRACK -> "nexttrack";
+			case PREVIOUS_TRACK -> null;
 		};
-		if (!isControlOnlyActive() || !state.canDispatch(command)) return false;
+		if ((command == null) || !isControlOnlyActive() || !state.canDispatch(command)) return false;
 		web.evaluateJavascript(dispatchSource(command), null);
 		return true;
 	}
@@ -407,6 +420,13 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 
 		long actions() {
 			return handlers.contains(Action.NEXT_TRACK) ? ACTION_SKIP_TO_NEXT : 0L;
+		}
+
+		long controlOnlyActions() {
+			long actions = actions();
+			if (handlers.contains(Action.PLAY)) actions |= ACTION_PLAY;
+			if (handlers.contains(Action.PAUSE)) actions |= ACTION_PAUSE;
+			return actions;
 		}
 
 		@Nullable MediaMetadataCompat metadata() {

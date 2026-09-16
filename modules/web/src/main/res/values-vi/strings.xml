@@ -17,6 +17,7 @@
 	<string name="video_quality">Chất lượng video</string>
 	<string name="open_on_start">Mở khi bắt đầu</string>
 	<string name="auto_highest_video_quality">Tự động chọn chất lượng video cao nhất</string>
+	<string name="yt_auto_fullscreen">Tự động toàn màn hình</string>
 	<string name="try_to_skip_ad">Cố gắng bỏ qua quảng cáo</string>
 	<string name="sponsorblock_sub">Bỏ qua các phân đoạn có nguồn gốc từ cộng đồng trong khi xem YouTube.</string>
 	<string name="sponsorblock_enable">Kích hoạt khối tài trợ</string>

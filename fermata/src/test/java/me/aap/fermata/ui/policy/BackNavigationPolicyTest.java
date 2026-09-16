@@ -25,12 +25,12 @@ public class BackNavigationPolicyTest {
 	}
 
 	@Test
-	public void activityBackReturnsThroughNavDashboardThenExit() {
+	public void activityBackReturnsThroughNavThenPrimaryRootThenExit() {
 		assertEquals(BackNavigationPolicy.ActivityBackAction.HANDLED,
 				BackNavigationPolicy.resolveActivityBack(true, true, true, false, false));
 		assertEquals(SHOW_NAV_FRAGMENT,
 				BackNavigationPolicy.resolveActivityBack(true, false, true, false, false));
-		assertEquals(BackNavigationPolicy.ActivityBackAction.SHOW_DASHBOARD,
+		assertEquals(BackNavigationPolicy.ActivityBackAction.SHOW_PRIMARY_ROOT,
 				BackNavigationPolicy.resolveActivityBack(true, false, true, true, false));
 		assertEquals(FINISH,
 				BackNavigationPolicy.resolveActivityBack(true, false, true, true, true));
@@ -39,8 +39,10 @@ public class BackNavigationPolicyTest {
 	}
 
 	@Test
-	public void addonRootReturnsToDashboardAndDashboardRootExitsOnEveryHost() {
-		assertEquals(BackNavigationPolicy.ActivityBackAction.SHOW_DASHBOARD,
+	public void phoneRootsReturnToControlWhileAutomotiveDashboardStillExits() {
+		assertEquals(FINISH,
+				BackNavigationPolicy.resolveActivityBack(true, false, true, true, true));
+		assertEquals(BackNavigationPolicy.ActivityBackAction.SHOW_PRIMARY_ROOT,
 				BackNavigationPolicy.resolveActivityBack(true, false, true, true, false));
 		assertEquals(FINISH,
 				BackNavigationPolicy.resolveActivityBack(true, false, true, true, true));

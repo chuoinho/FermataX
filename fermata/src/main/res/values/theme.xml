@@ -22,6 +22,10 @@
         <item name="cornerRadius">13dp</item>
     </style>
 
+    <style name="PhoneBottomMenuThemeOverlay" parent="">
+        <item name="android:textColorSecondary">@color/aa_nav_icon_tint</item>
+    </style>
+
     <style name="AppTheme.MediaItemStyle">
         <item name="iconColor">?attr/colorOnSecondary</item>
         <item name="hintColor">@android:color/holo_green_light</item>

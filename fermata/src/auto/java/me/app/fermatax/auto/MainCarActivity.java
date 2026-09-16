@@ -46,8 +46,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
+import java.util.function.BooleanSupplier;
+
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.addon.AddonInfo;
+import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.AddonState;
+import me.aap.fermata.auto.AutomotiveConnectionState;
+import me.aap.fermata.auto.AutomotiveNavigationController;
+import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -95,6 +103,9 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private final long diagnosticsActivityId = DiagnosticsObserver.nextId();
 	private final ProjectedBackEventFilter projectedBackEventFilter =
 			new ProjectedBackEventFilter();
+	private final AutomotiveNavigationController.Navigator phoneNavigator =
+			this::openFromPhone;
+	private final Object controlVisibilityOwner = new Object();
 
 	@NonNull
 	@Override
@@ -199,6 +210,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
+		AutomotiveConnectionState.get().appVisibilityChanged(controlVisibilityOwner, true);
+		AutomotiveNavigationController.get().register(phoneNavigator);
 		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.RESUMED, diagnosticsActivityId);
 		resumed = true;
 		MainActivityDelegate d = createdDelegate;
@@ -223,6 +236,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@Override
 	public void onPause() {
 		stopInput();
+		AutomotiveNavigationController.get().unregister(phoneNavigator);
+		AutomotiveConnectionState.get().appVisibilityChanged(controlVisibilityOwner, false);
 		super.onPause();
 		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.PAUSED, diagnosticsActivityId);
 		resumed = false;
@@ -236,6 +251,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@SuppressWarnings("unchecked")
 	public void onDestroy() {
 		stopInput();
+		AutomotiveNavigationController.get().unregister(phoneNavigator);
+		AutomotiveConnectionState.get().appVisibilityChanged(controlVisibilityOwner, false);
 		destroyed = true;
 		if (currentInstance == this) currentInstance = null;
 		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.DESTROYED, diagnosticsActivityId);
@@ -314,6 +331,41 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		MainCarActivity activity = currentInstance;
 		if (activity == null) return;
 		FermataApplication.get().getHandler().post(activity::finish);
+	}
+
+	private FutureSupplier<OpenResult> openFromPhone(int destinationId,
+			BooleanSupplier stillCurrent) {
+		MainActivityDelegate delegate = createdDelegate;
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if (!resumed || destroyed || (delegate == null)) return completed(OpenResult.NOT_READY);
+		Promise<OpenResult> result = new Promise<>();
+		FermataApplication.get().getHandler().post(() -> {
+			if (!stillCurrent.getAsBoolean() || !resumed || destroyed ||
+					(createdDelegate != delegate)) {
+				result.complete(OpenResult.CANCELLED);
+				return;
+			}
+			delegate.showFragmentWhenReadyGuarded(destinationId, null, () ->
+					stillCurrent.getAsBoolean() && resumed && !destroyed &&
+							(createdDelegate == delegate)).onCompletion((opened, error) -> {
+				if (!stillCurrent.getAsBoolean() || !resumed || destroyed ||
+						(createdDelegate != delegate)) result.complete(OpenResult.CANCELLED);
+				else if (error != null) result.complete(OpenResult.FAILED);
+				else if (Boolean.TRUE.equals(opened)) result.complete(OpenResult.OPENED);
+				else result.complete(failedOpenResult(destinationId));
+			});
+		});
+		return result;
+	}
+
+	private static OpenResult failedOpenResult(int destinationId) {
+		AddonInfo info = AddonManager.get().getAddonInfo(destinationId);
+		if (info == null) return OpenResult.FAILED;
+		return switch (AddonManager.get().getAddonState(info)) {
+			case DISABLED -> OpenResult.DISABLED;
+			case FAILED -> OpenResult.FAILED;
+			default -> OpenResult.NOT_READY;
+		};
 	}
 
 	@Override

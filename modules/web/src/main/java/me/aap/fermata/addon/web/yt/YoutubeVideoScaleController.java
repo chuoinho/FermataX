@@ -26,7 +26,8 @@ final class YoutubeVideoScaleController {
 		return "(function(){var id='" + STYLE_ID + "';var s=document.getElementById(id);" +
 				"if(!s){s=document.createElement('style');s.id=id;" +
 				"(document.head||document.documentElement).appendChild(s);}" +
-				"s.textContent='html.fermata-yt-immersive body video{object-fit:" + fit +
+				"s.textContent='html.fermata-yt-immersive body video,:fullscreen video," +
+				":-webkit-full-screen video{object-fit:" + fit +
 				" !important;}';})()";
 	}
 }

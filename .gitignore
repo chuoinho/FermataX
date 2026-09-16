@@ -36,6 +36,8 @@ fermatax-dhu-gallery-*/
 docs/*
 !docs/maintainability-refactor-goal-20260730.md
 !docs/package-identity.md
+!docs/p0-p1/
+!docs/p0-p1/**
 !docs/stremio/
 !docs/stremio/**
 mockups/

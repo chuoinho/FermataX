@@ -10,6 +10,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.utils.log.Log;
 
 /** Process-wide observer for the official Android Auto projection connection boundary. */
@@ -122,6 +123,7 @@ final class AutoConnectionMonitor {
 			if ((expectedObservation != observationGeneration) || (type == null)) return;
 		}
 
+		AutomotiveConnectionState.get().connectionChanged(type == CONNECTION_TYPE_PROJECTION);
 		boolean projectionAccepted = false;
 		if (type == CONNECTION_TYPE_PROJECTION) {
 			projectionAccepted = AutoSessionShutdown.sessionStarted();

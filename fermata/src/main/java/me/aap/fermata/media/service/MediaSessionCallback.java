@@ -162,7 +162,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private final PlaybackCustomActions playbackActions;
 	private final BroadcastReceiver onNoisy;
 	private MediaEngine engine;
-	private ControlOnlyDelegate controlOnlyDelegate;
+	private ControlOnlySessionState controlOnlySession = new ControlOnlySessionState();
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
 	private boolean isMuted;
@@ -350,53 +350,52 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private void invalidateAudioEffectsApply() { audioEffectsApplyGeneration++; AudioEffectsApplyRequest request = audioEffectsApply; audioEffectsApply = null; if (request != null) request.result.completeExceptionally(new CancellationException("Audio-effects Apply was superseded")); }
 
-	/**
-	 * A short-lived transport owner for renderers which remain outside Fermata's media-engine
-	 * pipeline. It cannot supply a source, decoder, audio focus, position, or stream URL.
-	 */
 	public interface ControlOnlyDelegate {
-		boolean isControlOnlyActive();
-
-		boolean dispatchControlOnlyAction(ControlOnlyAction action);
+		boolean isControlOnlyActive(); boolean dispatchControlOnlyAction(ControlOnlyAction action);
+		default String controlOnlyAddonClass() { return null; } default String controlOnlyContentKey() { return ""; }
+		default long controlOnlyActions() { return 0L; } default void onControlOnlyRevoked() { }
 	}
 
-	public enum ControlOnlyAction { PLAY, PAUSE, NEXT_TRACK }
+	public enum ControlOnlyAction { PLAY, PAUSE, NEXT_TRACK, PREVIOUS_TRACK }
 
 	public boolean claimControlOnly(@NonNull ControlOnlyDelegate delegate, int state,
-			long actions, @Nullable MediaMetadataCompat nextMetadata) {
-		if (terminal || !delegate.isControlOnlyActive() || (engine != null)) return false;
-		ControlOnlyDelegate current = controlOnlyDelegate;
-		if ((current != null) && (current != delegate)) return false;
-		controlOnlyDelegate = delegate;
-		long supported = ACTION_PLAY | ACTION_PAUSE | ACTION_PLAY_PAUSE;
-		if ((actions & ACTION_SKIP_TO_NEXT) != 0) supported |= ACTION_SKIP_TO_NEXT;
-		metadata = nextMetadata;
-		session.setMetadata(nextMetadata);
-		setPlaybackState(new PlaybackStateCompat.Builder().setActions(supported)
-				.setState(state, 0L, 1f).build(), null, nextMetadata);
-		return true;
+			long actions, @Nullable MediaMetadataCompat nextMetadata) { return claimControlOnly(delegate, delegate.controlOnlyContentKey(), state, actions, nextMetadata); }
+
+	public boolean claimControlOnly(@NonNull ControlOnlyDelegate delegate, @Nullable String contentKey,
+			int state, long actions, @Nullable MediaMetadataCompat nextMetadata) {
+		if (terminal || !delegate.isControlOnlyActive() || (engine != null)) return false; ControlOnlyPresentation presentation = controlOnlySession().claimPresentation(delegate, contentKey, state, actions, nextMetadata); if (presentation == null) return false;
+		metadata = nextMetadata; session.setMetadata(nextMetadata); setPlaybackState(new PlaybackStateCompat.Builder().setActions(presentation.actions()).setState(state, 0L, 1f).build(), null, nextMetadata); return true;
 	}
 
 	public void releaseControlOnly(@NonNull ControlOnlyDelegate delegate) {
-		if (controlOnlyDelegate != delegate) return;
-		controlOnlyDelegate = null;
-		if (engine != null) return;
-		metadata = null;
-		session.setMetadata(null);
-		setPlaybackState(new PlaybackStateCompat.Builder().setActions(0L)
-				.setState(STATE_NONE, 0L, 1f).build(), null, null);
-		session.setActive(false);
+		if (!controlOnlySession().release(delegate) || engine != null) return; metadata = null; session.setMetadata(null); setPlaybackState(new PlaybackStateCompat.Builder().setActions(0L).setState(STATE_NONE, 0L, 1f).build(), null, null); session.setActive(false);
+	}
+
+	@Nullable
+	public ControlOnlyPresentation getControlOnlyPresentation() {
+		ControlOnlySessionState s = controlOnlySession(); ControlOnlyPresentation p = s.presentation(); ControlOnlyDelegate d = s.owner(); return (p != null) && !terminal && (engine == null) && (d != null) && d.isControlOnlyActive() && s.isCurrent(p, d) ? p : null;
+	}
+
+	public boolean isControlOnlyCurrent(long leaseId) {
+		ControlOnlyPresentation p = getControlOnlyPresentation(); return (p != null) && p.leaseId() == leaseId;
+	}
+
+	public boolean dispatchControlOnly(long leaseId, ControlOnlyAction action) {
+		ControlOnlyPresentation p = getControlOnlyPresentation(); ControlOnlyDelegate d = controlOnlySession().owner(); if (p == null || p.leaseId() != leaseId || d == null || !ControlOnlySessionState.supports(p.actions(), action)) return false;
+		try { return d.dispatchControlOnlyAction(action); } catch (RuntimeException error) { Log.d(error, "Control-only media action failed"); return false; }
 	}
 
 	private boolean dispatchControlOnlyAction(ControlOnlyAction action) {
-		ControlOnlyDelegate delegate = controlOnlyDelegate;
-		if ((delegate == null) || !delegate.isControlOnlyActive()) return false;
-		try {
-			return delegate.dispatchControlOnlyAction(action);
-		} catch (RuntimeException error) {
-			Log.d(error, "Control-only media action failed");
-			return false;
-		}
+		ControlOnlyPresentation p = getControlOnlyPresentation(); if (p == null) return false; dispatchControlOnly(p.leaseId(), action); return true;
+	}
+
+	private void revokeControlOnly() {
+		ControlOnlySessionState s = controlOnlySession(); ControlOnlyDelegate d = s.owner(); if (d == null) return; s.invalidateAndGetOwner(); try { d.onControlOnlyRevoked(); } catch (RuntimeException error) { Log.d(error, "Control-only revoke callback failed"); }
+		if (s.owner() != null || engine != null) return; metadata = null; session.setMetadata(null); setPlaybackState(new PlaybackStateCompat.Builder().setActions(0L).setState(STATE_NONE, 0L, 1f).build(), null, null); session.setActive(false);
+	}
+
+	private ControlOnlySessionState controlOnlySession() {
+		return (controlOnlySession != null) ? controlOnlySession : (controlOnlySession = new ControlOnlySessionState());
 	}
 
 	@Override
@@ -424,6 +423,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public void setEngine(MediaEngine engine) {
 		if (terminal) { MediaEngineShutdown.release(engine, audioManager, audioFocusReq); return; }
 		invalidateAudioEffectsApply();
+		revokeControlOnly();
 		switchEngine(engine);
 	}
 
@@ -553,6 +553,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			session.setActive(true);
 			return;
 		}
+		revokeControlOnly();
 		playerTask.cancel();
 		onStop(false);
 		this.engine = engine;
@@ -771,6 +772,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	public void close() {
 		hardwareInputRouter.close();
+		revokeControlOnly();
 		stopImmediately();
 		audioEffectsController.close();
 		progressCoordinator.cancelCheckpoint();
@@ -1095,6 +1097,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onSkipToPrevious() {
+		if (dispatchControlOnlyAction(ControlOnlyAction.PREVIOUS_TRACK)) return;
 		if (terminal) return; permanentFocusLoss.cancel();
 		invalidateAudioEffectsApply();
 		playerTask.cancel();

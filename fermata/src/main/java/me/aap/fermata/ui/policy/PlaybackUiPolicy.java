@@ -20,8 +20,16 @@ public final class PlaybackUiPolicy {
 		if ((source == null) || engine.isVideoModeRequired()) return false;
 
 		ActivityFragment fragment = activity.getActiveFragment();
-		return shouldShowAudioPlayerBar(true, false, fragment != null,
-				(fragment == null) ? 0 : fragment.getFragmentId(), R.id.dashboard_fragment);
+		return shouldShowAudioPlayerBar(activity.getRuntimeHostMode(), true, false,
+				fragment != null, (fragment == null) ? 0 : fragment.getFragmentId());
+	}
+
+	static boolean shouldShowAudioPlayerBar(RuntimeHostMode hostMode, boolean hasAudioSource,
+			boolean videoModeRequired, boolean hasActiveFragment, int activeFragmentId) {
+		return shouldShowAudioPlayerBar(hasAudioSource, videoModeRequired, hasActiveFragment,
+				activeFragmentId, R.id.dashboard_fragment) &&
+				(!PhoneRootPolicy.usesPhoneRoots(hostMode) ||
+						!PhoneRootPolicy.isPhoneRoot(activeFragmentId));
 	}
 
 	static boolean shouldShowAudioPlayerBar(boolean hasAudioSource, boolean videoModeRequired,

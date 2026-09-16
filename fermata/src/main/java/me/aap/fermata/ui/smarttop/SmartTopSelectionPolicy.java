@@ -7,7 +7,13 @@ public final class SmartTopSelectionPolicy {
 
 	public static SmartTopMode select(boolean hasCanonicalCurrent, boolean hasResume,
 			boolean hasRecent, boolean hasRecommendation) {
+		return select(hasCanonicalCurrent, false, hasResume, hasRecent, hasRecommendation);
+	}
+
+	public static SmartTopMode select(boolean hasCanonicalCurrent, boolean hasLiveWebLease,
+			boolean hasResume, boolean hasRecent, boolean hasRecommendation) {
 		if (hasCanonicalCurrent) return SmartTopMode.CURRENT;
+		if (hasLiveWebLease) return SmartTopMode.CURRENT_WEB;
 		if (hasResume) return SmartTopMode.RESUME;
 		if (hasRecent) return SmartTopMode.RECENT;
 		// Keep the recommendation input for compatibility, but it is no longer a display tier.

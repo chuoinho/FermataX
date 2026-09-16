@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.smarttop;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.support.v4.media.MediaMetadataCompat;
 import android.text.TextUtils;
@@ -24,6 +25,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
+import me.aap.fermata.media.service.ControlOnlyPresentation;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.policy.PlaybackTimelinePolicy;
 import me.aap.utils.async.FutureSupplier;
@@ -109,7 +111,49 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			loadQuickRecent(generation, active);
 			return;
 		}
+		ControlOnlyPresentation web = activity.getMediaSessionCallback().getControlOnlyPresentation();
+		if (web != null) {
+			publishWeb(generation, web);
+			loadQuickRecent(generation, null);
+			return;
+		}
 		loadProviderCandidates(generation);
+	}
+
+	private void publishWeb(int generation, ControlOnlyPresentation web) {
+		MediaMetadataCompat metadata = web.metadata();
+		CharSequence title = (metadata == null) ? "" : metadata.getText(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE);
+		CharSequence subtitle = (metadata == null) ? "" : metadata.getText(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE);
+		AddonInfoHolder addon = addonInfo(web.addonClass());
+		title = webTitle(title, addon.name);
+		if (TextUtils.isEmpty(subtitle)) subtitle = "";
+		SmartTopCapabilities capabilities = SmartTopCapabilities.web(web.actions(), web.state());
+		boolean playing = web.state() == android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING ||
+				web.state() == android.support.v4.media.session.PlaybackStateCompat.STATE_BUFFERING;
+		SmartTopViewState current = new SmartTopViewState(generation, SmartTopMode.CURRENT_WEB, layout,
+				null, null, addon.icon, webBackground(web),
+				context.getString(R.string.dashboard_now_playing), title, subtitle,
+				SmartTopTimeline.hidden(playing), capabilities,
+				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT_WEB, layout, capabilities), false,
+				List.of(), null, web, thumbnailFor(metadata, "web:" + web.leaseId()));
+		publish(current);
+	}
+
+	private static final class AddonInfoHolder {
+		final int icon;
+		final CharSequence name;
+		AddonInfoHolder(int icon, CharSequence name) { this.icon = icon; this.name = name; }
+	}
+
+	private AddonInfoHolder addonInfo(String addonClass) {
+		me.aap.fermata.addon.AddonInfo info = AddonManager.get().getAddonInfo(addonClass);
+		return (info == null) ? new AddonInfoHolder(R.drawable.video,
+				context.getString(R.string.dashboard_now_playing)) :
+				new AddonInfoHolder(info.icon, context.getString(info.addonName));
+	}
+
+	static CharSequence webTitle(@Nullable CharSequence title, CharSequence addonName) {
+		return ((title == null) || (title.length() == 0)) ? addonName : title;
 	}
 
 	private boolean refreshCurrentInPlace(PlayableItem active) {
@@ -131,17 +175,20 @@ public final class SmartTopCoordinator implements AutoCloseable {
 				SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, layout, capabilities);
 		SmartTopTimeline timeline = activeTimeline(active);
 		SmartTopBackground background = currentBackground(current, active, snapshot.getMetadata());
+		SmartTopThumbnail thumbnail = (snapshot.getMetadata() == null) ? current.thumbnail() :
+				thumbnailFor(snapshot.getMetadata(), itemIdentity(active));
 
 		SmartTopViewState next = new SmartTopViewState(current.generation(), SmartTopMode.CURRENT,
 				layout, active, PlayableItemResolver.unwrap(active), active.getIcon(),
 				background,
 				context.getString(R.string.dashboard_now_playing), title, subtitle, timeline,
-				capabilities, actions, favorite, current.quickRecent(), null);
+				capabilities, actions, favorite, current.quickRecent(), null, null, thumbnail);
 		boolean metadataStable = (current.icon() == next.icon()) &&
 				current.background().identity().equals(next.background().identity()) &&
 				TextUtils.equals(current.eyebrow(), next.eyebrow()) &&
 				TextUtils.equals(current.title(), next.title()) &&
 				TextUtils.equals(current.subtitle(), next.subtitle()) &&
+				Objects.equals(current.thumbnail(), next.thumbnail()) &&
 				(current.favorite() == next.favorite()) && current.actions().equals(next.actions());
 		boolean timelineChanged = !SmartTopTimelinePresentation.of(current.timeline()).equals(
 				SmartTopTimelinePresentation.of(next.timeline()));
@@ -171,7 +218,8 @@ public final class SmartTopCoordinator implements AutoCloseable {
 				backgroundFor(active, snapshot.getMetadata()),
 				context.getString(R.string.dashboard_now_playing), title, subtitle(active), timeline,
 				capabilities, SmartTopActionPolicy.resolve(SmartTopMode.CURRENT, layout, capabilities),
-				favoriteSupported && active.isFavoriteItem(), List.of(), null);
+				favoriteSupported && active.isFavoriteItem(), List.of(), null, null,
+				thumbnailFor(snapshot.getMetadata(), itemIdentity(active)));
 		publish(current);
 		loadItemMetadata(generation, active, false);
 	}
@@ -289,6 +337,8 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			}
 			SmartTopBackground background = backgroundFor(item, metadata);
 			if (!next.background().equals(background)) next = next.withBackground(background);
+			SmartTopThumbnail thumbnail = thumbnailFor(metadata, itemIdentity(item));
+			if (!Objects.equals(next.thumbnail(), thumbnail)) next = next.withThumbnail(thumbnail);
 			if (next != current) publish(next);
 		});
 	}
@@ -392,6 +442,7 @@ public final class SmartTopCoordinator implements AutoCloseable {
 	private CharSequence eyebrow(SmartTopMode mode) {
 		return switch (mode) {
 			case CURRENT -> context.getString(R.string.dashboard_now_playing);
+			case CURRENT_WEB -> context.getString(R.string.dashboard_now_playing);
 			case RESUME -> context.getString(R.string.dashboard_continue);
 			case RECENT -> context.getString(R.string.recent);
 			case EMPTY -> context.getString(R.string.dashboard_smart_discover);
@@ -477,8 +528,11 @@ public final class SmartTopCoordinator implements AutoCloseable {
 
 	private SmartTopBackground backgroundFor(PlayableItem item,
 			@Nullable MediaMetadataCompat metadata) {
+		Bitmap bitmap = SmartTopArtworkResolver.directArtworkBitmap(metadata);
+		boolean directArtwork = (bitmap != null) && SmartTopBackgroundPolicy.eligibleDimensions(
+				bitmap.getWidth(), bitmap.getHeight(), false);
 		Uri artwork = SmartTopArtworkResolver.directArtworkUri(metadata);
-		boolean eligibleArtwork = SmartTopArtworkResolver.isAllowed(context, artwork);
+		boolean eligibleArtwork = directArtwork || SmartTopArtworkResolver.isAllowed(context, artwork);
 		String rootId = item.getRoot().getId();
 		SmartTopBackground.Kind kind = SmartTopBackgroundPolicy.select(false, eligibleArtwork,
 				SmartTopArtworkResolver.isProvenAudioRoot(item.getRoot()));
@@ -486,13 +540,42 @@ public final class SmartTopCoordinator implements AutoCloseable {
 			case ARTWORK -> {
 				String itemIdentity = TextUtils.isEmpty(item.getOrigId()) ?
 						item.getId() : item.getOrigId();
-				yield SmartTopBackground.artwork(Objects.requireNonNull(artwork), itemIdentity);
+				yield directArtwork ? SmartTopBackground.artworkSource(bitmap, itemIdentity) :
+						SmartTopBackground.artwork(Objects.requireNonNull(artwork), itemIdentity);
 			}
 			case AUDIO_SPECTRUM -> SmartTopBackground.audioSpectrum(rootId);
 			case SOURCE_FALLBACK -> SmartTopBackground.sourceFallback(
 					TextUtils.isEmpty(rootId) ? item.getClass().getName() : rootId);
 			case EMPTY -> throw new IllegalStateException("Concrete item selected Empty background");
 		};
+	}
+
+	private SmartTopBackground webBackground(ControlOnlyPresentation web) {
+		MediaMetadataCompat metadata = web.metadata();
+		Bitmap bitmap = SmartTopArtworkResolver.directArtworkBitmap(metadata);
+		if ((bitmap != null) && SmartTopBackgroundPolicy.eligibleDimensions(
+				bitmap.getWidth(), bitmap.getHeight(), false)) {
+			return SmartTopBackground.artworkSource(bitmap, "web:" + web.leaseId());
+		}
+		Uri artwork = SmartTopArtworkResolver.directArtworkUri(metadata);
+		if (SmartTopArtworkResolver.isAllowed(context, artwork)) {
+			return SmartTopBackground.artwork(artwork, "web:" + web.leaseId());
+		}
+		return SmartTopBackground.sourceFallback(web.addonClass());
+	}
+
+	@Nullable
+	private SmartTopThumbnail thumbnailFor(@Nullable MediaMetadataCompat metadata, String identity) {
+		SmartTopThumbnail bitmap = SmartTopThumbnail.fromSource(identity,
+				SmartTopArtworkResolver.directArtworkBitmap(metadata));
+		if (bitmap != null) return bitmap;
+		Uri uri = SmartTopArtworkResolver.directArtworkUri(metadata);
+		return SmartTopArtworkResolver.isAllowed(context, uri) ?
+				SmartTopThumbnail.fromUri(identity, uri) : null;
+	}
+
+	private static String itemIdentity(PlayableItem item) {
+		return TextUtils.isEmpty(item.getOrigId()) ? item.getId() : item.getOrigId();
 	}
 
 	private static SmartTopBackground fallbackBackground(PlayableItem item) {

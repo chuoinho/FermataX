@@ -40,6 +40,11 @@ final class YoutubeFullscreenHostAdapter implements YoutubeFullscreenCoordinator
 	}
 
 	@Override
+	public boolean isAutomaticEntryEnabled() {
+		return web.getAddon().getAutoFullscreen();
+	}
+
+	@Override
 	public boolean requestBrowserFullscreen(long request) {
 		if (getLiveActivity() == null) return false;
 		FermataChromeClient chrome = web.getWebChromeClient();
@@ -92,6 +97,7 @@ final class YoutubeFullscreenHostAdapter implements YoutubeFullscreenCoordinator
 		MainActivityDelegate activity = getLiveActivity();
 		if ((activity == null) || !canEnterFullscreen(activity)) return;
 		web.setImmersiveVideoMode(false);
+		YoutubeVideoScaleController.apply(web, web.getAddon().getScale());
 		FermataChromeClient chrome = web.getWebChromeClient();
 		if (chrome instanceof YoutubeChromeClient youtubeChrome &&
 				youtubeChrome.isFullScreen()) {

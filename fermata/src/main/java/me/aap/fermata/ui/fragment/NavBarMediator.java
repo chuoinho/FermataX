@@ -56,9 +56,11 @@ public class NavBarMediator extends PrefNavBarMediator
 
 	@Override
 	protected List<NavBarItem> getItems(NavBarView nb) {
-		List<DashboardItems.NavItem> navItems = DashboardItems.getNavItems(getPreferenceStore(nb));
+		MainActivityDelegate activity = MainActivityDelegate.get(nb.getContext());
+		List<DashboardItems.NavItem> navItems =
+				DashboardItems.getNavItems(getPreferenceStore(nb));
 		List<NavBarItem> items = new ArrayList<>(navItems.size());
-		Context ctx = MainActivityDelegate.get(nb.getContext()).getLocalizedContext(nb.getContext());
+		Context ctx = activity.getLocalizedContext(nb.getContext());
 
 		for (DashboardItems.NavItem item : navItems) {
 			items.add(create(ctx, item.id, item.icon, item.title, true));

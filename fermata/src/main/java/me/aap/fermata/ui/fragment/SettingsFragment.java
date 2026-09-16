@@ -59,6 +59,8 @@ public class SettingsFragment extends MainActivityFragment
 	private DiagnosticsPreferences diagnosticsPreferences;
 	private AudioEffectsDraft audioEffectsDraft;
 	private AudioEffectsProfileRepository audioEffectsProfiles;
+	@Nullable
+	private ReadinessPrefsBuilder readinessPrefsBuilder;
 
 	@Override
 	public int getFragmentId() {
@@ -144,6 +146,20 @@ public class SettingsFragment extends MainActivityFragment
 		if (adapter != null) adapter.onDestroy();
 		adapter = null;
 		diagnosticsPreferences = null;
+		if (readinessPrefsBuilder != null) readinessPrefsBuilder.close();
+		readinessPrefsBuilder = null;
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		if (readinessPrefsBuilder != null) readinessPrefsBuilder.refresh();
+	}
+
+	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		if (!hidden && (readinessPrefsBuilder != null)) readinessPrefsBuilder.refresh();
 	}
 
 	@Override
@@ -374,6 +390,14 @@ public class SettingsFragment extends MainActivityFragment
 				o.subtitle = R.string.restore_backup_sub;
 				o.onClick = () -> SettingsBackupManager.restoreBackup(a);
 			});
+		}
+
+		if (ReadinessPrefsBuilder.shouldAdd(a.getRuntimeHostMode())) {
+			long readinessGeneration = viewGeneration;
+			BooleanSupplier readinessUiActive = () -> viewActive && !isHidden() &&
+					(viewGeneration == readinessGeneration) && (activityDelegate == a) && isAdded();
+			readinessPrefsBuilder = new ReadinessPrefsBuilder(a, readinessUiActive);
+			readinessPrefsBuilder.addTo(set);
 		}
 
 		return new PreferenceViewAdapter(set) {

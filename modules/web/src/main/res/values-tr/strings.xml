@@ -17,6 +17,7 @@
 	<string name="video_quality">Video kalitesi</string>
 	<string name="open_on_start">Başlangıçta aç</string>
 	<string name="auto_highest_video_quality">En yüksek video kalitesini otomatik seç</string>
+	<string name="yt_auto_fullscreen">Otomatik tam ekran</string>
 	<string name="try_to_skip_ad">Reklamları atlamayı deneyin</string>
 	<string name="sponsorblock_sub">YouTube izlerken kitle kaynaklı bölümleri atlayın.</string>
 	<string name="sponsorblock_enable">SponsorBlock\&apos;u Etkinleştir</string>

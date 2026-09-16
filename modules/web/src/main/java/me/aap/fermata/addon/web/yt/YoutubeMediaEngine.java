@@ -429,6 +429,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		fullScreenCoordinator.onUserExit();
 	}
 
+	void onAutomaticEntryPreferenceChanged() {
+		fullScreenCoordinator.onAutomaticEntryPreferenceChanged();
+	}
+
 	YoutubeFullscreenCoordinator.Suspension suspendFullscreenForHostInterruption() {
 		return fullScreenCoordinator.suspendForHostInterruption();
 	}
@@ -1035,6 +1039,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		b.addItem(me.aap.fermata.R.id.video_scaling,
 				ResourcesCompat.getDrawable(r, R.drawable.video_scaling, ctx.getTheme()),
 				r.getString(me.aap.fermata.R.string.video_scaling)).setSubmenu(this::videoScalingMenu);
+		b.addItem(R.id.yt_auto_fullscreen, null, r.getString(R.string.yt_auto_fullscreen))
+				.setChecked(web.getAddon().getAutoFullscreen(), false).setHandler(this);
 	}
 
 	private void videoScalingMenu(OverlayMenu.Builder b) {
@@ -1053,7 +1059,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	@Override
 	public boolean menuItemSelected(OverlayMenuItem item) {
 		int itemId = item.getItemId();
-		if (itemId == me.aap.fermata.R.id.video_scaling_best) {
+		if (itemId == R.id.yt_auto_fullscreen) {
+			YoutubeAddon addon = web.getAddon();
+			addon.setAutoFullscreen(!addon.getAutoFullscreen());
+			return true;
+		} else if (itemId == me.aap.fermata.R.id.video_scaling_best) {
 			web.setScale(VideoScale.CONTAIN);
 			return true;
 		} else if (itemId == me.aap.fermata.R.id.video_scaling_fill) {

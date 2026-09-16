@@ -44,6 +44,17 @@
         app:srcCompat="@drawable/audiotrack"
         app:tint="?attr/colorOnSecondary" />
 
+    <ImageView
+        android:id="@+id/dashboard_smart_thumbnail"
+        android:layout_width="66dp"
+        android:layout_height="66dp"
+        android:background="@drawable/dashboard_smart_icon_bg"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/dashboard_item_eyebrow"
         android:layout_width="0dp"

@@ -2,6 +2,7 @@ package me.aap.fermata.media.service;
 
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_BUFFERING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SEEK_TO;
 import static android.view.View.GONE;
 import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
@@ -29,7 +30,9 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
+import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
+import me.aap.fermata.media.service.ProgressOwnership.LastPlayedLease;
 import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.fermata.ui.policy.PlaybackTimelinePolicy;
 import me.aap.fermata.ui.policy.RuntimeSessionCoordinator;
@@ -97,6 +100,77 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	public boolean isPlaying() {
 		PlaybackStateCompat st = mediaController.getPlaybackState();
 		return (st != null) && (st.getState() == STATE_PLAYING || st.getState() == STATE_BUFFERING);
+	}
+
+	@NonNull
+	public PlaybackSnapshot getPlaybackSnapshot() {
+		return sessionCallback.getPlaybackSnapshot();
+	}
+
+	public void play() {
+		mediaController.getTransportControls().play();
+	}
+
+	public void pause() {
+		mediaController.getTransportControls().pause();
+	}
+
+	public void seekTo(long positionMillis) {
+		mediaController.getTransportControls().seekTo(Math.max(0L, positionMillis));
+	}
+
+	@Nullable
+	public ControlSeekToken captureControlSeekToken() {
+		MediaControllerCallback current = callback;
+		RuntimeSessionCoordinator.Token presentation = presentationToken;
+		PlaybackSnapshot snapshot = getPlaybackSnapshot();
+		PlaybackTimelineSnapshot timeline = playbackTimelineSnapshot;
+		PlayableItem item = snapshot.getItem();
+		if (!validControlSeekState(current, presentation, snapshot, timeline, item)) return null;
+		LastPlayedLease playback = sessionCallback.captureLastPlayed(item);
+		return sessionCallback.isStillLastPlayedOwner(playback) &&
+				sessionCallback.isCurrentEngineSource(playback.item()) ?
+				new ControlSeekToken(this, presentation, playback) : null;
+	}
+
+	public boolean seekToIfCurrent(@Nullable ControlSeekToken token, long positionMillis) {
+		if ((token == null) || (token.binder != this) || (token.presentation != presentationToken) ||
+				!runtimeSessions.isCurrent(token.presentation) ||
+				!sessionCallback.isStillLastPlayedOwner(token.playback) ||
+				!sessionCallback.isCurrentEngineSource(token.playback.item())) return false;
+		PlaybackSnapshot snapshot = getPlaybackSnapshot();
+		PlaybackTimelineSnapshot timeline = playbackTimelineSnapshot;
+		PlayableItem item = snapshot.getItem();
+		if (!validControlSeekState(callback, token.presentation, snapshot, timeline, item) ||
+				(PlayableItemResolver.unwrap(item) != token.playback.item())) return false;
+		mediaController.getTransportControls().seekTo(
+				Math.min(Math.max(0L, positionMillis), timeline.durationMillis()));
+		return true;
+	}
+
+	private boolean validControlSeekState(@Nullable MediaControllerCallback current,
+			@Nullable RuntimeSessionCoordinator.Token presentation, PlaybackSnapshot snapshot,
+			@Nullable PlaybackTimelineSnapshot timeline, @Nullable PlayableItem item) {
+		return (current != null) && (presentation != null) && isPresentationBound(current) &&
+				(item != null) && (timeline != null) &&
+				(PlayableItemResolver.unwrap(timeline.item()) == PlayableItemResolver.unwrap(item)) &&
+				(timeline.presentationGeneration() == presentation.generation()) &&
+				(timeline.mode() == PlaybackTimelinePolicy.Mode.SEEKABLE) &&
+				(timeline.durationMillis() > 0L) &&
+				((snapshot.getState().getActions() & ACTION_SEEK_TO) != 0L);
+	}
+
+	public static final class ControlSeekToken {
+		private final FermataServiceUiBinder binder;
+		private final RuntimeSessionCoordinator.Token presentation;
+		private final LastPlayedLease playback;
+
+		private ControlSeekToken(FermataServiceUiBinder binder,
+				RuntimeSessionCoordinator.Token presentation, LastPlayedLease playback) {
+			this.binder = binder;
+			this.presentation = presentation;
+			this.playback = playback;
+		}
 	}
 
 	@Nullable
@@ -327,9 +401,20 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		Log.d("UI unbound");
 	}
 
+	/** True only while this binder owns the active presentation callback. */
+	public boolean isControlAvailable() {
+		MediaControllerCallback current = callback;
+		return (current != null) && isPresentationBound(current);
+	}
+
 	private boolean isPresentationBound(MediaControllerCallback candidate) {
-		return ownsPresentationLease(bound, callback, candidate,
+		return isControlAvailable(bound, callback, candidate,
 				runtimeSessions.isCurrent(candidate.ownerToken));
+	}
+
+	static boolean isControlAvailable(boolean bound, @Nullable Object activeCallback,
+			@Nullable Object candidateCallback, boolean currentSession) {
+		return ownsPresentationLease(bound, activeCallback, candidateCallback, currentSession);
 	}
 
 	static boolean ownsPresentationLease(boolean bound, @Nullable Object activeCallback,

@@ -150,7 +150,7 @@ public class FermataChromeClient extends WebChromeClient {
 		customViewCallback = callback;
 		addCustomView(view);
 		setFullScreen(a, true);
-		videoScale.attach();
+		if (shouldAttachVideoScale()) videoScale.attach();
 		diagnosticsObserver.onCustomView(CustomViewEvent.ATTACHED,
 				customViewSnapshot(view, a));
 		view.postDelayed(() -> {
@@ -166,6 +166,11 @@ public class FermataChromeClient extends WebChromeClient {
 		}
 
 		a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+	}
+
+	/** Sites with their own fullscreen scale bridge can retain ownership of video geometry. */
+	protected boolean shouldAttachVideoScale() {
+		return true;
 	}
 
 	@Override

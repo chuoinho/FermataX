@@ -10,8 +10,8 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.policy.ItemRoutePolicy;
+import me.aap.fermata.ui.policy.PhoneRootPolicy;
 import me.aap.fermata.ui.policy.TopBarPolicy;
 import me.aap.fermata.ui.policy.TopBarPolicy.State;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -49,7 +49,9 @@ public final class TopBarController {
 
 	/** Applies the fragment-wide chrome rule after a mediator restores its own visibility. */
 	public static boolean applyVisibility(ToolBarView toolBar, ActivityFragment fragment) {
-		int visibility = TopBarPolicy.resolveTopBarVisibility(fragment.getFragmentId());
+		MainActivityDelegate activity = MainActivityDelegate.get(toolBar.getContext());
+		int visibility = TopBarPolicy.resolveTopBarVisibility(
+				fragment.getFragmentId(), activity.isBarsHidden());
 		if (toolBar.getVisibility() != visibility) toolBar.setVisibility(visibility);
 		return visibility == View.VISIBLE;
 	}
@@ -63,7 +65,9 @@ public final class TopBarController {
 		if ((fragment instanceof TopBarPlaybackContext context) &&
 				!context.usePlaybackTitle(snapshot)) playbackOwnerFragmentId = 0;
 		return TopBarPolicy.resolve(activity.getRuntimeHostMode(),
-				fragment instanceof DashboardFragment, fragment.getFragmentId(),
+				PhoneRootPolicy.isPrimaryRoot(activity.getRuntimeHostMode(),
+						activity.getPhoneRootId(), fragment.getFragmentId()),
+				fragment.getFragmentId(),
 				playbackOwnerFragmentId, fragment.getTitle(), snapshot.getDisplayTitle(),
 				snapshot.getPreparationStatus());
 	}

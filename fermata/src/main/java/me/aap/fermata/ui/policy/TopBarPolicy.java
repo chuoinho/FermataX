@@ -14,12 +14,12 @@ public final class TopBarPolicy {
 	}
 
 	@NonNull
-	public static State resolve(@Nullable RuntimeHostMode hostMode, boolean dashboardFragment,
+	public static State resolve(@Nullable RuntimeHostMode hostMode, boolean primaryRoot,
 			int activeFragmentId, int playbackOwnerFragmentId,
 			@NonNull CharSequence fragmentTitle, @NonNull CharSequence playbackTitle,
 			@NonNull CharSequence preparationStatus) {
 		BackTarget backTarget = BackNavigationPolicy.resolveTopBarBackTarget(
-				hostMode != null, dashboardFragment);
+				hostMode != null, primaryRoot);
 		int backVisibility = backTarget == BackTarget.NONE ? GONE : VISIBLE;
 		CharSequence title = ToolBarTitlePolicy.resolve(activeFragmentId,
 				playbackOwnerFragmentId, fragmentTitle, playbackTitle, preparationStatus);
@@ -27,14 +27,20 @@ public final class TopBarPolicy {
 	}
 
 	public static boolean isTopBackVisible(@Nullable RuntimeHostMode hostMode,
-			boolean dashboardFragment) {
+			boolean primaryRoot) {
 		return BackNavigationPolicy.resolveTopBarBackTarget(hostMode != null,
-				dashboardFragment) != BackTarget.NONE;
+				primaryRoot) != BackTarget.NONE;
 	}
 
 	/** Stremio owns its in-page chrome, so it must use the entire content height. */
 	public static int resolveTopBarVisibility(int activeFragmentId) {
-		return (activeFragmentId == me.aap.fermata.R.id.stremio_fragment) ? GONE : VISIBLE;
+		return resolveTopBarVisibility(activeFragmentId, false);
+	}
+
+	/** A hidden shell always wins over route-specific top-bar visibility. */
+	public static int resolveTopBarVisibility(int activeFragmentId, boolean barsHidden) {
+		return barsHidden || (activeFragmentId == me.aap.fermata.R.id.stremio_fragment) ?
+				GONE : VISIBLE;
 	}
 
 	public record State(int backVisibility, @NonNull CharSequence title,

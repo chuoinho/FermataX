@@ -34,7 +34,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="?android:colorBackground"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/phone_bottom_menu"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toEndOf="@id/nav_bar"
@@ -50,7 +50,7 @@
         android:translationZ="3dp"
         android:importantForAccessibility="no"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/phone_bottom_menu"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/nav_bar" />
 
@@ -60,7 +60,7 @@
         android:layout_height="@dimen/control_panel_height"
         android:translationZ="4dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/phone_bottom_menu"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toEndOf="@id/nav_bar" />
@@ -74,8 +74,24 @@
         android:translationY="-76dp"
         android:alpha="0.5"
         android:elevation="10dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/phone_bottom_menu"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@id/phone_bottom_menu"
+        style="@style/Widget.MaterialComponents.BottomNavigationView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?android:colorPrimary"
+        android:theme="@style/PhoneBottomMenuThemeOverlay"
+        android:visibility="gone"
+        app:itemIconTint="@color/aa_nav_icon_tint"
+        app:itemTextColor="@color/aa_nav_icon_tint"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/nav_bar"
+        app:menu="@menu/phone_bottom_menu" />
 
     <androidx.core.widget.ContentLoadingProgressBar
         android:id="@+id/content_loading_progress"

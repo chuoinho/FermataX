@@ -13,11 +13,14 @@ import org.junit.Test;
 /** Source/resource guards for the strict SmartTop background ownership boundary. */
 public class SmartTopBackgroundContractTest {
 	@Test
-	public void foregroundIconCanNeverBecomeArtwork() throws Exception {
+	public void thumbnailKeepsTheSourceIconFootprintForMetadataConstraints() throws Exception {
 		String binder = source("ui/smarttop/SmartTopBinder.java");
 		assertTrue(binder.contains("ImageView sourceIcon = views.sourceIcon()"));
 		assertTrue(binder.contains("sourceIcon.setImageResource(state.icon())"));
-		assertFalse(binder.contains("setImageBitmap("));
+		assertTrue(binder.contains("ImageView thumbnailView = views.thumbnail()"));
+		assertTrue(binder.contains("thumbnail.setImageBitmap(bitmap)"));
+		assertTrue(binder.contains("views.sourceIcon().setVisibility(View.INVISIBLE)"));
+		assertFalse(binder.contains("views.sourceIcon().setVisibility(View.GONE)"));
 		assertFalse(binder.contains("getIconUri()"));
 		assertTrue(binder.contains("root.setBackground(rendered.ripple())"));
 	}
@@ -31,6 +34,16 @@ public class SmartTopBackgroundContractTest {
 		assertFalse(coordinator.contains("getIconUri()"));
 		assertTrue(binder.contains("getBitmapIfCached("));
 		assertFalse(binder.contains(".getBitmap("));
+	}
+
+	@Test
+	public void directArtworkIsNormalizedOnceOffTheDashboardPublicationPath() throws Exception {
+		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
+		String binder = source("ui/smarttop/SmartTopBinder.java");
+		assertTrue(coordinator.contains("SmartTopBackground.artworkSource("));
+		assertTrue(coordinator.contains("SmartTopThumbnail.fromSource("));
+		assertTrue(binder.contains("normalizedDirectArtwork("));
+		assertTrue(binder.contains("App.get().execute(() -> SmartTopThumbnail.fromBitmap("));
 	}
 
 	@Test
@@ -70,14 +83,17 @@ public class SmartTopBackgroundContractTest {
 	@Test
 	public void stateCopiesPreserveBackground() throws Exception {
 		String state = source("ui/smarttop/SmartTopViewState.java");
-		assertEquals(4, occurrences(state, "icon, background, eyebrow"));
+		assertEquals(7, occurrences(state, "icon, background, eyebrow"));
+		assertTrue(state.contains("providerResult, controlOnly, thumbnail"));
 		assertTrue(state.contains("public SmartTopViewState withBackground("));
+		assertTrue(state.contains("public SmartTopViewState withThumbnail("));
 	}
 
 	@Test
-	public void v2LayoutHasNoNewBackgroundChildOrConstraint() throws Exception {
+	public void v2LayoutAddsOnlyTheFixedArtworkSlotWithoutChangingTheBackgroundLayer() throws Exception {
 		String layout = resource("layout/dashboard_smart_top_v2_item.xml");
-		assertEquals(1, occurrences(layout, "<ImageView"));
+		assertEquals(2, occurrences(layout, "<ImageView"));
+		assertTrue(layout.contains("@+id/dashboard_smart_thumbnail"));
 		assertFalse(layout.contains("dashboard_smart_background"));
 		assertTrue(layout.contains("android:background=\"@drawable/dashboard_smart_top_bg\""));
 	}

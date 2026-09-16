@@ -19,6 +19,7 @@
 	<string name="web_page_load_failed">Die Seite konnte nicht geladen werden</string>
 	<string name="web_page_load_failed_msg">Konnte nicht geladen werden:\n%1$s\n\nGrund: %2$s\n\nWebView: %3$s</string>
 	<string name="auto_highest_video_quality">Wählen Sie automatisch die höchste Videoqualität aus</string>
+	<string name="yt_auto_fullscreen">Automatischer Vollbildmodus</string>
 	<string name="sponsorblock_sub">Überspringen Sie beim Ansehen von YouTube Crowdsourcing-Segmente.</string>
 	<string name="sponsorblock_enable">Aktivieren Sie SponsorBlock</string>
 	<string name="sponsorblock_enable_sub">Ruft Segmentdaten von sponsor.ajay.app für das aktuelle Video ab.</string>

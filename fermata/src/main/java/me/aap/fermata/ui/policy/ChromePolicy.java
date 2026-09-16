@@ -6,7 +6,6 @@ import static android.view.View.VISIBLE;
 import androidx.annotation.Nullable;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.view.TopBarController;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
@@ -27,7 +26,9 @@ public final class ChromePolicy {
 
 	public static boolean isTopBackVisible(MainActivityDelegate a,
 			@Nullable ActivityFragment f) {
-		return TopBarPolicy.isTopBackVisible(a.getRuntimeHostMode(), f instanceof DashboardFragment);
+		return TopBarPolicy.isTopBackVisible(a.getRuntimeHostMode(), (f != null) &&
+				PhoneRootPolicy.isPrimaryRoot(a.getRuntimeHostMode(), a.getPhoneRootId(),
+						f.getFragmentId()));
 	}
 
 	/**
@@ -35,9 +36,9 @@ public final class ChromePolicy {
 	 * longer affect route Back semantics.
 	 */
 	static boolean isTopBackVisible(RuntimeHostMode hostMode, boolean frameMode,
-			boolean videoMode, boolean dashboardFragment,
+			boolean videoMode, boolean primaryRoot,
 			boolean audioPlayerBarVisible, boolean playerBackOwned) {
-		return TopBarPolicy.isTopBackVisible(hostMode, dashboardFragment);
+		return TopBarPolicy.isTopBackVisible(hostMode, primaryRoot);
 	}
 
 	public static void refreshTopBackButton(MainActivityDelegate a) {

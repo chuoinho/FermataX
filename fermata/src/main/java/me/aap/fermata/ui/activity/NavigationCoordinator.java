@@ -2,6 +2,7 @@ package me.aap.fermata.ui.activity;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.policy.BackNavigationPolicy;
+import me.aap.fermata.ui.policy.PhoneRootPolicy;
 
 /** Common semantic entry point for top-level navigation intents and route synchronization. */
 public final class NavigationCoordinator {
@@ -13,7 +14,10 @@ public final class NavigationCoordinator {
 	 * renderer observes the same authoritative state during synchronous fragment callbacks.
 	 */
 	public static boolean select(MainActivityDelegate activity, int destinationId) {
-		if (destinationId == R.id.dashboard_fragment) {
+		if (destinationId == R.id.control_fragment) {
+			activity.showControl();
+			return true;
+		} else if (destinationId == R.id.dashboard_fragment) {
 			activity.showDashboard();
 			return true;
 		}
@@ -32,6 +36,8 @@ public final class NavigationCoordinator {
 	 */
 	public static void routeChanged(MainActivityDelegate activity, int routeId,
 			boolean topLevelDestination) {
+		activity.setPhoneRootId(PhoneRootPolicy.resolvePhoneRoot(
+				activity.getPhoneRootId(), routeId));
 		int current = activity.getActiveNavItemId();
 		int selected = resolveRouteSelection(current, routeId, topLevelDestination);
 		if (selected != current) activity.setActiveNavItemId(selected);

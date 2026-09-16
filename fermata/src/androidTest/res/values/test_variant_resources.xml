@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AndroidTest receives the app variant resValues but has its own resource namespace. -->
+    <string name="app_name_auto_debug" translatable="false">Fermata test</string>
+    <string name="app_name_mobile_debug" translatable="false">Fermata test</string>
+    <string name="media_service_name_auto_debug" translatable="false">Fermata test</string>
+    <string name="media_service_name_mobile_debug" translatable="false">Fermata test</string>
+    <string name="mirror_service_name_debug" translatable="false">Fermata test</string>
+    <string name="app_name_auto_release" translatable="false">Fermata test</string>
+    <string name="app_name_mobile_release" translatable="false">Fermata test</string>
+    <string name="media_service_name_auto_release" translatable="false">Fermata test</string>
+    <string name="media_service_name_mobile_release" translatable="false">Fermata test</string>
+    <string name="mirror_service_name_release" translatable="false">Fermata test</string>
+    <item name="launcher" type="drawable">@android:drawable/ic_dialog_info</item>
+    <item name="media_service" type="drawable">@android:drawable/ic_dialog_info</item>
+</resources>

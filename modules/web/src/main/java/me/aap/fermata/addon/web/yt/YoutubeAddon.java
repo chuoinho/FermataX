@@ -82,6 +82,8 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final Pref<BooleanSupplier> YT_OPEN_ON_START = Pref.b("YT_OPEN_ON_START", false);
 	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
 			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
+	private static final Pref<BooleanSupplier> YT_AUTO_FULLSCREEN =
+			YoutubePlayerPreferences.AUTO_FULLSCREEN;
 	private static final Pref<Supplier<String>> YT_ITEM_HISTORY = Pref.s("YT_ITEM_HISTORY", "");
 	private static final Pref<Supplier<String>> YT_PINNED_ITEMS = Pref.s("YT_PINNED_ITEMS", "");
 	private static final YoutubeRetentionPolicy ITEM_RETENTION =
@@ -205,7 +207,7 @@ public class YoutubeAddon extends WebBrowserAddon
 			o.title = R.string.auto_highest_video_quality;
 			o.visibility = visibility;
 		});
-
+		YoutubePlayerPreferences.contributeAutoFullscreenSetting(getPreferenceStore(), set, visibility);
 		if (AUTO) {
 			set.addBooleanPref(o -> {
 				o.store = getPreferenceStore();
@@ -367,6 +369,18 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	boolean autoHighestQuality() {
 		return getPreferenceStore().getBooleanPref(YT_AUTO_HIGHEST_QUALITY);
+	}
+
+	boolean getAutoFullscreen() {
+		return YoutubePlayerPreferences.getAutoFullscreen(getPreferenceStore());
+	}
+
+	void setAutoFullscreen(boolean enabled) {
+		YoutubePlayerPreferences.setAutoFullscreen(getPreferenceStore(), enabled);
+	}
+
+	boolean autoFullscreenChanged(List<Pref<?>> prefs) {
+		return prefs.contains(YT_AUTO_FULLSCREEN);
 	}
 
 	YoutubePlaybackMetadata getPlaybackMetadata() {

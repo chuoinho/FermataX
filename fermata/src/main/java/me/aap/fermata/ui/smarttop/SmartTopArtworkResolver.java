@@ -2,6 +2,7 @@ package me.aap.fermata.ui.smarttop;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.v4.media.MediaMetadataCompat;
@@ -23,10 +24,26 @@ final class SmartTopArtworkResolver {
 	@Nullable
 	static Uri directArtworkUri(@Nullable MediaMetadataCompat metadata) {
 		if (metadata == null) return null;
-		String value = metadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI);
-		if ((value == null) || value.isBlank()) return null;
-		Uri uri = Uri.parse(value);
-		return (uri.getScheme() == null) ? null : uri;
+		for (String key : new String[]{MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
+				MediaMetadataCompat.METADATA_KEY_ART_URI}) {
+			String value = metadata.getString(key);
+			if ((value == null) || value.isBlank()) continue;
+			Uri uri = Uri.parse(value);
+			if (uri.getScheme() != null) return uri;
+		}
+		return null;
+	}
+
+	@Nullable
+	static Bitmap directArtworkBitmap(@Nullable MediaMetadataCompat metadata) {
+		if (metadata == null) return null;
+		for (String key : new String[]{MediaMetadataCompat.METADATA_KEY_ALBUM_ART,
+				MediaMetadataCompat.METADATA_KEY_ART}) {
+			Bitmap bitmap = metadata.getBitmap(key);
+			if ((bitmap != null) && !bitmap.isRecycled() &&
+					(bitmap.getWidth() > 0) && (bitmap.getHeight() > 0)) return bitmap;
+		}
+		return null;
 	}
 
 	static boolean isAllowed(Context context, @Nullable Uri uri) {

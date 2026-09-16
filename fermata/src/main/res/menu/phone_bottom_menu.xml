@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@id/control_fragment"
+        android:icon="@drawable/play_pause"
+        android:title="@string/playback_control" />
+    <item
+        android:id="@id/dashboard_fragment"
+        android:icon="@drawable/home"
+        android:title="@string/home" />
+    <item
+        android:id="@id/settings_fragment"
+        android:icon="@drawable/settings"
+        android:title="@string/settings" />
+</menu>

@@ -3,7 +3,7 @@ package me.aap.fermata.ui.policy;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static me.aap.fermata.ui.policy.BackNavigationPolicy.ActivityBackAction.HANDLED;
-import static me.aap.fermata.ui.policy.BackNavigationPolicy.ActivityBackAction.SHOW_DASHBOARD;
+import static me.aap.fermata.ui.policy.BackNavigationPolicy.ActivityBackAction.SHOW_PRIMARY_ROOT;
 import static me.aap.fermata.ui.policy.BackNavigationPolicy.ActivityBackAction.SHOW_NAV_FRAGMENT;
 import static me.aap.fermata.ui.view.BodyLayout.Mode.BOTH;
 import static me.aap.fermata.ui.view.BodyLayout.Mode.FRAME;
@@ -78,7 +78,7 @@ public class UiShellCommonScenarioMatrixTest {
 	public void nestedAndNonNavPagesReturnThroughTheCommonHierarchy() {
 		assertEquals(HANDLED,
 				BackNavigationPolicy.resolveActivityBack(true, true, true, true, false));
-		assertEquals(SHOW_DASHBOARD,
+		assertEquals(SHOW_PRIMARY_ROOT,
 				BackNavigationPolicy.resolveActivityBack(true, false, true, true, false));
 		assertEquals(SHOW_NAV_FRAGMENT,
 				BackNavigationPolicy.resolveActivityBack(true, false, true, false, false));

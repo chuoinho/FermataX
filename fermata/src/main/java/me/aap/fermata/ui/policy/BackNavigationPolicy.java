@@ -4,7 +4,6 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.VideoPresentationController;
@@ -21,8 +20,8 @@ public final class BackNavigationPolicy {
 	 * fullscreen/history/parent behavior remains resolved at execution time by handleActivityBack().
 	 */
 	public static BackTarget resolveTopBarBackTarget(boolean hasRuntimeHost,
-			boolean dashboardFragment) {
-		return hasRuntimeHost && !dashboardFragment ? BackTarget.ACTIVITY_BACK : BackTarget.NONE;
+			boolean primaryRoot) {
+		return hasRuntimeHost && !primaryRoot ? BackTarget.ACTIVITY_BACK : BackTarget.NONE;
 	}
 
 	/**
@@ -82,15 +81,21 @@ public final class BackNavigationPolicy {
 
 		ActivityFragment f = a.getActiveFragment();
 		if ((f != null) && f.onBackPressed()) return;
-		int navId = (f == null) ? ID_NULL : a.getActiveNavItemId();
+		boolean phoneRoots = PhoneRootPolicy.usesPhoneRoots(a.getRuntimeHostMode());
+		int navId = (f == null) ? ID_NULL :
+				(phoneRoots ? a.getPhoneRootId() : a.getActiveNavItemId());
 		boolean fragmentMatchesNav = (f != null) && (f.getFragmentId() == navId);
-		boolean dashboardRoot = fragmentMatchesNav && (f instanceof DashboardFragment) &&
-				(navId == R.id.dashboard_fragment) && f.isRootPage();
+		boolean primaryRoot = fragmentMatchesNav &&
+				PhoneRootPolicy.isPrimaryRoot(a.getRuntimeHostMode(), a.getPhoneRootId(), navId) &&
+				f.isRootPage();
 
 		switch (resolveActivityBack(f != null, false, navId != ID_NULL,
-				fragmentMatchesNav, dashboardRoot)) {
-			case SHOW_NAV_FRAGMENT -> a.showFragment(navId);
-			case SHOW_DASHBOARD -> a.showDashboard();
+				fragmentMatchesNav, primaryRoot)) {
+			case SHOW_NAV_FRAGMENT -> {
+				if (phoneRoots) a.showPhoneRoot(navId);
+				else a.showFragment(navId);
+			}
+			case SHOW_PRIMARY_ROOT -> a.showPrimaryRoot();
 			case FINISH -> a.finish();
 			case HANDLED -> {
 			}
@@ -98,11 +103,11 @@ public final class BackNavigationPolicy {
 	}
 
 	static ActivityBackAction resolveActivityBack(boolean hasFragment, boolean fragmentHandled,
-			boolean hasNavFragment, boolean fragmentMatchesNav, boolean dashboardRoot) {
+			boolean hasNavFragment, boolean fragmentMatchesNav, boolean primaryRoot) {
 		if (fragmentHandled) return ActivityBackAction.HANDLED;
 		if (hasFragment && hasNavFragment && !fragmentMatchesNav)
 			return ActivityBackAction.SHOW_NAV_FRAGMENT;
-		if (hasFragment && !dashboardRoot) return ActivityBackAction.SHOW_DASHBOARD;
+		if (hasFragment && !primaryRoot) return ActivityBackAction.SHOW_PRIMARY_ROOT;
 		return ActivityBackAction.FINISH;
 	}
 
@@ -115,6 +120,6 @@ public final class BackNavigationPolicy {
 	}
 
 	enum ActivityBackAction {
-		SHOW_NAV_FRAGMENT, SHOW_DASHBOARD, FINISH, HANDLED
+		SHOW_NAV_FRAGMENT, SHOW_PRIMARY_ROOT, FINISH, HANDLED
 	}
 }

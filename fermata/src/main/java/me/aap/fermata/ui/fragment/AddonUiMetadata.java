@@ -35,7 +35,7 @@ final class AddonUiMetadata {
 			case AUDIOBOOK -> 4;
 			case WEB -> 5;
 			case STREMIO -> 6;
-			case GENERIC -> 8;
+			case GENERIC -> 7;
 		};
 	}
 

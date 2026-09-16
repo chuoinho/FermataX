@@ -17,6 +17,7 @@
 	<string name="video_quality">Qualidade de vídeo</string>
 	<string name="open_on_start">Abrir no início</string>
 	<string name="auto_highest_video_quality">Selecione automaticamente a mais alta qualidade de vídeo</string>
+	<string name="yt_auto_fullscreen">Ecrã inteiro automático</string>
 	<string name="try_to_skip_ad">Tente pular a publicidade</string>
 	<string name="sponsorblock_sub">Pule segmentos de crowdsourcing enquanto assiste ao YouTube.</string>
 	<string name="sponsorblock_enable">Habilitar SponsorBlock</string>

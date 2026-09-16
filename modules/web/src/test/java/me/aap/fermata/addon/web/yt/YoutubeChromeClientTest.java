@@ -26,6 +26,23 @@ public class YoutubeChromeClientTest {
 		assertFalse(chrome.isFullScreen());
 	}
 
+	@Test
+	public void youtubeCustomViewLeavesVideoGeometryToYoutube() {
+		ProbeYoutubeChromeClient chrome = new ProbeYoutubeChromeClient();
+
+		assertFalse(chrome.shouldAttachCommonVideoScale());
+	}
+
+	private static final class ProbeYoutubeChromeClient extends YoutubeChromeClient {
+		private ProbeYoutubeChromeClient() {
+			super(null, null, request -> true);
+		}
+
+		private boolean shouldAttachCommonVideoScale() {
+			return shouldAttachVideoScale();
+		}
+	}
+
 	private static final class TrackingCallback implements CustomViewCallback {
 		private boolean hidden;
 

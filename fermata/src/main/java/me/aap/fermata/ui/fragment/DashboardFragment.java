@@ -38,6 +38,8 @@ import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.media.service.ControlOnlyPresentation;
+import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -456,7 +458,8 @@ public class DashboardFragment extends MainActivityFragment
 			smartTopCoordinator = smartTopV2Enabled ?
 					new SmartTopCoordinator(activity, ctx, this) : null;
 			smartTopBinder = smartTopV2Enabled ? new SmartTopBinder(ctx, this,
-					activity.getPrefs().isSmartTopBackgroundEnabled()) : null;
+					activity.getPrefs().isSmartTopBackgroundEnabled(),
+					activity.getLib().getBitmapCache()) : null;
 			reload();
 		}
 
@@ -748,6 +751,10 @@ public class DashboardFragment extends MainActivityFragment
 		@Override
 		public void onCard(SmartTopViewState state) {
 			if (editMode || !acceptSmartTop(state)) return;
+			if (state.mode() == me.aap.fermata.ui.smarttop.SmartTopMode.CURRENT_WEB) {
+				openControlOnly(state);
+				return;
+			}
 			PlayableItem item = state.presentedItem();
 			if (item != null) {
 				DashboardPlayableNavigator.openSmartTop(activity, item);
@@ -764,8 +771,23 @@ public class DashboardFragment extends MainActivityFragment
 		public void onAction(SmartTopAction action, long generation, PlayableItem item) {
 			SmartTopViewState state = currentSmartTopState(generation, item);
 			if (editMode || (state == null) || !acceptClick()) return;
-			switch (action) {
+				switch (action) {
 				case PLAY_PAUSE -> {
+					ControlOnlyPresentation web = state.controlOnly();
+					if (web != null) {
+						MediaSessionCallback callback = activity.getMediaSessionCallback();
+						if (!callback.isControlOnlyCurrent(web.leaseId())) {
+							if (smartTopCoordinator != null) smartTopCoordinator.refresh();
+							return;
+						}
+						boolean playing = (web.state() == PlaybackStateCompat.STATE_PLAYING) ||
+								(web.state() == PlaybackStateCompat.STATE_BUFFERING);
+						callback.dispatchControlOnly(web.leaseId(), playing ?
+								MediaSessionCallback.ControlOnlyAction.PAUSE :
+								MediaSessionCallback.ControlOnlyAction.PLAY);
+						if (smartTopCoordinator != null) smartTopCoordinator.refresh();
+						return;
+					}
 					if (item != null) {
 						DashboardPlayableNavigator.togglePlayback(activity, item);
 						refreshSmartTopCard();
@@ -789,6 +811,27 @@ public class DashboardFragment extends MainActivityFragment
 					if (smartTopCoordinator != null) smartTopCoordinator.refresh();
 				}
 			}
+		}
+
+		private void openControlOnly(SmartTopViewState state) {
+			ControlOnlyPresentation web = state.controlOnly();
+			if (web == null) return;
+			MediaSessionCallback callback = activity.getMediaSessionCallback();
+			if (!callback.isControlOnlyCurrent(web.leaseId())) {
+				if (smartTopCoordinator != null) smartTopCoordinator.refresh();
+				return;
+			}
+			AddonInfo info = AddonManager.get().getAddonInfo(web.addonClass());
+			if ((info == null) || (AddonManager.get().getAddon(web.addonClass()) == null) ||
+					(info.addonId == 0)) {
+				if (smartTopCoordinator != null) smartTopCoordinator.refresh();
+				return;
+			}
+			activity.showFragmentWhenReadyGuarded(info.addonId, null,
+					() -> callback.isControlOnlyCurrent(web.leaseId())).onCompletion((opened, error) -> {
+						if (!Boolean.TRUE.equals(opened) && (smartTopCoordinator != null))
+							smartTopCoordinator.refresh();
+					});
 		}
 
 		@Override
@@ -1046,10 +1089,12 @@ public class DashboardFragment extends MainActivityFragment
 		final View editActions;
 		final ImageButton moveEarlier;
 		final ImageButton moveLater;
+		final ImageView smartThumbnail;
 
 		private ItemHolder(@NonNull View itemView) {
 			super(itemView);
 			icon = itemView.findViewById(R.id.dashboard_item_icon);
+			smartThumbnail = itemView.findViewById(R.id.dashboard_smart_thumbnail);
 			eyebrow = itemView.findViewById(R.id.dashboard_item_eyebrow);
 			title = itemView.findViewById(R.id.dashboard_item_title);
 			subtitle = itemView.findViewById(R.id.dashboard_item_subtitle);
@@ -1077,7 +1122,7 @@ public class DashboardFragment extends MainActivityFragment
 		}
 
 		private SmartTopBinder.Views smartTopViews() {
-			return new SmartTopBinder.Views(itemView, icon, eyebrow, title, subtitle, actions,
+			return new SmartTopBinder.Views(itemView, icon, smartThumbnail, eyebrow, title, subtitle, actions,
 					labeledAction, List.of(playPause, favorite),
 					progressGroup, progress, progressCurrent, progressTotal,
 					recentPanel, recentTitle,

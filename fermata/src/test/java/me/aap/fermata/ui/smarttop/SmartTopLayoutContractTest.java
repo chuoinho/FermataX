@@ -77,6 +77,17 @@ public class SmartTopLayoutContractTest {
 	}
 
 	@Test
+	public void thumbnailFollowsTheAdaptiveSourceIconGeometry() throws Exception {
+		String controller = source("ui/smarttop/SmartTopLayoutController.java");
+		assertTrue(controller.contains("root.findViewById(R.id.dashboard_smart_thumbnail)"));
+		assertTrue(controller.contains("thumbnailParams.width = artworkSize"));
+		assertTrue(controller.contains("thumbnailParams.height = artworkSize"));
+		assertTrue(controller.contains(
+				"thumbnailParams.startToStart = R.id.dashboard_item_icon"));
+		assertTrue(controller.contains("thumbnailParams.topToTop = R.id.dashboard_item_icon"));
+	}
+
+	@Test
 	public void binderConsumesAdaptiveActionsTerminalStyleAndRecentRows() throws Exception {
 		String binder = source("ui/smarttop/SmartTopBinder.java");
 		assertTrue(binder.contains("SmartTopLayoutController.layoutSpec(views.root(), state)"));

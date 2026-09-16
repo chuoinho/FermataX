@@ -63,9 +63,9 @@
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_radio">Radio</string>
     <string name="addon_name_podcast">Podcasts</string>
-    <string name="addon_name_audiobook">Audiobooks</string>
+	<string name="addon_name_audiobook">Audiobooks</string>
 	<string name="addon_name_stremio" translatable="false">Stremio</string>
-    <string name="addon_name_web_browser">Web browser</string>
+	<string name="addon_name_web_browser">Web browser</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
     <string name="addon_name_cast" translatable="false">Google Cast</string>
     <string name="addon_name_chat" translatable="false">ChatGPT</string>

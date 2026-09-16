@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="control_nothing_playing">Nothing playing</string>
+    <string name="control_current_content">Current content</string>
+    <string name="control_open_dashboard">Open FermataX on the car screen</string>
+    <string name="control_aa_disconnected">AA disconnected</string>
+    <string name="control_aa_unknown">Checking AA</string>
+    <string name="control_aa_connected">AA connected</string>
+    <string name="control_aa_visible">On car screen</string>
+    <string name="control_aa_disconnected_detail">Connect Android Auto, then open FermataX on the car screen.</string>
+    <string name="control_aa_unknown_detail">Waiting for the official Android Auto connection status.</string>
+    <string name="control_aa_connected_detail">Open FermataX on the car screen to choose an addon.</string>
+    <string name="control_aa_visible_detail">Choose an addon below to open it on the car screen.</string>
+    <string name="control_addons_heading">OPEN ON CAR SCREEN · ENABLED ADDONS</string>
+    <string name="control_open_on_car">Open</string>
+    <string name="control_addon_loading">Loading</string>
+    <string name="control_addon_failed">Failed to load</string>
+    <string name="control_open_car_first">Open FermataX on the car screen first.</string>
+    <string name="control_open_failed">Could not open this addon on the car screen.</string>
+    <string name="control_no_addons">No enabled addons with a car screen.</string>
+</resources>
