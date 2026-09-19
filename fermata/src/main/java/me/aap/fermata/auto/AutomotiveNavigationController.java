@@ -2,6 +2,8 @@ package me.aap.fermata.auto;
 
 import static me.aap.utils.async.Completed.completed;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 import me.aap.utils.async.FutureSupplier;
@@ -11,28 +13,66 @@ import me.aap.utils.log.Log;
 public final class AutomotiveNavigationController {
 	private static final AutomotiveNavigationController INSTANCE =
 			new AutomotiveNavigationController();
+	private final AutomotiveConnectionState connection;
+	private final OpenOnCarMode openOnCarMode = new OpenOnCarMode();
+	private final Set<ReadinessListener> readinessListeners = new LinkedHashSet<>();
 	private Navigator navigator;
 	private long registrationGeneration;
 	private long requestGeneration;
+	private boolean readinessAvailable;
+	private long readinessEpoch;
 
 	AutomotiveNavigationController() {
+		this(AutomotiveConnectionState.get());
+	}
+
+	AutomotiveNavigationController(AutomotiveConnectionState connection) {
+		this.connection = connection;
+		readinessEpoch = connection.connectionEpoch();
+		openOnCarMode.setAvailable(false, readinessEpoch);
+		connection.addRawConnectionListener((connected, epoch) -> updateReadiness());
 	}
 
 	public static AutomotiveNavigationController get() {
 		return INSTANCE;
 	}
 
-	public synchronized void register(Navigator navigator) {
-		this.navigator = navigator;
-		registrationGeneration++;
-		requestGeneration++;
+	public void register(Navigator navigator) {
+		synchronized (this) {
+			this.navigator = navigator;
+			registrationGeneration++;
+			requestGeneration++;
+		}
+		updateReadiness();
 	}
 
-	public synchronized void unregister(Navigator navigator) {
-		if (this.navigator != navigator) return;
-		this.navigator = null;
-		registrationGeneration++;
-		requestGeneration++;
+	public void unregister(Navigator navigator) {
+		synchronized (this) {
+			if (this.navigator != navigator) return;
+			this.navigator = null;
+			registrationGeneration++;
+			requestGeneration++;
+		}
+		updateReadiness();
+	}
+
+	public synchronized OpenOnCarMode getOpenOnCarMode() {
+		return openOnCarMode;
+	}
+
+	public void addReadinessListener(ReadinessListener listener) {
+		boolean available;
+		long epoch;
+		synchronized (this) {
+			readinessListeners.add(listener);
+			available = readinessAvailable;
+			epoch = readinessEpoch;
+		}
+		listener.onReadinessChanged(available, epoch);
+	}
+
+	public synchronized void removeReadinessListener(ReadinessListener listener) {
+		readinessListeners.remove(listener);
 	}
 
 	public FutureSupplier<OpenResult> open(int destinationId) {
@@ -42,7 +82,6 @@ public final class AutomotiveNavigationController {
 		long connectionEpoch;
 		synchronized (this) {
 			captured = navigator;
-			AutomotiveConnectionState connection = AutomotiveConnectionState.get();
 			if ((captured == null) || !connection.isProjectionConnected()) {
 				return completed(OpenResult.NOT_READY);
 			}
@@ -70,10 +109,25 @@ public final class AutomotiveNavigationController {
 
 	private synchronized boolean isCurrent(Navigator captured, long registration, long request,
 			long connectionEpoch) {
-		AutomotiveConnectionState connection = AutomotiveConnectionState.get();
 		return (navigator == captured) && (registrationGeneration == registration) &&
 				(requestGeneration == request) && connection.isProjectionConnected() &&
 				(connection.connectionEpoch() == connectionEpoch);
+	}
+
+	private void updateReadiness() {
+		ReadinessListener[] notify;
+		boolean available;
+		long epoch;
+		synchronized (this) {
+			available = (navigator != null) && connection.isProjectionConnected();
+			epoch = connection.connectionEpoch();
+			if ((available == readinessAvailable) && (epoch == readinessEpoch)) return;
+			readinessAvailable = available;
+			readinessEpoch = epoch;
+			openOnCarMode.setAvailable(available, epoch);
+			notify = readinessListeners.toArray(new ReadinessListener[0]);
+		}
+		for (ReadinessListener listener : notify) listener.onReadinessChanged(available, epoch);
 	}
 
 	public enum OpenResult {
@@ -86,5 +140,9 @@ public final class AutomotiveNavigationController {
 
 	public interface Navigator {
 		FutureSupplier<OpenResult> open(int destinationId, BooleanSupplier stillCurrent);
+	}
+
+	public interface ReadinessListener {
+		void onReadinessChanged(boolean available, long epoch);
 	}
 }

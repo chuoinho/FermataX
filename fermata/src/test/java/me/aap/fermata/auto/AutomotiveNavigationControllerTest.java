@@ -17,6 +17,26 @@ import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
 
 public class AutomotiveNavigationControllerTest {
 	@Test
+	public void readinessTracksNavigatorRegistrationAndRawConnection() {
+		AutomotiveConnectionState connection = new AutomotiveConnectionState();
+		AutomotiveNavigationController controller = new AutomotiveNavigationController(connection);
+		List<String> events = new ArrayList<>();
+		controller.addReadinessListener((available, epoch) ->
+				events.add(available + ":" + epoch));
+		AutomotiveNavigationController.Navigator navigator = (id, current) ->
+				completed(OpenResult.OPENED);
+
+		connection.connectionChanged(true);
+		controller.register(navigator);
+		connection.connectionChanged(false);
+		controller.unregister(navigator);
+
+		assertEquals(List.of("false:0", "false:1", "true:1", "false:2"), events);
+		assertFalse(controller.getOpenOnCarMode().isAvailable());
+		assertFalse(controller.getOpenOnCarMode().isEnabled());
+	}
+
+	@Test
 	public void openIsAcceptedOnlyByTheRegisteredCarNavigator() {
 		AutomotiveNavigationController controller = new AutomotiveNavigationController();
 		List<Integer> destinations = new ArrayList<>();
