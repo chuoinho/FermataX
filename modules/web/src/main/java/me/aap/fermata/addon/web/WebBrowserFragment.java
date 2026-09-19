@@ -23,8 +23,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.auto.AutomotiveNavigationController;
+import me.aap.fermata.auto.OpenOnCarKind;
+import me.aap.fermata.auto.OpenOnCarMode;
+import me.aap.fermata.auto.OpenOnCarRequest;
+import me.aap.fermata.auto.OpenOnCarToken;
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
@@ -52,6 +58,10 @@ public class WebBrowserFragment extends MainActivityFragment
 
 	private boolean fullScreenOnResume;
 	private long suppressHistoryBackUntil;
+	private WebUrlSyncObserver urlObserver;
+	private AutomotiveNavigationController.ReadinessListener urlReadinessListener;
+	private long urlSourceGeneration;
+	private long urlConnectionEpoch = -1L;
 
 	@Override
 	public int getFragmentId() {
@@ -77,6 +87,7 @@ public class WebBrowserFragment extends MainActivityFragment
 		FermataWebClient webClient = createWebClient();
 		FermataChromeClient chromeClient = createChromeClient(webView, fullScreenView);
 		webView.init(addon, webClient, chromeClient);
+		attachUrlObserver(webView, addon);
 		addon.attachRuntimeFragment(this);
 		if (!addon.attachExternalFragment(this)) webView.loadUrl(getInitialUrl(addon));
 		MainActivityDelegate.getActivityDelegate(ctx).onSuccess(this::registerListeners);
@@ -104,6 +115,7 @@ public class WebBrowserFragment extends MainActivityFragment
 
 	@Override
 	public void onDestroyView() {
+		detachUrlObserver();
 		WebBrowserAddon addon = getAddon();
 		if (addon != null) {
 			addon.detachExternalFragment(this);
@@ -111,6 +123,82 @@ public class WebBrowserFragment extends MainActivityFragment
 		}
 		MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(this::unregisterListeners);
 		super.onDestroyView();
+	}
+
+	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		if (hidden) {
+			detachUrlObserver();
+		} else {
+			FermataWebView web = getWebView();
+			WebBrowserAddon addon = getAddon();
+			if ((web != null) && (addon != null)) attachUrlObserver(web, addon);
+		}
+	}
+
+	private boolean isUrlSourceForeground(FermataWebView web, WebBrowserAddon addon) {
+		MainActivityDelegate activity = MainActivityDelegate.getActivityDelegate(
+				web.getContext()).peek();
+		boolean foreground = !isHidden() && ((activity == null) ||
+				(activity.getActiveFragment() == this));
+		return (web.isPhoneSource()) && FermataWebClient.shouldAttachUrlObserver(
+				addon.getAddonId(), getFragmentId(), web.getRuntimeHostMode(), foreground);
+	}
+
+	private void attachUrlObserver(FermataWebView web, WebBrowserAddon addon) {
+		if ((urlObserver != null) || !isUrlSourceForeground(web, addon)) return;
+		final AutomotiveNavigationController controller = AutomotiveNavigationController.get();
+		final OpenOnCarMode mode = controller.getOpenOnCarMode();
+		final long sourceGeneration = ++urlSourceGeneration;
+		urlReadinessListener = (available, epoch) -> urlConnectionEpoch = epoch;
+		controller.addReadinessListener(urlReadinessListener);
+		WebUrlSyncObserver.Scheduler scheduler = (runnable, delayMillis) -> {
+			AtomicBoolean cancelled = new AtomicBoolean();
+			Runnable task = () -> {
+				if (!cancelled.get()) runnable.run();
+			};
+			web.postDelayed(task, delayMillis);
+			return () -> {
+				cancelled.set(true);
+				web.removeCallbacks(task);
+			};
+		};
+		WebUrlSyncObserver observer = new WebUrlSyncObserver(() -> {
+			boolean admitted = isUrlSourceForeground(web, addon);
+			return new WebUrlSyncObserver.DispatchState(admitted && mode.isEnabled(), 0L,
+					sourceGeneration, 0L, mode.revision(), urlConnectionEpoch);
+		}, scheduler, candidate -> dispatchWebUrl(controller, mode, web, addon, candidate));
+		urlObserver = observer;
+		web.getWebViewClient().setUrlObserver(observer, sourceGeneration);
+		String current = web.getUrl();
+		if (current != null) observer.baseline(new WebUrlSyncObserver.NavigationEvent(sourceGeneration,
+				0L, WebUrlSyncObserver.Provenance.APP_GET, false, true, current));
+	}
+
+	private void dispatchWebUrl(AutomotiveNavigationController controller, OpenOnCarMode mode,
+			FermataWebView web, WebBrowserAddon addon, WebUrlSyncObserver.Candidate candidate) {
+		if (!isUrlSourceForeground(web, addon) || !mode.isEnabled()) return;
+		WebUrlSyncObserver.DispatchState state = candidate.state();
+		OpenOnCarToken token = new OpenOnCarToken(state.connectionEpoch(), state.hostGeneration(),
+				state.modeRevision(), candidate.sourceGeneration(), state.token());
+		controller.open(new OpenOnCarRequest(OpenOnCarKind.WEB_URL, addon.getAddonId(),
+				candidate.url(), token));
+	}
+
+	private void detachUrlObserver() {
+		if (urlReadinessListener != null) {
+			AutomotiveNavigationController.get().removeReadinessListener(urlReadinessListener);
+			urlReadinessListener = null;
+		}
+		if (urlObserver == null) return;
+		FermataWebView web = getWebView();
+		if (web != null) web.getWebViewClient().clearUrlObserver(urlObserver);
+		else {
+			urlObserver.onHidden();
+			urlObserver.close();
+		}
+		urlObserver = null;
 	}
 
 	@Override

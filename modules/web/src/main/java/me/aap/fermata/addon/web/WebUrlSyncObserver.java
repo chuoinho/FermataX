@@ -63,6 +63,11 @@ public final class WebUrlSyncObserver implements AutoCloseable {
 		cancelPending();
 	}
 
+	/** Cancels pending source work when the owning browser fragment is hidden. */
+	public synchronized void onHidden() {
+		cancelPending();
+	}
+
 	@Override
 	public synchronized void close() {
 		if (closed) return;

@@ -175,7 +175,12 @@ public class FermataWebView extends WebView
 	public void loadUrl(@NonNull String url) {
 		if (!isScriptUrl(url) && (externalPlayback == null) && !clearingExternalPlayback)
 			lastUrl = url;
+		if (!isScriptUrl(url) && (webClient != null)) webClient.markAppNavigation(url);
 		super.loadUrl(url);
+	}
+
+	void markRecoveryNavigation(String url) {
+		if (webClient != null) webClient.markRecoveryNavigation(url);
 	}
 
 	boolean openExternalPlayback(ExternalPlaybackRequest request) {
@@ -339,6 +344,10 @@ public class FermataWebView extends WebView
 
 	protected final RuntimeHostMode getRuntimeHostMode() {
 		return hostMode;
+	}
+
+	final boolean isPhoneSource() {
+		return hostMode == RuntimeHostMode.PHONE;
 	}
 
 	final boolean usesAutomotivePresentation() {

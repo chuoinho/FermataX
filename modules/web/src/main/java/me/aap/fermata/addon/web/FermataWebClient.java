@@ -255,6 +255,17 @@ public class FermataWebClient extends WebViewClientCompat {
 	private int retryCount;
 	private long retryGeneration;
 	private ExternalNavigationPolicy externalNavigationPolicy;
+	private WebUrlSyncObserver urlObserver;
+	private long sourceGeneration;
+	private long navigationSequence;
+	private long currentNavigationSequence = Long.MIN_VALUE;
+	private String currentNavigationUrl;
+	private WebUrlSyncObserver.Provenance currentNavigationProvenance =
+			WebUrlSyncObserver.Provenance.UNKNOWN;
+	private String pendingNavigationUrl;
+	private long pendingNavigationSequence = Long.MIN_VALUE;
+	private WebUrlSyncObserver.Provenance pendingNavigationProvenance =
+			WebUrlSyncObserver.Provenance.UNKNOWN;
 
 	public FermataWebClient() {
 		this(diagnosticsObserver());
@@ -361,6 +372,103 @@ public class FermataWebClient extends WebViewClientCompat {
 		return new FermataWebClient(getDiagnosticsObserver());
 	}
 
+	void setUrlObserver(WebUrlSyncObserver observer, long generation) {
+		if (urlObserver == observer) return;
+		if (urlObserver != null) urlObserver.close();
+		urlObserver = observer;
+		sourceGeneration = generation;
+		navigationSequence = 0L;
+		currentNavigationSequence = Long.MIN_VALUE;
+		currentNavigationUrl = null;
+		pendingNavigationUrl = null;
+		pendingNavigationSequence = Long.MIN_VALUE;
+	}
+
+	void clearUrlObserver(WebUrlSyncObserver observer) {
+		if (urlObserver != observer) return;
+		observer.onHidden();
+		observer.close();
+		urlObserver = null;
+	}
+
+	void markAppNavigation(String url) {
+		if ((pendingNavigationProvenance == WebUrlSyncObserver.Provenance.RECOVERY) &&
+				(url != null) && url.equals(pendingNavigationUrl)) return;
+		markNavigation(url, WebUrlSyncObserver.Provenance.APP_GET);
+	}
+
+	void markRecoveryNavigation(String url) {
+		markNavigation(url, WebUrlSyncObserver.Provenance.RECOVERY);
+	}
+
+	private void markRequestNavigation(String url, WebUrlSyncObserver.Provenance provenance) {
+		markNavigation(url, provenance);
+	}
+
+	private void markNavigation(String url, WebUrlSyncObserver.Provenance provenance) {
+		if (urlObserver == null) return;
+		pendingNavigationUrl = url;
+		pendingNavigationProvenance = provenance;
+		pendingNavigationSequence = ++navigationSequence;
+	}
+
+	private void cancelUrlNavigation() {
+		if (urlObserver != null) urlObserver.cancel();
+		pendingNavigationUrl = null;
+		pendingNavigationSequence = Long.MIN_VALUE;
+		pendingNavigationProvenance = WebUrlSyncObserver.Provenance.UNKNOWN;
+	}
+
+	private void forwardStarted(WebView view, String url) {
+		if (urlObserver == null) return;
+		long sequence;
+		WebUrlSyncObserver.Provenance provenance;
+		if ((pendingNavigationUrl != null) && pendingNavigationUrl.equals(url)) {
+			sequence = pendingNavigationSequence;
+			provenance = pendingNavigationProvenance;
+		} else {
+			sequence = ++navigationSequence;
+			provenance = WebUrlSyncObserver.Provenance.UNKNOWN;
+		}
+		pendingNavigationUrl = null;
+		pendingNavigationSequence = Long.MIN_VALUE;
+		pendingNavigationProvenance = WebUrlSyncObserver.Provenance.UNKNOWN;
+		currentNavigationSequence = sequence;
+		currentNavigationUrl = url;
+		currentNavigationProvenance = provenance;
+		urlObserver.onStarted(new WebUrlSyncObserver.NavigationEvent(sourceGeneration, sequence,
+				provenance, false, true, url));
+	}
+
+	private void forwardFinished(String url) {
+		if (urlObserver == null) return;
+		long sequence = (currentNavigationSequence == Long.MIN_VALUE) ? navigationSequence :
+				currentNavigationSequence;
+		urlObserver.onFinished(new WebUrlSyncObserver.NavigationEvent(sourceGeneration, sequence,
+				currentNavigationProvenance, false, true, url));
+	}
+
+	private void forwardFailed(String url) {
+		if (urlObserver == null) return;
+		long sequence = (currentNavigationSequence == Long.MIN_VALUE) ? navigationSequence :
+				currentNavigationSequence;
+		urlObserver.onFailed(new WebUrlSyncObserver.NavigationEvent(sourceGeneration, sequence,
+				currentNavigationProvenance, false, true, url));
+	}
+
+	static boolean shouldAttachUrlObserver(int addonId, int fragmentId,
+			me.aap.fermata.ui.policy.RuntimeHostMode hostMode, boolean foreground) {
+		return (addonId == me.aap.fermata.R.id.web_browser_fragment) &&
+				(fragmentId == me.aap.fermata.R.id.web_browser_fragment) &&
+				(hostMode == me.aap.fermata.ui.policy.RuntimeHostMode.PHONE) && foreground;
+	}
+
+	static WebUrlSyncObserver.Provenance requestProvenance(String method) {
+		if ("GET".equalsIgnoreCase(method)) return WebUrlSyncObserver.Provenance.REQUEST_GET;
+		if ("POST".equalsIgnoreCase(method)) return WebUrlSyncObserver.Provenance.POST;
+		return WebUrlSyncObserver.Provenance.UNKNOWN;
+	}
+
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 		boolean allowed = isExternalNavigationAllowed(url);
@@ -386,6 +494,7 @@ public class FermataWebClient extends WebViewClientCompat {
 		}
 		diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_STARTED,
 				webSnapshot(view, true, true));
+		forwardStarted(view, url);
 		super.onPageStarted(view, url, favicon);
 	}
 
@@ -404,6 +513,7 @@ public class FermataWebClient extends WebViewClientCompat {
 		}
 
 		super.onPageFinished(view, url);
+		forwardFinished(url);
 		((FermataWebView) view).hideKeyboard();
 		if ((failedMainFrameUrl == null) || !failedMainFrameUrl.equals(url)) {
 			retryGeneration++;
@@ -418,6 +528,7 @@ public class FermataWebClient extends WebViewClientCompat {
 																			@NonNull WebResourceRequest request) {
 		if (!request.isForMainFrame()) return false;
 		if (!isExternalNavigationAllowed(request.getUrl().toString())) {
+			cancelUrlNavigation();
 			if (view instanceof FermataWebView web) web.externalNavigationRejected();
 			return true;
 		}
@@ -425,6 +536,7 @@ public class FermataWebClient extends WebViewClientCompat {
 		// discard the Stremio owner and bypass the source policy.
 		if (externalNavigationPolicy != null) return false;
 		if (isYoutubeUri(request.getUrl())) {
+			cancelUrlNavigation();
 			try {
 				MainActivityDelegate a =
 						MainActivityDelegate.getActivityDelegate(view.getContext()).peek();
@@ -438,7 +550,22 @@ public class FermataWebClient extends WebViewClientCompat {
 			}
 		}
 
+		markRequestNavigation(request.getUrl().toString(), requestProvenance(request.getMethod()));
 		return false;
+	}
+
+	@Override
+	public void doUpdateVisitedHistory(@NonNull WebView view, String url, boolean reload) {
+		super.doUpdateVisitedHistory(view, url, reload);
+		if (urlObserver == null) return;
+		if (!reload && (currentNavigationUrl != null) && currentNavigationUrl.equals(url)) return;
+		long sequence = ++navigationSequence;
+		currentNavigationSequence = sequence;
+		currentNavigationUrl = url;
+		currentNavigationProvenance = reload ? WebUrlSyncObserver.Provenance.APP_GET :
+				WebUrlSyncObserver.Provenance.SAME_DOCUMENT;
+		urlObserver.onHistory(new WebUrlSyncObserver.NavigationEvent(sourceGeneration, sequence,
+				currentNavigationProvenance, reload, true, url));
 	}
 
 	void setExternalNavigationPolicy(ExternalNavigationPolicy policy) {
@@ -497,6 +624,7 @@ public class FermataWebClient extends WebViewClientCompat {
 								.errorCode(error.getErrorCode()).build()));
 
 		if (mainFrame) {
+			forwardFailed(request.getUrl().toString());
 			failedMainFrameUrl = request.getUrl().toString();
 			completeLoading(view);
 			if (!scheduleAutoRetry(view, request.getUrl(), error.getErrorCode(), desc))
@@ -517,6 +645,7 @@ public class FermataWebClient extends WebViewClientCompat {
 	public void onReceivedHttpError(@NonNull WebView view, @NonNull WebResourceRequest request,
 																	@NonNull WebResourceResponse errorResponse) {
 		if (request.isForMainFrame()) {
+			forwardFailed(request.getUrl().toString());
 			String reason = "HTTP " + errorResponse.getStatusCode();
 			String phrase = errorResponse.getReasonPhrase();
 			if ((phrase != null) && !phrase.isEmpty()) reason += " " + phrase;
@@ -548,6 +677,7 @@ public class FermataWebClient extends WebViewClientCompat {
 				webSnapshot(view, true, true).toBuilder()
 						.errorCode(error.getPrimaryError()).build());
 		failedMainFrameUrl = url;
+		forwardFailed(url);
 		completeLoading(view);
 		if (url != null) showLoadError(view, Uri.parse(url), reason);
 	}
@@ -591,6 +721,12 @@ public class FermataWebClient extends WebViewClientCompat {
 				webSnapshot(view, true, true).toBuilder()
 						.errorCode(detail.didCrash() ? 1 : 0).build());
 		completeLoading(view);
+		cancelUrlNavigation();
+		if (urlObserver != null) {
+			urlObserver.onHidden();
+			urlObserver.close();
+			urlObserver = null;
+		}
 		if (view instanceof FermataWebView v) return v.recoverRenderProcess();
 		return super.onRenderProcessGone(view, detail);
 	}
@@ -643,6 +779,7 @@ public class FermataWebClient extends WebViewClientCompat {
 			if (view.getParent() == null) return;
 			String current = view.getUrl();
 			if (shouldRunRetry(generation, retryGeneration, url, current, failedMainFrameUrl)) {
+				if (view instanceof FermataWebView web) web.markRecoveryNavigation(url);
 				view.loadUrl(url);
 			}
 		}, delay);
