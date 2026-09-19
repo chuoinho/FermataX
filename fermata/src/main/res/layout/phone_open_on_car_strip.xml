@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/phone_open_on_car_strip"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:colorPrimary"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="8dp"
+    android:visibility="gone">
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/phone_open_on_car_strip_title"
+        android:textColor="?android:attr/textColorPrimary" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/phone_open_on_car_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/phone_open_on_car_strip_title"
+        android:text="@string/phone_open_on_car_strip_detail" />
+
+</LinearLayout>

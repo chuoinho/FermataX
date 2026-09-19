@@ -71,6 +71,7 @@ import me.aap.fermata.addon.AddonCapability;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.auto.AutomotiveNavigationController;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
@@ -111,6 +112,7 @@ import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.PhoneBottomMenuController;
+import me.aap.fermata.ui.view.PhoneOpenOnCarStripController;
 import me.aap.fermata.ui.view.UiShellController;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
@@ -154,6 +156,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	private FloatingButton floatingButton;
 	private ContentLoadingProgressBar progressBar;
 	private PhoneBottomMenuController phoneBottomMenuController;
+	private PhoneOpenOnCarStripController phoneOpenOnCarStripController;
 	private FutureSupplier<?> contentLoading;
 	private final AsyncOperationController contentOperations =
 			new AsyncOperationController(this::onContentOperationChanged);
@@ -521,6 +524,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		getMediaServiceBinder().getMediaSessionCallback().removeAssistant(this);
 		getPrefs().removeBroadcastListener(this);
 		voiceInteraction.close();
+		if (phoneOpenOnCarStripController != null) phoneOpenOnCarStripController.close();
 
 		AddonManager.get().onActivityDestroy(this);
 
@@ -727,6 +731,12 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public void refreshPhoneBottomMenu() {
 		if (phoneBottomMenuController != null) phoneBottomMenuController.refresh();
+	}
+
+	public void refreshPhoneOpenOnCarStrip() {
+		if (phoneOpenOnCarStripController != null) {
+			phoneOpenOnCarStripController.refresh(getRuntimeHostMode(), isBarsHidden());
+		}
 	}
 
 	private boolean isCurrentSplitMode() {
@@ -1274,6 +1284,13 @@ public class MainActivityDelegate extends ActivityDelegate
 		floatingButton = a.findViewById(R.id.floating_button);
 		phoneBottomMenuController = new PhoneBottomMenuController(this,
 				a.findViewById(R.id.phone_bottom_menu));
+		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
+			phoneOpenOnCarStripController = new PhoneOpenOnCarStripController(
+					AutomotiveNavigationController.get().getOpenOnCarMode(),
+					a.findViewById(R.id.phone_open_on_car_strip),
+					a.findViewById(R.id.phone_open_on_car_toggle));
+			refreshPhoneOpenOnCarStrip();
+		}
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		if (getRuntimeHostMode().usesAutomotivePresentation()) floatingButton.setVisibility(GONE);
 		controlPanel.bind(getMediaServiceBinder());

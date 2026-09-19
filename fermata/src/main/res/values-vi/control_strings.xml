@@ -18,4 +18,6 @@
     <string name="control_open_car_first">Hãy mở FermataX trên màn hình xe trước.</string>
     <string name="control_open_failed">Không thể mở addon này trên màn hình xe.</string>
     <string name="control_no_addons">Không có addon đã bật hỗ trợ màn hình xe.</string>
+    <string name="phone_open_on_car_strip_title">Nội dung mở tiếp theo sẽ mở trên xe</string>
+    <string name="phone_open_on_car_strip_detail">Đồng bộ URL sang xe</string>
 </resources>

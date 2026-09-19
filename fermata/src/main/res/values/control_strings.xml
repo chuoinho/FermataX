@@ -18,4 +18,6 @@
     <string name="control_open_car_first">Open FermataX on the car screen first.</string>
     <string name="control_open_failed">Could not open this addon on the car screen.</string>
     <string name="control_no_addons">No enabled addons with a car screen.</string>
+    <string name="phone_open_on_car_strip_title" translatable="false">The next content you open will open on the car</string>
+    <string name="phone_open_on_car_strip_detail" translatable="false">Sync URL to car</string>
 </resources>
