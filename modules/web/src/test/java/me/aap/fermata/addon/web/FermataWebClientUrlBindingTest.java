@@ -185,6 +185,25 @@ public class FermataWebClientUrlBindingTest {
 		assertEquals(List.of(A), f.urls);
 	}
 
+	@Test public void callbackForwardingKeepsHistoryAndFinishAckNonEmitting() throws Exception {
+		Fixture f = new Fixture();
+		f.client.markAppNavigation(A); f.start(A); f.finish(A); f.drain();
+		assertEquals(List.of(A), f.urls);
+		f.client.doUpdateVisitedHistory(null, B, false); f.drain();
+		assertEquals(List.of(A, B), f.urls);
+		f.finish(B); f.drain();
+		assertEquals(List.of(A, B), f.urls);
+	}
+
+	@Test public void hiddenObserverCancelsDebounceImmediately() throws Exception {
+		Fixture f = new Fixture();
+		f.client.markAppNavigation(A); f.start(A);
+		f.observer.onHidden();
+		f.drain();
+		assertTrue(f.urls.isEmpty());
+	}
+
+
 	private static class Fixture {
 		final FermataWebClient client = new FermataWebClient();
 		final List<Runnable> tasks = new ArrayList<>();

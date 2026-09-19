@@ -63,6 +63,7 @@ public class WebBrowserFragment extends MainActivityFragment
 	private WebUrlSyncObserver urlObserver;
 	private long urlSourceGeneration;
 	private FermataWebView urlSourceView;
+	private WebUrlSourceBinding urlBinding;
 
 	@Override
 	public int getFragmentId() {
@@ -141,17 +142,27 @@ public class WebBrowserFragment extends MainActivityFragment
 	private boolean isUrlSourceForeground(FermataWebView web, WebBrowserAddon addon) {
 		MainActivityDelegate activity = MainActivityDelegate.getActivityDelegate(
 				web.getContext()).peek();
-		boolean foreground = !isHidden() && (activity != null) &&
-				(activity.getActiveFragment() == this) && isResumed() &&
-				web.isAttachedToWindow() && (getWebView() == web);
-		return FermataWebClient.shouldAttachUrlObserver(
-				addon.getAddonId(), getFragmentId(), web.getRuntimeHostMode(), foreground);
+		boolean active = !isHidden() && (activity != null) && (activity.getActiveFragment() == this);
+		return shouldBindUrlObserver(addon.getAddonId(), getFragmentId(), web.getRuntimeHostMode(),
+				active, isResumed(), web.isAttachedToWindow(), web, getWebView(),
+				urlSourceGeneration, urlSourceGeneration);
 	}
 
 	static boolean isCurrentUrlSource(boolean active, boolean resumed, boolean attached,
 			Object expectedView, Object currentView, long generation, long currentGeneration) {
 		return active && resumed && attached && (expectedView != null) &&
 				(expectedView == currentView) && (generation == currentGeneration);
+	}
+
+	static boolean shouldBindUrlObserver(int addonId, int fragmentId,
+			me.aap.fermata.ui.policy.RuntimeHostMode hostMode, boolean active, boolean resumed,
+			boolean attached, Object expectedView, Object currentView, long generation,
+			long currentGeneration) {
+		return (addonId == me.aap.fermata.R.id.web_browser_fragment) &&
+				(fragmentId == me.aap.fermata.R.id.web_browser_fragment) &&
+				(hostMode == me.aap.fermata.ui.policy.RuntimeHostMode.PHONE) &&
+				isCurrentUrlSource(active, resumed, attached, expectedView, currentView,
+						generation, currentGeneration);
 	}
 
 	private void attachUrlObserver(FermataWebView web, WebBrowserAddon addon) {
@@ -179,9 +190,8 @@ public class WebBrowserFragment extends MainActivityFragment
 					urlSourceGeneration, token.registrationGeneration(), token.modeRevision(), token.connectionEpoch());
 		}, scheduler, candidate -> dispatchWebUrl(controller, mode, web, addon, candidate));
 		urlObserver = observer;
-		web.getWebViewClient().setUrlObserver(observer, sourceGeneration);
-		String current = web.getUrl();
-		web.getWebViewClient().baselineUrl(current);
+		urlBinding = new WebUrlSourceBinding(web.getWebViewClient(), observer, mode,
+				sourceGeneration, web.getUrl());
 	}
 
 	private void dispatchWebUrl(AutomotiveNavigationController controller, OpenOnCarMode mode,
@@ -199,13 +209,10 @@ public class WebBrowserFragment extends MainActivityFragment
 
 	private void detachUrlObserver() {
 		urlSourceGeneration++;
-		if (urlObserver == null) return;
-		FermataWebView web = urlSourceView;
 		urlSourceView = null;
-		if (web != null) web.getWebViewClient().clearUrlObserver(urlObserver);
-		else {
-			urlObserver.onHidden();
-			urlObserver.close();
+		if (urlBinding != null) {
+			urlBinding.close();
+			urlBinding = null;
 		}
 		urlObserver = null;
 	}

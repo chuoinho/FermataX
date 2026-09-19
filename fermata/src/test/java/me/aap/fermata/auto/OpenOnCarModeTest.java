@@ -7,6 +7,28 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public class OpenOnCarModeTest {
+	@Test public void removingListenerStopsNotificationsAndListenerMayReadMode() {
+		OpenOnCarMode mode = new OpenOnCarMode();
+		java.util.List<Boolean> events = new java.util.ArrayList<>();
+		OpenOnCarMode.Listener listener = (available, enabled, revision) -> {
+			assertEquals(mode.isEnabled(), enabled);
+			events.add(enabled);
+		};
+		mode.addListener(listener);
+		mode.setAvailable(true, 1);
+		mode.removeListener(listener);
+		mode.setEnabled(true);
+		assertEquals(java.util.List.of(false, false), events);
+	}
+	@Test public void listenerSeesDisableAndAvailabilityImmediately() {
+		OpenOnCarMode mode = new OpenOnCarMode();
+		java.util.List<String> events = new java.util.ArrayList<>();
+		mode.addListener((available, enabled, revision) -> events.add(available + ":" + enabled));
+		mode.setAvailable(true, 1);
+		mode.setEnabled(true);
+		mode.setAvailable(false, 2);
+		assertEquals(java.util.List.of("false:false", "true:false", "true:true", "false:false"), events);
+	}
 	@Test
 	public void reconnectNeverReenables() {
 		OpenOnCarMode mode = new OpenOnCarMode();

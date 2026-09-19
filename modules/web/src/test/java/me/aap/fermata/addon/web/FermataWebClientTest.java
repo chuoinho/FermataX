@@ -188,4 +188,5 @@ public class FermataWebClientTest {
 		assertEquals(WebUrlSyncObserver.Provenance.UNKNOWN,
 				FermataWebClient.requestProvenance(null));
 	}
+
 }
