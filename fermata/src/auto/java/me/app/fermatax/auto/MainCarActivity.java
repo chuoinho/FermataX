@@ -47,6 +47,7 @@ import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.IntFunction;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -56,6 +57,8 @@ import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.auto.AutomotiveNavigationController;
 import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
+import me.aap.fermata.auto.OpenOnCarKind;
+import me.aap.fermata.auto.OpenOnCarRequest;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -104,7 +107,19 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private final ProjectedBackEventFilter projectedBackEventFilter =
 			new ProjectedBackEventFilter();
 	private final AutomotiveNavigationController.Navigator phoneNavigator =
-			this::openFromPhone;
+			new AutomotiveNavigationController.Navigator() {
+				@Override
+				public FutureSupplier<OpenResult> open(int destinationId,
+						BooleanSupplier stillCurrent) {
+					return openFromPhone(destinationId, stillCurrent);
+				}
+
+				@Override
+				public FutureSupplier<OpenResult> open(OpenOnCarRequest request,
+						BooleanSupplier stillCurrent) {
+					return openFromPhone(request, stillCurrent);
+				}
+			};
 	private final Object controlVisibilityOwner = new Object();
 
 	@NonNull
@@ -356,6 +371,21 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			});
 		});
 		return result;
+	}
+
+	private FutureSupplier<OpenResult> openFromPhone(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent) {
+		return dispatchPhoneRequest(request, stillCurrent,
+				destinationId -> openFromPhone(destinationId, stillCurrent));
+	}
+
+	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon) {
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		// WEB_URL has no attached-WebView receiver until Task 4. Do not route its record through
+		// setInput(Object): WebBrowserFragment currently converts arbitrary input via toString().
+		if (request.kind() != OpenOnCarKind.OPEN_ADDON) return completed(OpenResult.NOT_READY);
+		return openAddon.apply(request.addonId());
 	}
 
 	private static OpenResult failedOpenResult(int destinationId) {

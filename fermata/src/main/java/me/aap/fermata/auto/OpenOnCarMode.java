@@ -7,7 +7,7 @@ public final class OpenOnCarMode {
 	private long epoch = -1;
 	private long revision;
 
-	public void setAvailable(boolean next, long nextEpoch) {
+	public synchronized void setAvailable(boolean next, long nextEpoch) {
 		if ((available == next) && (epoch == nextEpoch)) return;
 		boolean changedEpoch = epoch != nextEpoch;
 		available = next;
@@ -16,22 +16,22 @@ public final class OpenOnCarMode {
 		revision++;
 	}
 
-	public void setEnabled(boolean next) {
+	public synchronized void setEnabled(boolean next) {
 		next &= available;
 		if (next == enabled) return;
 		enabled = next;
 		revision++;
 	}
 
-	public boolean isEnabled() {
+	public synchronized boolean isEnabled() {
 		return enabled;
 	}
 
-	public boolean isAvailable() {
+	public synchronized boolean isAvailable() {
 		return available;
 	}
 
-	public long revision() {
+	public synchronized long revision() {
 		return revision;
 	}
 }

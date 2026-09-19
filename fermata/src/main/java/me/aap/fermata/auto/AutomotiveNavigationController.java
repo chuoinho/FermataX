@@ -78,7 +78,7 @@ public final class AutomotiveNavigationController {
 	public FutureSupplier<OpenResult> open(int destinationId) {
 		Navigator captured;
 		long registration;
-		long request;
+		long requestId;
 		long connectionEpoch;
 		synchronized (this) {
 			captured = navigator;
@@ -86,13 +86,47 @@ public final class AutomotiveNavigationController {
 				return completed(OpenResult.NOT_READY);
 			}
 			registration = registrationGeneration;
-			request = ++requestGeneration;
+			requestId = ++requestGeneration;
 			connectionEpoch = connection.connectionEpoch();
 		}
-		BooleanSupplier stillCurrent = () -> isCurrent(captured, registration, request,
+		BooleanSupplier stillCurrent = () -> isCurrent(captured, registration, requestId,
 				connectionEpoch);
+		return dispatch(captured, stillCurrent, () -> captured.open(destinationId, stillCurrent));
+	}
+
+	/**
+	 * Dispatches a typed request to the currently registered projected host. Caller-provided
+	 * token values are never trusted for host/request identity; only mode/source values survive.
+	 */
+	public FutureSupplier<OpenResult> open(OpenOnCarRequest request) {
+		if (request == null) return completed(OpenResult.FAILED);
+		Navigator captured;
+		long registration;
+		long requestId;
+		long connectionEpoch;
+		long modeRevision;
+		synchronized (this) {
+			captured = navigator;
+			if ((captured == null) || !connection.isProjectionConnected()) {
+				return completed(OpenResult.NOT_READY);
+			}
+			modeRevision = openOnCarMode.revision();
+			if (request.token().modeRevision() != modeRevision) return completed(OpenResult.CANCELLED);
+			registration = registrationGeneration;
+			requestId = ++requestGeneration;
+			connectionEpoch = connection.connectionEpoch();
+		}
+		OpenOnCarRequest stamped = request.stamp(new OpenOnCarToken(connectionEpoch, registration,
+				modeRevision, request.token().sourceGeneration(), requestId));
+		BooleanSupplier stillCurrent = () -> isCurrent(captured, registration, requestId,
+				connectionEpoch) && (openOnCarMode.revision() == modeRevision);
+		return dispatch(captured, stillCurrent, () -> captured.open(stamped, stillCurrent));
+	}
+
+	private FutureSupplier<OpenResult> dispatch(Navigator captured, BooleanSupplier stillCurrent,
+			me.aap.utils.function.Supplier<FutureSupplier<OpenResult>> open) {
 		try {
-			FutureSupplier<OpenResult> result = captured.open(destinationId, stillCurrent);
+			FutureSupplier<OpenResult> result = open.get();
 			if (result == null) return completed(OpenResult.FAILED);
 			return result.map(value -> stillCurrent.getAsBoolean() ?
 					(value == null ? OpenResult.FAILED : value) : OpenResult.CANCELLED)
@@ -132,6 +166,7 @@ public final class AutomotiveNavigationController {
 
 	public enum OpenResult {
 		OPENED,
+		LOAD_DISPATCHED,
 		NOT_READY,
 		DISABLED,
 		FAILED,
@@ -140,6 +175,12 @@ public final class AutomotiveNavigationController {
 
 	public interface Navigator {
 		FutureSupplier<OpenResult> open(int destinationId, BooleanSupplier stillCurrent);
+
+		default FutureSupplier<OpenResult> open(OpenOnCarRequest request,
+				BooleanSupplier stillCurrent) {
+			if (request.kind() != OpenOnCarKind.OPEN_ADDON) return completed(OpenResult.NOT_READY);
+			return open(request.addonId(), stillCurrent);
+		}
 	}
 
 	public interface ReadinessListener {
