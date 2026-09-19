@@ -71,9 +71,13 @@ public final class WebUrlSyncObserver implements AutoCloseable {
 	}
 
 	private synchronized void accept(NavigationEvent event) {
+		if (closed) return;
 		DispatchState state = Objects.requireNonNull(stateSource.get());
-		if (closed || !state.enabled() || !event.mainFrame() ||
-				(state.sourceGeneration() != event.sourceGeneration())) return;
+		if (!state.enabled() || (state.sourceGeneration() != event.sourceGeneration())) {
+			cancelPending();
+			return;
+		}
+		if (!event.mainFrame()) return;
 		if (!WebUrlSyncPolicy.accepts(event.url())) {
 			reject(event);
 			return;
@@ -99,9 +103,13 @@ public final class WebUrlSyncObserver implements AutoCloseable {
 	}
 
 	private synchronized void reject(NavigationEvent event) {
+		if (closed) return;
 		DispatchState state = Objects.requireNonNull(stateSource.get());
-		if (closed || !state.enabled() || !event.mainFrame() ||
-				(state.sourceGeneration() != event.sourceGeneration())) return;
+		if (!state.enabled() || (state.sourceGeneration() != event.sourceGeneration())) {
+			cancelPending();
+			return;
+		}
+		if (!event.mainFrame()) return;
 		if (event.sourceGeneration() != sourceGeneration) {
 			cancelPending();
 			sourceGeneration = event.sourceGeneration();

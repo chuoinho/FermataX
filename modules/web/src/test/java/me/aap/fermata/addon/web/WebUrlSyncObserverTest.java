@@ -1,7 +1,6 @@
 package me.aap.fermata.addon.web;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static me.aap.fermata.addon.web.WebUrlSyncObserver.Provenance.APP_GET;
 import static me.aap.fermata.addon.web.WebUrlSyncObserver.Provenance.POST;
@@ -117,6 +116,8 @@ public class WebUrlSyncObserverTest {
 		f.observer.onStarted(event(7, 2, POST, false, true, B));
 		f.observer.onStarted(event(7, 3, UNKNOWN, false, true, B));
 		f.observer.onStarted(event(7, 4, RECOVERY, false, true, B));
+		f.observer.onHistory(event(7, 4, POST, false, true, B));
+		f.observer.onHistory(event(7, 4, UNKNOWN, false, true, B));
 		f.observer.onStarted(event(7, 5, APP_GET, false, true, "javascript:alert(1)"));
 		f.observer.onHistory(event(7, 6, SAME_DOCUMENT, false, false, C));
 		assertTrue(f.scheduler.tasks.isEmpty());
@@ -134,6 +135,32 @@ public class WebUrlSyncObserverTest {
 		f.observer.close();
 		f.scheduler.runAll();
 		f.observer.onStarted(event(7, 9, APP_GET, false, true, B));
+		assertTrue(f.received.isEmpty());
+	}
+
+	@Test
+	public void disabledStateCancelsPendingCandidateBeforeReenable() {
+		Fixture f = new Fixture();
+		f.observer.baseline(event(7, 1, APP_GET, false, true, A));
+		f.observer.onStarted(event(7, 2, APP_GET, false, true, B));
+		f.state = new DispatchState(false, 11, 7, 13, 17, 19);
+		f.observer.onStarted(event(7, 3, APP_GET, false, true, C));
+		f.state = new DispatchState(true, 11, 7, 13, 17, 19);
+		f.scheduler.runAll();
+
+		assertTrue(f.received.isEmpty());
+	}
+
+	@Test
+	public void sourceAdmissionChangeCancelsPendingCandidate() {
+		Fixture f = new Fixture();
+		f.observer.baseline(event(7, 1, APP_GET, false, true, A));
+		f.observer.onStarted(event(7, 2, APP_GET, false, true, B));
+		f.state = new DispatchState(true, 11, 8, 13, 17, 19);
+		f.observer.onStarted(event(7, 3, APP_GET, false, true, C));
+		f.state = new DispatchState(true, 11, 7, 13, 17, 19);
+		f.scheduler.runAll();
+
 		assertTrue(f.received.isEmpty());
 	}
 
