@@ -266,6 +266,9 @@ public class FermataWebClient extends WebViewClientCompat {
 	private long pendingNavigationSequence = Long.MIN_VALUE;
 	private WebUrlSyncObserver.Provenance pendingNavigationProvenance =
 			WebUrlSyncObserver.Provenance.UNKNOWN;
+	private WebUrlSyncObserver.DispatchState pendingOrigin;
+	private WebUrlSyncObserver.DispatchState currentOrigin;
+	private String stableDocumentUrl;
 
 	public FermataWebClient() {
 		this(diagnosticsObserver());
@@ -382,6 +385,8 @@ public class FermataWebClient extends WebViewClientCompat {
 		currentNavigationUrl = null;
 		pendingNavigationUrl = null;
 		pendingNavigationSequence = Long.MIN_VALUE;
+		pendingOrigin = currentOrigin = null;
+		stableDocumentUrl = null;
 	}
 
 	void clearUrlObserver(WebUrlSyncObserver observer) {
@@ -392,8 +397,6 @@ public class FermataWebClient extends WebViewClientCompat {
 	}
 
 	void markAppNavigation(String url) {
-		if ((pendingNavigationProvenance == WebUrlSyncObserver.Provenance.RECOVERY) &&
-				(url != null) && url.equals(pendingNavigationUrl)) return;
 		markNavigation(url, WebUrlSyncObserver.Provenance.APP_GET);
 	}
 
@@ -401,12 +404,39 @@ public class FermataWebClient extends WebViewClientCompat {
 		markNavigation(url, WebUrlSyncObserver.Provenance.RECOVERY);
 	}
 
+	void baselineUrl(String url) {
+		if (urlObserver == null) return;
+		markRecoveryNavigation(url);
+		currentNavigationUrl = url;
+		currentNavigationSequence = navigationSequence;
+		currentNavigationProvenance = WebUrlSyncObserver.Provenance.RECOVERY;
+		urlObserver.baseline(new WebUrlSyncObserver.NavigationEvent(sourceGeneration,
+				navigationSequence, WebUrlSyncObserver.Provenance.RECOVERY, false, true, url));
+	}
+
+	void markUserReload(String url) {
+		boolean get = isGet(currentNavigationProvenance) &&
+				java.util.Objects.equals(stableDocumentUrl, url);
+		markNavigation(url, get ? WebUrlSyncObserver.Provenance.APP_GET :
+				WebUrlSyncObserver.Provenance.UNKNOWN);
+	}
+
 	private void markRequestNavigation(String url, WebUrlSyncObserver.Provenance provenance) {
+		if (urlObserver == null) return;
+		WebUrlSyncObserver.DispatchState origin = (pendingNavigationUrl == null) ? currentOrigin : pendingOrigin;
+		if (!originIsCurrent(origin)) provenance = WebUrlSyncObserver.Provenance.UNKNOWN;
+		if ((pendingNavigationProvenance == WebUrlSyncObserver.Provenance.RECOVERY) ||
+				(currentNavigationProvenance == WebUrlSyncObserver.Provenance.RECOVERY))
+			provenance = WebUrlSyncObserver.Provenance.RECOVERY;
 		markNavigation(url, provenance);
+		pendingOrigin = origin;
 	}
 
 	private void markNavigation(String url, WebUrlSyncObserver.Provenance provenance) {
 		if (urlObserver == null) return;
+		urlObserver.cancel();
+		stableDocumentUrl = null;
+		pendingOrigin = urlObserver.captureState();
 		pendingNavigationUrl = url;
 		pendingNavigationProvenance = provenance;
 		pendingNavigationSequence = ++navigationSequence;
@@ -417,6 +447,9 @@ public class FermataWebClient extends WebViewClientCompat {
 		pendingNavigationUrl = null;
 		pendingNavigationSequence = Long.MIN_VALUE;
 		pendingNavigationProvenance = WebUrlSyncObserver.Provenance.UNKNOWN;
+		pendingOrigin = currentOrigin = null;
+		stableDocumentUrl = null;
+		currentNavigationProvenance = WebUrlSyncObserver.Provenance.UNKNOWN;
 	}
 
 	private void forwardStarted(WebView view, String url) {
@@ -426,10 +459,14 @@ public class FermataWebClient extends WebViewClientCompat {
 		if ((pendingNavigationUrl != null) && pendingNavigationUrl.equals(url)) {
 			sequence = pendingNavigationSequence;
 			provenance = pendingNavigationProvenance;
+			currentOrigin = pendingOrigin;
 		} else {
 			sequence = ++navigationSequence;
 			provenance = WebUrlSyncObserver.Provenance.UNKNOWN;
+			currentOrigin = null;
 		}
+		stableDocumentUrl = null;
+		if (!originIsCurrent(currentOrigin)) provenance = WebUrlSyncObserver.Provenance.UNKNOWN;
 		pendingNavigationUrl = null;
 		pendingNavigationSequence = Long.MIN_VALUE;
 		pendingNavigationProvenance = WebUrlSyncObserver.Provenance.UNKNOWN;
@@ -442,6 +479,8 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	private void forwardFinished(String url) {
 		if (urlObserver == null) return;
+		if (java.util.Objects.equals(currentNavigationUrl, url) &&
+				isGet(currentNavigationProvenance)) stableDocumentUrl = url;
 		long sequence = (currentNavigationSequence == Long.MIN_VALUE) ? navigationSequence :
 				currentNavigationSequence;
 		urlObserver.onFinished(new WebUrlSyncObserver.NavigationEvent(sourceGeneration, sequence,
@@ -450,10 +489,33 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	private void forwardFailed(String url) {
 		if (urlObserver == null) return;
+		if (java.util.Objects.equals(currentNavigationUrl, url)) {
+			stableDocumentUrl = null;
+			currentNavigationProvenance = WebUrlSyncObserver.Provenance.UNKNOWN;
+			currentOrigin = null;
+		}
 		long sequence = (currentNavigationSequence == Long.MIN_VALUE) ? navigationSequence :
 				currentNavigationSequence;
 		urlObserver.onFailed(new WebUrlSyncObserver.NavigationEvent(sourceGeneration, sequence,
 				currentNavigationProvenance, false, true, url));
+	}
+
+	private boolean originIsCurrent(WebUrlSyncObserver.DispatchState origin) {
+		return (origin != null) && origin.enabled() && origin.equals(urlObserver.captureState());
+	}
+
+	private static boolean isGet(WebUrlSyncObserver.Provenance provenance) {
+		return (provenance == WebUrlSyncObserver.Provenance.APP_GET) ||
+				(provenance == WebUrlSyncObserver.Provenance.REQUEST_GET);
+	}
+
+	private static boolean sameOrigin(String first, String second) {
+		if ((first == null) || !WebUrlSyncPolicy.accepts(second)) return false;
+		try {
+			URI a = URI.create(first), b = URI.create(second);
+			return equalIgnoreCase(a.getScheme(), b.getScheme()) &&
+					equalIgnoreCase(a.getHost(), b.getHost()) && (a.getPort() == b.getPort());
+		} catch (IllegalArgumentException invalid) { return false; }
 	}
 
 	static boolean shouldAttachUrlObserver(int addonId, int fragmentId,
@@ -471,8 +533,10 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
+		if (view instanceof FermataWebView web) web.mirroredPageStarted(url);
 		boolean allowed = isExternalNavigationAllowed(url);
 		if (!allowed) {
+			cancelUrlNavigation();
 			diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_STARTED,
 					webSnapshot(view, true, false));
 			view.stopLoading();
@@ -501,6 +565,7 @@ public class FermataWebClient extends WebViewClientCompat {
 	@Override
 	public void onPageFinished(WebView view, String url) {
 		FermataWebView v = (FermataWebView) view;
+		v.mirroredPageFinished(url);
 		diagnosticsObserver.onPage(PageEvent.MAIN_FRAME_FINISHED,
 				webSnapshot(view, true, true));
 		FutureSupplier<MainActivityDelegate> f =
@@ -534,7 +599,10 @@ public class FermataWebClient extends WebViewClientCompat {
 		}
 		// A policy-bound route remains on the Web surface. Routing it to another addon would
 		// discard the Stremio owner and bypass the source policy.
-		if (externalNavigationPolicy != null) return false;
+		if (externalNavigationPolicy != null) {
+			cancelUrlNavigation();
+			return false;
+		}
 		if (isYoutubeUri(request.getUrl())) {
 			cancelUrlNavigation();
 			try {
@@ -550,7 +618,12 @@ public class FermataWebClient extends WebViewClientCompat {
 			}
 		}
 
-		markRequestNavigation(request.getUrl().toString(), requestProvenance(request.getMethod()));
+		// Non-gesture redirects never upgrade an unsafe/recovery chain to a user GET.
+		var provenance = requestProvenance(request.getMethod());
+		if (!request.hasGesture() && !isGet(currentNavigationProvenance))
+			provenance = WebUrlSyncObserver.Provenance.UNKNOWN;
+		if (request.hasGesture()) markNavigation(request.getUrl().toString(), provenance);
+		else markRequestNavigation(request.getUrl().toString(), provenance);
 		return false;
 	}
 
@@ -558,14 +631,21 @@ public class FermataWebClient extends WebViewClientCompat {
 	public void doUpdateVisitedHistory(@NonNull WebView view, String url, boolean reload) {
 		super.doUpdateVisitedHistory(view, url, reload);
 		if (urlObserver == null) return;
-		if (!reload && (currentNavigationUrl != null) && currentNavigationUrl.equals(url)) return;
-		long sequence = ++navigationSequence;
-		currentNavigationSequence = sequence;
+		if (java.util.Objects.equals(currentNavigationUrl, url)) return;
+		// A history callback does not prove GET. Only a stable known-GET document can
+		// originate same-document history; unknown/new/reload callbacks fail closed.
+		boolean sameDocument = !reload && (pendingNavigationUrl == null) &&
+				isGet(currentNavigationProvenance) && sameOrigin(stableDocumentUrl, url);
+		var provenance = sameDocument ? WebUrlSyncObserver.Provenance.SAME_DOCUMENT :
+				WebUrlSyncObserver.Provenance.UNKNOWN;
+		currentNavigationSequence = ++navigationSequence;
 		currentNavigationUrl = url;
-		currentNavigationProvenance = reload ? WebUrlSyncObserver.Provenance.APP_GET :
-				WebUrlSyncObserver.Provenance.SAME_DOCUMENT;
-		urlObserver.onHistory(new WebUrlSyncObserver.NavigationEvent(sourceGeneration, sequence,
-				currentNavigationProvenance, reload, true, url));
+		if (!sameDocument) {
+			currentNavigationProvenance = provenance;
+			stableDocumentUrl = null;
+		}
+		urlObserver.onHistory(new WebUrlSyncObserver.NavigationEvent(sourceGeneration,
+				currentNavigationSequence, provenance, reload, true, url));
 	}
 
 	void setExternalNavigationPolicy(ExternalNavigationPolicy policy) {
@@ -624,6 +704,7 @@ public class FermataWebClient extends WebViewClientCompat {
 								.errorCode(error.getErrorCode()).build()));
 
 		if (mainFrame) {
+			if (view instanceof FermataWebView web) web.mirroredPageFailed(request.getUrl().toString());
 			forwardFailed(request.getUrl().toString());
 			failedMainFrameUrl = request.getUrl().toString();
 			completeLoading(view);
@@ -645,6 +726,7 @@ public class FermataWebClient extends WebViewClientCompat {
 	public void onReceivedHttpError(@NonNull WebView view, @NonNull WebResourceRequest request,
 																	@NonNull WebResourceResponse errorResponse) {
 		if (request.isForMainFrame()) {
+			if (view instanceof FermataWebView web) web.mirroredPageFailed(request.getUrl().toString());
 			forwardFailed(request.getUrl().toString());
 			String reason = "HTTP " + errorResponse.getStatusCode();
 			String phrase = errorResponse.getReasonPhrase();
@@ -677,6 +759,7 @@ public class FermataWebClient extends WebViewClientCompat {
 				webSnapshot(view, true, true).toBuilder()
 						.errorCode(error.getPrimaryError()).build());
 		failedMainFrameUrl = url;
+		if (view instanceof FermataWebView web) web.mirroredPageFailed(url);
 		forwardFailed(url);
 		completeLoading(view);
 		if (url != null) showLoadError(view, Uri.parse(url), reason);
@@ -741,6 +824,8 @@ public class FermataWebClient extends WebViewClientCompat {
 	}
 
 	private void showLoadError(WebView view, Uri uri, String reason) {
+		// No stale dialog Retry action may replay a mirrored token.
+		if ((view instanceof FermataWebView web) && web.isMirroredPage()) return;
 		if (uri == null) return;
 		String url = uri.toString();
 		if (url.startsWith("about:") || url.startsWith("data:")) return;
@@ -762,6 +847,7 @@ public class FermataWebClient extends WebViewClientCompat {
 	}
 
 	private boolean scheduleAutoRetry(WebView view, Uri uri, int errorCode, String reason) {
+		if ((view instanceof FermataWebView web) && web.isMirroredPage()) return false;
 		if ((uri == null) || !isTransientLoadError(errorCode, reason)) return false;
 		String url = uri.toString();
 		if (url.startsWith("about:") || url.startsWith("data:")) return false;
@@ -777,6 +863,7 @@ public class FermataWebClient extends WebViewClientCompat {
 		Log.e("Transient WebView error. Auto-retrying in ", delay, " ms: ", reason);
 		view.postDelayed(() -> {
 			if (view.getParent() == null) return;
+			if ((view instanceof FermataWebView web) && web.isMirroredPage()) return;
 			String current = view.getUrl();
 			if (shouldRunRetry(generation, retryGeneration, url, current, failedMainFrameUrl)) {
 				if (view instanceof FermataWebView web) web.markRecoveryNavigation(url);
@@ -788,6 +875,10 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	static boolean canAutoRetry(int retryCount) {
 		return retryCount < 2;
+	}
+
+	void suppressRetry() {
+		retryGeneration++;
 	}
 
 	static long getAutoRetryDelay(int attempt) {

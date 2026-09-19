@@ -59,6 +59,7 @@ import me.aap.fermata.auto.AutomotiveNavigationController;
 import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
 import me.aap.fermata.auto.OpenOnCarKind;
 import me.aap.fermata.auto.OpenOnCarRequest;
+import me.aap.fermata.auto.OpenOnCarRequestHandler;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -376,14 +377,57 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private FutureSupplier<OpenResult> openFromPhone(OpenOnCarRequest request,
 			BooleanSupplier stillCurrent) {
 		return dispatchPhoneRequest(request, stillCurrent,
-				destinationId -> openFromPhone(destinationId, stillCurrent));
+				destinationId -> openFromPhone(destinationId, stillCurrent),
+				typed -> openWebFromPhone(typed, stillCurrent));
+	}
+
+	private FutureSupplier<OpenResult> openWebFromPhone(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent) {
+		MainActivityDelegate captured = createdDelegate;
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if (!resumed || destroyed || (captured == null)) return completed(OpenResult.NOT_READY);
+		BooleanSupplier guard = () -> stillCurrent.getAsBoolean() && resumed && !destroyed &&
+				(createdDelegate == captured);
+		Promise<OpenResult> result = new Promise<>();
+		FermataApplication.get().getHandler().post(() -> {
+			if (!guard.getAsBoolean()) { result.complete(OpenResult.CANCELLED); return; }
+			AddonManager manager = AddonManager.get();
+			AddonInfo info = manager.getAddonInfo(R.id.web_browser_fragment);
+			// Source synchronization cannot install a module on the car.
+			if ((info == null) || (manager.getAddonState(info) != AddonState.LOADED)) {
+				result.complete(OpenResult.NOT_READY); return;
+			}
+			captured.showFragmentWhenReadyGuarded(R.id.web_browser_fragment, null, guard)
+					.onCompletion((opened, error) -> captured.post(() -> {
+				if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
+				else if (error != null) result.complete(OpenResult.FAILED);
+				else if (!Boolean.TRUE.equals(opened)) result.complete(OpenResult.NOT_READY);
+				else {
+					ActivityFragment fragment = captured.getActiveFragment();
+					if ((fragment == null) || (fragment.getFragmentId() != R.id.web_browser_fragment) ||
+							!(fragment instanceof OpenOnCarRequestHandler handler))
+						result.complete(OpenResult.NOT_READY);
+					else result.complete(handler.openOnCar(request, guard));
+				}
+			}));
+		});
+		return result;
+	}
+
+	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openWeb) {
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if ((request.kind() == OpenOnCarKind.WEB_URL) &&
+				(request.addonId() == R.id.web_browser_fragment) && (request.payload() instanceof String))
+			return openWeb.apply(request);
+		return dispatchPhoneRequest(request, stillCurrent, openAddon);
 	}
 
 	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,
 			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon) {
 		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
-		// WEB_URL has no attached-WebView receiver until Task 4. Do not route its record through
-		// setInput(Object): WebBrowserFragment currently converts arbitrary input via toString().
+		// Compatibility path for addon-only callers: never pass a typed payload to setInput.
 		if (request.kind() != OpenOnCarKind.OPEN_ADDON) return completed(OpenResult.NOT_READY);
 		return openAddon.apply(request.addonId());
 	}

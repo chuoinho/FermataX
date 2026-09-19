@@ -17,6 +17,40 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
 
 public class AutomotiveNavigationControllerTest {
+	@Test public void typedQueuedRequestRetainsSourceLifetimeGuard() {
+		AutomotiveConnectionState connection = new AutomotiveConnectionState();
+		AutomotiveNavigationController controller = new AutomotiveNavigationController(connection);
+		connection.connectionChanged(true);
+		AtomicReference<BooleanSupplier> queuedGuard = new AtomicReference<>();
+		controller.register(new AutomotiveNavigationController.Navigator() {
+			public FutureSupplier<OpenResult> open(int id, BooleanSupplier guard) {
+				return completed(OpenResult.OPENED);
+			}
+			public FutureSupplier<OpenResult> open(OpenOnCarRequest request, BooleanSupplier guard) {
+				queuedGuard.set(guard); return new Promise<>();
+			}
+		});
+		controller.getOpenOnCarMode().setEnabled(true);
+		java.util.concurrent.atomic.AtomicBoolean source = new java.util.concurrent.atomic.AtomicBoolean(true);
+		controller.open(new OpenOnCarRequest(OpenOnCarKind.WEB_URL, 1, "https://example.org/",
+				controller.captureSourceToken(7)), source::get);
+		assertTrue(queuedGuard.get().getAsBoolean());
+		source.set(false);
+		assertFalse(queuedGuard.get().getAsBoolean());
+	}
+	@Test public void sourceSnapshotChangesOnHostReplacementEvenWhileModeStaysEnabled() {
+		AutomotiveConnectionState connection = new AutomotiveConnectionState();
+		AutomotiveNavigationController controller = new AutomotiveNavigationController(connection);
+		connection.connectionChanged(true);
+		controller.register((id, current) -> completed(OpenResult.OPENED));
+		controller.getOpenOnCarMode().setEnabled(true);
+		var before = controller.captureSourceToken(7);
+		controller.register((id, current) -> completed(OpenResult.OPENED));
+		var after = controller.captureSourceToken(7);
+		assertTrue(controller.getOpenOnCarMode().isEnabled());
+		assertFalse(before.equals(after));
+		assertTrue(after.registrationGeneration() > before.registrationGeneration());
+	}
 	@Test
 	public void readinessTracksNavigatorRegistrationAndRawConnection() {
 		AutomotiveConnectionState connection = new AutomotiveConnectionState();

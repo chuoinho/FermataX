@@ -60,6 +60,11 @@ public final class AutomotiveNavigationController {
 		return openOnCarMode;
 	}
 
+	public synchronized OpenOnCarToken captureSourceToken(long sourceGeneration) {
+		return new OpenOnCarToken(connection.connectionEpoch(), registrationGeneration,
+				openOnCarMode.revision(), sourceGeneration, requestGeneration);
+	}
+
 	public void addReadinessListener(ReadinessListener listener) {
 		boolean available;
 		long epoch;
@@ -99,7 +104,12 @@ public final class AutomotiveNavigationController {
 	 * token values are never trusted for host/request identity; only mode/source values survive.
 	 */
 	public FutureSupplier<OpenResult> open(OpenOnCarRequest request) {
+		return open(request, () -> true);
+	}
+
+	public FutureSupplier<OpenResult> open(OpenOnCarRequest request, BooleanSupplier sourceCurrent) {
 		if (request == null) return completed(OpenResult.FAILED);
+		if (!sourceCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
 		Navigator captured;
 		long registration;
 		long requestId;
@@ -119,7 +129,7 @@ public final class AutomotiveNavigationController {
 		OpenOnCarRequest stamped = request.stamp(new OpenOnCarToken(connectionEpoch, registration,
 				modeRevision, request.token().sourceGeneration(), requestId));
 		BooleanSupplier stillCurrent = () -> isCurrent(captured, registration, requestId,
-				connectionEpoch) && (openOnCarMode.revision() == modeRevision);
+				connectionEpoch) && (openOnCarMode.revision() == modeRevision) && sourceCurrent.getAsBoolean();
 		return dispatch(captured, stillCurrent, () -> captured.open(stamped, stillCurrent));
 	}
 
