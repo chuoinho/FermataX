@@ -97,7 +97,7 @@ public final class StremioWebView extends FermataWebView {
 	 * new hosted document instead of relying on a same-document hash transition to recover it.
 	 */
 	void loadFreshDocument(String url) {
-		if (url == null) return;
+		if (!StremioWebSessionPolicy.isPersistableRoute(url)) return;
 		if (pendingFreshDocumentUrl != null) {
 			pendingFreshDocumentUrl = url;
 			return;
@@ -113,6 +113,8 @@ public final class StremioWebView extends FermataWebView {
 	}
 
 	void endAutomotiveSession() {
+		pendingFreshDocumentUrl = null;
+		clearingFreshDocumentHistory = false;
 		StremioWebMediaSessionBridge bridge = mediaSessionBridge;
 		if (bridge != null) bridge.endAutomotiveSession();
 		StremioWebAudioBridge webAudio = audioBridge;
@@ -123,6 +125,8 @@ public final class StremioWebView extends FermataWebView {
 	}
 
 	void resetToHomeForNewSession() {
+		pendingFreshDocumentUrl = null;
+		clearingFreshDocumentHistory = false;
 		stopLoading();
 		clearHistory();
 		loadUrl(StremioWebAddon.HOME_URL);
@@ -147,6 +151,12 @@ public final class StremioWebView extends FermataWebView {
 	@Override
 	protected StremioWebView createReplacementView(Context context) {
 		return new StremioWebView(context);
+	}
+
+	@Override
+	protected String getRecoveryUrl() {
+		// Renderer recovery is not a new source selection. Never replay a player payload.
+		return StremioWebSessionPolicy.entryUrl(false, super.getRecoveryUrl());
 	}
 
 	@Override

@@ -111,6 +111,16 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	}
 
 	@Override
+	public String controlOnlyContentKey() {
+		return documentGeneration + ":" + state.session;
+	}
+
+	@Override
+	public void onControlOnlyRevoked() {
+		endAutomotiveSession();
+	}
+
+	@Override
 	public long controlOnlyActions() {
 		return state.controlOnlyActions();
 	}
@@ -124,7 +134,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			case PREVIOUS_TRACK -> null;
 		};
 		if ((command == null) || !isControlOnlyActive() || !state.canDispatch(command)) return false;
-		web.evaluateJavascript(dispatchSource(command), null);
+		web.evaluateJavascript(dispatchSource(command, documentGeneration, state.session), null);
 		return true;
 	}
 
@@ -271,14 +281,20 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			  var port = window.fermataStremioControl;
 			  if (!port || typeof port.postMessage !== 'function') return;
 			  var session = Math.random().toString(36).slice(2) + Date.now().toString(36);
+			  var generation = %d, closed = false;
 			  var allowed = Object.freeze(Object.assign(Object.create(null), {play:true,pause:true,nexttrack:true}));
 			  var handlers = Object.create(null);
 			  var send = function(type, data) { try {
-			    var msg = data || {}; msg.v = 1; msg.g = %d; msg.t = type; msg.s = session;
+			    var msg = data || {}; msg.v = 1; msg.g = generation; msg.t = type; msg.s = session;
 			    port.postMessage(JSON.stringify(msg));
 			  } catch (_) {} };
 			  var text = function(value) { return typeof value === 'string' ? value.slice(0, 256) : ''; };
-			  var expose = function() { window.__fermataStremioMediaSessionV1 = Object.freeze({version:1, dispatch:function(action) {
+			  var expose = function() { window.__fermataStremioMediaSessionV1 = Object.freeze({version:1, dispatch:function(action, g, s) {
+			    if (closed || g !== generation || s !== session) return false;
+			    var playback = navigator.mediaSession.playbackState;
+			    if (playback !== 'playing' && playback !== 'paused') return false;
+			    if ((action === 'play' && playback !== 'paused') ||
+			        (action === 'pause' && playback !== 'playing')) return false;
 			    var callback = handlers[action]; if (typeof callback !== 'function') return false;
 			    try { callback(); } catch (_) {} return true;
 			  }}); };
@@ -341,15 +357,16 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			    catch (_) { try { navigator.mediaSession = mediaSession; } catch (_) { return; } }
 			    expose();
 			  }
-			  addEventListener('pagehide', function(){ send('SESSION_CLOSED'); }, {once:true});
+			  addEventListener('pagehide', function(){ closed = true; send('SESSION_CLOSED'); }, {once:true});
 			  send('READY');
 			})();
 			""", generation);
 	}
 
-	private static String dispatchSource(String action) {
+	private static String dispatchSource(String action, long generation, String session) {
 		return "(function(){var b=window.__fermataStremioMediaSessionV1;" +
-				"return !!(b&&b.version===1&&b.dispatch('" + action + "'));})()";
+				"return !!(b&&b.version===1&&b.dispatch('" + action + "'," + generation + "," +
+				JSONObject.quote(session) + "));})()";
 	}
 
 	static final class State {
@@ -410,7 +427,12 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		}
 
 		boolean canDispatch(String action) {
-			return handlers.contains(Action.from(action));
+			if (!handlers.contains(Action.from(action))) return false;
+			return switch (action) {
+				case "play" -> playback == Playback.PAUSED;
+				case "pause" -> playback == Playback.PLAYING;
+				default -> playback != Playback.NONE;
+			};
 		}
 
 		int playbackState() {
