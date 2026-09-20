@@ -24,4 +24,10 @@ public class YoutubeRoutedPlaybackResultTest {
 		assertEquals(CANCELLED, YoutubeFragment.dispatchPlayback(new Admission(PHONE, current::get),
 				() -> false, () -> { current.set(false); return true; }));
 	}
+	@Test public void alreadyHandledYoutubeRouteRemainsSuccessfulWithoutClaimingLoad() {
+		Admission admission = new Admission(PHONE, () -> true);
+		java.util.function.Supplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>
+				handled = () -> OPENED;
+		assertEquals(OPENED, YoutubeFragment.dispatchTypedPlayback(admission, () -> false, handled));
+	}
 }

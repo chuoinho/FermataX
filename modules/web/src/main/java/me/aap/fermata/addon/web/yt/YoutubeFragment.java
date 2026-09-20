@@ -74,14 +74,21 @@ public class YoutubeFragment extends WebBrowserFragment
 				(me.aap.fermata.media.lib.DefaultMediaLib) activity.getLib(), descriptor);
 		var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
 				me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, stillCurrent);
-		return dispatchPlayback(admission, activity.getMediaSessionCallback()::hasCustomEngineProvider,
-				() -> activity.getMediaServiceBinder().playRoutedItem(item, 0, admission));
+		return dispatchTypedPlayback(admission, activity.getMediaSessionCallback()::hasCustomEngineProvider,
+				() -> activity.getMediaServiceBinder().playRoutedItemResult(item, 0, admission));
 	}
 
 	static me.aap.fermata.auto.AutomotiveNavigationController.OpenResult dispatchPlayback(
 			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission,
 			java.util.function.BooleanSupplier customProvider, java.util.function.BooleanSupplier dispatch) {
 		return FermataServiceUiBinder.dispatchRoutedPlayback(admission, customProvider, dispatch);
+	}
+
+	static me.aap.fermata.auto.AutomotiveNavigationController.OpenResult dispatchTypedPlayback(
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission,
+			java.util.function.BooleanSupplier customProvider,
+			java.util.function.Supplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult> dispatch) {
+		return FermataServiceUiBinder.dispatchTypedRoutedPlayback(admission, customProvider, dispatch);
 	}
 
 	@Nullable

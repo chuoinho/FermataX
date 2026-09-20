@@ -252,20 +252,37 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		return started ? OpenResult.LOAD_DISPATCHED : OpenResult.NOT_READY;
 	}
 
+	/** Preserves successful same-item resume/no-op outcomes without creating a loading request. */
+	public static OpenResult dispatchTypedRoutedPlayback(Admission admission,
+			java.util.function.BooleanSupplier customProvider,
+			java.util.function.Supplier<OpenResult> dispatch) {
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
+		if (!admission.canAttach() || (admission.target() == RuntimeHostMode.AA_PROJECTION &&
+				customProvider.getAsBoolean())) return OpenResult.NOT_READY;
+		OpenResult outcome = dispatch.get();
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
+		return outcome == null ? OpenResult.NOT_READY : outcome;
+	}
+
 	public boolean playRoutedItem(PlayableItem i, long pos, Admission admission) {
-		if (!admission.isCurrent()) return false;
+		return playRoutedItemResult(i, pos, admission) == OpenResult.LOAD_DISPATCHED;
+	}
+
+	/** Already-routed callers need the difference between a fresh load and an accepted no-op. */
+	public OpenResult playRoutedItemResult(PlayableItem i, long pos, Admission admission) {
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
 		boolean sameItem = i.equals(getCurrentItem());
 		boolean sameHost = admission.target() == sessionCallback.getVideoOutputCoordinator().getHost();
 		if (!shouldCreatePlaybackRequest(sameItem, pos, sameHost)) {
-			if (!admission.commit()) return false;
+			if (!admission.commit()) return OpenResult.CANCELLED;
 			if (sessionCallback.getPlaybackState().getState() == PlaybackStateCompat.STATE_PAUSED) {
 				sessionCallback.onPlay();
 			}
-			return false;
+			return OpenResult.OPENED;
 		} else {
-			if (!sessionCallback.admitPlaybackHost(admission)) return false;
+			if (!sessionCallback.admitPlaybackHost(admission)) return OpenResult.NOT_READY;
 			sessionCallback.playItem(i, pos);
-			return true;
+			return OpenResult.LOAD_DISPATCHED;
 		}
 	}
 

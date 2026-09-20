@@ -27,6 +27,18 @@ public class FermataServiceUiBinderTest {
 		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.LOAD_DISPATCHED,
 				FermataServiceUiBinder.dispatchRoutedPlayback(admission, () -> false, () -> true));
 	}
+	@Test public void routedNativeSameItemResumeAndNoopStaySuccessfulWithoutLoading() {
+		var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+				me.aap.fermata.ui.policy.RuntimeHostMode.PHONE, () -> true);
+		java.util.function.Supplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>
+				pausedResume = () -> me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED;
+		java.util.function.Supplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>
+				alreadyPlaying = () -> me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED;
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED,
+				FermataServiceUiBinder.dispatchTypedRoutedPlayback(admission, () -> false, pausedResume));
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED,
+				FermataServiceUiBinder.dispatchTypedRoutedPlayback(admission, () -> false, alreadyPlaying));
+	}
 	@Test public void castActivatedDuringReadinessWaitRejectsFinalNativeDispatch() {
 		var connection = me.aap.fermata.auto.AutomotiveConnectionState.get();
 		var controller = me.aap.fermata.auto.AutomotiveNavigationController.get();

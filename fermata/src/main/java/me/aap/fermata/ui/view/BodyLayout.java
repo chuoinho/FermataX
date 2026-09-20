@@ -330,9 +330,9 @@ public class BodyLayout extends SplitLayout
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		MediaLib.PlayableItem cur = b.getCurrentItem();
 		startingPlayback = new Promise<Void>().thenRun(() -> startingPlayback = completedVoid());
-		var dispatchResult = FermataServiceUiBinder.dispatchRoutedPlayback(admission,
+		var dispatchResult = FermataServiceUiBinder.dispatchTypedRoutedPlayback(admission,
 				b.getMediaSessionCallback()::hasCustomEngineProvider,
-				() -> b.playRoutedItem(i, position, admission));
+				() -> b.playRoutedItemResult(i, position, admission));
 		boolean requestStarted = dispatchResult ==
 				me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.LOAD_DISPATCHED;
 		result.complete(dispatchResult);
