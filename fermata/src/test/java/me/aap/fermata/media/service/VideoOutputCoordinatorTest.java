@@ -33,6 +33,16 @@ public class VideoOutputCoordinatorTest {
 		coordinator.add(newCar, 0, me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION);
 		assertNull(coordinator.getSelected());
 	}
+	@Test public void newCarRequestIgnoresOldSurfaceRegistrationAfterHostReplacement() throws Exception {
+		var coordinator = new VideoOutputCoordinator();
+		VideoView oldCar = view(), currentCar = view();
+		coordinator.add(oldCar, 0, me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, 11L);
+		coordinator.selectHost(me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, () -> true, 11L);
+		assertSame(oldCar, coordinator.getSelected());
+		coordinator.add(currentCar, 0, me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, 12L);
+		coordinator.selectHost(me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, () -> true, 12L);
+		assertSame(currentCar, coordinator.getSelected());
+	}
 	@Test public void requestedHostOverridesPriorityAndNeverFallsBackAcrossHosts() throws Exception {
 		var coordinator = new VideoOutputCoordinator();
 		VideoView phone = view(), car = view();

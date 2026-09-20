@@ -72,11 +72,16 @@ public class YoutubeFragment extends WebBrowserFragment
 		YoutubeAddon addon = (YoutubeAddon) getWebView().getAddon();
 		PlayableItem item = new YoutubeAddon.YoutubeHistoryItem(addon,
 				(me.aap.fermata.media.lib.DefaultMediaLib) activity.getLib(), descriptor);
-		activity.getMediaServiceBinder().playRoutedItem(item, 0,
-				new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
-						me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, stillCurrent));
-		return stillCurrent.getAsBoolean() ? me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.LOAD_DISPATCHED :
-				me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED;
+		var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+				me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, stillCurrent);
+		return dispatchPlayback(admission, activity.getMediaSessionCallback()::hasCustomEngineProvider,
+				() -> activity.getMediaServiceBinder().playRoutedItem(item, 0, admission));
+	}
+
+	static me.aap.fermata.auto.AutomotiveNavigationController.OpenResult dispatchPlayback(
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission,
+			java.util.function.BooleanSupplier customProvider, java.util.function.BooleanSupplier dispatch) {
+		return FermataServiceUiBinder.dispatchRoutedPlayback(admission, customProvider, dispatch);
 	}
 
 	@Nullable

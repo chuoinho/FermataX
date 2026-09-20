@@ -392,7 +392,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		Promise<OpenResult> result = new Promise<>();
 		captured.post(() -> {
 			if (!guard.getAsBoolean()) { result.complete(OpenResult.CANCELLED); return; }
-			if (captured.getMediaSessionCallback().hasCustomEngineProvider()) {
+			if (hasCustomEngineProvider(captured)) {
 				result.complete(OpenResult.NOT_READY); return;
 			}
 			if (request.kind() == OpenOnCarKind.YOUTUBE_VIDEO) {
@@ -400,6 +400,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 						.onCompletion((opened, error) -> captured.post(() -> {
 					if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
 					else if (error != null) result.complete(OpenResult.FAILED);
+					else if (hasCustomEngineProvider(captured)) result.complete(OpenResult.NOT_READY);
 					else if (!Boolean.TRUE.equals(opened) ||
 							!(captured.getActiveFragment() instanceof OpenOnCarRequestHandler handler))
 						result.complete(OpenResult.NOT_READY);
@@ -415,6 +416,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 				if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
 				else if (error != null) result.complete(OpenResult.FAILED);
 				else if (!Boolean.TRUE.equals(opened)) result.complete(OpenResult.NOT_READY);
+				else if (hasCustomEngineProvider(captured)) result.complete(OpenResult.NOT_READY);
 				else captured.getBody().playRoutedItem(media.item(), media.position(),
 						new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
 								me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, guard))
@@ -422,6 +424,11 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			}));
 		});
 		return result;
+	}
+
+	/** Must run after readiness callbacks: Cast/custom providers can activate while waiting. */
+	private static boolean hasCustomEngineProvider(MainActivityDelegate delegate) {
+		return delegate.getMediaSessionCallback().hasCustomEngineProvider();
 	}
 
 	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,

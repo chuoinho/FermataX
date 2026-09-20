@@ -241,6 +241,17 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	/** Already routed executor: transport and car receivers never re-read the switch. */
+	public static OpenResult dispatchRoutedPlayback(Admission admission,
+			java.util.function.BooleanSupplier customProvider,
+			java.util.function.BooleanSupplier dispatch) {
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
+		if (!admission.canAttach() || (admission.target() == RuntimeHostMode.AA_PROJECTION &&
+				customProvider.getAsBoolean())) return OpenResult.NOT_READY;
+		boolean started = dispatch.getAsBoolean();
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
+		return started ? OpenResult.LOAD_DISPATCHED : OpenResult.NOT_READY;
+	}
+
 	public boolean playRoutedItem(PlayableItem i, long pos, Admission admission) {
 		if (!admission.isCurrent()) return false;
 		boolean sameItem = i.equals(getCurrentItem());

@@ -74,13 +74,28 @@ public final class OpenOnCarMediaRouting {
 	public static final class Admission {
 		private final RuntimeHostMode target;
 		private final BooleanSupplier current;
-		private final OpenOnCarToken hostLease = AutomotiveNavigationController.get().captureSourceToken(0);
+		private final java.util.function.Supplier<OpenOnCarToken> hostToken;
+		private final OpenOnCarToken hostLease;
 		private boolean committed;
 		public Admission(RuntimeHostMode target, BooleanSupplier current) {
-			this.target = target; this.current = current;
+			this(target, current, () -> AutomotiveNavigationController.get().captureSourceToken(0));
+		}
+		Admission(RuntimeHostMode target, BooleanSupplier current,
+				java.util.function.Supplier<OpenOnCarToken> hostToken) {
+			this.target = target;
+			this.current = current;
+			this.hostToken = hostToken;
+			hostLease = hostToken.get();
 		}
 		public RuntimeHostMode target() { return target; }
-		public boolean isCurrent() { return committed || current.getAsBoolean(); }
+		public long hostRegistrationGeneration() { return hostLease.registrationGeneration(); }
+		public boolean isCurrent() {
+			OpenOnCarToken live = hostToken.get();
+			boolean hostLeaseCurrent = target != RuntimeHostMode.AA_PROJECTION ||
+					(live.connectionEpoch() == hostLease.connectionEpoch() &&
+						live.registrationGeneration() == hostLease.registrationGeneration());
+			return hostLeaseCurrent && (committed || current.getAsBoolean());
+		}
 		public boolean commit() { return committed = isCurrent(); }
 		public boolean canAttach() {
 			if (target != RuntimeHostMode.AA_PROJECTION) return true;

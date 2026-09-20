@@ -109,6 +109,19 @@ public class OpenOnCarMediaRoutingTest {
 		current.set(true); assertTrue(admission.commit());
 		current.set(false); assertTrue(admission.isCurrent());
 	}
+	@Test public void committedAdmissionStillDiesWhenCarRegistrationIsReplaced() {
+		var connection = new AutomotiveConnectionState();
+		var controller = new AutomotiveNavigationController(connection);
+		connection.connectionChanged(true);
+		controller.register((id, guard) -> completed(OpenResult.OPENED));
+		controller.getOpenOnCarMode().setEnabled(true);
+		var admission = new OpenOnCarMediaRouting.Admission(AA_PROJECTION, () -> true,
+				() -> controller.captureSourceToken(0));
+		assertTrue(admission.commit());
+		controller.register((id, guard) -> completed(OpenResult.OPENED));
+		assertFalse(admission.isCurrent());
+		connection.connectionChanged(false);
+	}
 	private static final class Fixture {
 		final AutomotiveConnectionState connection = new AutomotiveConnectionState();
 		final AutomotiveNavigationController controller = new AutomotiveNavigationController(connection);
