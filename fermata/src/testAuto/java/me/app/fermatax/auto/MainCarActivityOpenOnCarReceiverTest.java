@@ -13,6 +13,21 @@ import me.aap.fermata.auto.OpenOnCarRequest;
 import me.aap.fermata.auto.OpenOnCarToken;
 
 public class MainCarActivityOpenOnCarReceiverTest {
+	@Test public void typedMediaUsesOnlyGuardedMediaContinuation() {
+		var item = (me.aap.fermata.media.lib.MediaLib.PlayableItem) java.lang.reflect.Proxy.newProxyInstance(
+				getClass().getClassLoader(), new Class[]{me.aap.fermata.media.lib.MediaLib.PlayableItem.class},
+				(proxy, method, args) -> null);
+		OpenOnCarRequest request = new OpenOnCarRequest(OpenOnCarKind.MEDIA_ITEM, 0,
+				new me.aap.fermata.auto.OpenOnCarMediaRouting.MediaItem(item, 1234L),
+				new OpenOnCarToken(1, 1, 1, 1, 1));
+		assertEquals(OpenResult.LOAD_DISPATCHED, MainCarActivity.dispatchPhoneRequest(request, () -> true,
+				id -> { throw new AssertionError(); }, web -> { throw new AssertionError(); }, media -> {
+					org.junit.Assert.assertSame(request, media); return completed(OpenResult.LOAD_DISPATCHED);
+				}).peek());
+		assertEquals(OpenResult.CANCELLED, MainCarActivity.dispatchPhoneRequest(request, () -> false,
+				id -> { throw new AssertionError(); }, web -> { throw new AssertionError(); },
+				media -> { throw new AssertionError(); }).peek());
+	}
 	@Test public void exactWebRequestUsesTypedContinuationNotSetInput() {
 		AtomicInteger addons = new AtomicInteger(), webLoads = new AtomicInteger();
 		OpenOnCarRequest request = new OpenOnCarRequest(OpenOnCarKind.WEB_URL,

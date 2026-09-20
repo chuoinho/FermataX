@@ -169,10 +169,11 @@ final class VoiceInteractionCoordinator {
 			if ((addon instanceof VoiceSearchAddon voice) &&
 					voice.resolveVoiceSelection(activity, option.getStableId())) return true;
 		}
+		var selection = activity.getMediaServiceBinder().captureUserSelection();
 		activity.getLib().getItem(option.getStableId()).main(activity.getHandler()).onSuccess(item -> {
 			if (item instanceof PlayableItem playable) {
-				activity.getMediaServiceBinder().playItem(playable);
-				activity.goToItem(playable);
+				activity.getBody().playSelection(selection, playable, -1);
+				if (!selection.forwardToCar()) activity.goToItem(playable);
 			}
 		});
 		return true;

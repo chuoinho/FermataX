@@ -519,6 +519,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			return false;
 		}
 		boolean sameEngine = engine == getEngine();
+		if (!videoOutput.commitAdmission()) return false;
 		PlaybackOwnership.Token pendingOwner = admission.pendingOwner();
 		if ((pendingOwner != null) && sameEngine &&
 				(playbackOwnership.bindEngine(pendingOwner, engine) == null)) return false;
@@ -616,7 +617,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private boolean isPlaybackRequestCurrent(long requestRevision,
 			@NonNull PlayableItem item) {
-		return !terminal && isPlaybackRequestCurrent(requestRevision, playbackRequestRevision,
+		return !terminal && videoOutput.isAdmissionCurrent() && isPlaybackRequestCurrent(requestRevision, playbackRequestRevision,
 				playbackOwnership.getActive(), item);
 	}
 
@@ -678,6 +679,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	public void addVideoView(VideoView view, int priority) { videoOutput.add(view, priority); }
+
+	public boolean admitPlaybackHost(me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission) { return !terminal && videoOutput.admit(admission); }
 
 	public void removeVideoView(VideoView view) { videoOutput.remove(view); }
 
@@ -1367,6 +1370,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onEnginePrepared(MediaEngine engine) {
 		if (!acceptsEngineCallback(engine)) return;
+		if (!videoOutput.commitAdmission()) return;
 		notifyPlaybackLifecycle((l, revision) -> l.onPlaybackAttemptPlayerReady(revision));
 		playerTask.cancel();
 		PlayableItem i = engine.getSource();
@@ -1996,7 +2000,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private boolean acceptsEngineCallback(@NonNull MediaEngine callbackEngine) {
-		if (terminal) return false;
+		if (terminal || !videoOutput.isAdmissionCurrent()) return false;
 		PlayableItem source = callbackEngine.getSource();
 		boolean sourcePresent = source != null;
 		if (usesTokenBackedAuthority(sourcePresent,

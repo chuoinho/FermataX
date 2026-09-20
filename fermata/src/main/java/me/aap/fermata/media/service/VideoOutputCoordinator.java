@@ -7,6 +7,7 @@ import java.util.List;
 
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.fermata.ui.policy.RuntimeHostMode;
 
 /**
  * Owns the single decoder-output target selected from the currently available video surfaces.
@@ -29,14 +30,45 @@ public final class VideoOutputCoordinator {
 	private long generation;
 	private long sourceOutputGeneration = -1L;
 	private long sourceGeneration;
+	private RuntimeHostMode requestedHost;
+	private java.util.function.BooleanSupplier hostCurrent = () -> true;
+	private me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission;
+
+	boolean admit(me.aap.fermata.auto.OpenOnCarMediaRouting.Admission next) {
+		if (!next.isCurrent()) return false;
+		admission = next;
+		selectHost(next.target(), next::canAttach);
+		return true;
+	}
+
+	public boolean isAdmissionCurrent() { return admission == null || admission.isCurrent(); }
+	boolean commitAdmission() { return admission == null || admission.commit(); }
+	public boolean canAttach() { return hostCurrent.getAsBoolean(); }
 
 	void add(VideoView view, int priority) {
+		add(view, priority, RuntimeHostMode.PHONE);
+	}
+
+	public void add(VideoView view, int priority, RuntimeHostMode host) {
 		for (Registration target : targets) {
 			if (target.view == view) return;
 		}
-		targets.add(new Registration(view, priority, targets.size()));
+		targets.add(new Registration(view, priority, targets.size(), host));
 		reconcile();
 	}
+
+	/** Called by an admitted playback request, never by a mode-toggle listener. */
+	public void selectHost(RuntimeHostMode host) {
+		selectHost(host, () -> true);
+	}
+
+	public void selectHost(RuntimeHostMode host, java.util.function.BooleanSupplier current) {
+		hostCurrent = current;
+		requestedHost = host;
+		reconcile();
+	}
+
+	public RuntimeHostMode getHost() { return requestedHost; }
 
 	void remove(VideoView view) {
 		boolean removed = targets.removeIf(target -> target.view == view);
@@ -162,14 +194,16 @@ public final class VideoOutputCoordinator {
 
 	@Nullable
 	private VideoView select() {
+		if (!hostCurrent.getAsBoolean()) return null;
 		Registration selected = null;
 		for (Registration target : targets) {
+			if ((requestedHost != null) && (requestedHost != target.host)) continue;
 			if ((selected == null) || target.precedes(selected)) selected = target;
 		}
 		return (selected == null) ? null : selected.view;
 	}
 
-	private record Registration(VideoView view, int priority, int order) {
+	private record Registration(VideoView view, int priority, int order, RuntimeHostMode host) {
 		boolean precedes(Registration other) {
 			return (priority < other.priority) || ((priority == other.priority) && (order < other.order));
 		}

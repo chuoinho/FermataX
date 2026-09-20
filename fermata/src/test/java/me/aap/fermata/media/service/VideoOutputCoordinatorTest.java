@@ -21,6 +21,42 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.view.VideoView;
 
 public class VideoOutputCoordinatorTest {
+	@Test public void replacedCarHostCannotReattachPreviousRequest() throws Exception {
+		var coordinator = new VideoOutputCoordinator();
+		var alive = new java.util.concurrent.atomic.AtomicBoolean(true);
+		VideoView oldCar = view(), newCar = view();
+		coordinator.selectHost(me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, alive::get);
+		coordinator.add(oldCar, 0, me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION);
+		assertSame(oldCar, coordinator.getSelected());
+		alive.set(false);
+		coordinator.remove(oldCar);
+		coordinator.add(newCar, 0, me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION);
+		assertNull(coordinator.getSelected());
+	}
+	@Test public void requestedHostOverridesPriorityAndNeverFallsBackAcrossHosts() throws Exception {
+		var coordinator = new VideoOutputCoordinator();
+		VideoView phone = view(), car = view();
+		coordinator.add(phone, 10, me.aap.fermata.ui.policy.RuntimeHostMode.PHONE);
+		coordinator.add(car, 0, me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION);
+		coordinator.selectHost(me.aap.fermata.ui.policy.RuntimeHostMode.PHONE);
+		assertSame(phone, coordinator.getSelected());
+		coordinator.selectHost(me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION);
+		assertSame(car, coordinator.getSelected());
+		coordinator.remove(car);
+		assertNull(coordinator.getSelected());
+	}
+
+	@Test public void sameHostPriorityRemainsAndSelectingSameHostDoesNotRebind() throws Exception {
+		var coordinator = new VideoOutputCoordinator();
+		List<VideoView> bindings = new ArrayList<>();
+		VideoView first = view(), second = view();
+		coordinator.selectHost(me.aap.fermata.ui.policy.RuntimeHostMode.PHONE);
+		coordinator.add(first, 2, me.aap.fermata.ui.policy.RuntimeHostMode.PHONE);
+		coordinator.bind(videoEngine(bindings), true);
+		coordinator.add(second, 1, me.aap.fermata.ui.policy.RuntimeHostMode.PHONE);
+		coordinator.selectHost(me.aap.fermata.ui.policy.RuntimeHostMode.PHONE);
+		assertEquals(List.of(first, second), bindings);
+	}
 	@Test
 	public void inactiveRegistrationDoesNotRebindTheDecoder() throws Exception {
 		List<VideoView> bindings = new ArrayList<>();

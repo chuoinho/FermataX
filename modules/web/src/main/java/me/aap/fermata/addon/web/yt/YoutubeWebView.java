@@ -174,6 +174,11 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	boolean loadExplicitUrl(@NonNull String url) {
+		if (mediaEngine != null && mediaEngine.routeExplicitSelection(url)) return true;
+		return loadTargetUrl(url);
+	}
+
+	boolean loadTargetUrl(@NonNull String url) {
 		if (!navigation.begin(true)) return false;
 		armExplicitPlayback();
 		loadUrl(url);
@@ -551,31 +556,7 @@ public class YoutubeWebView extends FermataWebView {
 				  function isVideoPage() {
 				    return location.pathname === '/watch' || location.pathname.startsWith('/shorts/');
 				  }
-				  if (state.intentListener)
-				    document.removeEventListener('click', state.intentListener, true);
-				  state.intentListener = function(e) {
-				    var href = '';
-				    var path = (typeof e.composedPath === 'function') ? e.composedPath() : [];
-				    for (var i = 0; i < path.length; i++) {
-				      var node = path[i];
-				      if (node && node.tagName === 'A' && node.href) { href = node.href; break; }
-				    }
-				    if (!href && e.target && e.target.closest) {
-				      var anchor = e.target.closest('a[href]');
-				      if (anchor) href = anchor.href;
-				    }
-				    if (!href) return;
-				    try {
-				      var url = new URL(href, location.href);
-				      var host = url.hostname.toLowerCase();
-				      var youtube = host === 'youtube.com' || host.endsWith('.youtube.com') ||
-				          host === 'youtu.be' || host.endsWith('.youtu.be');
-				      var video = (url.pathname === '/watch' && !!url.searchParams.get('v')) ||
-				          url.pathname.startsWith('/shorts/');
-				      if (youtube && video) event(%d, url.href);
-				    } catch (err) {}
-				  };
-				  document.addEventListener('click', state.intentListener, true);
+				  %s
 				  function activeVideo() { return fermataActiveContentVideo(); }
 				  function isActiveVideo(v) {
 				    return !!v && isVideoPage() && v === activeVideo();
@@ -697,7 +678,7 @@ public class YoutubeWebView extends FermataWebView {
 				  }, 750);
 				})();""", scale, Math.max(0L, seedGeneration),
 				Math.max(0L, sessionGeneration), fullscreenTapEnabled,
-				JS_EVENT, PLAYBACK_SIGNAL_JS, JS_PLAYBACK_INTENT,
+				JS_EVENT, PLAYBACK_SIGNAL_JS, YoutubeSelectionRouting.clickScript(JS_PLAYBACK_INTENT),
 				JS_VIDEO_PLAYING, JS_VIDEO_READY, debug, JS_VIDEO_PLAYING,
 				JS_VIDEO_PAUSED, JS_VIDEO_ENDED, JS_VIDEO_FULLSCREEN_TAP,
 				JS_VIDEO_TOUCHED, JS_VIDEO_TOUCHED, JS_NAVIGATION), null);

@@ -12,6 +12,10 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 public class FermataServiceUiBinderTest {
+	@Test public void sameItemOnDifferentRequestedHostStillCreatesPlaybackRequest() {
+		assertTrue(FermataServiceUiBinder.shouldCreatePlaybackRequest(true, -1, false));
+		assertFalse(FermataServiceUiBinder.shouldCreatePlaybackRequest(true, -1, true));
+	}
 	@Test
 	public void playbackErrorAlwaysHasDisplayableText() {
 		assertEquals("fallback", FermataServiceUiBinder.normalizePlaybackError(null, "fallback"));

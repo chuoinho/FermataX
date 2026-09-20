@@ -5,8 +5,14 @@ final class YoutubeTargetPrepareGate {
 	private long requestRevision;
 	private String videoId = "";
 	private long playbackGeneration;
+	private java.util.function.BooleanSupplier admission = () -> true;
 
 	long begin(String videoId, long playbackGeneration) {
+		return begin(videoId, playbackGeneration, () -> true);
+	}
+
+	long begin(String videoId, long playbackGeneration, java.util.function.BooleanSupplier admission) {
+		this.admission = admission;
 		this.videoId = (videoId == null) ? "" : videoId;
 		this.playbackGeneration = Math.max(0L, playbackGeneration);
 		return ++requestRevision;
@@ -37,7 +43,7 @@ final class YoutubeTargetPrepareGate {
 	}
 
 	private boolean matches(String videoId, long playbackGeneration) {
-		return !this.videoId.isEmpty() && this.videoId.equals(videoId) &&
+		return admission.getAsBoolean() && !this.videoId.isEmpty() && this.videoId.equals(videoId) &&
 				(this.playbackGeneration == playbackGeneration);
 	}
 

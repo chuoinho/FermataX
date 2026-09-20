@@ -562,15 +562,16 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	public void playFolder(BrowsableItem folder) {
-		openFolder(folder);
 		MainActivityDelegate a = getMainActivity();
+		var selection = a.getMediaServiceBinder().captureUserSelection();
+		if (!selection.forwardToCar()) openFolder(folder);
 		folder.getLastPlayedItem()
 				.then(last -> (last == null) ? folder.getFirstPlayable() : completed(last))
 				.main(a.getHandler())
 				.onSuccess(p -> {
 					if (p == null) return;
-					a.getMediaServiceBinder().playItem(p);
-					a.goToItem(p);
+					a.getBody().playSelection(selection, p, -1);
+					if (!selection.forwardToCar()) a.goToItem(p);
 				});
 	}
 
@@ -586,6 +587,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		};
 
 		boolean play = cmd.isPlay();
+		var selection = play ? b.captureUserSelection() : null;
 		long voiceRequestId = cmd.getVoiceRequestId();
 		SearchFolder.search(cmd.getQuery(), ps).main(a.getHandler()).onSuccess(f -> {
 			if ((voiceRequestId != 0L) && !a.isCurrentVoiceTransaction(voiceRequestId)) return;
@@ -600,8 +602,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			}
 			if (items.size() == 1) {
 				PlayableItem first = items.get(0);
-				if (play) b.playItem(first);
-				a.goToItem(first);
+				if (play) a.getBody().playSelection(selection, first, -1);
+				if (!play || !selection.forwardToCar()) a.goToItem(first);
 				if (voiceRequestId != 0L) a.completeVoiceTransaction(voiceRequestId);
 				return;
 			}

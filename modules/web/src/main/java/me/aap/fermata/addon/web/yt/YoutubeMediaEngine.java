@@ -68,6 +68,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private final YoutubePlaybackSession playbackSession = new YoutubePlaybackSession();
 	private final YoutubePlaybackOwner<PlayableItem> playbackOwner = new YoutubePlaybackOwner<>();
 	private final YoutubeTargetPrepareGate targetPrepareGate = new YoutubeTargetPrepareGate();
+	private final YoutubeSelectionRouting selectionRouting;
 	private final YoutubePlaybackMetadata playbackMetadata;
 	private final DiagnosticsObserver diagnosticsObserver;
 	private YoutubePlayableItem current;
@@ -91,6 +92,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	public YoutubeMediaEngine(YoutubeWebView web, MainActivityDelegate a) {
 		this.web = web;
+		selectionRouting = new YoutubeSelectionRouting(web);
 		playbackMetadata = web.getAddon().getPlaybackMetadata();
 		diagnosticsObserver = FermataWebClient.diagnosticsObserver();
 		cb = a.getMediaSessionCallback();
@@ -121,6 +123,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	private boolean claimExternalPlayback(YoutubePlaybackActivation activation) {
+		if (!isCurrentEngine() && !cb.admitPlaybackHost(new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+				carHost() ? me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION :
+						me.aap.fermata.ui.policy.RuntimeHostMode.PHONE, () -> !webDestroyed && web.isAttachedToWindow())))
+			return false;
 		YoutubeSessionEngine owner = sessionOwner;
 		return (owner == null) ? web.getAddon().getRuntime()
 				.claimBrowserPlayback(this, cb, activation) : owner.activate(activation);
@@ -130,6 +136,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		if (!YoutubePlaybackMetadata.isStructuredSignal(url)) return;
 		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(url, web.getUrl());
 		recordPlaybackSignal(PlaybackEvent.READY_SIGNAL, signal, false);
+		if (routeUserSignal(signal)) { web.silenceRejectedPlayback(url); return; }
 		if (!acceptsPlaybackGeneration(url) ||
 				!targetPrepareGate.accepts(signal.videoId(), signal.generation())) {
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
@@ -148,10 +155,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		boolean activeHost = isActivePlaybackHost();
 		boolean intentAccepted = activeHost && acceptsPlaybackSignal();
 		if (!canClaimExternalPlayback(false, activeHost, true, intentAccepted)) {
-			boolean forwarded = YoutubePlaybackHostPolicy.forward(web, false, activeHost, signal, this::acceptsPlaybackSignal);
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
-			Log.d(forwarded ? "Forwarding YouTube playback to automotive host" :
-					"Ignoring YouTube ready signal without playback intent");
+			Log.d("Ignoring YouTube ready signal without playback intent");
 			web.silenceRejectedPlayback(url);
 			return;
 		}
@@ -168,6 +173,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		if (!YoutubePlaybackMetadata.isStructuredSignal(url)) return;
 		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(url, web.getUrl());
 		recordPlaybackSignal(PlaybackEvent.PLAYING_SIGNAL, signal, true);
+		if (routeUserSignal(signal)) { web.silenceRejectedPlayback(url); return; }
 		if (!acceptsPlaybackGeneration(url) ||
 				!targetPrepareGate.accepts(signal.videoId(), signal.generation())) {
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
@@ -181,10 +187,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 				(activeHost && acceptsPlaybackSignal());
 		if (!canClaimExternalPlayback(currentEngine, activeHost, autoPlayback,
 				intentAccepted)) {
-			boolean forwarded = YoutubePlaybackHostPolicy.forward(web, currentEngine, activeHost, signal, this::acceptsPlaybackSignal);
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
-			Log.d(forwarded ? "Forwarding YouTube playback to automotive host" :
-					"Ignoring YouTube preview playback");
+			Log.d("Ignoring YouTube preview playback");
 			web.silenceRejectedPlayback(url);
 			return;
 		}
@@ -374,7 +378,15 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	void onPlaybackGesture(long eventTime) {
+		selectionRouting.capture(eventTime);
 		if (web.usesAutoPlaybackBehavior()) playbackIntentGate.armUserGesture(eventTime);
+	}
+
+	boolean isLocalUserSelection() { return selectionRouting.isLocal(); }
+	boolean routeExplicitSelection(String url) { return selectionRouting.explicit(url); }
+
+	private boolean routeUserSignal(YoutubePlaybackMetadata.Signal signal) {
+		return selectionRouting.signal(signal, isCurrentEngine(), isCurrentVideo(signal.videoId()), playbackIntentGate);
 	}
 
 	void armExplicitPlayback() {
@@ -488,6 +500,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public void prepare(PlayableItem source) {
+		if (!cb.getVideoOutputCoordinator().isAdmissionCurrent()) return;
 		source = PlayableItemResolver.unwrap(source);
 		if ((source == next) || NEXT_ID.equals(source.getOrigId())) {
 			if (web.usesAutoPlaybackBehavior()) armPlaybackIntent();
@@ -529,8 +542,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 					web.rebindPlaybackGeneration(playbackSessionSnapshot.generation());
 				} else if (!(source instanceof Current)) {
 					long request = targetPrepareGate.begin(descriptor.videoId(),
-							playbackSessionSnapshot.generation());
-					if (!web.loadExplicitUrl(descriptor.pageUrl())) {
+							playbackSessionSnapshot.generation(), cb.getVideoOutputCoordinator()::isAdmissionCurrent);
+					if (!web.loadTargetUrl(descriptor.pageUrl())) {
 						targetPrepareGate.cancel(request);
 						cb.onEngineError(callbackEngine(), new IllegalStateException(
 								"YouTube navigation runtime is unavailable"));
@@ -795,6 +808,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	boolean isCurrentEngine() {
 		return cb.getEngine() == callbackEngine();
 	}
+
+	boolean carHost() { return MainActivityDelegate.get(web.getContext()).isCarActivityNotMirror(); }
 
 	boolean isCurrentVideo(String videoId) {
 		if ((videoId == null) || !(current instanceof Current active) ||

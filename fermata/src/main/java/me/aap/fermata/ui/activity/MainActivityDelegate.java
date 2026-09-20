@@ -346,21 +346,18 @@ public class MainActivityDelegate extends ActivityDelegate
 					goToItem(id).map(MiscUtils::nonNull);
 					return completed(true);
 				} else if (INTENT_ACTION_PLAY.equals(action)) {
-					goToItem(id).map(i -> {
+					var selection = getMediaServiceBinder().captureUserSelection();
+					getLib().getItem(id).main(getHandler()).map(i -> {
 						if (!(i instanceof PlayableItem)) return false;
-						getMediaServiceBinder().playItem((PlayableItem) i);
+						getBody().playSelection(selection, (PlayableItem) i, -1);
+						if (!selection.forwardToCar()) goToItem(i);
 						return true;
 					});
 					return completed(true);
 				}
 			} else if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 				PlayableItem i = new IntentPlayable(this, u);
-				getMediaServiceBinder().stop();
-				post(() -> {
-					if (!(getActiveFragment() instanceof MediaLibFragment))
-						goToCurrent().onSuccess(v -> getMediaServiceBinder().playItem(i));
-					else getMediaServiceBinder().playItem(i);
-				});
+				getBody().playItem(i);
 			}
 		}
 
