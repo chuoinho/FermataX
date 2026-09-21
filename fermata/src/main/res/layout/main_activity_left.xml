@@ -8,6 +8,15 @@
     android:background="?android:colorPrimary"
     android:layoutDirection="ltr">
 
+    <include
+        android:id="@+id/phone_open_on_car_strip"
+        layout="@layout/phone_open_on_car_strip"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/nav_bar"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <me.aap.fermata.ui.view.FermataNavBarView
         android:id="@+id/nav_bar"
         android:layout_width="wrap_content"
@@ -15,7 +24,7 @@
         app:labelVisibilityMode="selected"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/phone_open_on_car_strip"
         app:layout_constraintVertical_weight="1"
         app:position="LEFT" />
 
@@ -27,7 +36,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toEndOf="@id/nav_bar"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/phone_open_on_car_strip" />
 
     <me.aap.fermata.ui.view.BodyLayout
         android:id="@+id/body_layout"

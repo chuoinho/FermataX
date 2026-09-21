@@ -7,6 +7,7 @@ import java.util.Set;
 public final class AutomotiveConnectionState {
 	private static final AutomotiveConnectionState INSTANCE = new AutomotiveConnectionState();
 	private final Set<Listener> listeners = new LinkedHashSet<>();
+	private final Set<RawConnectionListener> rawConnectionListeners = new LinkedHashSet<>();
 	private boolean connectionObserved;
 	private boolean connected;
 	private Object visibleOwner;
@@ -44,20 +45,34 @@ public final class AutomotiveConnectionState {
 		listeners.remove(listener);
 	}
 
+	public synchronized void addRawConnectionListener(RawConnectionListener listener) {
+		rawConnectionListeners.add(listener);
+	}
+
+	public synchronized void removeRawConnectionListener(RawConnectionListener listener) {
+		rawConnectionListeners.remove(listener);
+	}
+
 	public void connectionChanged(boolean connected) {
-		Listener[] notify;
+		Listener[] notify = null;
+		RawConnectionListener[] rawNotify;
 		State next;
+		long epoch;
 		synchronized (this) {
 			if (!connectionObserved || (this.connected != connected)) connectionEpoch++;
 			else return;
 			connectionObserved = true;
 			this.connected = connected;
+			epoch = connectionEpoch;
+			rawNotify = rawConnectionListeners.toArray(new RawConnectionListener[0]);
 			next = resolveState();
-			if (next == state) return;
-			state = next;
-			notify = listeners.toArray(new Listener[0]);
+			if (next != state) {
+				state = next;
+				notify = listeners.toArray(new Listener[0]);
+			}
 		}
-		notifyListeners(notify, next);
+		if (notify != null) notifyListeners(notify, next);
+		notifyRawConnectionListeners(rawNotify, connected, epoch);
 	}
 
 	public void appVisibilityChanged(Object owner, boolean visible) {
@@ -85,6 +100,13 @@ public final class AutomotiveConnectionState {
 		for (Listener listener : notify) listener.onStateChanged(next);
 	}
 
+	private static void notifyRawConnectionListeners(RawConnectionListener[] notify,
+			boolean connected, long epoch) {
+		for (RawConnectionListener listener : notify) {
+			listener.onConnectionChanged(connected, epoch);
+		}
+	}
+
 	public enum State {
 		DISCONNECTED,
 		CONNECTED,
@@ -93,5 +115,9 @@ public final class AutomotiveConnectionState {
 
 	public interface Listener {
 		void onStateChanged(State state);
+	}
+
+	public interface RawConnectionListener {
+		void onConnectionChanged(boolean connected, long epoch);
 	}
 }

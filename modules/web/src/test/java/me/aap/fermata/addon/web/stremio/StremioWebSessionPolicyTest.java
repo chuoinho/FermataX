@@ -9,6 +9,27 @@ import org.junit.Test;
 
 public class StremioWebSessionPolicyTest {
 	@Test
+	public void routeTrustBoundaryRejectsCredentialsAndOtherPorts() {
+		for (String url : new String[] {
+				"https://user:secret@web.stremio.com/#/detail/movie/example",
+				"https://web.stremio.com:444/#/detail/movie/example"}) {
+			assertFalse(url, StremioWebSessionPolicy.isHostedRoute(url));
+			assertFalse(url, StremioWebSessionPolicy.isPersistableRoute(url));
+		}
+	}
+
+	@Test
+	public void emptyAndEncodedPlayerRoutesCannotBeRecoveredAsEntryState() {
+		for (String fragment : new String[] {"/player", "/player?stream=secret",
+				"/player/stream", "/%70layer/stream", "/player%2Fstream"}) {
+			String url = "https://web.stremio.com/#" + fragment;
+			assertFalse(fragment, StremioWebSessionPolicy.isPersistableRoute(url));
+			assertEquals(StremioWebSessionPolicy.HOME_URL,
+					StremioWebSessionPolicy.entryUrl(false, url));
+		}
+	}
+
+	@Test
 	public void playerRoutesNeverBecomePersistedEntryState() {
 		assertFalse(StremioWebSessionPolicy.isPersistableRoute(
 				"https://web.stremio.com/#/player/encoded-stream"));

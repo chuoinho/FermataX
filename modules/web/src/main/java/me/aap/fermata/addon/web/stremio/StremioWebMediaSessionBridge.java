@@ -42,11 +42,14 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	private static final Set<String> ORIGINS = Set.of(ORIGIN);
 	private final StremioWebView web;
 	private final State state = new State();
+	private final StremioPlayerTransferGate transferGate = new StremioPlayerTransferGate();
 	private ScriptHandler script;
 	private MediaSessionCallback claimedCallback;
 	private boolean installed;
 	private boolean acceptingMessages;
 	private long documentGeneration;
+	@Nullable
+	private java.util.function.BooleanSupplier transferCurrent;
 
 	StremioWebMediaSessionBridge(StremioWebView web) {
 		this.web = web;
@@ -68,6 +71,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	}
 
 	void onDocumentNavigation(String url) {
+		cancelTransferredPlayer();
 		state.reset();
 		releaseClaim();
 		acceptingMessages = false;
@@ -84,6 +88,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 
 	/** Blocks the old document before an automotive session is torn down. */
 	void endAutomotiveSession() {
+		cancelTransferredPlayer();
 		documentGeneration++;
 		acceptingMessages = false;
 		state.reset();
@@ -91,23 +96,40 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		removeDocumentScript();
 	}
 
-	void onFragmentActiveChanged(boolean active) {
-		if (active) syncClaim();
-		else releaseClaim();
-	}
-
 	boolean isPlaybackActive() {
 		return state.isPlaybackActive();
 	}
 
+	void armTransferredPlayer(java.util.function.BooleanSupplier current) {
+		if (!installed || (current == null) || !current.getAsBoolean()) return;
+		transferCurrent = current;
+		transferGate.arm(documentGeneration);
+	}
+
+	void cancelTransferredPlayer() {
+		transferCurrent = null;
+		transferGate.cancel();
+	}
+
 	@Override
 	public boolean isControlOnlyActive() {
-		return installed && isStremioActive() && state.canClaim();
+		return isLiveHostedDocument(installed, acceptingMessages,
+				(web != null) && web.isAttachedToWindow()) && state.canClaim();
 	}
 
 	@Override
 	public String controlOnlyAddonClass() {
 		return StremioWebAddon.class.getName();
+	}
+
+	@Override
+	public String controlOnlyContentKey() {
+		return documentGeneration + ":" + state.session;
+	}
+
+	@Override
+	public void onControlOnlyRevoked() {
+		endAutomotiveSession();
 	}
 
 	@Override
@@ -124,11 +146,12 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			case PREVIOUS_TRACK -> null;
 		};
 		if ((command == null) || !isControlOnlyActive() || !state.canDispatch(command)) return false;
-		web.evaluateJavascript(dispatchSource(command), null);
+		web.evaluateJavascript(dispatchSource(command, documentGeneration, state.session), null);
 		return true;
 	}
 
 	void close() {
+		cancelTransferredPlayer();
 		installed = false;
 		acceptingMessages = false;
 		documentGeneration++;
@@ -172,6 +195,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 				}
 			}
 			syncClaim();
+			maybeDispatchTransferredPlay();
 			if (wasPlaybackActive != state.isPlaybackActive()) notifyContentChanged();
 		} catch (JSONException ignored) {
 		}
@@ -183,6 +207,21 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 					me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED);
 		} catch (RuntimeException ignored) {
 		}
+	}
+
+	private void maybeDispatchTransferredPlay() {
+		if (state.isPlaying()) {
+			transferGate.onPlaying(documentGeneration);
+			return;
+		}
+		java.util.function.BooleanSupplier current = transferCurrent;
+		if ((current == null) || !current.getAsBoolean()) {
+			cancelTransferredPlayer();
+			return;
+		}
+		if (!transferGate.shouldDispatchPlay(documentGeneration, state.isPaused(),
+				state.hasHandler("play"))) return;
+		web.evaluateJavascript(dispatchSource("play", documentGeneration, state.session), null);
 	}
 
 	private void syncClaim() {
@@ -201,16 +240,6 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		MediaSessionCallback callback = claimedCallback;
 		claimedCallback = null;
 		if (callback != null) callback.releaseControlOnly(this);
-	}
-
-	private boolean isStremioActive() {
-		try {
-			return (web.getParent() != null) &&
-					(MainActivityDelegate.get(web.getContext()).getActiveFragment()
-							instanceof StremioWebFragment);
-		} catch (RuntimeException ignored) {
-			return false;
-		}
 	}
 
 	private void removeDocumentScript() {
@@ -237,6 +266,12 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 
 	static boolean supportsBridge(boolean documentStart, boolean webMessageListener) {
 		return documentStart && webMessageListener;
+	}
+
+	/** Fragment visibility is UI state; only the hosted WebView/document controls claim liveness. */
+	static boolean isLiveHostedDocument(boolean installed, boolean acceptingMessages,
+			boolean attached) {
+		return installed && acceptingMessages && attached;
 	}
 
 	static boolean isAllowedOrigin(String origin) {
@@ -271,14 +306,20 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			  var port = window.fermataStremioControl;
 			  if (!port || typeof port.postMessage !== 'function') return;
 			  var session = Math.random().toString(36).slice(2) + Date.now().toString(36);
+			  var generation = %d, closed = false;
 			  var allowed = Object.freeze(Object.assign(Object.create(null), {play:true,pause:true,nexttrack:true}));
 			  var handlers = Object.create(null);
 			  var send = function(type, data) { try {
-			    var msg = data || {}; msg.v = 1; msg.g = %d; msg.t = type; msg.s = session;
+			    var msg = data || {}; msg.v = 1; msg.g = generation; msg.t = type; msg.s = session;
 			    port.postMessage(JSON.stringify(msg));
 			  } catch (_) {} };
 			  var text = function(value) { return typeof value === 'string' ? value.slice(0, 256) : ''; };
-			  var expose = function() { window.__fermataStremioMediaSessionV1 = Object.freeze({version:1, dispatch:function(action) {
+			  var expose = function() { window.__fermataStremioMediaSessionV1 = Object.freeze({version:1, dispatch:function(action, g, s) {
+			    if (closed || g !== generation || s !== session) return false;
+			    var playback = navigator.mediaSession.playbackState;
+			    if (playback !== 'playing' && playback !== 'paused') return false;
+			    if ((action === 'play' && playback !== 'paused') ||
+			        (action === 'pause' && playback !== 'playing')) return false;
 			    var callback = handlers[action]; if (typeof callback !== 'function') return false;
 			    try { callback(); } catch (_) {} return true;
 			  }}); };
@@ -341,15 +382,16 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			    catch (_) { try { navigator.mediaSession = mediaSession; } catch (_) { return; } }
 			    expose();
 			  }
-			  addEventListener('pagehide', function(){ send('SESSION_CLOSED'); }, {once:true});
+			  addEventListener('pagehide', function(){ closed = true; send('SESSION_CLOSED'); }, {once:true});
 			  send('READY');
 			})();
 			""", generation);
 	}
 
-	private static String dispatchSource(String action) {
+	private static String dispatchSource(String action, long generation, String session) {
 		return "(function(){var b=window.__fermataStremioMediaSessionV1;" +
-				"return !!(b&&b.version===1&&b.dispatch('" + action + "'));})()";
+				"return !!(b&&b.version===1&&b.dispatch('" + action + "'," + generation + "," +
+				JSONObject.quote(session) + "));})()";
 	}
 
 	static final class State {
@@ -409,8 +451,26 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 			return playback != Playback.NONE;
 		}
 
+		boolean isPlaying() {
+			return playback == Playback.PLAYING;
+		}
+
+		boolean isPaused() {
+			return playback == Playback.PAUSED;
+		}
+
+		boolean hasHandler(String action) {
+			Action value = Action.from(action);
+			return (value != null) && handlers.contains(value);
+		}
+
 		boolean canDispatch(String action) {
-			return handlers.contains(Action.from(action));
+			if (!handlers.contains(Action.from(action))) return false;
+			return switch (action) {
+				case "play" -> playback == Playback.PAUSED;
+				case "pause" -> playback == Playback.PLAYING;
+				default -> playback != Playback.NONE;
+			};
 		}
 
 		int playbackState() {

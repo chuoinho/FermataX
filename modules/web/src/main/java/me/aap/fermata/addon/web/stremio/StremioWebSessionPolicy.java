@@ -1,10 +1,12 @@
 package me.aap.fermata.addon.web.stremio;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 /** Keeps the hosted account session while preventing stale Player routes from becoming entry state. */
 final class StremioWebSessionPolicy {
 	static final String HOME_URL = "https://web.stremio.com/#/";
+	private static final int MAX_ROUTE_BYTES = 64 * 1024;
 
 	private StremioWebSessionPolicy() {
 	}
@@ -35,18 +37,17 @@ final class StremioWebSessionPolicy {
 	}
 
 	static boolean isHostedRoute(String url) {
-		if (url == null) return false;
+		if (!isBoundedRoute(url)) return false;
 		try {
 			URI uri = URI.create(url);
-			return "https".equalsIgnoreCase(uri.getScheme()) &&
-					"web.stremio.com".equalsIgnoreCase(uri.getHost());
+			return isHostedRoute(uri);
 		} catch (IllegalArgumentException ignored) {
 			return false;
 		}
 	}
 
 	static boolean isPlayerRoute(String url) {
-		if (url == null) return false;
+		if (!isBoundedRoute(url)) return false;
 		try {
 			return isPlayerRoute(URI.create(url));
 		} catch (IllegalArgumentException ignored) {
@@ -55,9 +56,21 @@ final class StremioWebSessionPolicy {
 	}
 
 	private static boolean isPlayerRoute(URI uri) {
+		String fragment = uri.getFragment();
+		return isHostedRoute(uri) && (fragment != null) &&
+				(fragment.equals("/player") || fragment.startsWith("/player/") ||
+						fragment.startsWith("/player?"));
+	}
+
+	private static boolean isHostedRoute(URI uri) {
 		return "https".equalsIgnoreCase(uri.getScheme()) &&
 				"web.stremio.com".equalsIgnoreCase(uri.getHost()) &&
-				(uri.getFragment() != null) && uri.getFragment().startsWith("/player/");
+				(uri.getRawUserInfo() == null) && ((uri.getPort() == -1) || (uri.getPort() == 443));
+	}
+
+	private static boolean isBoundedRoute(String url) {
+		return (url != null) && (url.length() <= MAX_ROUTE_BYTES) &&
+				(url.getBytes(StandardCharsets.UTF_8).length <= MAX_ROUTE_BYTES);
 	}
 
 	static boolean isHomeUrl(String url) {

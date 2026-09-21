@@ -89,7 +89,6 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final YoutubeRetentionPolicy ITEM_RETENTION =
 			new YoutubeRetentionPolicy(10, Long.MAX_VALUE);
 	private final SponsorBlockController sponsorBlockController = new SponsorBlockController();
-	private static final long HOST_HANDOFF_DEBOUNCE_MS = 2_000L;
 	private static final YoutubeSessionPolicy SESSION_POLICY = new YoutubeSessionPolicy(
 			YoutubeSessionPolicy.DEFAULT_RETENTION_MILLIS);
 	private final YoutubeNavigationGeneration navigationGeneration =
@@ -138,8 +137,6 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
 	private final YoutubePlaybackMetadata playbackMetadata = new YoutubePlaybackMetadata();
 	private boolean ignorePrefChange;
-	private String lastHostHandoffVideoId = "";
-	private long lastHostHandoffAt;
 
 	@Override
 	public void install() {
@@ -651,19 +648,19 @@ public class YoutubeAddon extends WebBrowserAddon
 	@Nullable
 	MainActivityDelegate currentPlaybackActivity() {
 		MainActivityDelegate automotive = activeAutomotiveActivity();
-		if (automotive != null) return automotive;
+		if ((automotive != null) && isPreferredPlaybackActivity(automotive)) return automotive;
 
 		MainActivity mobile = MainActivity.getActiveInstance();
 		if (mobile != null) {
 			MainActivityDelegate activity = mobile.getActivityDelegate().peek();
-			if (activity != null) return activity;
+			if (activity != null && isPreferredPlaybackActivity(activity)) return activity;
 		}
 
 		try {
 			var resolver = ActivityDelegate.getContextToDelegate();
 			if (resolver == null) return null;
 			ActivityDelegate activity = resolver.apply(FermataApplication.get());
-			return (activity instanceof MainActivityDelegate main) ? main : null;
+			return (activity instanceof MainActivityDelegate main && isPreferredPlaybackActivity(main)) ? main : null;
 		} catch (RuntimeException ignored) {
 			return null;
 		}
@@ -674,23 +671,14 @@ public class YoutubeAddon extends WebBrowserAddon
 	}
 
 	boolean isPreferredPlaybackActivity(MainActivityDelegate activity) {
-		MainActivityDelegate automotive = activeAutomotiveActivity();
-		return (automotive == null) || (automotive == activity);
+		return YoutubePlaybackHostPolicy.prefersHost(activity.isCarActivityNotMirror(),
+				activity.getMediaSessionCallback().getVideoOutputCoordinator().getHost() ==
+						me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION);
 	}
 
 	boolean forwardPlaybackToPreferredHost(YoutubeWebView source,
-			YoutubePlaybackMetadata.Signal signal) {
-		MainActivityDelegate automotive = activeAutomotiveActivity();
-		if (automotive == null) return false;
-
-		MainActivityDelegate sourceActivity;
-		try {
-			sourceActivity = MainActivityDelegate.get(source.getContext());
-		} catch (RuntimeException ignored) {
-			return false;
-		}
-		if (automotive == sourceActivity) return false;
-
+			YoutubePlaybackMetadata.Signal signal,
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Selection selection) {
 		YoutubeItem descriptor;
 		try {
 			descriptor = YoutubeItem.fromPageUrl(signal.pageUrl(), signal.title(),
@@ -699,15 +687,16 @@ public class YoutubeAddon extends WebBrowserAddon
 			return false;
 		}
 		if (!descriptor.videoId().equals(signal.videoId())) return false;
+		return forwardPlaybackToPreferredHost(source, descriptor, selection);
+	}
 
-		long now = System.currentTimeMillis();
-		if (descriptor.videoId().equals(lastHostHandoffVideoId) &&
-				((now - lastHostHandoffAt) < HOST_HANDOFF_DEBOUNCE_MS)) return true;
-		lastHostHandoffVideoId = descriptor.videoId();
-		lastHostHandoffAt = now;
-		updateYoutubeItem(descriptor);
-		automotive.getMediaSessionCallback().playItem(
-				new YoutubeHistoryItem(this, (DefaultMediaLib) automotive.getLib(), descriptor), 0L);
+	boolean forwardPlaybackToPreferredHost(YoutubeWebView source, YoutubeItem descriptor,
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Selection selection) {
+
+		if (!selection.forwardToCar()) return false;
+		MainActivityDelegate activity = MainActivityDelegate.get(source.getContext());
+		activity.getMediaServiceBinder().dispatchYoutubeSelection(selection, descriptor,
+				() -> source.isAttachedToWindow());
 		return true;
 	}
 

@@ -71,6 +71,7 @@ import me.aap.fermata.addon.AddonCapability;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.auto.AutomotiveNavigationController;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
@@ -89,7 +90,6 @@ import me.aap.fermata.media.service.MediaServiceRuntimeGate;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.MediaSessionCallbackAssistant;
 import me.aap.fermata.ui.fragment.DashboardFragment;
-import me.aap.fermata.ui.fragment.ControlFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
 import me.aap.fermata.ui.fragment.InitialSetupFragment;
@@ -111,6 +111,7 @@ import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.PhoneBottomMenuController;
+import me.aap.fermata.ui.view.PhonePlaybackCarHeaderController;
 import me.aap.fermata.ui.view.UiShellController;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
@@ -154,11 +155,12 @@ public class MainActivityDelegate extends ActivityDelegate
 	private FloatingButton floatingButton;
 	private ContentLoadingProgressBar progressBar;
 	private PhoneBottomMenuController phoneBottomMenuController;
+	private PhonePlaybackCarHeaderController phonePlaybackCarHeaderController;
 	private FutureSupplier<?> contentLoading;
 	private final AsyncOperationController contentOperations =
 			new AsyncOperationController(this::onContentOperationChanged);
 	private boolean barsHidden;
-	private int phoneRootId = R.id.control_fragment;
+	private int phoneRootId = R.id.dashboard_fragment;
 	private boolean videoMode;
 	private int brightness = 255;
 	private final VoiceInteractionCoordinator voiceInteraction;
@@ -253,7 +255,7 @@ public class MainActivityDelegate extends ActivityDelegate
 			navId = state.getInt("navId", ID_NULL);
 			fragmentId = state.getInt("fragmentId", ID_NULL);
 			phoneRootId = PhoneRootPolicy.resolvePhoneRoot(
-					state.getInt("phoneRootId", R.id.control_fragment), fragmentId);
+					state.getInt("phoneRootId", R.id.dashboard_fragment), fragmentId);
 		} else {
 			navId = ID_NULL;
 			fragmentId = ID_NULL;
@@ -343,21 +345,18 @@ public class MainActivityDelegate extends ActivityDelegate
 					goToItem(id).map(MiscUtils::nonNull);
 					return completed(true);
 				} else if (INTENT_ACTION_PLAY.equals(action)) {
-					goToItem(id).map(i -> {
+					var selection = getMediaServiceBinder().captureUserSelection();
+					getLib().getItem(id).main(getHandler()).map(i -> {
 						if (!(i instanceof PlayableItem)) return false;
-						getMediaServiceBinder().playItem((PlayableItem) i);
+						getBody().playSelection(selection, (PlayableItem) i, -1);
+						if (!selection.forwardToCar()) goToItem(i);
 						return true;
 					});
 					return completed(true);
 				}
 			} else if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 				PlayableItem i = new IntentPlayable(this, u);
-				getMediaServiceBinder().stop();
-				post(() -> {
-					if (!(getActiveFragment() instanceof MediaLibFragment))
-						goToCurrent().onSuccess(v -> getMediaServiceBinder().playItem(i));
-					else getMediaServiceBinder().playItem(i);
-				});
+				getBody().playItem(i);
 			}
 		}
 
@@ -380,17 +379,6 @@ public class MainActivityDelegate extends ActivityDelegate
 	public void showPrimaryRoot() {
 		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) showPhoneRoot(phoneRootId);
 		else showDashboard();
-	}
-
-	public void showControl() {
-		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
-			showPhoneRoot(R.id.control_fragment);
-			return;
-		}
-		hideActiveMenu();
-		BodyLayout body = getBody();
-		if (!body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
-		showFragment(R.id.control_fragment);
 	}
 
 	public void showDashboard() {
@@ -521,6 +509,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		getMediaServiceBinder().getMediaSessionCallback().removeAssistant(this);
 		getPrefs().removeBroadcastListener(this);
 		voiceInteraction.close();
+		if (phonePlaybackCarHeaderController != null) phonePlaybackCarHeaderController.close();
 
 		AddonManager.get().onActivityDestroy(this);
 
@@ -727,6 +716,12 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public void refreshPhoneBottomMenu() {
 		if (phoneBottomMenuController != null) phoneBottomMenuController.refresh();
+	}
+
+	public void refreshPhonePlaybackCarHeader() {
+		if (phonePlaybackCarHeaderController != null) {
+			phonePlaybackCarHeaderController.refresh(getRuntimeHostMode(), isBarsHidden());
+		}
 	}
 
 	private boolean isCurrentSplitMode() {
@@ -964,9 +959,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	protected ActivityFragment createFragment(int id) {
-		if (id == R.id.control_fragment) {
-			return new ControlFragment();
-		} else if (id == R.id.dashboard_fragment) {
+		if (id == R.id.dashboard_fragment) {
 			return new DashboardFragment();
 		} else if (id == R.id.folders_fragment) {
 			return new FoldersFragment();
@@ -1274,6 +1267,13 @@ public class MainActivityDelegate extends ActivityDelegate
 		floatingButton = a.findViewById(R.id.floating_button);
 		phoneBottomMenuController = new PhoneBottomMenuController(this,
 				a.findViewById(R.id.phone_bottom_menu));
+		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
+			phonePlaybackCarHeaderController = new PhonePlaybackCarHeaderController(
+					mediaServiceBinder, AutomotiveNavigationController.get().getOpenOnCarMode(),
+					a.findViewById(R.id.phone_open_on_car_strip),
+					a.findViewById(R.id.phone_open_on_car_toggle));
+			refreshPhonePlaybackCarHeader();
+		}
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		if (getRuntimeHostMode().usesAutomotivePresentation()) floatingButton.setVisibility(GONE);
 		controlPanel.bind(getMediaServiceBinder());

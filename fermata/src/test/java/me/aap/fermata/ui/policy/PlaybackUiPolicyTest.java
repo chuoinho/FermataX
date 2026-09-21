@@ -24,14 +24,12 @@ public class PlaybackUiPolicyTest {
 	}
 
 	@Test
-	public void phoneRootsNeverShowTheGlobalAudioPlayerBar() {
-		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(RuntimeHostMode.PHONE,
-				true, false, true, R.id.control_fragment));
+	public void phoneHeaderOwnsTheGlobalAudioPlayerBarForEveryPhoneRoute() {
 		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(RuntimeHostMode.PHONE,
 				true, false, true, R.id.dashboard_fragment));
 		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(RuntimeHostMode.PHONE,
 				true, false, true, R.id.settings_fragment));
-		assertTrue(PlaybackUiPolicy.shouldShowAudioPlayerBar(RuntimeHostMode.PHONE,
+		assertFalse(PlaybackUiPolicy.shouldShowAudioPlayerBar(RuntimeHostMode.PHONE,
 				true, false, true, R.id.radio_fragment));
 		assertTrue(PlaybackUiPolicy.shouldShowAudioPlayerBar(RuntimeHostMode.AA_PROJECTION,
 				true, false, true, R.id.settings_fragment));

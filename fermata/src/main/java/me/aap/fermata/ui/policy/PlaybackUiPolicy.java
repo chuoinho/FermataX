@@ -26,10 +26,9 @@ public final class PlaybackUiPolicy {
 
 	static boolean shouldShowAudioPlayerBar(RuntimeHostMode hostMode, boolean hasAudioSource,
 			boolean videoModeRequired, boolean hasActiveFragment, int activeFragmentId) {
+		if (PhoneRootPolicy.usesPhoneRoots(hostMode)) return false;
 		return shouldShowAudioPlayerBar(hasAudioSource, videoModeRequired, hasActiveFragment,
-				activeFragmentId, R.id.dashboard_fragment) &&
-				(!PhoneRootPolicy.usesPhoneRoots(hostMode) ||
-						!PhoneRootPolicy.isPhoneRoot(activeFragmentId));
+				activeFragmentId, R.id.dashboard_fragment);
 	}
 
 	static boolean shouldShowAudioPlayerBar(boolean hasAudioSource, boolean videoModeRequired,

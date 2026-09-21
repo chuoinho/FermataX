@@ -10,8 +10,8 @@ import me.aap.fermata.R;
 
 public class PhoneRootPolicyTest {
 	@Test
-	public void phoneStartsOnControlAndAutomotiveHostsKeepDashboard() {
-		assertEquals(R.id.control_fragment,
+	public void everyHostStartsOnDashboard() {
+		assertEquals(R.id.dashboard_fragment,
 				PhoneRootPolicy.initialDestination(RuntimeHostMode.PHONE));
 		assertEquals(R.id.dashboard_fragment,
 				PhoneRootPolicy.initialDestination(RuntimeHostMode.AA_PROJECTION));
@@ -20,7 +20,7 @@ public class PhoneRootPolicyTest {
 	}
 
 	@Test
-	public void onlyPhoneUsesThreeRootNavigation() {
+	public void onlyPhoneUsesTwoRootNavigation() {
 		assertTrue(PhoneRootPolicy.usesPhoneRoots(RuntimeHostMode.PHONE));
 		assertFalse(PhoneRootPolicy.usesPhoneRoots(RuntimeHostMode.AA_PROJECTION));
 		assertFalse(PhoneRootPolicy.usesPhoneRoots(RuntimeHostMode.MIRROR));
@@ -29,8 +29,6 @@ public class PhoneRootPolicyTest {
 	@Test
 	public void primaryRootDependsOnRuntimeHost() {
 		assertTrue(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.PHONE,
-				R.id.control_fragment));
-		assertFalse(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.PHONE,
 				R.id.dashboard_fragment));
 		assertTrue(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.AA_PROJECTION,
 				R.id.dashboard_fragment));
@@ -45,16 +43,16 @@ public class PhoneRootPolicyTest {
 		assertFalse(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.PHONE,
 				R.id.dashboard_fragment, R.id.youtube_fragment));
 		assertTrue(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.AA_PROJECTION,
-				R.id.control_fragment, R.id.dashboard_fragment));
+				R.id.youtube_fragment, R.id.dashboard_fragment));
 	}
 
 	@Test
-	public void validatesAndNormalizesOnlyTheThreePhoneRoots() {
-		assertTrue(PhoneRootPolicy.isPhoneRoot(R.id.control_fragment));
+	public void validatesAndNormalizesOnlyDashboardAndSettingsPhoneRoots() {
+		assertFalse(PhoneRootPolicy.isPhoneRoot(R.id.folders_fragment));
 		assertTrue(PhoneRootPolicy.isPhoneRoot(R.id.dashboard_fragment));
 		assertTrue(PhoneRootPolicy.isPhoneRoot(R.id.settings_fragment));
 		assertFalse(PhoneRootPolicy.isPhoneRoot(R.id.youtube_fragment));
-		assertEquals(R.id.control_fragment,
+		assertEquals(R.id.dashboard_fragment,
 				PhoneRootPolicy.normalizePhoneRoot(R.id.youtube_fragment));
 	}
 
@@ -70,8 +68,6 @@ public class PhoneRootPolicyTest {
 
 	@Test
 	public void phoneChromeDependsOnSelectedRootAndHiddenBars() {
-		assertFalse(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.PHONE,
-				R.id.control_fragment, false));
 		assertTrue(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.PHONE,
 				R.id.dashboard_fragment, false));
 		assertFalse(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.PHONE,
@@ -85,7 +81,7 @@ public class PhoneRootPolicyTest {
 	@Test
 	public void automotiveHostsKeepAddonNavAndNeverShowPhoneMenu() {
 		assertTrue(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.AA_PROJECTION,
-				R.id.control_fragment, false));
+				R.id.dashboard_fragment, false));
 		assertTrue(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.MIRROR,
 				R.id.settings_fragment, false));
 		assertFalse(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.AA_PROJECTION,

@@ -437,7 +437,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			});
 		} else {
 			Bookmark bm = i.getData();
-			getMainActivity().getMediaServiceBinder().playItem(bm.item, bm.time * 1000L);
+			getMainActivity().getBody().playItem(bm.item, bm.time * 1000L);
 		}
 
 		return true;

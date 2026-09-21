@@ -26,7 +26,6 @@
     <item name="menu" type="id" />
 
     <item name="dashboard_fragment" type="id" />
-    <item name="control_fragment" type="id" />
     <item name="phone_bottom_menu" type="id" />
     <item name="dashboard_settings" type="id" />
     <item name="dashboard_edit" type="id" />

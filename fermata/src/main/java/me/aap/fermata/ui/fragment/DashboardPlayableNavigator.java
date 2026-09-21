@@ -43,6 +43,25 @@ final class DashboardPlayableNavigator {
 
 	private static void route(MainActivityDelegate activity, PlayableItem item,
 			@Nullable Consumer<PlayableItem> onOpened, boolean play) {
+		if (play) {
+			var binder = activity.getMediaServiceBinder();
+			var selection = binder.captureUserSelection();
+			binder.routeUserSelection(selection, item, -1, admission -> {
+				PlayableItem canonical = PlayableItemResolver.unwrap(item);
+				if (!activity.goToItem(canonical)) return me.aap.utils.async.Completed.completed(
+						me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.NOT_READY);
+				var result = new me.aap.utils.async.Promise<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>();
+				activity.post(() -> {
+					if (!admission.isCurrent()) { result.complete(
+							me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED); return; }
+					playIfNeeded(activity, item, admission);
+					if (onOpened != null) activity.post(() -> { if (admission.isCurrent()) onOpened.accept(canonical); });
+					result.complete(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.LOAD_DISPATCHED);
+				});
+				return result;
+			});
+			return;
+		}
 		PlayableItem presented = item;
 		PlayableItem canonical = PlayableItemResolver.unwrap(item);
 		if (!activity.goToItem(canonical)) return;
@@ -51,20 +70,15 @@ final class DashboardPlayableNavigator {
 			return;
 		}
 
-		// Let the destination fragment attach its playback surface before selecting the engine.
-		// This is especially important for immutable WebView items opened from Recent/Favorites:
-		// selecting an engine first can hand the request to the WebView for the previous item.
-		activity.post(() -> {
-			playIfNeeded(activity, presented);
-			if (onOpened != null) activity.post(() -> onOpened.accept(canonical));
-		});
 	}
 
-	private static void playIfNeeded(MainActivityDelegate activity, PlayableItem item) {
+	private static void playIfNeeded(MainActivityDelegate activity, PlayableItem item,
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission) {
 		PlayableItem current = activity.getMediaServiceBinder().getCurrentItem();
 		if ((current == null) || !isSamePlayable(current, item) ||
-				!activity.getMediaServiceBinder().isPlaying()) {
-			activity.getMediaServiceBinder().playItem(item);
+				!activity.getMediaServiceBinder().isPlaying() ||
+				activity.getMediaSessionCallback().getVideoOutputCoordinator().getHost() != admission.target()) {
+			activity.getMediaServiceBinder().playRoutedItem(item, -1, admission);
 		}
 	}
 

@@ -20,6 +20,7 @@ public final class UiShellController {
 		TopBarController.refresh(activity);
 		NavBarController.refresh(activity);
 		activity.refreshPhoneBottomMenu();
+		activity.refreshPhonePlaybackCarHeader();
 	}
 
 	/**
@@ -34,5 +35,6 @@ public final class UiShellController {
 		TopBarController.refresh(activity);
 		NavBarController.refresh(activity);
 		activity.refreshPhoneBottomMenu();
+		activity.refreshPhonePlaybackCarHeader();
 	}
 }

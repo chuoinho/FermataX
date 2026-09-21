@@ -41,6 +41,7 @@ public class YoutubeWebClient extends FermataWebClient {
 		if (request.hasGesture() && (view instanceof YoutubeWebView youtube)) {
 			try {
 				YoutubeItem.fromPageUrl(request.getUrl().toString(), "", 0L);
+				if (youtube.getMediaEngine().routeExplicitSelection(request.getUrl().toString())) return true;
 				youtube.armExplicitPlayback();
 			} catch (IllegalArgumentException ignored) {
 			}

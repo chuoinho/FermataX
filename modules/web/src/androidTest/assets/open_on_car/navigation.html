@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Open on Car native navigation fixture</title>
+<h1>Native history callback fixture</h1>
+<p>Use dummy values only. No native bridge and no media hooks.</p>
+<a href="navigation.html?page=b">GET document B</a>
+<button onclick="history.pushState({}, '', '?spa=push')">pushState</button>
+<button onclick="history.replaceState({}, '', '?spa=replace')">replaceState</button>
+<button onclick="location.hash='fixture-hash'">hash</button>
+<button onclick="history.back()">Back</button>
+<button onclick="history.forward()">Forward</button>
+<button onclick="location.reload()">Page reload (unknown method)</button>
+<form method="get" action="navigation.html"><input name="query" value="dummy"><button>GET form</button></form>
+<form method="post" action="/post"><input name="body" value="dummy"><button>POST form</button></form>
+<iframe title="Subframe only" srcdoc="<a href='navigation.html?iframe=only'>iframe GET</a>"></iframe>
+</html>

@@ -59,6 +59,38 @@ public class YoutubeFragment extends WebBrowserFragment
 		return me.aap.fermata.R.id.youtube_fragment;
 	}
 
+	@Override
+	public me.aap.fermata.auto.AutomotiveNavigationController.OpenResult openOnCar(
+			me.aap.fermata.auto.OpenOnCarRequest request, java.util.function.BooleanSupplier stillCurrent) {
+		if (!stillCurrent.getAsBoolean()) return me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED;
+		if (request.kind() != me.aap.fermata.auto.OpenOnCarKind.YOUTUBE_VIDEO ||
+				!(request.payload() instanceof YoutubeItem descriptor) || getWebView() == null)
+			return me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.NOT_READY;
+		MainActivityDelegate activity = MainActivityDelegate.get(requireContext());
+		if (!activity.isCarActivityNotMirror() || activity.getMediaSessionCallback().hasCustomEngineProvider())
+			return me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.NOT_READY;
+		YoutubeAddon addon = (YoutubeAddon) getWebView().getAddon();
+		PlayableItem item = new YoutubeAddon.YoutubeHistoryItem(addon,
+				(me.aap.fermata.media.lib.DefaultMediaLib) activity.getLib(), descriptor);
+		var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+				me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, stillCurrent);
+		return dispatchTypedPlayback(admission, activity.getMediaSessionCallback()::hasCustomEngineProvider,
+				() -> activity.getMediaServiceBinder().playRoutedItemResult(item, 0, admission));
+	}
+
+	static me.aap.fermata.auto.AutomotiveNavigationController.OpenResult dispatchPlayback(
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission,
+			java.util.function.BooleanSupplier customProvider, java.util.function.BooleanSupplier dispatch) {
+		return FermataServiceUiBinder.dispatchRoutedPlayback(admission, customProvider, dispatch);
+	}
+
+	static me.aap.fermata.auto.AutomotiveNavigationController.OpenResult dispatchTypedPlayback(
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission,
+			java.util.function.BooleanSupplier customProvider,
+			java.util.function.Supplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult> dispatch) {
+		return FermataServiceUiBinder.dispatchTypedRoutedPlayback(admission, customProvider, dispatch);
+	}
+
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

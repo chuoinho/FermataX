@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import me.aap.fermata.addon.web.yt.YoutubeWebClient;
+import me.aap.fermata.ui.policy.RuntimeHostMode;
 
 public class FermataWebClientTest {
 	@Test
@@ -151,4 +152,41 @@ public class FermataWebClientTest {
 		assertTrue(replacement.isExternalNavigationAllowed("https://allowed.example/video"));
 		assertFalse(replacement.isExternalNavigationAllowed("https://blocked.example/video"));
 	}
+
+	@Test
+	public void urlObserverAdmissionIsExactPhoneGeneralForegroundOnly() {
+		assertTrue(FermataWebClient.shouldAttachUrlObserver(
+				me.aap.fermata.R.id.web_browser_fragment,
+				me.aap.fermata.R.id.web_browser_fragment,
+				RuntimeHostMode.PHONE, true));
+		assertFalse(FermataWebClient.shouldAttachUrlObserver(
+				me.aap.fermata.R.id.youtube_fragment,
+				me.aap.fermata.R.id.youtube_fragment,
+				RuntimeHostMode.PHONE, true));
+		assertFalse(FermataWebClient.shouldAttachUrlObserver(
+				me.aap.fermata.R.id.stremio_fragment,
+				me.aap.fermata.R.id.stremio_fragment,
+				RuntimeHostMode.PHONE, true));
+		assertFalse(FermataWebClient.shouldAttachUrlObserver(
+				me.aap.fermata.R.id.web_browser_fragment,
+				me.aap.fermata.R.id.web_browser_fragment,
+				RuntimeHostMode.AA_PROJECTION, true));
+		assertFalse(FermataWebClient.shouldAttachUrlObserver(
+				me.aap.fermata.R.id.web_browser_fragment,
+				me.aap.fermata.R.id.web_browser_fragment,
+				RuntimeHostMode.PHONE, false));
+	}
+
+	@Test
+	public void webRequestMethodProvenanceFailsClosedForPostAndUnknown() {
+		assertEquals(WebUrlSyncObserver.Provenance.REQUEST_GET,
+				FermataWebClient.requestProvenance("GET"));
+		assertEquals(WebUrlSyncObserver.Provenance.POST,
+				FermataWebClient.requestProvenance("POST"));
+		assertEquals(WebUrlSyncObserver.Provenance.UNKNOWN,
+				FermataWebClient.requestProvenance("PATCH"));
+		assertEquals(WebUrlSyncObserver.Provenance.UNKNOWN,
+				FermataWebClient.requestProvenance(null));
+	}
+
 }

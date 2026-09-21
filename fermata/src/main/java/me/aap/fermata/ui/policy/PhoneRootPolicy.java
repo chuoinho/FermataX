@@ -12,7 +12,7 @@ public final class PhoneRootPolicy {
 	}
 
 	public static int initialDestination(RuntimeHostMode mode) {
-		return usesPhoneRoots(mode) ? R.id.control_fragment : R.id.dashboard_fragment;
+		return R.id.dashboard_fragment;
 	}
 
 	public static boolean isPrimaryRoot(RuntimeHostMode mode, int fragmentId) {
@@ -27,13 +27,12 @@ public final class PhoneRootPolicy {
 	}
 
 	public static boolean isPhoneRoot(int fragmentId) {
-		return (fragmentId == R.id.control_fragment) ||
-				(fragmentId == R.id.dashboard_fragment) ||
+		return (fragmentId == R.id.dashboard_fragment) ||
 				(fragmentId == R.id.settings_fragment);
 	}
 
 	public static int normalizePhoneRoot(int fragmentId) {
-		return isPhoneRoot(fragmentId) ? fragmentId : R.id.control_fragment;
+		return isPhoneRoot(fragmentId) ? fragmentId : R.id.dashboard_fragment;
 	}
 
 	public static int resolvePhoneRoot(int currentRootId, int routeId) {

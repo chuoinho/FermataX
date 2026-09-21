@@ -113,7 +113,7 @@ public class YoutubeJsInterface extends FermataJsInterface {
 				engine.fullscreenTapped(data);
 				break;
 			case JS_PLAYBACK_INTENT:
-				engine.armExplicitPlayback();
+				((YoutubeWebView) getWebView()).loadExplicitUrl(data);
 				break;
 			case JS_NAVIGATION:
 				((YoutubeWebView) getWebView()).onSpaNavigation(data);

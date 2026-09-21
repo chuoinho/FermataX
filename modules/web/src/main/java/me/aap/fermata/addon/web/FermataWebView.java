@@ -120,6 +120,10 @@ public class FermataWebView extends WebView
 	private ExternalPlaybackRequest externalPlayback;
 	private boolean clearingExternalPlayback;
 	private boolean clearExternalHistoryOnLoad;
+	private java.lang.ref.WeakReference<WebBrowserFragment> sourceFragment;
+	private boolean explicitUserLoad;
+	private final WebUrlDestination mirroredDestination = new WebUrlDestination();
+	private boolean mirroredPage;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -175,7 +179,65 @@ public class FermataWebView extends WebView
 	public void loadUrl(@NonNull String url) {
 		if (!isScriptUrl(url) && (externalPlayback == null) && !clearingExternalPlayback)
 			lastUrl = url;
+		if (!isScriptUrl(url) && (webClient != null)) {
+			if (explicitUserLoad) webClient.markAppNavigation(url);
+			else webClient.markRecoveryNavigation(url);
+		}
 		super.loadUrl(url);
+	}
+
+	void loadUserUrl(String url) {
+		mirroredDestination.cancel();
+		mirroredPage = false;
+		explicitUserLoad = true;
+		try { loadUrl(url); } finally { explicitUserLoad = false; }
+	}
+
+	void loadBaselineUrl(String url) {
+		if (webClient != null) webClient.baselineUrl(url);
+		loadUrl(url);
+	}
+
+	void reloadUserPage() {
+		if (webClient != null) webClient.markUserReload(getUrl());
+		reload();
+	}
+
+	me.aap.fermata.auto.AutomotiveNavigationController.OpenResult openMirroredUrl(
+			me.aap.fermata.auto.OpenOnCarRequest request, java.util.function.BooleanSupplier current) {
+		return mirroredDestination.open(request, current,
+				() -> isAttachedToWindow() && (hostMode == RuntimeHostMode.AA_PROJECTION) &&
+						(addon != null) && (addon.getAddonId() == me.aap.fermata.R.id.web_browser_fragment),
+				url -> {
+					mirroredPage = true;
+					webClient.suppressRetry();
+					stopLoading();
+					FermataWebView.super.loadUrl(url);
+				});
+	}
+
+	boolean isMirroredPage() { return mirroredPage; }
+	void mirroredPageStarted(String url) { if (mirroredPage) mirroredDestination.pageStarted(url); }
+	void mirroredPageFinished(String url) { if (mirroredPage) mirroredDestination.pageFinished(url); }
+	void mirroredPageFailed(String url) { if (mirroredPage) mirroredDestination.pageFailed(url); }
+
+	void setSourceFragment(WebBrowserFragment fragment) {
+		sourceFragment = new java.lang.ref.WeakReference<>(fragment);
+	}
+
+	@Nullable
+	protected WebBrowserFragment getSourceFragment() {
+		return (sourceFragment == null) ? null : sourceFragment.get();
+	}
+
+	@Override protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		WebBrowserFragment fragment = (sourceFragment == null) ? null : sourceFragment.get();
+		if (fragment != null) post(fragment::tryAttachUrlObserver);
+	}
+
+	void markRecoveryNavigation(String url) {
+		if (webClient != null) webClient.markRecoveryNavigation(url);
 	}
 
 	boolean openExternalPlayback(ExternalPlaybackRequest request) {
@@ -341,6 +403,10 @@ public class FermataWebView extends WebView
 		return hostMode;
 	}
 
+	final boolean isPhoneSource() {
+		return hostMode == RuntimeHostMode.PHONE;
+	}
+
 	final boolean usesAutomotivePresentation() {
 		return hostMode.usesAutomotivePresentation();
 	}
@@ -398,6 +464,7 @@ public class FermataWebView extends WebView
 
 	protected void pageLoaded(String uri) {
 		addFocusHighlight();
+		if (mirroredPage) { updateWebToolbar(uri); return; }
 		if (externalPlayback != null) {
 			if (clearExternalHistoryOnLoad) {
 				clearExternalHistoryOnLoad = false;
@@ -462,6 +529,7 @@ public class FermataWebView extends WebView
 	}
 
 	boolean recoverRenderProcess() {
+		mirroredDestination.cancel();
 		Log.e("WebView renderer process is gone. Recreating WebView.");
 
 		if (!(getParent() instanceof ViewGroup parent)) {
@@ -505,7 +573,9 @@ public class FermataWebView extends WebView
 			}
 			destroyAfterRendererLoss(parent);
 			parent.addView(web, index, lp);
-			if ((url != null) && !url.isEmpty()) web.loadUrl(url);
+			if ((url != null) && !url.isEmpty()) web.loadBaselineUrl(url);
+			WebBrowserFragment fragment = (sourceFragment == null) ? null : sourceFragment.get();
+			if (fragment != null) fragment.onSourceViewReplaced(this, web);
 		} catch (Throwable ex) {
 			Log.e(ex, "Failed to recreate WebView after renderer process loss");
 			destroyAfterRendererLoss(parent);
@@ -528,6 +598,7 @@ public class FermataWebView extends WebView
 	}
 
 	protected String getRecoveryUrl() {
+		if (mirroredPage) return null;
 		String current = getUrl();
 		if ((current != null) && !isScriptUrl(current)) return current;
 		if ((lastUrl != null) && !isScriptUrl(lastUrl)) return lastUrl;

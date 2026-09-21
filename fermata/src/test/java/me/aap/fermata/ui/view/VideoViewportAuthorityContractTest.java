@@ -18,7 +18,7 @@ public class VideoViewportAuthorityContractTest {
 		assertTrue(body.contains("if (requestedMode != originalMode)"));
 		assertTrue(body.contains("observer.addOnPreDrawListener"));
 		assertTrue(body.contains("awaitPlaybackSurface(i, originalMode, requestedMode,"));
-		assertTrue(body.contains("startPlaybackRequest(i, originalMode, requestedMode, request)"));
+		assertTrue(body.contains("startPlaybackRequest(i, originalMode, requestedMode, request, position, admission, result)"));
 	}
 
 	@Test

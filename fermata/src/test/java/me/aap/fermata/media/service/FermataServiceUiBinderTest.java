@@ -12,6 +12,88 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 public class FermataServiceUiBinderTest {
+	@Test public void routedNativeResultRejectsUnavailableHostWithoutExecuting() {
+		var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+				me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, () -> true);
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.NOT_READY,
+				FermataServiceUiBinder.dispatchRoutedPlayback(admission, () -> false,
+						() -> { throw new AssertionError("not-ready host must not dispatch"); }));
+	}
+	@Test public void routedNativeResultDoesNotClaimTerminalRejectionWasDispatched() {
+		var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+				me.aap.fermata.ui.policy.RuntimeHostMode.PHONE, () -> true);
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.NOT_READY,
+				FermataServiceUiBinder.dispatchRoutedPlayback(admission, () -> false, () -> false));
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.LOAD_DISPATCHED,
+				FermataServiceUiBinder.dispatchRoutedPlayback(admission, () -> false, () -> true));
+	}
+	@Test public void routedNativeSameItemResumeAndNoopStaySuccessfulWithoutLoading() {
+		var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+				me.aap.fermata.ui.policy.RuntimeHostMode.PHONE, () -> true);
+		java.util.function.Supplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>
+				pausedResume = () -> me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED;
+		java.util.function.Supplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>
+				alreadyPlaying = () -> me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED;
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED,
+				FermataServiceUiBinder.dispatchTypedRoutedPlayback(admission, () -> false, pausedResume));
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED,
+				FermataServiceUiBinder.dispatchTypedRoutedPlayback(admission, () -> false, alreadyPlaying));
+	}
+	@Test public void castActivatedDuringReadinessWaitRejectsFinalNativeDispatch() {
+		var connection = me.aap.fermata.auto.AutomotiveConnectionState.get();
+		var controller = me.aap.fermata.auto.AutomotiveNavigationController.get();
+		me.aap.fermata.auto.AutomotiveNavigationController.Navigator navigator =
+				(id, guard) -> me.aap.utils.async.Completed.completed(
+						me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED);
+		connection.connectionChanged(true); controller.register(navigator);
+		try {
+			controller.getOpenOnCarMode().setEnabled(true);
+			var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+					me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, () -> true);
+			var cast = new java.util.concurrent.atomic.AtomicBoolean(false);
+			var readiness = new me.aap.utils.async.Promise<Boolean>();
+			var result = readiness.map(ready -> FermataServiceUiBinder.dispatchRoutedPlayback(
+					admission, cast::get, () -> { throw new AssertionError("Cast must not be taken over"); }));
+			cast.set(true); readiness.complete(true);
+			assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.NOT_READY, result.peek());
+		} finally { controller.unregister(navigator); connection.connectionChanged(false); }
+	}
+	@Test public void nativeHostLossDuringDispatchReturnsCancelled() {
+		var current = new java.util.concurrent.atomic.AtomicBoolean(true);
+		var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+				me.aap.fermata.ui.policy.RuntimeHostMode.PHONE, current::get);
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED,
+				FermataServiceUiBinder.dispatchRoutedPlayback(admission, () -> false,
+						() -> { current.set(false); return true; }));
+	}
+	@Test public void committedCarOwnerSurvivesSwitchOffButNotHostReplacement() {
+		var connection = me.aap.fermata.auto.AutomotiveConnectionState.get();
+		var controller = me.aap.fermata.auto.AutomotiveNavigationController.get();
+		me.aap.fermata.auto.AutomotiveNavigationController.Navigator first =
+				(id, guard) -> me.aap.utils.async.Completed.completed(
+						me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED);
+		me.aap.fermata.auto.AutomotiveNavigationController.Navigator replacement =
+				(id, guard) -> me.aap.utils.async.Completed.completed(
+						me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.OPENED);
+		connection.connectionChanged(true); controller.register(first);
+		try {
+			controller.getOpenOnCarMode().setEnabled(true);
+			var admission = new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+					me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION,
+					controller.getOpenOnCarMode()::isEnabled);
+			assertTrue(admission.commit());
+			controller.getOpenOnCarMode().setEnabled(false);
+			assertTrue(admission.isCurrent());
+			assertTrue(admission.canAttach());
+			controller.register(replacement);
+			assertFalse(admission.isCurrent());
+			assertFalse(admission.canAttach());
+		} finally { controller.unregister(replacement); connection.connectionChanged(false); }
+	}
+	@Test public void sameItemOnDifferentRequestedHostStillCreatesPlaybackRequest() {
+		assertTrue(FermataServiceUiBinder.shouldCreatePlaybackRequest(true, -1, false));
+		assertFalse(FermataServiceUiBinder.shouldCreatePlaybackRequest(true, -1, true));
+	}
 	@Test
 	public void playbackErrorAlwaysHasDisplayableText() {
 		assertEquals("fallback", FermataServiceUiBinder.normalizePlaybackError(null, "fallback"));

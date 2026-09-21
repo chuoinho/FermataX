@@ -6,6 +6,15 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public class YoutubeTargetPrepareGateTest {
+	@Test public void lostModeAdmissionRejectsMatchingTargetWithoutAcceptingLateSignals() {
+		YoutubeTargetPrepareGate gate = new YoutubeTargetPrepareGate();
+		java.util.concurrent.atomic.AtomicBoolean admitted = new java.util.concurrent.atomic.AtomicBoolean(true);
+		gate.begin("A", 10L, admitted::get);
+		admitted.set(false);
+		assertFalse(gate.accepts("A", 10L));
+		assertFalse(gate.complete("A", 10L));
+		assertTrue(gate.isPending());
+	}
 	@Test
 	public void onlyLatestVideoAndGenerationCanComplete() {
 		YoutubeTargetPrepareGate gate = new YoutubeTargetPrepareGate();

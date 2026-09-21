@@ -54,15 +54,16 @@ final class YoutubeRuntime {
 	boolean claimBrowserPlayback(YoutubeMediaEngine engine,
 			MediaSessionCallback callback, YoutubePlaybackActivation activation) {
 		YoutubeSessionEngine current = session;
-		if ((current == null) || !current.attach(engine)) {
+		if ((current == null) || !current.attach(engine, false)) {
 			current = new YoutubeSessionEngine(addon, this, callback, null);
-			if (!current.attach(engine)) return false;
+			if (!current.attach(engine, false)) return false;
 			session = current;
 		}
 		return current.activate(activation);
 	}
 
 	void requestHost(YoutubeSessionEngine requester) {
+		if (!requester.admissionCurrent()) return;
 		if ((session != null) && (session != requester)) return;
 		session = requester;
 		if (attachPreferred(requester)) return;
@@ -89,14 +90,16 @@ final class YoutubeRuntime {
 	}
 
 	private boolean attachPreferred(YoutubeSessionEngine target) {
-		Host fallback = null;
 		for (Host host : hosts.values()) {
 			if (!host.web.isAttachedToWindow()) continue;
-			if (addon.isPreferredPlaybackActivity(host.activity)) return target.attach(host.engine);
-			if (fallback == null) fallback = host;
+			if (YoutubePlaybackHostPolicy.attachHost(target.carHost(),
+					host.activity.isCarActivityNotMirror(), target.admissionCurrent()))
+				return target.attach(host.engine);
 		}
-		return (fallback != null) && target.attach(fallback.engine);
+		return false;
 	}
+
+	boolean attachRequested(YoutubeSessionEngine target) { return attachPreferred(target); }
 
 	private record Host(long generation, YoutubeWebView web, YoutubeMediaEngine engine,
 			MainActivityDelegate activity) {

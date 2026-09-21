@@ -146,6 +146,7 @@ public class PlaybackEngineLeaseControllerTest {
 		MutableAccess access = new MutableAccess(pending.generation(), initial);
 		PlaybackEngineLeaseController controller = new PlaybackEngineLeaseController(ownership, access);
 		MediaSessionCallback callback = allocate(MediaSessionCallback.class);
+		set(callback, "videoOutput", new VideoOutputCoordinator());
 		set(callback, "playbackOwnership", ownership);
 		set(callback, "playbackEngineLease", controller);
 		set(callback, "playbackTransition", new PlaybackTransition());

@@ -47,6 +47,7 @@ import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.IntFunction;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -56,6 +57,9 @@ import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.auto.AutomotiveNavigationController;
 import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
+import me.aap.fermata.auto.OpenOnCarKind;
+import me.aap.fermata.auto.OpenOnCarRequest;
+import me.aap.fermata.auto.OpenOnCarRequestHandler;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -104,7 +108,19 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private final ProjectedBackEventFilter projectedBackEventFilter =
 			new ProjectedBackEventFilter();
 	private final AutomotiveNavigationController.Navigator phoneNavigator =
-			this::openFromPhone;
+			new AutomotiveNavigationController.Navigator() {
+				@Override
+				public FutureSupplier<OpenResult> open(int destinationId,
+						BooleanSupplier stillCurrent) {
+					return openFromPhone(destinationId, stillCurrent);
+				}
+
+				@Override
+				public FutureSupplier<OpenResult> open(OpenOnCarRequest request,
+						BooleanSupplier stillCurrent) {
+					return openFromPhone(request, stillCurrent);
+				}
+			};
 	private final Object controlVisibilityOwner = new Object();
 
 	@NonNull
@@ -356,6 +372,171 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			});
 		});
 		return result;
+	}
+
+	private FutureSupplier<OpenResult> openFromPhone(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent) {
+		return dispatchPhoneRequest(request, stillCurrent,
+				destinationId -> openFromPhone(destinationId, stillCurrent),
+				typed -> openWebFromPhone(typed, stillCurrent),
+				typed -> openMediaFromPhone(typed, stillCurrent),
+				typed -> openStremioFromPhone(typed, stillCurrent));
+	}
+
+	private FutureSupplier<OpenResult> openStremioFromPhone(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent) {
+		MainActivityDelegate captured = createdDelegate;
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if (!resumed || destroyed || (captured == null)) return completed(OpenResult.NOT_READY);
+		BooleanSupplier guard = () -> stillCurrent.getAsBoolean() && resumed && !destroyed &&
+				(createdDelegate == captured);
+		Promise<OpenResult> result = new Promise<>();
+		FermataApplication.get().getHandler().post(() -> {
+			if (!guard.getAsBoolean()) { result.complete(OpenResult.CANCELLED); return; }
+			AddonManager manager = AddonManager.get();
+			AddonInfo info = manager.getAddonInfo(R.id.stremio_fragment);
+			if ((info == null) || (manager.getAddonState(info) != AddonState.LOADED)) {
+				result.complete(OpenResult.NOT_READY); return;
+			}
+			captured.showFragmentWhenReadyGuarded(R.id.stremio_fragment, null, guard)
+					.onCompletion((opened, error) -> captured.post(() -> {
+				if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
+				else if (error != null) result.complete(OpenResult.FAILED);
+				else if (!Boolean.TRUE.equals(opened)) result.complete(OpenResult.NOT_READY);
+				else {
+					ActivityFragment fragment = captured.getActiveFragment();
+					if ((fragment == null) || (fragment.getFragmentId() != R.id.stremio_fragment) ||
+							!(fragment instanceof OpenOnCarRequestHandler handler))
+						result.complete(OpenResult.NOT_READY);
+					else result.complete(handler.openOnCar(request, guard));
+				}
+			}));
+		});
+		return result;
+	}
+
+	private FutureSupplier<OpenResult> openMediaFromPhone(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent) {
+		MainActivityDelegate captured = createdDelegate;
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if (!resumed || destroyed || captured == null) return completed(OpenResult.NOT_READY);
+		BooleanSupplier guard = () -> stillCurrent.getAsBoolean() && resumed && !destroyed &&
+				createdDelegate == captured;
+		Promise<OpenResult> result = new Promise<>();
+		captured.post(() -> {
+			if (!guard.getAsBoolean()) { result.complete(OpenResult.CANCELLED); return; }
+			if (hasCustomEngineProvider(captured)) {
+				result.complete(OpenResult.NOT_READY); return;
+			}
+			if (request.kind() == OpenOnCarKind.YOUTUBE_VIDEO) {
+				captured.showFragmentWhenReadyGuarded(R.id.youtube_fragment, null, guard)
+						.onCompletion((opened, error) -> captured.post(() -> {
+					if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
+					else if (error != null) result.complete(OpenResult.FAILED);
+					else if (hasCustomEngineProvider(captured)) result.complete(OpenResult.NOT_READY);
+					else if (!Boolean.TRUE.equals(opened) ||
+							!(captured.getActiveFragment() instanceof OpenOnCarRequestHandler handler))
+						result.complete(OpenResult.NOT_READY);
+					else result.complete(handler.openOnCar(request, guard));
+				}));
+				return;
+			}
+			var media = (me.aap.fermata.auto.OpenOnCarMediaRouting.MediaItem) request.payload();
+			int destination = me.aap.fermata.ui.policy.ItemRoutePolicy.getFragmentId(media.item());
+			if (destination == 0) { result.complete(OpenResult.NOT_READY); return; }
+			captured.showFragmentWhenReadyGuarded(destination, null, guard).onCompletion((opened, error) ->
+					captured.post(() -> {
+				if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
+				else if (error != null) result.complete(OpenResult.FAILED);
+				else if (!Boolean.TRUE.equals(opened)) result.complete(OpenResult.NOT_READY);
+				else if (hasCustomEngineProvider(captured)) result.complete(OpenResult.NOT_READY);
+				else captured.getBody().playRoutedItem(media.item(), media.position(),
+						new me.aap.fermata.auto.OpenOnCarMediaRouting.Admission(
+								me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, guard))
+						.onCompletion((value, failure) -> result.complete(failure == null ? value : OpenResult.FAILED));
+			}));
+		});
+		return result;
+	}
+
+	/** Must run after readiness callbacks: Cast/custom providers can activate while waiting. */
+	private static boolean hasCustomEngineProvider(MainActivityDelegate delegate) {
+		return delegate.getMediaSessionCallback().hasCustomEngineProvider();
+	}
+
+	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openWeb,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openMedia) {
+		return dispatchPhoneRequest(request, stillCurrent, openAddon, openWeb, openMedia,
+				typed -> completed(OpenResult.NOT_READY));
+	}
+
+	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openWeb,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openMedia,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openStremio) {
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if ((request.kind() == OpenOnCarKind.STREMIO_PLAYER) &&
+				(request.addonId() == R.id.stremio_fragment) && (request.payload() instanceof String))
+			return openStremio.apply(request);
+		if ((request.kind() == OpenOnCarKind.MEDIA_ITEM &&
+				request.payload() instanceof me.aap.fermata.auto.OpenOnCarMediaRouting.MediaItem) ||
+				(request.kind() == OpenOnCarKind.YOUTUBE_VIDEO && request.addonId() == R.id.youtube_fragment))
+			return openMedia.apply(request);
+		return dispatchPhoneRequest(request, stillCurrent, openAddon, openWeb);
+	}
+
+	private FutureSupplier<OpenResult> openWebFromPhone(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent) {
+		MainActivityDelegate captured = createdDelegate;
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if (!resumed || destroyed || (captured == null)) return completed(OpenResult.NOT_READY);
+		BooleanSupplier guard = () -> stillCurrent.getAsBoolean() && resumed && !destroyed &&
+				(createdDelegate == captured);
+		Promise<OpenResult> result = new Promise<>();
+		FermataApplication.get().getHandler().post(() -> {
+			if (!guard.getAsBoolean()) { result.complete(OpenResult.CANCELLED); return; }
+			AddonManager manager = AddonManager.get();
+			AddonInfo info = manager.getAddonInfo(R.id.web_browser_fragment);
+			// Source synchronization cannot install a module on the car.
+			if ((info == null) || (manager.getAddonState(info) != AddonState.LOADED)) {
+				result.complete(OpenResult.NOT_READY); return;
+			}
+			captured.showFragmentWhenReadyGuarded(R.id.web_browser_fragment, null, guard)
+					.onCompletion((opened, error) -> captured.post(() -> {
+				if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
+				else if (error != null) result.complete(OpenResult.FAILED);
+				else if (!Boolean.TRUE.equals(opened)) result.complete(OpenResult.NOT_READY);
+				else {
+					ActivityFragment fragment = captured.getActiveFragment();
+					if ((fragment == null) || (fragment.getFragmentId() != R.id.web_browser_fragment) ||
+							!(fragment instanceof OpenOnCarRequestHandler handler))
+						result.complete(OpenResult.NOT_READY);
+					else result.complete(handler.openOnCar(request, guard));
+				}
+			}));
+		});
+		return result;
+	}
+
+	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openWeb) {
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if ((request.kind() == OpenOnCarKind.WEB_URL) &&
+				(request.addonId() == R.id.web_browser_fragment) && (request.payload() instanceof String))
+			return openWeb.apply(request);
+		return dispatchPhoneRequest(request, stillCurrent, openAddon);
+	}
+
+	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon) {
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		// Compatibility path for addon-only callers: never pass a typed payload to setInput.
+		if (request.kind() != OpenOnCarKind.OPEN_ADDON) return completed(OpenResult.NOT_READY);
+		return openAddon.apply(request.addonId());
 	}
 
 	private static OpenResult failedOpenResult(int destinationId) {

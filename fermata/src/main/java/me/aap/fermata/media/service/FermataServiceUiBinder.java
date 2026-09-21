@@ -26,6 +26,13 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.auto.AutomotiveNavigationController;
+import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
+import me.aap.fermata.auto.OpenOnCarKind;
+import me.aap.fermata.auto.OpenOnCarMediaRouting;
+import me.aap.fermata.auto.OpenOnCarMediaRouting.Admission;
+import me.aap.fermata.auto.OpenOnCarMediaRouting.Cause;
+import me.aap.fermata.auto.OpenOnCarMediaRouting.Selection;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -79,6 +86,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	@Nullable
 	private View controlPanel;
 	private long playPauseTime;
+	private final OpenOnCarMediaRouting mediaRouting =
+			new OpenOnCarMediaRouting(AutomotiveNavigationController.get());
 
 	FermataServiceUiBinder(FermataMediaServiceConnection c) {
 		sessionCallback = c.getMediaSessionCallback();
@@ -193,20 +202,96 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	public boolean playItem(PlayableItem i, long pos) {
+		Selection selection = captureUserSelection();
+		if (selection.forwardToCar()) {
+			routeUserSelection(selection, i, pos, admission -> {
+				throw new IllegalStateException("Car request reached phone executor");
+			});
+			return false;
+		}
+		return playRoutedItem(i, pos, admission(selection));
+	}
+
+	public Selection captureUserSelection() {
+		RuntimeHostMode source = presentationToken == null ? RuntimeHostMode.PHONE : presentationToken.mode();
+		RuntimeHostMode owner = sessionCallback.getVideoOutputCoordinator().getHost();
+		return mediaRouting.capture(source, Cause.USER_SELECTION, owner == null ? source : owner);
+	}
+
+	public FutureSupplier<OpenResult> routeUserSelection(Selection selection, PlayableItem item,
+			long position, java.util.function.Function<Admission, FutureSupplier<OpenResult>> prepareLocal) {
+		// An active Cast/custom provider is never disconnected or repurposed by this switch.
+		if (selection.forwardToCar() && sessionCallback.hasCustomEngineProvider())
+			return me.aap.utils.async.Completed.completed(OpenResult.NOT_READY);
+		return mediaRouting.dispatch(selection, OpenOnCarKind.MEDIA_ITEM, 0,
+				new OpenOnCarMediaRouting.MediaItem(item, position), () -> prepareLocal.apply(admission(selection)));
+	}
+
+	private Admission admission(Selection selection) {
+		return new Admission(selection.target(), () -> mediaRouting.isCurrent(selection));
+	}
+
+	/** The web module supplies its immutable descriptor, not a page/media URL. */
+	public FutureSupplier<OpenResult> dispatchYoutubeSelection(Selection selection, Object descriptor,
+			java.util.function.BooleanSupplier sourceCurrent) {
+		if (!selection.forwardToCar() || !sourceCurrent.getAsBoolean() || sessionCallback.hasCustomEngineProvider())
+			return me.aap.utils.async.Completed.completed(OpenResult.NOT_READY);
+		return mediaRouting.dispatch(selection, OpenOnCarKind.YOUTUBE_VIDEO, R.id.youtube_fragment,
+				descriptor, () -> me.aap.utils.async.Completed.completed(OpenResult.NOT_READY), sourceCurrent);
+	}
+
+	/** Already routed executor: transport and car receivers never re-read the switch. */
+	public static OpenResult dispatchRoutedPlayback(Admission admission,
+			java.util.function.BooleanSupplier customProvider,
+			java.util.function.BooleanSupplier dispatch) {
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
+		if (!admission.canAttach() || (admission.target() == RuntimeHostMode.AA_PROJECTION &&
+				customProvider.getAsBoolean())) return OpenResult.NOT_READY;
+		boolean started = dispatch.getAsBoolean();
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
+		return started ? OpenResult.LOAD_DISPATCHED : OpenResult.NOT_READY;
+	}
+
+	/** Preserves successful same-item resume/no-op outcomes without creating a loading request. */
+	public static OpenResult dispatchTypedRoutedPlayback(Admission admission,
+			java.util.function.BooleanSupplier customProvider,
+			java.util.function.Supplier<OpenResult> dispatch) {
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
+		if (!admission.canAttach() || (admission.target() == RuntimeHostMode.AA_PROJECTION &&
+				customProvider.getAsBoolean())) return OpenResult.NOT_READY;
+		OpenResult outcome = dispatch.get();
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
+		return outcome == null ? OpenResult.NOT_READY : outcome;
+	}
+
+	public boolean playRoutedItem(PlayableItem i, long pos, Admission admission) {
+		return playRoutedItemResult(i, pos, admission) == OpenResult.LOAD_DISPATCHED;
+	}
+
+	/** Already-routed callers need the difference between a fresh load and an accepted no-op. */
+	public OpenResult playRoutedItemResult(PlayableItem i, long pos, Admission admission) {
+		if (!admission.isCurrent()) return OpenResult.CANCELLED;
 		boolean sameItem = i.equals(getCurrentItem());
-		if (!shouldCreatePlaybackRequest(sameItem, pos)) {
+		boolean sameHost = admission.target() == sessionCallback.getVideoOutputCoordinator().getHost();
+		if (!shouldCreatePlaybackRequest(sameItem, pos, sameHost)) {
+			if (!admission.commit()) return OpenResult.CANCELLED;
 			if (sessionCallback.getPlaybackState().getState() == PlaybackStateCompat.STATE_PAUSED) {
 				sessionCallback.onPlay();
 			}
-			return false;
+			return OpenResult.OPENED;
 		} else {
+			if (!sessionCallback.admitPlaybackHost(admission)) return OpenResult.NOT_READY;
 			sessionCallback.playItem(i, pos);
-			return true;
+			return OpenResult.LOAD_DISPATCHED;
 		}
 	}
 
 	static boolean shouldCreatePlaybackRequest(boolean sameItem, long position) {
 		return !sameItem || (position > 0);
+	}
+
+	static boolean shouldCreatePlaybackRequest(boolean sameItem, long position, boolean sameHost) {
+		return !sameHost || shouldCreatePlaybackRequest(sameItem, position);
 	}
 
 	public void stop() {
@@ -219,7 +304,9 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		if ((current != null) && DashboardPlaybackIdentity.same(current, item) && isPlaying()) {
 			mediaController.getTransportControls().pause();
 		} else {
-			playItem(item);
+			RuntimeHostMode owner = sessionCallback.getVideoOutputCoordinator().getHost();
+			playRoutedItem(item, -1, new Admission(owner == null ? RuntimeHostMode.PHONE : owner,
+					() -> true));
 		}
 	}
 
@@ -378,6 +465,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	public void unbind() {
+		mediaRouting.invalidate();
 		if (!bound) return;
 		MediaControllerCallback callback = this.callback;
 		RuntimeSessionCoordinator.Token token = presentationToken;

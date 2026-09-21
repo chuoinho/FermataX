@@ -238,6 +238,30 @@ public class BodyLayout extends SplitLayout
 	}
 
 	public void playItem(MediaLib.PlayableItem i) {
+		playItem(i, -1);
+	}
+
+	public void playItem(MediaLib.PlayableItem item, long position) {
+		FermataServiceUiBinder binder = getActivity().getMediaServiceBinder();
+		playSelection(binder.captureUserSelection(), item, position);
+	}
+
+	public me.aap.utils.async.FutureSupplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>
+	playSelection(me.aap.fermata.auto.OpenOnCarMediaRouting.Selection selection,
+			MediaLib.PlayableItem item, long position) {
+		return getActivity().getMediaServiceBinder().routeUserSelection(selection, item, position,
+				admission -> playRoutedItem(item, position, admission));
+	}
+
+	/** Called only after target capture, including by the guarded car receiver. */
+	public me.aap.utils.async.FutureSupplier<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>
+	playRoutedItem(MediaLib.PlayableItem i, long position,
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission) {
+		var result = new Promise<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult>();
+		if (!admission.isCurrent()) {
+			result.complete(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED);
+			return result;
+		}
 		finishPlaybackLoading();
 		MainActivityDelegate a = getActivity();
 		MediaSessionCallback cb = a.getMediaSessionCallback();
@@ -247,12 +271,18 @@ public class BodyLayout extends SplitLayout
 				originalMode, i, customEngineProvider);
 		long request = ++playbackStartGeneration;
 		if (requestedMode != originalMode) setMode(requestedMode);
-		awaitPlaybackViewport(i, originalMode, requestedMode, customEngineProvider, request);
+		awaitPlaybackViewport(i, originalMode, requestedMode, customEngineProvider, request,
+				position, admission, result);
+		return result;
 	}
 
 	private void awaitPlaybackViewport(MediaLib.PlayableItem i, Mode originalMode,
-			Mode requestedMode, boolean customEngineProvider, long request) {
-		if (request != playbackStartGeneration) return;
+			Mode requestedMode, boolean customEngineProvider, long request, long position,
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission,
+			Promise<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult> result) {
+		if (request != playbackStartGeneration || !admission.isCurrent()) {
+			result.complete(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED); return;
+		}
 		if (requestedMode != originalMode) {
 			VideoView video = getVideoView();
 			ViewTreeObserver observer = video.getViewTreeObserver();
@@ -263,36 +293,49 @@ public class BodyLayout extends SplitLayout
 						ViewTreeObserver current = video.getViewTreeObserver();
 						if (current.isAlive()) current.removeOnPreDrawListener(this);
 						awaitPlaybackSurface(i, originalMode, requestedMode,
-								customEngineProvider, request);
+								customEngineProvider, request, position, admission, result);
 						return true;
 					}
 				});
 				return;
 			}
 		}
-		awaitPlaybackSurface(i, originalMode, requestedMode, customEngineProvider, request);
+		awaitPlaybackSurface(i, originalMode, requestedMode, customEngineProvider, request, position, admission, result);
 	}
 
 	private void awaitPlaybackSurface(MediaLib.PlayableItem i, Mode originalMode,
-			Mode requestedMode, boolean customEngineProvider, long request) {
-		if (request != playbackStartGeneration) return;
+			Mode requestedMode, boolean customEngineProvider, long request, long position,
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission,
+			Promise<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult> result) {
+		if (request != playbackStartGeneration || !admission.isCurrent()) {
+			result.complete(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED); return;
+		}
 		VideoView video = getVideoView();
 		if (i.isVideo() && !customEngineProvider && !video.isSurfaceCreated()) {
 			video.onSurfaceCreated(() ->
-					startPlaybackRequest(i, originalMode, requestedMode, request));
+					startPlaybackRequest(i, originalMode, requestedMode, request, position, admission, result));
 			return;
 		}
-		startPlaybackRequest(i, originalMode, requestedMode, request);
+		startPlaybackRequest(i, originalMode, requestedMode, request, position, admission, result);
 	}
 
 	private void startPlaybackRequest(MediaLib.PlayableItem i, Mode originalMode,
-			Mode requestedMode, long request) {
-		if (request != playbackStartGeneration) return;
+			Mode requestedMode, long request, long position,
+			me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission,
+			Promise<me.aap.fermata.auto.AutomotiveNavigationController.OpenResult> result) {
+		if (request != playbackStartGeneration || !admission.isCurrent()) {
+			result.complete(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED); return;
+		}
 		MainActivityDelegate a = getActivity();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		MediaLib.PlayableItem cur = b.getCurrentItem();
 		startingPlayback = new Promise<Void>().thenRun(() -> startingPlayback = completedVoid());
-		boolean requestStarted = b.playItem(i);
+		var dispatchResult = FermataServiceUiBinder.dispatchTypedRoutedPlayback(admission,
+				b.getMediaSessionCallback()::hasCustomEngineProvider,
+				() -> b.playRoutedItemResult(i, position, admission));
+		boolean requestStarted = dispatchResult ==
+				me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.LOAD_DISPATCHED;
+		result.complete(dispatchResult);
 		MediaEngine eng = b.getCurrentEngine();
 		boolean currentVideoModeRequired = i.equals(cur) && (eng != null) && eng.isVideoModeRequired();
 

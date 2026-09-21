@@ -31,6 +31,7 @@ final class YoutubeSessionEngine implements MediaEngine {
 	private boolean speedSet;
 	private boolean playRequested;
 	private boolean closed;
+	private boolean runtimeHostPrepared = true;
 
 	YoutubeSessionEngine(YoutubeAddon addon, YoutubeRuntime runtime,
 			MediaSessionCallback callback, YoutubeItem descriptor) {
@@ -48,13 +49,26 @@ final class YoutubeSessionEngine implements MediaEngine {
 		return !closed && (delegate == candidate);
 	}
 
+	boolean admissionCurrent() {
+		return callback.getVideoOutputCoordinator().isAdmissionCurrent() && callback.getVideoOutputCoordinator().canAttach();
+	}
+
+	boolean carHost() {
+		return callback.getVideoOutputCoordinator().getHost() == me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION;
+	}
+
 	@Nullable
 	PlayableItem getExternalPlaybackOwner() {
 		return (delegate == null) ? null : delegate.getExternalPlaybackOwner();
 	}
 
 	boolean attach(YoutubeMediaEngine next) {
-		if (closed || (next == null) || !next.belongsTo(addon)) return false;
+		return attach(next, true);
+	}
+
+	boolean attach(YoutubeMediaEngine next, boolean prepareSource) {
+		if (closed || (next == null) || !next.belongsTo(addon) ||
+				!YoutubePlaybackHostPolicy.attachHost(carHost(), next.carHost(), admissionCurrent())) return false;
 		if (delegate == next) return true;
 		YoutubeMediaEngine previous = delegate;
 		delegate = next;
@@ -64,7 +78,7 @@ final class YoutubeSessionEngine implements MediaEngine {
 			previous.pause();
 		}
 		PlayableItem item = source;
-		if (item != null) {
+		if (item != null && runtimeHostPrepared && prepareSource) {
 			next.prepare(item);
 			if (positionSet) next.setPosition(position);
 			if (speedSet) next.setSpeed(speed);
@@ -92,7 +106,7 @@ final class YoutubeSessionEngine implements MediaEngine {
 
 	@Override
 	public void prepare(PlayableItem requested) {
-		if (closed) return;
+		if (closed || !admissionCurrent()) return;
 		if (requested.isPlaybackTransportCommand()) {
 			YoutubeMediaEngine current = delegate;
 			if (current != null) current.prepare(requested);
@@ -107,6 +121,15 @@ final class YoutubeSessionEngine implements MediaEngine {
 		}
 		setAuthoritativeSource(resolved, nextDescriptor);
 		playRequested = false;
+		runtimeHostPrepared = false;
+		boolean attached = runtime.attachRequested(this);
+		if (!attached && delegate != null) {
+			YoutubeMediaEngine previous = delegate;
+			delegate = null;
+			previous.detachSession(this);
+			previous.pause();
+		}
+		runtimeHostPrepared = true;
 		YoutubeMediaEngine current = delegate;
 		if (current != null) current.prepare(resolved);
 		else runtime.requestHost(this);

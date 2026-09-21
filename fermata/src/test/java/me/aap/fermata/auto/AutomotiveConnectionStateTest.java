@@ -62,6 +62,26 @@ public class AutomotiveConnectionStateTest {
 	}
 
 	@Test
+	public void rawConnectionAndEpochNotifyWhenStaleVisibleOwnerKeepsEnumVisible() {
+		AutomotiveConnectionState state = new AutomotiveConnectionState();
+		List<String> rawEvents = new ArrayList<>();
+		state.addRawConnectionListener((connected, epoch) ->
+				rawEvents.add(connected + ":" + epoch));
+		Object staleVisibleOwner = new Object();
+
+		state.connectionChanged(true);
+		state.appVisibilityChanged(staleVisibleOwner, true);
+		assertEquals(AutomotiveConnectionState.State.APP_VISIBLE, state.state());
+
+		state.connectionChanged(false);
+
+		assertEquals(AutomotiveConnectionState.State.APP_VISIBLE, state.state());
+		assertFalse(state.isProjectionConnected());
+		assertEquals(2L, state.connectionEpoch());
+		assertEquals(List.of("true:1", "false:2"), rawEvents);
+	}
+
+	@Test
 	public void removedListenerReceivesNoMoreEvents() {
 		AutomotiveConnectionState state = new AutomotiveConnectionState();
 		List<AutomotiveConnectionState.State> events = new ArrayList<>();
