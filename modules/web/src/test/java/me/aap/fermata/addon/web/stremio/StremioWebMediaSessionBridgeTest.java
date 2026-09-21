@@ -67,6 +67,14 @@ public class StremioWebMediaSessionBridgeTest {
 	}
 
 	@Test
+	public void liveHostedDocumentDoesNotRequireTheStremioFragmentToRemainVisible() {
+		assertTrue(StremioWebMediaSessionBridge.isLiveHostedDocument(true, true, true));
+		assertFalse(StremioWebMediaSessionBridge.isLiveHostedDocument(true, true, false));
+		assertFalse(StremioWebMediaSessionBridge.isLiveHostedDocument(true, false, true));
+		assertFalse(StremioWebMediaSessionBridge.isLiveHostedDocument(false, true, true));
+	}
+
+	@Test
 	public void limitsMessagesToTheVersionedControlSchema() {
 		assertTrue(StremioWebMediaSessionBridge.isBoundedPayload("{}"));
 		assertFalse(StremioWebMediaSessionBridge.isBoundedPayload(null));

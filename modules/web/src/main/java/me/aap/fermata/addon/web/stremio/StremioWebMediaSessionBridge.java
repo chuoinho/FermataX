@@ -42,11 +42,14 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	private static final Set<String> ORIGINS = Set.of(ORIGIN);
 	private final StremioWebView web;
 	private final State state = new State();
+	private final StremioPlayerTransferGate transferGate = new StremioPlayerTransferGate();
 	private ScriptHandler script;
 	private MediaSessionCallback claimedCallback;
 	private boolean installed;
 	private boolean acceptingMessages;
 	private long documentGeneration;
+	@Nullable
+	private java.util.function.BooleanSupplier transferCurrent;
 
 	StremioWebMediaSessionBridge(StremioWebView web) {
 		this.web = web;
@@ -68,6 +71,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	}
 
 	void onDocumentNavigation(String url) {
+		cancelTransferredPlayer();
 		state.reset();
 		releaseClaim();
 		acceptingMessages = false;
@@ -84,6 +88,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 
 	/** Blocks the old document before an automotive session is torn down. */
 	void endAutomotiveSession() {
+		cancelTransferredPlayer();
 		documentGeneration++;
 		acceptingMessages = false;
 		state.reset();
@@ -91,18 +96,25 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		removeDocumentScript();
 	}
 
-	void onFragmentActiveChanged(boolean active) {
-		if (active) syncClaim();
-		else releaseClaim();
-	}
-
 	boolean isPlaybackActive() {
 		return state.isPlaybackActive();
 	}
 
+	void armTransferredPlayer(java.util.function.BooleanSupplier current) {
+		if (!installed || (current == null) || !current.getAsBoolean()) return;
+		transferCurrent = current;
+		transferGate.arm(documentGeneration);
+	}
+
+	void cancelTransferredPlayer() {
+		transferCurrent = null;
+		transferGate.cancel();
+	}
+
 	@Override
 	public boolean isControlOnlyActive() {
-		return installed && isStremioActive() && state.canClaim();
+		return isLiveHostedDocument(installed, acceptingMessages,
+				(web != null) && web.isAttachedToWindow()) && state.canClaim();
 	}
 
 	@Override
@@ -139,6 +151,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 	}
 
 	void close() {
+		cancelTransferredPlayer();
 		installed = false;
 		acceptingMessages = false;
 		documentGeneration++;
@@ -182,6 +195,7 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 				}
 			}
 			syncClaim();
+			maybeDispatchTransferredPlay();
 			if (wasPlaybackActive != state.isPlaybackActive()) notifyContentChanged();
 		} catch (JSONException ignored) {
 		}
@@ -193,6 +207,21 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 					me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED);
 		} catch (RuntimeException ignored) {
 		}
+	}
+
+	private void maybeDispatchTransferredPlay() {
+		if (state.isPlaying()) {
+			transferGate.onPlaying(documentGeneration);
+			return;
+		}
+		java.util.function.BooleanSupplier current = transferCurrent;
+		if ((current == null) || !current.getAsBoolean()) {
+			cancelTransferredPlayer();
+			return;
+		}
+		if (!transferGate.shouldDispatchPlay(documentGeneration, state.isPaused(),
+				state.hasHandler("play"))) return;
+		web.evaluateJavascript(dispatchSource("play", documentGeneration, state.session), null);
 	}
 
 	private void syncClaim() {
@@ -211,16 +240,6 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 		MediaSessionCallback callback = claimedCallback;
 		claimedCallback = null;
 		if (callback != null) callback.releaseControlOnly(this);
-	}
-
-	private boolean isStremioActive() {
-		try {
-			return (web.getParent() != null) &&
-					(MainActivityDelegate.get(web.getContext()).getActiveFragment()
-							instanceof StremioWebFragment);
-		} catch (RuntimeException ignored) {
-			return false;
-		}
 	}
 
 	private void removeDocumentScript() {
@@ -247,6 +266,12 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 
 	static boolean supportsBridge(boolean documentStart, boolean webMessageListener) {
 		return documentStart && webMessageListener;
+	}
+
+	/** Fragment visibility is UI state; only the hosted WebView/document controls claim liveness. */
+	static boolean isLiveHostedDocument(boolean installed, boolean acceptingMessages,
+			boolean attached) {
+		return installed && acceptingMessages && attached;
 	}
 
 	static boolean isAllowedOrigin(String origin) {
@@ -424,6 +449,19 @@ final class StremioWebMediaSessionBridge implements MediaSessionCallback.Control
 
 		boolean isPlaybackActive() {
 			return playback != Playback.NONE;
+		}
+
+		boolean isPlaying() {
+			return playback == Playback.PLAYING;
+		}
+
+		boolean isPaused() {
+			return playback == Playback.PAUSED;
+		}
+
+		boolean hasHandler(String action) {
+			Action value = Action.from(action);
+			return (value != null) && handlers.contains(value);
 		}
 
 		boolean canDispatch(String action) {

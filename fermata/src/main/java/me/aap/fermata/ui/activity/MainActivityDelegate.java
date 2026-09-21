@@ -90,7 +90,6 @@ import me.aap.fermata.media.service.MediaServiceRuntimeGate;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.MediaSessionCallbackAssistant;
 import me.aap.fermata.ui.fragment.DashboardFragment;
-import me.aap.fermata.ui.fragment.ControlFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
 import me.aap.fermata.ui.fragment.InitialSetupFragment;
@@ -112,7 +111,7 @@ import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.PhoneBottomMenuController;
-import me.aap.fermata.ui.view.PhoneOpenOnCarStripController;
+import me.aap.fermata.ui.view.PhonePlaybackCarHeaderController;
 import me.aap.fermata.ui.view.UiShellController;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
@@ -156,12 +155,12 @@ public class MainActivityDelegate extends ActivityDelegate
 	private FloatingButton floatingButton;
 	private ContentLoadingProgressBar progressBar;
 	private PhoneBottomMenuController phoneBottomMenuController;
-	private PhoneOpenOnCarStripController phoneOpenOnCarStripController;
+	private PhonePlaybackCarHeaderController phonePlaybackCarHeaderController;
 	private FutureSupplier<?> contentLoading;
 	private final AsyncOperationController contentOperations =
 			new AsyncOperationController(this::onContentOperationChanged);
 	private boolean barsHidden;
-	private int phoneRootId = R.id.control_fragment;
+	private int phoneRootId = R.id.dashboard_fragment;
 	private boolean videoMode;
 	private int brightness = 255;
 	private final VoiceInteractionCoordinator voiceInteraction;
@@ -256,7 +255,7 @@ public class MainActivityDelegate extends ActivityDelegate
 			navId = state.getInt("navId", ID_NULL);
 			fragmentId = state.getInt("fragmentId", ID_NULL);
 			phoneRootId = PhoneRootPolicy.resolvePhoneRoot(
-					state.getInt("phoneRootId", R.id.control_fragment), fragmentId);
+					state.getInt("phoneRootId", R.id.dashboard_fragment), fragmentId);
 		} else {
 			navId = ID_NULL;
 			fragmentId = ID_NULL;
@@ -380,17 +379,6 @@ public class MainActivityDelegate extends ActivityDelegate
 	public void showPrimaryRoot() {
 		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) showPhoneRoot(phoneRootId);
 		else showDashboard();
-	}
-
-	public void showControl() {
-		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
-			showPhoneRoot(R.id.control_fragment);
-			return;
-		}
-		hideActiveMenu();
-		BodyLayout body = getBody();
-		if (!body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
-		showFragment(R.id.control_fragment);
 	}
 
 	public void showDashboard() {
@@ -521,7 +509,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		getMediaServiceBinder().getMediaSessionCallback().removeAssistant(this);
 		getPrefs().removeBroadcastListener(this);
 		voiceInteraction.close();
-		if (phoneOpenOnCarStripController != null) phoneOpenOnCarStripController.close();
+		if (phonePlaybackCarHeaderController != null) phonePlaybackCarHeaderController.close();
 
 		AddonManager.get().onActivityDestroy(this);
 
@@ -730,9 +718,9 @@ public class MainActivityDelegate extends ActivityDelegate
 		if (phoneBottomMenuController != null) phoneBottomMenuController.refresh();
 	}
 
-	public void refreshPhoneOpenOnCarStrip() {
-		if (phoneOpenOnCarStripController != null) {
-			phoneOpenOnCarStripController.refresh(getRuntimeHostMode(), isBarsHidden());
+	public void refreshPhonePlaybackCarHeader() {
+		if (phonePlaybackCarHeaderController != null) {
+			phonePlaybackCarHeaderController.refresh(getRuntimeHostMode(), isBarsHidden());
 		}
 	}
 
@@ -971,9 +959,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	protected ActivityFragment createFragment(int id) {
-		if (id == R.id.control_fragment) {
-			return new ControlFragment();
-		} else if (id == R.id.dashboard_fragment) {
+		if (id == R.id.dashboard_fragment) {
 			return new DashboardFragment();
 		} else if (id == R.id.folders_fragment) {
 			return new FoldersFragment();
@@ -1282,11 +1268,11 @@ public class MainActivityDelegate extends ActivityDelegate
 		phoneBottomMenuController = new PhoneBottomMenuController(this,
 				a.findViewById(R.id.phone_bottom_menu));
 		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
-			phoneOpenOnCarStripController = new PhoneOpenOnCarStripController(
-					AutomotiveNavigationController.get().getOpenOnCarMode(),
+			phonePlaybackCarHeaderController = new PhonePlaybackCarHeaderController(
+					mediaServiceBinder, AutomotiveNavigationController.get().getOpenOnCarMode(),
 					a.findViewById(R.id.phone_open_on_car_strip),
 					a.findViewById(R.id.phone_open_on_car_toggle));
-			refreshPhoneOpenOnCarStrip();
+			refreshPhonePlaybackCarHeader();
 		}
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		if (getRuntimeHostMode().usesAutomotivePresentation()) floatingButton.setVisibility(GONE);

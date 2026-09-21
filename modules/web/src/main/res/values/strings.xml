@@ -34,4 +34,5 @@
     <string name="sponsorblock_cat_music_offtopic">Non-music sections</string>
     <string name="sponsorblock_cat_filler">Filler</string>
     <string name="sponsorblock_cat_filler_sub">Aggressive category; disabled by default.</string>
+    <string name="stremio_open_on_car_failed" translatable="false">Could not open this Stremio stream on the car screen.</string>
 </resources>

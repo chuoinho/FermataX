@@ -1,23 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="control_nothing_playing">Chưa phát gì</string>
-    <string name="control_current_content">Nội dung hiện tại</string>
-    <string name="control_open_dashboard">Mở FermataX trên màn hình xe</string>
-    <string name="control_aa_disconnected">Mất kết nối AA</string>
-    <string name="control_aa_unknown">Đang kiểm tra AA</string>
-    <string name="control_aa_connected">Đã nối AA</string>
-    <string name="control_aa_visible">Trên màn xe</string>
-    <string name="control_aa_disconnected_detail">Kết nối Android Auto rồi mở FermataX trên màn hình xe.</string>
-    <string name="control_aa_unknown_detail">Đang chờ trạng thái kết nối chính thức từ Android Auto.</string>
-    <string name="control_aa_connected_detail">Mở FermataX trên màn hình xe để chọn addon.</string>
-    <string name="control_aa_visible_detail">Chọn addon bên dưới để mở trên màn hình xe.</string>
-    <string name="control_addons_heading">MỞ TRÊN MÀN HÌNH XE · ADDON ĐÃ BẬT</string>
-    <string name="control_open_on_car">Mở</string>
-    <string name="control_addon_loading">Đang tải</string>
-    <string name="control_addon_failed">Không tải được</string>
-    <string name="control_open_car_first">Hãy mở FermataX trên màn hình xe trước.</string>
-    <string name="control_open_failed">Không thể mở addon này trên màn hình xe.</string>
-    <string name="control_no_addons">Không có addon đã bật hỗ trợ màn hình xe.</string>
-    <string name="phone_open_on_car_strip_title">Nội dung mở tiếp theo sẽ mở trên xe</string>
-    <string name="phone_open_on_car_strip_detail">Đồng bộ URL sang xe</string>
+    <string name="phone_header_nothing_playing">Chưa phát nội dung</string>
+    <string name="phone_header_choose_media">Chọn media để điều khiển</string>
+    <string name="phone_header_aa_disconnect">AA disconnect</string>
+    <string name="phone_header_aa_connected">AA connected</string>
+    <string name="phone_open_on_car_strip_title">Mở trên xe</string>
 </resources>

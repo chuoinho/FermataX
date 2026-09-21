@@ -223,7 +223,7 @@ public class WebBrowserFragment extends MainActivityFragment
 		replacement.post(this::tryAttachUrlObserver);
 	}
 
-	void tryAttachUrlObserver() {
+	protected void tryAttachUrlObserver() {
 		FermataWebView web = getWebView();
 		WebBrowserAddon addon = getAddon();
 		if ((web != null) && (addon != null)) attachUrlObserver(web, addon);

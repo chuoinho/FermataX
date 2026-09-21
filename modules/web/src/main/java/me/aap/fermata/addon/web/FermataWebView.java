@@ -225,6 +225,11 @@ public class FermataWebView extends WebView
 		sourceFragment = new java.lang.ref.WeakReference<>(fragment);
 	}
 
+	@Nullable
+	protected WebBrowserFragment getSourceFragment() {
+		return (sourceFragment == null) ? null : sourceFragment.get();
+	}
+
 	@Override protected void onAttachedToWindow() {
 		super.onAttachedToWindow();
 		WebBrowserFragment fragment = (sourceFragment == null) ? null : sourceFragment.get();

@@ -379,7 +379,40 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		return dispatchPhoneRequest(request, stillCurrent,
 				destinationId -> openFromPhone(destinationId, stillCurrent),
 				typed -> openWebFromPhone(typed, stillCurrent),
-				typed -> openMediaFromPhone(typed, stillCurrent));
+				typed -> openMediaFromPhone(typed, stillCurrent),
+				typed -> openStremioFromPhone(typed, stillCurrent));
+	}
+
+	private FutureSupplier<OpenResult> openStremioFromPhone(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent) {
+		MainActivityDelegate captured = createdDelegate;
+		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if (!resumed || destroyed || (captured == null)) return completed(OpenResult.NOT_READY);
+		BooleanSupplier guard = () -> stillCurrent.getAsBoolean() && resumed && !destroyed &&
+				(createdDelegate == captured);
+		Promise<OpenResult> result = new Promise<>();
+		FermataApplication.get().getHandler().post(() -> {
+			if (!guard.getAsBoolean()) { result.complete(OpenResult.CANCELLED); return; }
+			AddonManager manager = AddonManager.get();
+			AddonInfo info = manager.getAddonInfo(R.id.stremio_fragment);
+			if ((info == null) || (manager.getAddonState(info) != AddonState.LOADED)) {
+				result.complete(OpenResult.NOT_READY); return;
+			}
+			captured.showFragmentWhenReadyGuarded(R.id.stremio_fragment, null, guard)
+					.onCompletion((opened, error) -> captured.post(() -> {
+				if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
+				else if (error != null) result.complete(OpenResult.FAILED);
+				else if (!Boolean.TRUE.equals(opened)) result.complete(OpenResult.NOT_READY);
+				else {
+					ActivityFragment fragment = captured.getActiveFragment();
+					if ((fragment == null) || (fragment.getFragmentId() != R.id.stremio_fragment) ||
+							!(fragment instanceof OpenOnCarRequestHandler handler))
+						result.complete(OpenResult.NOT_READY);
+					else result.complete(handler.openOnCar(request, guard));
+				}
+			}));
+		});
+		return result;
 	}
 
 	private FutureSupplier<OpenResult> openMediaFromPhone(OpenOnCarRequest request,
@@ -435,7 +468,19 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon,
 			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openWeb,
 			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openMedia) {
+		return dispatchPhoneRequest(request, stillCurrent, openAddon, openWeb, openMedia,
+				typed -> completed(OpenResult.NOT_READY));
+	}
+
+	static FutureSupplier<OpenResult> dispatchPhoneRequest(OpenOnCarRequest request,
+			BooleanSupplier stillCurrent, IntFunction<FutureSupplier<OpenResult>> openAddon,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openWeb,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openMedia,
+			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openStremio) {
 		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
+		if ((request.kind() == OpenOnCarKind.STREMIO_PLAYER) &&
+				(request.addonId() == R.id.stremio_fragment) && (request.payload() instanceof String))
+			return openStremio.apply(request);
 		if ((request.kind() == OpenOnCarKind.MEDIA_ITEM &&
 				request.payload() instanceof me.aap.fermata.auto.OpenOnCarMediaRouting.MediaItem) ||
 				(request.kind() == OpenOnCarKind.YOUTUBE_VIDEO && request.addonId() == R.id.youtube_fragment))

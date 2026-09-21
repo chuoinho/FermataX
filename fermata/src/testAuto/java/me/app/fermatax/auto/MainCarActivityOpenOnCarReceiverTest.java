@@ -65,4 +65,26 @@ public class MainCarActivityOpenOnCarReceiverTest {
 		assertEquals(OpenResult.NOT_READY, result);
 		assertEquals(0, addonContinuations.get());
 	}
+	@Test
+	public void stremioPlayerUsesItsDedicatedTypedContinuation() {
+		AtomicInteger addons = new AtomicInteger(), web = new AtomicInteger(), stremio = new AtomicInteger();
+		OpenOnCarRequest request = new OpenOnCarRequest(OpenOnCarKind.STREMIO_PLAYER,
+				me.aap.fermata.R.id.stremio_fragment, "https://web.stremio.com/#/player/fixture",
+				new OpenOnCarToken(1, 1, 1, 1, 1));
+
+		OpenResult result = MainCarActivity.dispatchPhoneRequest(request, () -> true,
+				id -> { addons.incrementAndGet(); return completed(OpenResult.OPENED); },
+				typed -> { web.incrementAndGet(); return completed(OpenResult.LOAD_DISPATCHED); },
+				typed -> { throw new AssertionError(); },
+				typed -> {
+					org.junit.Assert.assertSame(request, typed);
+					stremio.incrementAndGet();
+					return completed(OpenResult.LOAD_DISPATCHED);
+				}).peek();
+
+		assertEquals(OpenResult.LOAD_DISPATCHED, result);
+		assertEquals(0, addons.get());
+		assertEquals(0, web.get());
+		assertEquals(1, stremio.get());
+	}
 }

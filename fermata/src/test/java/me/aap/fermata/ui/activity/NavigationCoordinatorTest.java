@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.activity;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
@@ -24,11 +25,11 @@ public class NavigationCoordinatorTest {
 	}
 
 	@Test
-	public void controlSelectionUsesTheDedicatedControlRoute() throws Exception {
+	public void controlIsNotAPhoneTopLevelRoute() throws Exception {
 		String source = new String(Files.readAllBytes(repositoryRoot().resolve(
 				"fermata/src/main/java/me/aap/fermata/ui/activity/NavigationCoordinator.java")));
-		assertTrue(source.contains("if (destinationId == R.id.control_fragment)"));
-		assertTrue(source.contains("activity.showControl();"));
+		assertFalse(source.contains("R.id.control_fragment"));
+		assertFalse(source.contains("activity.showControl();"));
 	}
 
 	private static Path repositoryRoot() {

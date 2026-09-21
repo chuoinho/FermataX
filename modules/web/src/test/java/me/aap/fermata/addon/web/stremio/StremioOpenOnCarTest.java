@@ -26,6 +26,53 @@ public class StremioOpenOnCarTest {
 	}
 
 	@Test
+	public void transferablePlayerRouteRequiresTheExactHostedPlayerShape() {
+		assertTrue(StremioOpenOnCarPolicy.acceptsPlayerRoute(PLAYER));
+		assertFalse(StremioOpenOnCarPolicy.acceptsPlayerRoute(DETAIL));
+		assertFalse(StremioOpenOnCarPolicy.acceptsPlayerRoute(
+				"https://web.stremio.com/#/player"));
+		assertFalse(StremioOpenOnCarPolicy.acceptsPlayerRoute(
+				"https://web.stremio.com:444/#/player/fixture"));
+		assertFalse(StremioOpenOnCarPolicy.acceptsPlayerRoute(
+				"https://user@web.stremio.com/#/player/fixture"));
+		assertFalse(StremioOpenOnCarPolicy.acceptsPlayerRoute(
+				"https://web.stremio.example/#/player/fixture"));
+	}
+
+	@Test
+	public void captureRequiresCurrentForegroundPhoneSourceAndEnabledMode() {
+		Object web = new Object();
+		assertTrue(StremioOpenOnCarPolicy.isCurrentPhoneSource(true, true, true, true,
+				web, web, 9L, 9L));
+		assertFalse(StremioOpenOnCarPolicy.isCurrentPhoneSource(false, true, true, true,
+				web, web, 9L, 9L));
+		assertFalse(StremioOpenOnCarPolicy.isCurrentPhoneSource(true, false, true, true,
+				web, web, 9L, 9L));
+		assertFalse(StremioOpenOnCarPolicy.isCurrentPhoneSource(true, true, false, true,
+				web, web, 9L, 9L));
+		assertFalse(StremioOpenOnCarPolicy.isCurrentPhoneSource(true, true, true, false,
+				web, web, 9L, 9L));
+		assertFalse(StremioOpenOnCarPolicy.isCurrentPhoneSource(true, true, true, true,
+				web, new Object(), 9L, 9L));
+		assertFalse(StremioOpenOnCarPolicy.isCurrentPhoneSource(true, true, true, true,
+				web, web, 9L, 10L));
+	}
+
+	@Test
+	public void fullMainFramePlayerNavigationIsEligibleForPhoneInterception() {
+		assertTrue(StremioOpenOnCarPolicy.shouldInterceptMainFrameRoute(
+				PLAYER, true, true, true, true));
+		assertFalse(StremioOpenOnCarPolicy.shouldInterceptMainFrameRoute(
+				PLAYER, false, true, true, true));
+		assertFalse(StremioOpenOnCarPolicy.shouldInterceptMainFrameRoute(
+				PLAYER, true, false, true, true));
+		assertFalse(StremioOpenOnCarPolicy.shouldInterceptMainFrameRoute(
+				PLAYER, true, true, false, true));
+		assertFalse(StremioOpenOnCarPolicy.shouldInterceptMainFrameRoute(
+				PLAYER, true, true, true, false));
+	}
+
+	@Test
 	public void playerRouteLimitIs64KiBUtf8NotJavaCharacterCount() {
 		String prefix = "https://web.stremio.com/#/player/";
 		String boundary = prefix + "x".repeat(65536 - prefix.length());
@@ -59,6 +106,16 @@ public class StremioOpenOnCarTest {
 		StremioWebView web = allocate(StremioWebView.class);
 		web.loadFreshDocument(PLAYER);
 		assertNull(pendingRecovery(web));
+	}
+
+	@Test
+	public void cancellationClearsAQueuedTransferredPlayerRoute() throws Exception {
+		StremioWebView web = allocate(StremioWebView.class);
+		Field field = StremioWebView.class.getDeclaredField("pendingFreshDocumentUrl");
+		field.setAccessible(true);
+		field.set(web, PLAYER);
+		web.cancelTransferredPlayer();
+		assertNull(field.get(web));
 	}
 
 	@Test
