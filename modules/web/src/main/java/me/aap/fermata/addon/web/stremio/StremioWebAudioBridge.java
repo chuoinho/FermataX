@@ -12,6 +12,8 @@ import java.util.Locale;
 import java.util.Set;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.addon.web.audio.WebAudioJsSource;
+import me.aap.fermata.addon.web.audio.WebAudioProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
 import me.aap.utils.log.Log;
@@ -81,7 +83,7 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 	private void dispatchProfile() {
 		if (!installed || !acceptingDocument) return;
 		long generation = documentGeneration;
-		StremioWebAudioProfile profile = currentProfile();
+		WebAudioProfile profile = currentProfile();
 		web.post(() -> {
 			if (!installed || !acceptingDocument || (generation != documentGeneration) ||
 					!isCurrentHostedDocument()) return;
@@ -107,12 +109,12 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 		removeDocumentScript();
 	}
 
-	private StremioWebAudioProfile currentProfile() {
+	private WebAudioProfile currentProfile() {
 		try {
 			AudioEffectsProfile profile = profiles.load();
-			return StremioWebAudioProfile.from(profile);
+			return WebAudioProfile.from(profile);
 		} catch (RuntimeException error) {
-			return StremioWebAudioProfile.unity();
+			return WebAudioProfile.unity();
 		}
 	}
 
@@ -128,10 +130,6 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 
 	static boolean isAllowedOrigin(String origin) {
 		return ORIGIN.equals(origin);
-	}
-
-	static boolean isCurrentDocumentGeneration(long expected, long candidate) {
-		return expected == candidate;
 	}
 
 	private boolean isCurrentHostedDocument() {
@@ -151,37 +149,26 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 		}
 	}
 
-	static String shimSource(long generation, StremioWebAudioProfile initialProfile) {
+	static String updateProfileSource(long generation, WebAudioProfile profile) {
+		return WebAudioJsSource.updateProfileSource("__fermataStremioWebAudioV1", generation, profile);
+	}
+
+	static String teardownSource(long generation) {
+		return WebAudioJsSource.teardownSource("__fermataStremioWebAudioV1", generation);
+	}
+
+	static String shimSource(long generation, WebAudioProfile initialProfile) {
 		return String.format(Locale.ROOT, """
 			(function(){
 			  'use strict';
 			  if (window.top !== window || window.__fermataStremioWebAudioV1) return;
 			  var generation = %d;
-			  var initialProfile = %s;
-			  var VERSION = 1, MIN_DB = -15, MAX_DB = 15, MIN_PREAMP = -60;
-			  // One-octave canonical bands use Q=sqrt(2), derived from the adjacent 2:1 centers.
-			  var Q = Math.SQRT2;
+			  var profile = %s;
+			%s
 			  var ownership = new WeakMap(), activity = new WeakMap(), encrypted = new WeakSet();
 			  var active = null, observer = null, scheduled = false, disposed = false;
 			  var now = function(){ return (window.performance && performance.now) ? performance.now() : Date.now(); };
-			  var finite = Number.isFinite || function(v){ return typeof v === 'number' && isFinite(v); };
-			  var unity = function(){ return {v:VERSION,m:false,e:false,b:[0,0,0,0,0,0,0,0,0,0],p:0}; };
-			  var normalize = function(value){
-			    if (!value || value.v !== VERSION || typeof value.m !== 'boolean' ||
-			        typeof value.e !== 'boolean' || !Array.isArray(value.b) || value.b.length !== 10 ||
-			        !finite(value.p) || value.p < MIN_PREAMP || value.p > 0) return null;
-			    var bands = [];
-			    for (var i = 0; i < value.b.length; i++) {
-			      if (!finite(value.b[i]) || value.b[i] < MIN_DB || value.b[i] > MAX_DB) return null;
-			      bands.push(value.b[i]);
-			    }
-			    return {v:VERSION,m:value.m,e:value.e,b:bands,p:value.p};
-			  };
-			  var profile = normalize(initialProfile) || unity();
-			  var sourceOf = function(media){
-			    try { return String(media.currentSrc || media.src || ''); } catch (_) { return ''; }
-			  };
-			  var isBlob = function(source){ return source.slice(0, 5).toLowerCase() === 'blob:'; };
+			  profile = normalize(profile) || unity();
 			  var visible = function(media){
 			    try {
 			      var style = getComputedStyle(media), rect = media.getBoundingClientRect();
@@ -213,18 +200,6 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			    return winner;
 			  };
 			  var playerRoute = function(){ return String(location.hash || '').indexOf('#/player/') === 0; };
-			  var smooth = function(param, value, context){
-			    var stamp = context.currentTime;
-			    try { param.cancelScheduledValues(stamp); param.setTargetAtTime(value, stamp, 0.015); }
-			    catch (_) { try { param.value = value; } catch (ignored) {} }
-			  };
-			  var apply = function(owner){
-			    if (!owner || owner.closed) return;
-			    var enabled = profile.m && profile.e;
-			    smooth(owner.preamp.gain, enabled ? Math.pow(10, profile.p / 20) : 1, owner.context);
-			    for (var i = 0; i < owner.filters.length; i++)
-			      smooth(owner.filters[i].gain, enabled ? profile.b[i] : 0, owner.context);
-			  };
 			  var disconnect = function(node){ try { if (node) node.disconnect(); } catch (_) {} };
 			  var closeOwner = function(owner){
 			    if (!owner || owner.closed) return;
@@ -232,6 +207,7 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			    if (active === owner) active = null;
 			    disconnect(owner.source); disconnect(owner.preamp);
 			    for (var i = 0; i < owner.filters.length; i++) disconnect(owner.filters[i]);
+			    disconnect(owner.nen); disconnect(owner.bu);
 			    disconnect(owner.output);
 			    try { if (owner.context.state !== 'closed') owner.context.close(); } catch (_) {}
 			  };
@@ -247,8 +223,6 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			    }
 			    catch (_) { owner.resuming = false; }
 			  };
-			  // Initial attachment needs live playback. Once attached, a short pause or buffering
-			  // stall must retain the one allowed MediaElementSourceNode for this source generation.
 			  var retainsOwner = function(owner){
 			    var media = owner.media, source = sourceOf(media);
 			    return media.isConnected && !media.ended && !media.error &&
@@ -265,25 +239,22 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			      if (!Context) { owner.terminal = true; return; }
 			      owner.context = new Context();
 			      owner.source = owner.context.createMediaElementSource(selected.media);
-			      owner.preamp = owner.context.createGain(); owner.filters = [];
-			      for (var i = 0; i < 10; i++) {
-			        var filter = owner.context.createBiquadFilter(); filter.type = 'peaking';
-			        filter.frequency.value = [31,62,125,250,500,1000,2000,4000,8000,16000][i];
-			        filter.Q.value = Q; owner.filters.push(filter);
-			      }
-			      owner.output = owner.context.createGain(); owner.sourceKey = selected.source;
-			      owner.source.connect(owner.preamp); var node = owner.preamp;
-			      for (var j = 0; j < owner.filters.length; j++) { node.connect(owner.filters[j]); node = owner.filters[j]; }
-			      node.connect(owner.output); owner.output.connect(owner.context.destination);
-			      active = owner; apply(owner);
+			      var nodes = buildAudioNodes(owner.context);
+			      owner.preamp = nodes.preamp;
+			      owner.filters = nodes.filters;
+			      owner.nen = nodes.nen;
+			      owner.bu = nodes.bu;
+			      owner.output = nodes.output;
+			      owner.sourceKey = selected.source;
+			      owner.source.connect(owner.preamp);
+			      active = owner;
+			      apply(owner);
 			      resume(owner);
 			    } catch (_) { closeOwner(owner); }
 			  };
 			  var evaluate = function(){
 			    if (disposed) return;
 			    if (active) { if (!retainsOwner(active)) closeOwner(active); else { resume(active); return; } }
-			    // Do not create a browser-owned routing graph until processing is requested.
-			    // Once attached, disabled processing remains an in-graph unity path.
 			    if (!(profile.m && profile.e)) return;
 			    if (!playerRoute()) return;
 			    var selected = selectActive(); if (selected) attach(selected);
@@ -300,39 +271,35 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			    } else noteActivity(media);
 			    schedule();
 			  };
-			  var eventNames = ['play','playing','timeupdate','loadeddata','canplay','loadstart','emptied','ended','error','encrypted','webkitneedkey'];
-			  for (var e = 0; e < eventNames.length; e++) document.addEventListener(eventNames[e], onMedia, true);
-			  var start = function(){
-			    if (disposed || observer) return;
-			    var root = document.documentElement; if (!root) return;
-			    observer = new MutationObserver(schedule);
-			    observer.observe(root, {childList:true, subtree:true, attributes:true,
-			      attributeFilter:['src','style','class','hidden']}); schedule();
-			  };
-			  if (document.documentElement) start(); else addEventListener('DOMContentLoaded', start, {once:true});
-			  addEventListener('hashchange', schedule);
+			  var events = ['play','playing','timeupdate','loadeddata','canplay','loadstart','emptied','ended','error','encrypted','webkitneedkey'];
+			  for (var e = 0; e < events.length; e++) document.addEventListener(events[e], onMedia, true);
+			  observer = new MutationObserver(schedule);
+			  if (document.documentElement) observer.observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['src','style','class','hidden']});
+			  window.addEventListener('hashchange', schedule);
 			  var teardown = function(messageGeneration){
 			    if (messageGeneration !== generation || disposed) return false;
-			    disposed = true; if (observer) observer.disconnect(); if (active) closeOwner(active); return true;
+			    disposed = true;
+			    if (observer) { observer.disconnect(); observer = null; }
+			    window.removeEventListener('hashchange', schedule);
+			    closeOwner(active);
+			    return true;
 			  };
 			  addEventListener('pagehide', function(){ teardown(generation); }, {once:true});
-			  window.__fermataStremioWebAudioV1 = Object.freeze({version:VERSION,
-			    updateProfile:function(messageGeneration, value){
+			  window.__fermataStremioWebAudioV1 = Object.freeze({
+			    version: VERSION,
+			    status: function(){ return {r: active ? 'SUPPORTED_ACTIVE' : 'NO_MEDIA', m: profile.m, e: profile.e, p: profile.p, b: active ? active.filters[5].gain.value : null}; },
+			    updateProfile: function(messageGeneration, value){
 			      if (messageGeneration !== generation || disposed) return false;
-			      var next = normalize(value); if (!next) return false;
-			      profile = next; apply(active); schedule(); return true;
-			    }, teardown:teardown});
+			      var next = normalize(value);
+			      if (!next) return false;
+			      profile = next;
+			      apply(active);
+			      schedule();
+			      return true;
+			    },
+			    teardown: teardown
+			  });
 			})();
-			""", generation, initialProfile.toJavascriptObject());
-	}
-
-	static String updateProfileSource(long generation, StremioWebAudioProfile profile) {
-		return "(function(){var b=window.__fermataStremioWebAudioV1;return !!(b&&b.version===1&&" +
-				"b.updateProfile(" + generation + "," + profile.toJavascriptObject() + "));})();";
-	}
-
-	static String teardownSource(long generation) {
-		return "(function(){var b=window.__fermataStremioWebAudioV1;return !!(b&&b.version===1&&" +
-				"b.teardown(" + generation + "));})();";
+			""", generation, initialProfile.toJavascriptObject(), WebAudioJsSource.CORE_DSP_LOGIC);
 	}
 }

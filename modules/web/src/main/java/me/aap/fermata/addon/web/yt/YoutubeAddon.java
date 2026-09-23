@@ -71,10 +71,6 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final Pref<Supplier<String[]>> YT_BOOKMARKS = Pref.sa("YT_BOOKMARKS");
 	private static final Pref<Supplier<String>> VIDEO_SCALE = Pref.s("VIDEO_SCALE", VideoScale.CONTAIN::prefName);
 	private static final Pref<Supplier<String>> YT_LAST_URL = Pref.s("YT_LAST_URL", "https://m.youtube.com");
-	private static final Pref<BooleanSupplier> LEGACY_YT_SESSION_RESET_PENDING =
-			Pref.b("YT_SESSION_RESET_PENDING", false);
-	private static final Pref<LongSupplier> LEGACY_YT_SESSION_LEFT_AT =
-			Pref.l("YT_SESSION_LEFT_AT", 0L);
 	private static final Pref<BooleanSupplier> YT_SESSION_COLD =
 			Pref.b("YT_SESSION_COLD_V2", false);
 	private static final Pref<LongSupplier> YT_SESSION_SOFT_LEFT_AT =
@@ -141,9 +137,9 @@ public class YoutubeAddon extends WebBrowserAddon
 	@Override
 	public void install() {
 		getSharedPreferences().edit()
-				.remove(LEGACY_YT_SESSION_RESET_PENDING.getName())
-				.remove(LEGACY_YT_SESSION_LEFT_AT.getName())
-				.remove(YT_SESSION_COLD.getName())
+				.remove("YT_SESSION_RESET_PENDING")
+				.remove("YT_SESSION_LEFT_AT")
+				.remove("YT_SESSION_COLD_V2")
 				.remove("YT_RESUME_POS")
 				.remove("YT_RESUME_VIDEO_ID")
 				.apply();

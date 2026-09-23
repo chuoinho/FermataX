@@ -31,7 +31,10 @@ public class YoutubeWebClient extends FermataWebClient {
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {
 		MainActivityDelegate.get(view.getContext()).clearVoiceSelection();
-		if (view instanceof YoutubeWebView youtube) youtube.onMainFramePageStarted();
+		if (view instanceof YoutubeWebView youtube) {
+			youtube.onMainFramePageStarted();
+			youtube.evaluateJavascript(YoutubeScripts.PREFER_H264 + YoutubeScripts.ADBLOCK_CSS + YoutubeScripts.NETWORK_ADBLOCK, null);
+		}
 		super.onPageStarted(view, url, favicon);
 	}
 

@@ -3,7 +3,6 @@ package me.aap.fermata.addon.web.yt;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_ERR;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_EVENT;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_ENDED;
-import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_FOUND;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_FULLSCREEN_TAP;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PAUSED;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PLAYING;
@@ -14,8 +13,6 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_PLAYBACK_INTENT;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_NAVIGATION;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
@@ -53,21 +50,10 @@ public class YoutubeWebView extends FermataWebView {
 	private static final long VOICE_RESULTS_RETRY_MS = 350L;
 	private static final int RELOAD_AUDIO_MAX_ATTEMPTS = 20;
 	private static final long RELOAD_AUDIO_RETRY_MS = 300L;
-	private final Handler sponsorHandler = new Handler(Looper.getMainLooper());
 	private final YoutubeReloadCoordinator reloadCoordinator = new YoutubeReloadCoordinator();
 	private final YoutubeNavigationCoordinator navigation = new YoutubeNavigationCoordinator();
-	private FutureSupplier<List<SponsorBlockClient.Segment>> sponsorRequest;
-	private List<SponsorBlockClient.Segment> sponsorSegments = List.of();
-	private int sponsorSegmentIndex;
-	private int sponsorSkippedSegmentIndex = -1;
-	private long sponsorSkippedTargetMillis = -1L;
 	private long sponsorGeneration;
 	private String sponsorVideoId = "";
-	private boolean sponsorPlaybackPaused;
-	private Runnable sponsorCheck;
-	private Runnable sponsorRetry;
-	private int sponsorRetryAttempt;
-	private boolean sponsorLoadComplete;
 	private static final String PLAYBACK_SIGNAL_JS = YoutubeScripts.PLAYBACK_SIGNAL;
 	private static final String AD_SKIP_JS = YoutubeScripts.AD_SKIP;
 	private static final long MANUAL_FULLSCREEN_GESTURE_WINDOW_MS = 1_500L;
@@ -495,7 +481,6 @@ public class YoutubeWebView extends FermataWebView {
 		}
 		attachListeners((mediaEngine == null) ? 0L : mediaEngine.playbackGenerationSeed(), generation);
 		if (mediaEngine != null) mediaEngine.onPageLoaded(uri);
-		injectSponsorBlock();
 		configureAdSkip();
 		addFocusHighlight();
 		flushCookiesSoon();
@@ -534,14 +519,12 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void attachListeners(long seedGeneration, long sessionGeneration) {
-		String debug = BuildConfig.D ? "event(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
 		evaluateJavascript(String.format(Locale.ROOT, """
 				(function() {
 				  const scale = '%s';
 				  const state = window.__fermataVideoState || (window.__fermataVideoState = {});
 				  if (state.observer) state.observer.disconnect();
-				  if (state.urlTimer) clearInterval(state.urlTimer);
 				  state.lastUrl = location.href;
 				  state.lastTitlePage = '';
 				  state.lastEvent = 0;
@@ -595,7 +578,6 @@ public class YoutubeWebView extends FermataWebView {
 				    v.__fermataAttached = true;
 				    v.__fermataGeneration = window.__fermataPlaybackGeneration || 0;
 				    v.style.objectFit = scale;
-				    %s
 				    notifyState(v);
 				    v.addEventListener('playing', function() { emitState(%d, v); });
 				    v.addEventListener('pause', function() { emitState(%d, v); });
@@ -659,7 +641,7 @@ public class YoutubeWebView extends FermataWebView {
 				  }
 				  scan(document);
 				  bindObserver();
-				  state.urlTimer = setInterval(function() {
+				  function checkUrlChange() {
 				    if (state.lastUrl !== location.href) {
 				      state.lastUrl = location.href;
 				      state.lastTitlePage = '';
@@ -672,14 +654,36 @@ public class YoutubeWebView extends FermataWebView {
 				        generation: sessionGeneration,
 				        url: location.href
 				      }));
+				      scheduleScan(true);
 				      setTimeout(function() { scheduleScan(true); }, 250);
+				      retryTitle(location.href, 0);
 				      setTimeout(function() { retryTitle(location.href, 0); }, 250);
 				    }
-				  }, 750);
+				  }
+				  if (!window.__fermataSpaNavHooked) {
+				    window.__fermataSpaNavHooked = true;
+				    ['popstate', 'yt-navigate-finish', 'yt-page-data-updated'].forEach(function(evt) {
+				      window.addEventListener(evt, function() { setTimeout(checkUrlChange, 50); });
+				    });
+				    var origPush = history.pushState;
+				    if (origPush) {
+				      history.pushState = function() {
+				        origPush.apply(this, arguments);
+				        setTimeout(checkUrlChange, 50);
+				      };
+				    }
+				    var origReplace = history.replaceState;
+				    if (origReplace) {
+				      history.replaceState = function() {
+				        origReplace.apply(this, arguments);
+				        setTimeout(checkUrlChange, 50);
+				      };
+				    }
+				  }
 				})();""", scale, Math.max(0L, seedGeneration),
 				Math.max(0L, sessionGeneration), fullscreenTapEnabled,
 				JS_EVENT, PLAYBACK_SIGNAL_JS, YoutubeSelectionRouting.clickScript(JS_PLAYBACK_INTENT),
-				JS_VIDEO_PLAYING, JS_VIDEO_READY, debug, JS_VIDEO_PLAYING,
+				JS_VIDEO_PLAYING, JS_VIDEO_READY, JS_VIDEO_PLAYING,
 				JS_VIDEO_PAUSED, JS_VIDEO_ENDED, JS_VIDEO_FULLSCREEN_TAP,
 				JS_VIDEO_TOUCHED, JS_VIDEO_TOUCHED, JS_NAVIGATION), null);
 	}
@@ -687,15 +691,14 @@ public class YoutubeWebView extends FermataWebView {
 	void syncPlaybackState() {
 		evaluateJavascript(String.format(Locale.ROOT, """
 				(function() {
-				  %s
-			  var v = fermataActiveContentVideo();
+				  var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video');
 				  if (!v) return;
 				  if ((location.pathname !== '/watch') && !location.pathname.startsWith('/shorts/')) return;
-				  var signal = fermataVideoSignal(v);
+				  var signal = (window.__fermataVideoSignal && window.__fermataVideoSignal(v)) || '';
 				  if (!signal) return;
 				  if (!v.paused && !v.ended) %s(%d, signal);
 				  else %s(%d, signal);
-				})();""", PLAYBACK_SIGNAL_JS, JS_EVENT, JS_VIDEO_PLAYING, JS_EVENT,
+				})();""", JS_EVENT, JS_VIDEO_PLAYING, JS_EVENT,
 				JS_VIDEO_READY), null);
 	}
 
@@ -724,9 +727,8 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void applyPlaybackGeneration(long generation, boolean syncState) {
-		String script = PLAYBACK_SIGNAL_JS +
-				"window.__fermataPlaybackGeneration = " + Math.max(0L, generation) + ";" +
-				"var v = fermataActiveContentVideo(); if (v) v.__fermataGeneration = " +
+		String script = "window.__fermataPlaybackGeneration = " + Math.max(0L, generation) + ";" +
+				"var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video'); if (v) v.__fermataGeneration = " +
 				Math.max(0L, generation) + ";" +
 				"var a = window.__fermataAdState; if (a && a.rebindGeneration) " +
 				"a.rebindGeneration();";
@@ -735,60 +737,46 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void onYoutubePlaybackPaused() {
-		sponsorPlaybackPaused = true;
-		if (sponsorCheck != null) {
-			sponsorHandler.removeCallbacks(sponsorCheck);
-			sponsorCheck = null;
-		}
 	}
 
 	void onYoutubePlaybackResumed() {
-		sponsorPlaybackPaused = false;
 		if (reloadAudioPageCommitted)
 			restoreReloadAudio(0, reloadAudioGeneration);
 		if (autoNextAudioRestorePending)
 			restoreAutoNextAudio(0, autoNextAudioGeneration);
-		if (sponsorSegments.isEmpty() || sponsorVideoId.isEmpty()) return;
-		scheduleSponsorCheck(0L, sponsorGeneration, sponsorVideoId);
-	}
-
-	private void seekSponsorSegment(YoutubePlaybackSession.Snapshot playback,
-			String videoId, long targetMillis) {
-		long generation = playback.generation();
-		evaluateJavascript(sponsorSeekScript(generation, videoId, targetMillis), null);
 	}
 
 	static String sponsorSeekScript(long generation, String videoId, long targetMillis) {
-		return PLAYBACK_SIGNAL_JS +
-				"(function(expectedGeneration, expectedVideoId, targetMillis) {" +
-				"var v = fermataActiveContentVideo();" +
+		return "(function(expectedGeneration, expectedVideoId, targetMillis) {" +
+				"var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video');" +
 				"if (!v || v.paused || v.ended || " +
 				"Number(v.__fermataGeneration || 0) !== expectedGeneration) return;" +
 				"var url = new URL(location.href);" +
-				"if (fermataPageVideoId() !== expectedVideoId) return;" +
+				"var pageId = (window.__fermataPageVideoId && window.__fermataPageVideoId());" +
+				"if (pageId && pageId !== expectedVideoId) return;" +
 				"v.currentTime = targetMillis / 1000;" +
 				"}) (" + Math.max(0L, generation) + ", " + JSONObject.quote(videoId) + ", " +
 				Math.max(0L, targetMillis) + ");";
 	}
 
 	void skipCurrentAd(long generation, String videoId) {
-		evaluateJavascript(PLAYBACK_SIGNAL_JS +
-				"(function(expectedGeneration, expectedVideoId) {" +
+		evaluateJavascript("(function(expectedGeneration, expectedVideoId) {" +
 				"var state = window.__fermataAdState;" +
+				"var pageId = (window.__fermataPageVideoId && window.__fermataPageVideoId());" +
 				"if (!state || !state.skipNow || " +
 				"Number(window.__fermataPlaybackGeneration || 0) !== expectedGeneration || " +
-				"fermataPageVideoId() !== expectedVideoId) return;" +
+				"(pageId && pageId !== expectedVideoId)) return;" +
 				"state.skipNow();" +
 				"})(" + Math.max(0L, generation) + ", " + JSONObject.quote(videoId) + ");", null);
 	}
 
 	void retryCurrentAd(long generation, String videoId) {
-		evaluateJavascript(PLAYBACK_SIGNAL_JS +
-				"(function(expectedGeneration, expectedVideoId) {" +
+		evaluateJavascript("(function(expectedGeneration, expectedVideoId) {" +
 				"var state = window.__fermataAdState;" +
+				"var pageId = (window.__fermataPageVideoId && window.__fermataPageVideoId());" +
 				"if (!state || !state.retryAd || " +
 				"Number(window.__fermataPlaybackGeneration || 0) !== expectedGeneration || " +
-				"fermataPageVideoId() !== expectedVideoId) return;" +
+				"(pageId && pageId !== expectedVideoId)) return;" +
 				"state.retryAd();" +
 				"})(" + Math.max(0L, generation) + ", " + JSONObject.quote(videoId) + ");", null);
 	}
@@ -902,8 +890,7 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	static String audibleRestoreScript(String videoId, int volume) {
-		return PLAYBACK_SIGNAL_JS +
-				"(function(expectedId,volume){" +
+		return "(function(expectedId,volume){" +
 				"if(fermataPageVideoId()!==expectedId)return false;" +
 				"var v=fermataActiveContentVideo();if(!v)return false;" +
 				"var p=document.querySelector('#movie_player');" +
@@ -915,177 +902,52 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void loadSponsorBlock(me.aap.fermata.addon.web.yt.YoutubeItem item) {
-		if ((item == null) || (item.videoId().equals(sponsorVideoId) &&
-				((sponsorRequest != null) || (sponsorRetry != null) || sponsorLoadComplete))) return;
+		if ((item == null) || item.videoId().equals(sponsorVideoId)) return;
 		cancelSponsorBlock();
 		if (!getAddon().getSponsorBlockEnabled()) return;
 
 		java.util.Set<SponsorBlockClient.Category> categories =
 				YoutubeSponsorBlock.getCategories(getAddon().getPreferenceStore());
 		if (categories.isEmpty()) return;
-		long generation = ++sponsorGeneration;
-		String videoId = sponsorVideoId = item.videoId();
-		sponsorPlaybackPaused = false;
-		SponsorBlockClient.Request request = new SponsorBlockClient.Request(item.videoId(), categories);
-		requestSponsorBlock(request, generation, videoId);
-	}
-
-	private void requestSponsorBlock(SponsorBlockClient.Request request, long generation,
-			String videoId) {
-		FutureSupplier<List<SponsorBlockClient.Segment>> future =
-				getAddon().getSponsorBlockController().getSegments(request).main();
-		sponsorRequest = future;
-		future.onCompletion((segments, error) -> {
-			if (sponsorRequest == future) sponsorRequest = null;
-			if (!isSponsorGeneration(generation, videoId)) return;
-			if (error != null) {
-				Log.d(error, "SponsorBlock unavailable");
-				if (SponsorBlockClient.isRetryableFailure(error)) {
-					scheduleSponsorRetry(request, generation, videoId);
-				} else {
-					sponsorLoadComplete = true;
-				}
-				return;
-			}
-			sponsorRetryAttempt = 0;
-			sponsorLoadComplete = true;
-			sponsorSegments = segments;
-			sponsorSegmentIndex = 0;
-			scheduleSponsorCheck(0L, generation, videoId);
-		});
-	}
-
-	private void scheduleSponsorRetry(SponsorBlockClient.Request request, long generation,
-			String videoId) {
-		long delay = SponsorBlockSchedule.retryDelayMillis(sponsorRetryAttempt++);
-		if (delay < 0L) return;
-		if (sponsorRetry != null) sponsorHandler.removeCallbacks(sponsorRetry);
-		sponsorRetry = () -> {
-			sponsorRetry = null;
-			if (!isSponsorGeneration(generation, videoId)) return;
-			if (!isYoutubePlaybackOwned(videoId)) {
-				cancelSponsorBlock();
-				return;
-			}
-			requestSponsorBlock(request, generation, videoId);
-		};
-		sponsorHandler.postDelayed(sponsorRetry, delay);
+		org.json.JSONArray catArr = new org.json.JSONArray();
+		for (SponsorBlockClient.Category c : categories) catArr.put(c.apiName());
+		evaluateJavascript(YoutubeScripts.sponsorBlock(catArr.toString()), null);
+		sponsorGeneration++;
+		sponsorVideoId = item.videoId();
 	}
 
 	protected boolean requestFullScreen() {
-		evaluateJavascript(PLAYBACK_SIGNAL_JS + "var v = fermataActiveContentVideo();\n" +
-				"if (v && ('webkitRequestFullscreen' in v)) v.webkitRequestFullscreen();\n" +
-				"else if (v && ('requestFullscreen' in v)) v.requestFullscreen();\n" +
-				"else " + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen not found in ' + v);", null);
+		evaluateJavascript("""
+				(function() {
+				  var BUTTON = [
+				    '.ytp-fullscreen-button',
+				    'button.fullscreen-icon',
+				    '[data-e2e*="fullscreen"]',
+				    'button[aria-label*="oàn màn hình"]',
+				    'button[aria-label*="ullscreen"]',
+				    'button[title*="oàn màn hình"]',
+				    'button[title*="ullscreen"]'
+				  ].join(',');
+				  var b = document.querySelector(BUTTON);
+				  if (b) {
+				    b.click();
+				    return;
+				  }
+				  var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video');
+				  var target = (v && v.closest) ? (v.closest('#movie_player') || v.closest('.html5-video-player') || v) : v;
+				  if (target && ('webkitRequestFullscreen' in target)) target.webkitRequestFullscreen();
+				  else if (target && ('requestFullscreen' in target)) target.requestFullscreen();
+				  else if (v && ('webkitRequestFullscreen' in v)) v.webkitRequestFullscreen();
+				  else if (v && ('requestFullscreen' in v)) v.requestFullscreen();
+				  else """ + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen not found in ' + target);" + """
+				})();
+				""", null);
 		return true;
 	}
 
 	private void cancelSponsorBlock() {
 		sponsorGeneration++;
-		if (sponsorRequest != null) {
-			sponsorRequest.cancel();
-			sponsorRequest = null;
-		}
-		if (sponsorCheck != null) {
-			sponsorHandler.removeCallbacks(sponsorCheck);
-			sponsorCheck = null;
-		}
-		if (sponsorRetry != null) {
-			sponsorHandler.removeCallbacks(sponsorRetry);
-			sponsorRetry = null;
-		}
-		sponsorRetryAttempt = 0;
-		sponsorLoadComplete = false;
-		sponsorSegments = List.of();
-		sponsorSegmentIndex = 0;
-		sponsorSkippedSegmentIndex = -1;
-		sponsorSkippedTargetMillis = -1L;
 		sponsorVideoId = "";
-	}
-
-	private void scheduleSponsorCheck(long delayMillis, long generation, String videoId) {
-		if (!isSponsorGeneration(generation, videoId) || sponsorSegments.isEmpty()) return;
-		if (sponsorCheck != null) sponsorHandler.removeCallbacks(sponsorCheck);
-		sponsorCheck = () -> {
-			sponsorCheck = null;
-			if (!isSponsorGeneration(generation, videoId)) return;
-			if (!isYoutubePlaybackOwned(videoId)) {
-				cancelSponsorBlock();
-				return;
-			}
-			if (!isYoutubePlaybackActive(videoId)) {
-				return;
-			}
-			getPosition().main().onSuccess(position -> {
-				if (!isSponsorGeneration(generation, videoId) || sponsorSegments.isEmpty() ||
-						!isYoutubePlaybackActive(videoId)) return;
-				sponsorSegmentIndex = SponsorBlockSchedule.findSegmentIndex(sponsorSegments, position);
-				if (sponsorSegmentIndex == sponsorSkippedSegmentIndex) {
-					if (position >= Math.max(0L, sponsorSkippedTargetMillis - 500L)) {
-						sponsorSegmentIndex++;
-					} else {
-						sponsorSkippedSegmentIndex = -1;
-						sponsorSkippedTargetMillis = -1L;
-					}
-				} else if (sponsorSkippedSegmentIndex >= 0) {
-					sponsorSkippedSegmentIndex = -1;
-					sponsorSkippedTargetMillis = -1L;
-				}
-				if (sponsorSegmentIndex >= sponsorSegments.size()) {
-					scheduleSponsorCheck(SponsorBlockSchedule.POST_SEGMENT_RESCAN_MS,
-							generation, videoId);
-					return;
-				}
-				SponsorBlockClient.Segment segment = sponsorSegments.get(sponsorSegmentIndex);
-				long start = SponsorBlockSchedule.millis(segment.startSeconds());
-				long end = SponsorBlockSchedule.millis(segment.endSeconds());
-				long trigger = Math.max(0L, start - 250L);
-				if (position >= trigger) {
-					getDuration().main().onSuccess(duration -> {
-						if (!isSponsorGeneration(generation, videoId) ||
-								!isYoutubePlaybackActive(videoId)) return;
-						if (duration <= 0L) {
-							scheduleSponsorCheck(1000L, generation, videoId);
-							return;
-						}
-						long clampedEnd = Math.min(end, duration);
-						long target = Math.min(clampedEnd, Math.max(0L, duration - 250L));
-						if ((clampedEnd > position) && (target > (position + 100L))) {
-							YoutubePlaybackSession.Snapshot playback =
-									mediaEngine.playbackSnapshot(videoId);
-							if (playback == null) {
-								scheduleSponsorCheck(250L, generation, videoId);
-								return;
-							}
-							seekSponsorSegment(playback, videoId, target);
-							sponsorSkippedSegmentIndex = sponsorSegmentIndex;
-							sponsorSkippedTargetMillis = target;
-						}
-						sponsorSegmentIndex++;
-						scheduleSponsorCheck(250L, generation, videoId);
-					}).onFailure(error -> scheduleSponsorCheck(1000L, generation, videoId));
-				} else {
-					getSpeed().main().onSuccess(speed -> scheduleSponsorCheck(
-							SponsorBlockSchedule.delayUntil(position, trigger, speed), generation, videoId))
-							.onFailure(error -> scheduleSponsorCheck(
-									SponsorBlockSchedule.delayUntil(position, trigger, 1f), generation, videoId));
-				}
-			}).onFailure(error -> scheduleSponsorCheck(1000L, generation, videoId));
-		};
-		sponsorHandler.postDelayed(sponsorCheck, Math.max(0L, delayMillis));
-	}
-
-	private boolean isSponsorGeneration(long generation, String videoId) {
-		return (generation == sponsorGeneration) && videoId.equals(sponsorVideoId);
-	}
-
-	private boolean isYoutubePlaybackOwned(String videoId) {
-		return (mediaEngine != null) && mediaEngine.ownsPlayback(videoId);
-	}
-
-	private boolean isYoutubePlaybackActive(String videoId) {
-		return !sponsorPlaybackPaused && isYoutubePlaybackOwned(videoId) &&
-				mediaEngine.isPlaybackActive();
 	}
 
 	@Override
@@ -1101,7 +963,18 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void configureAdSkip() {
-		evaluateJavascript(PLAYBACK_SIGNAL_JS + AD_SKIP_JS +
+		String sbScript = "";
+		if (getAddon().getSponsorBlockEnabled()) {
+			java.util.Set<SponsorBlockClient.Category> categories =
+					YoutubeSponsorBlock.getCategories(getAddon().getPreferenceStore());
+			if (!categories.isEmpty()) {
+				org.json.JSONArray catArr = new org.json.JSONArray();
+				for (SponsorBlockClient.Category c : categories) catArr.put(c.apiName());
+				sbScript = YoutubeScripts.sponsorBlock(catArr.toString());
+			}
+		}
+		evaluateJavascript(YoutubeScripts.PREFER_H264 + YoutubeScripts.ADBLOCK_CSS + YoutubeScripts.NETWORK_ADBLOCK + YoutubeScripts.NONSTOP +
+				sbScript + PLAYBACK_SIGNAL_JS + AD_SKIP_JS +
 				"window.__fermataAdState.configure(" + getAddon().skipAd() + ", " +
 				YoutubeJsInterface.JS_AD_SIGNAL + ");", null);
 	}
@@ -1149,13 +1022,13 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void play() {
-		loadUrl("javascript:" + PLAYBACK_SIGNAL_JS + "var v = fermataActiveContentVideo(); if (v != null) v.play();");
+		evaluateJavascript("var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video'); if (v != null) v.play();", null);
 	}
 
 	/** Starts a user/media-session requested play audibly without overriding later mute changes. */
 	void playAudible() {
-		evaluateJavascript(PLAYBACK_SIGNAL_JS +
-				"(function(){var v=fermataActiveContentVideo();if(!v)return false;" +
+		evaluateJavascript(
+				"(function(){var v=(window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video');if(!v)return false;" +
 				"var p=document.querySelector('#movie_player');" +
 				"try{if(p&&typeof p.unMute==='function')p.unMute();" +
 				"if(v.volume<=0){v.volume=1;if(p&&typeof p.setVolume==='function')p.setVolume(100);}" +
@@ -1168,22 +1041,23 @@ public class YoutubeWebView extends FermataWebView {
 	void silenceRejectedPlayback(String signal) {
 		YoutubePlaybackMetadata.Signal parsed = YoutubePlaybackMetadata.parse(signal, getUrl());
 		if (parsed.videoId().isEmpty()) return;
-		evaluateJavascript(PLAYBACK_SIGNAL_JS +
+		evaluateJavascript(
 				"(function(expectedId,expectedGeneration){" +
-				"if(fermataPageVideoId()!==expectedId||" +
+				"var pageId = (window.__fermataPageVideoId && window.__fermataPageVideoId());" +
+				"if((pageId && pageId!==expectedId)||" +
 				"Number(window.__fermataPlaybackGeneration||0)!==expectedGeneration)return false;" +
-				"var v=fermataActiveContentVideo();if(!v)return false;" +
-				"v.pause();v.muted=true;return true;})(" +
+				"var v=(window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video');if(!v)return false;" +
+				"window.__fermataPauseOk=true;try{v.pause();}finally{window.__fermataPauseOk=false;}" +
+				"v.muted=true;return true;})(" +
 				JSONObject.quote(parsed.videoId()) + "," + Math.max(0L, parsed.generation()) + ")", null);
 	}
 
 	void pause() {
-		loadUrl("javascript:" + PLAYBACK_SIGNAL_JS + "var v = fermataActiveContentVideo(); if (v != null) v.pause();");
+		evaluateJavascript("window.__fermataPauseOk=true;try{var v=(window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video');if(v!=null)v.pause();}finally{window.__fermataPauseOk=false;}", null);
 	}
 
 	void stop() {
-		loadUrl("javascript:" + PLAYBACK_SIGNAL_JS + "var v = fermataActiveContentVideo();\n" +
-				"if (v != null) { v.currentTime = 0; v.pause(); }");
+		evaluateJavascript("window.__fermataPauseOk=true;try{var v=(window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video');if(v!=null){v.currentTime=0;v.pause();}}finally{window.__fermataPauseOk=false;}", null);
 	}
 
 	void prev() {
@@ -1204,14 +1078,15 @@ public class YoutubeWebView extends FermataWebView {
 
 	FutureSupplier<Long> getContentDuration() {
 		Promise<Long> promise = new Promise<>();
-		evaluateJavascript("(function(){" + PLAYBACK_SIGNAL_JS +
-				"if(!fermataPlaybackIdentityMatchesPage())return 0;" +
+		evaluateJavascript("(function(){" +
+				"var matches = window.__fermataPageVideoId ? (window.__fermataPageVideoId() !== '') : true;" +
+				"if(!matches)return 0;" +
 				"var state=window.__fermataAdState;" +
 				"var player=document.querySelector('#movie_player,.html5-video-player');" +
 				"var showing=!!((state&&state.lastShowing)||" +
 				"(player&&player.classList.contains('ad-showing')));" +
 				"if(showing)return state?Number(state.contentDuration||0):0;" +
-				"var v=fermataActiveContentVideo();if(!v)return 0;" +
+				"var v=(window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video');if(!v)return 0;" +
 				"var duration=Number(v.duration||0);" +
 				"if(state&&duration>0){state.contentDuration=duration;" +
 				"state.contentSource=v.currentSrc||v.src||'';}return duration;})()", value -> {
@@ -1241,7 +1116,7 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void setHighestVideoQuality() {
-		loadUrl("javascript:\n" +
+		evaluateJavascript(
 				"(function() {\n" +
 				YoutubeScripts.CLEAR_HIGHEST_VIDEO_QUALITY +
 				"  clearFermataQ();\n" +
@@ -1267,7 +1142,7 @@ public class YoutubeWebView extends FermataWebView {
 				"  function install() {\n" +
 				"    var p = getPlayer();\n" +
 				"    if (!p || typeof p.addEventListener !== 'function') {\n" +
-				"      if (++state.attempts < 50) state.timeout = setTimeout(install, 200);\n" +
+				"      if (++state.attempts < 20) state.timeout = setTimeout(install, 200);\n" +
 				"      return;\n" +
 				"    }\n" +
 				"    state.player = p;\n" +
@@ -1278,21 +1153,21 @@ public class YoutubeWebView extends FermataWebView {
 				"    applyHighest(p);\n" +
 				"  }\n" +
 				"  install();\n" +
-				"})();");
+				"})();", null);
 	}
 
 	void clearHighestVideoQuality() {
-		loadUrl("javascript:\n" +
+		evaluateJavascript(
 				"(function() {\n" +
 				YoutubeScripts.CLEAR_HIGHEST_VIDEO_QUALITY +
 				"  clearFermataQ();\n" +
-				"})();");
+				"})();", null);
 	}
 
 	private FutureSupplier<Long> getMilliseconds(String value) {
 		Promise<Long> p = new Promise<>();
-			evaluateJavascript(
-				"(function(){" + PLAYBACK_SIGNAL_JS + "var v = fermataActiveContentVideo(); return (v != null) ? v." + value +
+		evaluateJavascript(
+				"(function(){var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video'); return (v != null) ? v." + value +
 						" : 0})();",
 				v -> {
 					try {
@@ -1307,17 +1182,14 @@ public class YoutubeWebView extends FermataWebView {
 
 	void setPosition(long position) {
 		double pos = position / 1000f;
-		loadUrl("javascript:" + PLAYBACK_SIGNAL_JS + "var v = fermataActiveContentVideo(); if (v != null) v.currentTime = " +
-				pos + ";");
+		evaluateJavascript("var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video'); if (v != null) v.currentTime = " +
+				pos + ";", null);
 	}
 
 	FutureSupplier<Float> getSpeed() {
 		Promise<Float> p = new Promise<>();
-			evaluateJavascript(
-				"(function(){" + PLAYBACK_SIGNAL_JS + "var v = fermataActiveContentVideo(); return (v != null) ? v" +
-						".playbackRate" +
-						" " +
-						": 0})();",
+		evaluateJavascript(
+				"(function(){var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video'); return (v != null) ? v.playbackRate : 1})();",
 				v -> {
 					try {
 						p.complete(Float.parseFloat(v));
@@ -1330,15 +1202,13 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void setSpeed(float speed) {
-		loadUrl("javascript:" + PLAYBACK_SIGNAL_JS + "var v = fermataActiveContentVideo(); if (v != null) v.playbackRate =" +
-				" " +
-				speed + ";");
+		evaluateJavascript("var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video'); if (v != null) v.playbackRate = " +
+				speed + ";", null);
 	}
 
 	FutureSupplier<String> getVideoTitle() {
 		Promise<String> p = new Promise<>();
-		evaluateJavascript("(function(){" + PLAYBACK_SIGNAL_JS +
-				"return fermataVideoTitle();})()",
+		evaluateJavascript("(function(){return (window.__fermataVideoTitle && window.__fermataVideoTitle()) || document.title || '';})()",
 				value -> p.complete(YoutubeScripts.decodeJavascriptString(value)));
 		return p;
 	}
@@ -1346,7 +1216,6 @@ public class YoutubeWebView extends FermataWebView {
 	void setScale(YoutubeAddon.VideoScale scale) {
 		getAddon().setScale(scale);
 		String p = scale.prefName();
-		evaluateJavascript(PLAYBACK_SIGNAL_JS +
-				"var v = fermataActiveContentVideo(); if (v) v.style.objectFit = '" + p + "';", null);
+		evaluateJavascript("var v = (window.__fermataActiveVideo && window.__fermataActiveVideo()) || document.querySelector('video'); if (v) v.style.objectFit = '" + p + "';", null);
 	}
 }

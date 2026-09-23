@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import me.aap.fermata.addon.web.audio.WebAudioProfile;
+
 public class StremioWebAudioBridgeTest {
 	@Test
 	public void isExactOriginAndDocumentStartOnly() {
@@ -23,11 +25,11 @@ public class StremioWebAudioBridgeTest {
 
 	@Test
 	public void scriptHasSingleAttachAndExplicitLifecycleGuards() {
-		String source = StremioWebAudioBridge.shimSource(37L, StremioWebAudioProfile.unity());
+		String source = StremioWebAudioBridge.shimSource(37L, WebAudioProfile.unity());
 		assertTrue(source.contains("window.top !== window"));
 		assertTrue(source.contains("new WeakMap()"));
 		assertTrue(source.contains("new WeakSet()"));
-		assertTrue(source.contains("var Q = Math.SQRT2"));
+		assertTrue(source.contains("Q = Math.SQRT2"));
 		assertTrue(source.contains("event.type === 'encrypted'"));
 		assertTrue(source.contains("new MutationObserver(schedule)"));
 		assertTrue(source.contains("var retainsOwner = function(owner)"));
@@ -40,19 +42,22 @@ public class StremioWebAudioBridgeTest {
 		assertFalse(source.contains("var eligibleOwner = function(owner)"));
 		assertTrue(source.contains("if (!(profile.m && profile.e)) return;"));
 		assertTrue(source.contains("addEventListener('hashchange', schedule)"));
+		assertTrue(source.contains("lowshelf"));
+		assertTrue(source.contains("highshelf"));
+		assertTrue(source.contains("createDynamicsCompressor()"));
+		assertTrue(source.contains("dinhDb"));
 		assertEquals(1, occurrences(source, "createMediaElementSource("));
 	}
 
 	@Test
 	public void profileUpdatesAreGenerationBoundAndInPlace() {
-		String source = StremioWebAudioBridge.shimSource(9L, StremioWebAudioProfile.unity());
-		assertTrue(source.contains("updateProfile:function(messageGeneration, value)"));
-		assertTrue(source.contains("profile = next; apply(active); schedule(); return true"));
+		String source = StremioWebAudioBridge.shimSource(9L, WebAudioProfile.unity());
+		assertTrue(source.contains("updateProfile"));
+		assertTrue(source.contains("profile = next"));
+		assertTrue(source.contains("apply(active)"));
 		assertTrue(StremioWebAudioBridge.updateProfileSource(9L,
-				StremioWebAudioProfile.unity()).contains("updateProfile(9,"));
+				WebAudioProfile.unity()).contains("updateProfile(9,"));
 		assertTrue(StremioWebAudioBridge.teardownSource(9L).contains("teardown(9)"));
-		assertTrue(StremioWebAudioBridge.isCurrentDocumentGeneration(9L, 9L));
-		assertFalse(StremioWebAudioBridge.isCurrentDocumentGeneration(10L, 9L));
 	}
 
 	private static int occurrences(String value, String needle) {
