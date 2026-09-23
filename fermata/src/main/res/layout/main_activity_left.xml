@@ -13,10 +13,6 @@
         layout="@layout/phone_open_on_car_strip"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="6dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -24,10 +20,9 @@
     <View
         android:id="@+id/phone_header_divider"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@null"
+        android:layout_height="1dp"
+        android:background="@drawable/phone_header_divider"
         android:importantForAccessibility="no"
-        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/phone_open_on_car_strip" />
@@ -37,7 +32,7 @@
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         app:labelVisibilityMode="selected"
-        app:layout_constraintBottom_toTopOf="@id/phone_bottom_menu"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/phone_header_divider"
         app:layout_constraintVertical_weight="1"
@@ -106,16 +101,15 @@
         style="@style/Widget.MaterialComponents.BottomNavigationView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@drawable/phone_bottom_menu_bg"
+        android:background="?android:colorPrimary"
         android:theme="@style/PhoneBottomMenuThemeOverlay"
         android:visibility="gone"
-        app:elevation="8dp"
         app:itemIconTint="@color/aa_nav_icon_tint"
         app:itemTextColor="@color/aa_nav_icon_tint"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/nav_bar"
         app:menu="@menu/phone_bottom_menu" />
 
     <androidx.core.widget.ContentLoadingProgressBar

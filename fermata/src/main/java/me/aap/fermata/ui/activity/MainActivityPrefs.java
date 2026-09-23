@@ -33,7 +33,6 @@ public interface MainActivityPrefs
 	int THEME_STAR_WARS = 4;
 	int THEME_PURPLE = 5;
 	int THEME_CLASSIC = 6;
-	int THEME_MATERIAL_YOU = 7;
 	int CLOCK_POS_NONE = 0;
 	int CLOCK_POS_LEFT = 1;
 	int CLOCK_POS_RIGHT = 2;

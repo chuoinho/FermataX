@@ -39,7 +39,7 @@ final class InterfacePrefsBuilder {
 			o.formatSubtitle = true;
 			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_system,
 					R.string.theme_black, R.string.theme_star_wars, R.string.theme_purple,
-					R.string.theme_classic, R.string.theme_material_you};
+					R.string.theme_classic};
 		});
 		if ((pgUpDown != null) && !BuildConfig.AUTO) {
 			set.addBooleanPref(o -> {

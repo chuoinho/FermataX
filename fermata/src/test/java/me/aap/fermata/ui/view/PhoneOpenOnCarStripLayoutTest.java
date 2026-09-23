@@ -30,8 +30,7 @@ public class PhoneOpenOnCarStripLayoutTest {
 		assertTrue(strip.contains("style=\"?attr/appSeekBarStyle\""));
 		assertTrue(strip.contains("app:layout_constraintStart_toStartOf=\"parent\""));
 		assertTrue(strip.contains("app:layout_constraintEnd_toEndOf=\"parent\""));
-		assertTrue(strip.contains("android:layout_height=\"wrap_content\"") ||
-				strip.contains("android:layout_height=\"228dp\""));
+		assertTrue(strip.contains("android:layout_height=\"228dp\""));
 
 		for (String layout : new String[] { "main_activity_left.xml", "main_activity_right.xml" }) {
 			String shell = resource(layout);
@@ -59,6 +58,8 @@ public class PhoneOpenOnCarStripLayoutTest {
 			String divider = element(shell, "phone_header_divider");
 
 			assertTrue(divider.contains("android:layout_width=\"0dp\""));
+			assertTrue(divider.contains("android:layout_height=\"1dp\""));
+			assertTrue(divider.contains("android:background=\"@drawable/phone_header_divider\""));
 			assertTrue(divider.contains("app:layout_constraintStart_toStartOf=\"parent\""));
 			assertTrue(divider.contains("app:layout_constraintEnd_toEndOf=\"parent\""));
 			assertTrue(divider.contains("app:layout_constraintTop_toBottomOf=\"@id/phone_open_on_car_strip\""));
