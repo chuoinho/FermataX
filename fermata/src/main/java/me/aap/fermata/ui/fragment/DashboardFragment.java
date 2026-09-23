@@ -5,8 +5,10 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.TypedValue;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -43,6 +45,7 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.smarttop.SmartTopAction;
 import me.aap.fermata.ui.smarttop.SmartTopBinder;
 import me.aap.fermata.ui.smarttop.SmartTopCoordinator;
@@ -535,6 +538,26 @@ public class DashboardFragment extends MainActivityFragment
 				return;
 			}
 			holder.icon.setImageResource(card.icon);
+			boolean isCar = activity.isCarActivity();
+			int currentTheme = MainActivityPrefs.get().getThemePref(isCar);
+			if ((currentTheme == MainActivityPrefs.THEME_MATERIAL_YOU) && (card.item != null)) {
+				int color = AddonUiMetadata.itemColor(card.item.name, card.item.addonInfo);
+				holder.icon.setImageTintList(ColorStateList.valueOf(color));
+				int pad = (int) (8 * ctx.getResources().getDisplayMetrics().density);
+				holder.icon.setPadding(pad, pad, pad, pad);
+				float radius = 14 * ctx.getResources().getDisplayMetrics().density;
+				holder.icon.setBackground(AddonUiMetadata.createBadgeDrawable(color, radius));
+			} else {
+				TypedValue tv = new TypedValue();
+				if (ctx.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSecondary, tv, true)) {
+					holder.icon.setImageTintList(ColorStateList.valueOf(tv.data));
+				} else {
+					holder.icon.setImageTintList(null);
+				}
+				int pad = (int) ctx.getResources().getDimension(R.dimen.dashboard_tile_icon_padding);
+				holder.icon.setPadding(pad, pad, pad, pad);
+				holder.icon.setBackground(null);
+			}
 			if (holder.eyebrow != null) {
 				boolean showEyebrow = smartTop &&
 						((card.smartTopState != null) || (card.playable != null));

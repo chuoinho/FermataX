@@ -36,10 +36,17 @@ final class SmartTopCardBackgroundDrawable extends Drawable {
 	@Nullable
 	private Bitmap softenedArtwork;
 
+	private final int borderColor;
+
 	SmartTopCardBackgroundDrawable(float density, SmartTopBackground.Kind kind) {
-		radiusPx = 14F * density;
-		borderWidthPx = Math.max(1F, density);
+		this(density, kind, 14F * density, 0x857AA7FF);
+	}
+
+	SmartTopCardBackgroundDrawable(float density, SmartTopBackground.Kind kind, float radiusPx, int borderColor) {
+		this.radiusPx = radiusPx;
+		this.borderWidthPx = Math.max(1F, density);
 		this.kind = kind;
+		this.borderColor = borderColor;
 	}
 
 	void setArtwork(@Nullable Bitmap bitmap) {
@@ -76,7 +83,7 @@ final class SmartTopCardBackgroundDrawable extends Drawable {
 		paint.setShader(null);
 		paint.setStyle(Paint.Style.STROKE);
 		paint.setStrokeWidth(borderWidthPx);
-		paint.setColor(0x857AA7FF);
+		paint.setColor(borderColor);
 		float inset = borderWidthPx * 0.5F;
 		border.set(bounds.left + inset, bounds.top + inset,
 				bounds.right - inset, bounds.bottom - inset);

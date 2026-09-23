@@ -67,6 +67,24 @@ public class AddonUiMetadataTest {
 		assertTrue(AddonUiMetadata.isNavigationItem(navigationOnly));
 	}
 
+	@Test
+	public void materialYouColorsCoverAllAddonsAndItems() {
+		assertEquals(0xFFEF4444, AddonUiMetadata.color(AddonUiMetadata.Role.YOUTUBE));
+		assertEquals(0xFF3B82F6, AddonUiMetadata.color(AddonUiMetadata.Role.TV));
+		assertEquals(0xFF10B981, AddonUiMetadata.color(AddonUiMetadata.Role.RADIO));
+		assertEquals(0xFFF59E0B, AddonUiMetadata.color(AddonUiMetadata.Role.PODCAST));
+		assertEquals(0xFF8B5CF6, AddonUiMetadata.color(AddonUiMetadata.Role.AUDIOBOOK));
+		assertEquals(0xFFA855F7, AddonUiMetadata.color(AddonUiMetadata.Role.STREMIO));
+		assertEquals(0xFF14B8A6, AddonUiMetadata.color(AddonUiMetadata.Role.WEB));
+		assertEquals(0xFF10A37F, AddonUiMetadata.color(AddonUiMetadata.Role.GENERIC));
+
+		assertEquals(0xFF06B6D4, AddonUiMetadata.itemColor("folders", null));
+		assertEquals(0xFFEC4899, AddonUiMetadata.itemColor("favorites", null));
+		assertEquals(0xFF94A3B8, AddonUiMetadata.itemColor("recent", null));
+		assertEquals(0xFF6366F1, AddonUiMetadata.itemColor("playlists", null));
+		assertEquals(0xFF10A37F, AddonUiMetadata.itemColor("chatgpt", null));
+	}
+
 	private static AddonInfo info(String className, String capabilities) {
 		return new AddonInfo("module", className, 1, 1, 1, 1,
 				false, true, true, false, "", capabilities);
