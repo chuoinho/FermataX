@@ -21,6 +21,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.OneShotPreDrawListener;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -548,12 +549,12 @@ public class DashboardFragment extends MainActivityFragment
 				float radius = 14 * ctx.getResources().getDisplayMetrics().density;
 				holder.icon.setBackground(AddonUiMetadata.createBadgeDrawable(color, radius));
 			} else {
-				TypedValue tv = new TypedValue();
-				if (ctx.getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSecondary, tv, true)) {
-					holder.icon.setImageTintList(ColorStateList.valueOf(tv.data));
-				} else {
-					holder.icon.setImageTintList(null);
+				Context themeCtx = activity.getContext();
+				int defaultTint = resolveColor(themeCtx, com.google.android.material.R.attr.colorOnSecondary, 0xff7aa7ff);
+				if ((defaultTint & 0x00ffffff) == 0) {
+					defaultTint = 0xff7aa7ff;
 				}
+				holder.icon.setImageTintList(ColorStateList.valueOf(defaultTint));
 				int pad = (int) ctx.getResources().getDimension(R.dimen.dashboard_tile_icon_padding);
 				holder.icon.setPadding(pad, pad, pad, pad);
 				holder.icon.setBackground(null);
@@ -1239,5 +1240,21 @@ public class DashboardFragment extends MainActivityFragment
 			FloatingButton.Mediator.super.disable(fb);
 			fb.setVisibility(View.VISIBLE);
 		}
+	}
+
+	private static int resolveColor(Context context, int attribute, int fallback) {
+		if (context == null) return fallback;
+		TypedValue value = new TypedValue();
+		if (!context.getTheme().resolveAttribute(attribute, value, true)) return fallback;
+		if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+			return value.data;
+		}
+		if (value.resourceId != 0) {
+			try {
+				return ContextCompat.getColor(context, value.resourceId);
+			} catch (Exception ignored) {
+			}
+		}
+		return (value.data != 0) ? value.data : fallback;
 	}
 }
