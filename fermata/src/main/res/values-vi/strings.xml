@@ -223,20 +223,6 @@
     <string name="preferred_sub_key">Phụ đề theo từ khóa</string>
     <string name="select_subtitles">Chọn phụ đề</string>
 
-    <string name="sub_gen_buf">Chiều dài bộ đệm</string>
-    <string name="sub_gen_buf_sub">Tải trước số giây được chỉ định</string>
-    <string name="sub_gen_chunk">Chiều dài khối</string>
-    <string name="sub_gen_chunk_sub">Xử lý bộ đệm theo từng phần trong khoảng thời gian được chỉ định</string>
-    <string name="sub_gen_model">Mẫu</string>
-    <string name="sub_gen_translate">Dịch</string>
-    <string name="sub_gen_use_gpu">Sử dụng GPU</string>
-    <string name="sub_gen_single">Phân đoạn đơn</string>
-    <string name="sub_gen_single_sub">Phiên âm toàn bộ đoạn dưới dạng một phân đoạn duy nhất</string>
-    <string name="sub_gen_downloading">Vui lòng đợi trong khi mô hình được tải xuống.</string>
-    <string name="sub_gen_download_fail">Không tải xuống mô hình: %s!</string>
-    <string name="sub_gen_cleanup">Xóa các mô hình đã tải xuống khác khỏi bộ nhớ cache</string>
-    <string name="sub_gen_cleanup_done">Đã xóa: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -480,8 +466,6 @@
 	<string name="module_name_radio">Đài phát thanh Internet</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">Sách nói</string>
-	<string name="addon_name_translate">Trình dịch ngôn ngữ</string>
-	<string name="addon_name_subgen">Trình tạo phụ đề</string>
 	<string name="car_keyboard_cancel">Hủy bỏ</string>
 	<string name="car_keyboard_input">đầu vào</string>
 	<string name="car_keyboard_shift">Sự thay đổi</string>

@@ -213,20 +213,6 @@
     <string name="preferred_sub_key">Preferisci i sottotitoli con parole chiave</string>
     <string name="select_subtitles">Seleziona sottotitoli</string>
 
-    <string name="sub_gen_buf">Lunghezza del buffer</string>
-    <string name="sub_gen_buf_sub">Precarica in anticipo il numero di secondi specificato</string>
-    <string name="sub_gen_chunk">Lunghezza del pezzo</string>
-    <string name="sub_gen_chunk_sub">Elabora il buffer in blocchi della durata specificata</string>
-    <string name="sub_gen_model">Modello</string>
-    <string name="sub_gen_translate">Tradurre</string>
-    <string name="sub_gen_use_gpu">Usa la GPU</string>
-    <string name="sub_gen_single">Segmento singolo</string>
-    <string name="sub_gen_single_sub">Trascrivi l\'intero pezzo come un singolo segmento</string>
-    <string name="sub_gen_downloading">Si prega di attendere mentre il modello viene scaricato.</string>
-    <string name="sub_gen_download_fail">Impossibile scaricare il modello: %s!</string>
-    <string name="sub_gen_cleanup">Elimina gli altri modelli scaricati dalla cache</string>
-    <string name="sub_gen_cleanup_done">Eliminato: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -470,8 +456,6 @@
 	<string name="module_name_radio">Radio Internet</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">Audiolibro</string>
-	<string name="addon_name_translate">Traduttore di lingue</string>
-	<string name="addon_name_subgen">Generatore di sottotitoli</string>
 	<string name="car_keyboard_cancel">Cancellare</string>
 	<string name="car_keyboard_input">Ingresso</string>
 	<string name="car_keyboard_shift">Spostare</string>

@@ -220,20 +220,6 @@
     <string name="preferred_sub_key">Preferir legendas com palavras-chave</string>
     <string name="select_subtitles">Selecionar legendas</string>
 
-    <string name="sub_gen_buf">Comprimento do buffer</string>
-    <string name="sub_gen_buf_sub">Pré-carregar antecipadamente o número especificado de segundos</string>
-    <string name="sub_gen_chunk">Comprimento do pedaço</string>
-    <string name="sub_gen_chunk_sub">Processe o buffer em partes da duração especificada</string>
-    <string name="sub_gen_model">Modelo</string>
-    <string name="sub_gen_translate">Traduzir</string>
-    <string name="sub_gen_use_gpu">Usar GPU</string>
-    <string name="sub_gen_single">Segmento único</string>
-    <string name="sub_gen_single_sub">Transcreva o pedaço inteiro como um único segmento</string>
-    <string name="sub_gen_downloading">Aguarde enquanto o modelo é baixado.</string>
-    <string name="sub_gen_download_fail">Falha ao baixar o modelo: %s!</string>
-    <string name="sub_gen_cleanup">Exclua outros modelos baixados do cache</string>
-    <string name="sub_gen_cleanup_done">Excluído: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -475,8 +461,6 @@
 	<string name="module_name_radio">Rádio na Internet</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">Audiolivro</string>
-	<string name="addon_name_translate">Tradutor de idiomas</string>
-	<string name="addon_name_subgen">Gerador de legendas</string>
 	<string name="car_keyboard_cancel">Cancelar</string>
 	<string name="car_keyboard_input">Entrada</string>
 	<string name="car_keyboard_shift">Mudança</string>

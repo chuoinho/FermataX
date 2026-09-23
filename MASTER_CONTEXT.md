@@ -132,7 +132,7 @@ cached-only ownership seams are characterized independently.
 - HTTPS is strict by default and includes certificate-chain and hostname validation.
 - Trust-all compatibility is restricted to the configured origin of IPTV/M3U, XMLTV/EPG, and
   Stremio sources. Same-origin redirects retain that policy; cross-origin redirects become strict.
-- ChatGPT, Whisper/OpusMT downloads, generic artwork, and every other HTTPS path remain strict.
+- ChatGPT, generic artwork, and every other HTTPS path remain strict.
 - Strict and user-source connections have separate cache identities. Do not introduce a global
   mutable trust switch or broaden the compatibility policy without an explicit product decision.
 
@@ -435,8 +435,9 @@ Current direction:
 ### Other bundled modules
 
 Current Gradle settings discover every directory under `modules/` as a dynamic feature. The
-current inventory is: `audiobook`, `cast`, `chat`, `exoplayer`, `gdrive`, `mlkit`, `opusmt`,
-`podcast`, `radio`, `sftp`, `smb`, `stremio`, `tv`, `vlc`, `web`, and `whisper`.
+current inventory is: `audiobook`, `cast`, `chat`, `exoplayer`, `gdrive`,
+`podcast`, `radio`, `sftp`, `smb`, `stremio`, `tv`, `vlc`, and `web`.
+(Retired modules: `stremio` native, `mlkit`, `opusmt`, `whisper`).
 
 `ArchitectureBoundaryTest.addonModulesDoNotImportSiblingImplementations` owns the corresponding
 package map and fails if the map and physical module directories diverge, a module declares source

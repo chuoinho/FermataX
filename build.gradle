@@ -16,23 +16,7 @@ ext {
     ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = libs.versions.androidxSwiperefreshlayout.get()
     GUAVA_VERSION = libs.versions.guava.get()
 
-    addons = [
-            [
-                    name       : 'translate',
-                    id         : 'translate_addon',
-                    icon       : 'translate',
-                    class      : 'me.aap.fermata.addon.TranslateAddon',
-                    hasSettings: false
-            ],
-            [
-                    name       : 'subgen',
-                    id         : 'subgen_addon',
-                    icon       : 'subgen',
-                    class      : 'me.aap.fermata.addon.SubGenAddon',
-                    depends    : 'exoplayer,translate',
-                    hasSettings: false
-            ],
-    ]
+    addons = []
 }
 
 buildscript {

@@ -213,20 +213,6 @@
     <string name="preferred_sub_key">ចូលចិត្តចំណងជើងរងដែលមានពាក្យគន្លឹះ</string>
     <string name="select_subtitles">ជ្រើសរើសចំណងជើងរង</string>
 
-    <string name="sub_gen_buf">ប្រវែងសតិបណ្ដោះអាសន្ន</string>
-    <string name="sub_gen_buf_sub">ផ្ទុកជាមុនចំនួនវិនាទីដែលបានបញ្ជាក់</string>
-    <string name="sub_gen_chunk">ប្រវែងដុំ</string>
-    <string name="sub_gen_chunk_sub">ដំណើរការសតិបណ្ដោះអាសន្នជាបំណែកនៃរយៈពេលដែលបានបញ្ជាក់</string>
-    <string name="sub_gen_model">គំរូ</string>
-    <string name="sub_gen_translate">បកប្រែ</string>
-    <string name="sub_gen_use_gpu">ប្រើ GPU</string>
-    <string name="sub_gen_single">ផ្នែកតែមួយ</string>
-    <string name="sub_gen_single_sub">ចម្លងបំណែកទាំងមូលជាផ្នែកតែមួយ</string>
-    <string name="sub_gen_downloading">សូមរង់ចាំខណៈពេលដែលគំរូត្រូវបានទាញយក។</string>
-    <string name="sub_gen_download_fail">បានបរាជ័យក្នុងការទាញយកម៉ូដែល៖ %s!</string>
-    <string name="sub_gen_cleanup">លុបម៉ូដែលដែលបានទាញយកផ្សេងទៀតចេញពីឃ្លាំងសម្ងាត់</string>
-    <string name="sub_gen_cleanup_done">បានលុប៖ %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -470,8 +456,6 @@
 	<string name="module_name_radio">វិទ្យុអ៊ីនធឺណិត</string>
 	<string name="module_name_podcast">ផតខាស</string>
 	<string name="module_name_audiobook">សៀវភៅជាសំឡេង</string>
-	<string name="addon_name_translate">អ្នកបកប្រែភាសា</string>
-	<string name="addon_name_subgen">ម៉ាស៊ីនបង្កើតចំណងជើងរង</string>
 	<string name="car_keyboard_cancel">បោះបង់</string>
 	<string name="car_keyboard_input">បញ្ចូល</string>
 	<string name="car_keyboard_shift">ប្ដូរ</string>

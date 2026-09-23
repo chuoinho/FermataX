@@ -8,7 +8,6 @@ import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
-import me.aap.fermata.addon.SubGenAddon;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
@@ -45,10 +44,7 @@ final class AddonPrefsBuilder
 		});
 
 		FermataAddon addon = manager.getAddon(info.className);
-		// Generated subtitle settings are owned by Playback > Subtitles > Auto.
-		// Keeping them out of the addon page avoids two controls writing the same
-		// media preference store.
-		if ((addon != null) && !(addon instanceof SubGenAddon)) {
+		if (addon != null) {
 			ChangeableCondition condition = PrefCondition.create(store, info.enabledPref);
 			addon.contributeSettings(contextSupplier.get(), store, set, condition);
 		}

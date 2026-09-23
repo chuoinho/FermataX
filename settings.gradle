@@ -1,7 +1,8 @@
 gradle.ext.modules = []
-// Stremio is delivered exclusively by the Web add-on. Keep the retired native
-// feature out of every Gradle graph even if an old module directory is restored.
-gradle.ext.retiredProductionModules = [':stremio'] as Set
+// Stremio is delivered exclusively by the Web add-on. Whisper, Opus-MT, and ML Kit
+// machine translation & speech-to-text features have been retired. Keep them out of
+// every Gradle graph even if an old module directory is restored.
+gradle.ext.retiredProductionModules = [':stremio', ':whisper', ':opusmt', ':mlkit'] as Set
 def abi = gradle.startParameter.projectProperties.get('ABI')
 gradle.ext.abiFilters = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86_64']
 

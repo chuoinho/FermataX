@@ -213,20 +213,6 @@
     <string name="preferred_sub_key">Preferuj napisy ze słowami kluczowymi</string>
     <string name="select_subtitles">Wybierz napisy</string>
 
-    <string name="sub_gen_buf">Długość bufora</string>
-    <string name="sub_gen_buf_sub">Załaduj wstępnie określoną liczbę sekund</string>
-    <string name="sub_gen_chunk">Długość kawałka</string>
-    <string name="sub_gen_chunk_sub">Przetwarzaj bufor w fragmentach o określonym czasie trwania</string>
-    <string name="sub_gen_model">Model</string>
-    <string name="sub_gen_translate">Tłumaczyć</string>
-    <string name="sub_gen_use_gpu">Użyj GPU</string>
-    <string name="sub_gen_single">Pojedynczy segment</string>
-    <string name="sub_gen_single_sub">Transkrypcja całego fragmentu jako pojedynczego segmentu</string>
-    <string name="sub_gen_downloading">Poczekaj na pobranie modelu.</string>
-    <string name="sub_gen_download_fail">Nie udało się pobrać modelu: %s!</string>
-    <string name="sub_gen_cleanup">Usuń inne pobrane modele z pamięci podręcznej</string>
-    <string name="sub_gen_cleanup_done">Usunięto: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -470,8 +456,6 @@
 	<string name="module_name_radio">Radia internetowego</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">Książka audio</string>
-	<string name="addon_name_translate">Tłumacz języka</string>
-	<string name="addon_name_subgen">Generator napisów</string>
 	<string name="car_keyboard_cancel">Anulować</string>
 	<string name="car_keyboard_input">Wejście</string>
 	<string name="car_keyboard_shift">Zmiana</string>

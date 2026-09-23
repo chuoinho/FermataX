@@ -220,20 +220,6 @@
     <string name="preferred_sub_key">預設字幕關鍵字</string>
     <string name="select_subtitles">選擇字幕</string>
 
-    <string name="sub_gen_buf">緩衝區長度</string>
-    <string name="sub_gen_buf_sub">提前預載指定的秒數</string>
-    <string name="sub_gen_chunk">區塊長度</string>
-    <string name="sub_gen_chunk_sub">以指定持續時間的區塊處理緩衝區</string>
-    <string name="sub_gen_model">型</string>
-    <string name="sub_gen_translate">譯</string>
-    <string name="sub_gen_use_gpu">使用GPU</string>
-    <string name="sub_gen_single">單一區段</string>
-    <string name="sub_gen_single_sub">將整個區塊轉錄為單一區段</string>
-    <string name="sub_gen_downloading">下載模型後請稍候。</string>
-    <string name="sub_gen_download_fail">無法下載模型：%s！</string>
-    <string name="sub_gen_cleanup">從快取中刪除其他下載的模型</string>
-    <string name="sub_gen_cleanup_done">已刪除：%s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -475,8 +461,6 @@
 	<string name="module_name_radio">網路廣播</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">有聲書</string>
-	<string name="addon_name_translate">語言翻譯</string>
-	<string name="addon_name_subgen">字幕產生器</string>
 	<string name="car_keyboard_cancel">取消</string>
 	<string name="car_keyboard_input">輸入</string>
 	<string name="car_keyboard_shift">轉移</string>

@@ -213,20 +213,6 @@
     <string name="preferred_sub_key">Preferă subtitrările cu cuvinte cheie</string>
     <string name="select_subtitles">Selectare subtitrări</string>
 
-    <string name="sub_gen_buf">Lungimea tamponului</string>
-    <string name="sub_gen_buf_sub">Preîncărcați înainte numărul specificat de secunde</string>
-    <string name="sub_gen_chunk">Lungimea bucatilor</string>
-    <string name="sub_gen_chunk_sub">Procesați tamponul în bucăți de durata specificată</string>
-    <string name="sub_gen_model">Model</string>
-    <string name="sub_gen_translate">Traduce</string>
-    <string name="sub_gen_use_gpu">Utilizați GPU</string>
-    <string name="sub_gen_single">Un singur segment</string>
-    <string name="sub_gen_single_sub">Transcrie întreaga bucată ca un singur segment</string>
-    <string name="sub_gen_downloading">Vă rugăm să așteptați până când modelul este descărcat.</string>
-    <string name="sub_gen_download_fail">Nu s-a putut descărca modelul: %s!</string>
-    <string name="sub_gen_cleanup">Ștergeți alte modele descărcate din cache</string>
-    <string name="sub_gen_cleanup_done">Șters: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -470,8 +456,6 @@
 	<string name="module_name_radio">Radio prin internet</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">Carte audio</string>
-	<string name="addon_name_translate">Traducător de limbă</string>
-	<string name="addon_name_subgen">Generator de subtitrări</string>
 	<string name="car_keyboard_cancel">Anula</string>
 	<string name="car_keyboard_input">Intrare</string>
 	<string name="car_keyboard_shift">Schimbare</string>

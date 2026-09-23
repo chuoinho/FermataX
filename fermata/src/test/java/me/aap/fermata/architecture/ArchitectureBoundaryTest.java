@@ -29,16 +29,13 @@ public class ArchitectureBoundaryTest {
 			Map.entry("chat", "me.aap.fermata.addon.chat."),
 			Map.entry("exoplayer", "me.aap.fermata.engine.exoplayer."),
 			Map.entry("gdrive", "me.aap.fermata.vfs.gdrive."),
-			Map.entry("mlkit", "me.aap.fermata.mlkit."),
-			Map.entry("opusmt", "me.aap.fermata.opusmt."),
 			Map.entry("podcast", "me.aap.fermata.addon.podcast."),
 			Map.entry("radio", "me.aap.fermata.addon.radio."),
 			Map.entry("sftp", "me.aap.fermata.vfs.sftp."),
 			Map.entry("smb", "me.aap.fermata.vfs.smb."),
 			Map.entry("tv", "me.aap.fermata.addon.tv."),
 			Map.entry("vlc", "me.aap.fermata.engine.vlc."),
-			Map.entry("web", "me.aap.fermata.addon.web."),
-			Map.entry("whisper", "me.aap.fermata.whisper."));
+			Map.entry("web", "me.aap.fermata.addon.web."));
 
 	@Test
 	public void coreDoesNotImportConcreteAddonImplementations() throws IOException {

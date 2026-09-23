@@ -213,20 +213,6 @@
     <string name="preferred_sub_key">Предпочитать субтитры с ключевыми словами</string>
     <string name="select_subtitles">Выбрать субтитры</string>
 
-    <string name="sub_gen_buf">Длина буфера</string>
-    <string name="sub_gen_buf_sub">Предварительная загрузка вперед на указанное количество секунд</string>
-    <string name="sub_gen_chunk">Длина блока</string>
-    <string name="sub_gen_chunk_sub">Обрабатывать буфер блоками указанной продолжительности</string>
-    <string name="sub_gen_model">Модель</string>
-    <string name="sub_gen_translate">Переводить</string>
-    <string name="sub_gen_use_gpu">Использовать графический процессор</string>
-    <string name="sub_gen_single">Один сегмент</string>
-    <string name="sub_gen_single_sub">Распознавать весь фрагмент как один сегмент</string>
-    <string name="sub_gen_downloading">Пожалуйста, подождите, пока модель загрузится.</string>
-    <string name="sub_gen_download_fail">Не удалось загрузить модель: %s!</string>
-    <string name="sub_gen_cleanup">Удалить другие загруженные модели из кеша</string>
-    <string name="sub_gen_cleanup_done">Удалено: %s</string>
-
     
     <string name="eq_hz">%1$s Гц</string>
     <string name="eq_khz">%1$s кГц</string>
@@ -470,8 +456,6 @@
 	<string name="module_name_radio">Интернет-радио</string>
 	<string name="module_name_podcast">Подкаст</string>
 	<string name="module_name_audiobook">Аудиокнига</string>
-	<string name="addon_name_translate">Языковой переводчик</string>
-	<string name="addon_name_subgen">Генератор субтитров</string>
 	<string name="car_keyboard_cancel">Отмена</string>
 	<string name="car_keyboard_input">Вход</string>
 	<string name="car_keyboard_shift">Сдвиг</string>
