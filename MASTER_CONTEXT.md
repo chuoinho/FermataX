@@ -1,6 +1,6 @@
 # FermataX Master Context
 
-> Last updated: 2026-08-20
+> Last updated: 2026-09-24
 >
 > This document is the primary project context for maintainers and coding agents. Read it
 > before changing product behavior, navigation, playback, addon activation, packaging, or
@@ -18,7 +18,7 @@
 - License: inherited from upstream Fermata, currently documented as GPL-3.0
 - Primary Android Auto package: `me.app.fermataX.auto`
 - Base application ID configured by Gradle: `me.app.fermataX`
-- Current version code: `301`
+- Current version code: `307`
 - Current version name: `2.0.1`
 - Version source: `gradle/libs.versions.toml`
 
@@ -132,7 +132,7 @@ cached-only ownership seams are characterized independently.
 - HTTPS is strict by default and includes certificate-chain and hostname validation.
 - Trust-all compatibility is restricted to the configured origin of IPTV/M3U, XMLTV/EPG, and
   Stremio sources. Same-origin redirects retain that policy; cross-origin redirects become strict.
-- ChatGPT, Whisper/OpusMT downloads, generic artwork, and every other HTTPS path remain strict.
+- ChatGPT, generic artwork, and every other HTTPS path remain strict.
 - Strict and user-source connections have separate cache identities. Do not introduce a global
   mutable trust switch or broaden the compatibility policy without an explicit product decision.
 
@@ -434,9 +434,10 @@ Current direction:
 
 ### Other bundled modules
 
-Current Gradle settings discover every directory under `modules/` as a dynamic feature. The
-current inventory is: `audiobook`, `cast`, `chat`, `exoplayer`, `gdrive`, `mlkit`, `opusmt`,
-`podcast`, `radio`, `sftp`, `smb`, `stremio`, `tv`, `vlc`, `web`, and `whisper`.
+Current Gradle settings discover feature directories under `modules/`. The source inventory is:
+`audiobook`, `cast`, `chat`, `exoplayer`, `gdrive`, `podcast`, `radio`, `sftp`, `smb`,
+`tv`, `vlc`, and `web`. The native `stremio`, `mlkit`, `opusmt`, and `whisper` modules are retired.
+Stremio Web remains part of `web`.
 
 `ArchitectureBoundaryTest.addonModulesDoNotImportSiblingImplementations` owns the corresponding
 package map and fails if the map and physical module directories diverge, a module declares source

@@ -144,6 +144,15 @@ public class NavRailContractTest {
 	}
 
 	@Test
+	public void railSizingKeepsConstraintLayoutInChargeOfThePhoneHeaderOffset() throws Exception {
+		String rail = source("ui/view/FermataNavBarView.java");
+		String sizing = method(rail, "public void setSize", "protected boolean setMediator");
+
+		assertTrue(sizing.contains("lp.height = 0;"));
+		assertFalse(sizing.contains("lp.height = LinearLayoutCompat.LayoutParams.MATCH_PARENT;"));
+	}
+
+	@Test
 	public void customGestureThresholdOwnsMoveRoutingAndLocksTheChosenAxis() throws Exception {
 		String rail = source("ui/view/FermataNavBarView.java");
 		String dispatch = method(rail, "public boolean dispatchTouchEvent",

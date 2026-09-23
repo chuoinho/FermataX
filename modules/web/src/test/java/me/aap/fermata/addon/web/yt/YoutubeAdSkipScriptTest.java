@@ -26,13 +26,23 @@ public class YoutubeAdSkipScriptTest {
 		assertTrue(script.contains("state.contentDuration = Number(video.duration || 0)"));
 		assertTrue(script.contains("state.observedRoot = player || null"));
 		assertTrue(script.contains("state.watchdog = setInterval"));
+		assertTrue(script.contains("state.videoListener"));
+		assertTrue(script.contains("document.addEventListener('playing', state.videoListener, true)"));
 		assertTrue(script.contains("function skipButton()"));
 		assertTrue(script.contains("getAttribute('aria-label')"));
 		assertTrue(script.contains("label.indexOf('skip ad')"));
 		assertTrue(script.contains("video.html5-ad-video"));
 		assertTrue(script.contains("video.classList.contains('html5-ad-video')"));
 		assertTrue(script.contains("state.podAttempts++"));
+		assertTrue(count(script, "state.lastAttempt = 0;") >= 3);
 		assertTrue(script.contains("if (!video) {"));
 		assertTrue(script.contains(".ytp-ad-skip-button-slot button"));
+	}
+
+	private static int count(String value, String token) {
+		int count = 0;
+		for (int offset = 0; (offset = value.indexOf(token, offset)) >= 0; offset += token.length())
+			count++;
+		return count;
 	}
 }

@@ -1,5 +1,8 @@
 # Open on Car — execution status (2026-09-20)
 
+This is a historical checkpoint for the commit range below. Its NOT RUN and merge-readiness
+statements describe 2026-09-20 only; they do not override later implementation or acceptance.
+
 ## Scope and evidence boundary
 
 - **Execution branch:** `codex/open-on-car`
@@ -61,4 +64,6 @@ Stremio transfer is unavailable and blocked until all of the following are compl
 
 ## Release decision
 
-There is **no merge readiness and no feature-completion claim**. Stremio remains blocked/unavailable, mandatory SPA/device/WebView/runtime gates are NOT RUN, and automated checks cannot substitute for those gates.
+At this 2026-09-20 checkpoint there was **no merge readiness or feature-completion claim**.
+Stremio transfer and mandatory SPA/device/WebView/runtime gates were NOT RUN. Later changes
+must be assessed from their own code, tests, and runtime evidence.

@@ -14,8 +14,3 @@
 
 -keepnames class androidx.media3.exoplayer.ExoPlayerImpl { *; }
 -keepnames class androidx.media3.exoplayer.ExoPlayerImplInternal { *; }
-
--keep class me.aap.fermata.mlkit.** { *; }
--keep class com.google.mlkit.** { *; }
--keep class com.google.android.gms.internal.mlkit_common.** { *; }
--keep class com.google.android.gms.internal.mlkit_translate.** { *; }

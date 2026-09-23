@@ -13,9 +13,19 @@
         layout="@layout/phone_open_on_car_strip"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintEnd_toStartOf="@id/nav_bar"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/phone_header_divider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@drawable/phone_header_divider"
+        android:importantForAccessibility="no"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/phone_open_on_car_strip" />
 
     <me.aap.fermata.ui.view.FermataNavBarView
         android:id="@+id/nav_bar"
@@ -24,7 +34,7 @@
         app:labelVisibilityMode="selected"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/phone_open_on_car_strip"
+        app:layout_constraintTop_toBottomOf="@id/phone_header_divider"
         app:layout_constraintVertical_weight="1"
         app:position="RIGHT" />
 
@@ -36,7 +46,7 @@
         app:layout_constraintEnd_toStartOf="@id/nav_bar"
         app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/phone_open_on_car_strip" />
+        app:layout_constraintTop_toBottomOf="@id/phone_header_divider" />
 
     <me.aap.fermata.ui.view.BodyLayout
         android:id="@+id/body_layout"

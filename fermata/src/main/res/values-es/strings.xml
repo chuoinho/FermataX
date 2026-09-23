@@ -221,20 +221,6 @@ Apagado: pausa</string>
     <string name="preferred_sub_key">Prefiere subtítulos con palabras clave</string>
     <string name="select_subtitles">Seleccionar subtítulos</string>
 
-    <string name="sub_gen_buf">Longitud del búfer</string>
-    <string name="sub_gen_buf_sub">Precargue con anticipación el número especificado de segundos</string>
-    <string name="sub_gen_chunk">Longitud del fragmento</string>
-    <string name="sub_gen_chunk_sub">Procesar el búfer en fragmentos de la duración especificada</string>
-    <string name="sub_gen_model">Modelo</string>
-    <string name="sub_gen_translate">Traducir</string>
-    <string name="sub_gen_use_gpu">Usa la GPU</string>
-    <string name="sub_gen_single">Segmento único</string>
-    <string name="sub_gen_single_sub">Transcribir todo el fragmento como un solo segmento</string>
-    <string name="sub_gen_downloading">Espere mientras se descarga el modelo.</string>
-    <string name="sub_gen_download_fail">No se pudo descargar el modelo: %s!</string>
-    <string name="sub_gen_cleanup">Eliminar otros modelos descargados de la caché</string>
-    <string name="sub_gen_cleanup_done">Eliminado: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -478,8 +464,6 @@ Por favor, reinicie la aplicación.</string>
 	<string name="module_name_radio">Radio por Internet</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">Audiolibro</string>
-	<string name="addon_name_translate">Traductor de idiomas</string>
-	<string name="addon_name_subgen">Generador de subtítulos</string>
 	<string name="car_keyboard_cancel">Cancelar</string>
 	<string name="car_keyboard_input">Aporte</string>
 	<string name="car_keyboard_shift">Cambio</string>

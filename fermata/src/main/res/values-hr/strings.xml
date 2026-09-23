@@ -213,20 +213,6 @@
     <string name="preferred_sub_key">Preferiraj titlove s ključnim riječima</string>
     <string name="select_subtitles">Odaberi titlove</string>
 
-    <string name="sub_gen_buf">Duljina međuspremnika</string>
-    <string name="sub_gen_buf_sub">Prethodno učitaj unaprijed određeni broj sekundi</string>
-    <string name="sub_gen_chunk">Duljina komada</string>
-    <string name="sub_gen_chunk_sub">Obradite međuspremnik u dijelovima određenog trajanja</string>
-    <string name="sub_gen_model">Model</string>
-    <string name="sub_gen_translate">Prevesti</string>
-    <string name="sub_gen_use_gpu">Korištenje GPU-a</string>
-    <string name="sub_gen_single">Pojedinačni segment</string>
-    <string name="sub_gen_single_sub">Prepišite cijeli dio kao jedan segment</string>
-    <string name="sub_gen_downloading">Pričekajte dok se model ne preuzme.</string>
-    <string name="sub_gen_download_fail">Nije uspjelo preuzimanje modela: %s!</string>
-    <string name="sub_gen_cleanup">Izbrišite ostale preuzete modele iz predmemorije</string>
-    <string name="sub_gen_cleanup_done">Izbrisano: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -470,8 +456,6 @@
 	<string name="module_name_radio">Internet radio</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">audio knjiga</string>
-	<string name="addon_name_translate">Prevoditelj jezika</string>
-	<string name="addon_name_subgen">Generator titlova</string>
 	<string name="car_keyboard_cancel">Otkazati</string>
 	<string name="car_keyboard_input">Ulazni</string>
 	<string name="car_keyboard_shift">Shift</string>

@@ -213,20 +213,6 @@
     <string name="preferred_sub_key">Anahtar kelimelerle altyazılar</string>
     <string name="select_subtitles">Altyazı seçin</string>
 
-    <string name="sub_gen_buf">Arabellek uzunluğu</string>
-    <string name="sub_gen_buf_sub">Belirtilen sayıda saniye kadar önceden yükleme yapın</string>
-    <string name="sub_gen_chunk">Parça uzunluğu</string>
-    <string name="sub_gen_chunk_sub">Tamponu belirtilen süre boyunca parçalar halinde işleyin</string>
-    <string name="sub_gen_model">Modeli</string>
-    <string name="sub_gen_translate">Çevir</string>
-    <string name="sub_gen_use_gpu">GPU\'yu kullan</string>
-    <string name="sub_gen_single">Tek segment</string>
-    <string name="sub_gen_single_sub">Tüm parçayı tek bir parça olarak yazıya dök</string>
-    <string name="sub_gen_downloading">Model indirilirken lütfen bekleyin.</string>
-    <string name="sub_gen_download_fail">Model indirilemedi: %s!</string>
-    <string name="sub_gen_cleanup">İndirilen diğer modelleri önbellekten silin</string>
-    <string name="sub_gen_cleanup_done">Silindi: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -470,8 +456,6 @@
 	<string name="module_name_radio">İnternet Radyosu</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">Sesli kitap</string>
-	<string name="addon_name_translate">Dil çevirmeni</string>
-	<string name="addon_name_subgen">Altyazı oluşturucu</string>
 	<string name="car_keyboard_cancel">İptal etmek</string>
 	<string name="car_keyboard_input">Giriş</string>
 	<string name="car_keyboard_shift">Vardiya</string>

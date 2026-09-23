@@ -183,7 +183,7 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 		var lp = getLayoutParams();
 		if (lp == null) lp = new LinearLayoutCompat.LayoutParams(0, 0);
 		lp.width = UiUtils.toIntPx(getContext(), widthDp);
-		lp.height = LinearLayoutCompat.LayoutParams.MATCH_PARENT;
+		lp.height = 0;
 		setLayoutParams(lp);
 		requestLayout();
 	}

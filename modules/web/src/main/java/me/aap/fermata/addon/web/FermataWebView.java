@@ -124,6 +124,7 @@ public class FermataWebView extends WebView
 	private boolean explicitUserLoad;
 	private final WebUrlDestination mirroredDestination = new WebUrlDestination();
 	private boolean mirroredPage;
+	private GenericWebAudioBridge genericAudioBridge;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -171,6 +172,11 @@ public class FermataWebView extends WebView
 		addon.getPreferenceStore().addBroadcastListener(this);
 		getActivity().onSuccess(a -> a.addBroadcastListener(this));
 
+		if (getClass() == FermataWebView.class) {
+			genericAudioBridge = new GenericWebAudioBridge(this);
+			genericAudioBridge.install();
+		}
+
 		setDesktopMode(addon, false);
 		setForceDark(addon, false);
 	}
@@ -182,6 +188,9 @@ public class FermataWebView extends WebView
 		if (!isScriptUrl(url) && (webClient != null)) {
 			if (explicitUserLoad) webClient.markAppNavigation(url);
 			else webClient.markRecoveryNavigation(url);
+		}
+		if (genericAudioBridge != null && !isScriptUrl(url)) {
+			genericAudioBridge.onNavigation(url);
 		}
 		super.loadUrl(url);
 	}
@@ -279,6 +288,7 @@ public class FermataWebView extends WebView
 	}
 
 	void onAutomotiveShutdown() {
+		if (genericAudioBridge != null) genericAudioBridge.close();
 		FermataChromeClient chrome = getWebChromeClient();
 		if ((chrome != null) && chrome.isFullScreen()) chrome.exitFullScreen();
 		stopLoading();
@@ -330,6 +340,10 @@ public class FermataWebView extends WebView
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
 		if (handleActivityDestroyEvent(a, e)) {
+			if (genericAudioBridge != null) {
+				genericAudioBridge.close();
+				genericAudioBridge = null;
+			}
 			getAddon().getPreferenceStore().removeBroadcastListener(this);
 		}
 	}
@@ -464,6 +478,7 @@ public class FermataWebView extends WebView
 
 	protected void pageLoaded(String uri) {
 		addFocusHighlight();
+		if (genericAudioBridge != null) genericAudioBridge.onPageLoaded(uri);
 		if (mirroredPage) { updateWebToolbar(uri); return; }
 		if (externalPlayback != null) {
 			if (clearExternalHistoryOnLoad) {
@@ -516,7 +531,7 @@ public class FermataWebView extends WebView
 				  if (document.getElementById('fermata-focus-style')) return;
 				  var style = document.createElement('style');
 				  style.id = 'fermata-focus-style';
-				  style.innerHTML = ':focus {outline: 2px solid blue !important; border-radius: 5px;}';
+				  style.textContent = ':focus {outline: 2px solid blue !important; border-radius: 5px;}';
 				  (document.head || document.documentElement).appendChild(style);
 				})()""", null);
 	}
@@ -768,6 +783,15 @@ public class FermataWebView extends WebView
 
 	private FutureSupplier<MainActivityDelegate> getActivity() {
 		return MainActivityDelegate.getActivityDelegate(getContext());
+	}
+
+	@Override
+	public void destroy() {
+		if (genericAudioBridge != null) {
+			genericAudioBridge.close();
+			genericAudioBridge = null;
+		}
+		super.destroy();
 	}
 
 	static final class UserAgent {

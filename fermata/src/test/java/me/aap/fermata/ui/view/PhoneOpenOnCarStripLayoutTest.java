@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.view;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -13,7 +14,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.auto.AutomotiveConnectionState.State;
 
 public class PhoneOpenOnCarStripLayoutTest {
-	@Test public void headerStartsGoneAndBothPhoneShellsFlowBelowIt() throws Exception {
+	@Test public void headerStartsGoneAndBothPhoneShellsFlowBelowDivider() throws Exception {
 		String strip = resource("phone_open_on_car_strip.xml");
 		assertTrue(strip.contains("android:visibility=\"gone\""));
 		assertTrue(strip.contains("@+id/phone_open_on_car_toggle"));
@@ -34,7 +35,38 @@ public class PhoneOpenOnCarStripLayoutTest {
 		for (String layout : new String[] { "main_activity_left.xml", "main_activity_right.xml" }) {
 			String shell = resource(layout);
 			assertTrue(shell.contains("layout=\"@layout/phone_open_on_car_strip\""));
-			assertTrue(shell.contains("app:layout_constraintTop_toBottomOf=\"@id/phone_open_on_car_strip\""));
+			assertTrue(shell.contains("app:layout_constraintTop_toBottomOf=\"@id/phone_header_divider\""));
+		}
+	}
+
+	@Test public void phoneHeaderOwnsTheFullTopRowBeforeTheNavigationRail() throws Exception {
+		for (String layout : new String[] { "main_activity_left.xml", "main_activity_right.xml" }) {
+			String header = element(resource(layout), "phone_open_on_car_strip");
+			String navBar = element(resource(layout), "nav_bar");
+
+			assertTrue(header.contains("app:layout_constraintStart_toStartOf=\"parent\""));
+			assertTrue(header.contains("app:layout_constraintEnd_toEndOf=\"parent\""));
+			assertFalse(header.contains("@id/nav_bar"));
+			assertTrue(navBar.contains(
+					"app:layout_constraintTop_toBottomOf=\"@id/phone_header_divider\""));
+		}
+	}
+
+	@Test public void phoneHeaderDividerSeparatesHeaderFromPhoneContent() throws Exception {
+		for (String layout : new String[] { "main_activity_left.xml", "main_activity_right.xml" }) {
+			String shell = resource(layout);
+			String divider = element(shell, "phone_header_divider");
+
+			assertTrue(divider.contains("android:layout_width=\"0dp\""));
+			assertTrue(divider.contains("android:layout_height=\"1dp\""));
+			assertTrue(divider.contains("android:background=\"@drawable/phone_header_divider\""));
+			assertTrue(divider.contains("app:layout_constraintStart_toStartOf=\"parent\""));
+			assertTrue(divider.contains("app:layout_constraintEnd_toEndOf=\"parent\""));
+			assertTrue(divider.contains("app:layout_constraintTop_toBottomOf=\"@id/phone_open_on_car_strip\""));
+			String navBar = element(shell, "nav_bar");
+			String toolBar = element(shell, "tool_bar");
+			assertTrue(navBar.contains("app:layout_constraintTop_toBottomOf=\"@id/phone_header_divider\""));
+			assertTrue(toolBar.contains("app:layout_constraintTop_toBottomOf=\"@id/phone_header_divider\""));
 		}
 	}
 
@@ -69,6 +101,16 @@ public class PhoneOpenOnCarStripLayoutTest {
 	private static String resource(String file) throws Exception {
 		return new String(Files.readAllBytes(repositoryRoot().resolve("fermata/src/main/res/layout")
 				.resolve(file)), StandardCharsets.UTF_8);
+	}
+
+	private static String element(String xml, String id) {
+		String marker = "android:id=\"@+id/" + id + "\"";
+		int from = xml.indexOf(marker);
+		if (from < 0) throw new AssertionError("Missing element: " + id);
+		int start = xml.lastIndexOf('<', from);
+		int end = xml.indexOf("/>", from);
+		if (end < 0) throw new AssertionError("Missing element end: " + id);
+		return xml.substring(start, end + 2);
 	}
 
 	private static Path repositoryRoot() {

@@ -213,20 +213,6 @@
     <string name="preferred_sub_key">تفضيل الترجمة:</string>
     <string name="select_subtitles">تحديد الترجمة</string>
 
-    <string name="sub_gen_buf">طول المخزن المؤقت</string>
-    <string name="sub_gen_buf_sub">التحميل المسبق لعدد محدد من الثواني</string>
-    <string name="sub_gen_chunk">طول القطعة</string>
-    <string name="sub_gen_chunk_sub">معالجة المخزن المؤقت في أجزاء من المدة المحددة</string>
-    <string name="sub_gen_model">نموذج</string>
-    <string name="sub_gen_translate">يترجم</string>
-    <string name="sub_gen_use_gpu">استخدم بطاقة الرسوميات</string>
-    <string name="sub_gen_single">شريحة واحدة</string>
-    <string name="sub_gen_single_sub">قم بنسخ القطعة بأكملها كقطعة واحدة</string>
-    <string name="sub_gen_downloading">الرجاء الانتظار حتى يتم تنزيل النموذج.</string>
-    <string name="sub_gen_download_fail">فشل تحميل النموذج: %s!</string>
-    <string name="sub_gen_cleanup">احذف النماذج الأخرى التي تم تنزيلها من ذاكرة التخزين المؤقت</string>
-    <string name="sub_gen_cleanup_done">محذوف: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -470,8 +456,6 @@
 	<string name="module_name_radio">راديو الإنترنت</string>
 	<string name="module_name_podcast">بودكاست</string>
 	<string name="module_name_audiobook">كتاب مسموع</string>
-	<string name="addon_name_translate">مترجم لغة</string>
-	<string name="addon_name_subgen">مولد ترجمات</string>
 	<string name="car_keyboard_cancel">يلغي</string>
 	<string name="car_keyboard_input">مدخل</string>
 	<string name="car_keyboard_shift">يحول</string>

@@ -56,4 +56,25 @@ public class YoutubeScriptsTest {
 		assertTrue(next.contains("player-middle-controls-prev-next-button"));
 		assertTrue(previous.contains("player-middle-controls-prev-next-button"));
 	}
+
+	@Test
+	public void nonstopOnlyConfirmsYouThereDialogsAndFiltersDestructiveActions() {
+		String nonstop = YoutubeScripts.NONSTOP;
+		assertTrue(nonstop.contains("function isYouThereDialog(dlg)"));
+		assertTrue(nonstop.contains("delete|remove|xóa|unsubscribe"));
+		assertTrue(nonstop.contains("continue watching|still watching|you there|video paused|tiếp tục xem"));
+		assertFalse(nonstop.contains("box.click()"));
+	}
+
+	@Test
+	public void sponsorBlockExposesLifecycleControllerForDynamicUpdatesAndTeardown() {
+		String sb = YoutubeScripts.sponsorBlock("[\"sponsor\",\"intro\"]");
+		assertTrue(sb.contains("window.__fermataSponsorBlock.setCategories"));
+		assertTrue(sb.contains("function stop()"));
+		assertTrue(sb.contains("function setCategories(newCats)"));
+		assertTrue(sb.contains("stop: stop"));
+		assertTrue(sb.contains("setCategories: setCategories"));
+		assertTrue(sb.contains("clearInterval(intervalId)"));
+		assertTrue(sb.contains("removeEventListener('timeupdate', onTimeUpdate)"));
+	}
 }

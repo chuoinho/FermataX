@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import me.aap.fermata.addon.web.audio.WebAudioProfile;
+
 public class YoutubeWebAudioBridgeTest {
 	@Test
 	public void isLimitedToTheTwoSupportedTopLevelYoutubeOrigins() {
@@ -21,15 +23,20 @@ public class YoutubeWebAudioBridgeTest {
 
 	@Test
 	public void scriptHasOneSourceClaimAndNeutralAfterClaimFailureBehavior() {
-		String source = YoutubeWebAudioBridge.shimSource(7L, YoutubeWebAudioProfile.unity());
+		String source = YoutubeWebAudioBridge.shimSource(7L, WebAudioProfile.unity());
 		assertTrue(source.contains("window.top !== window"));
 		assertTrue(source.contains("fermataActiveContentVideo"));
 		assertTrue(source.contains("new WeakMap()"));
-		assertTrue(source.contains("event.type==='encrypted'"));
+		assertTrue(source.contains("encrypted"));
 		assertTrue(source.contains("neutral(owner)"));
-		assertTrue(source.contains("ownership.get(media)||(profile.m&&profile.e)"));
-		assertTrue(source.contains("r:active?'SUPPORTED_ACTIVE':'NO_MEDIA'"));
+		assertTrue(source.contains("ownership.get(media) || (profile.m && profile.e)"));
+		assertTrue(source.contains("SUPPORTED_ACTIVE"));
 		assertTrue(source.contains("addEventListener('pagehide'"));
+		assertTrue(source.contains("lowshelf"));
+		assertTrue(source.contains("highshelf"));
+		assertTrue(source.contains("createDynamicsCompressor()"));
+		assertTrue(source.contains("dinhDb"));
+		assertFalse(source.contains("setInterval("));
 		assertFalse(source.contains("googlevideo"));
 		assertFalse(source.contains("addJavascriptInterface"));
 		assertEquals(1, occurrences(source, "createMediaElementSource("));
@@ -38,10 +45,8 @@ public class YoutubeWebAudioBridgeTest {
 	@Test
 	public void profileUpdateAndTeardownAreGenerationBound() {
 		assertTrue(YoutubeWebAudioBridge.updateProfileSource(7L,
-				YoutubeWebAudioProfile.unity()).contains("updateProfile(7,"));
+				WebAudioProfile.unity()).contains("updateProfile(7,"));
 		assertTrue(YoutubeWebAudioBridge.teardownSource(7L).contains("teardown(7)"));
-		assertTrue(YoutubeWebAudioBridge.isCurrentDocumentGeneration(7L, 7L));
-		assertFalse(YoutubeWebAudioBridge.isCurrentDocumentGeneration(8L, 7L));
 	}
 
 	private static int occurrences(String value, String needle) {

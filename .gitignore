@@ -79,3 +79,8 @@ desktop.ini
 # Custom builds
 fermata/src/custom/
 build-custom.gradle
+
+# Recoverable build residue from retired offline subtitle modules.
+/.retired-module-build-cache-*/
+/.codex-gradle/
+/.gradle-fermata-temp/

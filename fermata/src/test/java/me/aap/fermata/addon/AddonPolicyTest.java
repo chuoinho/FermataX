@@ -151,13 +151,6 @@ public class AddonPolicyTest {
 	}
 
 	@Test
-	public void subtitleGeneratorIsNotExposedAsAnAddonSetting() {
-		AddonInfo info = AddonRegistry.get().require(SubGenAddon.class.getName());
-
-		assertFalse(info.hasSettings);
-	}
-
-	@Test
 	public void generatedFragmentAddonsDeclareExplicitUiCapabilities() {
 		assertCapabilities("me.aap.fermata.addon.tv.TvAddon", AddonCapability.TV);
 		assertCapabilities("me.aap.fermata.addon.radio.RadioAddon", AddonCapability.RADIO);

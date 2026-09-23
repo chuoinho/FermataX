@@ -220,20 +220,6 @@
     <string name="preferred_sub_key">선호하는 키워드 자막</string>
     <string name="select_subtitles">자막 선택</string>
 
-    <string name="sub_gen_buf">버퍼 길이</string>
-    <string name="sub_gen_buf_sub">지정된 시간(초)보다 먼저 미리 로드</string>
-    <string name="sub_gen_chunk">청크 길이</string>
-    <string name="sub_gen_chunk_sub">지정된 기간 동안 버퍼를 청크로 처리합니다.</string>
-    <string name="sub_gen_model">모델</string>
-    <string name="sub_gen_translate">번역하다</string>
-    <string name="sub_gen_use_gpu">GPU 사용</string>
-    <string name="sub_gen_single">단일 세그먼트</string>
-    <string name="sub_gen_single_sub">전체 청크를 단일 세그먼트로 복사</string>
-    <string name="sub_gen_downloading">모델을 다운로드하는 동안 잠시 기다려 주세요.</string>
-    <string name="sub_gen_download_fail">모델을 다운로드하지 못했습니다: %s!</string>
-    <string name="sub_gen_cleanup">캐시에서 다운로드한 다른 모델 삭제</string>
-    <string name="sub_gen_cleanup_done">삭제됨: %s</string>
-
     
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -475,8 +461,6 @@
 	<string name="module_name_radio">인터넷 라디오</string>
 	<string name="module_name_podcast">팟캐스트</string>
 	<string name="module_name_audiobook">오디오북</string>
-	<string name="addon_name_translate">언어 번역기</string>
-	<string name="addon_name_subgen">자막 생성기</string>
 	<string name="car_keyboard_cancel">취소</string>
 	<string name="car_keyboard_input">입력</string>
 	<string name="car_keyboard_shift">옮기다</string>
