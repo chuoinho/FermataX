@@ -948,6 +948,7 @@ public class YoutubeWebView extends FermataWebView {
 	private void cancelSponsorBlock() {
 		sponsorGeneration++;
 		sponsorVideoId = "";
+		evaluateJavascript("if (window.__fermataSponsorBlock && window.__fermataSponsorBlock.stop) { window.__fermataSponsorBlock.stop(); }", null);
 	}
 
 	@Override
@@ -963,6 +964,10 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void configureAdSkip() {
+		boolean skipAd = getAddon().skipAd();
+		String adblockScripts = skipAd
+				? (YoutubeScripts.ADBLOCK_CSS + YoutubeScripts.NETWORK_ADBLOCK)
+				: "(function(){ var s = document.getElementById('fermata-adblock-css'); if (s) s.remove(); })();";
 		String sbScript = "";
 		if (getAddon().getSponsorBlockEnabled()) {
 			java.util.Set<SponsorBlockClient.Category> categories =
@@ -971,11 +976,15 @@ public class YoutubeWebView extends FermataWebView {
 				org.json.JSONArray catArr = new org.json.JSONArray();
 				for (SponsorBlockClient.Category c : categories) catArr.put(c.apiName());
 				sbScript = YoutubeScripts.sponsorBlock(catArr.toString());
+			} else {
+				cancelSponsorBlock();
 			}
+		} else {
+			cancelSponsorBlock();
 		}
-		evaluateJavascript(YoutubeScripts.PREFER_H264 + YoutubeScripts.ADBLOCK_CSS + YoutubeScripts.NETWORK_ADBLOCK + YoutubeScripts.NONSTOP +
+		evaluateJavascript(YoutubeScripts.PREFER_H264 + adblockScripts + YoutubeScripts.NONSTOP +
 				sbScript + PLAYBACK_SIGNAL_JS + AD_SKIP_JS +
-				"window.__fermataAdState.configure(" + getAddon().skipAd() + ", " +
+				"window.__fermataAdState.configure(" + skipAd + ", " +
 				YoutubeJsInterface.JS_AD_SIGNAL + ");", null);
 	}
 

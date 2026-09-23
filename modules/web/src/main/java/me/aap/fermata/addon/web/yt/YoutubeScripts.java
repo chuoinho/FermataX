@@ -195,16 +195,31 @@ final class YoutubeScripts {
 			      return undefined;
 			    };
 			  }
-			  function dismiss() {
-			    var dlg = document.querySelector('yt-confirm-dialog-renderer, ytm-confirm-dialog-renderer, ytmusic-you-there-renderer');
+			  function isYouThereDialog(dlg) {
 			    if (!dlg) return false;
-			    var btn = dlg.querySelector('#confirm-button, .yt-spec-button-shape-next, tp-yt-paper-button:not(#cancel-button), button');
-			    if (btn) btn.click();
-			    else {
-			      var box = document.querySelector('ytd-popup-container, ytm-popup-container');
-			      if (box) box.click();
+			    var tag = (dlg.tagName || '').toLowerCase();
+			    if (tag.indexOf('you-there') !== -1) return true;
+			    var text = (dlg.textContent || '').toLowerCase();
+			    if (/delete|remove|xóa|unsubscribe|hủy đăng ký|hủy|report|báo cáo|block|chặn|discard|clear history/.test(text)) {
+			      return false;
 			    }
-			    return true;
+			    if (/continue watching|still watching|you there|video paused|tiếp tục xem|đang xem|bạn có đang xem|bạn vẫn đang xem|video đã tạm dừng|continuar viendo|poursuivre la lecture|weiter ansehen|続きを視聴|계속 시청|继续观看/.test(text)) {
+			      return true;
+			    }
+			    if (dlg.querySelector('[dialog-action*="you_there"], [dialog-action*="you-there"], [data-type*="you-there"]')) {
+			      return true;
+			    }
+			    return false;
+			  }
+			  function dismiss() {
+			    var dlg = document.querySelector('yt-confirm-dialog-renderer, ytm-confirm-dialog-renderer, ytmusic-you-there-renderer, ytm-you-there-renderer');
+			    if (!dlg || !isYouThereDialog(dlg)) return false;
+			    var btn = dlg.querySelector('#confirm-button, .yt-spec-button-shape-next, tp-yt-paper-button:not(#cancel-button), button');
+			    if (btn) {
+			      btn.click();
+			      return true;
+			    }
+			    return false;
 			  }
 			  document.addEventListener('yt-popup-opened', function(e) {
 			    try {
@@ -231,13 +246,19 @@ final class YoutubeScripts {
 	static String sponsorBlock(String categoriesJson) {
 		return String.format(Locale.ROOT, """
 				(function(categories) {
-				  if (window.__fermataSponsorBlock) return;
-				  window.__fermataSponsorBlock = true;
+				  if (window.__fermataSponsorBlock && window.__fermataSponsorBlock.setCategories) {
+				    window.__fermataSponsorBlock.setCategories(categories);
+				    return;
+				  }
 				  var API = 'https://sponsor.ajay.app/api/skipSegments/';
 				  var EDGE = 0.35;
 				  var currentVideoId = null;
 				  var segments = [];
 				  var lastSkippedEnd = -1;
+				  var currentCategories = categories;
+				  var intervalId = null;
+				  var attachedVideo = null;
+				  var isStopped = false;
 				  function videoIdFromUrl() {
 				    try {
 				      var u = new URL(location.href);
@@ -263,7 +284,7 @@ final class YoutubeScripts {
 				    lastSkippedEnd = -1;
 				    sha256Hex(videoId).then(function(hex) {
 				      var prefix = hex.slice(0, 4);
-				      var cats = Array.isArray(categories) && categories.length ? categories :
+				      var cats = Array.isArray(currentCategories) && currentCategories.length ? currentCategories :
 				          ['sponsor', 'selfpromo', 'interaction', 'intro', 'outro', 'music_offtopic'];
 				      var url = API + prefix + '?categories=' + encodeURIComponent(JSON.stringify(cats));
 				      return fetch(url).then(function(res) {
@@ -271,7 +292,7 @@ final class YoutubeScripts {
 				        return res.json();
 				      });
 				    }).then(function(list) {
-				      if (!Array.isArray(list) || videoId !== currentVideoId) return;
+				      if (isStopped || !Array.isArray(list) || videoId !== currentVideoId) return;
 				      var mine = [];
 				      for (var i = 0; i < list.length; i++) {
 				        if (list[i] && list[i].videoID === videoId && Array.isArray(list[i].segments)) {
@@ -293,7 +314,7 @@ final class YoutubeScripts {
 				    }).catch(function() {});
 				  }
 				  function maybeSkip(video) {
-				    if (!segments.length || !video || video.paused) return;
+				    if (isStopped || !segments.length || !video || video.paused) return;
 				    var t = video.currentTime;
 				    for (var i = 0; i < segments.length; i++) {
 				      var start = segments[i][0];
@@ -306,8 +327,11 @@ final class YoutubeScripts {
 				      }
 				    }
 				  }
-				  var attachedVideo = null;
+				  function onTimeUpdate() {
+				    if (!isStopped && attachedVideo) maybeSkip(attachedVideo);
+				  }
 				  function tick() {
+				    if (isStopped) return;
 				    var id = videoIdFromUrl();
 				    if (id !== currentVideoId) {
 				      currentVideoId = id;
@@ -317,11 +341,42 @@ final class YoutubeScripts {
 				    }
 				    var v = document.querySelector('video');
 				    if (v && v !== attachedVideo) {
+				      if (attachedVideo) {
+				        try { attachedVideo.removeEventListener('timeupdate', onTimeUpdate); } catch (e) {}
+				      }
 				      attachedVideo = v;
-				      v.addEventListener('timeupdate', function() { maybeSkip(v); });
+				      v.addEventListener('timeupdate', onTimeUpdate);
 				    }
 				  }
-				  setInterval(tick, 1000);
+				  function stop() {
+				    isStopped = true;
+				    if (intervalId) {
+				      clearInterval(intervalId);
+				      intervalId = null;
+				    }
+				    if (attachedVideo) {
+				      try { attachedVideo.removeEventListener('timeupdate', onTimeUpdate); } catch (e) {}
+				      attachedVideo = null;
+				    }
+				    segments = [];
+				    currentVideoId = null;
+				    lastSkippedEnd = -1;
+				  }
+				  function setCategories(newCats) {
+				    currentCategories = newCats;
+				    if (isStopped) {
+				      isStopped = false;
+				      if (!intervalId) intervalId = setInterval(tick, 1000);
+				    }
+				    segments = [];
+				    lastSkippedEnd = -1;
+				    if (currentVideoId) loadSegments(currentVideoId);
+				  }
+				  window.__fermataSponsorBlock = {
+				    stop: stop,
+				    setCategories: setCategories
+				  };
+				  intervalId = setInterval(tick, 1000);
 				  tick();
 				})(%s);
 				""", categoriesJson);

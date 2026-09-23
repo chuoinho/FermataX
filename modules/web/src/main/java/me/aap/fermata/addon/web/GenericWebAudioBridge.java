@@ -199,6 +199,7 @@ final class GenericWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			  };
 
 			  var onMedia = function(event){
+			    if (disposed) return;
 			    var media = event.target;
 			    if (!media || (media.tagName !== 'VIDEO' && media.tagName !== 'AUDIO')) return;
 			    if (profile.m && profile.e) attach(media);
@@ -210,7 +211,25 @@ final class GenericWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			  var teardown = function(messageGeneration){
 			    if (messageGeneration !== generation || disposed) return false;
 			    disposed = true;
-			    neutral(active);
+			    for (var e = 0; e < events.length; e++) {
+			      try { document.removeEventListener(events[e], onMedia, true); } catch (_) {}
+			    }
+			    if (active) {
+			      neutral(active);
+			      try {
+			        if (active.source) active.source.disconnect();
+			        if (active.preamp) active.preamp.disconnect();
+			        if (active.filters) {
+			          for (var i = 0; i < active.filters.length; i++) active.filters[i].disconnect();
+			        }
+			        if (active.nen) active.nen.disconnect();
+			        if (active.bu) active.bu.disconnect();
+			        if (active.output) active.output.disconnect();
+			        if (active.context && active.context.state !== 'closed') active.context.close();
+			      } catch (_) {}
+			      if (active.media) try { ownership.delete(active.media); } catch (_) {}
+			      active = null;
+			    }
 			    return true;
 			  };
 			  addEventListener('pagehide', function(){ teardown(generation); }, {once:true});
@@ -222,6 +241,16 @@ final class GenericWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			      var next = normalize(value);
 			      if (!next) return false;
 			      profile = next;
+			      if (profile.m && profile.e && !active) {
+			        var allMedia = document.querySelectorAll('video, audio');
+			        for (var i = 0; i < allMedia.length; i++) {
+			          var m = allMedia[i];
+			          if (m && !m.paused && !m.ended && isSafe(m)) {
+			            attach(m);
+			            break;
+			          }
+			        }
+			      }
 			      apply(active);
 			      return true;
 			    },

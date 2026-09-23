@@ -30,6 +30,13 @@ public class GenericWebAudioBridgeTest {
 		assertTrue(updateSource.contains("updateProfile(15,"));
 		String teardownSource = GenericWebAudioBridge.teardownSource(15L);
 		assertTrue(teardownSource.contains("teardown(15)"));
+
+		String shim = GenericWebAudioBridge.shimSource(15L, WebAudioProfile.unity());
+		assertTrue(shim.contains("if (disposed) return;"));
+		assertTrue(shim.contains("document.removeEventListener"));
+		assertTrue(shim.contains("active.context.close()"));
+		assertTrue(shim.contains("if (profile.m && profile.e && !active)"));
+		assertTrue(shim.contains("document.querySelectorAll('video, audio')"));
 	}
 
 	private static int occurrences(String value, String needle) {

@@ -226,6 +226,7 @@ final class YoutubeWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			  };
 			  var schedule = function(){ if (!disposed) Promise.resolve().then(evaluate); };
 			  var onMedia = function(event){
+			    if (disposed) return;
 			    var media = event.target;
 			    if (!media || media.tagName !== 'VIDEO') return;
 			    if (event.type === 'encrypted' || event.type === 'webkitneedkey') {
@@ -241,6 +242,9 @@ final class YoutubeWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			  var teardown = function(messageGeneration){
 			    if (messageGeneration !== generation || disposed) return false;
 			    disposed = true;
+			    for (var e = 0; e < events.length; e++) {
+			      try { document.removeEventListener(events[e], onMedia, true); } catch (_) {}
+			    }
 			    observer.disconnect();
 			    neutral(active);
 			    return true;
