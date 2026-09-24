@@ -3,15 +3,22 @@ package me.aap.fermata.ui.fragment;
 import static me.aap.fermata.media.pref.MediaPrefs.SUB_LANG;
 import static me.aap.fermata.media.pref.MediaPrefs.SUB_SIZE;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
+import me.aap.utils.ui.UiUtils;
 import android.content.Context;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -279,19 +286,22 @@ public class SettingsFragment extends MainActivityFragment
 	private PreferenceViewAdapter createAdapter(MainActivityDelegate a) {
 		MediaLibPrefs mediaPrefs = a.getMediaServiceBinder().getLib().getPrefs();
 		PreferenceSet set = new PreferenceSet();
+		Context ctx = a.getContext();
 
-		PreferenceSet interfacePrefs = set.subSet(o -> o.title = R.string.interface_prefs);
-		InterfacePrefsBuilder.add(a, interfacePrefs);
+		addSectionHeader(set, ctx, R.string.interface_prefs);
+		InterfacePrefsBuilder.add(a, set);
 
-		PreferenceSet playback = set.subSet(o -> o.title = R.string.playback_settings);
+		addSectionHeader(set, ctx, R.string.playback_settings);
 		audioEffectsProfiles = new AudioEffectsProfileRepository(
 				FermataApplication.get().getPreferenceStore());
 		audioEffectsDraft = new AudioEffectsDraft(audioEffectsProfiles);
-		PlaybackPrefsBuilder.add(a, playback, mediaPrefs, audioEffectsProfiles, audioEffectsDraft);
+		PlaybackPrefsBuilder.add(a, set, mediaPrefs, audioEffectsProfiles, audioEffectsDraft);
 
+		addSectionHeader(set, ctx, R.string.addons);
 		addAddons(set);
 
 		if (ReadinessPrefsBuilder.shouldAdd(a.getRuntimeHostMode())) {
+			addSectionHeader(set, ctx, R.string.readiness_title);
 			long readinessGeneration = viewGeneration;
 			BooleanSupplier readinessUiActive = () -> viewActive && !isHidden() &&
 					(viewGeneration == readinessGeneration) && (activityDelegate == a) && isAdded();
@@ -301,14 +311,11 @@ public class SettingsFragment extends MainActivityFragment
 
 		diagnosticsPreferences = new DiagnosticsPreferences(a.getContext());
 		diagnosticsPreferences.disableIfExpired(System.currentTimeMillis());
-		PreferenceSet diagnostics = set.subSet(o -> {
-			o.title = R.string.diagnostics;
-			o.subtitle = R.string.diagnostics_sub;
-		});
+		addSectionHeader(set, ctx, R.string.diagnostics);
 		long diagnosticsGeneration = viewGeneration;
 		BooleanSupplier diagnosticsUiActive = () -> viewActive &&
 				(viewGeneration == diagnosticsGeneration) && (activityDelegate == a) && isAdded();
-		diagnostics.addBooleanPref(o -> {
+		set.addBooleanPref(o -> {
 			o.store = diagnosticsPreferences.getStore();
 			o.pref = DiagnosticsPreferences.DETAILED_ENABLED;
 			o.title = R.string.detailed_diagnostics;
@@ -321,34 +328,31 @@ public class SettingsFragment extends MainActivityFragment
 				o.subtitle = R.string.detailed_diagnostics_sub;
 			}
 		});
-		diagnostics.addButton(o -> {
+		set.addButton(o -> {
 			o.title = R.string.vehicle_key_test;
 			o.subtitle = R.string.vehicle_key_test_sub;
 			o.onClick = () -> SettingsDiagnosticsManager.testVehicleKeys(a, diagnosticsUiActive);
 		});
-		KeyBindingPrefsBuilder.add(diagnostics);
-		diagnostics.addButton(o -> {
+		KeyBindingPrefsBuilder.add(set);
+		set.addButton(o -> {
 			o.title = R.string.export_diagnostic_report;
 			o.subtitle = R.string.export_diagnostic_report_sub;
 			o.onClick = () -> SettingsDiagnosticsManager.exportReport(a, diagnosticsUiActive);
 		});
-		diagnostics.addButton(o -> {
+		set.addButton(o -> {
 			o.title = R.string.clear_diagnostic_data;
 			o.subtitle = R.string.clear_diagnostic_data_sub;
 			o.onClick = () -> SettingsDiagnosticsManager.clear(a, diagnosticsUiActive);
 		});
 
 		if (!a.isCarActivityNotMirror()) {
-			PreferenceSet backup = set.subSet(o -> {
-				o.title = R.string.backup_restore;
-				o.subtitle = R.string.backup_restore_sub;
-			});
-			backup.addButton(o -> {
+			addSectionHeader(set, ctx, R.string.backup_restore);
+			set.addButton(o -> {
 				o.title = R.string.backup_all_data;
 				o.subtitle = R.string.backup_all_data_sub;
 				o.onClick = () -> SettingsBackupManager.backupAllData(a);
 			});
-			backup.addButton(o -> {
+			set.addButton(o -> {
 				o.title = R.string.restore_backup;
 				o.subtitle = R.string.restore_backup_sub;
 				o.onClick = () -> SettingsBackupManager.restoreBackup(a);
@@ -406,5 +410,59 @@ public class SettingsFragment extends MainActivityFragment
 			PreferenceSet sub1 = sub.subSet(b);
 			sub1.configure(b::configure);
 		}
+	}
+
+	private static void addSectionHeader(PreferenceSet set, Context ctx, @StringRes int titleRes) {
+		set.addView(o -> {
+			o.view = () -> {
+				TextView tv = new TextView(ctx);
+				int padStart = (int) UiUtils.toPx(ctx, 14);
+				int padTop = (int) UiUtils.toPx(ctx, 18);
+				int padBottom = (int) UiUtils.toPx(ctx, 6);
+				tv.setPaddingRelative(padStart, padTop, padStart, padBottom);
+				tv.setText(titleRes);
+				tv.setTextSize(13f);
+				tv.setAllCaps(true);
+				tv.setTypeface(Typeface.DEFAULT_BOLD);
+				tv.setLetterSpacing(0.06f);
+				int accent = resolveColor(ctx, android.R.attr.colorAccent, 0xff4f9cff);
+				tv.setTextColor(ColorUtils.setAlphaComponent(accent, 220));
+				Runnable resetParent = () -> {
+					ViewParent p = tv.getParent();
+					if (p instanceof me.aap.utils.pref.PreferenceView pv) {
+						pv.setBackground(null);
+						pv.setPadding(0, 0, 0, 0);
+						pv.setFocusable(false);
+						pv.setClickable(false);
+					}
+				};
+				tv.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+					@Override
+					public void onViewAttachedToWindow(View v) {
+						resetParent.run();
+					}
+
+					@Override
+					public void onViewDetachedFromWindow(View v) {
+						ViewParent p = v.getParent();
+						if (p instanceof me.aap.utils.pref.PreferenceView pv) {
+							pv.setBackgroundResource(me.aap.utils.R.drawable.box_secondary);
+							int pad = (int) UiUtils.toPx(pv.getContext(), 5);
+							pv.setPadding(pad, pad, pad, pad);
+							pv.setFocusable(true);
+							pv.setClickable(true);
+						}
+					}
+				});
+				tv.post(resetParent);
+				return tv;
+			};
+		});
+	}
+
+	private static int resolveColor(Context context, int attribute, int fallback) {
+		TypedValue value = new TypedValue();
+		if (!context.getTheme().resolveAttribute(attribute, value, true)) return fallback;
+		return (value.resourceId == 0) ? value.data : ContextCompat.getColor(context, value.resourceId);
 	}
 }

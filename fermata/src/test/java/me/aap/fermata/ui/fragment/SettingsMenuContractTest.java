@@ -23,19 +23,24 @@ public class SettingsMenuContractTest {
 		assertFalse(source.contains("R.string.text_icon_size"));
 		assertFalse(source.contains("R.string.show_pg_up_down"));
 		assertFalse(source.contains("R.string.use_dpad_cursor"));
+		assertFalse(source.contains("R.string.theme_dark"));
+		assertFalse(source.contains("R.string.theme_light"));
+		assertFalse(source.contains("R.string.theme_system"));
+		assertFalse(source.contains("R.string.theme_black"));
+		assertFalse(source.contains("R.string.theme_star_wars"));
+		assertFalse(source.contains("R.string.theme_purple"));
+		assertTrue(source.contains("R.string.theme_classic"));
+		assertTrue(source.contains("R.string.theme_material_you"));
 	}
 
 	@Test
 	public void playbackSettingsDoesNotExposeSubtitleSubmenu() throws Exception {
-		String source = source("SettingsFragment.java");
-		int start = source.indexOf("PreferenceSet playback =");
-		int end = source.indexOf("addAddons(set);", start);
+		String source = source("PlaybackPrefsBuilder.java");
+		assertFalse(source.contains("R.string.subtitles"));
+		assertFalse(source.contains("addSubtitlePrefs"));
 
-		assertTrue(start >= 0);
-		assertTrue(end > start);
-		String playback = source.substring(start, end);
-		assertFalse(playback.contains("R.string.subtitles"));
-		assertFalse(playback.contains("addSubtitlePrefs"));
+		String settings = source("SettingsFragment.java");
+		assertTrue(settings.contains("PlaybackPrefsBuilder.add(a, set, mediaPrefs"));
 	}
 
 	@Test
@@ -46,7 +51,7 @@ public class SettingsMenuContractTest {
 
 		assertTrue(settings.contains("R.string.detailed_diagnostics"));
 		assertTrue(settings.contains("R.string.vehicle_key_test"));
-		assertTrue(settings.contains("KeyBindingPrefsBuilder.add(diagnostics);"));
+		assertTrue(settings.contains("KeyBindingPrefsBuilder.add(set);"));
 		assertTrue(settings.contains("R.string.export_diagnostic_report"));
 		assertTrue(settings.contains("R.string.clear_diagnostic_data"));
 		assertFalse(settings.contains("VoicePrefsBuilder.add"));
@@ -56,6 +61,19 @@ public class SettingsMenuContractTest {
 		assertFalse(backup.contains("static void openLog"));
 		assertFalse(backup.contains("PrefUtils.exportSharedPreferences"));
 		assertTrue(stateStore.contains("\"diagnostics\""));
+	}
+
+	@Test
+	public void singleLargePageStructureWithSectionHeaders() throws Exception {
+		String settings = source("SettingsFragment.java");
+		assertTrue(settings.contains("addSectionHeader(set, ctx, R.string.interface_prefs);"));
+		assertTrue(settings.contains("addSectionHeader(set, ctx, R.string.playback_settings);"));
+		assertTrue(settings.contains("addSectionHeader(set, ctx, R.string.addons);"));
+		assertTrue(settings.contains("addSectionHeader(set, ctx, R.string.readiness_title);"));
+		assertTrue(settings.contains("addSectionHeader(set, ctx, R.string.diagnostics);"));
+		assertTrue(settings.contains("addSectionHeader(set, ctx, R.string.backup_restore);"));
+		assertFalse(settings.contains("set.subSet(o -> o.title = R.string.interface_prefs)"));
+		assertFalse(settings.contains("set.subSet(o -> o.title = R.string.playback_settings)"));
 	}
 
 	@Test

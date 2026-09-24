@@ -83,7 +83,7 @@ public interface MainActivityPrefs
 			Pref.b("INITIAL_SETUP_COMPLETED", false);
 	Pref<IntSupplier> INITIAL_SETUP_VERSION = Pref.i("INITIAL_SETUP_VERSION", 0);
 
-	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
+	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_CLASSIC);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
 	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
@@ -104,7 +104,9 @@ public interface MainActivityPrefs
 	}
 
 	default int getThemePref(boolean auto) {
-		return getIntPref(THEME_MAIN);
+		int theme = getIntPref(THEME_MAIN);
+		if (theme != THEME_CLASSIC && theme != THEME_MATERIAL_YOU) return THEME_CLASSIC;
+		return theme;
 	}
 
 	@Nullable

@@ -566,19 +566,8 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public static void setTheme(Context ctx, boolean auto) {
 		@StyleRes int theme = switch (MainActivityPrefs.get().getThemePref(auto)) {
-			case MainActivityPrefs.THEME_LIGHT -> R.style.AppTheme_Light;
-			case MainActivityPrefs.THEME_SYSTEM -> {
-				if ((ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) ==
-						Configuration.UI_MODE_NIGHT_YES)
-					yield R.style.AppTheme_Dark;
-				else yield R.style.AppTheme_Light;
-			}
-			case MainActivityPrefs.THEME_BLACK -> R.style.AppTheme_Black;
-			case MainActivityPrefs.THEME_STAR_WARS -> R.style.AppTheme_BlackStarWars;
-			case MainActivityPrefs.THEME_PURPLE -> R.style.AppTheme_Purple;
-			case MainActivityPrefs.THEME_CLASSIC -> R.style.AppTheme_Classic;
 			case MainActivityPrefs.THEME_MATERIAL_YOU -> R.style.AppTheme_MaterialYou;
-			default -> R.style.AppTheme_Dark;
+			default -> R.style.AppTheme_Classic;
 		};
 		ctx.setTheme(theme);
 		if ((VERSION.SDK_INT >= VERSION_CODES.S) && (ctx instanceof Activity a)) {

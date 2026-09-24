@@ -22,15 +22,15 @@ final class InterfacePrefsBuilder {
 	static void add(MainActivityDelegate activity, PreferenceSet set) {
 		PreferenceStore store = activity.getPrefs();
 
+		normalizeTheme(store);
 		set.addListPref(o -> {
 			o.store = store;
 			o.pref = MainActivityPrefs.THEME_MAIN;
 			o.title = R.string.theme;
 			o.subtitle = R.string.theme_sub;
 			o.formatSubtitle = true;
-			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_system,
-					R.string.theme_black, R.string.theme_star_wars, R.string.theme_purple,
-					R.string.theme_classic, R.string.theme_material_you};
+			o.values = new int[]{R.string.theme_classic, R.string.theme_material_you};
+			o.valuesMap = new int[]{MainActivityPrefs.THEME_CLASSIC, MainActivityPrefs.THEME_MATERIAL_YOU};
 		});
 
 		Pref<IntSupplier> navBarPosition = BuildConfig.AUTO ?
@@ -57,6 +57,13 @@ final class InterfacePrefsBuilder {
 			o.stringValues = CollectionUtils.mapToArray(MainActivityPrefs.Lang.getValues(),
 					v -> v.locale.getDisplayName(), String[]::new);
 		});
+	}
+
+	private static void normalizeTheme(PreferenceStore store) {
+		int theme = store.getIntPref(MainActivityPrefs.THEME_MAIN);
+		if (theme != MainActivityPrefs.THEME_CLASSIC && theme != MainActivityPrefs.THEME_MATERIAL_YOU) {
+			store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_CLASSIC);
+		}
 	}
 
 	private static void normalizeNavBarPosition(PreferenceStore store, Pref<IntSupplier> pref) {
