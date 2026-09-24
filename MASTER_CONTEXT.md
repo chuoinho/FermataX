@@ -138,14 +138,8 @@ cached-only ownership seams are characterized independently.
 
 ## 4. Confirmed UX Model
 
-The current UI direction was developed with local mockup artifacts:
-
-- `docs/ui-redesign/fermatax-aa-ui-refresh-mockup.html`
-- `docs/ui-redesign/fermatax-aa-ui-refresh-mockup.png`
-
-Those mockups are currently ignored local assets, not shared tracked documentation. The confirmed
-rules below are canonical even when the local mockups are unavailable. Search was explicitly
-excluded from this UI refresh.
+The current UI direction was developed with local mockups that are not stored in this repo.
+The confirmed rules below are canonical. Search was explicitly excluded from this UI refresh.
 
 ### Dashboard
 
