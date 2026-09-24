@@ -577,6 +577,7 @@ public class MainActivityDelegate extends ActivityDelegate
 			case MainActivityPrefs.THEME_STAR_WARS -> R.style.AppTheme_BlackStarWars;
 			case MainActivityPrefs.THEME_PURPLE -> R.style.AppTheme_Purple;
 			case MainActivityPrefs.THEME_CLASSIC -> R.style.AppTheme_Classic;
+			case MainActivityPrefs.THEME_MATERIAL_YOU -> R.style.AppTheme_MaterialYou;
 			default -> R.style.AppTheme_Dark;
 		};
 		ctx.setTheme(theme);

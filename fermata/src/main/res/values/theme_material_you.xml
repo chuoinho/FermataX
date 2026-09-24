@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme.MaterialYou">
+
+        <item name="android:colorBackground">#0B0E14</item>
+
+        <!-- Status bar -->
+        <item name="colorPrimaryDark">#0F141F</item>
+
+        <!-- Tool/Nav bars -->
+        <item name="colorPrimary">#0F141F</item>
+        <item name="colorOnPrimary">#C3CDDE</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+
+        <!-- List/Media items (Bento card surface) -->
+        <item name="colorSecondary">#131926</item>
+        <item name="colorOnSecondary">#3B82F6</item>
+        <item name="android:textColorSecondary">#94A3B8</item>
+        <item name="boxStrokeColor">#263552</item>
+        <item name="cornerRadius">18dp</item>
+
+        <!-- Active media item -->
+        <item name="alpha">1</item>
+        <item name="colorSecondaryVariant">#1C263A</item>
+        <item name="android:textColorTertiary">#FFFFFF</item>
+
+        <!-- Popup menu -->
+        <item name="colorSurface">#131926</item>
+        <item name="colorOnSurface">#C3CDDE</item>
+        <item name="colorPrimarySurface">#1A2234</item>
+        <item name="colorOnPrimarySurface">#3B82F6</item>
+
+        <item name="colorAccent">#3B82F6</item>
+        <item name="rippleColor">#333B82F6</item>
+
+        <item name="android:textColorHint">#64748B</item>
+
+        <item name="colorControlNormal">#94A3B8</item>
+        <item name="colorControlActivated">#3B82F6</item>
+
+    </style>
+
+</resources>
