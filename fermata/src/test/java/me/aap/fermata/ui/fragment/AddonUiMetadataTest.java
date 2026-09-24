@@ -67,6 +67,14 @@ public class AddonUiMetadataTest {
 		assertTrue(AddonUiMetadata.isNavigationItem(navigationOnly));
 	}
 
+	@Test
+	public void materialThemeKeepsDistinctAddonBadgeColors() throws Exception {
+		var color = AddonUiMetadata.class.getDeclaredMethod("color", AddonUiMetadata.Role.class);
+		assertEquals(0xFFEF4444, color.invoke(null, AddonUiMetadata.Role.YOUTUBE));
+		assertEquals(0xFF3B82F6, color.invoke(null, AddonUiMetadata.Role.TV));
+		assertEquals(0xFF10B981, color.invoke(null, AddonUiMetadata.Role.RADIO));
+	}
+
 	private static AddonInfo info(String className, String capabilities) {
 		return new AddonInfo("module", className, 1, 1, 1, 1,
 				false, true, true, false, "", capabilities);

@@ -109,7 +109,7 @@
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/nav_bar"
+        app:layout_constraintStart_toStartOf="parent"
         app:menu="@menu/phone_bottom_menu" />
 
     <androidx.core.widget.ContentLoadingProgressBar

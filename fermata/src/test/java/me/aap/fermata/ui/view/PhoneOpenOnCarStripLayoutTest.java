@@ -52,6 +52,15 @@ public class PhoneOpenOnCarStripLayoutTest {
 		}
 	}
 
+	@Test public void phoneBottomMenuSpansTheFullWidthOnBothRailSides() throws Exception {
+		for (String layout : new String[] { "main_activity_left.xml", "main_activity_right.xml" }) {
+			String menu = element(resource(layout), "phone_bottom_menu");
+			assertTrue(menu.contains("app:layout_constraintStart_toStartOf=\"parent\""));
+			assertTrue(menu.contains("app:layout_constraintEnd_toEndOf=\"parent\""));
+			assertFalse(menu.contains("@id/nav_bar"));
+		}
+	}
+
 	@Test public void phoneHeaderDividerSeparatesHeaderFromPhoneContent() throws Exception {
 		for (String layout : new String[] { "main_activity_left.xml", "main_activity_right.xml" }) {
 			String shell = resource(layout);
@@ -106,6 +115,7 @@ public class PhoneOpenOnCarStripLayoutTest {
 	private static String element(String xml, String id) {
 		String marker = "android:id=\"@+id/" + id + "\"";
 		int from = xml.indexOf(marker);
+		if (from < 0) from = xml.indexOf("android:id=\"@id/" + id + "\"");
 		if (from < 0) throw new AssertionError("Missing element: " + id);
 		int start = xml.lastIndexOf('<', from);
 		int end = xml.indexOf("/>", from);

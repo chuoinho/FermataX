@@ -5,8 +5,10 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.TypedValue;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -19,6 +21,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.OneShotPreDrawListener;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -43,6 +46,7 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.smarttop.SmartTopAction;
 import me.aap.fermata.ui.smarttop.SmartTopBinder;
 import me.aap.fermata.ui.smarttop.SmartTopCoordinator;
@@ -535,6 +539,23 @@ public class DashboardFragment extends MainActivityFragment
 				return;
 			}
 			holder.icon.setImageResource(card.icon);
+			int currentTheme = MainActivityPrefs.get().getThemePref(activity.isCarActivity());
+			if ((currentTheme == MainActivityPrefs.THEME_MATERIAL_YOU) && (card.item != null)) {
+				int color = AddonUiMetadata.itemColor(card.item.name, card.item.addonInfo);
+				holder.icon.setImageTintList(ColorStateList.valueOf(color));
+				int pad = (int) (8 * ctx.getResources().getDisplayMetrics().density);
+				holder.icon.setPadding(pad, pad, pad, pad);
+				float radius = 14 * ctx.getResources().getDisplayMetrics().density;
+				holder.icon.setBackground(AddonUiMetadata.createBadgeDrawable(color, radius));
+			} else {
+				int defaultTint = resolveColor(activity.getContext(),
+						com.google.android.material.R.attr.colorOnSecondary, 0xff7aa7ff);
+				if ((defaultTint & 0x00ffffff) == 0) defaultTint = 0xff7aa7ff;
+				holder.icon.setImageTintList(ColorStateList.valueOf(defaultTint));
+				int pad = (int) ctx.getResources().getDimension(R.dimen.dashboard_tile_icon_padding);
+				holder.icon.setPadding(pad, pad, pad, pad);
+				holder.icon.setBackground(null);
+			}
 			if (holder.eyebrow != null) {
 				boolean showEyebrow = smartTop &&
 						((card.smartTopState != null) || (card.playable != null));
@@ -1216,5 +1237,21 @@ public class DashboardFragment extends MainActivityFragment
 			FloatingButton.Mediator.super.disable(fb);
 			fb.setVisibility(View.VISIBLE);
 		}
+	}
+
+	private static int resolveColor(Context context, int attribute, int fallback) {
+		if (context == null) return fallback;
+		TypedValue value = new TypedValue();
+		if (!context.getTheme().resolveAttribute(attribute, value, true)) return fallback;
+		if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT && value.type <= TypedValue.TYPE_LAST_COLOR_INT)
+			return value.data;
+		if (value.resourceId != 0) {
+			try {
+				return ContextCompat.getColor(context, value.resourceId);
+			} catch (Exception ignored) {
+				return fallback;
+			}
+		}
+		return value.data != 0 ? value.data : fallback;
 	}
 }
