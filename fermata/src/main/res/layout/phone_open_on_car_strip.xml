@@ -7,15 +7,15 @@
     android:layout_height="wrap_content"
     android:background="@drawable/phone_header_card_bg"
     android:paddingStart="14dp"
-    android:paddingTop="12dp"
+    android:paddingTop="10dp"
     android:paddingEnd="14dp"
-    android:paddingBottom="12dp"
+    android:paddingBottom="10dp"
     android:visibility="gone">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/phone_header_utility"
         android:layout_width="0dp"
-        android:layout_height="28dp"
+        android:layout_height="32dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -23,12 +23,12 @@
         <LinearLayout
             android:id="@+id/phone_header_aa_group"
             android:layout_width="wrap_content"
-            android:layout_height="26dp"
+            android:layout_height="28dp"
             android:background="@drawable/phone_header_aa_capsule_bg"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingEnd="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="12dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -86,6 +86,7 @@
         android:layout_height="wrap_content"
         android:minHeight="54dp"
         android:layout_marginTop="8dp"
+        app:layout_goneMarginTop="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/phone_header_utility">
@@ -194,6 +195,7 @@
         android:layout_width="0dp"
         android:layout_height="22dp"
         android:layout_marginTop="4dp"
+        app:layout_goneMarginTop="0dp"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
         android:splitTrack="false"
@@ -206,6 +208,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="2dp"
+        app:layout_goneMarginBottom="0dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"

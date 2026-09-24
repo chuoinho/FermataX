@@ -127,34 +127,49 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 				binder.getPlaybackTimelineSnapshot(), AutomotiveConnectionState.get().state());
 		if (!presentation.canSeek) cancelSeek();
 		this.presentation = presentation;
-		TextView title = header.findViewById(R.id.phone_header_title);
-		TextView subtitle = header.findViewById(R.id.phone_header_subtitle);
-		title.setText(presentation.hasMedia && (presentation.title.length() > 0) ?
-				presentation.title : header.getContext().getString(R.string.phone_header_nothing_playing));
-		subtitle.setText(presentation.hasMedia && (presentation.subtitle.length() > 0) ?
-				presentation.subtitle : header.getContext().getString(R.string.phone_header_choose_media));
-		ImageView artwork = header.findViewById(R.id.phone_header_artwork);
-		MediaMetadataCompat metadata = presentation.metadata;
-		Bitmap bitmap = (metadata == null) ? null :
-				metadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART);
-		if (bitmap == null) artwork.setImageResource(R.drawable.audiotrack);
-		else artwork.setImageBitmap(bitmap);
-		updateTimeline(presentation);
+
+		View summary = header.findViewById(R.id.phone_header_summary);
+		SeekBar progress = header.findViewById(R.id.phone_header_progress);
+		View times = header.findViewById(R.id.phone_header_times);
+
+		if (!shouldShowSummary(presentation.hasMedia)) {
+			summary.setVisibility(GONE);
+			progress.setVisibility(GONE);
+			times.setVisibility(GONE);
+		} else {
+			summary.setVisibility(VISIBLE);
+			TextView title = header.findViewById(R.id.phone_header_title);
+			TextView subtitle = header.findViewById(R.id.phone_header_subtitle);
+			title.setText((presentation.title.length() > 0) ?
+					presentation.title : header.getContext().getString(R.string.phone_header_nothing_playing));
+			subtitle.setText((presentation.subtitle.length() > 0) ?
+					presentation.subtitle : header.getContext().getString(R.string.phone_header_choose_media));
+			ImageView artwork = header.findViewById(R.id.phone_header_artwork);
+			MediaMetadataCompat metadata = presentation.metadata;
+			Bitmap bitmap = (metadata == null) ? null :
+					metadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART);
+			if (bitmap == null) artwork.setImageResource(R.drawable.audiotrack);
+			else artwork.setImageBitmap(bitmap);
+
+			ImageButton previous = header.findViewById(R.id.phone_header_previous);
+			ImageButton playPause = header.findViewById(R.id.phone_header_play_pause);
+			ImageButton next = header.findViewById(R.id.phone_header_next);
+			previous.setEnabled(presentation.canPrevious);
+			previous.setAlpha(presentation.canPrevious ? 1f : 0.45f);
+			playPause.setEnabled(presentation.canPlayPause);
+			playPause.setAlpha(presentation.canPlayPause ? 1f : 0.45f);
+			playPause.setImageResource(presentation.playing ? R.drawable.pause : R.drawable.play);
+			playPause.setContentDescription(header.getContext().getString(presentation.playing ?
+					R.string.action_pause : R.string.action_play));
+			next.setEnabled(presentation.canNext);
+			next.setAlpha(presentation.canNext ? 1f : 0.45f);
+
+			updateTimeline(presentation);
+		}
+
 		State state = presentation.automotiveState;
 		((TextView) header.findViewById(R.id.phone_header_aa_status)).setText(aaStatus(state));
 		header.findViewById(R.id.phone_header_aa_dot).setSelected(state != State.DISCONNECTED);
-		ImageButton previous = header.findViewById(R.id.phone_header_previous);
-		ImageButton playPause = header.findViewById(R.id.phone_header_play_pause);
-		ImageButton next = header.findViewById(R.id.phone_header_next);
-		previous.setEnabled(presentation.canPrevious);
-		previous.setAlpha(presentation.canPrevious ? 1f : 0.45f);
-		playPause.setEnabled(presentation.canPlayPause);
-		playPause.setAlpha(presentation.canPlayPause ? 1f : 0.45f);
-		playPause.setImageResource(presentation.playing ? R.drawable.pause : R.drawable.play);
-		playPause.setContentDescription(header.getContext().getString(presentation.playing ?
-				R.string.action_pause : R.string.action_play));
-		next.setEnabled(presentation.canNext);
-		next.setAlpha(presentation.canNext ? 1f : 0.45f);
 	}
 
 	private void wirePlaybackControls() {
@@ -199,23 +214,34 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 
 	private void updateTimeline(ControlPresentation presentation) {
 		SeekBar progress = header.findViewById(R.id.phone_header_progress);
-		progress.setEnabled(presentation.canSeek);
+		View times = header.findViewById(R.id.phone_header_times);
+		if (!shouldShowTimeline(presentation.hasMedia, presentation.canSeek)) {
+			progress.setVisibility(GONE);
+			times.setVisibility(GONE);
+			return;
+		}
 		progress.setVisibility(VISIBLE);
-		progress.setAlpha(presentation.canSeek ? 1f : 0.45f);
-		if (presentation.canSeek && !seekGesture.isDragging()) {
+		times.setVisibility(VISIBLE);
+		progress.setEnabled(true);
+		progress.setAlpha(1f);
+		if (!seekGesture.isDragging()) {
 			progress.setMax(progressSeconds(presentation.durationMillis));
 			progress.setProgress(Math.min(progress.getMax(), progressSeconds(presentation.positionMillis)));
 		}
-		else if (!presentation.canSeek) {
-			progress.setMax(1);
-			progress.setProgress(0);
-		}
 		TextView elapsed = header.findViewById(R.id.phone_header_elapsed);
 		if (!seekGesture.isDragging()) {
-			elapsed.setText(presentation.canSeek ? timeText(presentation.positionMillis) : "");
+			elapsed.setText(timeText(presentation.positionMillis));
 		}
 		((TextView) header.findViewById(R.id.phone_header_duration)).setText(
-				presentation.canSeek ? timeText(presentation.durationMillis) : "");
+				timeText(presentation.durationMillis));
+	}
+
+	static boolean shouldShowSummary(boolean hasMedia) {
+		return hasMedia;
+	}
+
+	static boolean shouldShowTimeline(boolean hasMedia, boolean canSeek) {
+		return hasMedia && canSeek;
 	}
 
 	private void cancelSeek() {

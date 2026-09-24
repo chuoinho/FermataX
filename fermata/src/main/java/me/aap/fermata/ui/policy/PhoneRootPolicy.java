@@ -41,8 +41,7 @@ public final class PhoneRootPolicy {
 
 	public static boolean showAddonNavBar(RuntimeHostMode mode, int phoneRootId,
 			boolean barsHidden) {
-		return !barsHidden && (!usesPhoneRoots(mode) ||
-				(normalizePhoneRoot(phoneRootId) == R.id.dashboard_fragment));
+		return !barsHidden && !usesPhoneRoots(mode);
 	}
 
 	public static boolean showPhoneBottomMenu(RuntimeHostMode mode, boolean barsHidden) {

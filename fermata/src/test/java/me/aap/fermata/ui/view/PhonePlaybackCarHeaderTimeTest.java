@@ -13,4 +13,18 @@ public class PhonePlaybackCarHeaderTimeTest {
 		assertEquals(1, PhonePlaybackCarHeaderController.displaySeconds(1_999L));
 		assertEquals(2, PhonePlaybackCarHeaderController.progressSeconds(1_001L));
 	}
+
+	@Test
+	public void headerCollapsesToSlimWhenNoMediaIsPresent() {
+		org.junit.Assert.assertFalse(PhonePlaybackCarHeaderController.shouldShowSummary(false));
+		org.junit.Assert.assertTrue(PhonePlaybackCarHeaderController.shouldShowSummary(true));
+	}
+
+	@Test
+	public void headerShowsTimelineOnlyWhenMediaHasActiveSeekableStream() {
+		org.junit.Assert.assertFalse(PhonePlaybackCarHeaderController.shouldShowTimeline(false, false));
+		org.junit.Assert.assertFalse(PhonePlaybackCarHeaderController.shouldShowTimeline(false, true));
+		org.junit.Assert.assertFalse(PhonePlaybackCarHeaderController.shouldShowTimeline(true, false));
+		org.junit.Assert.assertTrue(PhonePlaybackCarHeaderController.shouldShowTimeline(true, true));
+	}
 }

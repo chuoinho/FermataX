@@ -68,7 +68,7 @@ public class PhoneRootPolicyTest {
 
 	@Test
 	public void phoneChromeDependsOnSelectedRootAndHiddenBars() {
-		assertTrue(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.PHONE,
+		assertFalse(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.PHONE,
 				R.id.dashboard_fragment, false));
 		assertFalse(PhoneRootPolicy.showAddonNavBar(RuntimeHostMode.PHONE,
 				R.id.settings_fragment, false));
