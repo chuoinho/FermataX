@@ -108,6 +108,17 @@ android {
     namespace = 'me.aap.fermata'
 }
 
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        if ((configuredAutoIdSuffix == '.test') &&
+                variant.productFlavors.any { it.second == 'auto' }) {
+            variant.sources.manifests.addStaticManifestFile(
+                    'src/testAutoMirror/AndroidManifest.xml')
+            variant.sources.res.addStaticSourceDirectory('src/testAutoMirror/res')
+        }
+    }
+}
+
 def verifyAutoReleaseIdentity = tasks.register('verifyAutoReleaseIdentity') {
     group = 'verification'
     description = 'Verifies the merged Auto release package and provider authority.'
@@ -154,10 +165,54 @@ def verifyAutoReleaseIdentity = tasks.register('verifyAutoReleaseIdentity') {
     }
 }
 
+def verifyMirrorFsVariantPolicy = tasks.register('verifyMirrorFsVariantPolicy') {
+    group = 'verification'
+    description = 'Verifies that MirrorFS is exposed only by the .test Auto release variant.'
+    dependsOn('processAutoReleaseMainManifest')
+
+    doLast {
+        def manifestDir = file("$buildDir/intermediates/merged_manifest/autoRelease")
+        def manifests = fileTree(manifestDir).matching { include '**/AndroidManifest.xml' }.files
+        if (manifests.isEmpty()) {
+            throw new GradleException("Auto release merged manifest not found in ${manifestDir}")
+        }
+
+        def manifestFile = manifests.max { it.lastModified() }
+        def factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        factory.setNamespaceAware(true)
+        def manifest = factory.newDocumentBuilder().parse(manifestFile)
+        def androidNamespace = 'http://schemas.android.com/apk/res/android'
+        def hasNamed = { String tag, String name ->
+            def elements = manifest.getElementsByTagName(tag)
+            for (int i = 0; i < elements.length; i++) {
+                if (elements.item(i).getAttributeNS(androidNamespace, 'name') == name) return true
+            }
+            return false
+        }
+        def mirrorFsExpected = configuredAutoIdSuffix == '.test'
+        def mirrorFsPresent = hasNamed('service',
+                'me.app.fermatax.auto.MirrorServiceFS')
+        def accessSurfacePresent = hasNamed('uses-permission',
+                'androidx.car.app.ACCESS_SURFACE')
+        def navigationTemplatesPresent = hasNamed('uses-permission',
+                'androidx.car.app.NAVIGATION_TEMPLATES')
+
+        if (mirrorFsPresent != mirrorFsExpected ||
+                accessSurfacePresent != mirrorFsExpected ||
+                navigationTemplatesPresent != mirrorFsExpected) {
+            throw new GradleException("MirrorFS manifest policy mismatch for ${expectedAutoReleaseApplicationId}: " +
+                    "expected=${mirrorFsExpected}, service=${mirrorFsPresent}, " +
+                    "accessSurface=${accessSurfacePresent}, " +
+                    "navigationTemplates=${navigationTemplatesPresent}")
+        }
+    }
+}
+
 tasks.configureEach { task ->
     if (task.name in ['assembleAutoRelease', 'bundleAutoRelease',
             'packageAutoReleaseUniversalApk']) {
         task.finalizedBy(verifyAutoReleaseIdentity)
+        task.finalizedBy(verifyMirrorFsVariantPolicy)
     }
 }
 
