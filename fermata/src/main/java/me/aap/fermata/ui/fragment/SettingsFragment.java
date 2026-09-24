@@ -37,7 +37,6 @@ import me.aap.fermata.pref.DiagnosticsPreferences;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
@@ -279,62 +278,26 @@ public class SettingsFragment extends MainActivityFragment
 
 	private PreferenceViewAdapter createAdapter(MainActivityDelegate a) {
 		MediaLibPrefs mediaPrefs = a.getMediaServiceBinder().getLib().getPrefs();
-		boolean isCar = a.isCarActivityNotMirror();
 		PreferenceSet set = new PreferenceSet();
-		PreferenceSet sub1;
 
-		sub1 = set.subSet(o -> o.title = R.string.interface_prefs);
-
-		if (BuildConfig.AUTO && a.isCarActivityNotMirror()) {
-			InterfacePrefsBuilder.addAndroidAuto(a, sub1);
-		} else {
-			if (BuildConfig.AUTO) {
-				InterfacePrefsBuilder.addAndroidAuto(a,
-						sub1.subSet(o -> o.title = R.string.interface_prefs_aa));
-			}
-			InterfacePrefsBuilder.add(a, sub1, MainActivityPrefs.THEME_MAIN,
-					MainActivityPrefs.SHOW_PG_UP_DOWN, null,
-					MainActivityPrefs.NAV_BAR_POS, MainActivityPrefs.NAV_BAR_SIZE,
-					MainActivityPrefs.TOOL_BAR_SIZE, MainActivityPrefs.CONTROL_PANEL_SIZE,
-					MainActivityPrefs.TEXT_ICON_SIZE);
-		}
-
-		sub1.addBooleanPref(o -> {
-			o.store = mediaPrefs;
-			o.pref = BrowsableItemPrefs.SHOW_TRACK_ICONS;
-			o.title = R.string.show_track_icons;
-		});
-		sub1.addListPref(o -> {
-			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.LOCALE;
-			o.title = R.string.lang;
-			o.subtitle = R.string.string_format;
-			o.formatSubtitle = true;
-			o.removeDefault = false;
-			o.cmp = String::compareTo;
-			o.stringValues = CollectionUtils.mapToArray(MainActivityPrefs.Lang.getValues(),
-					v -> v.locale.getDisplayName(), String[]::new);
-		});
-		if (!a.isCarActivityNotMirror()) {
-			sub1.addButton(o -> {
-				o.title = R.string.initial_setup_reopen;
-				o.subtitle = R.string.initial_setup_reopen_sub;
-				o.onClick = () -> a.showFragment(R.id.initial_setup_fragment);
-			});
-		}
-		KeyBindingPrefsBuilder.add(sub1);
+		PreferenceSet interfacePrefs = set.subSet(o -> o.title = R.string.interface_prefs);
+		InterfacePrefsBuilder.add(a, interfacePrefs);
 
 		PreferenceSet playback = set.subSet(o -> o.title = R.string.playback_settings);
 		audioEffectsProfiles = new AudioEffectsProfileRepository(
 				FermataApplication.get().getPreferenceStore());
 		audioEffectsDraft = new AudioEffectsDraft(audioEffectsProfiles);
 		PlaybackPrefsBuilder.add(a, playback, mediaPrefs, audioEffectsProfiles, audioEffectsDraft);
-		MediaEnginePrefsBuilder.add(a, playback, mediaPrefs, isCar);
 
-		VoicePrefsBuilder.add(a, set);
-
-		DashboardPrefsBuilder.add(a, set, this::refreshPrefs);
 		addAddons(set);
+
+		if (ReadinessPrefsBuilder.shouldAdd(a.getRuntimeHostMode())) {
+			long readinessGeneration = viewGeneration;
+			BooleanSupplier readinessUiActive = () -> viewActive && !isHidden() &&
+					(viewGeneration == readinessGeneration) && (activityDelegate == a) && isAdded();
+			readinessPrefsBuilder = new ReadinessPrefsBuilder(a, readinessUiActive);
+			readinessPrefsBuilder.addTo(set);
+		}
 
 		diagnosticsPreferences = new DiagnosticsPreferences(a.getContext());
 		diagnosticsPreferences.disableIfExpired(System.currentTimeMillis());
@@ -363,6 +326,7 @@ public class SettingsFragment extends MainActivityFragment
 			o.subtitle = R.string.vehicle_key_test_sub;
 			o.onClick = () -> SettingsDiagnosticsManager.testVehicleKeys(a, diagnosticsUiActive);
 		});
+		KeyBindingPrefsBuilder.add(diagnostics);
 		diagnostics.addButton(o -> {
 			o.title = R.string.export_diagnostic_report;
 			o.subtitle = R.string.export_diagnostic_report_sub;
@@ -375,8 +339,7 @@ public class SettingsFragment extends MainActivityFragment
 		});
 
 		if (!a.isCarActivityNotMirror()) {
-			sub1 = set.subSet(o -> o.title = R.string.other);
-			PreferenceSet backup = sub1.subSet(o -> {
+			PreferenceSet backup = set.subSet(o -> {
 				o.title = R.string.backup_restore;
 				o.subtitle = R.string.backup_restore_sub;
 			});
@@ -392,14 +355,6 @@ public class SettingsFragment extends MainActivityFragment
 			});
 		}
 
-		if (ReadinessPrefsBuilder.shouldAdd(a.getRuntimeHostMode())) {
-			long readinessGeneration = viewGeneration;
-			BooleanSupplier readinessUiActive = () -> viewActive && !isHidden() &&
-					(viewGeneration == readinessGeneration) && (activityDelegate == a) && isAdded();
-			readinessPrefsBuilder = new ReadinessPrefsBuilder(a, readinessUiActive);
-			readinessPrefsBuilder.addTo(set);
-		}
-
 		return new PreferenceViewAdapter(set) {
 			@Override
 			public void setPreferenceSet(PreferenceSet set) {
@@ -407,10 +362,6 @@ public class SettingsFragment extends MainActivityFragment
 				a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 			}
 		};
-	}
-
-	private void refreshPrefs(PreferenceSet set) {
-		if (adapter != null) adapter.setPreferenceSet(set);
 	}
 
 	private void restoreAudioEffectsDraft(Bundle state) {

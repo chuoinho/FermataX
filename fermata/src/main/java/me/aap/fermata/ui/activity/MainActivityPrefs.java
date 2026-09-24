@@ -100,12 +100,11 @@ public interface MainActivityPrefs
 	}
 
 	static boolean hasThemePref(MainActivityDelegate a, List<Pref<?>> prefs) {
-		if (AUTO && a.isCarActivity()) return prefs.contains(THEME_AA);
-		return prefs.contains(THEME_MAIN);
+		return prefs.contains(THEME_MAIN) || (AUTO && prefs.contains(THEME_AA));
 	}
 
 	default int getThemePref(boolean auto) {
-		return (AUTO && auto) ? getIntPref(THEME_AA) : getIntPref(THEME_MAIN);
+		return getIntPref(THEME_MAIN);
 	}
 
 	@Nullable
@@ -147,8 +146,7 @@ public interface MainActivityPrefs
 	}
 
 	static boolean hasNavBarPosPref(MainActivityDelegate a, List<Pref<?>> prefs) {
-		if (AUTO && a.isCarActivity()) return prefs.contains(NAV_BAR_POS_AA);
-		return prefs.contains(NAV_BAR_POS);
+		return prefs.contains(NAV_BAR_POS) || (AUTO && prefs.contains(NAV_BAR_POS_AA));
 	}
 
 	default int getNavBarPosPref(MainActivityDelegate a) {

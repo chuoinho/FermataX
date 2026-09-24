@@ -17,13 +17,19 @@ public class SettingsMenuContractTest {
 
 		assertFalse(source.contains("R.string.hide_bars"));
 		assertFalse(source.contains("R.string.fullscreen_mode"));
+		assertFalse(source.contains("R.string.nav_bar_size"));
+		assertFalse(source.contains("R.string.tool_bar_size"));
+		assertFalse(source.contains("R.string.control_panel_size"));
+		assertFalse(source.contains("R.string.text_icon_size"));
+		assertFalse(source.contains("R.string.show_pg_up_down"));
+		assertFalse(source.contains("R.string.use_dpad_cursor"));
 	}
 
 	@Test
 	public void playbackSettingsDoesNotExposeSubtitleSubmenu() throws Exception {
 		String source = source("SettingsFragment.java");
 		int start = source.indexOf("PreferenceSet playback =");
-		int end = source.indexOf("VoicePrefsBuilder.add", start);
+		int end = source.indexOf("addAddons(set);", start);
 
 		assertTrue(start >= 0);
 		assertTrue(end > start);
@@ -40,8 +46,12 @@ public class SettingsMenuContractTest {
 
 		assertTrue(settings.contains("R.string.detailed_diagnostics"));
 		assertTrue(settings.contains("R.string.vehicle_key_test"));
+		assertTrue(settings.contains("KeyBindingPrefsBuilder.add(diagnostics);"));
 		assertTrue(settings.contains("R.string.export_diagnostic_report"));
 		assertTrue(settings.contains("R.string.clear_diagnostic_data"));
+		assertFalse(settings.contains("VoicePrefsBuilder.add"));
+		assertFalse(settings.contains("DashboardPrefsBuilder.add"));
+		assertFalse(settings.contains("R.string.other"));
 		assertFalse(settings.contains("R.string.open_log"));
 		assertFalse(backup.contains("static void openLog"));
 		assertFalse(backup.contains("PrefUtils.exportSharedPreferences"));

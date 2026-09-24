@@ -1305,8 +1305,20 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (MainActivityPrefs.hasThemePref(this, prefs)) {
+			if (BuildConfig.AUTO && prefs.contains(MainActivityPrefs.THEME_MAIN)) {
+				int theme = getPrefs().getIntPref(MainActivityPrefs.THEME_MAIN);
+				if (getPrefs().getIntPref(MainActivityPrefs.THEME_AA) != theme) {
+					getPrefs().applyIntPref(MainActivityPrefs.THEME_AA, theme);
+				}
+			}
 			recreate();
 		} else if (MainActivityPrefs.hasNavBarPosPref(this, prefs)) {
+			if (BuildConfig.AUTO && prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
+				int pos = getPrefs().getIntPref(MainActivityPrefs.NAV_BAR_POS_AA);
+				if (getPrefs().getIntPref(MainActivityPrefs.NAV_BAR_POS) != pos) {
+					getPrefs().applyIntPref(MainActivityPrefs.NAV_BAR_POS, pos);
+				}
+			}
 			recreate();
 		} else if (MainActivityPrefs.hasTextIconSizePref(this, prefs)) {
 			if (floatingButton != null) floatingButton.setScale(getPrefs().getTextIconSizePref(this));

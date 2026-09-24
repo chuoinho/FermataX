@@ -4,8 +4,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.utils.function.BooleanSupplier;
-import me.aap.utils.function.DoubleSupplier;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
@@ -17,23 +16,15 @@ final class InterfacePrefsBuilder {
 	}
 
 	static void addAndroidAuto(MainActivityDelegate activity, PreferenceSet set) {
-		if (!BuildConfig.AUTO) return;
-		add(activity, set, MainActivityPrefs.THEME_AA, MainActivityPrefs.SHOW_PG_UP_DOWN_AA,
-				MainActivityPrefs.USE_DPAD_CURSOR, MainActivityPrefs.NAV_BAR_POS_AA,
-				MainActivityPrefs.NAV_BAR_SIZE_AA, MainActivityPrefs.TOOL_BAR_SIZE_AA,
-				MainActivityPrefs.CONTROL_PANEL_SIZE_AA, MainActivityPrefs.TEXT_ICON_SIZE_AA);
+		add(activity, set);
 	}
 
-	static void add(MainActivityDelegate activity, PreferenceSet set, Pref<IntSupplier> theme,
-						Pref<BooleanSupplier> pgUpDown, Pref<BooleanSupplier> dpadCursor,
-						Pref<IntSupplier> navBarPosition, Pref<DoubleSupplier> navBarSize,
-						Pref<DoubleSupplier> toolBarSize, Pref<DoubleSupplier> controlPanelSize,
-						Pref<DoubleSupplier> textIconSize) {
+	static void add(MainActivityDelegate activity, PreferenceSet set) {
 		PreferenceStore store = activity.getPrefs();
-		normalizeNavBarPosition(store, navBarPosition);
+
 		set.addListPref(o -> {
 			o.store = store;
-			o.pref = theme;
+			o.pref = MainActivityPrefs.THEME_MAIN;
 			o.title = R.string.theme;
 			o.subtitle = R.string.theme_sub;
 			o.formatSubtitle = true;
@@ -41,20 +32,10 @@ final class InterfacePrefsBuilder {
 					R.string.theme_black, R.string.theme_star_wars, R.string.theme_purple,
 					R.string.theme_classic, R.string.theme_material_you};
 		});
-		if ((pgUpDown != null) && !BuildConfig.AUTO) {
-			set.addBooleanPref(o -> {
-				o.store = store;
-				o.pref = pgUpDown;
-				o.title = R.string.show_pg_up_down;
-			});
-		}
-		if (dpadCursor != null) {
-			set.addBooleanPref(o -> {
-				o.store = store;
-				o.pref = dpadCursor;
-				o.title = R.string.use_dpad_cursor;
-			});
-		}
+
+		Pref<IntSupplier> navBarPosition = BuildConfig.AUTO ?
+				MainActivityPrefs.NAV_BAR_POS_AA : MainActivityPrefs.NAV_BAR_POS;
+		normalizeNavBarPosition(store, navBarPosition);
 		set.addListPref(o -> {
 			o.store = store;
 			o.pref = navBarPosition;
@@ -64,21 +45,17 @@ final class InterfacePrefsBuilder {
 			o.values = new int[]{R.string.nav_bar_pos_left, R.string.nav_bar_pos_right};
 			o.valuesMap = new int[]{NavBarView.POSITION_LEFT, NavBarView.POSITION_RIGHT};
 		});
-		addSize(set, store, navBarSize, R.string.nav_bar_size);
-		addSize(set, store, toolBarSize, R.string.tool_bar_size);
-		addSize(set, store, controlPanelSize, R.string.control_panel_size);
-		addSize(set, store, textIconSize, R.string.text_icon_size);
-	}
 
-	private static void addSize(PreferenceSet set, PreferenceStore store,
-										Pref<DoubleSupplier> pref, int title) {
-		set.addFloatPref(o -> {
+		set.addListPref(o -> {
 			o.store = store;
-			o.pref = pref;
-			o.title = title;
-			o.scale = 0.05f;
-			o.seekMin = 10;
-			o.seekMax = 40;
+			o.pref = MainActivityPrefs.LOCALE;
+			o.title = R.string.lang;
+			o.subtitle = R.string.string_format;
+			o.formatSubtitle = true;
+			o.removeDefault = false;
+			o.cmp = String::compareTo;
+			o.stringValues = CollectionUtils.mapToArray(MainActivityPrefs.Lang.getValues(),
+					v -> v.locale.getDisplayName(), String[]::new);
 		});
 	}
 
