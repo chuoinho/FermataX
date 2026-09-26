@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -30,6 +31,9 @@ import androidx.appcompat.widget.AppCompatImageView;
 import androidx.car.app.SurfaceContainer;
 
 import com.google.android.apps.auto.sdk.CarActivity;
+import com.google.android.gms.car.CarActivityHost;
+
+import java.lang.reflect.Field;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -37,17 +41,76 @@ import me.aap.fermata.media.service.AutomotiveRuntimeGate;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.concurrent.ReschedulableTask;
+import me.aap.utils.log.Log;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MirrorActivity extends CarActivity implements SurfaceHolder.Callback {
+	private static MirrorActivity activeInstance;
 	private MirrorDisplay md;
 	private SurfaceContainer sc;
 	private long projectionGeneration;
+	private CarActivityHost carActivityHost;
+	private boolean finishing;
+
+	public static MirrorActivity getActiveInstance() {
+		return activeInstance;
+	}
+
+	static void finishForAutoDisconnect() {
+		MirrorActivity activity = activeInstance;
+		if (activity == null) return;
+		FermataApplication.get().getHandler().post(activity::finish);
+	}
+
+	@Override
+	public void attach(CarActivityHost host) {
+		super.attach(host);
+		this.carActivityHost = host;
+	}
+
+	CarActivityHost getCarActivityHost() {
+		if (carActivityHost != null) return carActivityHost;
+		try {
+			for (Class<?> clz = getClass(); clz != null; clz = clz.getSuperclass()) {
+				for (Field f : clz.getDeclaredFields()) {
+					if (CarActivityHost.class.isAssignableFrom(f.getType())) {
+						f.setAccessible(true);
+						Object val = f.get(this);
+						if (val instanceof CarActivityHost) {
+							carActivityHost = (CarActivityHost) val;
+							return carActivityHost;
+						}
+					}
+				}
+			}
+		} catch (Throwable t) {
+			Log.w(t, "Failed to resolve CarActivityHost in MirrorActivity");
+		}
+		return null;
+	}
+
+	public void finish() {
+		if (Looper.myLooper() != Looper.getMainLooper()) {
+			FermataApplication.get().getHandler().post(this::finish);
+			return;
+		}
+		if (finishing) return;
+		finishing = true;
+		CarActivityHost host = getCarActivityHost();
+		if (host != null) {
+			try {
+				host.finish();
+			} catch (Throwable t) {
+				Log.e(t, "Failed to finish MirrorActivity host");
+			}
+		}
+	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		activeInstance = this;
 		super.onCreate(savedInstanceState);
 		md = MirrorDisplay.get();
 		MainActivityDelegate.setTheme(this, true);
@@ -73,6 +136,7 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 
 	@Override
 	public void onDestroy() {
+		if (activeInstance == this) activeInstance = null;
 		if (md != null) md.release();
 		md = null;
 		super.onDestroy();

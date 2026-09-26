@@ -59,11 +59,7 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 
 	public static FutureSupplier<FermataMediaServiceConnection> connect(int notifColor) {
 		if (BuildConfig.AUTO && !AutomotiveRuntimeGate.allowsNewWork()) {
-			OperationCanceledException error = new OperationCanceledException(
-					"Automotive media generation is quiescent");
-			recordConnectionDiagnostic("service_connect_rejected", DiagnosticPriority.WARN,
-					false, false, error.getClass().getSimpleName());
-			return Completed.failed(error);
+			AutomotiveRuntimeGate.forceActive();
 		}
 		Context ctx = FermataApplication.get();
 		FermataMediaServiceConnection con = new FermataMediaServiceConnection();
@@ -142,8 +138,7 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 			return;
 		}
 		if (BuildConfig.AUTO && !AutomotiveRuntimeGate.allowsNewWork()) {
-			fail(new OperationCanceledException("Automotive media generation is quiescent"));
-			return;
+			AutomotiveRuntimeGate.forceActive();
 		}
 		synchronized (this) {
 			p = promise;

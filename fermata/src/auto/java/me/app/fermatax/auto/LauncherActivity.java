@@ -15,6 +15,7 @@ import static me.aap.utils.ui.UiUtils.toPx;
 import static me.aap.utils.ui.activity.ActivityDelegate.FULLSCREEN_FLAGS;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -412,7 +413,10 @@ public class LauncherActivity extends AppCompatActivity {
 				icon.startAnimation(animation);
 
 				if (appInfo.equals(AppInfo.EXIT)) {
-					AutoSessionShutdown.shutdown(getContext());
+					CarSessionCoordinator.shutdown(getContext());
+					var launcher = LauncherActivity.getActiveInstance();
+					if (launcher != null) launcher.finish();
+					else if (getContext() instanceof Activity a) a.finish();
 				} else if (appInfo.equals(AppInfo.ADD)) {
 					var pm = getContext().getPackageManager();
 					var allApps = loadAllAppList(pm);

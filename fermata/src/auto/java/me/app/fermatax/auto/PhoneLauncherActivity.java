@@ -17,7 +17,7 @@ public final class PhoneLauncherActivity extends Activity {
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		if (ProjectionActivity.resumePendingRequest(this)) {
-			finish();
+			finishAndRemoveTask();
 			return;
 		}
 
@@ -26,8 +26,8 @@ public final class PhoneLauncherActivity extends Activity {
 		// no-display trampoline. Finishing it then leaves an empty task and returns to Home.
 		var target = new Intent(this, MainActivity.class);
 		target.setAction(Intent.ACTION_MAIN);
-		target.addFlags(FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP);
+		target.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP);
 		startActivity(target);
-		finish();
+		finishAndRemoveTask();
 	}
 }

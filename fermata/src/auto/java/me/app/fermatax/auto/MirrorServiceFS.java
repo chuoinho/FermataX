@@ -47,7 +47,7 @@ public class MirrorServiceFS extends CarAppService {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		AutoConnectionMonitor.hostCreated(this);
+		CarSessionCoordinator.hostCreated(this);
 		md = MirrorDisplay.get();
 	}
 
@@ -58,7 +58,6 @@ public class MirrorServiceFS extends CarAppService {
 		activeScreen = null;
 		if (md != null) md.release();
 		md = null;
-		AutoConnectionMonitor.hostDestroyed(this);
 		super.onDestroy();
 	}
 

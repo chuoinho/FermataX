@@ -23,6 +23,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
@@ -45,7 +46,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
+import com.google.android.gms.car.CarActivityHost;
 
+import java.lang.reflect.Field;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntFunction;
 
@@ -60,6 +63,7 @@ import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
 import me.aap.fermata.auto.OpenOnCarKind;
 import me.aap.fermata.auto.OpenOnCarRequest;
 import me.aap.fermata.auto.OpenOnCarRequestHandler;
+import me.aap.fermata.media.service.FermataMediaService;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -85,6 +89,10 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			new DirectAppStartupCoordinator<>(FermataMediaServiceConnection::isConnected,
 					FermataMediaServiceConnection::disconnect);
 	private static MainCarActivity currentInstance;
+
+	public static MainCarActivity getActiveInstance() {
+		return currentInstance;
+	}
 	@SuppressWarnings("unchecked")
 	@NonNull
 	private FutureSupplier<MainActivityDelegate> delegate =
@@ -104,6 +112,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private boolean delegateResumed;
 	private boolean destroyed;
 	private boolean finishRequested;
+	private boolean finishing;
+	private CarActivityHost carActivityHost;
 	private final long diagnosticsActivityId = DiagnosticsObserver.nextId();
 	private final ProjectedBackEventFilter projectedBackEventFilter =
 			new ProjectedBackEventFilter();
@@ -135,6 +145,33 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	@Override
+	public void attach(CarActivityHost host) {
+		super.attach(host);
+		this.carActivityHost = host;
+	}
+
+	CarActivityHost getCarActivityHost() {
+		if (carActivityHost != null) return carActivityHost;
+		try {
+			for (Class<?> clz = getClass(); clz != null; clz = clz.getSuperclass()) {
+				for (Field f : clz.getDeclaredFields()) {
+					if (CarActivityHost.class.isAssignableFrom(f.getType())) {
+						f.setAccessible(true);
+						Object val = f.get(this);
+						if (val instanceof CarActivityHost) {
+							carActivityHost = (CarActivityHost) val;
+							return carActivityHost;
+						}
+					}
+				}
+			}
+		} catch (Throwable t) {
+			Log.w(t, "Failed to resolve CarActivityHost via reflection");
+		}
+		return null;
+	}
+
+	@Override
 	protected void attachBaseContext(Context base) {
 		super.attachBaseContext(MainActivityDelegate.attachBaseContext(base));
 	}
@@ -147,7 +184,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		initCarActivity(this);
 		// CarActivity creation is an authoritative projected-host signal. Open the new generation
 		// synchronously so the media-service bind cannot race the asynchronous CarConnection value.
-		AutoSessionShutdown.sessionStarted();
+		CarSessionCoordinator.sessionStarted();
 		int notifColor = FermataMediaServiceConnection.resolveNotificationColor(this);
 		DirectAppStartupCoordinator.Startup<FermataMediaServiceConnection> startup =
 				STARTUP.begin(() -> FermataMediaServiceConnection.connect(notifColor));
@@ -334,9 +371,45 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	public void finish() {
+		if (Looper.myLooper() != Looper.getMainLooper()) {
+			FermataApplication.get().getHandler().post(this::finish);
+			return;
+		}
+		if (finishing) return;
+		finishing = true;
 		finishRequested = true;
+
 		MainActivityDelegate d = createdDelegate;
-		if (d != null) d.onActivityFinish();
+		if (d != null) {
+			try {
+				if (d.getMediaServiceBinder() != null) {
+					var cb = d.getMediaServiceBinder().getMediaSessionCallback();
+					if (cb != null) cb.onStop();
+				}
+			} catch (Throwable t) {
+				Log.w(t, "Failed to stop media callback on finish");
+			}
+			try {
+				FermataMediaService.suspendActiveInstanceForAutomotiveDisconnect();
+			} catch (Throwable t) {
+				Log.w(t, "Failed to suspend media on finish");
+			}
+			d.onActivityFinish();
+		}
+
+		CarSessionCoordinator.shutdown(this);
+
+		FermataMediaServiceConnection connection = takeServiceForShutdown();
+		if (connection != null) connection.disconnect();
+
+		CarActivityHost host = getCarActivityHost();
+		if (host != null) {
+			try {
+				host.finish();
+			} catch (Throwable t) {
+				Log.e(t, "Failed to finish CarActivityHost");
+			}
+		}
 	}
 
 	static FermataMediaServiceConnection takeServiceForShutdown() {

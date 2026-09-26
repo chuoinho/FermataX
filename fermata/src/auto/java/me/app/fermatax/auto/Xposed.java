@@ -65,23 +65,41 @@ public class Xposed implements IXposedHookLoadPackage {
 		log("[Fermata] Hooking into package " + pkgName);
 
 		if (AA_PKG.equals(pkgName) || APPLICATION_ID.equals(pkgName)) {
-			if (VERSION.SDK_INT >= VERSION_CODES.R) {
-				findAndHookMethod(InstallSourceInfo.class, "getInitiatingPackageName",
-						new XC_MethodHook() {
+			XC_MethodHook returnPlayStoreHook = new XC_MethodHook() {
+				@Override
+				protected void afterHookedMethod(MethodHookParam param) {
+					param.setResult(GPLAY_PKG);
+				}
+			};
 
-							@Override
-							protected void afterHookedMethod(MethodHookParam param) {
-								param.setResult(GPLAY_PKG);
-							}
-						});
-			} else {
+			if (VERSION.SDK_INT >= VERSION_CODES.R) {
+				try {
+					findAndHookMethod(InstallSourceInfo.class, "getInitiatingPackageName", returnPlayStoreHook);
+				} catch (Throwable t) {
+					debug(t, "Failed to hook getInitiatingPackageName");
+				}
+				try {
+					findAndHookMethod(InstallSourceInfo.class, "getInstallingPackageName", returnPlayStoreHook);
+				} catch (Throwable t) {
+					debug(t, "Failed to hook getInstallingPackageName");
+				}
+				try {
+					findAndHookMethod(InstallSourceInfo.class, "getOriginatingPackageName", returnPlayStoreHook);
+				} catch (Throwable ignored) {
+				}
+				if (VERSION.SDK_INT >= 34) {
+					try {
+						findAndHookMethod(InstallSourceInfo.class, "getUpdateOwnerPackageName", returnPlayStoreHook);
+					} catch (Throwable ignored) {
+					}
+				}
+			}
+
+			try {
 				findAndHookMethod(PKG_MGR_CLASS, lpparam.classLoader, "getInstallerPackageName",
-						String.class, new XC_MethodHook() {
-							@Override
-							protected void afterHookedMethod(MethodHookParam param) {
-								param.setResult(GPLAY_PKG);
-							}
-						});
+						String.class, returnPlayStoreHook);
+			} catch (Throwable t) {
+				debug(t, "Failed to hook getInstallerPackageName");
 			}
 			return;
 		}
@@ -248,7 +266,18 @@ public class Xposed implements IXposedHookLoadPackage {
 					e.setLocation(e.getX() - loc[0], e.getY() - loc[1]);
 					activity.dispatchTouchEvent(e);
 				}
-				case XposedEventDispatcherService.MSG_BACK_EVENT -> activity.onBackPressed();
+				case XposedEventDispatcherService.MSG_BACK_EVENT -> {
+					try {
+						var method = activity.getClass().getMethod("getOnBackPressedDispatcher");
+						var dispatcher = method.invoke(activity);
+						if (dispatcher != null) {
+							dispatcher.getClass().getMethod("onBackPressed").invoke(dispatcher);
+							return;
+						}
+					} catch (Throwable ignored) {
+					}
+					activity.onBackPressed();
+				}
 			}
 		}
 

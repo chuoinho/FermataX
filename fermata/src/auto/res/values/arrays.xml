@@ -4,5 +4,10 @@
         <item>com.google.android.projection.gearhead</item>
         <item>com.android.chrome</item>
         <item>com.google.android.apps.maps</item>
+        <item>com.google.android.youtube</item>
+        <item>com.google.android.youtube.tv</item>
+        <item>org.videolan.vlc</item>
+        <item>com.mxtech.videoplayer.ad</item>
+        <item>com.mxtech.videoplayer.pro</item>
     </string-array>
 </resources>

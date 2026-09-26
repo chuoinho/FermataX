@@ -30,6 +30,7 @@
 		android:icon="@drawable/launcher">
 		<activity
 			android:name="me.aap.fermata.ui.activity.MainActivity"
+			android:excludeFromRecents="false"
 			android:exported="true">
 			<intent-filter tools:node="remove">
 				<action android:name="android.intent.action.MAIN" />
@@ -47,6 +48,8 @@
 			android:excludeFromRecents="true"
 			android:exported="true"
 			android:launchMode="singleTop"
+			android:noHistory="true"
+			android:taskAffinity="me.app.fermatax.auto.launcher"
 			android:theme="@android:style/Theme.NoDisplay">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
@@ -164,7 +167,8 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/filepaths" />
+                android:resource="@xml/filepaths"
+                tools:replace="android:resource" />
         </provider>
 
     </application>

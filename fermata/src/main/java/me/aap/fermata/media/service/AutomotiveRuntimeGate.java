@@ -22,6 +22,17 @@ public final class AutomotiveRuntimeGate {
 		return ++generation;
 	}
 
+	/**
+	 * Authoritatively forces the runtime gate into ACTIVE state for direct user/host launches.
+	 * Even if the gate was quiescent or in mid-teardown, an explicit launch from Android Auto
+	 * takes absolute priority and arms a new active generation.
+	 */
+	public static synchronized long forceActive() {
+		if (state == State.ACTIVE) return generation;
+		state = State.ACTIVE;
+		return ++generation;
+	}
+
 	/** Atomically closes the active generation to all new runtime work. */
 	public static synchronized long beginShutdown() {
 		if (state != State.ACTIVE) return -1L;
@@ -47,6 +58,10 @@ public final class AutomotiveRuntimeGate {
 
 	public static synchronized boolean isActiveGeneration(long expectedGeneration) {
 		return (state == State.ACTIVE) && (generation == expectedGeneration);
+	}
+
+	public static synchronized boolean isTearingDownGeneration(long targetGen) {
+		return (state == State.SHUTTING_DOWN) && (generation == targetGen);
 	}
 
 	public static synchronized long currentGeneration() {

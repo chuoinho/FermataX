@@ -5,9 +5,10 @@
     <external-cache-path
         name="ext_updates"
         path="updates/" />
-    <paths>
-        <external-path
-            name="ext_files"
-            path="." />
-    </paths>
+    <external-files-path
+        name="parking_photos"
+        path="parking_photos/" />
+    <external-path
+        name="ext_files"
+        path="." />
 </paths>
