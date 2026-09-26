@@ -1,8 +1,8 @@
 if (gradle.ext.enableGoogleServices) apply plugin: 'com.google.gms.google-services'
 
 def defaultApplicationId = 'me.app.fermataX'
-def configuredApplicationId = project.getProperties().getOrDefault('APP_ID', defaultApplicationId)
-def configuredAutoIdSuffix = project.getProperties().getOrDefault('APP_ID_SFX', '')
+def configuredApplicationId = (rootProject.findProperty('APP_ID') ?: defaultApplicationId).toString()
+def configuredAutoIdSuffix = (rootProject.findProperty('APP_ID_SFX') ?: '').toString()
 def expectedAutoReleaseApplicationId = configuredApplicationId + '.auto' + configuredAutoIdSuffix
 def artifactIdentity = expectedAutoReleaseApplicationId
         .replaceAll('[^A-Za-z0-9._-]', '_')
@@ -83,7 +83,7 @@ android {
 
         auto {
             dimension "version"
-            applicationIdSuffix '.auto' + project.getProperties().getOrDefault('APP_ID_SFX', '')
+            applicationIdSuffix '.auto' + configuredAutoIdSuffix
             resValue "string", "app_name", project.getProperties()
                     .getOrDefault('APP_NAME', "@string/app_name_auto")
             resValue "string", "media_service_name", "@string/media_service_name_auto"
@@ -97,6 +97,7 @@ android {
             }
         }
     }
+
     packagingOptions {
         resources {
             excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/license.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt', 'META-INF/notice.txt', 'META-INF/ASL2.0']
@@ -114,7 +115,6 @@ androidComponents {
                 variant.productFlavors.any { it.second == 'auto' }) {
             variant.sources.manifests.addStaticManifestFile(
                     'src/testAutoMirror/AndroidManifest.xml')
-            variant.sources.res.addStaticSourceDirectory('src/testAutoMirror/res')
         }
     }
 }

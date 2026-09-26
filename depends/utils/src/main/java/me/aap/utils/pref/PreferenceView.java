@@ -679,7 +679,7 @@ public class PreferenceView extends ConstraintLayout {
 						int id = (o.valuesMap == null) ? i : o.valuesMap[i];
 						map.put(res.getString(o.values[i]), id);
 					}
-				} else {
+				} else if (o.stringValues != null) {
 					for (int i = 0; i < o.stringValues.length; i++) {
 						if (!o.valuesFilter.apply(i)) continue;
 						int id = (o.valuesMap == null) ? i : o.valuesMap[i];
@@ -725,11 +725,13 @@ public class PreferenceView extends ConstraintLayout {
 		Resources res = getContext().getResources();
 		int value = o.store.getIntPref(o.pref);
 		int idx = (o.valuesMap == null) ? value : CollectionUtils.indexOf(o.valuesMap, value);
+		int len = (o.values != null) ? o.values.length : ((o.stringValues != null) ? o.stringValues.length : 0);
+		if (idx < 0 || idx >= len) idx = 0;
 
-		if (idx != -1) {
+		if (idx < len) {
 			if (o.values != null) {
 				text.get().setText(res.getString(resId, res.getString(o.values[idx])));
-			} else {
+			} else if (o.stringValues != null) {
 				text.get().setText(res.getString(resId, o.stringValues[idx]));
 			}
 		}
