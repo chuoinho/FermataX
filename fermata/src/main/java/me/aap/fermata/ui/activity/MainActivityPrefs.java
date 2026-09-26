@@ -290,35 +290,7 @@ public interface MainActivityPrefs
 	}
 
 	default boolean shouldShowInitialSetup(MainActivityDelegate activity) {
-		if (getBooleanPref(INITIAL_SETUP_COMPLETED)) return false;
-
-		try {
-			PackageInfo info = activity.getContext().getPackageManager().getPackageInfo(
-					activity.getContext().getPackageName(), 0);
-			boolean hasExistingPrefs = false;
-			for (String key : getSharedPreferences().getAll().keySet()) {
-				// AddonManager may run from the media service before the first Activity.
-				if ("ADDONS_ENABLED_BY_DEFAULT".equals(key) ||
-						"ADDONS_ENABLED_BY_DEFAULT_V2".equals(key) ||
-						"DASHBOARD_ITEMS".equals(key) ||
-						"DASHBOARD_LAYOUT_VERSION".equals(key) ||
-						"METADATA_VERSION".equals(key) ||
-						"CHECK_UPDATES_STAMP".equals(key) ||
-						(key.endsWith("_enabled") && key.indexOf('.') >= 0)) continue;
-				hasExistingPrefs = true;
-				break;
-			}
-			boolean show = shouldShowInitialSetup(info.firstInstallTime, info.lastUpdateTime,
-					hasExistingPrefs, false);
-			if (!show) {
-				// A legacy installation must never be interrupted by the new setup screen.
-				applyInitialSetupCompleted();
-			}
-			return show;
-		} catch (Exception err) {
-			// Startup must remain fail-open if package metadata is unavailable.
-			return false;
-		}
+		return !getBooleanPref(INITIAL_SETUP_COMPLETED);
 	}
 
 	default void applyInitialSetupCompleted() {
@@ -349,11 +321,12 @@ public interface MainActivityPrefs
     ;
 
 		private static final List<Lang> values = List.of(values());
+		private static final List<Lang> SUPPORTED_VALUES = List.of(EN, VI, RU, ES, PT, ZH_TW);
 		private static final Map<String, Lang> nameToValue = new HashMap<>();
 		public final Locale locale;
 
 		static {
-			for (var v : values) {
+			for (var v : SUPPORTED_VALUES) {
 				nameToValue.put(v.locale.getLanguage(), v);
 			}
 		}
@@ -367,16 +340,22 @@ public interface MainActivityPrefs
 		}
 
 		public static List<Lang> getValues() {
-			return values;
+			return SUPPORTED_VALUES;
 		}
 
 		public static Lang get(int pref) {
-			return ((pref < 0) || (pref >= Lang.values.size())) ? Lang.EN : Lang.values.get(pref);
+			if ((pref < 0) || (pref >= values.size())) return EN;
+			Lang l = values.get(pref);
+			return isSupported(l) ? l : EN;
+		}
+
+		public static boolean isSupported(Lang l) {
+			return SUPPORTED_VALUES.contains(l);
 		}
 
 		public static Lang get(String name) {
 			var value = nameToValue.get(name);
-			return (value == null) ? Lang.EN : value;
+			return (value == null) ? EN : value;
 		}
 	}
 }

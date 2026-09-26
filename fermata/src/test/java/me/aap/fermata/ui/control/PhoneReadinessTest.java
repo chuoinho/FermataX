@@ -16,6 +16,14 @@ public class PhoneReadinessTest {
 						PhoneReadiness.Status.NOT_APPLICABLE, PhoneReadiness.Action.NONE),
 				new PhoneReadiness.Row(PhoneReadiness.Check.CONTROL_SESSION,
 						PhoneReadiness.Status.INFO, PhoneReadiness.Action.NONE),
+				new PhoneReadiness.Row(PhoneReadiness.Check.STORAGE,
+						PhoneReadiness.Status.OK, PhoneReadiness.Action.STORAGE_SETTINGS),
+				new PhoneReadiness.Row(PhoneReadiness.Check.LOCATION,
+						PhoneReadiness.Status.OK, PhoneReadiness.Action.LOCATION_SETTINGS),
+				new PhoneReadiness.Row(PhoneReadiness.Check.ACCESSIBILITY,
+						PhoneReadiness.Status.NOT_APPLICABLE, PhoneReadiness.Action.NONE),
+				new PhoneReadiness.Row(PhoneReadiness.Check.MICROPHONE,
+						PhoneReadiness.Status.OK, PhoneReadiness.Action.MICROPHONE_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.NOTIFICATIONS,
 						PhoneReadiness.Status.OK, PhoneReadiness.Action.NOTIFICATION_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.OVERLAY,
@@ -25,7 +33,7 @@ public class PhoneReadinessTest {
 				new PhoneReadiness.Row(PhoneReadiness.Check.BATTERY,
 						PhoneReadiness.Status.INFO, PhoneReadiness.Action.BATTERY_SETTINGS)),
 				PhoneReadiness.evaluate(new PhoneReadiness.Input(false, false,
-						State.DISCONNECTED, false, true, false, false)));
+						State.DISCONNECTED, false, true, true, false, true, true, false, false)));
 	}
 
 	@Test
@@ -33,7 +41,7 @@ public class PhoneReadinessTest {
 		assertEquals(new PhoneReadiness.Row(PhoneReadiness.Check.CONNECTION,
 				PhoneReadiness.Status.UNKNOWN, PhoneReadiness.Action.NONE), row(
 				PhoneReadiness.evaluate(new PhoneReadiness.Input(true, false,
-						State.DISCONNECTED, true, false, false, false)),
+						State.DISCONNECTED, true, false, false, false, false, false, false, false)),
 				PhoneReadiness.Check.CONNECTION));
 	}
 
@@ -44,6 +52,14 @@ public class PhoneReadinessTest {
 						PhoneReadiness.Status.INFO, PhoneReadiness.Action.NONE),
 				new PhoneReadiness.Row(PhoneReadiness.Check.CONTROL_SESSION,
 						PhoneReadiness.Status.INFO, PhoneReadiness.Action.NONE),
+				new PhoneReadiness.Row(PhoneReadiness.Check.STORAGE,
+						PhoneReadiness.Status.ACTION_AVAILABLE, PhoneReadiness.Action.STORAGE_SETTINGS),
+				new PhoneReadiness.Row(PhoneReadiness.Check.LOCATION,
+						PhoneReadiness.Status.ACTION_AVAILABLE, PhoneReadiness.Action.LOCATION_SETTINGS),
+				new PhoneReadiness.Row(PhoneReadiness.Check.ACCESSIBILITY,
+						PhoneReadiness.Status.ACTION_AVAILABLE, PhoneReadiness.Action.ACCESSIBILITY_SETTINGS),
+				new PhoneReadiness.Row(PhoneReadiness.Check.MICROPHONE,
+						PhoneReadiness.Status.ACTION_AVAILABLE, PhoneReadiness.Action.MICROPHONE_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.NOTIFICATIONS,
 						PhoneReadiness.Status.ACTION_AVAILABLE,
 						PhoneReadiness.Action.NOTIFICATION_SETTINGS),
@@ -54,7 +70,7 @@ public class PhoneReadinessTest {
 				new PhoneReadiness.Row(PhoneReadiness.Check.BATTERY,
 						PhoneReadiness.Status.INFO, PhoneReadiness.Action.BATTERY_SETTINGS)),
 				PhoneReadiness.evaluate(new PhoneReadiness.Input(true, true,
-						State.DISCONNECTED, false, false, false, false)));
+						State.DISCONNECTED, false, false, false, false, false, false, false, false)));
 	}
 
 	@Test
@@ -64,6 +80,14 @@ public class PhoneReadinessTest {
 						PhoneReadiness.Status.OK, PhoneReadiness.Action.NONE),
 				new PhoneReadiness.Row(PhoneReadiness.Check.CONTROL_SESSION,
 						PhoneReadiness.Status.OK, PhoneReadiness.Action.NONE),
+				new PhoneReadiness.Row(PhoneReadiness.Check.STORAGE,
+						PhoneReadiness.Status.OK, PhoneReadiness.Action.STORAGE_SETTINGS),
+				new PhoneReadiness.Row(PhoneReadiness.Check.LOCATION,
+						PhoneReadiness.Status.OK, PhoneReadiness.Action.LOCATION_SETTINGS),
+				new PhoneReadiness.Row(PhoneReadiness.Check.ACCESSIBILITY,
+						PhoneReadiness.Status.OK, PhoneReadiness.Action.ACCESSIBILITY_SETTINGS),
+				new PhoneReadiness.Row(PhoneReadiness.Check.MICROPHONE,
+						PhoneReadiness.Status.OK, PhoneReadiness.Action.MICROPHONE_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.NOTIFICATIONS,
 						PhoneReadiness.Status.OK, PhoneReadiness.Action.NOTIFICATION_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.OVERLAY,
@@ -73,7 +97,7 @@ public class PhoneReadinessTest {
 				new PhoneReadiness.Row(PhoneReadiness.Check.BATTERY,
 						PhoneReadiness.Status.INFO, PhoneReadiness.Action.BATTERY_SETTINGS)),
 				PhoneReadiness.evaluate(new PhoneReadiness.Input(true, true,
-						State.CONNECTED, true, true, true, true)));
+						State.CONNECTED, true, true, true, true, true, true, true, true)));
 	}
 
 	@Test
@@ -81,7 +105,7 @@ public class PhoneReadinessTest {
 		assertEquals(new PhoneReadiness.Row(PhoneReadiness.Check.CONNECTION,
 				PhoneReadiness.Status.OK, PhoneReadiness.Action.NONE), row(
 				PhoneReadiness.evaluate(new PhoneReadiness.Input(true, true,
-						State.APP_VISIBLE, false, true, true, false)),
+						State.APP_VISIBLE, false, true, true, true, true, true, true, false)),
 				PhoneReadiness.Check.CONNECTION));
 	}
 

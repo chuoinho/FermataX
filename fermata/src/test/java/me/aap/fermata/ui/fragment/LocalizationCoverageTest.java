@@ -22,11 +22,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class LocalizationCoverageTest {
-	private static final List<String> LOCALES = List.of("ar", "de", "es", "fr", "hr", "it",
-			"ja", "km", "ko", "pl", "pt", "ro", "ru", "tr", "vi", "zh-rTW");
+	private static final List<String> LOCALES = List.of("es", "pt", "ru", "vi", "zh-rTW");
 	private static final List<String> RESOURCE_ROOTS = List.of(
 			"fermata/src/main/res", "modules/audiobook/src/main/res",
-			"modules/chat/src/main/res", "modules/podcast/src/main/res",
+			"modules/podcast/src/main/res",
 			"modules/radio/src/main/res", "modules/tv/src/main/res",
 			"modules/web/src/main/res",
 			"depends/utils/src/main/res");

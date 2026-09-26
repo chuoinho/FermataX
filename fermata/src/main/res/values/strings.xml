@@ -97,7 +97,7 @@
     <string name="theme_star_wars">Star Wars</string>
     <string name="theme_purple">Purple</string>
     <string name="theme_classic">Classic</string>
-    <string name="theme_material_you" translatable="false">Material You / Bento</string>
+    <string name="theme_material_you">Material You / Bento</string>
 
     <string name="nav_bar_pos">Navigation bar position</string>
     <string name="nav_bar_pos_sub">Current position: %1$s</string>
@@ -513,4 +513,60 @@
 	<string name="retry">Retry</string>
 	<string name="media_list_empty">No items yet</string>
 	<string name="media_list_load_failed">Unable to load items.</string>
+
+    <!-- Car Finder Strings -->
+    <string name="car_finder_title">Find Car</string>
+    <string name="car_finder_my_car">My Car</string>
+    <string name="car_finder_you">You</string>
+    <string name="car_finder_no_location">No parked location saved yet.\nYour car location will be saved automatically when you disconnect from Android Auto.</string>
+    <string name="car_finder_pin_here">Pin current location here</string>
+    <string name="car_finder_pinned_success">Saved current location</string>
+    <string name="car_finder_waiting_gps">Waiting for GPS position...</string>
+    <string name="car_finder_measuring_gps">Measuring location...</string>
+    <string name="car_finder_precise_find">Precise Radar</string>
+    <string name="car_finder_directions">Directions</string>
+    <string name="car_finder_found_car">Found My Car</string>
+    <string name="car_finder_found_confirm_title">Confirm Found</string>
+    <string name="car_finder_found_confirm_msg">Did you find your car? The saved parking location will be cleared.</string>
+    <string name="car_finder_cleared_toast">Parking location cleared.</string>
+    <string name="car_finder_settings_title">Car Finder Settings</string>
+    <string name="car_finder_pref_auto_save">Auto-save location when leaving car</string>
+    <string name="car_finder_pref_notif">Notify when disconnected from car</string>
+    <string name="car_finder_clear_location">Clear current parking location</string>
+    <string name="car_finder_clear_confirm_title">Clear Parking Location</string>
+    <string name="car_finder_clear_confirm_msg">Do you want to clear the current saved parking location?</string>
+    <string name="car_finder_saved_title">Vehicle Parking Saved</string>
+    <string name="car_finder_notif_desc">Notifications when parking location is saved after leaving car</string>
+    <string name="car_finder_parked_auto">Parked location saved upon Android Auto disconnect.</string>
+    <string name="car_finder_address_resolving">Resolving address...</string>
+    <string name="car_finder_parked_ago_minutes">Parked %1$d min ago</string>
+    <string name="car_finder_parked_ago_hours">Parked %1$d hr ago</string>
+    <string name="car_finder_walk_minutes">· %1$d min walk</string>
+    <string name="car_finder_straight_ahead">Straight ahead</string>
+    <string name="car_finder_front_right">Front, slightly right</string>
+    <string name="car_finder_front_left">Front, slightly left</string>
+    <string name="car_finder_right">To the right</string>
+    <string name="car_finder_left">To the left</string>
+    <string name="car_finder_rear_right">Behind, slightly right</string>
+    <string name="car_finder_rear_left">Behind, slightly left</string>
+    <string name="car_finder_behind">Behind you</string>
+    <string name="car_finder_right_here">Your car is right here</string>
+    <string name="car_finder_almost_there">Almost there</string>
+    <string name="car_finder_follow_arrow">Follow the arrow</string>
+    <string name="car_finder_compass_uncalibrated">Compass offset — move phone in figure 8</string>
+    <string name="car_finder_accuracy_margin">±%1$d m</string>
+    <string name="car_finder_back">Back</string>
+    <string name="car_finder_close">Close</string>
+    <string name="car_finder_take_photo">Take spot photo</string>
+    <string name="car_finder_retake_photo">Retake</string>
+    <string name="car_finder_delete_photo">Delete</string>
+    <string name="car_finder_photo_title">Parking Spot Photo</string>
+    <string name="car_finder_add_note">Add note (e.g. Pillar B2 #15)</string>
+    <string name="car_finder_note_hint">Pillar, floor, parking spot number...</string>
+    <string name="car_finder_near_car_hint">You are near your car (~%1$d m). You can also use Radar mode for precise direction.</string>
+    <string name="car_finder_conf_high">Accurate (±%1$d m)</string>
+    <string name="car_finder_conf_med">Approximate (±%1$d m)</string>
+    <string name="car_finder_conf_basement">Garage Entrance · Verify</string>
+    <string name="car_finder_basement_hint">Parked in garage. Snap a photo or note your pillar to find your spot easily!</string>
+    <string name="car_finder_view_on_map">View on Map</string>
 </resources>

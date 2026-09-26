@@ -222,7 +222,7 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	}
 
 	private Locale selectedAppLocale() {
-		return MainActivityPrefs.Lang.get(appLanguage.getSelectedItemPosition()).locale;
+		return MainActivityPrefs.Lang.getValues().get(appLanguage.getSelectedItemPosition()).locale;
 	}
 
 	private void applyAndContinue() {
@@ -230,12 +230,13 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		MainActivityPrefs prefs = activity.getPrefs();
 		int nav = (navPosition.getCheckedRadioButtonId() == R.id.initial_setup_nav_right)
 				? NavBarView.POSITION_RIGHT : NavBarView.POSITION_LEFT;
-		int locale = appLanguage.getSelectedItemPosition();
+		MainActivityPrefs.Lang selectedLang = MainActivityPrefs.Lang.getValues().get(appLanguage.getSelectedItemPosition());
+		int locale = selectedLang.ordinal();
 		boolean voice = voiceEnabled.isChecked();
 		String voiceLocale = selectedVoiceLocale(activity);
 		boolean autoVoice = voiceLanguage.getSelectedItemPosition() == VOICE_AUTO;
 		boolean navChanged = prefs.getNavBarPosPref(activity) != nav;
-		boolean localeChanged = !prefs.getLocalePref().equals(MainActivityPrefs.Lang.get(locale).locale);
+		boolean localeChanged = !prefs.getLocalePref().equals(selectedLang.locale);
 		boolean presentationChanged = navChanged || localeChanged;
 
 		try (var edit = prefs.editPreferenceStore()) {
