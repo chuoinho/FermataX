@@ -315,6 +315,11 @@ public class FermataWebView extends WebView
 		else if (visibility != View.GONE) super.onWindowVisibilityChanged(View.VISIBLE);
 	}
 
+	@Override
+	public void onVisibilityAggregated(boolean isVisible) {
+		super.onVisibilityAggregated((BuildConfig.AUTO && keepWindowVisibleOnAuto()) || isVisible);
+	}
+
 	protected boolean keepWindowVisibleOnAuto() {
 		return true;
 	}

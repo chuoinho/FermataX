@@ -37,7 +37,8 @@ final class YoutubeScripts {
 			  var css = '.video-ads, .ytp-ad-player-overlay, ytm-promoted-sparkles-web-renderer, ytm-promoted-video-renderer, ' +
 			      'ytm-compact-promoted-video-renderer, ytd-ad-slot-renderer, ytd-in-feed-ad-layout-renderer, ' +
 			      'ytm-companion-slot, #player-ads, #masthead-ad, .ytp-ad-module, .ytp-ad-overlay-container, ' +
-			      'ad-slot-renderer, ytm-reel-shelf-renderer, ytm-shorts-lockup-view-model, ' +
+			      'ad-slot-renderer, ytm-rich-item-renderer:has(ad-slot-renderer), ytm-rich-item-renderer:has(.ytm-promoted-video-renderer), ' +
+			      'ytm-rich-item-renderer:has(ytm-promoted-sparkles-web-renderer), ytm-reel-shelf-renderer, ytm-shorts-lockup-view-model, ' +
 			      '[class*="ad-showing"] .ad-interrupting { display: none !important; } ' +
 			      '.html5-video-player.ad-showing video, video.ad-showing, .ad-showing .html5-main-video { opacity: 0 !important; }';
 			  function inject() {

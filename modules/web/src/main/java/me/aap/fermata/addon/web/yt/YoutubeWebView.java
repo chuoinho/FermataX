@@ -485,6 +485,7 @@ public class YoutubeWebView extends FermataWebView {
 		addFocusHighlight();
 		flushCookiesSoon();
 		notifyToolbarPageChanged();
+		evaluateJavascript("window.dispatchEvent(new Event('resize'));", null);
 		if (reloadAudioRestorePending) {
 			reloadAudioPageCommitted = true;
 			restoreReloadAudio(0, reloadAudioGeneration);

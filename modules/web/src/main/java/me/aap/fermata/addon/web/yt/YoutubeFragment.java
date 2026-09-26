@@ -124,9 +124,14 @@ public class YoutubeFragment extends WebBrowserFragment
 					addon.consumeEntry(a, System.currentTimeMillis(), directPlayback,
 							isYoutubePlaybackActive(a, webView), webView.sessionGeneration());
 			if (!directPlayback) {
-				if (returnAction == YoutubeAddon.SessionReturnAction.RESET_HOME)
+				if (returnAction == YoutubeAddon.SessionReturnAction.RESET_HOME) {
 					resetStaleSession(a, webView);
-				else webView.loadUrl(startUrl);
+				} else {
+					runWhenMeasured(webView, () -> {
+						if (!isAdded()) return;
+						webView.loadUrl(startUrl);
+					});
+				}
 			}
 		});
 	}
@@ -365,7 +370,58 @@ public class YoutubeFragment extends WebBrowserFragment
 			if (callback.isPlaying()) return;
 			callback.onStop();
 		}
-		view.resetToHome();
+		runWhenMeasured(view, view::resetToHome);
+	}
+
+	private static void runWhenMeasured(View view, Runnable action) {
+		if (view.getWidth() > 0 && view.getHeight() > 0) {
+			if (view.isAttachedToWindow()) action.run();
+			return;
+		}
+		final boolean[] executed = {false};
+		final View.OnLayoutChangeListener[] layoutRef = new View.OnLayoutChangeListener[1];
+		final Runnable[] timeoutRef = new Runnable[1];
+		final View.OnAttachStateChangeListener[] attachRef = new View.OnAttachStateChangeListener[1];
+
+		final Runnable cleanup = () -> {
+			if (layoutRef[0] != null) view.removeOnLayoutChangeListener(layoutRef[0]);
+			if (timeoutRef[0] != null) view.removeCallbacks(timeoutRef[0]);
+			if (attachRef[0] != null) view.removeOnAttachStateChangeListener(attachRef[0]);
+		};
+
+		timeoutRef[0] = () -> {
+			cleanup.run();
+			if (!executed[0] && view.isAttachedToWindow()) {
+				executed[0] = true;
+				action.run();
+			}
+		};
+
+		layoutRef[0] = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+			if ((right - left > 0) && (bottom - top > 0)) {
+				cleanup.run();
+				if (!executed[0] && v.isAttachedToWindow()) {
+					executed[0] = true;
+					action.run();
+				}
+			}
+		};
+
+		attachRef[0] = new View.OnAttachStateChangeListener() {
+			@Override
+			public void onViewAttachedToWindow(View v) {
+			}
+
+			@Override
+			public void onViewDetachedFromWindow(View v) {
+				cleanup.run();
+				executed[0] = true;
+			}
+		};
+
+		view.addOnAttachStateChangeListener(attachRef[0]);
+		view.addOnLayoutChangeListener(layoutRef[0]);
+		view.postDelayed(timeoutRef[0], 500L);
 	}
 
 	@Override
