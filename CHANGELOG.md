@@ -15,8 +15,10 @@ Thay đổi kể từ [FermataX v305](https://github.com/chuoinho/FermataX/relea
 ## Cải thiện
 
 - Android Auto ổn định hơn khi kết nối lại hoặc ngắt trong lúc phát media.
-- Cải thiện trải nghiệm YouTube, Stremio và Web: điều khiển phát, thumbnail, âm thanh,
-  fullscreen và xử lý trang web đã đóng.
+- YouTube nhận diện và bỏ qua quảng cáo video nhanh, ổn định hơn khi chuyển clip; đồng
+  thời cải thiện thumbnail, điều khiển phát, âm thanh và fullscreen.
+- Cải thiện trải nghiệm Stremio và Web: điều khiển phát, âm thanh, fullscreen và xử lý
+  trang web đã đóng.
 - Dashboard, SmartTop và bottom menu trên điện thoại gọn hơn, dễ dùng hơn.
 - Khôi phục khả năng mở nhiều định dạng media từ ứng dụng khác.
 
