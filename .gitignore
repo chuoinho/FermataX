@@ -41,6 +41,9 @@ docs/*
 !docs/stremio/
 !docs/stremio/**
 mockups/
+design/
+product_screenshots/
+FERMATAX_WAZE_DRIVING_BUBBLE_IMPLEMENTATION_PLAN.md
 BUILDING_README_SECTION.md
 codex-*.gradle
 local.properties

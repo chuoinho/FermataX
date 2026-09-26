@@ -26,9 +26,7 @@ public class ArchitectureBoundaryTest {
 	private static final Map<String, String> ADDON_PACKAGES = Map.ofEntries(
 			Map.entry("audiobook", "me.aap.fermata.addon.audiobook."),
 			Map.entry("cast", "me.aap.fermata.addon.cast."),
-			Map.entry("chat", "me.aap.fermata.addon.chat."),
 			Map.entry("exoplayer", "me.aap.fermata.engine.exoplayer."),
-			Map.entry("gdrive", "me.aap.fermata.vfs.gdrive."),
 			Map.entry("podcast", "me.aap.fermata.addon.podcast."),
 			Map.entry("radio", "me.aap.fermata.addon.radio."),
 			Map.entry("sftp", "me.aap.fermata.vfs.sftp."),

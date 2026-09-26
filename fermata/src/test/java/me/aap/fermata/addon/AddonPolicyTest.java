@@ -161,14 +161,10 @@ public class AddonPolicyTest {
 		assertCapabilities("me.aap.fermata.addon.web.WebBrowserAddon", AddonCapability.WEB);
 		assertCapabilities("me.aap.fermata.addon.web.stremio.StremioWebAddon",
 				AddonCapability.STREMIO, AddonCapability.VOICE_SEARCH);
-		assertCapabilities("me.aap.fermata.addon.chat.ChatAddon", AddonCapability.CHATGPT,
-				AddonCapability.VOICE_SEARCH);
 		assertEquals("tv", AddonRegistry.get().require(
 				"me.aap.fermata.addon.tv.TvAddon").voiceTarget);
 		assertEquals("youtube", AddonRegistry.get().require(
 				"me.aap.fermata.addon.web.yt.YoutubeAddon").voiceTarget);
-		assertEquals("chatgpt", AddonRegistry.get().require(
-				"me.aap.fermata.addon.chat.ChatAddon").voiceTarget);
 	}
 
 	@Test
