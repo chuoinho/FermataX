@@ -34,6 +34,31 @@ public class SettingsMenuContractTest {
 	}
 
 	@Test
+	public void interfaceMapsLanguageOrdinalsToValuesMap() throws Exception {
+		String source = source("InterfacePrefsBuilder.java");
+		assertTrue(source.contains("MainActivityPrefs.LOCALE"));
+		assertTrue(source.contains("o.valuesMap = langs.stream().mapToInt(Enum::ordinal).toArray();"));
+	}
+
+	@Test
+	public void supportedLanguagesMapToExpectedLegacyOrdinals() {
+		var values = me.aap.fermata.ui.activity.MainActivityPrefs.Lang.getValues();
+		org.junit.Assert.assertEquals(6, values.size());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.EN, values.get(0));
+		org.junit.Assert.assertEquals(0, values.get(0).ordinal());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.VI, values.get(1));
+		org.junit.Assert.assertEquals(6, values.get(1).ordinal());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.RU, values.get(2));
+		org.junit.Assert.assertEquals(1, values.get(2).ordinal());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.ES, values.get(3));
+		org.junit.Assert.assertEquals(15, values.get(3).ordinal());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.PT, values.get(4));
+		org.junit.Assert.assertEquals(5, values.get(4).ordinal());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.ZH_TW, values.get(5));
+		org.junit.Assert.assertEquals(10, values.get(5).ordinal());
+	}
+
+	@Test
 	public void playbackSettingsDoesNotExposeSubtitleSubmenu() throws Exception {
 		String source = source("PlaybackPrefsBuilder.java");
 		assertFalse(source.contains("R.string.subtitles"));

@@ -46,6 +46,7 @@ final class InterfacePrefsBuilder {
 			o.valuesMap = new int[]{NavBarView.POSITION_LEFT, NavBarView.POSITION_RIGHT};
 		});
 
+		normalizeLocale(store);
 		set.addListPref(o -> {
 			o.store = store;
 			o.pref = MainActivityPrefs.LOCALE;
@@ -54,8 +55,10 @@ final class InterfacePrefsBuilder {
 			o.formatSubtitle = true;
 			o.removeDefault = false;
 			o.cmp = String::compareTo;
-			o.stringValues = CollectionUtils.mapToArray(MainActivityPrefs.Lang.getValues(),
+			var langs = MainActivityPrefs.Lang.getValues();
+			o.stringValues = CollectionUtils.mapToArray(langs,
 					v -> v.locale.getDisplayName(), String[]::new);
+			o.valuesMap = langs.stream().mapToInt(Enum::ordinal).toArray();
 		});
 
 		if (!activity.isCarActivityNotMirror()) {
@@ -78,5 +81,11 @@ final class InterfacePrefsBuilder {
 		int position = store.getIntPref(pref);
 		int normalized = MainActivityPrefs.normalizeNavBarPosition(position);
 		if (normalized != position) store.applyIntPref(pref, normalized);
+	}
+
+	private static void normalizeLocale(PreferenceStore store) {
+		int pref = store.getIntPref(MainActivityPrefs.LOCALE);
+		MainActivityPrefs.Lang lang = MainActivityPrefs.Lang.get(pref);
+		if (lang.ordinal() != pref) store.applyIntPref(MainActivityPrefs.LOCALE, lang.ordinal());
 	}
 }
