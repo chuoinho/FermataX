@@ -42,6 +42,7 @@
     <item name="recent_fragment" type="id" />
     <item name="playlists_fragment" type="id" />
     <item name="settings_fragment" type="id" />
+    <item name="car_finder_fragment" type="id" />
     <item name="initial_setup_fragment" type="id" />
     <item name="subtitles_fragment" type="id" />
     <item name="tv_fragment" type="id" />

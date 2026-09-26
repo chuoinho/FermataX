@@ -17,10 +17,12 @@ import android.view.MotionEvent;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import android.content.Intent;
 import androidx.annotation.Nullable;
 
 import com.google.android.play.core.splitcompat.SplitCompat;
 
+import me.aap.fermata.R;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
@@ -116,6 +118,20 @@ public class MainActivity extends SplitCompatActivityBase
 	protected void onResume() {
 		super.onResume();
 		activeInstance = this;
+		if (getIntent() != null && getIntent().getBooleanExtra("NAV_TO_CAR_FINDER", false)) {
+			getIntent().removeExtra("NAV_TO_CAR_FINDER");
+			getActivityDelegate().onSuccess(a -> a.showPhoneRoot(R.id.car_finder_fragment));
+		}
+	}
+
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		setIntent(intent);
+		if (intent != null && intent.getBooleanExtra("NAV_TO_CAR_FINDER", false)) {
+			intent.removeExtra("NAV_TO_CAR_FINDER");
+			getActivityDelegate().onSuccess(a -> a.showPhoneRoot(R.id.car_finder_fragment));
+		}
 	}
 
 	@Override

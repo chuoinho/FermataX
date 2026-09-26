@@ -5,6 +5,10 @@
         android:icon="@drawable/home"
         android:title="@string/home" />
     <item
+        android:id="@id/car_finder_fragment"
+        android:icon="@drawable/ic_car_find"
+        android:title="@string/car_finder_title" />
+    <item
         android:id="@id/settings_fragment"
         android:icon="@drawable/settings"
         android:title="@string/settings" />

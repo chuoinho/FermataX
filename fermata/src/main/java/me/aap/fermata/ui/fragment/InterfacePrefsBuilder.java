@@ -57,6 +57,14 @@ final class InterfacePrefsBuilder {
 			o.stringValues = CollectionUtils.mapToArray(MainActivityPrefs.Lang.getValues(),
 					v -> v.locale.getDisplayName(), String[]::new);
 		});
+
+		if (!activity.isCarActivityNotMirror()) {
+			set.addButton(o -> {
+				o.title = R.string.initial_setup_reopen;
+				o.subtitle = R.string.initial_setup_reopen_sub;
+				o.onClick = () -> activity.showFragment(R.id.initial_setup_fragment);
+			});
+		}
 	}
 
 	private static void normalizeTheme(PreferenceStore store) {

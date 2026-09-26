@@ -13,6 +13,10 @@ public final class PhoneReadiness {
 		return List.of(connection(input),
 				new Row(Check.CONTROL_SESSION, input.controlAvailable() ? Status.OK : Status.INFO,
 						Action.NONE),
+				storage(input),
+				location(input),
+				accessibility(input),
+				microphone(input),
 				new Row(Check.NOTIFICATIONS, input.notificationsEnabled() ? Status.OK :
 						Status.ACTION_AVAILABLE, Action.NOTIFICATION_SETTINGS),
 				overlay(input),
@@ -33,6 +37,29 @@ public final class PhoneReadiness {
 						Status.INFO : Status.OK, Action.NONE);
 	}
 
+	private static Row storage(Input input) {
+		return new Row(Check.STORAGE, input.storageGranted() ? Status.OK : Status.ACTION_AVAILABLE,
+				Action.STORAGE_SETTINGS);
+	}
+
+	private static Row location(Input input) {
+		return new Row(Check.LOCATION, input.locationGranted() ? Status.OK : Status.ACTION_AVAILABLE,
+				Action.LOCATION_SETTINGS);
+	}
+
+	private static Row accessibility(Input input) {
+		if (!input.autoBuild()) {
+			return new Row(Check.ACCESSIBILITY, Status.NOT_APPLICABLE, Action.NONE);
+		}
+		return new Row(Check.ACCESSIBILITY, input.accessibilityGranted() ? Status.OK :
+				Status.ACTION_AVAILABLE, Action.ACCESSIBILITY_SETTINGS);
+	}
+
+	private static Row microphone(Input input) {
+		return new Row(Check.MICROPHONE, input.microphoneGranted() ? Status.OK : Status.ACTION_AVAILABLE,
+				Action.MICROPHONE_SETTINGS);
+	}
+
 	private static Row overlay(Input input) {
 		if (!input.autoBuild()) {
 			return new Row(Check.OVERLAY, Status.NOT_APPLICABLE, Action.NONE);
@@ -44,6 +71,10 @@ public final class PhoneReadiness {
 	public enum Check {
 		CONNECTION,
 		CONTROL_SESSION,
+		STORAGE,
+		LOCATION,
+		ACCESSIBILITY,
+		MICROPHONE,
 		NOTIFICATIONS,
 		OVERLAY,
 		SCREEN_CAPTURE,
@@ -61,6 +92,10 @@ public final class PhoneReadiness {
 	public enum Action {
 		NONE,
 		APP_DETAILS,
+		STORAGE_SETTINGS,
+		LOCATION_SETTINGS,
+		ACCESSIBILITY_SETTINGS,
+		MICROPHONE_SETTINGS,
 		NOTIFICATION_SETTINGS,
 		OVERLAY_SETTINGS,
 		BATTERY_SETTINGS
@@ -71,6 +106,8 @@ public final class PhoneReadiness {
 
 	public record Input(boolean autoBuild, boolean connectionObserved,
 			AutomotiveConnectionState.State connectionState, boolean controlAvailable,
-			boolean notificationsEnabled, boolean overlayGranted, boolean batteryExempt) {
+			boolean storageGranted, boolean locationGranted, boolean accessibilityGranted,
+			boolean microphoneGranted, boolean notificationsEnabled, boolean overlayGranted,
+			boolean batteryExempt) {
 	}
 }

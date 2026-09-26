@@ -222,6 +222,11 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		return true;
 	}
 
+	public static boolean isPlaybackActive() {
+		FermataMediaService service = activeInstance;
+		return (service != null) && (service.callback != null) && service.callback.isPlaying();
+	}
+
 	/**
 	 * Stops the disconnected Automotive generation while leaving a service that Android Auto still
 	 * holds bound capable of accepting the next, confirmed generation.
@@ -273,9 +278,6 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	@Override
 	public IBinder onBind(Intent intent) {
 		boolean mediaAction = (intent != null) && ACTION_MEDIA_SERVICE.equals(intent.getAction());
-		if (BuildConfig.AUTO && mediaAction && !AutomotiveRuntimeGate.allowsNewWork()) {
-			AutomotiveRuntimeGate.projectionConnected();
-		}
 		if (hardShutdownRequested || !AutomotiveRuntimeGate.allowsNewWork()) {
 			recordServiceDiagnostic("service_bind_rejected", DiagnosticPriority.WARN, false,
 					false, false);

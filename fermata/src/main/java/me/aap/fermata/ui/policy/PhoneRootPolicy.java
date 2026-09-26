@@ -28,6 +28,7 @@ public final class PhoneRootPolicy {
 
 	public static boolean isPhoneRoot(int fragmentId) {
 		return (fragmentId == R.id.dashboard_fragment) ||
+				(fragmentId == R.id.car_finder_fragment) ||
 				(fragmentId == R.id.settings_fragment);
 	}
 

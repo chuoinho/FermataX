@@ -89,6 +89,7 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaServiceRuntimeGate;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.MediaSessionCallbackAssistant;
+import me.aap.fermata.carfinder.CarFinderFragment;
 import me.aap.fermata.ui.fragment.DashboardFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
@@ -885,6 +886,10 @@ public class MainActivityDelegate extends ActivityDelegate
 			if ((id == R.id.dashboard_fragment) && (fragment instanceof DashboardFragment dashboard)) {
 				dashboard.showHome();
 			}
+			if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode()) && PhoneRootPolicy.isPhoneRoot(id)) {
+				phoneRootId = id;
+				UiShellController.onRouteChanged(this);
+			}
 			AsyncOperationController.DiagnosticsObserver.navigationCompleted(operationId, id);
 			return fragment;
 		} catch (RuntimeException | Error failure) {
@@ -961,6 +966,8 @@ public class MainActivityDelegate extends ActivityDelegate
 			return new PlaylistsFragment();
 		} else if (id == R.id.settings_fragment) {
 			return new SettingsFragment();
+		} else if (id == R.id.car_finder_fragment) {
+			return new CarFinderFragment();
 		} else if (id == R.id.initial_setup_fragment) {
 			return new InitialSetupFragment();
 		} else if (id == R.id.subtitles_fragment) {

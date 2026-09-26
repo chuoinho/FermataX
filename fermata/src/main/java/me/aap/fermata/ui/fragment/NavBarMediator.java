@@ -252,7 +252,15 @@ public class NavBarMediator extends PrefNavBarMediator
 			MainActivityDelegate.get(item.getContext()).showFragment(R.id.settings_fragment);
 			return true;
 		} else if (itemId == R.id.nav_exit) {
-			MainActivityDelegate.get(item.getContext()).finish();
+			MainActivityDelegate a = MainActivityDelegate.get(item.getContext());
+			try {
+				if (a.getMediaServiceBinder() != null) {
+					var cb = a.getMediaServiceBinder().getMediaSessionCallback();
+					if (cb != null) cb.onStop();
+				}
+			} catch (Throwable ignored) {
+			}
+			a.finish();
 			return true;
 		}
 		MainActivityDelegate a;

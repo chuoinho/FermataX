@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-files-path
+        name="parking_photos"
+        path="parking_photos/" />
+    <external-files-path
+        name="external_files"
+        path="." />
+</paths>

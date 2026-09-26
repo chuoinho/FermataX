@@ -1,15 +1,20 @@
 package me.aap.fermata.ui.fragment;
 
+import android.Manifest;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.os.PowerManager;
 import android.provider.Settings;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +35,7 @@ import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.ui.UiUtils;
 
-/** Phone-settings collector for read-only connection and system-permission readiness. */
+/** Phone-settings collector for connection and system-permission readiness. */
 final class ReadinessPrefsBuilder {
 	private final MainActivityDelegate activity;
 	private final Context context;
@@ -95,23 +100,87 @@ final class ReadinessPrefsBuilder {
 				o.title = title(row.check());
 				o.csubtitle = subtitle(row, current.input());
 				o.onClick = (row.action() == Action.NONE) ? () -> {
-				} : () -> openSettings(row.action());
+				} : () -> performAction(row.action());
 			});
 		}
 	}
 
 	private Snapshot collect() {
+		Boolean storage = queryStorage();
+		Boolean location = queryLocation();
+		Boolean accessibility = queryAccessibility();
+		Boolean microphone = queryMicrophone();
 		Boolean notifications = queryNotifications();
 		Boolean overlay = queryOverlay();
 		Boolean battery = queryBatteryExemption();
 		Input input = new Input(BuildConfig.AUTO, connection.hasConnectionObservation(),
-				connection.state(), binder.isControlAvailable(), Boolean.TRUE.equals(notifications),
+				connection.state(), binder.isControlAvailable(), Boolean.TRUE.equals(storage),
+				Boolean.TRUE.equals(location), Boolean.TRUE.equals(accessibility),
+				Boolean.TRUE.equals(microphone), Boolean.TRUE.equals(notifications),
 				Boolean.TRUE.equals(overlay), Boolean.TRUE.equals(battery));
 		List<Row> rows = new ArrayList<>(PhoneReadiness.evaluate(input));
+		if (storage == null) markUnknown(rows, Check.STORAGE);
+		if (location == null) markUnknown(rows, Check.LOCATION);
+		if (accessibility == null) markUnknown(rows, Check.ACCESSIBILITY);
+		if (microphone == null) markUnknown(rows, Check.MICROPHONE);
 		if (notifications == null) markUnknown(rows, Check.NOTIFICATIONS);
 		if (overlay == null) markUnknown(rows, Check.OVERLAY);
 		if (battery == null) markUnknown(rows, Check.BATTERY);
 		return new Snapshot(input, List.copyOf(rows));
+	}
+
+	@Nullable
+	private Boolean queryStorage() {
+		try {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+				return Environment.isExternalStorageManager();
+			} else {
+				return ContextCompat.checkSelfPermission(context,
+						Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+			}
+		} catch (RuntimeException ignored) {
+			return null;
+		}
+	}
+
+	@Nullable
+	private Boolean queryLocation() {
+		try {
+			return ContextCompat.checkSelfPermission(context,
+					Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+					|| ContextCompat.checkSelfPermission(context,
+					Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+		} catch (RuntimeException ignored) {
+			return null;
+		}
+	}
+
+	@Nullable
+	private Boolean queryAccessibility() {
+		try {
+			ComponentName target = new ComponentName(context.getPackageName(),
+					"me.app.fermatax.auto.AccessibilityEventDispatcherService");
+			String enabledServices = Settings.Secure.getString(context.getContentResolver(),
+					Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+			if (enabledServices == null) return false;
+			for (String c : enabledServices.split(":")) {
+				ComponentName n = ComponentName.unflattenFromString(c);
+				if (target.equals(n)) return true;
+			}
+			return false;
+		} catch (RuntimeException ignored) {
+			return null;
+		}
+	}
+
+	@Nullable
+	private Boolean queryMicrophone() {
+		try {
+			return ContextCompat.checkSelfPermission(context,
+					Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+		} catch (RuntimeException ignored) {
+			return null;
+		}
 	}
 
 	@Nullable
@@ -157,6 +226,10 @@ final class ReadinessPrefsBuilder {
 		return switch (check) {
 			case CONNECTION -> R.string.readiness_connection;
 			case CONTROL_SESSION -> R.string.readiness_control_session;
+			case STORAGE -> R.string.readiness_storage;
+			case LOCATION -> R.string.readiness_location;
+			case ACCESSIBILITY -> R.string.readiness_accessibility;
+			case MICROPHONE -> R.string.readiness_microphone;
 			case NOTIFICATIONS -> R.string.readiness_notifications;
 			case OVERLAY -> R.string.readiness_overlay;
 			case SCREEN_CAPTURE -> R.string.readiness_screen_capture;
@@ -170,6 +243,15 @@ final class ReadinessPrefsBuilder {
 			case CONNECTION -> connectionSubtitle(input);
 			case CONTROL_SESSION -> activity.getString(input.controlAvailable() ?
 					R.string.readiness_control_available : R.string.readiness_control_unavailable);
+			case STORAGE -> activity.getString(input.storageGranted() ?
+					R.string.readiness_storage_granted : R.string.readiness_storage_not_granted);
+			case LOCATION -> activity.getString(input.locationGranted() ?
+					R.string.readiness_location_granted : R.string.readiness_location_not_granted);
+			case ACCESSIBILITY -> activity.getString(row.status() == Status.NOT_APPLICABLE ?
+					R.string.readiness_not_applicable : input.accessibilityGranted() ?
+					R.string.readiness_accessibility_granted : R.string.readiness_accessibility_not_granted);
+			case MICROPHONE -> activity.getString(input.microphoneGranted() ?
+					R.string.readiness_microphone_granted : R.string.readiness_microphone_not_granted);
 			case NOTIFICATIONS -> activity.getString(input.notificationsEnabled() ?
 					R.string.readiness_notifications_enabled : R.string.readiness_notifications_disabled);
 			case OVERLAY -> activity.getString(row.status() == Status.NOT_APPLICABLE ?
@@ -191,10 +273,41 @@ final class ReadinessPrefsBuilder {
 		};
 	}
 
+	private void performAction(Action action) {
+		if (!isRefreshAllowed(uiActive, closed)) return;
+		if (action == Action.LOCATION_SETTINGS) {
+			if (activity.getAppActivity() != null) {
+				activity.getAppActivity().checkPermissions(
+						Manifest.permission.ACCESS_FINE_LOCATION,
+						Manifest.permission.ACCESS_COARSE_LOCATION
+				).onCompletion((res, err) -> scheduleRefresh());
+				return;
+			}
+		} else if (action == Action.MICROPHONE_SETTINGS) {
+			if (activity.getAppActivity() != null) {
+				activity.getAppActivity().checkPermissions(
+						Manifest.permission.RECORD_AUDIO
+				).onCompletion((res, err) -> scheduleRefresh());
+				return;
+			}
+		} else if (action == Action.STORAGE_SETTINGS) {
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && activity.getAppActivity() != null) {
+				activity.getAppActivity().checkPermissions(
+						Manifest.permission.READ_EXTERNAL_STORAGE
+				).onCompletion((res, err) -> scheduleRefresh());
+				return;
+			}
+		}
+		openSettings(action);
+	}
+
 	private void openSettings(Action action) {
 		if (!isRefreshAllowed(uiActive, closed)) return;
 		Intent primary = settingsIntent(action, context.getPackageName(), Build.VERSION.SDK_INT);
 		if (startSettings(primary)) return;
+		if (action == Action.STORAGE_SETTINGS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			if (startSettings(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))) return;
+		}
 		if ((action != Action.APP_DETAILS) && startSettings(
 				settingsIntent(Action.APP_DETAILS, context.getPackageName(), Build.VERSION.SDK_INT))) return;
 		if (isRefreshAllowed(uiActive, closed)) {
@@ -230,7 +343,11 @@ final class ReadinessPrefsBuilder {
 		Uri packageUri = Uri.parse("package:" + packageName);
 		return switch (action) {
 			case NONE -> null;
-			case APP_DETAILS -> new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri);
+			case APP_DETAILS, LOCATION_SETTINGS, MICROPHONE_SETTINGS ->
+					new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri);
+			case STORAGE_SETTINGS -> (sdk >= Build.VERSION_CODES.R) ?
+					new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, packageUri) :
+					new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri);
 			case NOTIFICATION_SETTINGS -> (sdk >= Build.VERSION_CODES.O) ?
 					new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
 							.putExtra(Settings.EXTRA_APP_PACKAGE, packageName) :
@@ -239,6 +356,7 @@ final class ReadinessPrefsBuilder {
 					new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri) :
 					new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri);
 			case BATTERY_SETTINGS -> new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+			case ACCESSIBILITY_SETTINGS -> new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
 		};
 	}
 
