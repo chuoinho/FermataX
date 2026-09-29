@@ -577,4 +577,11 @@
     <string name="car_finder_conf_basement">Въезд в паркинг · Проверьте</string>
     <string name="car_finder_basement_hint">Припарковано на крытом паркинге. Сфотографируйте колонну или запишите этаж!</string>
     <string name="car_finder_view_on_map">Показать на карте</string>
+    <string name="about_support">О приложении и поддержка</string>
+    <string name="app_version">Версия</string>
+    <string name="support_kofi_title">Угостить разработчика кофе ☕</string>
+    <string name="support_kofi_sub">Поддержите разработку на ko-fi.com/fermatax</string>
+    <string name="github_repo_title">Репозиторий GitHub</string>
+    <string name="github_repo_sub">Исходный код, выпуски и сообщения об ошибках</string>
+    <string name="support_banner_text">Нравится FermataX? Поддержите проект чашкой кофе ☕</string>
 </resources>

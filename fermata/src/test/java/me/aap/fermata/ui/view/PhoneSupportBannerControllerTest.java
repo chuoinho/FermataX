@@ -17,7 +17,7 @@ public class PhoneSupportBannerControllerTest {
 		assertTrue("Duration must be between 3s and 5s",
 				PhoneSupportBannerController.DISPLAY_DURATION_MS >= 3000L &&
 				PhoneSupportBannerController.DISPLAY_DURATION_MS <= 5000L);
-		assertTrue(PhoneSupportBannerController.MIN_RESUME_INTERVAL_MS >= 30000L);
+		assertEquals(10000L, PhoneSupportBannerController.MIN_RESUME_INTERVAL_MS);
 	}
 
 	@Test

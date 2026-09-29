@@ -582,4 +582,11 @@
     <string name="car_finder_conf_basement">車庫入口 · 請確認</string>
     <string name="car_finder_basement_hint">車輛停放於室內停車場。建議拍照或備註柱號樓層以便尋找！</string>
     <string name="car_finder_view_on_map">在地圖上查看</string>
+    <string name="about_support">關於與支援</string>
+    <string name="app_version">版本</string>
+    <string name="support_kofi_title">請開發者喝杯咖啡 ☕</string>
+    <string name="support_kofi_sub">前往 ko-fi.com/fermatax 支持開發</string>
+    <string name="github_repo_title">GitHub 儲存庫</string>
+    <string name="github_repo_sub">原始碼、版本更新與問題回報</string>
+    <string name="support_banner_text">喜歡 FermataX 嗎？請喝杯咖啡支持開發 ☕</string>
 </resources>

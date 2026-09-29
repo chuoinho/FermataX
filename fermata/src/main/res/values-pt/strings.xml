@@ -582,4 +582,11 @@
     <string name="car_finder_conf_basement">Entrada da garagem · Verificar</string>
     <string name="car_finder_basement_hint">Estacionado em garagem. Tire uma foto ou anote a coluna para encontrar facilmente!</string>
     <string name="car_finder_view_on_map">Ver no mapa</string>
+    <string name="about_support">Sobre e suporte</string>
+    <string name="app_version">Versão</string>
+    <string name="support_kofi_title">Pague-me um café ☕</string>
+    <string name="support_kofi_sub">Apoie o desenvolvimento em ko-fi.com/fermatax</string>
+    <string name="github_repo_title">Repositório no GitHub</string>
+    <string name="github_repo_sub">Código-fonte, versões e relatos de problemas</string>
+    <string name="support_banner_text">Gostou do FermataX? Apoie o projeto com um café ☕</string>
 </resources>
