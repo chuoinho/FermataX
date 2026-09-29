@@ -27,6 +27,10 @@
 
     <item name="dashboard_fragment" type="id" />
     <item name="phone_bottom_menu" type="id" />
+    <item name="phone_support_banner" type="id" />
+    <item name="phone_support_icon" type="id" />
+    <item name="phone_support_text" type="id" />
+    <item name="phone_support_close" type="id" />
     <item name="dashboard_settings" type="id" />
     <item name="dashboard_edit" type="id" />
     <item name="dashboard_menu" type="id" />

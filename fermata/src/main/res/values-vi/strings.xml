@@ -576,4 +576,13 @@
     <string name="car_finder_conf_basement">Cửa hầm · Cần xác nhận</string>
     <string name="car_finder_basement_hint">Xe đỗ dưới hầm. Hãy chụp ảnh cột hoặc ghi chú tầng để dễ tìm xe!</string>
     <string name="car_finder_view_on_map">Xem trên bản đồ</string>
+
+    <!-- About & Support -->
+    <string name="about_support">Giới thiệu &amp; Hỗ trợ</string>
+    <string name="app_version">Phiên bản</string>
+    <string name="support_kofi_title">Mua tặng tác giả ly cà phê ☕</string>
+    <string name="support_kofi_sub">Ủng hộ dự án tại ko-fi.com/fermatax</string>
+    <string name="github_repo_title">Mã nguồn GitHub</string>
+    <string name="github_repo_sub">Mã nguồn, cập nhật và báo lỗi</string>
+    <string name="support_banner_text">Thích FermataX? Mời dev ly cà phê nhé ☕</string>
 </resources>

@@ -115,6 +115,7 @@ androidComponents {
                 variant.productFlavors.any { it.second == 'auto' }) {
             variant.sources.manifests.addStaticManifestFile(
                     'src/testAutoMirror/AndroidManifest.xml')
+            variant.sources.res.addStaticSourceDirectory('src/testAutoMirror/res')
         }
     }
 }

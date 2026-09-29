@@ -101,6 +101,16 @@
         app:layout_constraintBottom_toTopOf="@id/phone_bottom_menu"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <include
+        android:id="@id/phone_support_banner"
+        layout="@layout/phone_support_banner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:layout_constraintBottom_toTopOf="@id/phone_bottom_menu"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@id/phone_bottom_menu"
         style="@style/Widget.MaterialComponents.BottomNavigationView"

@@ -44,6 +44,7 @@ import me.aap.fermata.pref.DiagnosticsPreferences;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
@@ -356,6 +357,24 @@ public class SettingsFragment extends MainActivityFragment
 				o.title = R.string.restore_backup;
 				o.subtitle = R.string.restore_backup_sub;
 				o.onClick = () -> SettingsBackupManager.restoreBackup(a);
+			});
+
+			addSectionHeader(set, ctx, R.string.about_support);
+			set.addButton(o -> {
+				o.title = R.string.app_version;
+				o.csubtitle = "v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")";
+				o.onClick = () -> Utils.openUrl(ctx, "https://github.com/chuoinho/FermataX/releases");
+			});
+			set.addButton(o -> {
+				o.title = R.string.support_kofi_title;
+				o.subtitle = R.string.support_kofi_sub;
+				o.icon = R.drawable.coffee;
+				o.onClick = () -> Utils.openUrl(ctx, "https://ko-fi.com/fermatax");
+			});
+			set.addButton(o -> {
+				o.title = R.string.github_repo_title;
+				o.subtitle = R.string.github_repo_sub;
+				o.onClick = () -> Utils.openUrl(ctx, "https://github.com/chuoinho/FermataX");
 			});
 		}
 

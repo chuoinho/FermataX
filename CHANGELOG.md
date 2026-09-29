@@ -1,45 +1,32 @@
-# FermataX v318 (draft)
+# FermataX v318
 
-Bản cập nhật lớn kể từ [FermataX v305](https://github.com/chuoinho/FermataX/releases/tag/v305).
+A worthwhile upgrade with many improvements for your in-car experience.
 
-### Điều khiển bằng điện thoại và Mở trên xe
+---
 
-Điều khiển Android Auto ngay trên điện thoại với ảnh bìa, Previous, Play/Pause, Next,
-tiến trình phát, trạng thái AA và công tắc **Mở trên xe**. Khi AA kết nối, YouTube,
-Stremio và Web tương thích có thể mở nội dung trên xe; lệnh cũ không tự chạy lại sau
-khi ngắt kết nối.
+### What's New & Noteworthy?
 
-### Giao diện mới
+- **Turn your phone into a Remote ("Open on Car")**: Control FermataX on Android Auto from your phone (skip tracks, Play/Pause). Your car screen doesn't have touch? Now you can browse content on your phone and cast it straight to the car display.
+- **Material You / Bento UI**: Modern, smooth, and more intuitive. Prefer the familiar look? You can always switch back to **Classic**. Menus and Settings have been reorganized for easier navigation.
+- **Car Finder (Never lose your car)**: Parked at a huge shopping mall? Maps, compass, radar, and parking spot photos help you find your car easily.
+- **YouTube & Stremio smoother than ever**: Video seeking, fullscreen, steering wheel buttons, and SponsorBlock work more accurately. Ad blocker has been optimized — say goodbye to 1-second ad flashes (YouTube occasionally changes its algorithms, but the team will always keep up).
+- **Android Auto more stable**: Plug/unplug cables smoothly while playing music, fewer app crashes or old tracks playing out of order. Support for more file formats from other apps.
 
-Material You / Bento đã sẵn sàng nếu bạn muốn đổi gió; Classic vẫn ở đây nếu bạn thích
-sự quen thuộc. Dashboard, SmartTop, menu dưới và Cài đặt cũng được làm gọn, dễ dùng hơn.
+---
 
-### Car Finder
+### Streamlined & Optimized (Important Notes)
 
-Hay quên chỗ đỗ xe? Car Finder lưu vị trí, hiển thị bản đồ/la bàn/radar, hỗ trợ ảnh chỗ
-đỗ và điều hướng quay lại xe.
+- **Removed bulky features**: Goodbye ChatGPT, Google Drive, and offline translation — the app is now lighter and starts faster. Please back up any necessary data before upgrading.
+- **Consolidated Themes & Languages**: Kept the 2 best interfaces (Material You & Classic) and 6 popular languages (Tiếng Việt, English, Русский, Español, Português, 繁體中文).
 
-## YouTube, Stremio và Web
+---
 
-YouTube bỏ qua quảng cáo và phản hồi Skip/tua ổn định hơn; SponsorBlock, ảnh xem trước,
-Next/Previous, fullscreen, nút vô-lăng và âm thanh/EQ cũng được cải thiện. Stremio/Web
-ít bị trang hoặc lệnh cũ chen vào hơn. Quảng cáo YouTube mới có thể vẫn xuất hiện thoáng
-qua vì YouTube thay đổi liên tục.
+### After Updating
 
-## Ổn định Android Auto
+1. Reconnect Android Auto once so your car recognizes the new version smoothly.
+2. Try fullscreen YouTube and Car Finder right in your car.
+3. Play your favorite songs and enjoy the ride!
 
-Kết nối lại/ngắt AA trong lúc phát media ổn định hơn, giảm mở nhầm nội dung hoặc lệnh cũ
-chạy lại. Mở media từ ứng dụng khác cũng hỗ trợ thêm nhiều định dạng phổ biến.
+---
 
-## Thay đổi quan trọng khi nâng cấp
-
-Đã dọn dẹp Chat, Google Drive, nhận dạng giọng nói, phụ đề và dịch offline. Chỉ còn
-hỗ trợ English, Tiếng Việt, Русский, Español, Português và 繁體中文; ngôn ngữ cũ sẽ chuyển
-về English. Theme cũ được quy về Classic; chỉ còn Classic và Material You.
-
-## Sau khi cập nhật
-
-- Kết nối lại Android Auto trước khi sử dụng **Mở trên xe**.
-- Kiểm tra fullscreen YouTube, Mở trên xe và Car Finder một lần trên xe của bạn.
-- Lưu dữ liệu cần thiết của Chat, Google Drive hoặc phụ đề/dịch offline trước khi nâng
-  cấp vì các add-on này không còn trong ứng dụng.
+> 🤖 **Buy & Install automatically via Telegram Bot!** Just message [@FermataXBot](https://t.me/FermataXBot), enter your Gmail → pay → receive the install link **automatically within minutes**, no manual support needed. Payments via **Ko-fi** and **Buy Me a Coffee**.

@@ -569,4 +569,13 @@
     <string name="car_finder_conf_basement">Garage Entrance · Verify</string>
     <string name="car_finder_basement_hint">Parked in garage. Snap a photo or note your pillar to find your spot easily!</string>
     <string name="car_finder_view_on_map">View on Map</string>
+
+    <!-- About & Support -->
+    <string name="about_support">About &amp; Support</string>
+    <string name="app_version">Version</string>
+    <string name="support_kofi_title">Buy Me a Coffee ☕</string>
+    <string name="support_kofi_sub">Support development at ko-fi.com/fermatax</string>
+    <string name="github_repo_title">GitHub Repository</string>
+    <string name="github_repo_sub">Source code, releases, and issue tracker</string>
+    <string name="support_banner_text">Enjoying FermataX? Support with a coffee ☕</string>
 </resources>

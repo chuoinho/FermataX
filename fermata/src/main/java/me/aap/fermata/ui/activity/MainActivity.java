@@ -122,6 +122,7 @@ public class MainActivity extends SplitCompatActivityBase
 			getIntent().removeExtra("NAV_TO_CAR_FINDER");
 			getActivityDelegate().onSuccess(a -> a.showPhoneRoot(R.id.car_finder_fragment));
 		}
+		getActivityDelegate().onSuccess(MainActivityDelegate::onPhoneResume);
 	}
 
 	@Override

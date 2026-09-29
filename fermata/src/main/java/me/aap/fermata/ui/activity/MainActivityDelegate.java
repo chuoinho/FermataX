@@ -113,6 +113,7 @@ import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.PhoneBottomMenuController;
 import me.aap.fermata.ui.view.PhonePlaybackCarHeaderController;
+import me.aap.fermata.ui.view.PhoneSupportBannerController;
 import me.aap.fermata.ui.view.UiShellController;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
@@ -157,6 +158,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	private ContentLoadingProgressBar progressBar;
 	private PhoneBottomMenuController phoneBottomMenuController;
 	private PhonePlaybackCarHeaderController phonePlaybackCarHeaderController;
+	private PhoneSupportBannerController phoneSupportBannerController;
 	private FutureSupplier<?> contentLoading;
 	private final AsyncOperationController contentOperations =
 			new AsyncOperationController(this::onContentOperationChanged);
@@ -715,6 +717,16 @@ public class MainActivityDelegate extends ActivityDelegate
 		}
 	}
 
+	public void onPhoneResume() {
+		if (phoneSupportBannerController != null) {
+			phoneSupportBannerController.start();
+		}
+	}
+
+	public PhoneSupportBannerController getPhoneSupportBannerController() {
+		return phoneSupportBannerController;
+	}
+
 	private boolean isCurrentSplitMode() {
 		MediaEngine engine = getMediaServiceBinder().getCurrentEngine();
 		return getBody().isBothMode() && (engine != null) && engine.isSplitModeSupported();
@@ -1270,6 +1282,9 @@ public class MainActivityDelegate extends ActivityDelegate
 					a.findViewById(R.id.phone_open_on_car_strip),
 					a.findViewById(R.id.phone_open_on_car_toggle));
 			refreshPhonePlaybackCarHeader();
+			phoneSupportBannerController = new PhoneSupportBannerController(this,
+					a.findViewById(R.id.phone_support_banner));
+			phoneSupportBannerController.start();
 		}
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		if (getRuntimeHostMode().usesAutomotivePresentation()) floatingButton.setVisibility(GONE);
