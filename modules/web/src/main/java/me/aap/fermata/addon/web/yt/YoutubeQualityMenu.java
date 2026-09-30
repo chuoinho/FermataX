@@ -36,6 +36,7 @@ final class YoutubeQualityMenu {
 	static boolean select(YoutubeWebView web, OverlayMenuItem item) {
 		if (!(item.getData() instanceof Integer value) || ((value & QUALITY_MASK) == 0))
 			return false;
+		web.clearHighestVideoQuality();
 		web.setVideoQuality(value & ~QUALITY_MASK);
 		return true;
 	}
