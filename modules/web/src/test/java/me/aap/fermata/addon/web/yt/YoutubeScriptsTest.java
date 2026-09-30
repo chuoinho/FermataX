@@ -55,6 +55,16 @@ public class YoutubeScriptsTest {
 	}
 
 	@Test
+	public void highestVideoQualityScriptDetachesAfterApplication() {
+		String script = YoutubeScripts.SET_HIGHEST_VIDEO_QUALITY;
+
+		assertTrue(script.contains("removeEventListener('onStateChange'"));
+		assertTrue(script.contains("clearFermataQ"));
+		assertTrue(script.contains("applyHighest"));
+		assertTrue(script.contains("detach();"));
+	}
+
+	@Test
 	public void previousAndNextKeepPlayerApiDesktopAndMobileFallbacks() {
 		String next = YoutubeScripts.prevNext(true);
 		String previous = YoutubeScripts.prevNext(false);

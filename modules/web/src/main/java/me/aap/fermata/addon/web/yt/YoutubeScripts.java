@@ -781,15 +781,69 @@ final class YoutubeScripts {
 				  };
 				})();
 			""";
-	static final String CLEAR_HIGHEST_VIDEO_QUALITY =
-			"function clearFermataQ() {\n" +
-					"  if (!window.__fermataQ) return;\n" +
-					"  if (window.__fermataQ.timeout) clearTimeout(window.__fermataQ.timeout);\n" +
-					"  if (window.__fermataQ.player && window.__fermataQ.handler) {\n" +
-					"    try { window.__fermataQ.player.removeEventListener('onStateChange', window.__fermataQ.handler); } catch(e) {}\n" +
-					"  }\n" +
-					"  window.__fermataQ = null;\n" +
-					"}\n";
+	static final String CLEAR_HIGHEST_VIDEO_QUALITY = """
+			function clearFermataQ() {
+			  if (!window.__fermataQ) return;
+			  if (window.__fermataQ.timeout) clearTimeout(window.__fermataQ.timeout);
+			  if (window.__fermataQ.safetyTimeout) clearTimeout(window.__fermataQ.safetyTimeout);
+			  if (window.__fermataQ.player && window.__fermataQ.handler) {
+			    try { window.__fermataQ.player.removeEventListener('onStateChange', window.__fermataQ.handler); } catch(e) {}
+			  }
+			  window.__fermataQ = null;
+			}
+			""";
+
+	static final String SET_HIGHEST_VIDEO_QUALITY = "(function() {\n" +
+			CLEAR_HIGHEST_VIDEO_QUALITY +
+			"  clearFermataQ();\n" +
+			"  var state = window.__fermataQ = { player: null, handler: null, timeout: null, safetyTimeout: null, attempts: 0 };\n" +
+			"  function detach() {\n" +
+			"    if (state.timeout) { clearTimeout(state.timeout); state.timeout = null; }\n" +
+			"    if (state.safetyTimeout) { clearTimeout(state.safetyTimeout); state.safetyTimeout = null; }\n" +
+			"    if (state.player && state.handler) {\n" +
+			"      try { state.player.removeEventListener('onStateChange', state.handler); } catch(e) {}\n" +
+			"      state.handler = null;\n" +
+			"    }\n" +
+			"  }\n" +
+			"  function getPlayer() {\n" +
+			"    return document.querySelector('#movie_player') || document.querySelector('.html5-video-player');\n" +
+			"  }\n" +
+			"  function applyHighest(p) {\n" +
+			"    if (!p || typeof p.getAvailableQualityLevels !== 'function') return false;\n" +
+			"    var levels = p.getAvailableQualityLevels();\n" +
+			"    if (!levels || levels.length === 0) return false;\n" +
+			"    var best = null;\n" +
+			"    for (var i = 0; i < levels.length; i++) {\n" +
+			"      if (levels[i] !== 'auto') { best = levels[i]; break; }\n" +
+			"    }\n" +
+			"    if (!best) return false;\n" +
+			"    if (p.getPlaybackQuality && p.getPlaybackQuality() === best) {\n" +
+			"      detach();\n" +
+			"      return true;\n" +
+			"    }\n" +
+			"    if (typeof p.setPlaybackQualityRange === 'function') p.setPlaybackQualityRange(best, best);\n" +
+			"    else if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(best);\n" +
+			"    else return false;\n" +
+			"    detach();\n" +
+			"    return true;\n" +
+			"  }\n" +
+			"  function install() {\n" +
+			"    var p = getPlayer();\n" +
+			"    if (!p || typeof p.addEventListener !== 'function') {\n" +
+			"      if (++state.attempts < 20) state.timeout = setTimeout(install, 200);\n" +
+			"      return;\n" +
+			"    }\n" +
+			"    state.player = p;\n" +
+			"    state.handler = function(s) {\n" +
+			"      if ((s === 1) || (s === 3)) applyHighest(getPlayer() || p);\n" +
+			"    };\n" +
+			"    p.addEventListener('onStateChange', state.handler);\n" +
+			"    if (!applyHighest(p)) {\n" +
+			"      state.safetyTimeout = setTimeout(detach, 15000);\n" +
+			"    }\n" +
+			"  }\n" +
+			"  install();\n" +
+			"})();";
 
 	static final String VOICE_RESULTS = """
 			(function() {
