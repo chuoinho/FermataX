@@ -922,12 +922,14 @@ final class YoutubeScripts {
 				      var level = String(levels[i] || '');
 				      if (level && unique.indexOf(level) < 0) unique.push(level);
 				    }
+				    if (unique.indexOf('auto') < 0) unique.unshift('auto');
 				    window.__fermataQualityLevels = unique;
 				    var current = '';
 				    try {
 				      if (typeof p.getPlaybackQuality === 'function')
 				        current = String(p.getPlaybackQuality() || '');
 				    } catch (ignore) {}
+				    if (!window.__fermataQualityLocked) current = 'auto';
 				    var result = [];
 				    for (var j = 0; j < unique.length; j++)
 				      result.push((unique[j] === current ? '*' : '') + label(unique[j]));
@@ -952,6 +954,17 @@ final class YoutubeScripts {
 				  }
 				  var level = levels[index];
 				  if (!level) return false;
+				  if (level === 'auto') {
+				    window.__fermataQualityLocked = false;
+				    try {
+				      if (typeof p.setPlaybackQualityRange === 'function')
+				        p.setPlaybackQualityRange('default', 'default');
+				      if (typeof p.setPlaybackQuality === 'function')
+				        p.setPlaybackQuality('default');
+				      return true;
+				    } catch (ignore) { return false; }
+				  }
+				  window.__fermataQualityLocked = true;
 				  try {
 				    if (typeof p.setPlaybackQualityRange === 'function')
 				      p.setPlaybackQualityRange(level, level);

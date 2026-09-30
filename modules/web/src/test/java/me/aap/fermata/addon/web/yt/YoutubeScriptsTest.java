@@ -31,6 +31,7 @@ public class YoutubeScriptsTest {
 		assertTrue(script.contains("getAvailableQualityLevels"));
 		assertTrue(script.contains("getPlaybackQuality"));
 		assertTrue(script.contains("window.__fermataQualityLevels"));
+		assertTrue(script.contains("unique.unshift('auto')") || script.contains("'auto'"));
 		assertFalse(script.contains(".player-quality-settings"));
 		assertFalse(script.contains(".player-settings-icon"));
 	}
@@ -43,6 +44,14 @@ public class YoutubeScriptsTest {
 		assertTrue(script.contains("setPlaybackQualityRange"));
 		assertTrue(script.contains("setPlaybackQuality"));
 		assertTrue(script.contains("})(3)"));
+	}
+
+	@Test
+	public void videoQualitySelectionHandlesAutoResetToDefault() {
+		String script = YoutubeScripts.setVideoQuality(0);
+
+		assertTrue(script.contains("setPlaybackQualityRange('default', 'default')"));
+		assertTrue(script.contains("setPlaybackQuality('default')"));
 	}
 
 	@Test
