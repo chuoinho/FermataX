@@ -836,10 +836,167 @@ public final class TikTokScripts {
 
 	""";
 
+	public static final String PLAY_STATE = """
+(function () {
+  if (window.__cntPlayState) { return; }
+  window.__cntPlayState = true;
+
+  var lastPlaying = null;
+  var lastKey = '';
+
+  function bridge() {
+    return (window.CntBridge && window.CntBridge.setPlaying) ? window.CntBridge : null;
+  }
+
+  function reportPlaying(playing) {
+    if (playing === lastPlaying) { return; }
+    lastPlaying = playing;
+    try {
+      var b = bridge();
+      if (b) { b.setPlaying(playing); }
+    } catch (e) { /* chua co cau noi */ }
+  }
+
+  function videoId() {
+    try {
+      var u = new URL(location.href);
+      var v = u.searchParams.get('v');
+      if (v) { return v; }
+      var m = u.pathname.match(/^\\/shorts\\/([A-Za-z0-9_-]{11})/);
+      return m ? m[1] : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function title() {
+    try {
+      if (typeof window.__cntTitle === 'function') {
+        var custom = window.__cntTitle();
+        if (custom) { return String(custom).trim(); }
+      }
+    } catch (e) { /* moc hong */ }
+
+    var sel = [
+      'ytm-slim-video-information-renderer h2',
+      '.slim-video-information-title',
+      'h1.title',
+      'ytd-watch-metadata h1'
+    ];
+    for (var i = 0; i < sel.length; i++) {
+      var el = document.querySelector(sel[i]);
+      if (el && el.textContent && el.textContent.trim()) {
+        return el.textContent.trim();
+      }
+    }
+    var d = (document.title || '').replace(/\\s*[-|]\\s*[^-|]{1,20}\\s*$/, '').trim();
+    return laTenTrang(d) ? '' : d;
+  }
+
+  function laTenTrang(s) {
+    if (!s) { return false; }
+    var host = (location.hostname || '').toLowerCase();
+    var k = s.toLowerCase().replace(/\\s+/g, '');
+    return k.length > 0 && host.indexOf(k) >= 0;
+  }
+
+  var tenCuId = '';
+  var tenCu = '';
+
+  function titleOnDinh() {
+    var id = videoId();
+    var t = title();
+    if (t) {
+      tenCuId = id;
+      tenCu = t;
+      return t;
+    }
+    return (id && id === tenCuId) ? tenCu : '';
+  }
+
+  function currentVideo() {
+    try {
+      if (typeof window.__cntVideo === 'function') {
+        var v = window.__cntVideo();
+        if (v) { return v; }
+      }
+    } catch (e) { /* moc hong */ }
+    return document.querySelector('video');
+  }
+
+  function thumb(v) {
+    try {
+      if (typeof window.__cntThumb === 'function') {
+        var custom = window.__cntThumb();
+        if (custom) { return String(custom); }
+      }
+    } catch (e) { /* moc hong */ }
+    return '';
+  }
+
+  function report() {
+    var v = currentVideo();
+    if (!v) {
+      reportPlaying(false);
+      return;
+    }
+    reportPlaying(!v.paused);
+
+    var b = bridge();
+    if (!b || !b.setNowPlaying) { return; }
+
+    var id = videoId();
+    var name = titleOnDinh();
+    var pos = Math.round((v.currentTime || 0) * 1000);
+    var dur = Math.round((isFinite(v.duration) ? v.duration : 0) * 1000);
+
+    var art = thumb(v);
+
+    var key = id + '|' + name + '|' + art + '|' + (!v.paused)
+            + '|' + Math.floor(pos / 5000);
+    if (key === lastKey) { return; }
+    lastKey = key;
+
+    try {
+      b.setNowPlaying(id, name, art, pos, dur, !v.paused);
+    } catch (e) { /* bo qua */ }
+  }
+
+  setInterval(report, 1000);
+  report();
+
+  ['seeked', 'loadedmetadata', 'durationchange', 'ended', 'ratechange']
+    .forEach(function (name) {
+      document.addEventListener(name, function (e) {
+        if (!e.target || e.target.tagName !== 'VIDEO') { return; }
+        lastKey = '';
+        report();
+      }, true);
+    });
+
+  if (typeof window.__cntNext !== 'function') {
+    window.__cntNext = function () { };
+  }
+  if (typeof window.__cntPrev !== 'function') {
+    window.__cntPrev = function () { history.back(); };
+  }
+
+  window.__cntSeek = function (ms, absolute) {
+    var v = currentVideo();
+    if (!v || !isFinite(v.duration)) { return; }
+    var target = absolute ? (ms / 1000) : (v.currentTime + ms / 1000);
+    v.currentTime = Math.max(0, Math.min(target, v.duration));
+    lastKey = '';
+    report();
+  };
+})();
+	""";
+
 	public static String injectSource() {
 		return "(function() { " +
 				"  try { " + TT_CLEAN + " } catch (e) { console.error('TT_CLEAN err', e); } " +
 				"  try { " + TT_NAV + " } catch (e) { console.error('TT_NAV err', e); } " +
+				"  try { " + PLAY_STATE + " } catch (e) { console.error('PLAY_STATE err', e); } " +
 				"})();";
 	}
 

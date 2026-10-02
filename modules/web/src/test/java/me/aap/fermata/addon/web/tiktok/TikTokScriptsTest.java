@@ -38,11 +38,22 @@ public class TikTokScriptsTest {
     }
 
     @Test
+    public void testPlayStateScriptIntegrity() {
+        String playState = TikTokScripts.PLAY_STATE;
+        assertNotNull(playState);
+        assertFalse(playState.trim().isEmpty());
+        assertTrue("Must contain __cntPlayState", playState.contains("__cntPlayState"));
+        assertTrue("Must report to CntBridge", playState.contains("CntBridge.setPlaying"));
+        assertTrue("Must support __cntSeek", playState.contains("__cntSeek"));
+    }
+
+    @Test
     public void testCombinedInjectionScript() {
         String combined = TikTokScripts.injectSource();
         assertNotNull(combined);
         assertTrue(combined.contains("__cntTtClean"));
         assertTrue(combined.contains("__cntTtNav"));
+        assertTrue(combined.contains("__cntPlayState"));
     }
 
     private String cleanNav() {
