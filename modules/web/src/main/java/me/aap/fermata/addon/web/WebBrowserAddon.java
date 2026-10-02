@@ -83,7 +83,8 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	}
 
 	protected WebBrowserAddon(String preferenceFile, String initialUrl) {
-		prefs = App.get().getSharedPreferences(preferenceFile, Context.MODE_PRIVATE);
+		App app = App.get();
+		prefs = (app != null) ? app.getSharedPreferences(preferenceFile, Context.MODE_PRIVATE) : null;
 		lastUrl = Pref.s("LAST_URL", initialUrl);
 	}
 
