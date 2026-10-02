@@ -13,6 +13,7 @@ public enum AddonCapability {
 	STREMIO,
 	YOUTUBE,
 	WEB,
+	TIKTOK,
 	CHATGPT,
 	VOICE_SEARCH;
 

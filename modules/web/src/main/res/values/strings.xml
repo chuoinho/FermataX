@@ -35,4 +35,6 @@
     <string name="sponsorblock_cat_filler">Filler</string>
     <string name="sponsorblock_cat_filler_sub">Aggressive category; disabled by default.</string>
     <string name="stremio_open_on_car_failed" translatable="false">Could not open this Stremio stream on the car screen.</string>
+    <string name="addon_tiktok" translatable="false">TikTok</string>
+    <string name="tiktok_for_you">For You</string>
 </resources>

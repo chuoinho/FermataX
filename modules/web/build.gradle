@@ -39,6 +39,17 @@ ext {
                     voiceTarget: 'stremio',
                     resolverSchemes: 'stremio',
                     order: 7
+            ],
+            [
+                    name : 'tiktok',
+                    id   : 'tiktok_fragment',
+                    icon : 'ic_app_tiktok',
+                    class: 'me.aap.fermata.addon.web.tiktok.TikTokAddon',
+                    fragment: true,
+                    capabilities: 'dashboard,navigation,tiktok,voice_search',
+                    voiceTarget: 'tiktok',
+                    resolverSchemes: 'tiktok',
+                    order: 8
             ]
     ]
 }
