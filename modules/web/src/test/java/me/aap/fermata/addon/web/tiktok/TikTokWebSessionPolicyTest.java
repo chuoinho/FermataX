@@ -64,4 +64,12 @@ public class TikTokWebSessionPolicyTest {
         assertEquals(TikTokWebSessionPolicy.HOME_URL, TikTokWebSessionPolicy.searchUrl(""));
         assertEquals(TikTokWebSessionPolicy.HOME_URL, TikTokWebSessionPolicy.searchUrl(null));
     }
+
+    @Test
+    public void testFormatDesktopUserAgent() {
+        String mobileUa = "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/AP2A.240805.005; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/127.0.6533.103 Mobile Safari/537.36";
+        String desktopUa = TikTokWebSessionPolicy.formatDesktopUserAgent(mobileUa);
+        assertEquals("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.103 Safari/537.36", desktopUa);
+        assertEquals("", TikTokWebSessionPolicy.formatDesktopUserAgent(null));
+    }
 }

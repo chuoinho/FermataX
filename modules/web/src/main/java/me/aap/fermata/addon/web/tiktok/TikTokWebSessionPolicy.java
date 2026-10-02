@@ -88,6 +88,14 @@ public final class TikTokWebSessionPolicy {
 		}
 	}
 
+	public static String formatDesktopUserAgent(String defaultUa) {
+		if (defaultUa == null) return "";
+		return defaultUa.replace("; wv", "")
+				.replace("Version/4.0 ", "")
+				.replaceFirst("\\(Linux; Android[^)]*\\)", "(Windows NT 10.0; Win64; x64)")
+				.replace(" Mobile Safari", " Safari");
+	}
+
 	private static boolean isBoundedRoute(String url) {
 		return (url != null) && (url.length() <= MAX_ROUTE_BYTES) &&
 				(url.getBytes(StandardCharsets.UTF_8).length <= MAX_ROUTE_BYTES);

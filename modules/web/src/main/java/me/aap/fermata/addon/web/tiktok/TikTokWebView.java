@@ -38,6 +38,13 @@ public final class TikTokWebView extends FermataWebView {
 		super.init(addon, webClient, chromeClient);
 		setBackgroundColor(0xFF000000);
 
+		android.webkit.WebSettings s = getSettings();
+		String defaultUa = s.getUserAgentString();
+		if (defaultUa != null) {
+			s.setUserAgentString(TikTokWebSessionPolicy.formatDesktopUserAgent(defaultUa));
+		}
+		s.setUseWideViewPort(true);
+
 		jsBridge = new TikTokJsBridge();
 		mediaSessionBridge = new TikTokMediaSessionBridge(this);
 		jsBridge.setListener(mediaSessionBridge);
