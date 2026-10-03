@@ -571,20 +571,21 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		Promise<OpenResult> result = new Promise<>();
 		FermataApplication.get().getHandler().post(() -> {
 			if (!guard.getAsBoolean()) { result.complete(OpenResult.CANCELLED); return; }
+			int targetFragmentId = request.addonId() != 0 ? request.addonId() : R.id.web_browser_fragment;
 			AddonManager manager = AddonManager.get();
-			AddonInfo info = manager.getAddonInfo(R.id.web_browser_fragment);
+			AddonInfo info = manager.getAddonInfo(targetFragmentId);
 			// Source synchronization cannot install a module on the car.
 			if ((info == null) || (manager.getAddonState(info) != AddonState.LOADED)) {
 				result.complete(OpenResult.NOT_READY); return;
 			}
-			captured.showFragmentWhenReadyGuarded(R.id.web_browser_fragment, null, guard)
+			captured.showFragmentWhenReadyGuarded(targetFragmentId, null, guard)
 					.onCompletion((opened, error) -> captured.post(() -> {
 				if (!guard.getAsBoolean()) result.complete(OpenResult.CANCELLED);
 				else if (error != null) result.complete(OpenResult.FAILED);
 				else if (!Boolean.TRUE.equals(opened)) result.complete(OpenResult.NOT_READY);
 				else {
 					ActivityFragment fragment = captured.getActiveFragment();
-					if ((fragment == null) || (fragment.getFragmentId() != R.id.web_browser_fragment) ||
+					if ((fragment == null) || (fragment.getFragmentId() != targetFragmentId) ||
 							!(fragment instanceof OpenOnCarRequestHandler handler))
 						result.complete(OpenResult.NOT_READY);
 					else result.complete(handler.openOnCar(request, guard));
@@ -599,7 +600,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			java.util.function.Function<OpenOnCarRequest, FutureSupplier<OpenResult>> openWeb) {
 		if (!stillCurrent.getAsBoolean()) return completed(OpenResult.CANCELLED);
 		if ((request.kind() == OpenOnCarKind.WEB_URL) &&
-				(request.addonId() == R.id.web_browser_fragment) && (request.payload() instanceof String))
+				(request.addonId() == R.id.web_browser_fragment || request.addonId() == R.id.tiktok_fragment) && (request.payload() instanceof String))
 			return openWeb.apply(request);
 		return dispatchPhoneRequest(request, stillCurrent, openAddon);
 	}

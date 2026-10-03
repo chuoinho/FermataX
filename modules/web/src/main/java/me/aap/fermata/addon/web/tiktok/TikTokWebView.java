@@ -102,6 +102,10 @@ public final class TikTokWebView extends FermataWebView {
 		return openOnCarBridge;
 	}
 
+	public boolean isProjectionDestination() {
+		return getRuntimeHostMode() == me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION;
+	}
+
 	@Override
 	public void destroy() {
 		if (mediaSessionBridge != null) {

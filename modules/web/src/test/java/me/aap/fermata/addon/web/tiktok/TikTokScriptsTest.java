@@ -20,6 +20,17 @@ public class TikTokScriptsTest {
         assertTrue("Must contain object-fit:contain", clean.contains("object-fit:contain"));
         assertTrue("Must protect photo swiper", clean.contains("swiper img") || clean.contains(".swiper"));
         assertTrue("Must contain __cnt_tt_clean style id", clean.contains("__cnt_tt_clean"));
+        assertFalse("Header must not be in HIDE array", clean.contains("'header'"));
+        assertFalse("Nav must not be in HIDE array", clean.contains("'nav'"));
+        assertFalse("Like must not be in HIDE array", clean.contains("'[data-e2e*=\"like\"]'"));
+        assertFalse("Comment must not be in HIDE array", clean.contains("'[data-e2e*=\"comment\"]'"));
+        assertTrue("Header must be hidden", clean.contains("header,#app-header") && clean.contains("display:none!important"));
+        assertTrue("TikTok logo must be hidden", clean.contains("[data-e2e=\"tiktok-logo\"]") && clean.contains("[class*=\"DivLogoWrapper\"]"));
+        assertTrue("Following and Upload buttons must be hidden", clean.contains("[data-e2e=\"nav-following\"]")
+                && clean.contains("[data-e2e=\"nav-upload\"]") && clean.contains("display:none!important"));
+        assertFalse("For You button must not be hidden", clean.contains("[data-e2e=\"nav-foryou\"]"));
+        assertFalse("Explore button must not be hidden", clean.contains("[data-e2e=\"nav-explore\"]"));
+        assertFalse("Profile button must not be hidden", clean.contains("[data-e2e=\"nav-profile\"]"));
     }
 
     @Test

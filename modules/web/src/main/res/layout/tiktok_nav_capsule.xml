@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tiktokNavCapsuleRoot"
+    android:layout_width="52dp"
+    android:layout_height="142dp"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/bg_tiktok_nav_pill"
+    android:elevation="8dp"
+    android:paddingTop="5dp"
+    android:paddingBottom="5dp">
+
+    <ImageButton
+        android:id="@+id/tiktokBtnPrev"
+        android:layout_width="44dp"
+        android:layout_height="38dp"
+        android:background="@drawable/bg_tiktok_nav_btn"
+        android:src="@drawable/ic_tiktok_nav_up"
+        android:scaleType="centerInside"
+        android:contentDescription="Previous Video" />
+
+    <ImageButton
+        android:id="@+id/tiktokBtnPlayPause"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:background="@drawable/bg_tiktok_center_btn"
+        android:src="@drawable/ic_tiktok_pause"
+        android:scaleType="centerInside"
+        android:elevation="2dp"
+        android:contentDescription="Play or Pause" />
+
+    <ImageButton
+        android:id="@+id/tiktokBtnNext"
+        android:layout_width="44dp"
+        android:layout_height="38dp"
+        android:background="@drawable/bg_tiktok_nav_btn"
+        android:src="@drawable/ic_tiktok_nav_down"
+        android:scaleType="centerInside"
+        android:contentDescription="Next Video" />
+
+</LinearLayout>

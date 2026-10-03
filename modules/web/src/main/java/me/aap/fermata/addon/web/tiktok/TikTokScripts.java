@@ -46,36 +46,14 @@ public final class TikTokScripts {
   var ITEM = 'article[data-e2e="recommend-list-item-container"]';
   var VIDEO = 'section[data-e2e="feed-video"]';
 
-  // Phan trang tri quanh video, an het.
+  // Dai quang cao tai app va banner che khuat noi dung
   var HIDE = [
-    // Thanh dieu huong trai va thanh tren
-    '[data-e2e^="nav-"]',
-    '[data-e2e="tiktok-logo"]',
-    '[data-e2e*="search"]',
-    '[data-e2e*="inbox"]',
-    '[data-e2e*="upload"]',
-    '[data-e2e*="profile"]',
-    '[data-e2e="dm-total-unread-count"]',
-    'header',
-    'nav',
-
-    // Nut tuong tac quanh video - khong dung duoc khi dang lai xe.
-    // Ten kenh va mo ta thi GIU, chi doi cho xuong duoi (xem INFO ben duoi).
-    '[data-e2e="feed-follow"]',
-    '[data-e2e*="avatar"]',
-    '[data-e2e*="music"]',
-    '[class*="Music"]',
-    '[data-e2e*="like"]',
-    '[data-e2e*="comment"]',
-    '[data-e2e*="share"]',
-    '[data-e2e*="favorite"]',
-    '[data-e2e*="follow"]',
-
-    // Dai moi tai ung dung
     '[class*="AppPromot"]',
     '[class*="DivDownload"]',
-
-    // Lop phu gradient de len video, chi de trang tri
+    '[data-e2e*="download"]',
+    '[data-e2e*="app-store"]',
+    '[data-e2e*="google-play"]',
+    '[class*="BannerDownload"]',
     '[class*="OverlayTop"]',
     '[class*="MaskLayer"]'
   ];
@@ -88,17 +66,7 @@ public final class TikTokScripts {
     '[data-e2e*="username"]'
   ].join(',');
 
-  // Nut chuyen video cua TikTok: AN di.
-  //
-  // Chung chi duoc React dung ra khi con tro chuot vao khung video, ma man
-  // hinh xe la cam ung nen khong bao gio co con tro. O khung nhin rong (1080p
-  // = 1828 dp) TikTok lai dung bo cuc desktop va dung san chung - tuc hanh vi
-  // PHU THUOC KICH THUOC MAN HINH, moi xe mot kieu.
-  //
-  // App da tu ve hai nut cua minh (xem CarScreen.buildNavButtons), luon o do
-  // va giong nhau tren moi man hinh. An nut cua trang de khong bi hai bo nut
-  // chong nhau. An bang display:none khong anh huong tt_nav.js: click() van
-  // kich hoat duoc phan tu dang an.
+  // Nut chuyen video cua TikTok: AN di vi da co thanh dieu khien noi (Floating Nav Capsule).
   var HIDE_NAV = [
     '[data-e2e="feed-navigation-next"]',
     '[data-e2e="feed-navigation-prev"]'
@@ -110,21 +78,23 @@ public final class TikTokScripts {
 
       HIDE_NAV.join(',') + '{display:none!important;}',
 
-      // 0. Bo hai khoang trang o canh trai va phia duoi.
-      //
-      //    Do duoc: vung cuon rong 788 trong khi muc chi 740 - 48px hut o
-      //    mot ben, va nen trang cua TikTok lo ra thanh vet trang. Keo ca hai
-      //    ra het co va dat nen den cho moi lop, ke ca html/body.
+      // 0. Bo hai khoang trang o canh trai va phia duoi. Dat nen den AMOLED cho toan bo trang.
       'html,body{background:#000!important;margin:0!important;padding:0!important;'
         + 'width:100%!important;height:100%!important;overflow:hidden!important;}',
 
-      //    KHONG dung 'body :has(ITEM)' o day.
-      //
-      //    Bo chon do khop moi to tien chua muc video, va trinh duyet phai
-      //    tinh lai no MOI LAN DOM doi. Dong video TikTok dai them lien tuc
-      //    khi cuon, nen cai gia tang dan theo thoi gian - dung mot phan cua
-      //    hien tuong "chay lau thi lag". Da do duoc chuoi that (xem dump
-      //    chuoi ngoai) nen ke ten thang, re hon nhieu.
+      // Thanh Header tren cung va Logo TikTok o cot ben trai: An di de toi uu 100% dien tich hien thi video va thanh dieu huong.
+      // Chuc nang login van su dung binh thuong thong qua nut Profile/Avatar o cot ben trai hoac Like/Bookmark o cot ben phai.
+      'header,#app-header,[id="app-header"],[class*="DivHeaderContainer"],'
+        + '[data-e2e="tiktok-logo"],[class*="DivLogoWrapper"]{display:none!important;}',
+
+      // An 2 nut Following va Upload o thanh dieu huong ben trai theo yeu cau, giu lai For You, Explore, Live, Profile, More
+      '[class*="DivMainNavContainer"] > :has([data-e2e="nav-following"]),'
+        + '[class*="DivMainNavContainer"] > :has([data-e2e="nav-upload"]),'
+        + '[data-e2e="nav-following"],[data-e2e="nav-upload"]{display:none!important;}',
+
+      'nav{background:#000!important;}',
+      'nav *{color:#fff!important;}',
+
       'main,[class*="ColumnListContainer"],[class*="BaseBodyContainer"],'
         + '[class*="MainContainer"]'
         + '{width:100%!important;max-width:none!important;'
@@ -132,57 +102,37 @@ public final class TikTokScripts {
         + 'border:0!important;}',
       ITEM + '{max-width:none!important;background:#000!important;}',
 
-      //    Khung boc thanh dieu huong trai: AN CA KHUNG, khong chi cac muc
-      //    ben trong. Do duoc: main bat dau o x=72 va hep di dung 72px, cha
-      //    khong he co padding - tuc co mot anh em giu cho 72px truoc no.
-      //    An tung muc nav-* khong du vi khung bao van con.
-      //
-      //    LUU Y: khong duoc viet ':has(> main:has(ITEM))'. Dac ta CSS cam
-      //    long :has() trong :has(), trinh duyet loai bo NGUYEN luat - da
-      //    viet vay mot lan va no im lang khong chay. Chi mot cap :has().
-      ':has(> main) > *:not(main){display:none!important;}',
       'main{margin:0!important;width:100%!important;flex:1 1 auto!important;}',
 
-      // 1. Moi muc cao DUNG mot khung nhin. Nho vay cuon mot buoc
-      //    clientHeight la roi dung ranh gioi video, khong lech dan nua.
+      // 1. Moi muc cao DUNG mot khung nhin.
       ITEM + '{height:100vh!important;min-height:100vh!important;'
         + 'max-height:100vh!important;margin:0!important;padding:0!important;}',
 
-      // 2. Doi hang thanh COT: video o tren, chu o duoi.
-      //
-      //    TikTok xep video va cot thong tin canh nhau theo chieu ngang, roi
-      //    con dat mot lop chu de len video. Tren man hinh xe thi chu de len
-      //    video vua kho doc vua che mat noi dung. Doi truc flex la video
-      //    chiem phan tren, khoi thong tin roi xuong duoi.
+      // 2. Video can giua, cot tuong tac xa hoi hien thi ben canh.
       'div:has(> ' + VIDEO + '){display:flex!important;'
-        + 'flex-direction:column!important;width:100%!important;'
+        + 'flex-direction:row!important;justify-content:center!important;'
+        + 'align-items:center!important;width:100%!important;'
         + 'height:100%!important;max-width:none!important;'
         + 'margin:0!important;padding:0!important;}',
 
-      //    Video an het phan tren, chu lay dung phan con lai.
-      //
-      //    ORDER moi la cai quyet dinh chu nam tren hay duoi. Doi truc sang
-      //    cot khong du: phan tu nao dung truoc trong DOM thi len tren, ma
-      //    khoi mo ta cua TikTok nam TRUOC khung video. Do duoc: video-desc o
-      //    y=46 trong khi video chiem y=0..397. Ep order cho video ve dau, moi
-      //    thu con lai xuong sau.
       VIDEO + '{order:0!important;display:flex!important;'
         + 'flex-direction:column!important;}',
 
-      //    Trong khung video cung phai xep lai: chuoi boc video len truoc,
-      //    moi thu khac (mo ta, ten kenh) xuong sau. Luat order o tang anh em
-      //    khong voi toi day duoc - do duoc mo ta nam o y=46 trong khi khung
-      //    video la y=0..397, tuc no o BEN TRONG khung.
-      //    VIDEO CHIEM TOAN BO KHUNG. Truoc day danh 22% chieu cao cho khoi
-      //    chu, nhung chu that chi cao 18px nen phan con lai thanh mang den.
-      //    Gio khoi chu noi de len day video (no da la lop phu tuyet doi,
-      //    khong chiem cho trong dong) va video lay het chieu cao.
       VIDEO + ' > *:has(video){flex:1 1 auto!important;min-height:0!important;'
         + 'height:100%!important;}',
 
-      //    Cot phu ben canh video (tim, binh luan, chia se) an han - da an
-      //    tung nut theo data-e2e roi, day la an ca cot de khong giu cho.
-      'div:has(> ' + VIDEO + ') > *:not(' + VIDEO + '){display:none!important;}',
+      // Cot tuong tac xa hoi (tim, binh luan, chia se, avatar, music) hien thi ro rang ben canh video
+      'section[class*="SectionActionBarContainer"],[class*="SectionActionBar"]'
+        + '{display:flex!important;visibility:visible!important;opacity:1!important;'
+        + 'z-index:50!important;margin-left:8px!important;margin-right:8px!important;}',
+      'section[class*="SectionActionBarContainer"] *,[class*="SectionActionBar"] *'
+        + '{visibility:visible!important;}',
+      'div:has(> ' + VIDEO + ') > *:not(' + VIDEO + '){display:flex!important;'
+        + 'visibility:visible!important;opacity:1!important;z-index:10!important;'
+        + 'margin-left:8px!important;}',
+      '[data-e2e*="like"],[data-e2e*="comment"],[data-e2e*="share"],'
+        + '[data-e2e*="favorite"],[data-e2e*="avatar"],[data-e2e*="music"]'
+        + '{visibility:visible!important;display:flex!important;}',
 
       //    Chu phai chay theo dong binh thuong, khong duoc dinh de len video.
       INFO + '{position:static!important;transform:none!important;'

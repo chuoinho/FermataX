@@ -43,6 +43,21 @@ public class MainCarActivityOpenOnCarReceiverTest {
 		assertEquals(0, addons.get());
 		assertEquals(1, webLoads.get());
 	}
+	@Test public void tiktokWebRequestUsesTypedWebContinuation() {
+		AtomicInteger addons = new AtomicInteger(), webLoads = new AtomicInteger();
+		OpenOnCarRequest request = new OpenOnCarRequest(OpenOnCarKind.WEB_URL,
+				me.aap.fermata.R.id.tiktok_fragment, "https://www.tiktok.com/@user/video/123",
+				new OpenOnCarToken(1, 1, 1, 1, 1));
+		OpenResult result = MainCarActivity.dispatchPhoneRequest(request, () -> true,
+				id -> { addons.incrementAndGet(); return completed(OpenResult.OPENED); },
+				typed -> {
+					org.junit.Assert.assertSame(request, typed);
+					webLoads.incrementAndGet(); return completed(OpenResult.LOAD_DISPATCHED);
+				}).peek();
+		assertEquals(OpenResult.LOAD_DISPATCHED, result);
+		assertEquals(0, addons.get());
+		assertEquals(1, webLoads.get());
+	}
 	@Test public void staleTypedRequestDoesNotRunAnyContinuation() {
 		OpenOnCarRequest request = new OpenOnCarRequest(OpenOnCarKind.WEB_URL,
 				me.aap.fermata.R.id.web_browser_fragment, "https://example.test",

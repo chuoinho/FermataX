@@ -40,4 +40,46 @@ public class TikTokWebAddonBindingTest {
 		assertEquals("https://www.tiktok.com/foryou",
 				TikTokOpenOnCarBridge.normalizeRouteForCar("https://www.tiktok.com/foryou"));
 	}
+
+	@Test
+	public void testOpenOnCarFragmentBehavior() {
+		TikTokWebFragment fragment = new TikTokWebFragment();
+		me.aap.fermata.auto.OpenOnCarToken token = new me.aap.fermata.auto.OpenOnCarToken(1, 1, 1, 1, 1);
+
+		// Cancelled when not current
+		me.aap.fermata.auto.OpenOnCarRequest reqValid = new me.aap.fermata.auto.OpenOnCarRequest(
+				me.aap.fermata.auto.OpenOnCarKind.WEB_URL,
+				me.aap.fermata.R.id.tiktok_fragment,
+				"https://www.tiktok.com/@user/video/123", token);
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.CANCELLED,
+				fragment.openOnCar(reqValid, () -> false));
+
+		// Failed when kind is wrong
+		me.aap.fermata.auto.OpenOnCarRequest reqWrongKind = new me.aap.fermata.auto.OpenOnCarRequest(
+				me.aap.fermata.auto.OpenOnCarKind.STREMIO_PLAYER,
+				me.aap.fermata.R.id.tiktok_fragment,
+				"https://www.tiktok.com/@user/video/123", token);
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.FAILED,
+				fragment.openOnCar(reqWrongKind, () -> true));
+
+		// Failed when addon ID is wrong
+		me.aap.fermata.auto.OpenOnCarRequest reqWrongAddon = new me.aap.fermata.auto.OpenOnCarRequest(
+				me.aap.fermata.auto.OpenOnCarKind.WEB_URL,
+				me.aap.fermata.R.id.web_browser_fragment,
+				"https://www.tiktok.com/@user/video/123", token);
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.FAILED,
+				fragment.openOnCar(reqWrongAddon, () -> true));
+
+		// Failed when URL route is unpersisted/rejected (e.g. login)
+		me.aap.fermata.auto.OpenOnCarRequest reqLogin = new me.aap.fermata.auto.OpenOnCarRequest(
+				me.aap.fermata.auto.OpenOnCarKind.WEB_URL,
+				me.aap.fermata.R.id.tiktok_fragment,
+				"https://www.tiktok.com/login", token);
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.FAILED,
+				fragment.openOnCar(reqLogin, () -> true));
+
+		// Not ready when web is not attached
+		assertEquals(me.aap.fermata.auto.AutomotiveNavigationController.OpenResult.NOT_READY,
+				fragment.openOnCar(reqValid, () -> true));
+	}
 }

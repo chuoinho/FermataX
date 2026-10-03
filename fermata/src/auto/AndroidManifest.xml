@@ -101,6 +101,7 @@
         <service
             android:name="me.app.fermatax.auto.CarService"
             android:exported="true"
+            android:icon="@drawable/launcher"
             android:label="@string/app_name"
             tools:ignore="ExportedService">
             <intent-filter>
@@ -113,6 +114,7 @@
 
         <service
             android:name="me.app.fermatax.auto.MirrorService"
+            android:enabled="false"
             android:exported="true"
             android:icon="@drawable/mirror"
             android:label="@string/mirror_service_name"

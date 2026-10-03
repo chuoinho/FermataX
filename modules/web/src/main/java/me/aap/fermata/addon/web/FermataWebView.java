@@ -418,7 +418,7 @@ public class FermataWebView extends WebView
 		return isCar;
 	}
 
-	protected final RuntimeHostMode getRuntimeHostMode() {
+	public final RuntimeHostMode getRuntimeHostMode() {
 		return hostMode;
 	}
 

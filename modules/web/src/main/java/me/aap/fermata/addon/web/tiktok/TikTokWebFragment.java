@@ -1,9 +1,11 @@
 package me.aap.fermata.addon.web.tiktok;
 
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 
 import androidx.annotation.Keep;
@@ -17,6 +19,9 @@ import me.aap.fermata.addon.web.FermataWebView;
 import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.WebBrowserAddon;
 import me.aap.fermata.addon.web.WebBrowserFragment;
+import me.aap.fermata.auto.AutomotiveNavigationController;
+import me.aap.fermata.auto.OpenOnCarKind;
+import me.aap.fermata.auto.OpenOnCarRequest;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.VoiceCommand;
 import me.aap.fermata.ui.view.TopBarController;
@@ -26,6 +31,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.FloatingButton;
+import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
 
 /**
@@ -40,6 +46,77 @@ public final class TikTokWebFragment extends WebBrowserFragment {
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
 			@Nullable Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.tiktok_browser, container, false);
+	}
+
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		TikTokFloatingNavView navCapsule = view.findViewById(R.id.tiktokNavCapsule);
+		if (navCapsule != null) {
+			navCapsule.attach(getTikTokWebView());
+			adjustFloatingNavPosition(navCapsule);
+		}
+	}
+
+	public void adjustFloatingNavPosition(@NonNull TikTokFloatingNavView navCapsule) {
+		ViewGroup.LayoutParams rawLp = navCapsule.getLayoutParams();
+		if (!(rawLp instanceof FrameLayout.LayoutParams lp)) return;
+
+		boolean isNavRight = false;
+		try {
+			MainActivityDelegate delegate = MainActivityDelegate.get(requireContext());
+			NavBarView navBar = (delegate != null) ? delegate.getNavBar() : null;
+			if (navBar != null) {
+				isNavRight = navBar.isRight();
+			} else if (delegate != null) {
+				isNavRight = delegate.getPrefs().getNavBarPosPref(delegate) == NavBarView.POSITION_RIGHT;
+			}
+		} catch (Exception ignored) {
+		}
+
+		float density = getResources().getDisplayMetrics().density;
+		int bottomMargin = Math.round(24 * density);
+		if (isNavRight) {
+			lp.gravity = Gravity.BOTTOM | Gravity.START;
+			lp.leftMargin = Math.round(76 * density);
+			lp.rightMargin = 0;
+		} else {
+			lp.gravity = Gravity.BOTTOM | Gravity.END;
+			lp.rightMargin = Math.round(16 * density);
+			lp.leftMargin = 0;
+		}
+		lp.bottomMargin = bottomMargin;
+		navCapsule.setLayoutParams(lp);
+	}
+
+	@Override
+	public AutomotiveNavigationController.OpenResult openOnCar(OpenOnCarRequest request,
+			java.util.function.BooleanSupplier stillCurrent) {
+		TikTokWebView web = getTikTokWebView();
+		if (!stillCurrent.getAsBoolean()) return AutomotiveNavigationController.OpenResult.CANCELLED;
+		if ((request.kind() != OpenOnCarKind.WEB_URL) ||
+				(request.addonId() != me.aap.fermata.R.id.tiktok_fragment) ||
+				!(request.payload() instanceof String url) ||
+				!TikTokOpenOnCarBridge.acceptsRoute(url))
+			return AutomotiveNavigationController.OpenResult.FAILED;
+		if ((web == null) || isHidden() || !web.isProjectionDestination())
+			return AutomotiveNavigationController.OpenResult.NOT_READY;
+		String targetUrl = TikTokOpenOnCarBridge.normalizeRouteForCar(url);
+		web.stopLoading();
+		web.loadUrl(targetUrl);
+		return AutomotiveNavigationController.OpenResult.LOAD_DISPATCHED;
+	}
+
+	@Override
+	public void onDestroyView() {
+		View view = getView();
+		if (view != null) {
+			TikTokFloatingNavView navCapsule = view.findViewById(R.id.tiktokNavCapsule);
+			if (navCapsule != null) {
+				navCapsule.detach();
+			}
+		}
+		super.onDestroyView();
 	}
 
 	@Override

@@ -90,6 +90,22 @@ public class AutoManifestPolicyTest {
 				"androidx.car.app.NAVIGATION_TEMPLATES"));
 	}
 
+	@Test
+	public void carServiceExplicitlyDeclaresLauncherIconAttribution() throws Exception {
+		Document manifest = parse("src/auto/AndroidManifest.xml");
+		Element carService = findNamed(manifest, "service", "me.app.fermatax.auto.CarService");
+		assertNotNull(carService);
+		assertEquals("@drawable/launcher", carService.getAttributeNS(ANDROID_NS, "icon"));
+	}
+
+	@Test
+	public void mirrorServiceIsDisabledByDefaultToPreventLauncherCollision() throws Exception {
+		Document manifest = parse("src/auto/AndroidManifest.xml");
+		Element mirrorService = findNamed(manifest, "service", "me.app.fermatax.auto.MirrorService");
+		assertNotNull(mirrorService);
+		assertEquals("false", mirrorService.getAttributeNS(ANDROID_NS, "enabled"));
+	}
+
 	private static Document parse(String path) throws Exception {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setNamespaceAware(true);
