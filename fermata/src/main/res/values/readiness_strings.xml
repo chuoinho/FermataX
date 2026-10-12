@@ -36,4 +36,7 @@
 	<string name="readiness_control_available">The Control channel is ready.</string>
 	<string name="readiness_control_unavailable">The Control channel is not ready.</string>
 	<string name="readiness_settings_unavailable">This settings page is not available on this device.</string>
+	<string name="readiness_nav_notification_access">Navigation notification listener</string>
+	<string name="readiness_nav_notification_access_granted">Enabled. Allows turn-by-turn navigation mirroring on the Glass dashboard.</string>
+	<string name="readiness_nav_notification_access_not_granted">Disabled. Tap to allow notification access for turn-by-turn navigation.</string>
 </resources>

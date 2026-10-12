@@ -103,6 +103,16 @@ final class ReadinessPrefsBuilder {
 				} : () -> performAction(row.action());
 			});
 		}
+
+		target.addButton(o -> {
+			boolean granted = PhoneReadiness.hasNotificationListenerCheck(context);
+			o.title = R.string.readiness_nav_notification_access;
+			o.subtitle = granted ? R.string.readiness_nav_notification_access_granted :
+					R.string.readiness_nav_notification_access_not_granted;
+			o.onClick = () -> {
+				startSettings(PhoneReadiness.createNotificationListenerSettingsIntent());
+			};
+		});
 	}
 
 	private Snapshot collect() {

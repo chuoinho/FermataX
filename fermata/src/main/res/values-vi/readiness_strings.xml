@@ -36,4 +36,7 @@
 	<string name="readiness_control_available">Kênh Điều khiển đã sẵn sàng.</string>
 	<string name="readiness_control_unavailable">Kênh Điều khiển chưa sẵn sàng.</string>
 	<string name="readiness_settings_unavailable">Trang Cài đặt này không có trên thiết bị.</string>
+	<string name="readiness_nav_notification_access">Quyền đọc thông báo dẫn đường</string>
+	<string name="readiness_nav_notification_access_granted">Đang bật. Cho phép phản chiếu dẫn đường từng bước trên bảng điều khiển Kính.</string>
+	<string name="readiness_nav_notification_access_not_granted">Đang tắt. Chạm để cấp quyền truy cập thông báo cho dẫn đường.</string>
 </resources>

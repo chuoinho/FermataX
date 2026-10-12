@@ -110,4 +110,16 @@ public final class PhoneReadiness {
 			boolean microphoneGranted, boolean notificationsEnabled, boolean overlayGranted,
 			boolean batteryExempt) {
 	}
+
+	public static boolean hasNotificationListenerCheck(android.content.Context ctx) {
+		if (ctx == null) return false;
+		String enabledListeners = android.provider.Settings.Secure.getString(
+				ctx.getContentResolver(), "enabled_notification_listeners");
+		String pkgName = ctx.getPackageName();
+		return (enabledListeners != null) && (pkgName != null) && enabledListeners.contains(pkgName);
+	}
+
+	public static android.content.Intent createNotificationListenerSettingsIntent() {
+		return new android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+	}
 }
