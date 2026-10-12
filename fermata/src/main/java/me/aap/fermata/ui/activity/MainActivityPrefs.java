@@ -34,11 +34,14 @@ public interface MainActivityPrefs
 	int THEME_PURPLE = 5;
 	int THEME_CLASSIC = 6;
 	int THEME_MATERIAL_YOU = 7;
+	int THEME_GLASS = 9;
 	int CLOCK_POS_NONE = 0;
 	int CLOCK_POS_LEFT = 1;
 	int CLOCK_POS_RIGHT = 2;
 	int CLOCK_POS_CENTER = 3;
 
+	Pref<Supplier<String>> PREF_GLASS_QUICK_SHORTCUTS = Pref.s("GLASS_QUICK_SHORTCUTS", "[]");
+	Pref<IntSupplier> GLASS_SPEED_UNIT = Pref.i("GLASS_SPEED_UNIT", 0);
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_CLASSIC);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
@@ -104,9 +107,20 @@ public interface MainActivityPrefs
 	}
 
 	default int getThemePref(boolean auto) {
+		if (AUTO && auto) {
+			int aaTheme = getIntPref(THEME_AA);
+			if (aaTheme == THEME_CLASSIC || aaTheme == THEME_MATERIAL_YOU || aaTheme == THEME_GLASS) {
+				return aaTheme;
+			}
+			return THEME_CLASSIC;
+		}
 		int theme = getIntPref(THEME_MAIN);
 		if (theme != THEME_CLASSIC && theme != THEME_MATERIAL_YOU) return THEME_CLASSIC;
 		return theme;
+	}
+
+	default boolean isGlassTheme(boolean auto) {
+		return AUTO && auto && getThemePref(true) == THEME_GLASS;
 	}
 
 	@Nullable

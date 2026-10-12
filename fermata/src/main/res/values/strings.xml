@@ -99,6 +99,7 @@
     <string name="theme_purple">Purple</string>
     <string name="theme_classic">Classic</string>
     <string name="theme_material_you">Material You / Bento</string>
+    <string name="theme_glass">Glassmorphism</string>
 
     <string name="nav_bar_pos">Navigation bar position</string>
     <string name="nav_bar_pos_sub">Current position: %1$s</string>

@@ -83,6 +83,7 @@
     <string name="theme_purple">Màu tím</string>
     <string name="theme_classic">Cổ điển</string>
     <string name="theme_material_you">Material You / Bento Grid</string>
+    <string name="theme_glass">Giao diện Kính (Glassmorphism)</string>
 
     <string name="nav_bar_pos">Vị trí thanh điều hướng</string>
     <string name="nav_bar_pos_sub">Vị trí hiện tại: %1$s</string>
