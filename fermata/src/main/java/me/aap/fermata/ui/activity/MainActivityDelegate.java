@@ -984,6 +984,8 @@ public class MainActivityDelegate extends ActivityDelegate
 			return new InitialSetupFragment();
 		} else if (id == R.id.subtitles_fragment) {
 			return new SubtitlesFragment();
+		} else if (id == R.id.glass_addons_catalog_fragment) {
+			return new me.aap.fermata.ui.glass.catalog.GlassAddonsCatalogFragment();
 		}
 		ActivityFragment f = FermataApplication.get().getAddonManager().createFragment(id);
 		return (f != null) ? f : super.createFragment(id);

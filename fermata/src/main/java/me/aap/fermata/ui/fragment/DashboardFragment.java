@@ -47,6 +47,8 @@ import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.glass.dashboard.GlassDashboardController;
+import me.aap.fermata.ui.glass.dashboard.GlassDashboardLayout;
 import me.aap.fermata.ui.smarttop.SmartTopAction;
 import me.aap.fermata.ui.smarttop.SmartTopBinder;
 import me.aap.fermata.ui.smarttop.SmartTopCoordinator;
@@ -75,6 +77,7 @@ public class DashboardFragment extends MainActivityFragment
 	private PreferenceStore prefs;
 	private FermataServiceUiBinder binder;
 	private boolean editMode;
+	private GlassDashboardController glassDashboardController;
 
 	@Override
 	public int getFragmentId() {
@@ -100,12 +103,25 @@ public class DashboardFragment extends MainActivityFragment
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
 													 @Nullable Bundle savedInstanceState) {
+		MainActivityDelegate a = getActivityDelegate();
+		if (a != null && a.isCarActivity() && a.getPrefs().getIntPref(MainActivityPrefs.THEME_AA) == MainActivityPrefs.THEME_GLASS) {
+			GlassDashboardLayout glassLayout = new GlassDashboardLayout(a.getContext());
+			glassLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+			return glassLayout;
+		}
 		return inflater.inflate(R.layout.dashboard_fragment, container, false);
 	}
 
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+
+		if (view instanceof GlassDashboardLayout) {
+			MainActivityDelegate activity = getActivityDelegate();
+			glassDashboardController = new GlassDashboardController(activity, (GlassDashboardLayout) view, activity.getMediaServiceBinder());
+			glassDashboardController.start();
+			return;
+		}
 
 		Context ctx = requireContext();
 		MainActivityDelegate activity = MainActivityDelegate.get(ctx);
@@ -198,6 +214,10 @@ public class DashboardFragment extends MainActivityFragment
 		this.adapter = null;
 		this.list = null;
 		this.layoutManager = null;
+		if (glassDashboardController != null) {
+			glassDashboardController.stop();
+			glassDashboardController = null;
+		}
 		super.onDestroyView();
 	}
 

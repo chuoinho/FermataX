@@ -59,6 +59,7 @@
     <item name="web_browser_fragment" type="id" />
     <item name="cast_addon" type="id" />
     <item name="chat_addon" type="id" />
+    <item name="glass_addons_catalog_fragment" type="id" />
 
 
     <item name="nav_got_to_current" type="id" />
