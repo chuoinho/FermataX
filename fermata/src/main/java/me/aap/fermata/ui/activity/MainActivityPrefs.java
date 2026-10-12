@@ -86,7 +86,7 @@ public interface MainActivityPrefs
 			Pref.b("INITIAL_SETUP_COMPLETED", false);
 	Pref<IntSupplier> INITIAL_SETUP_VERSION = Pref.i("INITIAL_SETUP_VERSION", 0);
 
-	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_CLASSIC);
+	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_GLASS);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
 	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
@@ -112,15 +112,15 @@ public interface MainActivityPrefs
 			if (aaTheme == THEME_CLASSIC || aaTheme == THEME_MATERIAL_YOU || aaTheme == THEME_GLASS) {
 				return aaTheme;
 			}
-			return THEME_CLASSIC;
+			return THEME_GLASS;
 		}
 		int theme = getIntPref(THEME_MAIN);
-		if (theme != THEME_CLASSIC && theme != THEME_MATERIAL_YOU) return THEME_CLASSIC;
+		if (theme != THEME_CLASSIC && theme != THEME_MATERIAL_YOU && theme != THEME_GLASS) return THEME_CLASSIC;
 		return theme;
 	}
 
 	default boolean isGlassTheme(boolean auto) {
-		return AUTO && auto && getThemePref(true) == THEME_GLASS;
+		return auto ? (AUTO && getThemePref(true) == THEME_GLASS) : (getThemePref(false) == THEME_GLASS);
 	}
 
 	@Nullable

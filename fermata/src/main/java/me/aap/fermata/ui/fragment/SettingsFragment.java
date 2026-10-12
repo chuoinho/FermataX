@@ -120,7 +120,7 @@ public class SettingsFragment extends MainActivityFragment
 			listView.setLayoutManager(new LinearLayoutManager(getContext()));
 			listView.setAdapter(adapter);
 
-			if (a.isCarActivity() && a.getPrefs().getIntPref(MainActivityPrefs.THEME_AA) == MainActivityPrefs.THEME_GLASS) {
+			if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
 				boolean isNight = (getResources().getConfiguration().uiMode &
 						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
 				me.aap.fermata.ui.glass.settings.GlassSettingsDecorator.apply(listView, isNight);

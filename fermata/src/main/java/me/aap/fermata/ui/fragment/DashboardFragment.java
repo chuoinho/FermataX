@@ -104,7 +104,7 @@ public class DashboardFragment extends MainActivityFragment
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
 													 @Nullable Bundle savedInstanceState) {
 		MainActivityDelegate a = getActivityDelegate();
-		if (a != null && a.isCarActivity() && a.getPrefs().getIntPref(MainActivityPrefs.THEME_AA) == MainActivityPrefs.THEME_GLASS) {
+		if (a != null && a.getPrefs().isGlassTheme(a.isCarActivity())) {
 			GlassDashboardLayout glassLayout = new GlassDashboardLayout(a.getContext());
 			glassLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 			return glassLayout;

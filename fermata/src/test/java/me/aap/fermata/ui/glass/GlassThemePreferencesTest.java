@@ -18,24 +18,38 @@ public class GlassThemePreferencesTest {
 	}
 
 	@Test
-	public void testPhoneUiNeverReturnsGlassTheme() {
+	public void testPhoneUiThemeDefaultsAndGlassOption() {
 		BasicPreferenceStore store = new BasicPreferenceStore();
-		store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_GLASS);
-
 		TestMainActivityPrefs prefs = new TestMainActivityPrefs(store);
+
+		// Default phone theme is Classic
+		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(false));
+		assertFalse(prefs.isGlassTheme(false));
+
+		// When phone selects Glass theme, returns Glass
+		store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_GLASS);
+		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(false));
+		assertTrue(prefs.isGlassTheme(false));
+
+		// Invalid theme falls back to Classic
+		store.applyIntPref(MainActivityPrefs.THEME_MAIN, 999);
 		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(false));
 		assertFalse(prefs.isGlassTheme(false));
 	}
 
 	@Test
-	public void testAutomotiveReturnsGlassThemeWhenConfigured() {
+	public void testAutomotiveDefaultsToGlassTheme() {
 		BasicPreferenceStore store = new BasicPreferenceStore();
-		store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_CLASSIC);
-		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_GLASS);
-
 		TestMainActivityPrefs prefs = new TestMainActivityPrefs(store);
+
+		// AA theme defaults to Glass
 		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(true));
 		assertTrue(prefs.isGlassTheme(true));
+
+		// Can switch AA to Classic
+		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_CLASSIC);
+		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(true));
+		assertFalse(prefs.isGlassTheme(true));
 	}
 
 	private static final class TestMainActivityPrefs extends BasicPreferenceStore implements MainActivityPrefs {
