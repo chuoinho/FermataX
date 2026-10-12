@@ -40,6 +40,8 @@ docs/*
 !docs/p0-p1/**
 !docs/stremio/
 !docs/stremio/**
+!docs/superpowers/
+!docs/superpowers/**
 mockups/
 design/
 product_screenshots/
