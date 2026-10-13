@@ -19,11 +19,13 @@ import androidx.appcompat.widget.SwitchCompat;
 import java.io.File;
 
 import me.aap.fermata.R;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 
 /**
  * Self-contained settings dialog for Car Finder, ensuring no settings leak
  * into the main FermataX global settings page.
- * Styled with FermataX's signature dark navy & electric blue theme.
+ * Styled with FermataX's signature dark navy & electric blue theme,
+ * upgraded with Glassmorphism when Glass Theme is active.
  */
 public final class CarFinderSettingsDialog {
 	public interface OnSettingsChangeListener {
@@ -32,6 +34,15 @@ public final class CarFinderSettingsDialog {
 	}
 
 	private CarFinderSettingsDialog() {
+	}
+
+	public static boolean isGlassTheme(Context context) {
+		try {
+			MainActivityDelegate a = MainActivityDelegate.get(context);
+			return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+		} catch (Throwable e) {
+			return false;
+		}
 	}
 
 	public static void show(Context context, OnSettingsChangeListener listener) {
@@ -50,11 +61,17 @@ public final class CarFinderSettingsDialog {
 		LinearLayout root = new LinearLayout(context);
 		root.setOrientation(LinearLayout.VERTICAL);
 
-		GradientDrawable rootBg = new GradientDrawable();
-		rootBg.setColor(0xFF131926); // Fermata dark surface
-		rootBg.setCornerRadius(16f * density);
-		rootBg.setStroke(Math.round(1f * density), 0xFF263552); // Fermata subtle border
-		root.setBackground(rootBg);
+		boolean isGlass = isGlassTheme(context);
+		if (isGlass) {
+			boolean isNight = (context.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			root.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
+		} else {
+			GradientDrawable rootBg = new GradientDrawable();
+			rootBg.setColor(0xFF131926); // Fermata dark surface
+			rootBg.setCornerRadius(16f * density);
+			rootBg.setStroke(Math.round(1f * density), 0xFF263552); // Fermata subtle border
+			root.setBackground(rootBg);
+		}
 		root.setPadding(pad24, pad24, pad24, pad24);
 
 		// Header
@@ -96,6 +113,16 @@ public final class CarFinderSettingsDialog {
 		p2.bottomMargin = pad16;
 		root.addView(switchNotif, p2);
 
+		if (isGlass) {
+			android.content.res.ColorStateList trackColors = new android.content.res.ColorStateList(new int[][]{
+					new int[]{android.R.attr.state_checked}, new int[]{}
+			}, new int[]{0x6600E5FF, 0x33FFFFFF});
+			switchAutoSave.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+			switchAutoSave.setTrackTintList(trackColors);
+			switchNotif.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+			switchNotif.setTrackTintList(trackColors);
+		}
+
 		View divider2 = createSettingsDividerView(context, pad12);
 		root.addView(divider2);
 
@@ -126,10 +153,10 @@ public final class CarFinderSettingsDialog {
 		});
 		root.addView(clearBtn);
 
-		// Close button (Fermata electric blue)
+		// Close button
 		TextView closeBtn = new TextView(context);
 		closeBtn.setText(R.string.car_finder_close);
-		closeBtn.setTextColor(0xFF3B82F6);
+		closeBtn.setTextColor(isGlass ? 0xFF00E5FF : 0xFF3B82F6);
 		closeBtn.setTextSize(15);
 		closeBtn.setTypeface(null, Typeface.BOLD);
 		closeBtn.setGravity(Gravity.END);

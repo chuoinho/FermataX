@@ -62,6 +62,7 @@ public class CarFinderFragment extends MainActivityFragment
 
 	private CarMapTileView mapTileView;
 	private CarRadarView radarView;
+	private me.aap.fermata.ui.glass.carfinder.GlassRadarView glassRadarView;
 
 	// Overview mode views
 	private TextView textCarTitle;
@@ -94,6 +95,11 @@ public class CarFinderFragment extends MainActivityFragment
 	private Location currentUserLocation;
 	private boolean isRadarMode = false;
 	private float currentAzimuth = 0.0f;
+
+	public boolean isGlassTheme() {
+		MainActivityDelegate a = getActivityDelegate();
+		return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+	}
 
 	@Override
 	public int getFragmentId() {
@@ -222,15 +228,20 @@ public class CarFinderFragment extends MainActivityFragment
 		mapTileView = new CarMapTileView(requireContext());
 		overviewContainer.addView(mapTileView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
 
-		// Bottom Card Container (Material 3 rounded bottom sheet in Fermata dark navy)
+		// Bottom Card Container (Material 3 rounded bottom sheet in Fermata dark navy / Glass)
 		LinearLayout cardContainer = new LinearLayout(requireContext());
 		cardContainer.setOrientation(LinearLayout.VERTICAL);
-		GradientDrawable sheetBg = new GradientDrawable();
-		sheetBg.setColor(SURFACE_DARK);
-		float cornerR = 24f * density;
-		sheetBg.setCornerRadii(new float[]{cornerR, cornerR, cornerR, cornerR, 0f, 0f, 0f, 0f});
-		sheetBg.setStroke(Math.round(1 * density), CARD_BORDER);
-		cardContainer.setBackground(sheetBg);
+		if (isGlassTheme()) {
+			boolean isNight = (requireContext().getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			cardContainer.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(requireContext(), 24f, isNight));
+		} else {
+			GradientDrawable sheetBg = new GradientDrawable();
+			sheetBg.setColor(SURFACE_DARK);
+			float cornerR = 24f * density;
+			sheetBg.setCornerRadii(new float[]{cornerR, cornerR, cornerR, cornerR, 0f, 0f, 0f, 0f});
+			sheetBg.setStroke(Math.round(1 * density), CARD_BORDER);
+			cardContainer.setBackground(sheetBg);
+		}
 		cardContainer.setPadding(Math.round(20 * density), Math.round(18 * density), Math.round(20 * density), Math.round(18 * density));
 
 		// Empty state
@@ -516,8 +527,13 @@ public class CarFinderFragment extends MainActivityFragment
 		radarContainer.addView(header, new LinearLayout.LayoutParams(-1, -2));
 
 		// Radar Canvas View (takes flex 1)
-		radarView = new CarRadarView(requireContext());
-		radarContainer.addView(radarView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
+		if (isGlassTheme()) {
+			glassRadarView = new me.aap.fermata.ui.glass.carfinder.GlassRadarView(requireContext());
+			radarContainer.addView(glassRadarView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
+		} else {
+			radarView = new CarRadarView(requireContext());
+			radarContainer.addView(radarView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
+		}
 
 		// Bottom Info & Controls
 		LinearLayout bottomRadar = new LinearLayout(requireContext());
@@ -590,18 +606,39 @@ public class CarFinderFragment extends MainActivityFragment
 		float density = getResources().getDisplayMetrics().density;
 		TextView btn = new TextView(requireContext());
 		btn.setText(text);
+		boolean isGlass = isGlassTheme();
+		if (isGlass) {
+			if (bgColor == ACCENT_BLUE) {
+				textColor = 0xFF00E5FF;
+			} else {
+				textColor = 0xFFFFFFFF;
+			}
+		}
 		btn.setTextColor(textColor);
 		btn.setTextSize(15);
 		btn.setTypeface(null, Typeface.BOLD);
 		btn.setGravity(Gravity.CENTER);
 
-		GradientDrawable gd = new GradientDrawable();
-		gd.setColor(bgColor);
-		gd.setCornerRadius(24f * density);
-		if (strokeColor != 0) {
-			gd.setStroke(Math.round(1f * density), strokeColor);
+		if (isGlass) {
+			boolean isNight = (requireContext().getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			if (bgColor == ACCENT_BLUE) {
+				GradientDrawable gd = new GradientDrawable();
+				gd.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
+				gd.setCornerRadius(24f * density);
+				gd.setStroke(Math.round(1.5f * density), 0xFF00E5FF);
+				btn.setBackground(gd);
+			} else {
+				btn.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(requireContext(), 24f, isNight));
+			}
+		} else {
+			GradientDrawable gd = new GradientDrawable();
+			gd.setColor(bgColor);
+			gd.setCornerRadius(24f * density);
+			if (strokeColor != 0) {
+				gd.setStroke(Math.round(1f * density), strokeColor);
+			}
+			btn.setBackground(gd);
 		}
-		btn.setBackground(gd);
 
 		btn.setClickable(true);
 		btn.setFocusable(true);
@@ -811,7 +848,7 @@ public class CarFinderFragment extends MainActivityFragment
 			textRadarDistance.setText("--");
 			textRadarUnit.setText("");
 			textRadarDirection.setText(R.string.car_finder_measuring_gps);
-			radarView.updateRelativeBearing(0f, false);
+			updateRadarBearing(0f, false);
 		}
 	}
 
@@ -820,8 +857,16 @@ public class CarFinderFragment extends MainActivityFragment
 		renderParkingStateToViews();
 	}
 
+	private void updateRadarBearing(float relativeBearingDegrees, boolean valid) {
+		if (glassRadarView != null) {
+			glassRadarView.updateRelativeBearing(relativeBearingDegrees, valid);
+		} else if (radarView != null) {
+			radarView.updateRelativeBearing(relativeBearingDegrees, valid);
+		}
+	}
+
 	private void updateRadarTelemetry(float distanceMeters, float relativeBearingDegrees) {
-		radarView.updateRelativeBearing(relativeBearingDegrees, true);
+		updateRadarBearing(relativeBearingDegrees, true);
 
 		float absAngle = Math.abs(relativeBearingDegrees);
 		boolean isRight = relativeBearingDegrees >= 0f;
