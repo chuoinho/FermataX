@@ -39,13 +39,29 @@ public class FermataToolBarView extends ToolBarView {
 		post(this::refreshCanonicalTopBar);
 	}
 
-	private void applyGlassThemeIfNeeded() {
+	public void applyGlassThemeIfNeeded() {
 		MainActivityDelegate a = MainActivityDelegate.get(getContext());
 		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
 			Context ctx = getContext();
 			boolean isNight = a.getPrefs().isGlassNightMode();
 			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+			me.aap.fermata.ui.glass.theme.GlassThemeColors colors =
+					me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, isNight);
+			for (int i = 0, count = getChildCount(); i < count; i++) {
+				View child = getChildAt(i);
+				if (child instanceof TextView text) {
+					text.setTextColor(colors.getTextPrimary());
+				} else if (child instanceof ImageButton button) {
+					button.setColorFilter(colors.getTextPrimary());
+				}
+			}
 		}
+	}
+
+	@Override
+	public void onViewAdded(View child) {
+		super.onViewAdded(child);
+		applyGlassThemeIfNeeded();
 	}
 
 	@Override
@@ -83,6 +99,7 @@ public class FermataToolBarView extends ToolBarView {
 	@Override
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 		super.onLayout(changed, left, top, right, bottom);
+		applyGlassThemeIfNeeded();
 		if (!(getParent() instanceof ViewGroup parent)) return;
 		View[] buttons = new View[getChildCount()];
 		int count = 0;

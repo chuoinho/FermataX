@@ -45,6 +45,9 @@ public final class TopBarController {
 		TextView title = toolBar.findViewById(me.aap.utils.R.id.tool_bar_title);
 		if ((title != null) && !TextUtils.equals(title.getText(), state.title()))
 			title.setText(state.title());
+		if (toolBar instanceof FermataToolBarView ftb) {
+			ftb.applyGlassThemeIfNeeded();
+		}
 	}
 
 	/** Applies the fragment-wide chrome rule after a mediator restores its own visibility. */

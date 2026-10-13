@@ -187,27 +187,35 @@ public class CarFinderFragment extends MainActivityFragment
 	}
 
 	private void setupOverviewModeLayout(float density) {
+		boolean isGlass = isGlassTheme();
+		boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(requireContext());
+		me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+				me.aap.fermata.ui.glass.theme.GlassThemeColors.get(requireContext(), isNight);
+
 		overviewContainer = new LinearLayout(requireContext());
 		overviewContainer.setOrientation(LinearLayout.VERTICAL);
-		overviewContainer.setBackgroundColor(0xFF07090D); // Fermata base dark background
+		overviewContainer.setBackgroundColor(isGlass ? (isNight ? 0xFF07090D : 0xFFF8FAFC) : 0xFF07090D);
 
 		// Header Bar
 		LinearLayout header = new LinearLayout(requireContext());
 		header.setOrientation(LinearLayout.HORIZONTAL);
 		header.setGravity(Gravity.CENTER_VERTICAL);
 		header.setPadding(Math.round(16 * density), Math.round(10 * density), Math.round(16 * density), Math.round(10 * density));
+		if (isGlass) {
+			header.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(requireContext(), 0f, isNight));
+		}
 
 		TextView title = new TextView(requireContext());
 		title.setText(R.string.car_finder_title);
 		title.setTextSize(20);
-		title.setTextColor(0xFFFFFFFF);
+		title.setTextColor(isGlass ? gc.getTextPrimary() : 0xFFFFFFFF);
 		title.setTypeface(null, Typeface.BOLD);
 		header.addView(title, new LinearLayout.LayoutParams(0, -2, 1.0f));
 
 		// In-page Settings Button using Fermata's official settings gear drawable
 		ImageView btnSettings = new ImageView(requireContext());
 		btnSettings.setImageResource(R.drawable.settings_gear);
-		btnSettings.setColorFilter(0xFFC3CDDE);
+		btnSettings.setColorFilter(isGlass ? gc.getTextPrimary() : 0xFFC3CDDE);
 		btnSettings.setPadding(Math.round(8 * density), Math.round(8 * density), Math.round(8 * density), Math.round(8 * density));
 		btnSettings.setOnClickListener(v -> CarFinderSettingsDialog.displaySettingsDialog(requireContext(), new CarFinderSettingsDialog.OnSettingsChangeListener() {
 			@Override
@@ -231,8 +239,7 @@ public class CarFinderFragment extends MainActivityFragment
 		// Bottom Card Container (Material 3 rounded bottom sheet in Fermata dark navy / Glass)
 		LinearLayout cardContainer = new LinearLayout(requireContext());
 		cardContainer.setOrientation(LinearLayout.VERTICAL);
-		if (isGlassTheme()) {
-			boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(requireContext());
+		if (isGlass) {
 			cardContainer.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(requireContext(), 24f, isNight));
 		} else {
 			GradientDrawable sheetBg = new GradientDrawable();
@@ -326,7 +333,7 @@ public class CarFinderFragment extends MainActivityFragment
 		textCarTitle = new TextView(requireContext());
 		textCarTitle.setText(R.string.car_finder_my_car);
 		textCarTitle.setTextSize(17);
-		textCarTitle.setTextColor(0xFFFFFFFF);
+		textCarTitle.setTextColor(isGlass ? gc.getTextPrimary() : 0xFFFFFFFF);
 		textCarTitle.setTypeface(null, Typeface.BOLD);
 		titleRow.addView(textCarTitle, new LinearLayout.LayoutParams(-2, -2));
 
@@ -340,7 +347,7 @@ public class CarFinderFragment extends MainActivityFragment
 		textCol.addView(titleRow);
 
 		textCarAddress = new TextView(requireContext());
-		textCarAddress.setTextColor(TEXT_MUTED);
+		textCarAddress.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
 		textCarAddress.setTextSize(13);
 		textCarAddress.setMaxLines(1);
 		textCarAddress.setEllipsize(TextUtils.TruncateAt.END);
@@ -361,7 +368,7 @@ public class CarFinderFragment extends MainActivityFragment
 		distCol.addView(textDistance, new LinearLayout.LayoutParams(-2, -2));
 
 		textWalkingTime = new TextView(requireContext());
-		textWalkingTime.setTextColor(TEXT_MUTED);
+		textWalkingTime.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
 		textWalkingTime.setTextSize(11);
 		distCol.addView(textWalkingTime, new LinearLayout.LayoutParams(-2, -2));
 
@@ -800,10 +807,10 @@ public class CarFinderFragment extends MainActivityFragment
 		String note = currentParkingLocation.getNote();
 		if (note != null && !note.isEmpty()) {
 			textNote.setText(note);
-			textNote.setTextColor(0xFFE2E8F0);
+			textNote.setTextColor(isGlassTheme() ? me.aap.fermata.ui.glass.theme.GlassThemeColors.get(requireContext()).getTextPrimary() : 0xFFE2E8F0);
 		} else {
 			textNote.setText("+ " + getString(R.string.car_finder_add_note));
-			textNote.setTextColor(TEXT_MUTED);
+			textNote.setTextColor(isGlassTheme() ? me.aap.fermata.ui.glass.theme.GlassThemeColors.get(requireContext()).getTextSecondary() : TEXT_MUTED);
 		}
 
 		if (currentUserLocation != null) {
