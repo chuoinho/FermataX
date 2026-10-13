@@ -529,6 +529,10 @@
     <string name="theme_glass">Glassmorphism</string>
     <string name="theme_aa">Tema do Android Auto</string>
     <string name="theme_aa_sub">Tema da tela do carro: %1$s</string>
+    <string name="glass_appearance">Modo de tema vidro</string>
+    <string name="glass_appearance_sub">Aplica-se ao tema vidro no telefone e Android Auto: %1$s</string>
+    <string name="glass_appearance_day">Dia</string>
+    <string name="glass_appearance_night">Noite</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">Localizar veículo</string>

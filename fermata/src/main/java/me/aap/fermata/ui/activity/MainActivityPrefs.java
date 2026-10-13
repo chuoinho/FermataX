@@ -86,7 +86,11 @@ public interface MainActivityPrefs
 			Pref.b("INITIAL_SETUP_COMPLETED", false);
 	Pref<IntSupplier> INITIAL_SETUP_VERSION = Pref.i("INITIAL_SETUP_VERSION", 0);
 
-	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_GLASS);
+	int GLASS_APPEARANCE_DAY = 0;
+	int GLASS_APPEARANCE_NIGHT = 1;
+	Pref<IntSupplier> GLASS_APPEARANCE = Pref.i("GLASS_APPEARANCE", GLASS_APPEARANCE_NIGHT);
+
+	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_CLASSIC);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
 	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
@@ -103,7 +107,7 @@ public interface MainActivityPrefs
 	}
 
 	static boolean hasThemePref(MainActivityDelegate a, List<Pref<?>> prefs) {
-		return prefs.contains(THEME_MAIN) || (AUTO && prefs.contains(THEME_AA));
+		return prefs.contains(THEME_MAIN) || (AUTO && prefs.contains(THEME_AA)) || prefs.contains(GLASS_APPEARANCE);
 	}
 
 	default int getThemePref(boolean auto) {
@@ -112,11 +116,30 @@ public interface MainActivityPrefs
 			if (aaTheme == THEME_CLASSIC || aaTheme == THEME_MATERIAL_YOU || aaTheme == THEME_GLASS) {
 				return aaTheme;
 			}
-			return THEME_GLASS;
+			return THEME_CLASSIC;
 		}
 		int theme = getIntPref(THEME_MAIN);
 		if (theme != THEME_CLASSIC && theme != THEME_MATERIAL_YOU && theme != THEME_GLASS) return THEME_CLASSIC;
 		return theme;
+	}
+
+	default int getGlassAppearancePref() {
+		int app = getIntPref(GLASS_APPEARANCE);
+		if (app != GLASS_APPEARANCE_DAY && app != GLASS_APPEARANCE_NIGHT) {
+			return GLASS_APPEARANCE_NIGHT;
+		}
+		return app;
+	}
+
+	default boolean isGlassNightMode() {
+		return getGlassAppearancePref() == GLASS_APPEARANCE_NIGHT;
+	}
+
+	default void setGlassAppearancePref(int appearance) {
+		if (appearance != GLASS_APPEARANCE_DAY && appearance != GLASS_APPEARANCE_NIGHT) {
+			appearance = GLASS_APPEARANCE_NIGHT;
+		}
+		applyIntPref(GLASS_APPEARANCE, appearance);
 	}
 
 	default boolean isGlassTheme(boolean auto) {

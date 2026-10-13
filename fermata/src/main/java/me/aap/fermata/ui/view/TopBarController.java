@@ -64,9 +64,10 @@ public final class TopBarController {
 				ItemRoutePolicy.getPlaybackOwnerFragmentId(item);
 		if ((fragment instanceof TopBarPlaybackContext context) &&
 				!context.usePlaybackTitle(snapshot)) playbackOwnerFragmentId = 0;
+		boolean isPrimaryRoot = PhoneRootPolicy.isPrimaryRoot(activity.getRuntimeHostMode(),
+				activity.getPhoneRootId(), fragment.getFragmentId()) && fragment.isRootPage();
 		return TopBarPolicy.resolve(activity.getRuntimeHostMode(),
-				PhoneRootPolicy.isPrimaryRoot(activity.getRuntimeHostMode(),
-						activity.getPhoneRootId(), fragment.getFragmentId()),
+				isPrimaryRoot,
 				fragment.getFragmentId(),
 				playbackOwnerFragmentId, fragment.getTitle(), snapshot.getDisplayTitle(),
 				snapshot.getPreparationStatus());

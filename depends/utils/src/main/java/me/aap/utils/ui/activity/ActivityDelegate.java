@@ -337,6 +337,22 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 		return false;
 	}
 
+	public boolean isGlassNightMode() {
+		return true;
+	}
+
+	public int getGlassTextPrimary() {
+		return isGlassNightMode() ? 0xFFFFFFFF : 0xFF15181A;
+	}
+
+	public int getGlassTextSecondary() {
+		return isGlassNightMode() ? 0x99FFFFFF : 0x9915181A;
+	}
+
+	public int getGlassActionColor() {
+		return isGlassNightMode() ? 0xFF00E5FF : 0xFF007A87;
+	}
+
 	@Nullable
 	public Drawable getGlassCardDrawable(Context ctx, float radiusDp) {
 		return null;

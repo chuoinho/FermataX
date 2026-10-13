@@ -1,11 +1,12 @@
 package me.aap.fermata.ui.glass.theme;
 
 import android.content.Context;
-import android.content.res.Configuration;
+
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 
 /**
  * Immutable color tokens for the Glassmorphism Theme, supporting Day/Night adaptation
- * based on automotive headlight/sensor signals. Adapted from CoDienMau.
+ * controlled strictly by user's manual appearance preference (G02/G03/G04).
  */
 public final class GlassThemeColors {
 	private final boolean night;
@@ -17,6 +18,16 @@ public final class GlassThemeColors {
 	private final int textPrimary;
 	private final int textSecondary;
 	private final int textTertiary;
+	private final int actionText;
+	private final int iconColor;
+	private final int inputBg;
+	private final int inputText;
+	private final int inputHint;
+	private final int inputBorder;
+	private final int divider;
+	private final int disabledText;
+	private final int errorText;
+	private final int surfaceBg;
 	private final int nenA;
 	private final int nenB;
 	private final int nenC;
@@ -38,6 +49,16 @@ public final class GlassThemeColors {
 			this.textPrimary = 0xFFFFFFFF;
 			this.textSecondary = 0x99FFFFFF;
 			this.textTertiary = 0x66FFFFFF;
+			this.actionText = 0xFF00E5FF;
+			this.iconColor = 0xFF00E5FF;
+			this.inputBg = 0x26181C1E;
+			this.inputText = 0xFFFFFFFF;
+			this.inputHint = 0x66FFFFFF;
+			this.inputBorder = 0x20FFFFFF;
+			this.divider = 0x1AFFFFFF;
+			this.disabledText = 0x4DFFFFFF;
+			this.errorText = 0xFFFF5252;
+			this.surfaceBg = 0xFF0A0F1D;
 			this.nenA = 0xFF15181A;
 			this.nenB = 0xFF0E1113;
 			this.nenC = 0xFF0A0C0E;
@@ -50,15 +71,32 @@ public final class GlassThemeColors {
 			this.textPrimary = 0xFF15181A;
 			this.textSecondary = 0x9915181A;
 			this.textTertiary = 0x6615181A;
+			this.actionText = 0xFF007A87;
+			this.iconColor = 0xFF007A87;
+			this.inputBg = 0xFFFFFFFF;
+			this.inputText = 0xFF15181A;
+			this.inputHint = 0x6615181A;
+			this.inputBorder = 0x20000000;
+			this.divider = 0x1A000000;
+			this.disabledText = 0x4D15181A;
+			this.errorText = 0xFFD32F2F;
+			this.surfaceBg = 0xFFEBEAE8;
 			this.nenA = 0xFFEBEAE8;
 			this.nenB = 0xFFF2F1EF;
 			this.nenC = 0xFFE0DFDC;
 		}
 	}
 
+	public static boolean isNight(Context context) {
+		try {
+			return MainActivityPrefs.get().isGlassNightMode();
+		} catch (Throwable e) {
+			return true;
+		}
+	}
+
 	public static GlassThemeColors get(Context context) {
-		boolean isNight = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-		return new GlassThemeColors(isNight);
+		return new GlassThemeColors(isNight(context));
 	}
 
 	public static GlassThemeColors get(Context context, boolean isNight) {
@@ -99,6 +137,46 @@ public final class GlassThemeColors {
 
 	public int getTextTertiary() {
 		return textTertiary;
+	}
+
+	public int getActionText() {
+		return actionText;
+	}
+
+	public int getIconColor() {
+		return iconColor;
+	}
+
+	public int getInputBg() {
+		return inputBg;
+	}
+
+	public int getInputText() {
+		return inputText;
+	}
+
+	public int getInputHint() {
+		return inputHint;
+	}
+
+	public int getInputBorder() {
+		return inputBorder;
+	}
+
+	public int getDivider() {
+		return divider;
+	}
+
+	public int getDisabledText() {
+		return disabledText;
+	}
+
+	public int getErrorText() {
+		return errorText;
+	}
+
+	public int getSurfaceBg() {
+		return surfaceBg;
 	}
 
 	public int getNenA() {

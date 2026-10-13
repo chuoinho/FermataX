@@ -50,6 +50,9 @@ final class AudiobookshelfSourceDialog {
 			view.setHasFixedSize(true);
 			view.setLayoutManager(new LinearLayoutManager(group.getContext()));
 			view.setAdapter(adapter);
+			if (activity.isGlassTheme()) {
+				me.aap.fermata.ui.glass.settings.GlassSettingsDecorator.apply(view, activity.isGlassNightMode());
+			}
 			group.addView(view);
 		});
 		fragment.setDialogValidator(() -> isValid(store));

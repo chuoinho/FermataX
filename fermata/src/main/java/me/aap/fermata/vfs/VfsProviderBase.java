@@ -152,6 +152,9 @@ public abstract class VfsProviderBase implements VfsProvider {
 			v.setHasFixedSize(true);
 			v.setLayoutManager(new LinearLayoutManager(g.getContext()));
 			v.setAdapter(adapter);
+			if (a.isGlassTheme()) {
+				me.aap.fermata.ui.glass.settings.GlassSettingsDecorator.apply(v, a.isGlassNightMode());
+			}
 			g.addView(v);
 		});
 		f.setDialogValidator(() -> validate(ps));

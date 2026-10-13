@@ -140,14 +140,16 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 			);
 			voiceEnabled.setThumbTintList(cyanTint);
 			voiceEnabled.setTrackTintList(trackTint);
+			boolean isNight = activity.isGlassNightMode();
+			int actionColor = activity.getGlassActionColor();
 			Button btnContinue = view.findViewById(R.id.initial_setup_continue);
 			if (btnContinue != null) {
-				btnContinue.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, true));
-				btnContinue.setTextColor(0xFF00E5FF);
+				btnContinue.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
+				btnContinue.setTextColor(actionColor);
 			}
 			if (microphoneTest != null) {
-				microphoneTest.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, true));
-				microphoneTest.setTextColor(0xFF00E5FF);
+				microphoneTest.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
+				microphoneTest.setTextColor(actionColor);
 			}
 		}
 	}

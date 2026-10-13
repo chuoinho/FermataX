@@ -102,6 +102,10 @@
     <string name="theme_glass">Glassmorphism</string>
     <string name="theme_aa">Android Auto theme</string>
     <string name="theme_aa_sub">Car screen theme: %1$s</string>
+    <string name="glass_appearance">Glass theme mode</string>
+    <string name="glass_appearance_sub">Applies to glass theme on phone and Android Auto: %1$s</string>
+    <string name="glass_appearance_day">Day</string>
+    <string name="glass_appearance_night">Night</string>
 
     <string name="nav_bar_pos">Navigation bar position</string>
     <string name="nav_bar_pos_sub">Current position: %1$s</string>

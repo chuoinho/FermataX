@@ -1,8 +1,9 @@
 package me.aap.fermata.ui.glass.dialog;
 
 import android.content.Context;
-import android.content.res.Configuration;
+import android.content.DialogInterface;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
@@ -36,7 +37,7 @@ public class GlassDialogBuilder extends DialogView.Builder {
 
 	private void styleGlassDialog(View root) {
 		if (root == null) return;
-		boolean isNight = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+		boolean isNight = GlassThemeColors.isNight(context);
 		GlassThemeColors colors = GlassThemeColors.get(context, isNight);
 
 		root.setBackground(GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
@@ -62,11 +63,45 @@ public class GlassDialogBuilder extends DialogView.Builder {
 			TextView tv = (TextView) btn;
 			tv.setAllCaps(false);
 			if (positive) {
-				tv.setTextColor(GlassThemeColors.ACCENT_CYAN);
+				tv.setTextColor(colors.getActionText());
 				tv.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
 			} else {
 				tv.setTextColor(colors.getTextSecondary());
 			}
 		}
+	}
+
+	public static void styleAlertDialog(android.app.Dialog dialog, Context context) {
+		if (dialog == null || context == null) return;
+		boolean isNight = GlassThemeColors.isNight(context);
+		GlassThemeColors colors = GlassThemeColors.get(context, isNight);
+		if (dialog.getWindow() != null) {
+			dialog.getWindow().setBackgroundDrawable(GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
+		}
+		dialog.setOnShowListener(d -> {
+			if (dialog instanceof androidx.appcompat.app.AlertDialog) {
+				androidx.appcompat.app.AlertDialog ad = (androidx.appcompat.app.AlertDialog) dialog;
+				Button p = ad.getButton(DialogInterface.BUTTON_POSITIVE);
+				if (p != null) {
+					p.setTextColor(colors.getActionText());
+					p.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
+				}
+				Button n = ad.getButton(DialogInterface.BUTTON_NEGATIVE);
+				if (n != null) n.setTextColor(colors.getTextSecondary());
+				Button neu = ad.getButton(DialogInterface.BUTTON_NEUTRAL);
+				if (neu != null) neu.setTextColor(colors.getTextSecondary());
+			} else if (dialog instanceof android.app.AlertDialog) {
+				android.app.AlertDialog ad = (android.app.AlertDialog) dialog;
+				Button p = ad.getButton(DialogInterface.BUTTON_POSITIVE);
+				if (p != null) {
+					p.setTextColor(colors.getActionText());
+					p.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
+				}
+				Button n = ad.getButton(DialogInterface.BUTTON_NEGATIVE);
+				if (n != null) n.setTextColor(colors.getTextSecondary());
+				Button neu = ad.getButton(DialogInterface.BUTTON_NEUTRAL);
+				if (neu != null) neu.setTextColor(colors.getTextSecondary());
+			}
+		});
 	}
 }

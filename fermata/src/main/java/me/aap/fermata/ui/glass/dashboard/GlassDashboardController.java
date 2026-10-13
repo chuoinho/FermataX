@@ -225,7 +225,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             @Override
             public void onShortcutLongClicked(int slotIndex, @NonNull GlassQuickShortcut shortcut) {
                 // Long press gives option to replace or remove
-                new android.app.AlertDialog.Builder(ctx)
+                android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(ctx)
                         .setTitle(shortcut.getTitle())
                         .setItems(new String[]{"Replace", "Remove"}, (d, which) -> {
                             if (which == 0) {
@@ -238,7 +238,11 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
                                 quickBarView.refresh();
                             }
                         })
-                        .show();
+                        .create();
+                if (activity.isGlassTheme()) {
+                    me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, ctx);
+                }
+                dialog.show();
             }
 
             @Override

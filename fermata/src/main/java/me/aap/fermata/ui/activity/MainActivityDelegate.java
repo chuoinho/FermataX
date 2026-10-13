@@ -1193,15 +1193,33 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	@Override
+	public boolean isGlassNightMode() {
+		return getPrefs().isGlassNightMode();
+	}
+
+	@Override
+	public int getGlassTextPrimary() {
+		return me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext(), isGlassNightMode()).getTextPrimary();
+	}
+
+	@Override
+	public int getGlassTextSecondary() {
+		return me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext(), isGlassNightMode()).getTextSecondary();
+	}
+
+	@Override
+	public int getGlassActionColor() {
+		return me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext(), isGlassNightMode()).getActionText();
+	}
+
+	@Override
 	public Drawable getGlassCardDrawable(Context ctx, float radiusDp) {
-		boolean isNight = (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, radiusDp, isNight);
+		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, radiusDp, isGlassNightMode());
 	}
 
 	@Override
 	public Drawable getGlassItemHighlightDrawable(Context ctx) {
-		boolean isNight = (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassItemHighlightDrawable(ctx, isNight);
+		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassItemHighlightDrawable(ctx, isGlassNightMode());
 	}
 
 	@Override

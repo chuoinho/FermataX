@@ -401,11 +401,15 @@ public final class AudioEffectsScreenView extends FrameLayout
 		int current = store.getIntPref(AudioEffectsProfileRepository.VIRTUALIZER_MODE);
 		int selected = 0;
 		for (int i = 0; i < modes.length; i++) if (modes[i] == current) selected = i;
-		new AlertDialog.Builder(getContext()).setTitle(R.string.virtualizer)
+		AlertDialog vDialog = new AlertDialog.Builder(getContext()).setTitle(R.string.virtualizer)
 				.setSingleChoiceItems(labels, selected, (dialog, which) -> {
 					store.applyIntPref(AudioEffectsProfileRepository.VIRTUALIZER_MODE, modes[which]);
 					dialog.dismiss();
-				}).show();
+				}).create();
+		if (isGlassTheme()) {
+			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(vDialog, getContext());
+		}
+		vDialog.show();
 	}
 
 	private void showBandEditor(AudioEffectsBandView band) {
@@ -434,9 +438,18 @@ public final class AudioEffectsScreenView extends FrameLayout
 		input.setSelection(input.length());
 		int padding = dp(8);
 		input.setPadding(padding, 0, padding, 0);
+		if (isGlassTheme()) {
+			me.aap.fermata.ui.glass.theme.GlassThemeColors gc = me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext());
+			input.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassInputDrawable(getContext(), 8f));
+			input.setTextColor(gc.getInputText());
+			input.setHintTextColor(gc.getInputHint());
+		}
 		AlertDialog dialog = new AlertDialog.Builder(getContext()).setTitle(title)
 				.setView(input).setNegativeButton(R.string.cancel, null)
 				.setPositiveButton(android.R.string.ok, null).create();
+		if (isGlassTheme()) {
+			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, getContext());
+		}
 		dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
 				.setOnClickListener(v -> {
 					try {

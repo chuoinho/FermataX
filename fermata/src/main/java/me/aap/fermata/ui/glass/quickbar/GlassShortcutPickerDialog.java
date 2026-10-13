@@ -6,13 +6,13 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
-import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.glass.dialog.GlassDialogBuilder;
 
 /**
  * Picker dialog allowing users to choose an addon or library destination for a quick bar slot.
@@ -26,19 +26,16 @@ public class GlassShortcutPickerDialog {
     public static List<GlassQuickShortcut> getAvailableShortcuts(@NonNull Context context) {
         List<GlassQuickShortcut> list = new ArrayList<>();
 
-        // Addons
+        // Addons (from declared addon registry infos)
         try {
             AddonManager mgr = AddonManager.get();
             if (mgr != null) {
-                Collection<FermataAddon> addons = mgr.getAddons();
+                List<AddonInfo> addons = mgr.getAddonInfos();
                 if (addons != null) {
-                    for (FermataAddon addon : addons) {
-                        if (addon != null) {
-                            AddonInfo info = addon.getInfo();
-                            if (info != null && info.addonName != 0) {
-                                String title = context.getString(info.addonName);
-                                list.add(new GlassQuickShortcut("addon:" + info.addonId, title, info.icon, "addon"));
-                            }
+                    for (AddonInfo info : addons) {
+                        if (info != null && info.addonName != 0) {
+                            String title = context.getString(info.addonName);
+                            list.add(new GlassQuickShortcut("addon:" + info.addonId, title, info.icon, "addon"));
                         }
                     }
                 }
@@ -63,13 +60,19 @@ public class GlassShortcutPickerDialog {
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Select Shortcut");
+        builder.setTitle(context.getString(R.string.theme_glass) + " Shortcuts");
         builder.setItems(titles, (dialog, which) -> {
             if (which >= 0 && which < shortcuts.size()) {
                 listener.onShortcutSelected(shortcuts.get(which));
             }
         });
         builder.setNegativeButton(android.R.string.cancel, null);
-        builder.show();
+        AlertDialog dialog = builder.create();
+
+        me.aap.utils.ui.activity.ActivityDelegate a = me.aap.utils.ui.activity.ActivityDelegate.get(context);
+        if (a != null && a.isGlassTheme()) {
+            GlassDialogBuilder.styleAlertDialog(dialog, context);
+        }
+        dialog.show();
     }
 }

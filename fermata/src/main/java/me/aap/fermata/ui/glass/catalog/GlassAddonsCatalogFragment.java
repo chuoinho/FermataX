@@ -209,23 +209,20 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment {
         try {
             AddonManager mgr = AddonManager.get();
             if (mgr != null) {
-                Collection<FermataAddon> addons = mgr.getAddons();
+                List<AddonInfo> addons = mgr.getAddonInfos();
                 if (addons != null) {
-                    for (FermataAddon addon : addons) {
-                        if (addon != null) {
-                            AddonInfo info = addon.getInfo();
-                            if (info != null && info.addonName != 0) {
-                                String title = ctx.getString(info.addonName);
-                                int color = resolveBrandColor(title);
-                                items.add(new CatalogItem(
-                                        info.addonId,
-                                        title,
-                                        "Addon Module",
-                                        info.icon,
-                                        color,
-                                        true
-                                ));
-                            }
+                    for (AddonInfo info : addons) {
+                        if (info != null && info.addonName != 0) {
+                            String title = ctx.getString(info.addonName);
+                            int color = resolveBrandColor(title);
+                            items.add(new CatalogItem(
+                                    info.addonId,
+                                    title,
+                                    "Addon Module",
+                                    info.icon,
+                                    color,
+                                    true
+                            ));
                         }
                     }
                 }

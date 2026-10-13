@@ -529,6 +529,10 @@
     <string name="theme_glass">毛玻璃主題 (Glassmorphism)</string>
     <string name="theme_aa">Android Auto 主題</string>
     <string name="theme_aa_sub">車載螢幕主題：%1$s</string>
+    <string name="glass_appearance">毛玻璃主題模式</string>
+    <string name="glass_appearance_sub">套用於手機與 Android Auto 上的毛玻璃主題：%1$s</string>
+    <string name="glass_appearance_day">淺色</string>
+    <string name="glass_appearance_night">深色</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">尋找車輛</string>

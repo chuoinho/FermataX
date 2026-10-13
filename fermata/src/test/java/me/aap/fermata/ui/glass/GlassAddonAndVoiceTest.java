@@ -13,7 +13,7 @@ public class GlassAddonAndVoiceTest {
 	public void testVoiceRecognitionSessionSupportsGlassTheme() throws Exception {
 		String source = source("fermata/src/main/java/me/aap/fermata/ui/activity/VoiceRecognitionSession.java");
 		assertTrue(source.contains("isGlassTheme"));
-		assertTrue(source.contains("0xFF00E5FF"));
+		assertTrue(source.contains("getGlassActionColor") || source.contains("0xFF00E5FF"));
 	}
 
 	@Test

@@ -63,7 +63,7 @@ public final class CarFinderSettingsDialog {
 
 		boolean isGlass = isGlassTheme(context);
 		if (isGlass) {
-			boolean isNight = (context.getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(context);
 			root.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
 		} else {
 			GradientDrawable rootBg = new GradientDrawable();
@@ -133,7 +133,7 @@ public final class CarFinderSettingsDialog {
 		clearBtn.setTextSize(15);
 		clearBtn.setPadding(0, pad12, 0, pad12);
 		clearBtn.setOnClickListener(v -> {
-			new AlertDialog.Builder(context)
+			AlertDialog confirmDialog = new AlertDialog.Builder(context)
 					.setTitle(R.string.car_finder_clear_confirm_title)
 					.setMessage(R.string.car_finder_clear_confirm_msg)
 					.setPositiveButton(android.R.string.ok, (d, w) -> {
@@ -149,7 +149,11 @@ public final class CarFinderSettingsDialog {
 						dialog.dismiss();
 					})
 					.setNegativeButton(android.R.string.cancel, null)
-					.show();
+					.create();
+			if (isGlass) {
+				me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(confirmDialog, context);
+			}
+			confirmDialog.show();
 		});
 		root.addView(clearBtn);
 

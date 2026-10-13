@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -403,7 +404,15 @@ public class FilePickerFragment extends GenericDialogFragment implements
 		default EditText createPath(ToolBarView tb, FilePickerFragment f) {
 			EditText t = createEditText(tb);
 			ConstraintLayout.LayoutParams lp = setLayoutParams(t, 0, WRAP_CONTENT);
-			t.setBackgroundResource(R.color.tool_bar_edittext_bg);
+			ActivityDelegate a = f != null ? f.getActivityDelegate() : ActivityDelegate.get(tb.getContext());
+			if (a != null && a.isGlassTheme()) {
+				Drawable glassInput = a.getGlassCardDrawable(tb.getContext(), 8f);
+				if (glassInput != null) t.setBackground(glassInput);
+				t.setTextColor(a.getGlassTextPrimary());
+				t.setHintTextColor(a.getGlassTextSecondary());
+			} else {
+				t.setBackgroundResource(R.color.tool_bar_edittext_bg);
+			}
 			t.setOnKeyListener((v, k, e) -> onPathKeyEvent(f, t, k, e));
 			t.setMaxLines(1);
 			t.setSingleLine(true);

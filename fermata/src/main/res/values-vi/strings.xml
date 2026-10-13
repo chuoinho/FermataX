@@ -86,6 +86,10 @@
     <string name="theme_glass">Giao diện Kính (Glassmorphism)</string>
     <string name="theme_aa">Giao diện Android Auto</string>
     <string name="theme_aa_sub">Giao diện màn hình xe: %1$s</string>
+    <string name="glass_appearance">Chế độ theme kính</string>
+    <string name="glass_appearance_sub">Áp dụng cho giao diện kính trên điện thoại và Android Auto: %1$s</string>
+    <string name="glass_appearance_day">Sáng</string>
+    <string name="glass_appearance_night">Tối</string>
 
     <string name="nav_bar_pos">Vị trí thanh điều hướng</string>
     <string name="nav_bar_pos_sub">Vị trí hiện tại: %1$s</string>

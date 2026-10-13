@@ -38,18 +38,48 @@ public class GlassThemePreferencesTest {
 	}
 
 	@Test
-	public void testAutomotiveDefaultsToGlassTheme() {
+	public void testAutomotiveDefaultsToClassicAndSupportsGlassOptIn() {
 		BasicPreferenceStore store = new BasicPreferenceStore();
 		TestMainActivityPrefs prefs = new TestMainActivityPrefs(store);
 
-		// AA theme defaults to Glass
+		// Fresh install AA theme defaults to Classic (no silent Glass force)
+		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(true));
+		assertFalse(prefs.isGlassTheme(true));
+
+		// Can opt in to Glass on AA
+		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_GLASS);
 		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(true));
 		assertTrue(prefs.isGlassTheme(true));
 
-		// Can switch AA to Classic
-		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_CLASSIC);
+		// Invalid AA theme falls back to Classic
+		store.applyIntPref(MainActivityPrefs.THEME_AA, 999);
 		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(true));
 		assertFalse(prefs.isGlassTheme(true));
+	}
+
+	@Test
+	public void testGlassAppearancePreference() {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+		TestMainActivityPrefs prefs = new TestMainActivityPrefs(store);
+
+		// Default appearance is NIGHT
+		assertEquals(MainActivityPrefs.GLASS_APPEARANCE_NIGHT, prefs.getGlassAppearancePref());
+		assertTrue(prefs.isGlassNightMode());
+
+		// Can switch to DAY
+		prefs.setGlassAppearancePref(MainActivityPrefs.GLASS_APPEARANCE_DAY);
+		assertEquals(MainActivityPrefs.GLASS_APPEARANCE_DAY, prefs.getGlassAppearancePref());
+		assertFalse(prefs.isGlassNightMode());
+
+		// Can switch back to NIGHT
+		prefs.setGlassAppearancePref(MainActivityPrefs.GLASS_APPEARANCE_NIGHT);
+		assertEquals(MainActivityPrefs.GLASS_APPEARANCE_NIGHT, prefs.getGlassAppearancePref());
+		assertTrue(prefs.isGlassNightMode());
+
+		// Invalid value normalizes to NIGHT
+		store.applyIntPref(MainActivityPrefs.GLASS_APPEARANCE, 42);
+		assertEquals(MainActivityPrefs.GLASS_APPEARANCE_NIGHT, prefs.getGlassAppearancePref());
+		assertTrue(prefs.isGlassNightMode());
 	}
 
 	private static final class TestMainActivityPrefs extends BasicPreferenceStore implements MainActivityPrefs {
@@ -62,6 +92,11 @@ public class GlassThemePreferencesTest {
 		@Override
 		public int getIntPref(Pref<? extends IntSupplier> pref) {
 			return delegate.getIntPref(pref);
+		}
+
+		@Override
+		public void applyIntPref(Pref<? extends IntSupplier> pref, int value) {
+			delegate.applyIntPref(pref, value);
 		}
 
 		@Override

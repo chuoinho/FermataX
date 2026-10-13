@@ -59,6 +59,21 @@ final class InterfacePrefsBuilder {
 			}
 		}
 
+		boolean hasGlass = store.getIntPref(MainActivityPrefs.THEME_MAIN) == MainActivityPrefs.THEME_GLASS
+				|| (BuildConfig.AUTO && store.getIntPref(MainActivityPrefs.THEME_AA) == MainActivityPrefs.THEME_GLASS);
+		if (hasGlass) {
+			normalizeGlassAppearance(store);
+			set.addListPref(o -> {
+				o.store = store;
+				o.pref = MainActivityPrefs.GLASS_APPEARANCE;
+				o.title = R.string.glass_appearance;
+				o.subtitle = R.string.glass_appearance_sub;
+				o.formatSubtitle = true;
+				o.values = new int[]{R.string.glass_appearance_day, R.string.glass_appearance_night};
+				o.valuesMap = new int[]{MainActivityPrefs.GLASS_APPEARANCE_DAY, MainActivityPrefs.GLASS_APPEARANCE_NIGHT};
+			});
+		}
+
 		Pref<IntSupplier> navBarPosition = BuildConfig.AUTO ?
 				MainActivityPrefs.NAV_BAR_POS_AA : MainActivityPrefs.NAV_BAR_POS;
 		normalizeNavBarPosition(store, navBarPosition);
@@ -110,7 +125,14 @@ final class InterfacePrefsBuilder {
 		if (theme != MainActivityPrefs.THEME_CLASSIC &&
 				theme != MainActivityPrefs.THEME_MATERIAL_YOU &&
 				theme != MainActivityPrefs.THEME_GLASS) {
-			store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_GLASS);
+			store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_CLASSIC);
+		}
+	}
+
+	private static void normalizeGlassAppearance(PreferenceStore store) {
+		int app = store.getIntPref(MainActivityPrefs.GLASS_APPEARANCE);
+		if (app != MainActivityPrefs.GLASS_APPEARANCE_DAY && app != MainActivityPrefs.GLASS_APPEARANCE_NIGHT) {
+			store.applyIntPref(MainActivityPrefs.GLASS_APPEARANCE, MainActivityPrefs.GLASS_APPEARANCE_NIGHT);
 		}
 	}
 

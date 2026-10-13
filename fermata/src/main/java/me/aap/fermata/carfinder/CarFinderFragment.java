@@ -232,7 +232,7 @@ public class CarFinderFragment extends MainActivityFragment
 		LinearLayout cardContainer = new LinearLayout(requireContext());
 		cardContainer.setOrientation(LinearLayout.VERTICAL);
 		if (isGlassTheme()) {
-			boolean isNight = (requireContext().getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(requireContext());
 			cardContainer.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(requireContext(), 24f, isNight));
 		} else {
 			GradientDrawable sheetBg = new GradientDrawable();
@@ -620,7 +620,7 @@ public class CarFinderFragment extends MainActivityFragment
 		btn.setGravity(Gravity.CENTER);
 
 		if (isGlass) {
-			boolean isNight = (requireContext().getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(requireContext());
 			if (bgColor == ACCENT_BLUE) {
 				GradientDrawable gd = new GradientDrawable();
 				gd.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
@@ -1055,9 +1055,15 @@ public class CarFinderFragment extends MainActivityFragment
 		FrameLayout container = new FrameLayout(requireContext());
 		int pad = Math.round(20 * getResources().getDisplayMetrics().density);
 		container.setPadding(pad, pad / 2, pad, pad / 2);
+		if (isGlassTheme()) {
+			me.aap.fermata.ui.glass.theme.GlassThemeColors gc = me.aap.fermata.ui.glass.theme.GlassThemeColors.get(requireContext());
+			input.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassInputDrawable(requireContext(), 8f));
+			input.setTextColor(gc.getInputText());
+			input.setHintTextColor(gc.getInputHint());
+		}
 		container.addView(input);
 
-		new AlertDialog.Builder(requireContext())
+		AlertDialog noteDialog = new AlertDialog.Builder(requireContext())
 				.setTitle(R.string.car_finder_add_note)
 				.setView(container)
 				.setPositiveButton(android.R.string.ok, (d, w) -> {
@@ -1066,7 +1072,11 @@ public class CarFinderFragment extends MainActivityFragment
 					renderParkingStateToViews();
 				})
 				.setNegativeButton(android.R.string.cancel, null)
-				.show();
+				.create();
+		if (isGlassTheme()) {
+			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(noteDialog, requireContext());
+		}
+		noteDialog.show();
 	}
 
 	/** Backwards-compatible alias */
@@ -1075,7 +1085,7 @@ public class CarFinderFragment extends MainActivityFragment
 	}
 
 	private void promptCarFoundConfirmationAndReset() {
-		new AlertDialog.Builder(requireContext())
+		AlertDialog confirmDialog = new AlertDialog.Builder(requireContext())
 				.setTitle(R.string.car_finder_found_confirm_title)
 				.setMessage(R.string.car_finder_found_confirm_msg)
 				.setPositiveButton(android.R.string.ok, (d, w) -> {
@@ -1091,7 +1101,11 @@ public class CarFinderFragment extends MainActivityFragment
 					setRadarModeVisible(false);
 				})
 				.setNegativeButton(android.R.string.cancel, null)
-				.show();
+				.create();
+		if (isGlassTheme()) {
+			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(confirmDialog, requireContext());
+		}
+		confirmDialog.show();
 	}
 
 	/** Backwards-compatible alias */

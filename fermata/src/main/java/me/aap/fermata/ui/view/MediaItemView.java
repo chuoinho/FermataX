@@ -318,7 +318,11 @@ public class MediaItemView extends ConstraintLayout
 			getSubtitle().setTextSize(COMPLEX_UNIT_SP, 13);
 		} else {
 			setMinimumHeight(toIntPx(getContext(), 62));
-			setBackgroundResource(R.drawable.media_item_bg);
+			if (!isGlassTheme()) {
+				setBackgroundResource(R.drawable.media_item_bg);
+			} else if (a != null) {
+				setBackground(a.getGlassCardDrawable(getContext(), 12f));
+			}
 			icon.setVisibility(VISIBLE);
 			setSize(getContext(), a.isGridView(), a.getPrefs().getTextIconSizePref(a));
 		}
@@ -516,13 +520,17 @@ public class MediaItemView extends ConstraintLayout
 		setActivated(activated);
 
 		if (isGlassTheme()) {
-			getTitle().setTextColor(activated ? 0xFF00E5FF : 0xFFFFFFFF);
+			MainActivityDelegate a = getMainActivity();
+			int titleColor = (a != null) ? (activated ? a.getGlassActionColor() : a.getGlassTextPrimary()) : (activated ? 0xFF00E5FF : 0xFFFFFFFF);
+			int subtitleColor = (a != null) ? a.getGlassTextSecondary() : 0x99FFFFFF;
+			getTitle().setTextColor(titleColor);
+			getSubtitle().setTextColor(subtitleColor);
 			LinearProgressIndicator p = getProgress();
 			if (p != null) {
-				p.setIndicatorColor(0xFF00E5FF);
+				int progressColor = (a != null) ? a.getGlassActionColor() : 0xFF00E5FF;
+				p.setIndicatorColor(progressColor);
 				p.setTrackColor(0x33FFFFFF);
 			}
-			MainActivityDelegate a = getMainActivity();
 			if (a != null) {
 				if (activated) {
 					setBackground(a.getGlassItemHighlightDrawable(getContext()));

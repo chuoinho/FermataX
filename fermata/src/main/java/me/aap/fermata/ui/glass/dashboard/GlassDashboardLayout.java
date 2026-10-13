@@ -10,28 +10,30 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
+import me.aap.fermata.ui.glass.theme.GlassThemeColors;
 
 /**
- * Responsive automotive Glass ViewGroup adapting cards layout according to screen aspect ratios.
- * Adapted from CoDienBoCuc.
+ * Adaptive container that reflows the 3 Glass cards (Speedo, Nav/Weather, Media)
+ * between WIDE (3-col), SQUARE (2-row), PORTRAIT (vertical stack), and SPLIT (2-col prioritized)
+ * based on available content bounds and minimum content budgets.
  */
 public class GlassDashboardLayout extends ViewGroup {
 
     public enum Mode {
-        WIDE,
-        SQUARE,
-        PORTRAIT,
-        SPLIT
+        WIDE,      // Ultrawide/wide displays (>= 1.25 ratio) -> 3 columns
+        SQUARE,    // Square or 4:3 displays (0.85 - 1.25 ratio) -> 2 rows
+        PORTRAIT,  // Tall / Portrait displays (< 0.85 ratio) -> 3 stacked rows
+        SPLIT      // AA Split screen active -> 2 columns prioritizing Nav & Media
     }
-
-    private final boolean isNight;
-    private boolean split = false;
 
     private View headerView;
     private View speedoCard;
     private View navWeatherCard;
     private View mediaCard;
     private View quickBarView;
+
+    private boolean split = false;
+    private boolean isNight;
 
     public GlassDashboardLayout(@NonNull Context context) {
         this(context, null);
@@ -43,9 +45,7 @@ public class GlassDashboardLayout extends ViewGroup {
 
     public GlassDashboardLayout(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        int uiMode = getResources().getConfiguration().uiMode;
-        this.isNight = (uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                != android.content.res.Configuration.UI_MODE_NIGHT_NO;
+        this.isNight = GlassThemeColors.isNight(context);
     }
 
     public void setViews(View headerView, View speedoCard, View navWeatherCard, View mediaCard, View quickBarView) {
@@ -87,6 +87,7 @@ public class GlassDashboardLayout extends ViewGroup {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         if (w > 0 && h > 0) {
+            isNight = GlassThemeColors.isNight(getContext());
             setBackground(GlassDrawables.createBackgroundGradient(w, h, isNight));
         }
     }
@@ -105,6 +106,8 @@ public class GlassDashboardLayout extends ViewGroup {
         if (width <= 0 || height <= 0) return;
 
         Context ctx = getContext();
+        isNight = GlassThemeColors.isNight(ctx);
+
         int padH = GlassDimensions.dpToPx(ctx, 16);
         int padV = GlassDimensions.dpToPx(ctx, 12);
         int gap = GlassDimensions.dpToPx(ctx, 14);
@@ -131,17 +134,29 @@ public class GlassDashboardLayout extends ViewGroup {
 
         Mode mode = computeMode(width, height);
 
+        // Ensure speedo visibility is properly restored when not in split mode (Fixes P1 defect 3)
+        if (mode != Mode.SPLIT) {
+            if (speedoCard != null && speedoCard.getVisibility() != VISIBLE) {
+                speedoCard.setVisibility(VISIBLE);
+            }
+        }
+
         switch (mode) {
             case WIDE: {
-                // 3 columns: Left (Speedo), Center (Nav/Weather), Right (Media)
-                int colWidth = (bodyWidth - 2 * gap) / 3;
-                int x0 = padH;
-                int x1 = x0 + colWidth + gap;
-                int x2 = x1 + colWidth + gap;
+                // Priority budget: Speedo takes compact width, Media and Nav/Weather get remaining width
+                int minSpeedoWidth = GlassDimensions.dpToPx(ctx, 180);
+                int speedoWidth = Math.max(minSpeedoWidth, (bodyWidth - 2 * gap) / 4);
+                int remainingWidth = Math.max(0, bodyWidth - speedoWidth - 2 * gap);
+                int navWeatherWidth = remainingWidth / 2;
+                int mediaWidth = remainingWidth - navWeatherWidth;
 
-                if (speedoCard != null) layoutChild(speedoCard, x0, bodyTop, colWidth, bodyHeight);
-                if (navWeatherCard != null) layoutChild(navWeatherCard, x1, bodyTop, colWidth, bodyHeight);
-                if (mediaCard != null) layoutChild(mediaCard, x2, bodyTop, colWidth, bodyHeight);
+                int x0 = padH;
+                int x1 = x0 + speedoWidth + gap;
+                int x2 = x1 + navWeatherWidth + gap;
+
+                if (speedoCard != null) layoutChild(speedoCard, x0, bodyTop, speedoWidth, bodyHeight);
+                if (navWeatherCard != null) layoutChild(navWeatherCard, x1, bodyTop, navWeatherWidth, bodyHeight);
+                if (mediaCard != null) layoutChild(mediaCard, x2, bodyTop, mediaWidth, bodyHeight);
                 break;
             }
             case SQUARE: {
@@ -167,7 +182,7 @@ public class GlassDashboardLayout extends ViewGroup {
                 break;
             }
             case SPLIT: {
-                // 2 columns prioritizing Nav & Media
+                // 2 columns prioritizing Nav & Media; Speedo hidden
                 int halfWidth = (bodyWidth - gap) / 2;
                 if (speedoCard != null) speedoCard.setVisibility(GONE);
                 if (navWeatherCard != null) {

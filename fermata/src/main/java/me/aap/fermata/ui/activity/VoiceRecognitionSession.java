@@ -166,8 +166,9 @@ final class VoiceRecognitionSession implements RecognitionListener,
 				layout.setBackground(activity.getGlassCardDrawable(context, 20f));
 				int pad = toIntPx(context, 16);
 				layout.setPadding(pad, pad, pad, pad);
-				image.setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
-				text.setTextColor(ColorStateList.valueOf(0xFFE0F7FA));
+				int actionColor = activity.getGlassActionColor();
+				image.setImageTintList(ColorStateList.valueOf(actionColor));
+				text.setTextColor(ColorStateList.valueOf(activity.getGlassTextPrimary()));
 			}
 
 			if (textInput) {
@@ -182,7 +183,7 @@ final class VoiceRecognitionSession implements RecognitionListener,
 				keyboard.setLayoutParams(layoutParams);
 				keyboard.setImageResource(R.drawable.keyboard);
 				if (activity.isGlassTheme()) {
-					keyboard.setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+					keyboard.setImageTintList(ColorStateList.valueOf(activity.getGlassActionColor()));
 				} else {
 					keyboard.setImageTintList(ColorStateList.valueOf(imageColor));
 				}

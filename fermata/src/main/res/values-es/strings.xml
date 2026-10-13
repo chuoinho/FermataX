@@ -532,6 +532,10 @@ Por favor, reinicie la aplicación.</string>
     <string name="theme_glass">Glassmorphism</string>
     <string name="theme_aa">Tema de Android Auto</string>
     <string name="theme_aa_sub">Tema de pantalla del coche: %1$s</string>
+    <string name="glass_appearance">Modo de tema cristal</string>
+    <string name="glass_appearance_sub">Se aplica al tema cristal en el teléfono y Android Auto: %1$s</string>
+    <string name="glass_appearance_day">Día</string>
+    <string name="glass_appearance_night">Noche</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">Buscar vehículo</string>

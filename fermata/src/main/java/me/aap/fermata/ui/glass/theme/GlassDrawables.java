@@ -19,6 +19,10 @@ public final class GlassDrawables {
 		return drawable;
 	}
 
+	public static Drawable createGlassCardDrawable(Context context, float radiusDp) {
+		return createGlassCardDrawable(context, radiusDp, GlassThemeColors.isNight(context));
+	}
+
 	public static Drawable createGlassPillDrawable(Context context, float radiusDp, boolean isNight) {
 		GlassThemeColors colors = GlassThemeColors.get(context, isNight);
 		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
@@ -27,6 +31,24 @@ public final class GlassDrawables {
 		drawable.setCornerRadius(radiusDp * density);
 		drawable.setStroke(Math.max(1, (int) (1.0f * density)), colors.getChipBorder());
 		return drawable;
+	}
+
+	public static Drawable createGlassPillDrawable(Context context, float radiusDp) {
+		return createGlassPillDrawable(context, radiusDp, GlassThemeColors.isNight(context));
+	}
+
+	public static Drawable createGlassInputDrawable(Context context, float radiusDp, boolean isNight) {
+		GlassThemeColors colors = GlassThemeColors.get(context, isNight);
+		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
+		GradientDrawable drawable = new GradientDrawable();
+		drawable.setColor(colors.getInputBg());
+		drawable.setCornerRadius(radiusDp * density);
+		drawable.setStroke(Math.max(1, (int) (1.0f * density)), colors.getInputBorder());
+		return drawable;
+	}
+
+	public static Drawable createGlassInputDrawable(Context context, float radiusDp) {
+		return createGlassInputDrawable(context, radiusDp, GlassThemeColors.isNight(context));
 	}
 
 	public static Drawable createBackgroundGradient(int width, int height, boolean isNight) {
@@ -47,7 +69,7 @@ public final class GlassDrawables {
 		GradientDrawable active = new GradientDrawable();
 		active.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
 		active.setCornerRadius(12f * density);
-		active.setStroke(Math.max(1, (int) (1.0f * density)), 0x8000E5FF);
+		active.setStroke(Math.max(1, (int) (1.0f * density)), isNight ? 0x8000E5FF : 0x80007A87);
 
 		GradientDrawable normal = new GradientDrawable();
 		normal.setColor(android.graphics.Color.TRANSPARENT);
@@ -57,5 +79,9 @@ public final class GlassDrawables {
 		sld.addState(new int[]{android.R.attr.state_pressed}, active);
 		sld.addState(new int[]{}, normal);
 		return sld;
+	}
+
+	public static Drawable createGlassItemHighlightDrawable(Context context) {
+		return createGlassItemHighlightDrawable(context, GlassThemeColors.isNight(context));
 	}
 }

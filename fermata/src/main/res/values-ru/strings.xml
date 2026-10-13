@@ -524,6 +524,10 @@
     <string name="theme_glass">Стеклянная тема (Glassmorphism)</string>
     <string name="theme_aa">Тема Android Auto</string>
     <string name="theme_aa_sub">Тема экрана автомобиля: %1$s</string>
+    <string name="glass_appearance">Режим стеклянной темы</string>
+    <string name="glass_appearance_sub">Применяется к стеклянной теме на телефоне и Android Auto: %1$s</string>
+    <string name="glass_appearance_day">День</string>
+    <string name="glass_appearance_night">Ночь</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">Поиск машины</string>

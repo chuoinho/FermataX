@@ -211,7 +211,7 @@ public class PreferenceView extends ConstraintLayout {
 		if (a != null && a.isGlassTheme()) {
 			View chevron = findViewById(R.id.pref_value);
 			if (chevron instanceof ImageView) {
-				((ImageView) chevron).setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+				((ImageView) chevron).setImageTintList(ColorStateList.valueOf(a.getGlassActionColor()));
 			}
 		}
 		setOnClickListener(v -> adapter.setPreferenceSet(set));
@@ -489,7 +489,7 @@ public class PreferenceView extends ConstraintLayout {
 		img.setNextFocusLeftId(t.getId());
 		ActivityDelegate ad = ActivityDelegate.get(getContext());
 		if (ad != null && ad.isGlassTheme()) {
-			img.setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+			img.setImageTintList(ColorStateList.valueOf(ad.getGlassActionColor()));
 			android.graphics.drawable.Drawable bg = ad.getGlassCardDrawable(getContext(), 12f);
 			if (bg != null) img.setBackground(bg);
 			int pad = (int) toPx(getContext(), 6);
@@ -588,8 +588,8 @@ public class PreferenceView extends ConstraintLayout {
 		SeekBar sb = findViewById(R.id.pref_footer);
 		ActivityDelegate a = ActivityDelegate.get(getContext());
 		if (a != null && a.isGlassTheme()) {
-			sb.setProgressTintList(ColorStateList.valueOf(0xFF00E5FF));
-			sb.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+			sb.setProgressTintList(ColorStateList.valueOf(a.getGlassActionColor()));
+			sb.setThumbTintList(ColorStateList.valueOf(a.getGlassTextPrimary()));
 		}
 		if (o.inputType != 0) t.setInputType(o.inputType);
 		boolean[] ignoreChange = new boolean[1];
@@ -855,10 +855,10 @@ public class PreferenceView extends ConstraintLayout {
 
 		ActivityDelegate a = ActivityDelegate.get(ctx);
 		if (a != null && a.isGlassTheme()) {
-			titleView.setTextColor(0xFFFFFFFF);
-			subtitleView.setTextColor(0x99FFFFFF);
+			titleView.setTextColor(a.getGlassTextPrimary());
+			subtitleView.setTextColor(a.getGlassTextSecondary());
 			if (iconView.getVisibility() == VISIBLE) {
-				iconView.setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+				iconView.setImageTintList(ColorStateList.valueOf(a.getGlassActionColor()));
 			}
 			android.graphics.drawable.Drawable itemHighlight = a.getGlassItemHighlightDrawable(ctx);
 			if (itemHighlight != null) {
