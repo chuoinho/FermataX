@@ -59,20 +59,16 @@ final class InterfacePrefsBuilder {
 			}
 		}
 
-		boolean hasGlass = store.getIntPref(MainActivityPrefs.THEME_MAIN) == MainActivityPrefs.THEME_GLASS
-				|| (BuildConfig.AUTO && store.getIntPref(MainActivityPrefs.THEME_AA) == MainActivityPrefs.THEME_GLASS);
-		if (hasGlass) {
-			normalizeGlassAppearance(store);
-			set.addListPref(o -> {
-				o.store = store;
-				o.pref = MainActivityPrefs.GLASS_APPEARANCE;
-				o.title = R.string.glass_appearance;
-				o.subtitle = R.string.glass_appearance_sub;
-				o.formatSubtitle = true;
-				o.values = new int[]{R.string.glass_appearance_day, R.string.glass_appearance_night};
-				o.valuesMap = new int[]{MainActivityPrefs.GLASS_APPEARANCE_DAY, MainActivityPrefs.GLASS_APPEARANCE_NIGHT};
-			});
-		}
+		normalizeGlassAppearance(store);
+		set.addListPref(o -> {
+			o.store = store;
+			o.pref = MainActivityPrefs.GLASS_APPEARANCE;
+			o.title = R.string.glass_appearance;
+			o.subtitle = R.string.glass_appearance_sub;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.glass_appearance_day, R.string.glass_appearance_night};
+			o.valuesMap = new int[]{MainActivityPrefs.GLASS_APPEARANCE_DAY, MainActivityPrefs.GLASS_APPEARANCE_NIGHT};
+		});
 
 		Pref<IntSupplier> navBarPosition = BuildConfig.AUTO ?
 				MainActivityPrefs.NAV_BAR_POS_AA : MainActivityPrefs.NAV_BAR_POS;
