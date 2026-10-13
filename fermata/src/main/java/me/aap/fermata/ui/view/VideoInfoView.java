@@ -41,7 +41,18 @@ public class VideoInfoView extends ConstraintLayout
 		getActivity().onSuccess(a -> {
 			a.addBroadcastListener(this, ACTIVITY_DESTROY);
 			a.getMediaServiceBinder().addBroadcastListener(this);
-			setBackgroundColor(Color.BLACK);
+			if (isGlassTheme()) {
+				boolean isNight = (context.getResources().getConfiguration().uiMode &
+						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+				setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 16f, isNight));
+				me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(this, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(context, 16f));
+				me.aap.fermata.ui.glass.theme.GlassThemeColors colors = me.aap.fermata.ui.glass.theme.GlassThemeColors.get(context, isNight);
+				getTitleView().setTextColor(colors.getTextPrimary());
+				getSubtitleView().setTextColor(colors.getTextSecondary());
+				getDescriptionView().setTextColor(colors.getTextTertiary());
+			} else {
+				setBackgroundColor(Color.BLACK);
+			}
 			onPlayableChanged(null, a.getCurrentPlayable());
 		});
 	}
@@ -147,7 +158,11 @@ public class VideoInfoView extends ConstraintLayout
 		if (icon == null) {
 			AppCompatImageView iv = getIconView();
 			iv.setImageResource(item.getIcon());
-			iv.setImageTintList(ColorStateList.valueOf(Utils.getLauncherColor()));
+			if (isGlassTheme()) {
+				iv.setImageTintList(ColorStateList.valueOf(me.aap.fermata.ui.glass.theme.GlassThemeColors.ACCENT_CYAN));
+			} else {
+				iv.setImageTintList(ColorStateList.valueOf(Utils.getLauncherColor()));
+			}
 			iv.setVisibility(VISIBLE);
 		} else {
 			getIconView().setVisibility(GONE);
@@ -187,5 +202,15 @@ public class VideoInfoView extends ConstraintLayout
 
 	private FutureSupplier<MainActivityDelegate> getActivity() {
 		return MainActivityDelegate.getActivityDelegate(getContext());
+	}
+
+	public boolean isGlassTheme() {
+		try {
+			MainActivityDelegate a = getActivity().peek();
+			if (a == null) a = MainActivityDelegate.get(getContext());
+			return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+		} catch (Exception e) {
+			return false;
+		}
 	}
 }

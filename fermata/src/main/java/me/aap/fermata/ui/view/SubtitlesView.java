@@ -25,6 +25,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+
 import me.aap.fermata.R;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
@@ -45,6 +47,9 @@ public class SubtitlesView extends SplitLayout
 
 	public SubtitlesView(@NonNull Context ctx, @Nullable AttributeSet attrs) {
 		super(ctx, attrs);
+		if (isGlassTheme()) {
+			applyGlassSplitStyle();
+		}
 	}
 
 	@Override
@@ -72,6 +77,9 @@ public class SubtitlesView extends SplitLayout
 	@Override
 	protected void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
+		if (isGlassTheme()) {
+			applyGlassSplitStyle();
+		}
 		if (subtitles == null) return;
 		var leftAdapter = (left == null) ? null : (SubAdapter) left.getAdapter();
 		var rightAdapter = (right == null) ? null : (SubAdapter) right.getAdapter();
@@ -85,6 +93,9 @@ public class SubtitlesView extends SplitLayout
 		if (left == null) {
 			left = findViewById(R.id.sub_left);
 			left.setLayoutManager(new LinearLayoutManager(getContext()));
+			if (isGlassTheme()) {
+				applyGlassStyle(left);
+			}
 		}
 		return left;
 	}
@@ -93,8 +104,38 @@ public class SubtitlesView extends SplitLayout
 		if (right == null) {
 			right = findViewById(R.id.sub_right);
 			right.setLayoutManager(new LinearLayoutManager(getContext()));
+			if (isGlassTheme()) {
+				applyGlassStyle(right);
+			}
 		}
 		return right;
+	}
+
+	public boolean isGlassTheme() {
+		try {
+			MainActivityDelegate a = getActivity();
+			return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	private void applyGlassStyle(RecyclerView rv) {
+		Context ctx = getContext();
+		boolean isNight = (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+		rv.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 14f, isNight));
+		me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(rv, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 14f));
+	}
+
+	private void applyGlassSplitStyle() {
+		AppCompatImageView handle = getSplitHandle();
+		if (handle != null) {
+			handle.setImageTintList(android.content.res.ColorStateList.valueOf(me.aap.fermata.ui.glass.theme.GlassThemeColors.ACCENT_CYAN));
+		}
+		View splitLine = getSplitLine();
+		if (splitLine != null) {
+			splitLine.setBackgroundColor(me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext()).getCardBorder());
+		}
 	}
 
 	public void setSubtitles(@Nullable SubGrid sg) {
@@ -263,8 +304,16 @@ public class SubtitlesView extends SplitLayout
 			void bind(int position) {
 				var i = (TextView) itemView;
 				text = subtitles.get(position);
-				i.setSelected(text == active);
+				boolean selected = (text == active);
+				i.setSelected(selected);
 				i.setText(fromHtml(text.getText(), FROM_HTML_MODE_LEGACY));
+				if (isGlassTheme()) {
+					if (selected) {
+						i.setTextColor(me.aap.fermata.ui.glass.theme.GlassThemeColors.ACCENT_CYAN);
+					} else {
+						i.setTextColor(me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext()).getTextPrimary());
+					}
+				}
 			}
 		}
 	}
