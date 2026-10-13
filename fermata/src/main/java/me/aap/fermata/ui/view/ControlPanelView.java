@@ -546,11 +546,13 @@ public class ControlPanelView extends ConstraintLayout
 		Context context = getContext();
 		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
 			boolean isNight = a.getPrefs().isGlassNightMode();
+			me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+					me.aap.fermata.ui.glass.theme.GlassThemeColors.get(context, isNight);
 			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
 			me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(this, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(context, 20f));
 			View seek = findViewById(R.id.seek_bar);
 			if (seek instanceof androidx.appcompat.widget.AppCompatSeekBar) {
-				int cyan = me.aap.fermata.ui.glass.theme.GlassThemeColors.get(context, isNight).getActionText();
+				int cyan = gc.getActionText();
 				((androidx.appcompat.widget.AppCompatSeekBar) seek).setProgressTintList(
 						android.content.res.ColorStateList.valueOf(cyan));
 				((androidx.appcompat.widget.AppCompatSeekBar) seek).setThumbTintList(
@@ -560,8 +562,22 @@ public class ControlPanelView extends ConstraintLayout
 			if (play != null) {
 				play.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
 			}
+			styleControlPanelChildren(this, gc);
 		} else if (BuildConfig.AUTO && a.isCarActivity()) {
 			setBackgroundResource(R.drawable.aa_control_panel_bg);
+		}
+	}
+
+	private static void styleControlPanelChildren(ViewGroup parent, me.aap.fermata.ui.glass.theme.GlassThemeColors gc) {
+		for (int i = 0, count = parent.getChildCount(); i < count; i++) {
+			View child = parent.getChildAt(i);
+			if (child instanceof android.widget.TextView tv) {
+				tv.setTextColor(gc.getTextSecondary());
+			} else if (child instanceof android.widget.ImageView iv && iv.getId() != R.id.control_play_pause) {
+				iv.setColorFilter(gc.getTextPrimary());
+			} else if (child instanceof ViewGroup vg) {
+				styleControlPanelChildren(vg, gc);
+			}
 		}
 	}
 

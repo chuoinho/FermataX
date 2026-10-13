@@ -107,11 +107,11 @@ public interface MainActivityPrefs
 	}
 
 	static boolean hasThemePref(MainActivityDelegate a, List<Pref<?>> prefs) {
-		return prefs.contains(THEME_MAIN) || (AUTO && prefs.contains(THEME_AA)) || prefs.contains(GLASS_APPEARANCE);
+		return prefs.contains(THEME_MAIN) || prefs.contains(THEME_AA) || prefs.contains(GLASS_APPEARANCE);
 	}
 
 	default int getThemePref(boolean auto) {
-		if (AUTO && auto) {
+		if (auto) {
 			int aaTheme = getIntPref(THEME_AA);
 			if (aaTheme == THEME_CLASSIC || aaTheme == THEME_MATERIAL_YOU || aaTheme == THEME_GLASS) {
 				return aaTheme;
@@ -143,7 +143,7 @@ public interface MainActivityPrefs
 	}
 
 	default boolean isGlassTheme(boolean auto) {
-		return auto ? (AUTO && getThemePref(true) == THEME_GLASS) : (getThemePref(false) == THEME_GLASS);
+		return auto ? (getThemePref(true) == THEME_GLASS) : (getThemePref(false) == THEME_GLASS);
 	}
 
 	@Nullable

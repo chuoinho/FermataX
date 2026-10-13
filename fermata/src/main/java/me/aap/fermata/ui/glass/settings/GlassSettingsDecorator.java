@@ -73,28 +73,37 @@ public class GlassSettingsDecorator {
         me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
                 me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, isNight);
         view.setBackground(GlassDrawables.createGlassCardDrawable(ctx, 20f, isNight));
+        styleViewTree(view, gc, isNight);
+    }
+
+    private static void styleViewTree(View view, me.aap.fermata.ui.glass.theme.GlassThemeColors gc, boolean isNight) {
+        if (view instanceof android.widget.TextView tv) {
+            if (tv.getId() == android.R.id.title) {
+                tv.setTextColor(gc.getTextPrimary());
+                tv.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
+            } else if (tv.getId() == android.R.id.summary) {
+                tv.setTextColor(gc.getTextSecondary());
+            } else {
+                tv.setTextColor(gc.getTextPrimary());
+            }
+        } else if (view instanceof androidx.appcompat.widget.SwitchCompat sc) {
+            sc.setThumbTintList(android.content.res.ColorStateList.valueOf(gc.getActionText()));
+            sc.setTrackTintList(new android.content.res.ColorStateList(
+                    new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+                    new int[]{isNight ? 0x6638BDF8 : 0x660284C7, isNight ? 0x33FFFFFF : 0x20000000}
+            ));
+        } else if (view instanceof android.widget.SeekBar sb) {
+            sb.setThumbTintList(android.content.res.ColorStateList.valueOf(gc.getActionText()));
+            sb.setProgressTintList(android.content.res.ColorStateList.valueOf(gc.getActionText()));
+        } else if (view instanceof android.widget.ImageView iv) {
+            if (iv.getId() != android.R.id.icon) {
+                iv.setColorFilter(gc.getTextSecondary());
+            }
+        }
 
         if (view instanceof ViewGroup vg) {
             for (int i = 0, count = vg.getChildCount(); i < count; i++) {
-                View child = vg.getChildAt(i);
-                if (child instanceof android.widget.TextView tv) {
-                    if (tv.getId() == android.R.id.title) {
-                        tv.setTextColor(gc.getTextPrimary());
-                    } else if (tv.getId() == android.R.id.summary) {
-                        tv.setTextColor(gc.getTextSecondary());
-                    } else {
-                        tv.setTextColor(gc.getTextPrimary());
-                    }
-                } else if (child instanceof androidx.appcompat.widget.SwitchCompat sc) {
-                    sc.setThumbTintList(android.content.res.ColorStateList.valueOf(gc.getActionText()));
-                    sc.setTrackTintList(new android.content.res.ColorStateList(
-                            new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
-                            new int[]{isNight ? 0x6638BDF8 : 0x660284C7, isNight ? 0x33FFFFFF : 0x20000000}
-                    ));
-                } else if (child instanceof android.widget.SeekBar sb) {
-                    sb.setThumbTintList(android.content.res.ColorStateList.valueOf(gc.getActionText()));
-                    sb.setProgressTintList(android.content.res.ColorStateList.valueOf(gc.getActionText()));
-                }
+                styleViewTree(vg.getChildAt(i), gc, isNight);
             }
         }
     }

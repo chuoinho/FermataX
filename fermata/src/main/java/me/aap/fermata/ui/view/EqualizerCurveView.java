@@ -50,6 +50,15 @@ public final class EqualizerCurveView extends View implements PreferenceStore.Li
 		}
 	}
 
+	public boolean isGlassNight() {
+		try {
+			MainActivityDelegate a = MainActivityDelegate.get(getContext());
+			return a != null ? a.getPrefs().isGlassNightMode() : true;
+		} catch (Throwable e) {
+			return true;
+		}
+	}
+
 	@Override
 	protected void onAttachedToWindow() {
 		super.onAttachedToWindow();
@@ -86,11 +95,15 @@ public final class EqualizerCurveView extends View implements PreferenceStore.Li
 				store.getBooleanPref(AudioEffectsProfileRepository.EQUALIZER_ENABLED);
 
 		if (isGlassTheme()) {
-			int cyan = 0xFF00E5FF;
-			int white = 0xFFFFFFFF;
+			boolean isNight = isGlassNight();
+			int cyan = isNight ? 0xFF00E5FF : 0xFF007A87;
+			int white = isNight ? 0xFFFFFFFF : 0xFF15181A;
+			int gridColor = isNight ? 0x33FFFFFF : 0x26000000;
+			int glowColor = isNight ? 0x3000E5FF : 0x20007A87;
+			int inactiveLine = isNight ? 0x6000E5FF : 0x60007A87;
 
 			paint.setStrokeWidth(dp(1f));
-			paint.setColor(0x33FFFFFF);
+			paint.setColor(gridColor);
 			paint.setAlpha(active ? 180 : 80);
 			canvas.drawLine(left, center, right, center, paint);
 
@@ -117,8 +130,10 @@ public final class EqualizerCurveView extends View implements PreferenceStore.Li
 
 			if (active) {
 				paint.setStyle(Paint.Style.FILL);
+				int gradStart = isNight ? 0x4500E5FF : 0x30007A87;
+				int gradEnd = isNight ? 0x0500E5FF : 0x05007A87;
 				paint.setShader(new LinearGradient(0, top, 0, bottom,
-						0x4500E5FF, 0x0500E5FF, Shader.TileMode.CLAMP));
+						gradStart, gradEnd, Shader.TileMode.CLAMP));
 				canvas.drawPath(fillPath, paint);
 				paint.setShader(null);
 			}
@@ -129,19 +144,19 @@ public final class EqualizerCurveView extends View implements PreferenceStore.Li
 
 			if (active) {
 				paint.setStrokeWidth(dp(5f));
-				paint.setColor(0x3000E5FF);
+				paint.setColor(glowColor);
 				canvas.drawPath(path, paint);
 			}
 
 			paint.setStrokeWidth(dp(2.5f));
-			paint.setColor(active ? cyan : 0x6000E5FF);
+			paint.setColor(active ? cyan : inactiveLine);
 			paint.setAlpha(active ? 255 : 96);
 			canvas.drawPath(path, paint);
 
 			paint.setStyle(Paint.Style.FILL);
 			for (int i = 0; i < xs.length; i++) {
 				if (active) {
-					paint.setColor(0x6000E5FF);
+					paint.setColor(glowColor);
 					canvas.drawCircle(xs[i], ys[i], dp(5f), paint);
 					paint.setColor(white);
 					canvas.drawCircle(xs[i], ys[i], dp(2.5f), paint);

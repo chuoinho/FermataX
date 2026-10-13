@@ -528,8 +528,9 @@ public class MediaItemView extends ConstraintLayout
 			LinearProgressIndicator p = getProgress();
 			if (p != null) {
 				int progressColor = (a != null) ? a.getGlassActionColor() : 0xFF00E5FF;
+				boolean isNight = (a == null) || a.isGlassNightMode();
 				p.setIndicatorColor(progressColor);
-				p.setTrackColor(0x33FFFFFF);
+				p.setTrackColor(isNight ? 0x33FFFFFF : 0x20000000);
 			}
 			if (a != null) {
 				if (activated) {
