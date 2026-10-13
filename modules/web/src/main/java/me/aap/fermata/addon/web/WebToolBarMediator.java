@@ -81,9 +81,10 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		lp.horizontalWeight = 2;
 		MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
 		if (a != null && a.isGlassTheme()) {
+			boolean isNight = a.getPrefs().isGlassNightMode();
 			t.setBackground(a.getGlassCardDrawable(tb.getContext(), 18f));
-			t.setTextColor(0xFFE0F7FA);
-			t.setHintTextColor(0x8080D8FF);
+			t.setTextColor(isNight ? 0xFFE0F7FA : 0xFF15181A);
+			t.setHintTextColor(isNight ? 0x8080D8FF : 0x6615181A);
 			int padH = UiUtils.toIntPx(tb.getContext(), 12);
 			int padV = UiUtils.toIntPx(tb.getContext(), 6);
 			t.setPadding(padH, padV, padH, padV);

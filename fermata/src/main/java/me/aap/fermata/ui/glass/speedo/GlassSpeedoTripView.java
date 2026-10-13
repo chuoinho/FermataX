@@ -56,9 +56,7 @@ public class GlassSpeedoTripView extends FrameLayout {
 
     public GlassSpeedoTripView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        int uiMode = getResources().getConfiguration().uiMode;
-        this.isNight = (uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                != android.content.res.Configuration.UI_MODE_NIGHT_NO;
+        this.isNight = GlassThemeColors.isNight(context);
         this.colors = GlassThemeColors.get(context, isNight);
         initView(context);
     }

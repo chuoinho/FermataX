@@ -43,8 +43,7 @@ public class FermataToolBarView extends ToolBarView {
 		MainActivityDelegate a = MainActivityDelegate.get(getContext());
 		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
 			Context ctx = getContext();
-			boolean isNight = (getResources().getConfiguration().uiMode &
-					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			boolean isNight = a.getPrefs().isGlassNightMode();
 			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
 		}
 	}
@@ -103,8 +102,7 @@ public class FermataToolBarView extends ToolBarView {
 		boolean isGlass = a.getPrefs().isGlassTheme(a.isCarActivity());
 		if (isGlass) {
 			Context ctx = getContext();
-			boolean isNight = (getResources().getConfiguration().uiMode &
-					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			boolean isNight = a.getPrefs().isGlassNightMode();
 			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
 			int horizontalPadding = UiUtils.toIntPx(ctx, 14);
 			setPadding(horizontalPadding, 0, horizontalPadding, 0);

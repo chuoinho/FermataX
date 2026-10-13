@@ -122,7 +122,7 @@ public class SubtitlesView extends SplitLayout
 
 	private void applyGlassStyle(RecyclerView rv) {
 		Context ctx = getContext();
-		boolean isNight = (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+		boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(ctx);
 		rv.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 14f, isNight));
 		me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(rv, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 14f));
 	}
@@ -130,7 +130,7 @@ public class SubtitlesView extends SplitLayout
 	private void applyGlassSplitStyle() {
 		AppCompatImageView handle = getSplitHandle();
 		if (handle != null) {
-			handle.setImageTintList(android.content.res.ColorStateList.valueOf(me.aap.fermata.ui.glass.theme.GlassThemeColors.ACCENT_CYAN));
+			handle.setImageTintList(android.content.res.ColorStateList.valueOf(me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext()).getActionText()));
 		}
 		View splitLine = getSplitLine();
 		if (splitLine != null) {
@@ -309,7 +309,7 @@ public class SubtitlesView extends SplitLayout
 				i.setText(fromHtml(text.getText(), FROM_HTML_MODE_LEGACY));
 				if (isGlassTheme()) {
 					if (selected) {
-						i.setTextColor(me.aap.fermata.ui.glass.theme.GlassThemeColors.ACCENT_CYAN);
+						i.setTextColor(me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext()).getActionText());
 					} else {
 						i.setTextColor(me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext()).getTextPrimary());
 					}

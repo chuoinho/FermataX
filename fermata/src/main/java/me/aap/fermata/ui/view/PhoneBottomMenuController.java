@@ -19,12 +19,13 @@ public final class PhoneBottomMenuController {
 		this.view = view;
 		if (activity.getPrefs().isGlassTheme(activity.isCarActivity())) {
 			android.content.Context ctx = view.getContext();
-			boolean isNight = (ctx.getResources().getConfiguration().uiMode &
-					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			boolean isNight = activity.getPrefs().isGlassNightMode();
 			view.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+			int actionColor = isNight ? 0xFF00E5FF : 0xFF007A87;
+			int unselectedColor = isNight ? 0x80FFFFFF : 0x8015181A;
 			android.content.res.ColorStateList iconColors = new android.content.res.ColorStateList(
 					new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
-					new int[]{0xFF00E5FF, 0x80FFFFFF}
+					new int[]{actionColor, unselectedColor}
 			);
 			view.setItemIconTintList(iconColors);
 			view.setItemTextColor(iconColors);

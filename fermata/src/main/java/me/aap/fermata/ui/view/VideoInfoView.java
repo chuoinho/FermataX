@@ -42,8 +42,7 @@ public class VideoInfoView extends ConstraintLayout
 			a.addBroadcastListener(this, ACTIVITY_DESTROY);
 			a.getMediaServiceBinder().addBroadcastListener(this);
 			if (isGlassTheme()) {
-				boolean isNight = (context.getResources().getConfiguration().uiMode &
-						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+				boolean isNight = a.getPrefs().isGlassNightMode();
 				setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 16f, isNight));
 				me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(this, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(context, 16f));
 				me.aap.fermata.ui.glass.theme.GlassThemeColors colors = me.aap.fermata.ui.glass.theme.GlassThemeColors.get(context, isNight);
@@ -159,7 +158,9 @@ public class VideoInfoView extends ConstraintLayout
 			AppCompatImageView iv = getIconView();
 			iv.setImageResource(item.getIcon());
 			if (isGlassTheme()) {
-				iv.setImageTintList(ColorStateList.valueOf(me.aap.fermata.ui.glass.theme.GlassThemeColors.ACCENT_CYAN));
+				MainActivityDelegate a = MainActivityDelegate.get(getContext());
+				boolean isNight = (a != null) ? a.getPrefs().isGlassNightMode() : me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(getContext());
+				iv.setImageTintList(ColorStateList.valueOf(me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext(), isNight).getIconColor()));
 			} else {
 				iv.setImageTintList(ColorStateList.valueOf(Utils.getLauncherColor()));
 			}

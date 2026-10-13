@@ -159,8 +159,8 @@ public final class CarFinderSettingsDialog {
 
 		// Close button
 		TextView closeBtn = new TextView(context);
-		closeBtn.setText(R.string.car_finder_close);
-		closeBtn.setTextColor(isGlass ? 0xFF00E5FF : 0xFF3B82F6);
+		boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(context);
+		closeBtn.setTextColor(isGlass ? (isNight ? 0xFF00E5FF : 0xFF007A87) : 0xFF3B82F6);
 		closeBtn.setTextSize(15);
 		closeBtn.setTypeface(null, Typeface.BOLD);
 		closeBtn.setGravity(Gravity.END);

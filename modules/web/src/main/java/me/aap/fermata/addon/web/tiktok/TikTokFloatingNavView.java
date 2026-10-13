@@ -93,12 +93,13 @@ public class TikTokFloatingNavView extends FrameLayout implements TikTokJsBridge
 
 		MainActivityDelegate a = MainActivityDelegate.get(context);
 		if (a != null && a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			boolean isNight = a.getPrefs().isGlassNightMode();
 			android.view.View root = findViewById(R.id.tiktokNavCapsuleRoot);
 			if (root != null) {
-				root.setBackground(GlassDrawables.createGlassPillDrawable(context, 26f, true));
+				root.setBackground(GlassDrawables.createGlassPillDrawable(context, 26f, isNight));
 			}
 			if (btnPlayPause != null) {
-				btnPlayPause.setImageTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+				btnPlayPause.setImageTintList(android.content.res.ColorStateList.valueOf(isNight ? 0xFF00E5FF : 0xFF007A87));
 			}
 		}
 	}

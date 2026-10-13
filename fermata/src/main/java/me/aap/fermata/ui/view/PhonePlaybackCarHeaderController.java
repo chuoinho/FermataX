@@ -55,27 +55,28 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 		wirePlaybackControls();
 		if (isGlassTheme()) {
 			android.content.Context ctx = header.getContext();
-			boolean isNight = (ctx.getResources().getConfiguration().uiMode &
-					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(ctx);
+			boolean isNight = (a != null) ? a.getPrefs().isGlassNightMode() : me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(ctx);
 			header.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 16f, isNight));
+			int actionColor = isNight ? 0xFF00E5FF : 0xFF007A87;
+			int thumbColor = isNight ? 0xFFFFFFFF : 0xFF15181A;
+			int bgTint = isNight ? 0x33FFFFFF : 0x20000000;
 			SeekBar progress = header.findViewById(R.id.phone_header_progress);
 			if (progress != null) {
-				progress.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
-				progress.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFFFFFFFF));
-				progress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x33FFFFFF));
+				progress.setProgressTintList(android.content.res.ColorStateList.valueOf(actionColor));
+				progress.setThumbTintList(android.content.res.ColorStateList.valueOf(thumbColor));
+				progress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(bgTint));
 			}
+			android.content.res.ColorStateList trackStateList = new android.content.res.ColorStateList(
+					new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+					new int[]{isNight ? 0x6600E5FF : 0x66007A87, bgTint}
+			);
 			if (toggle instanceof androidx.appcompat.widget.SwitchCompat switchCompat) {
-				switchCompat.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
-				switchCompat.setTrackTintList(new android.content.res.ColorStateList(
-						new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
-						new int[]{0x6600E5FF, 0x33FFFFFF}
-				));
+				switchCompat.setThumbTintList(android.content.res.ColorStateList.valueOf(actionColor));
+				switchCompat.setTrackTintList(trackStateList);
 			} else if (toggle instanceof android.widget.Switch sw) {
-				sw.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
-				sw.setTrackTintList(new android.content.res.ColorStateList(
-						new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
-						new int[]{0x6600E5FF, 0x33FFFFFF}
-				));
+				sw.setThumbTintList(android.content.res.ColorStateList.valueOf(actionColor));
+				sw.setTrackTintList(trackStateList);
 			}
 		}
 		binder.addBroadcastListener(this);

@@ -80,13 +80,12 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         Context ctx = requireContext();
-        boolean isNight = (ctx.getResources().getConfiguration().uiMode &
-                android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        boolean isNight = GlassThemeColors.isNight(ctx);
         GlassThemeColors colors = GlassThemeColors.get(ctx, isNight);
 
         LinearLayout root = new LinearLayout(ctx);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(0xFF0A0F1D); // Deep glass navy
+        root.setBackgroundColor(isNight ? 0xFF0A0F1D : 0xFFEBEAE8);
         root.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 

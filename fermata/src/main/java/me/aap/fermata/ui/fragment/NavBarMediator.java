@@ -238,8 +238,7 @@ public class NavBarMediator extends PrefNavBarMediator
 			f.setTitle(item.getContext().getString(R.string.about));
 			f.setContentProvider(g -> {
 				Context ctx = g.getContext();
-				boolean isNight = (ctx.getResources().getConfiguration().uiMode &
-						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+				boolean isNight = a.getPrefs().isGlassNightMode();
 				boolean isGlass = a.getPrefs().isGlassTheme(a.isCarActivity());
 				String url = "https://github.com/chuoinho/FermataX";
 				String html = ctx.getString(R.string.about_html, VERSION_NAME, VERSION_CODE, url);
@@ -252,7 +251,7 @@ public class NavBarMediator extends PrefNavBarMediator
 							g.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createBackgroundGradient(w, h, isNight));
 						}
 					});
-					g.setBackgroundColor(0xFF0A0F1D);
+					g.setBackgroundColor(isNight ? 0xFF0A0F1D : 0xFFEBEAE8);
 					int padOuter = me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 16);
 					g.setPadding(padOuter, padOuter, padOuter, padOuter);
 

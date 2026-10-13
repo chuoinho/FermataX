@@ -406,6 +406,13 @@ public class FermataWebView extends WebView
 	}
 
 	private boolean isDarkPhoneTheme() {
+		try {
+			MainActivityDelegate a = MainActivityDelegate.get(getContext());
+			if (a != null && a.getPrefs().isGlassTheme(a.isCarActivity())) {
+				return a.getPrefs().isGlassNightMode();
+			}
+		} catch (Throwable ignored) {
+		}
 		int mode = getResources().getConfiguration().uiMode;
 		return (mode & UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES;
 	}

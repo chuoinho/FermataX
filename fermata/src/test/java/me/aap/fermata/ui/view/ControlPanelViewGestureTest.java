@@ -14,22 +14,26 @@ public class ControlPanelViewGestureTest {
 	public void gestureHandlingPreservesZeroLatencyWakeAndDebounce() throws Exception {
 		String source = source("ControlPanelView.java");
 
-		// Verify zero-latency waking on single tap up
+		// Verify zero-latency waking on single tap up in Glass mode
 		assertTrue(source.contains("onSingleTapUp(MotionEvent e)"));
+		assertTrue(source.contains("if (!a.getPrefs().isGlassTheme(a.isCarActivity()))"));
 		assertTrue(source.contains("if (!isVideoControlsVisible())"));
 
-		// Verify debounce on double tap
+		// Verify debounce on double tap in Glass mode
 		assertTrue(source.contains("onDoubleTap"));
+		assertTrue(source.contains("lastControlsShowTimestamp < 400"));
 
 		// Verify 500ms grace period on single tap confirmed
 		assertTrue(source.contains("lastControlsShowTimestamp < 500"));
 	}
 
 	@Test
-	public void controlPanelAppliesGlassThemeStyling() throws Exception {
+	public void controlPanelAppliesGlassThemeStylingWithManualNightMode() throws Exception {
 		String source = source("ControlPanelView.java");
 
 		assertTrue(source.contains("isGlassTheme"));
+		assertTrue(source.contains("isGlassNightMode()"));
+		assertFalse(source.contains("Configuration.UI_MODE_NIGHT_MASK"));
 	}
 
 	private static String source(String name) throws Exception {

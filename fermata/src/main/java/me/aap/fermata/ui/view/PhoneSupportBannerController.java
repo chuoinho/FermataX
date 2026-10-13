@@ -53,8 +53,7 @@ public final class PhoneSupportBannerController implements MainActivityListener 
 		}
 
 		if (isGlassTheme()) {
-			boolean isNight = (activity.getContext().getResources().getConfiguration().uiMode &
-					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			boolean isNight = activity.getPrefs().isGlassNightMode();
 			bannerView.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(activity.getContext(), 999f, isNight));
 		}
 

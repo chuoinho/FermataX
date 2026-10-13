@@ -20,4 +20,17 @@ public class CarKeyboardOverlayTest {
 		assertTrue(CarKeyboardOverlay.isPasswordInputType(
 				TYPE_CLASS_NUMBER | TYPE_NUMBER_VARIATION_PASSWORD));
 	}
+
+	@Test
+	public void keyboardSupportsGlassThemeDayNightTokensWithoutUiMode() throws Exception {
+		java.nio.file.Path file = java.nio.file.Path.of("src/auto/java/me/app/fermatax/auto/CarKeyboardOverlay.java");
+		if (!java.nio.file.Files.isRegularFile(file)) {
+			file = java.nio.file.Path.of("fermata/src/auto/java/me/app/fermatax/auto/CarKeyboardOverlay.java");
+		}
+		String source = new String(java.nio.file.Files.readAllBytes(file), java.nio.charset.StandardCharsets.UTF_8);
+		assertTrue(source.contains("isGlassTheme()"));
+		assertTrue(source.contains("isGlassNightMode()"));
+		assertTrue(source.contains("applyTheme()"));
+		assertFalse(source.contains("UI_MODE_NIGHT"));
+	}
 }

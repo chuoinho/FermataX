@@ -608,10 +608,11 @@ public class CarFinderFragment extends MainActivityFragment
 		btn.setText(text);
 		boolean isGlass = isGlassTheme();
 		if (isGlass) {
+			boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(requireContext());
 			if (bgColor == ACCENT_BLUE) {
-				textColor = 0xFF00E5FF;
+				textColor = isNight ? 0xFF00E5FF : 0xFF007A87;
 			} else {
-				textColor = 0xFFFFFFFF;
+				textColor = isNight ? 0xFFFFFFFF : 0xFF15181A;
 			}
 		}
 		btn.setTextColor(textColor);
@@ -625,7 +626,7 @@ public class CarFinderFragment extends MainActivityFragment
 				GradientDrawable gd = new GradientDrawable();
 				gd.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
 				gd.setCornerRadius(24f * density);
-				gd.setStroke(Math.round(1.5f * density), 0xFF00E5FF);
+				gd.setStroke(Math.round(1.5f * density), isNight ? 0xFF00E5FF : 0xFF007A87);
 				btn.setBackground(gd);
 			} else {
 				btn.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(requireContext(), 24f, isNight));

@@ -129,8 +129,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			b.getLib().getPrefs().addBroadcastListener(this);
 			b.addBroadcastListener(this);
 			if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
-				boolean isNight = (getResources().getConfiguration().uiMode &
-						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+				boolean isNight = a.getPrefs().isGlassNightMode();
 				me.aap.fermata.ui.glass.medialib.GlassMediaLibDecorator.apply(view, v, isNight);
 			}
 			Log.d("MediaLibFragment view created: ", this);
@@ -409,10 +408,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 				panel.setBackground(a.getGlassCardDrawable(requireContext(), 16f));
 			}
 			if (action != null) {
-				boolean isNight = (requireContext().getResources().getConfiguration().uiMode &
-						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+				boolean isNight = a.getPrefs().isGlassNightMode();
 				action.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(requireContext(), 20f, isNight));
-				action.setTextColor(0xFF00E5FF);
+				action.setTextColor(a.getGlassActionColor());
 			}
 		}
 		switch (state) {

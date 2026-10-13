@@ -12,6 +12,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.SystemClock;
@@ -134,6 +135,7 @@ final class CarKeyboardOverlay {
 		CharSequence hint = target.getHint();
 		title.setText((hint == null) || (hint.length() == 0) ?
 				activity.getString(R.string.car_keyboard_input) : hint);
+		applyTheme();
 		voice.setVisibility(activity.isVoiceInputEnabled() && !isPassword(target) ?
 				View.VISIBLE : View.GONE);
 		value.setText(displayValue());
@@ -439,13 +441,62 @@ final class CarKeyboardOverlay {
 		return lp;
 	}
 
+	private boolean isGlassTheme() {
+		try {
+			return me.aap.fermata.ui.activity.MainActivityPrefs.get().isGlassTheme(true);
+		} catch (Throwable e) {
+			return false;
+		}
+	}
+
+	private boolean isGlassNight() {
+		try {
+			return me.aap.fermata.ui.activity.MainActivityPrefs.get().isGlassNightMode();
+		} catch (Throwable e) {
+			return true;
+		}
+	}
+
+	private void applyTheme() {
+		boolean glass = isGlassTheme();
+		boolean night = isGlassNight();
+		view.setBackgroundColor(glass ? (night ? 0xB807111D : 0x88303E4D) : 0xB807111D);
+		panel.setBackground(panelBg());
+		value.setBackground(inputBg());
+		title.setTextColor(glass ? (night ? 0xFFE2E8F0 : 0xFF15181A) : 0xFFE2E8F0);
+		value.setTextColor(glass ? (night ? Color.WHITE : 0xFF15181A) : Color.WHITE);
+		int tbFilter = glass ? (night ? 0xFFE5EDF7 : 0xFF15181A) : 0xFFE5EDF7;
+		voice.setColorFilter(tbFilter);
+		paste.setColorFilter(tbFilter);
+		clear.setColorFilter(tbFilter);
+		cancel.setColorFilter(tbFilter);
+		Drawable tbBg = glass ?
+				(night ? keyBg(0x2BFFFFFF, 0x8000E5FF, 0x5000E5FF, 0x20FFFFFF, 0x8000E5FF) :
+						keyBg(0xFFDDE3EA, 0x80007A87, 0x50007A87, 0x20000000, 0x80007A87)) :
+				keyBg(0xFF1C3044, 0xFF315673, 0xFF3E6888, 0xFF42617E, 0xFF8CC7EA);
+		voice.setBackground(tbBg);
+		paste.setBackground(tbBg);
+		clear.setBackground(tbBg);
+		cancel.setBackground(tbBg);
+	}
+
 	private Button key(String text) {
 		Button button = new Button(activity);
 		button.setId(View.generateViewId());
 		button.setAllCaps(false);
 		button.setText(text);
 		button.setTextSize(text.length() > 1 ? 14 : 19);
-		button.setTextColor(0xFFF3F7FB);
+		boolean glass = isGlassTheme();
+		boolean night = isGlassNight();
+		if (glass) {
+			button.setTextColor(night ? 0xFFF3F7FB : 0xFF15181A);
+			button.setBackground(night ?
+					keyBg(0x26FFFFFF, 0x8000E5FF, 0x4000E5FF, 0x20FFFFFF, 0x8000E5FF) :
+					keyBg(0xFFFFFFFF, 0x80007A87, 0x40007A87, 0x20000000, 0x80007A87));
+		} else {
+			button.setTextColor(0xFFF3F7FB);
+			button.setBackground(keyBg(0xFF203348, 0xFF315673, 0xFF3E6888, 0xFF42617E, 0xFF8CC7EA));
+		}
 		button.setGravity(CENTER);
 		button.setPadding(0, 0, 0, 0);
 		button.setMinWidth(0);
@@ -453,7 +504,6 @@ final class CarKeyboardOverlay {
 		button.setMinimumWidth(0);
 		button.setMinimumHeight(0);
 		button.setFocusable(true);
-		button.setBackground(keyBg(0xFF203348, 0xFF315673, 0xFF3E6888));
 		return button;
 	}
 
@@ -461,7 +511,16 @@ final class CarKeyboardOverlay {
 		Button button = key(text);
 		button.setTextSize(13);
 		button.setTypeface(Typeface.DEFAULT_BOLD);
-		button.setBackground(keyBg(0xFF2B3E51, 0xFF3C607B, 0xFF496E8B));
+		boolean glass = isGlassTheme();
+		boolean night = isGlassNight();
+		if (glass) {
+			button.setTextColor(night ? 0xFFF3F7FB : 0xFF15181A);
+			button.setBackground(night ?
+					keyBg(0x38FFFFFF, 0x8000E5FF, 0x5000E5FF, 0x20FFFFFF, 0x8000E5FF) :
+					keyBg(0xFFDDE3EA, 0x80007A87, 0x50007A87, 0x20000000, 0x80007A87));
+		} else {
+			button.setBackground(keyBg(0xFF2B3E51, 0xFF3C607B, 0xFF496E8B, 0xFF42617E, 0xFF8CC7EA));
+		}
 		return button;
 	}
 
@@ -469,7 +528,16 @@ final class CarKeyboardOverlay {
 		Button button = key(text);
 		button.setTextSize(14);
 		button.setTypeface(Typeface.DEFAULT_BOLD);
-		button.setBackground(keyBg(0xFF0076B8, 0xFF1596D3, 0xFF25A7E2));
+		boolean glass = isGlassTheme();
+		boolean night = isGlassNight();
+		if (glass) {
+			button.setTextColor(night ? 0xFF000000 : 0xFFFFFFFF);
+			int base = night ? 0xFF00E5FF : 0xFF007A87;
+			int pressed = night ? 0xFF18FFFF : 0xFF005662;
+			button.setBackground(keyBg(base, pressed, pressed, base, base));
+		} else {
+			button.setBackground(keyBg(0xFF0076B8, 0xFF1596D3, 0xFF25A7E2, 0xFF42617E, 0xFF8CC7EA));
+		}
 		return button;
 	}
 
@@ -477,13 +545,28 @@ final class CarKeyboardOverlay {
 		AppCompatImageButton button = new AppCompatImageButton(activity);
 		button.setId(View.generateViewId());
 		button.setImageResource(icon);
-		button.setColorFilter(0xFFF3F7FB);
+		boolean glass = isGlassTheme();
+		boolean night = isGlassNight();
+		int iconColor = glass ? (night ? 0xFFF3F7FB : 0xFF15181A) : 0xFFF3F7FB;
+		button.setColorFilter(iconColor);
 		button.setContentDescription(activity.getString(description));
 		button.setPadding(dp(12), dp(12), dp(12), dp(12));
 		button.setFocusable(true);
-		button.setBackground(selected ?
-				keyBg(0xFF087FB9, 0xFF1596D3, 0xFF25A7E2) :
-				keyBg(0xFF2B3E51, 0xFF3C607B, 0xFF496E8B));
+		if (glass) {
+			if (selected) {
+				int selColor = night ? 0xFF00E5FF : 0xFF007A87;
+				button.setColorFilter(night ? 0xFF000000 : 0xFFFFFFFF);
+				button.setBackground(keyBg(selColor, selColor, selColor, selColor, selColor));
+			} else {
+				button.setBackground(night ?
+						keyBg(0x38FFFFFF, 0x8000E5FF, 0x5000E5FF, 0x20FFFFFF, 0x8000E5FF) :
+						keyBg(0xFFDDE3EA, 0x80007A87, 0x50007A87, 0x20000000, 0x80007A87));
+			}
+		} else {
+			button.setBackground(selected ?
+					keyBg(0xFF087FB9, 0xFF1596D3, 0xFF25A7E2, 0xFF42617E, 0xFF8CC7EA) :
+					keyBg(0xFF2B3E51, 0xFF3C607B, 0xFF496E8B, 0xFF42617E, 0xFF8CC7EA));
+		}
 		return button;
 	}
 
@@ -491,11 +574,19 @@ final class CarKeyboardOverlay {
 		AppCompatImageButton button = new AppCompatImageButton(activity);
 		button.setId(View.generateViewId());
 		button.setImageResource(icon);
-		button.setColorFilter(0xFFE5EDF7);
+		boolean glass = isGlassTheme();
+		boolean night = isGlassNight();
+		button.setColorFilter(glass ? (night ? 0xFFE5EDF7 : 0xFF15181A) : 0xFFE5EDF7);
 		button.setContentDescription(activity.getString(description));
 		button.setPadding(dp(9), dp(9), dp(9), dp(9));
 		button.setFocusable(true);
-		button.setBackground(keyBg(0xFF1C3044, 0xFF315673, 0xFF3E6888));
+		if (glass) {
+			button.setBackground(night ?
+					keyBg(0x2BFFFFFF, 0x8000E5FF, 0x5000E5FF, 0x20FFFFFF, 0x8000E5FF) :
+					keyBg(0xFFDDE3EA, 0x80007A87, 0x50007A87, 0x20000000, 0x80007A87));
+		} else {
+			button.setBackground(keyBg(0xFF1C3044, 0xFF315673, 0xFF3E6888, 0xFF42617E, 0xFF8CC7EA));
+		}
 		return button;
 	}
 
@@ -595,20 +686,34 @@ final class CarKeyboardOverlay {
 	}
 
 	private GradientDrawable panelBg() {
+		if (isGlassTheme()) {
+			boolean night = isGlassNight();
+			int bg = night ? 0xE6141E28 : 0xF5F0F4F8;
+			int stroke = night ? 0x26FFFFFF : 0x1A000000;
+			GradientDrawable drawable = shape(bg, stroke);
+			drawable.setCornerRadii(new float[] {dp(14), dp(14), dp(14), dp(14), 0, 0, 0, 0});
+			return drawable;
+		}
 		GradientDrawable drawable = shape(0xFF0E1A27, 0xFF243B52);
 		drawable.setCornerRadii(new float[] {dp(8), dp(8), dp(8), dp(8), 0, 0, 0, 0});
 		return drawable;
 	}
 
 	private GradientDrawable inputBg() {
+		if (isGlassTheme()) {
+			boolean night = isGlassNight();
+			int bg = night ? 0x26181C1E : 0xFFFFFFFF;
+			int stroke = night ? 0x20FFFFFF : 0x20000000;
+			return shape(bg, stroke);
+		}
 		return shape(0xFF14263A, 0xFF436887);
 	}
 
-	private StateListDrawable keyBg(int normal, int focused, int pressed) {
+	private StateListDrawable keyBg(int normal, int focused, int pressed, int normalStroke, int focusStroke) {
 		StateListDrawable drawable = new StateListDrawable();
-		drawable.addState(new int[] {android.R.attr.state_pressed}, shape(pressed, 0xFF75A7C7));
-		drawable.addState(new int[] {android.R.attr.state_focused}, shape(focused, 0xFF8CC7EA));
-		drawable.addState(StateSet.WILD_CARD, shape(normal, 0xFF42617E));
+		drawable.addState(new int[] {android.R.attr.state_pressed}, shape(pressed, focusStroke));
+		drawable.addState(new int[] {android.R.attr.state_focused}, shape(focused, focusStroke));
+		drawable.addState(StateSet.WILD_CARD, shape(normal, normalStroke));
 		return drawable;
 	}
 

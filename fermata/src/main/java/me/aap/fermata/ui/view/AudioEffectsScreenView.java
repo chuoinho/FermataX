@@ -363,7 +363,7 @@ public final class AudioEffectsScreenView extends FrameLayout
 			if (a != null) return a.getGlassCardDrawable(context, radiusDp);
 		} catch (Throwable ignored) {
 		}
-		boolean isNight = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+		boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(context);
 		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, radiusDp, isNight);
 	}
 

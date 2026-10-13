@@ -81,9 +81,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         this.binder = binder;
 
         Context ctx = layout.getContext();
-        int uiMode = ctx.getResources().getConfiguration().uiMode;
-        this.isNight = (uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                != android.content.res.Configuration.UI_MODE_NIGHT_NO;
+        this.isNight = activity.getPrefs().isGlassNightMode();
         this.colors = GlassThemeColors.get(ctx, isNight);
 
         int speedUnitPref = activity.getPrefs().getIntPref(MainActivityPrefs.GLASS_SPEED_UNIT);

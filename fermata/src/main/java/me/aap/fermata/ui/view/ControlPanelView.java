@@ -104,25 +104,7 @@ public class ControlPanelView extends ConstraintLayout
 						getActivity().postDelayed(task, delay);
 					}
 				});
-		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
-			boolean isNight = (context.getResources().getConfiguration().uiMode &
-					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
-			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
-			me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(this, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(context, 20f));
-			View seek = findViewById(R.id.seek_bar);
-			if (seek instanceof androidx.appcompat.widget.AppCompatSeekBar) {
-				((androidx.appcompat.widget.AppCompatSeekBar) seek).setProgressTintList(
-						android.content.res.ColorStateList.valueOf(me.aap.fermata.ui.glass.theme.GlassThemeColors.ACCENT_CYAN));
-				((androidx.appcompat.widget.AppCompatSeekBar) seek).setThumbTintList(
-						android.content.res.ColorStateList.valueOf(0xFFFFFFFF));
-			}
-			View play = findViewById(R.id.control_play_pause);
-			if (play != null) {
-				play.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
-			}
-		} else if (BuildConfig.AUTO && a.isCarActivity()) {
-			setBackgroundResource(R.drawable.aa_control_panel_bg);
-		}
+		applyGlassStyling();
 		presentationView = new ControlPanelPresentationView(this);
 		a.addBroadcastListener(this, ACTIVITY_DESTROY | FRAGMENT_CHANGED);
 		a.getPrefs().addBroadcastListener(this);
@@ -407,19 +389,28 @@ public class ControlPanelView extends ConstraintLayout
 	@Override
 	public boolean onDoubleTap(MotionEvent e) {
 		if (!(gestureSource instanceof VideoView)) return false;
+		MainActivityDelegate a = getActivity();
+		if (!a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			a.getMediaServiceBinder().onPlayPauseButtonClick();
+			return true;
+		}
 		if (!isVideoControlsVisible()) {
 			return onTouch((VideoView) gestureSource);
 		}
 		if (System.currentTimeMillis() - lastControlsShowTimestamp < 400) {
 			return true;
 		}
-		getActivity().getMediaServiceBinder().onPlayPauseButtonClick();
+		a.getMediaServiceBinder().onPlayPauseButtonClick();
 		return true;
 	}
 
 	@Override
 	public boolean onSingleTapUp(MotionEvent e) {
 		if (!(gestureSource instanceof VideoView)) return false;
+		MainActivityDelegate a = getActivity();
+		if (!a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			return false;
+		}
 		if (!isVideoControlsVisible()) {
 			return onTouch((VideoView) gestureSource);
 		}
@@ -429,6 +420,10 @@ public class ControlPanelView extends ConstraintLayout
 	@Override
 	public boolean onSingleTapConfirmed(MotionEvent e) {
 		if (!(gestureSource instanceof VideoView)) return false;
+		MainActivityDelegate a = getActivity();
+		if (!a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			return onTouch((VideoView) gestureSource);
+		}
 		if (System.currentTimeMillis() - lastControlsShowTimestamp < 500) {
 			return true;
 		}
@@ -546,9 +541,37 @@ public class ControlPanelView extends ConstraintLayout
 		favoriteController.refresh();
 	}
 
+	private void applyGlassStyling() {
+		MainActivityDelegate a = getActivity();
+		Context context = getContext();
+		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			boolean isNight = a.getPrefs().isGlassNightMode();
+			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
+			me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(this, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(context, 20f));
+			View seek = findViewById(R.id.seek_bar);
+			if (seek instanceof androidx.appcompat.widget.AppCompatSeekBar) {
+				int cyan = me.aap.fermata.ui.glass.theme.GlassThemeColors.get(context, isNight).getActionText();
+				((androidx.appcompat.widget.AppCompatSeekBar) seek).setProgressTintList(
+						android.content.res.ColorStateList.valueOf(cyan));
+				((androidx.appcompat.widget.AppCompatSeekBar) seek).setThumbTintList(
+						android.content.res.ColorStateList.valueOf(isNight ? 0xFFFFFFFF : 0xFF15181A));
+			}
+			View play = findViewById(R.id.control_play_pause);
+			if (play != null) {
+				play.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
+			}
+		} else if (BuildConfig.AUTO && a.isCarActivity()) {
+			setBackgroundResource(R.drawable.aa_control_panel_bg);
+		}
+	}
+
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
 		MainActivityDelegate a = getActivity();
+
+		if (MainActivityPrefs.hasThemePref(a, prefs)) {
+			applyGlassStyling();
+		}
 
 		if (MainActivityPrefs.hasControlPanelSizePref(a, prefs)) {
 			setSize(a.getPrefs().getControlPanelSizePref(a));

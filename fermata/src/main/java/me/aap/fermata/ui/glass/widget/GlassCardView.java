@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassHardwareUtils;
+import me.aap.fermata.ui.glass.theme.GlassThemeColors;
 
 /**
  * Reusable Glass Card container view built purely in Java.
@@ -46,8 +47,7 @@ public class GlassCardView extends FrameLayout {
 
 	public void updateGlassBackground() {
 		Context context = getContext();
-		boolean isNight = (context.getResources().getConfiguration().uiMode &
-				Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+		boolean isNight = GlassThemeColors.isNight(context);
 		setBackground(GlassDrawables.createGlassCardDrawable(context, cornerRadiusDp, isNight));
 		float density = context.getResources().getDisplayMetrics().density;
 		GlassHardwareUtils.clipRound(this, cornerRadiusDp * density);

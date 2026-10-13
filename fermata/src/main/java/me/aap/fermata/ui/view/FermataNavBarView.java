@@ -73,8 +73,7 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 		MainActivityDelegate a = getMainActivity();
 		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
 			Context ctx = getContext();
-			boolean isNight = (getResources().getConfiguration().uiMode &
-					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			boolean isNight = a.getPrefs().isGlassNightMode();
 			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
 		} else {
 			setBackgroundResource(isRight() ? R.drawable.aa_projected_nav_rail_bg_right :
