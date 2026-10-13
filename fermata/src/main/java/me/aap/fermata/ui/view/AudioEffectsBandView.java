@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat;
 import me.aap.fermata.R;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.pref.PreferenceStore;
 
 /** A single accessible, whole-dB equalizer band. */
@@ -63,6 +64,15 @@ final class AudioEffectsBandView extends View implements PreferenceStore.Listene
 		setMinimumWidth(dp(automotive ? AUTO_TOUCH_WIDTH_DP : PHONE_TOUCH_WIDTH_DP));
 		setMinimumHeight(dp(MIN_HEIGHT_DP));
 		setContentDescription(accessibilityText());
+	}
+
+	public boolean isGlassTheme() {
+		try {
+			MainActivityDelegate a = MainActivityDelegate.get(getContext());
+			return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+		} catch (Throwable e) {
+			return false;
+		}
 	}
 
 	int getFrequencyHz() {
@@ -114,6 +124,58 @@ final class AudioEffectsBandView extends View implements PreferenceStore.Listene
 		float x = getWidth() / 2f;
 		float position = EqualizerCurveGeometry.gainPosition(getValueDb());
 		float y = top + ((bottom - top) * position);
+
+		if (isGlassTheme()) {
+			int cyan = 0xFF00E5FF;
+			int white = 0xFFFFFFFF;
+			int glassTrack = 0x33FFFFFF;
+			int glassCenterLine = 0x22FFFFFF;
+
+			paint.setStyle(Paint.Style.STROKE);
+			paint.setStrokeCap(Paint.Cap.ROUND);
+			paint.setStrokeWidth(dp(4));
+			paint.setColor(glassTrack);
+			paint.setAlpha(isEnabled() ? 255 : 80);
+			canvas.drawLine(x, top, x, bottom, paint);
+
+			paint.setColor(cyan);
+			paint.setAlpha(isEnabled() ? 255 : 100);
+			paint.setStrokeWidth(dp(4));
+			canvas.drawLine(x, center, x, y, paint);
+
+			paint.setStrokeWidth(dp(1));
+			paint.setColor(glassCenterLine);
+			canvas.drawLine(0, center, getWidth(), center, paint);
+
+			if (isEnabled()) {
+				paint.setStyle(Paint.Style.FILL);
+				paint.setColor(0x4000E5FF);
+				canvas.drawCircle(x, y, dp(14), paint);
+
+				paint.setColor(cyan);
+				canvas.drawCircle(x, y, dp(9), paint);
+
+				paint.setColor(white);
+				canvas.drawCircle(x, y, dp(5), paint);
+			} else {
+				paint.setStyle(Paint.Style.FILL);
+				paint.setColor(0x60808080);
+				canvas.drawCircle(x, y, dp(7), paint);
+			}
+
+			paint.setTextAlign(Paint.Align.CENTER);
+			paint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+			paint.setTextSize(sp(14));
+			paint.setColor(isEnabled() ? cyan : 0x80FFFFFF);
+			canvas.drawText(formatDb(getValueDb()), x, dp(25), paint);
+
+			paint.setTypeface(android.graphics.Typeface.DEFAULT);
+			paint.setTextSize(sp(12));
+			paint.setColor(isEnabled() ? white : 0x60FFFFFF);
+			canvas.drawText(frequencyLabel(frequencyHz), x, getHeight() - dp(13), paint);
+			return;
+		}
+
 		int color = isEnabled() ? accentColor : secondaryColor;
 
 		paint.setStyle(Paint.Style.STROKE);

@@ -36,7 +36,11 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		this.callback = callback;
 		setOrientation(VERTICAL);
 		setGravity(Gravity.CENTER_VERTICAL);
-		setBackgroundColor(resolveColor(context, android.R.attr.colorBackground, Color.TRANSPARENT));
+		if (AudioEffectsScreenView.isGlassTheme(context)) {
+			setBackground(AudioEffectsScreenView.getGlassCard(context, 16f));
+		} else {
+			setBackgroundColor(resolveColor(context, android.R.attr.colorBackground, Color.TRANSPARENT));
+		}
 		status = new TextView(context);
 		status.setTextColor(resolveColor(context, android.R.attr.textColorSecondary, 0xff808080));
 		status.setGravity(Gravity.CENTER_VERTICAL);
@@ -54,6 +58,9 @@ public final class AudioEffectsApplyView extends LinearLayout implements AudioEf
 		apply = button(context, R.string.audio_effects_apply);
 		apply.setOnClickListener(v -> startApply());
 		apply.setMinWidth(dp(72));
+		if (AudioEffectsScreenView.isGlassTheme(context)) {
+			apply.setTextColor(0xFF00E5FF);
+		}
 		buttons.addView(apply, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
 		setMinimumHeight(dp(56));
 		setPadding(dp(8), dp(4), dp(8), dp(4));

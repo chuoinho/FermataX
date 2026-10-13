@@ -7,13 +7,17 @@ import static android.view.View.MeasureSpec.EXACTLY;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Shader;
 import android.util.TypedValue;
 import android.view.View;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.audio.AudioEffectsProfile;
 import me.aap.fermata.media.audio.AudioEffectsProfileRepository;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.pref.PreferenceStore;
 
 /** Read-only view of the persisted ten-band profile. */
@@ -35,6 +39,15 @@ public final class EqualizerCurveView extends View implements PreferenceStore.Li
 		neutralColor = resolveColor(context, android.R.attr.textColorSecondary, 0xff808080);
 		setContentDescription(context.getString(R.string.equalizer));
 		setMinimumHeight(dp(HEIGHT_DP));
+	}
+
+	public boolean isGlassTheme() {
+		try {
+			MainActivityDelegate a = MainActivityDelegate.get(getContext());
+			return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+		} catch (Throwable e) {
+			return false;
+		}
 	}
 
 	@Override
@@ -71,6 +84,74 @@ public final class EqualizerCurveView extends View implements PreferenceStore.Li
 		float center = (top + bottom) / 2f;
 		boolean active = store.getBooleanPref(AudioEffectsProfileRepository.ENABLED) &&
 				store.getBooleanPref(AudioEffectsProfileRepository.EQUALIZER_ENABLED);
+
+		if (isGlassTheme()) {
+			int cyan = 0xFF00E5FF;
+			int white = 0xFFFFFFFF;
+
+			paint.setStrokeWidth(dp(1f));
+			paint.setColor(0x33FFFFFF);
+			paint.setAlpha(active ? 180 : 80);
+			canvas.drawLine(left, center, right, center, paint);
+
+			Path path = new Path();
+			Path fillPath = new Path();
+			fillPath.moveTo(left, bottom);
+
+			float[] xs = new float[AudioEffectsProfile.CANONICAL_FREQ_HZ.length];
+			float[] ys = new float[AudioEffectsProfile.CANONICAL_FREQ_HZ.length];
+			for (int i = 0; i < AudioEffectsProfile.CANONICAL_FREQ_HZ.length; i++) {
+				xs[i] = left + (right - left) * EqualizerCurveGeometry.frequencyPosition(
+						AudioEffectsProfile.CANONICAL_FREQ_HZ[i]);
+				ys[i] = gainY(store.getIntPref(AudioEffectsProfileRepository.CANONICAL_CURVE_DB[i]), top, bottom);
+				if (i == 0) {
+					path.moveTo(xs[0], ys[0]);
+					fillPath.lineTo(xs[0], ys[0]);
+				} else {
+					path.lineTo(xs[i], ys[i]);
+					fillPath.lineTo(xs[i], ys[i]);
+				}
+			}
+			fillPath.lineTo(right, bottom);
+			fillPath.close();
+
+			if (active) {
+				paint.setStyle(Paint.Style.FILL);
+				paint.setShader(new LinearGradient(0, top, 0, bottom,
+						0x4500E5FF, 0x0500E5FF, Shader.TileMode.CLAMP));
+				canvas.drawPath(fillPath, paint);
+				paint.setShader(null);
+			}
+
+			paint.setStyle(Paint.Style.STROKE);
+			paint.setStrokeCap(Paint.Cap.ROUND);
+			paint.setStrokeJoin(Paint.Join.ROUND);
+
+			if (active) {
+				paint.setStrokeWidth(dp(5f));
+				paint.setColor(0x3000E5FF);
+				canvas.drawPath(path, paint);
+			}
+
+			paint.setStrokeWidth(dp(2.5f));
+			paint.setColor(active ? cyan : 0x6000E5FF);
+			paint.setAlpha(active ? 255 : 96);
+			canvas.drawPath(path, paint);
+
+			paint.setStyle(Paint.Style.FILL);
+			for (int i = 0; i < xs.length; i++) {
+				if (active) {
+					paint.setColor(0x6000E5FF);
+					canvas.drawCircle(xs[i], ys[i], dp(5f), paint);
+					paint.setColor(white);
+					canvas.drawCircle(xs[i], ys[i], dp(2.5f), paint);
+				} else {
+					paint.setColor(0x60808080);
+					canvas.drawCircle(xs[i], ys[i], dp(2.5f), paint);
+				}
+			}
+			return;
+		}
 
 		paint.setStrokeWidth(dp(1f));
 		paint.setColor(neutralColor);

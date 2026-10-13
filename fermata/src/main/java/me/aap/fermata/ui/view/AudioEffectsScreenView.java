@@ -120,6 +120,17 @@ public final class AudioEffectsScreenView extends FrameLayout
 		masterSwitch.setOnCheckedChangeListener((button, checked) -> {
 			if (!updating) store.applyBooleanPref(AudioEffectsProfileRepository.ENABLED, checked);
 		});
+		if (isGlassTheme()) {
+			topRow.setBackground(getGlassCard(context, 14f));
+			topRow.setPadding(dp(16), dp(10), dp(16), dp(10));
+			LinearLayout.LayoutParams topParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+			topParams.bottomMargin = dp(8);
+			topRow.setLayoutParams(topParams);
+			masterSwitch.setThumbTintList(ColorStateList.valueOf(0xFF00E5FF));
+			masterSwitch.setTrackTintList(new ColorStateList(new int[][]{
+					new int[]{android.R.attr.state_checked}, new int[]{}
+			}, new int[]{0x6600E5FF, 0x33FFFFFF}));
+		}
 		content.addView(topRow);
 
 		LinearLayout presetRow = createRow();
@@ -129,6 +140,14 @@ public final class AudioEffectsScreenView extends FrameLayout
 		preset = buttonText("");
 		preset.setContentDescription(context.getString(R.string.preset_name));
 		presetRow.addView(preset, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1f));
+		if (isGlassTheme()) {
+			presetRow.setBackground(getGlassCard(context, 14f));
+			presetRow.setPadding(dp(16), dp(10), dp(16), dp(10));
+			LinearLayout.LayoutParams presetParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+			presetParams.bottomMargin = dp(8);
+			presetRow.setLayoutParams(presetParams);
+			preset.setTextColor(0xFF00E5FF);
+		}
 		content.addView(presetRow);
 		preset.setOnClickListener(v -> showPresetMenu());
 		equalizerColumn = new LinearLayout(context);
@@ -166,8 +185,17 @@ public final class AudioEffectsScreenView extends FrameLayout
 		bandArea.addView(equalizerScale, new LinearLayout.LayoutParams(dp(
 				AudioEffectsScreenLayoutPolicy.EQ_SCALE_WIDTH_DP), dp(BAND_HEIGHT_DP)));
 		bandArea.addView(bandStrip, new LinearLayout.LayoutParams(0, dp(BAND_HEIGHT_DP), 1f));
-		equalizerColumn.addView(bandArea, new LinearLayout.LayoutParams(MATCH_PARENT,
-				dp(BAND_HEIGHT_DP)));
+		if (isGlassTheme()) {
+			bandArea.setBackground(getGlassCard(context, 16f));
+			bandArea.setPadding(dp(10), dp(10), dp(10), dp(10));
+			LinearLayout.LayoutParams bandAreaParams = new LinearLayout.LayoutParams(MATCH_PARENT,
+					dp(BAND_HEIGHT_DP) + dp(20));
+			bandAreaParams.bottomMargin = dp(8);
+			equalizerColumn.addView(bandArea, bandAreaParams);
+		} else {
+			equalizerColumn.addView(bandArea, new LinearLayout.LayoutParams(MATCH_PARENT,
+					dp(BAND_HEIGHT_DP)));
+		}
 
 		addGainControl(effectsColumn, R.string.preamp, AudioEffectsProfileRepository.PREAMP_DB,
 				AudioEffectsProfile.MIN_CANONICAL_DB, 0);
@@ -316,9 +344,39 @@ public final class AudioEffectsScreenView extends FrameLayout
 		return control.toggle;
 	}
 
+	public static boolean isGlassTheme(Context context) {
+		try {
+			MainActivityDelegate a = MainActivityDelegate.get(context);
+			return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+		} catch (Throwable e) {
+			return false;
+		}
+	}
+
+	public boolean isGlassTheme() {
+		return isGlassTheme(getContext());
+	}
+
+	public static android.graphics.drawable.Drawable getGlassCard(Context context, float radiusDp) {
+		try {
+			MainActivityDelegate a = MainActivityDelegate.get(context);
+			if (a != null) return a.getGlassCardDrawable(context, radiusDp);
+		} catch (Throwable ignored) {
+		}
+		boolean isNight = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, radiusDp, isNight);
+	}
+
 	private void addVirtualizerMode(LinearLayout parent,
 			PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> enabledPref) {
 		LinearLayout row = createRow();
+		if (isGlassTheme()) {
+			row.setBackground(getGlassCard(getContext(), 14f));
+			row.setPadding(dp(16), dp(10), dp(16), dp(10));
+			LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+			rowParams.bottomMargin = dp(8);
+			row.setLayoutParams(rowParams);
+		}
 		TextView label = textView(16);
 		label.setText(R.string.audio_effects_mode);
 		label.setSingleLine(false);
@@ -424,6 +482,19 @@ public final class AudioEffectsScreenView extends FrameLayout
 	}
 
 	static void styleButton(Context context, Button button) {
+		if (isGlassTheme(context)) {
+			button.setBackground(getGlassCard(context, 12f));
+			int[][] states = new int[][]{
+					new int[]{-android.R.attr.state_enabled},
+					new int[]{android.R.attr.state_pressed},
+					new int[]{android.R.attr.state_selected},
+					new int[]{android.R.attr.state_focused},
+					new int[]{}
+			};
+			button.setTextColor(new ColorStateList(states, new int[]{
+					0x40FFFFFF, 0xFF00E5FF, 0xFF00E5FF, 0xFF00E5FF, 0xFFFFFFFF}));
+			return;
+		}
 		int surface = resolveColor(context, com.google.android.material.R.attr.colorSurface,
 				resolveColor(context, android.R.attr.colorBackground, 0xff202124));
 		int selectedSurface = stateSurface(surface);
@@ -454,7 +525,8 @@ public final class AudioEffectsScreenView extends FrameLayout
 			super(context);
 			density = getResources().getDisplayMetrics().density;
 			scaledDensity = getResources().getDisplayMetrics().scaledDensity;
-			color = resolveColor(context, android.R.attr.textColorSecondary, 0xffa0a0a0);
+			color = isGlassTheme(context) ? 0x80FFFFFF :
+					resolveColor(context, android.R.attr.textColorSecondary, 0xffa0a0a0);
 			setContentDescription(context.getString(R.string.audio_effects_scale));
 		}
 
@@ -611,6 +683,14 @@ public final class AudioEffectsScreenView extends FrameLayout
 			this.enabledPref = enabledPref;
 			LinearLayout control = new LinearLayout(getContext());
 			control.setOrientation(LinearLayout.VERTICAL);
+			boolean isGlass = isGlassTheme();
+			if (isGlass) {
+				control.setBackground(getGlassCard(getContext(), 14f));
+				control.setPadding(dp(16), dp(12), dp(16), dp(12));
+				LinearLayout.LayoutParams ctrlParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+				ctrlParams.bottomMargin = dp(8);
+				control.setLayoutParams(ctrlParams);
+			}
 			LinearLayout header = createRow();
 			TextView label = textView(15);
 			label.setText(title);
@@ -622,6 +702,9 @@ public final class AudioEffectsScreenView extends FrameLayout
 			value.setSingleLine(true);
 			value.setMinHeight(dp(48));
 			value.setPadding(dp(8), 0, dp(4), 0);
+			if (isGlass) {
+				value.setTextColor(0xFF00E5FF);
+			}
 			header.addView(value, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
 			toggle = showSwitch ? new SwitchCompat(getContext()) : null;
 			if (toggle != null) {
@@ -629,6 +712,12 @@ public final class AudioEffectsScreenView extends FrameLayout
 				toggle.setMinWidth(dp(64));
 				toggle.setMinHeight(dp(48));
 				toggle.setContentDescription(getContext().getString(title));
+				if (isGlass) {
+					toggle.setThumbTintList(ColorStateList.valueOf(0xFF00E5FF));
+					toggle.setTrackTintList(new ColorStateList(new int[][]{
+							new int[]{android.R.attr.state_checked}, new int[]{}
+					}, new int[]{0x6600E5FF, 0x33FFFFFF}));
+				}
 				header.addView(toggle, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
 				toggle.setOnCheckedChangeListener((button, checked) -> {
 					if (!updating) store.applyBooleanPref(enabledPref, checked);
@@ -637,6 +726,11 @@ public final class AudioEffectsScreenView extends FrameLayout
 			control.addView(header, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
 			seek = new SeekBar(getContext());
 			seek.setPadding(0, 0, 0, 0);
+			if (isGlass) {
+				seek.setProgressTintList(ColorStateList.valueOf(0xFF00E5FF));
+				seek.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+				seek.setProgressBackgroundTintList(ColorStateList.valueOf(0x33FFFFFF));
+			}
 			control.addView(seek, new LinearLayout.LayoutParams(MATCH_PARENT, dp(48)));
 			seek.setMax(max - min);
 			seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
