@@ -128,6 +128,28 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		microphoneTest.setOnClickListener(v -> testMicrophone());
 		view.findViewById(R.id.initial_setup_continue).setOnClickListener(v -> applyAndContinue());
 		updateVoiceControls(voiceEnabled.isChecked());
+
+		if (activity.isGlassTheme()) {
+			View content = view.findViewById(R.id.initial_setup_nav_position).getParent() instanceof View ?
+					(View) view.findViewById(R.id.initial_setup_nav_position).getParent() : view;
+			content.setBackground(activity.getGlassCardDrawable(view.getContext(), 16f));
+			android.content.res.ColorStateList cyanTint = android.content.res.ColorStateList.valueOf(0xFF00E5FF);
+			android.content.res.ColorStateList trackTint = new android.content.res.ColorStateList(
+					new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+					new int[]{0x6600E5FF, 0x40FFFFFF}
+			);
+			voiceEnabled.setThumbTintList(cyanTint);
+			voiceEnabled.setTrackTintList(trackTint);
+			Button btnContinue = view.findViewById(R.id.initial_setup_continue);
+			if (btnContinue != null) {
+				btnContinue.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, true));
+				btnContinue.setTextColor(0xFF00E5FF);
+			}
+			if (microphoneTest != null) {
+				microphoneTest.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, true));
+				microphoneTest.setTextColor(0xFF00E5FF);
+			}
+		}
 	}
 
 	@Override

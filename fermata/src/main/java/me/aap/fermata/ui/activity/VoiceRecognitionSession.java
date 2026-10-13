@@ -162,6 +162,14 @@ final class VoiceRecognitionSession implements RecognitionListener,
 			layout.addView(image);
 			layout.addView(text);
 
+			if (activity.isGlassTheme()) {
+				layout.setBackground(activity.getGlassCardDrawable(context, 20f));
+				int pad = toIntPx(context, 16);
+				layout.setPadding(pad, pad, pad, pad);
+				image.setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+				text.setTextColor(ColorStateList.valueOf(0xFFE0F7FA));
+			}
+
 			if (textInput) {
 				int minKeyboardSize = toIntPx(activity.getContext(), 48);
 				int keyboardSize = Math.max(minKeyboardSize, size / 4);
@@ -173,7 +181,11 @@ final class VoiceRecognitionSession implements RecognitionListener,
 				layoutParams.setMargins(0, margin, 0, margin);
 				keyboard.setLayoutParams(layoutParams);
 				keyboard.setImageResource(R.drawable.keyboard);
-				keyboard.setImageTintList(ColorStateList.valueOf(imageColor));
+				if (activity.isGlassTheme()) {
+					keyboard.setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+				} else {
+					keyboard.setImageTintList(ColorStateList.valueOf(imageColor));
+				}
 				layout.setOnClickListener(view -> {
 					controller.cancel(generation);
 					promise.completeExceptionally(new OperationCanceledException());

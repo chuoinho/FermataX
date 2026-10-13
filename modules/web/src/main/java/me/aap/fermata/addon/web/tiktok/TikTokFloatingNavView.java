@@ -13,6 +13,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import me.aap.fermata.addon.web.R;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.glass.theme.GlassDrawables;
 
 /**
  * Floating capsule pill navigation bar for TikTok Web player.
@@ -88,6 +90,17 @@ public class TikTokFloatingNavView extends FrameLayout implements TikTokJsBridge
 		});
 
 		updatePlayPauseIcon(false);
+
+		MainActivityDelegate a = MainActivityDelegate.get(context);
+		if (a != null && a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			android.view.View root = findViewById(R.id.tiktokNavCapsuleRoot);
+			if (root != null) {
+				root.setBackground(GlassDrawables.createGlassPillDrawable(context, 26f, true));
+			}
+			if (btnPlayPause != null) {
+				btnPlayPause.setImageTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+			}
+		}
 	}
 
 	public void attach(@Nullable TikTokWebView web) {

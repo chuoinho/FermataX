@@ -79,7 +79,17 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		EditText t = createEditText(tb);
 		ConstraintLayout.LayoutParams lp = setLayoutParams(t, 0, WRAP_CONTENT);
 		lp.horizontalWeight = 2;
-		t.setBackgroundResource(me.aap.utils.R.color.tool_bar_edittext_bg);
+		MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
+		if (a != null && a.isGlassTheme()) {
+			t.setBackground(a.getGlassCardDrawable(tb.getContext(), 18f));
+			t.setTextColor(0xFFE0F7FA);
+			t.setHintTextColor(0x8080D8FF);
+			int padH = UiUtils.toIntPx(tb.getContext(), 12);
+			int padV = UiUtils.toIntPx(tb.getContext(), 6);
+			t.setPadding(padH, padV, padH, padV);
+		} else {
+			t.setBackgroundResource(me.aap.utils.R.color.tool_bar_edittext_bg);
+		}
 		t.setOnKeyListener((v, keyCode, event) -> onKey(f, t, keyCode, event));
 		t.setMaxLines(1);
 		t.setSingleLine(true);
