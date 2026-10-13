@@ -495,6 +495,15 @@ public class MediaItemView extends ConstraintLayout
 		}
 	}
 
+	public boolean isGlassTheme() {
+		try {
+			MainActivityDelegate a = getMainActivity();
+			return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+		} catch (Throwable e) {
+			return false;
+		}
+	}
+
 	private void setState(int surfaceType, boolean activated) {
 		Item item = getItem();
 		if ((item != null) && isTvSourceItem(item)) surfaceType = Typeface.BOLD;
@@ -505,6 +514,23 @@ public class MediaItemView extends ConstraintLayout
 		t.setTypeface(null, surfaceType);
 		t.setActivated(activated);
 		setActivated(activated);
+
+		if (isGlassTheme()) {
+			getTitle().setTextColor(activated ? 0xFF00E5FF : 0xFFFFFFFF);
+			LinearProgressIndicator p = getProgress();
+			if (p != null) {
+				p.setIndicatorColor(0xFF00E5FF);
+				p.setTrackColor(0x33FFFFFF);
+			}
+			MainActivityDelegate a = getMainActivity();
+			if (a != null) {
+				if (activated) {
+					setBackground(a.getGlassItemHighlightDrawable(getContext()));
+				} else {
+					setBackground(a.getGlassCardDrawable(getContext(), 12f));
+				}
+			}
+		}
 	}
 
 	public void refreshCheckbox() {

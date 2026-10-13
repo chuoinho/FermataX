@@ -179,6 +179,13 @@ public class FilePickerFragment extends GenericDialogFragment implements
 		v.setItemsChangeListener(this);
 		setFilter(v);
 		if (state.supplier != null) v.setItems(requireNonNull(state.supplier));
+		ActivityDelegate a = getActivityDelegate();
+		if (a != null && a.isGlassTheme()) {
+			v.setBackground(a.getGlassCardDrawable(getContext(), 16f));
+			v.setClipToPadding(false);
+			int pad = (int) (12 * getResources().getDisplayMetrics().density);
+			v.setPadding(pad, pad, pad, pad);
+		}
 	}
 
 	private void setFilter(ListView<VirtualResource> v) {

@@ -403,6 +403,18 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		getListView().setVisibility(content ? View.VISIBLE : View.GONE);
 		panel.setVisibility(content ? View.GONE : View.VISIBLE);
 		progress.setVisibility(state == LoadState.LOADING ? View.VISIBLE : View.GONE);
+		MainActivityDelegate a = getMainActivity();
+		if (a != null && a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			if (panel != null) {
+				panel.setBackground(a.getGlassCardDrawable(requireContext(), 16f));
+			}
+			if (action != null) {
+				boolean isNight = (requireContext().getResources().getConfiguration().uiMode &
+						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+				action.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(requireContext(), 20f, isNight));
+				action.setTextColor(0xFF00E5FF);
+			}
+		}
 		switch (state) {
 			case LOADING -> {
 				message.setText(R.string.loading);
