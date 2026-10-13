@@ -1,5 +1,6 @@
 package me.aap.utils.ui.fragment;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,7 @@ import androidx.annotation.Nullable;
 
 import me.aap.utils.R;
 import me.aap.utils.function.Consumer;
+import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
@@ -74,7 +76,15 @@ public class GenericFragment extends ActivityFragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
 													 @Nullable Bundle savedInstanceState) {
-		return new LinearLayout(getContext());
+		LinearLayout v = new LinearLayout(getContext());
+		ActivityDelegate a = ActivityDelegate.get(getContext());
+		if (a != null && a.isGlassTheme()) {
+			Drawable glass = a.getGlassCardDrawable(getContext(), 20f);
+			if (glass != null) {
+				v.setBackground(glass);
+			}
+		}
+		return v;
 	}
 
 	@Override

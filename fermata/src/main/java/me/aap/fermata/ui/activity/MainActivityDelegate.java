@@ -1181,6 +1181,9 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	public DialogBuilder createDialogBuilder(Context ctx) {
+		if (isGlassTheme()) {
+			return new me.aap.fermata.ui.glass.dialog.GlassDialogBuilder(ctx, getContextMenu());
+		}
 		return DialogBuilder.create(getContextMenu());
 	}
 
