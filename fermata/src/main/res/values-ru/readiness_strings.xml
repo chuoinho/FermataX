@@ -36,4 +36,7 @@
 	<string name="readiness_control_available">The Control channel is ready.</string>
 	<string name="readiness_control_unavailable">The Control channel is not ready.</string>
 	<string name="readiness_settings_unavailable">This settings page is not available on this device.</string>
+	<string name="readiness_nav_notification_access">Служба уведомлений навигации</string>
+	<string name="readiness_nav_notification_access_granted">Включено. Позволяет отображать пошаговую навигацию на панели Glass.</string>
+	<string name="readiness_nav_notification_access_not_granted">Отключено. Нажмите, чтобы разрешить доступ к уведомлениям для пошаговой навигации.</string>
 </resources>

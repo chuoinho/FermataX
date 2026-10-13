@@ -526,6 +526,9 @@
     <string name="legacy_preset_migration_notice">A predefinição anterior do equalizador do seu dispositivo não pôde ser convertida automaticamente. Escolha ou ajuste o equalizador uma vez.</string>
 
     <string name="theme_material_you">Material You / Bento</string>
+    <string name="theme_glass">Glassmorphism</string>
+    <string name="theme_aa">Tema do Android Auto</string>
+    <string name="theme_aa_sub">Tema da tela do carro: %1$s</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">Localizar veículo</string>

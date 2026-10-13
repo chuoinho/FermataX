@@ -36,4 +36,7 @@
 	<string name="readiness_control_available">The Control channel is ready.</string>
 	<string name="readiness_control_unavailable">The Control channel is not ready.</string>
 	<string name="readiness_settings_unavailable">This settings page is not available on this device.</string>
+	<string name="readiness_nav_notification_access">Ouvinte de notificações de navegação</string>
+	<string name="readiness_nav_notification_access_granted">Ativado. Permite espelhar a navegação passo a passo no painel Glass.</string>
+	<string name="readiness_nav_notification_access_not_granted">Desativado. Toque para permitir o acesso a notificações para navegação passo a passo.</string>
 </resources>

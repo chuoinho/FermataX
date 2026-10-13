@@ -526,6 +526,9 @@
     <string name="legacy_preset_migration_notice">無法自動轉換您先前裝置的等化器預設值。請選擇或調整一次等化器。</string>
 
     <string name="theme_material_you">Material You / 便當風格</string>
+    <string name="theme_glass">毛玻璃主題 (Glassmorphism)</string>
+    <string name="theme_aa">Android Auto 主題</string>
+    <string name="theme_aa_sub">車載螢幕主題：%1$s</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">尋找車輛</string>

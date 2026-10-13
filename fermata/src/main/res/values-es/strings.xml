@@ -529,6 +529,9 @@ Por favor, reinicie la aplicación.</string>
     <string name="legacy_preset_migration_notice">No se pudo convertir automáticamente el preajuste del ecualizador de tu dispositivo anterior. Elige o ajusta el ecualizador una vez.</string>
 
     <string name="theme_material_you">Material You / Bento</string>
+    <string name="theme_glass">Glassmorphism</string>
+    <string name="theme_aa">Tema de Android Auto</string>
+    <string name="theme_aa_sub">Tema de pantalla del coche: %1$s</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">Buscar vehículo</string>

@@ -521,6 +521,9 @@
     <string name="legacy_preset_migration_notice">Не удалось автоматически преобразовать предыдущий пресет эквалайзера устройства. Выберите или настройте эквалайзер один раз.</string>
 
     <string name="theme_material_you">Material You / Bento</string>
+    <string name="theme_glass">Стеклянная тема (Glassmorphism)</string>
+    <string name="theme_aa">Тема Android Auto</string>
+    <string name="theme_aa_sub">Тема экрана автомобиля: %1$s</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">Поиск машины</string>

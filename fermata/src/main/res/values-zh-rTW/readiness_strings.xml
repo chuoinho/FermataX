@@ -36,4 +36,7 @@
 	<string name="readiness_control_available">The Control channel is ready.</string>
 	<string name="readiness_control_unavailable">The Control channel is not ready.</string>
 	<string name="readiness_settings_unavailable">This settings page is not available on this device.</string>
+	<string name="readiness_nav_notification_access">導航通知監聽器</string>
+	<string name="readiness_nav_notification_access_granted">已啟用。允許在 Glass 儀表板上鏡像逐向導航。</string>
+	<string name="readiness_nav_notification_access_not_granted">已停用。輕觸以允許逐向導航的通知存取權限。</string>
 </resources>
