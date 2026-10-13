@@ -51,7 +51,17 @@ public class OverlayMenuView extends ScrollView implements OverlayMenu {
 				androidx.appcompat.R.attr.popupMenuStyle,
 				R.style.Theme_Utils_Base_PopupMenuStyle);
 		headerColor = ta.getColor(OverlayMenuView_colorPrimarySurface, Color.TRANSPARENT);
-		setBackgroundColor(ta.getColor(OverlayMenuView_android_colorBackground, Color.TRANSPARENT));
+		ActivityDelegate a = ActivityDelegate.get(ctx);
+		if (a != null && a.isGlassTheme()) {
+			Drawable glassCard = a.getGlassCardDrawable(ctx, 16f);
+			if (glassCard != null) {
+				setBackground(glassCard);
+			} else {
+				setBackgroundColor(ta.getColor(OverlayMenuView_android_colorBackground, Color.TRANSPARENT));
+			}
+		} else {
+			setBackgroundColor(ta.getColor(OverlayMenuView_android_colorBackground, Color.TRANSPARENT));
+		}
 		ta.recycle();
 	}
 
@@ -64,8 +74,15 @@ public class OverlayMenuView extends ScrollView implements OverlayMenu {
 	}
 
 	private void showMenu(MenuBuilder builder) {
-		ActivityDelegate.get(getContext()).setActiveMenu(this);
+		ActivityDelegate a = ActivityDelegate.get(getContext());
+		a.setActiveMenu(this);
 		this.builder = builder;
+		if (a.isGlassTheme()) {
+			Drawable glassCard = a.getGlassCardDrawable(getContext(), 16f);
+			if (glassCard != null) {
+				setBackground(glassCard);
+			}
+		}
 		setVisibility(VISIBLE);
 
 		ViewGroup g = builder.view;
@@ -309,7 +326,12 @@ public class OverlayMenuView extends ScrollView implements OverlayMenu {
 			v.setLayoutParams(p);
 			v.setElevation(elevation);
 			v.setTranslationZ(elevation);
-			v.setBackgroundColor(headerColor);
+			if (ActivityDelegate.get(ctx).isGlassTheme()) {
+				v.setTextColor(0xFF00E5FF);
+				v.setBackgroundColor(Color.TRANSPARENT);
+			} else {
+				v.setBackgroundColor(headerColor);
+			}
 			v.setPadding(0, padding, 0, padding);
 			view.addView(v, 0);
 			v.setVisibility(VISIBLE);

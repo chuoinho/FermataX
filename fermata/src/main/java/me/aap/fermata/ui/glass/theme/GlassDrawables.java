@@ -39,4 +39,23 @@ public final class GlassDrawables {
 		gradient.setColors(new int[]{colors.getNenA(), colors.getNenB(), colors.getNenC()});
 		return gradient;
 	}
+
+	public static Drawable createGlassItemHighlightDrawable(Context context, boolean isNight) {
+		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
+		android.graphics.drawable.StateListDrawable sld = new android.graphics.drawable.StateListDrawable();
+
+		GradientDrawable active = new GradientDrawable();
+		active.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
+		active.setCornerRadius(12f * density);
+		active.setStroke(Math.max(1, (int) (1.0f * density)), 0x8000E5FF);
+
+		GradientDrawable normal = new GradientDrawable();
+		normal.setColor(android.graphics.Color.TRANSPARENT);
+
+		sld.addState(new int[]{android.R.attr.state_focused}, active);
+		sld.addState(new int[]{android.R.attr.state_selected}, active);
+		sld.addState(new int[]{android.R.attr.state_pressed}, active);
+		sld.addState(new int[]{}, normal);
+		return sld;
+	}
 }

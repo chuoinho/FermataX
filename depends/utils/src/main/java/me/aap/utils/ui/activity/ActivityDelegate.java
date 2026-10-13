@@ -22,6 +22,7 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.content.res.Resources.Theme;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -330,6 +331,20 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 
 	public DialogBuilder createDialogBuilder(Context ctx) {
 		return getAppActivity().createDialogBuilder(ctx);
+	}
+
+	public boolean isGlassTheme() {
+		return false;
+	}
+
+	@Nullable
+	public Drawable getGlassCardDrawable(Context ctx, float radiusDp) {
+		return null;
+	}
+
+	@Nullable
+	public Drawable getGlassItemHighlightDrawable(Context ctx) {
+		return null;
 	}
 
 	@NonNull

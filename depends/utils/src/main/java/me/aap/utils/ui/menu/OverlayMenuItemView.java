@@ -105,7 +105,21 @@ public class OverlayMenuItemView extends AppCompatTextView implements OverlayMen
 		setFocusable(true);
 		setOnClickListener(this);
 		setOnLongClickListener(this);
-		setBackgroundResource(R.drawable.focusable_shape_transparent);
+		ActivityDelegate a = ActivityDelegate.get(getContext());
+		if (a != null && a.isGlassTheme()) {
+			setTextColor(0xFFFFFFFF);
+			Drawable highlight = a.getGlassItemHighlightDrawable(getContext());
+			if (highlight != null) {
+				setBackground(highlight);
+			} else {
+				setBackgroundResource(R.drawable.focusable_shape_transparent);
+			}
+			if (iconTint == null) {
+				TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(0xFF00E5FF));
+			}
+		} else {
+			setBackgroundResource(R.drawable.focusable_shape_transparent);
+		}
 		setMovementMethod(new ScrollingMovementMethod());
 
 		if (scale != 1F) {
@@ -220,5 +234,14 @@ public class OverlayMenuItemView extends AppCompatTextView implements OverlayMen
 		Drawable[] d = getCompoundDrawables();
 		d[2] = (icon == ID_NULL) ? null : AppCompatResources.getDrawable(getContext(), icon);
 		setCompoundDrawablesWithIntrinsicBounds(d[0], d[1], d[2], d[3]);
+	}
+
+	@Override
+	public void setSelected(boolean selected) {
+		super.setSelected(selected);
+		ActivityDelegate a = ActivityDelegate.get(getContext());
+		if (a != null && a.isGlassTheme()) {
+			setTextColor(selected ? 0xFF00E5FF : 0xFFFFFFFF);
+		}
 	}
 }

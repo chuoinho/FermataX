@@ -36,6 +36,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
@@ -1181,6 +1182,23 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public DialogBuilder createDialogBuilder(Context ctx) {
 		return DialogBuilder.create(getContextMenu());
+	}
+
+	@Override
+	public boolean isGlassTheme() {
+		return getPrefs().isGlassTheme(isCarActivity());
+	}
+
+	@Override
+	public Drawable getGlassCardDrawable(Context ctx, float radiusDp) {
+		boolean isNight = (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, radiusDp, isNight);
+	}
+
+	@Override
+	public Drawable getGlassItemHighlightDrawable(Context ctx) {
+		boolean isNight = (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassItemHighlightDrawable(ctx, isNight);
 	}
 
 	public void addPlaylistMenu(OverlayMenu.Builder builder,
