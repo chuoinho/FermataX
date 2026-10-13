@@ -347,6 +347,16 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 		return null;
 	}
 
+	@Nullable
+	public View createSwitch(Context ctx) {
+		return null;
+	}
+
+	@Nullable
+	public View createSlider(Context ctx) {
+		return null;
+	}
+
 	@NonNull
 	public FragmentManager getSupportFragmentManager() {
 		return getAppActivity().getSupportFragmentManager();

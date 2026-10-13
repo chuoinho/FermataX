@@ -1204,6 +1204,22 @@ public class MainActivityDelegate extends ActivityDelegate
 		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassItemHighlightDrawable(ctx, isNight);
 	}
 
+	@Override
+	public View createSwitch(Context ctx) {
+		if (isGlassTheme()) {
+			return new me.aap.fermata.ui.glass.widget.GlassSwitch(ctx);
+		}
+		return null;
+	}
+
+	@Override
+	public View createSlider(Context ctx) {
+		if (isGlassTheme()) {
+			return new me.aap.fermata.ui.glass.widget.GlassSlider(ctx);
+		}
+		return null;
+	}
+
 	public void addPlaylistMenu(OverlayMenu.Builder builder,
 			FutureSupplier<List<PlayableItem>> selection) {
 		addPlaylistMenu(builder, () -> selection, () -> "");

@@ -207,12 +207,46 @@ public class PreferenceView extends ConstraintLayout {
 
 	private void setPreferenceSet(PreferenceViewAdapter adapter, PreferenceSet set, Opts o) {
 		setPreference(R.layout.set_pref_layout, o);
+		ActivityDelegate a = ActivityDelegate.get(getContext());
+		if (a != null && a.isGlassTheme()) {
+			View chevron = findViewById(R.id.pref_value);
+			if (chevron instanceof ImageView) {
+				((ImageView) chevron).setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+			}
+		}
 		setOnClickListener(v -> adapter.setPreferenceSet(set));
 	}
 
 	private void setBooleanPreference(BooleanOpts o) {
 		setPreference(R.layout.boolean_pref_layout, o);
 		CheckBox b = findViewById(R.id.pref_value);
+		ActivityDelegate a = ActivityDelegate.get(getContext());
+		if (a != null && a.isGlassTheme()) {
+			View sw = a.createSwitch(getContext());
+			if (sw instanceof android.widget.Checkable) {
+				android.widget.Checkable checkable = (android.widget.Checkable) sw;
+				ViewGroup parent = (ViewGroup) b.getParent();
+				int index = parent.indexOfChild(b);
+				ViewGroup.LayoutParams lp = b.getLayoutParams();
+				parent.removeViewAt(index);
+				sw.setId(b.getId());
+				sw.setLayoutParams(lp);
+				checkable.setChecked(o.store.getBooleanPref(o.pref));
+				sw.setOnClickListener(v -> {
+					checkable.toggle();
+					o.store.applyBooleanPref(o.removeDefault, o.pref, checkable.isChecked());
+				});
+				setOnClickListener(v -> {
+					checkable.toggle();
+					o.store.applyBooleanPref(o.removeDefault, o.pref, checkable.isChecked());
+				});
+				parent.addView(sw, index);
+				setPrefListener((s, p) -> {
+					if (p.contains(o.pref)) checkable.setChecked(o.store.getBooleanPref(o.pref));
+				});
+				return;
+			}
+		}
 		b.setChecked(o.store.getBooleanPref(o.pref));
 		b.setOnCheckedChangeListener(
 				(v, checked) -> o.store.applyBooleanPref(o.removeDefault, o.pref, checked));
@@ -453,6 +487,14 @@ public class PreferenceView extends ConstraintLayout {
 		img.setImageResource(o.browseIcon);
 		t.setNextFocusRightId(img.getId());
 		img.setNextFocusLeftId(t.getId());
+		ActivityDelegate ad = ActivityDelegate.get(getContext());
+		if (ad != null && ad.isGlassTheme()) {
+			img.setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+			android.graphics.drawable.Drawable bg = ad.getGlassCardDrawable(getContext(), 12f);
+			if (bg != null) img.setBackground(bg);
+			int pad = (int) toPx(getContext(), 6);
+			img.setPadding(pad, pad, pad, pad);
+		}
 
 		OnClickListener onClick = v -> {
 			ActivityDelegate a = ActivityDelegate.get(getContext());
@@ -544,6 +586,11 @@ public class PreferenceView extends ConstraintLayout {
 		setPreference(R.layout.number_pref_layout, o);
 		EditText t = activityEditText(R.id.pref_value);
 		SeekBar sb = findViewById(R.id.pref_footer);
+		ActivityDelegate a = ActivityDelegate.get(getContext());
+		if (a != null && a.isGlassTheme()) {
+			sb.setProgressTintList(ColorStateList.valueOf(0xFF00E5FF));
+			sb.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+		}
 		if (o.inputType != 0) t.setInputType(o.inputType);
 		boolean[] ignoreChange = new boolean[1];
 		String initValue = get.get();
@@ -805,6 +852,19 @@ public class PreferenceView extends ConstraintLayout {
 		setTextAppearance(ctx, titleView, titleTextAppearance, scale);
 		setTextAppearance(ctx, subtitleView, subtitleTextAppearance, scale);
 		setFooterTextAppearance(ctx, scale);
+
+		ActivityDelegate a = ActivityDelegate.get(ctx);
+		if (a != null && a.isGlassTheme()) {
+			titleView.setTextColor(0xFFFFFFFF);
+			subtitleView.setTextColor(0x99FFFFFF);
+			if (iconView.getVisibility() == VISIBLE) {
+				iconView.setImageTintList(ColorStateList.valueOf(0xFF00E5FF));
+			}
+			android.graphics.drawable.Drawable itemHighlight = a.getGlassItemHighlightDrawable(ctx);
+			if (itemHighlight != null) {
+				setBackground(itemHighlight);
+			}
+		}
 
 		if (opts.visibility != null) {
 			if (opts.visibility.get()) {
