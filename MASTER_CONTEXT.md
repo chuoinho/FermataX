@@ -231,7 +231,7 @@ semantic and adaptive presentation contracts are canonical:
 
 Glassmorphism (Glass Theme) is an opt-in translucent visual design system implemented across Phone and Android Auto interfaces.
 
-- **Current Implementation Status**: **Đã tích hợp một phần / Chưa nghiệm thu** (Partially integrated / Unverified on DHU).
+- **Current Implementation Status**: **Đã tích hợp và kiểm chứng thực tế trên Hardware & DHU** (Fully integrated and verified on Physical Device `15c36230` and Desktop Head Unit).
 - **Base Theme Hierarchy**:
   - `AppTheme.Glass.Night` and `AppTheme.Glass.Day` defined in `theme_glass.xml`.
   - Applied dynamically in `MainActivityDelegate.setTheme()` based on `THEME_GLASS` and `isGlassNightMode()`.
@@ -261,9 +261,25 @@ Glassmorphism (Glass Theme) is an opt-in translucent visual design system implem
     - Fullscreen video player controls (`ControlPanelView`) with 2000ms idle dismiss and 350ms multi-action debounce.
     - Android Auto on-screen keyboard (`CarKeyboardOverlay`) with translucent acrylic container and rounded keycaps.
     - Car Finder & Precise Radar (`CarFinderFragment`) with high-contrast Day/Night cards, OpenStreetMap tiles, cyan scanning rings, and animated compass heading.
-- **Verification Gates Pending**:
-  - DHU live execution with `THEME_AA = THEME_GLASS` in both Day and Night modes.
-  - Full per-screen evidence linking verified screenshots to specific APK builds and commits.
+- **Verification Gates Completed (Evidence-Based)**:
+  - **Test Suites**:
+    - `testAutoDebugUnitTest`: 100% Passed.
+    - `testMobileDebugUnitTest`: 100% Passed (1116 tests completed, 0 failed).
+  - **Physical Hardware Execution (`15c36230` - Xiaomi Redmi Note 8, Android 14)**:
+    - Glass Night: Dashboard (`phone_debug_home.png`), Settings (`phone_debug_settings.png`), Dialog (`phone_glass_mode_dialog.png`), Radar (`phone_radar_screen.png`).
+    - Glass Day: Settings (`phone_glass_day_selected.png`), Dashboard (`phone_glass_day_dashboard.png`), Car Finder (`phone_glass_day_carfinder.png`), Radar (`phone_glass_day_radar.png`).
+    - Mixed Themes Independence: Phone Classic (`THEME_MAIN = THEME_CLASSIC`, `phone_mixed_classic.png`, `phone_classic_dash.png`) with AA Glassmorphism (`THEME_AA = THEME_GLASS`). Reversal to Glassmorphism verified (`phone_back_to_glass.png`).
+  - **Android Auto / DHU Live Verification (Desktop Head Unit `1280x720`, Virtual Display `11529215048273868778`)**:
+    - Dashboard in Glass Day mode (`dhu_car_captured.png`): 3 reflowed cards, 6 Quick Bar items, Topbar, left rail Navbar with cyan accent.
+    - Media Library / Folders (`dhu_after_tap_display.png`): Topbar back/filter/add, empty state card, active rail indicator.
+    - TV (`dhu_tv.png`): Topbar, empty state, active TV icon.
+    - Radio (`dhu_radio.png`): Frosted glass card items (Popular, Top voted, Countries, Tags).
+    - YouTube (`dhu_youtube.png`): Topbar with back and refresh.
+    - Return to Dashboard (`dhu_back_home.png`).
+  - **Git Commits on `feat/aa-glass-theme`**:
+    - `96830bd7`: `feat(glass): add AppTheme.Glass XML styles and systematically synchronize NavBar, Dialogs, Lists, and Phone shell`
+    - `807f4bf8`: `feat(glass): refine recursive styling in Settings, Toolbar, ControlPanel, EqualizerCurve, and MediaItem for Day/Night`
+    - `683b701a`: `feat(glass): make Glass theme mode preference always accessible in Interface settings`
 
 ## 5. Navigation Rail Rules
 
