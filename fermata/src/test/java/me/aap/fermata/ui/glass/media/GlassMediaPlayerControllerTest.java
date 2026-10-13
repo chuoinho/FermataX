@@ -76,4 +76,29 @@ public class GlassMediaPlayerControllerTest {
         controller.updatePlayback("Blinding Lights", "The Weeknd", 60000L, 200000L, true, true);
         view.updateFromController();
     }
+
+    @Test
+    public void testPlaybackTimelineInterpolation() {
+        GlassMediaPlayerController controller = new GlassMediaPlayerController();
+        me.aap.fermata.media.lib.MediaLib.PlayableItem mockItem =
+                (me.aap.fermata.media.lib.MediaLib.PlayableItem) java.lang.reflect.Proxy.newProxyInstance(
+                        me.aap.fermata.media.lib.MediaLib.PlayableItem.class.getClassLoader(),
+                        new Class<?>[]{me.aap.fermata.media.lib.MediaLib.PlayableItem.class},
+                        (proxy, method, args) -> switch (method.getName()) {
+                            case "equals" -> proxy == args[0];
+                            case "hashCode" -> System.identityHashCode(proxy);
+                            case "toString" -> "Test Track";
+                            case "getName" -> "Test Track";
+                            default -> null;
+                        });
+        me.aap.fermata.media.service.PlaybackTimelineSnapshot timeline =
+                new me.aap.fermata.media.service.PlaybackTimelineSnapshot(
+                        mockItem, 1L, me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.SEEKABLE,
+                        10000L, 60000L, true);
+
+        controller.onPlaybackTimelineChanged(timeline);
+        assertTrue(controller.isPlaying());
+        assertTrue(controller.getPositionMs() >= 10000L);
+        assertEquals(60000L, controller.getDurationMs());
+    }
 }

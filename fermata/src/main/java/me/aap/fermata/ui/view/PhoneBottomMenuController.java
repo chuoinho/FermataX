@@ -17,6 +17,12 @@ public final class PhoneBottomMenuController {
 	public PhoneBottomMenuController(MainActivityDelegate activity, BottomNavigationView view) {
 		this.activity = activity;
 		this.view = view;
+		if (activity.getPrefs().isGlassTheme(activity.isCarActivity())) {
+			android.content.Context ctx = view.getContext();
+			boolean isNight = (ctx.getResources().getConfiguration().uiMode &
+					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			view.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+		}
 		view.setOnItemSelectedListener(item -> {
 			if (rendering) return true;
 			return activity.showPhoneRoot(item.getItemId());

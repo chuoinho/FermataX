@@ -128,6 +128,11 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			a.getToolBar().addBroadcastListener(this);
 			b.getLib().getPrefs().addBroadcastListener(this);
 			b.addBroadcastListener(this);
+			if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
+				boolean isNight = (getResources().getConfiguration().uiMode &
+						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+				me.aap.fermata.ui.glass.medialib.GlassMediaLibDecorator.apply(view, v, isNight);
+			}
 			Log.d("MediaLibFragment view created: ", this);
 		});
 	}

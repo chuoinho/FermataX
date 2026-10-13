@@ -64,10 +64,22 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 		setClipToPadding(true);
 		setVerticalScrollBarEnabled(false);
 		initialized = true;
-		setBackgroundResource(isRight() ? R.drawable.aa_projected_nav_rail_bg_right :
-				R.drawable.aa_projected_nav_rail_bg_left);
+		applyRailBackground();
 		ensureRailStructure();
 		setSize(getMainActivity().getPrefs().getNavBarSizePref(getMainActivity()));
+	}
+
+	private void applyRailBackground() {
+		MainActivityDelegate a = getMainActivity();
+		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			Context ctx = getContext();
+			boolean isNight = (getResources().getConfiguration().uiMode &
+					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+		} else {
+			setBackgroundResource(isRight() ? R.drawable.aa_projected_nav_rail_bg_right :
+					R.drawable.aa_projected_nav_rail_bg_left);
+		}
 	}
 
 	@Override

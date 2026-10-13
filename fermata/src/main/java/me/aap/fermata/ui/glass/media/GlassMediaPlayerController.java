@@ -3,6 +3,7 @@ package me.aap.fermata.ui.glass.media;
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 
@@ -11,6 +12,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Locale;
 
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
@@ -27,12 +29,15 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
     }
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Runnable progressTicker = this::onTick;
 
     private String displayedTitle = "No Media Playing";
     private String displayedArtist = "FermataX";
     private Bitmap albumArt = null;
     private long positionMs = 0L;
     private long durationMs = 0L;
+    private long lastPositionUpdateTime = 0L;
+    private float playbackSpeed = 1.0f;
     private boolean playing = false;
     private boolean favorite = false;
 
@@ -60,6 +65,7 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
     }
 
     public synchronized void unbind() {
+        stopTicker();
         if (binder != null) {
             binder.removeBroadcastListener(this);
             binder = null;
@@ -96,6 +102,10 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
         boolean isPlay = state != null && state.getState() == PlaybackStateCompat.STATE_PLAYING;
         long pos = state != null ? state.getPosition() : 0L;
         boolean fav = item != null && item.isFavoriteItem();
+        if (state != null) {
+            float sp = state.getPlaybackSpeed();
+            this.playbackSpeed = sp > 0 ? sp : 1.0f;
+        }
 
         updatePlayback(title, artist, pos, duration, isPlay, fav);
         this.albumArt = art;
@@ -119,6 +129,10 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
 
         boolean isPlay = state != null && state.getState() == PlaybackStateCompat.STATE_PLAYING;
         long pos = state != null ? state.getPosition() : 0L;
+        if (state != null) {
+            float sp = state.getPlaybackSpeed();
+            this.playbackSpeed = sp > 0 ? sp : 1.0f;
+        }
 
         updatePlayback(title, artist, pos, duration, isPlay, false);
         this.albumArt = art;
@@ -132,15 +146,19 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
         this.durationMs = Math.max(0L, durationMs);
         this.playing = isPlaying;
         this.favorite = isFavorite;
+        this.lastPositionUpdateTime = SystemClock.elapsedRealtime();
+        updateTicker();
         notifyListener();
     }
 
     public synchronized void resetToIdle() {
+        stopTicker();
         this.displayedTitle = "No Media Playing";
         this.displayedArtist = "FermataX";
         this.albumArt = null;
         this.positionMs = 0L;
         this.durationMs = 0L;
+        this.lastPositionUpdateTime = 0L;
         this.playing = false;
         this.favorite = false;
         notifyListener();
@@ -226,9 +244,51 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
 
     @Override
     public void onPlaybackTimelineChanged(PlaybackTimelineSnapshot snapshot) {
-        if (binder != null) {
-            applySnapshot(binder.getPlaybackSnapshot());
+        if (snapshot == null) return;
+        synchronized (this) {
+            this.positionMs = Math.max(0L, snapshot.positionMillis());
+            if (snapshot.durationMillis() > 0L) {
+                this.durationMs = snapshot.durationMillis();
+            }
+            this.playing = snapshot.playing();
+            this.lastPositionUpdateTime = SystemClock.elapsedRealtime();
+            updateTicker();
         }
+        notifyListener();
+    }
+
+    private void onTick() {
+        synchronized (this) {
+            if (!playing) return;
+            if (binder != null) {
+                MediaEngine eng = (binder.getMediaSessionCallback() != null) ?
+                        binder.getMediaSessionCallback().getEngine() : null;
+                if (eng != null) {
+                    eng.getPosition().main().onSuccess(pos -> {
+                        if (pos != null && pos >= 0L) {
+                            synchronized (GlassMediaPlayerController.this) {
+                                GlassMediaPlayerController.this.positionMs = pos;
+                                GlassMediaPlayerController.this.lastPositionUpdateTime = SystemClock.elapsedRealtime();
+                            }
+                            notifyListener();
+                        }
+                    });
+                }
+            }
+            updateTicker();
+        }
+        notifyListener();
+    }
+
+    private synchronized void updateTicker() {
+        mainHandler.removeCallbacks(progressTicker);
+        if (playing) {
+            mainHandler.postDelayed(progressTicker, 1000);
+        }
+    }
+
+    private synchronized void stopTicker() {
+        mainHandler.removeCallbacks(progressTicker);
     }
 
     public String getDisplayedTitle() {
@@ -244,8 +304,16 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
         return albumArt;
     }
 
-    public long getPositionMs() {
-        return positionMs;
+    public synchronized long getPositionMs() {
+        if (!playing || lastPositionUpdateTime <= 0L) {
+            return positionMs;
+        }
+        long delta = SystemClock.elapsedRealtime() - lastPositionUpdateTime;
+        long current = positionMs + (long) (delta * playbackSpeed);
+        if (durationMs > 0L) {
+            current = Math.min(current, durationMs);
+        }
+        return Math.max(0L, current);
     }
 
     public long getDurationMs() {

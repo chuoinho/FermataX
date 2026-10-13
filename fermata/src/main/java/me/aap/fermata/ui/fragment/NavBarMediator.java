@@ -238,14 +238,42 @@ public class NavBarMediator extends PrefNavBarMediator
 			f.setTitle(item.getContext().getString(R.string.about));
 			f.setContentProvider(g -> {
 				Context ctx = g.getContext();
-				ScalableTextView v = new ScalableTextView(ctx);
+				boolean isNight = (ctx.getResources().getConfiguration().uiMode &
+						android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+				boolean isGlass = a.getPrefs().isGlassTheme(a.isCarActivity());
 				String url = "https://github.com/chuoinho/FermataX";
 				String html = ctx.getString(R.string.about_html, VERSION_NAME, VERSION_CODE, url);
-				int pad = UiUtils.toIntPx(ctx, 10);
-				v.setPadding(pad, pad, pad, pad);
-				v.setText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY));
-				v.setOnClickListener(t -> openUrl(t.getContext(), url));
-				g.addView(v);
+
+				if (isGlass) {
+					g.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+						int w = r - l;
+						int h = b - t;
+						if (w > 0 && h > 0) {
+							g.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createBackgroundGradient(w, h, isNight));
+						}
+					});
+					g.setBackgroundColor(0xFF0A0F1D);
+					int padOuter = me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 16);
+					g.setPadding(padOuter, padOuter, padOuter, padOuter);
+
+					android.widget.FrameLayout card = new android.widget.FrameLayout(ctx);
+					card.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 20f, isNight));
+					int cardPad = me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 20);
+					card.setPadding(cardPad, cardPad, cardPad, cardPad);
+
+					ScalableTextView v = new ScalableTextView(ctx);
+					v.setText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY));
+					v.setOnClickListener(t -> openUrl(t.getContext(), url));
+					card.addView(v);
+					g.addView(card);
+				} else {
+					ScalableTextView v = new ScalableTextView(ctx);
+					int pad = UiUtils.toIntPx(ctx, 10);
+					v.setPadding(pad, pad, pad, pad);
+					v.setText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY));
+					v.setOnClickListener(t -> openUrl(t.getContext(), url));
+					g.addView(v);
+				}
 			});
 			return true;
 		} else if (itemId == R.id.settings_fragment) {

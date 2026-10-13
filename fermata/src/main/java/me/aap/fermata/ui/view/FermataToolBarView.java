@@ -33,9 +33,20 @@ public class FermataToolBarView extends ToolBarView {
 	@Override
 	protected void onAttachedToWindow() {
 		super.onAttachedToWindow();
+		applyGlassThemeIfNeeded();
 		// Base construction may attach a fragment mediator before MainActivityDelegate stores this view.
 		// Reconcile canonical Back/title state once the real toolbar is attached to the activity tree.
 		post(this::refreshCanonicalTopBar);
+	}
+
+	private void applyGlassThemeIfNeeded() {
+		MainActivityDelegate a = MainActivityDelegate.get(getContext());
+		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			Context ctx = getContext();
+			boolean isNight = (getResources().getConfiguration().uiMode &
+					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+		}
 	}
 
 	@Override
@@ -88,11 +99,22 @@ public class FermataToolBarView extends ToolBarView {
 	@Override
 	public void setSize(float scale) {
 		super.setSize(scale);
-		if (!isCarInterface()) return;
-
-		setBackgroundResource(R.drawable.aa_top_bar_bg);
-		int horizontalPadding = UiUtils.toIntPx(getContext(), 14);
-		setPadding(horizontalPadding, 0, horizontalPadding, 0);
+		MainActivityDelegate a = MainActivityDelegate.get(getContext());
+		boolean isGlass = a.getPrefs().isGlassTheme(a.isCarActivity());
+		if (isGlass) {
+			Context ctx = getContext();
+			boolean isNight = (getResources().getConfiguration().uiMode &
+					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+			int horizontalPadding = UiUtils.toIntPx(ctx, 14);
+			setPadding(horizontalPadding, 0, horizontalPadding, 0);
+		} else if (isCarInterface()) {
+			setBackgroundResource(R.drawable.aa_top_bar_bg);
+			int horizontalPadding = UiUtils.toIntPx(getContext(), 14);
+			setPadding(horizontalPadding, 0, horizontalPadding, 0);
+		} else {
+			return;
+		}
 
 		int height = getLayoutParams().height;
 		float heightDp = height / getResources().getDisplayMetrics().density;

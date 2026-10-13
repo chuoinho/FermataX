@@ -74,6 +74,7 @@ public class ControlPanelView extends ConstraintLayout
 	private byte mask;
 	private View gestureSource;
 	private long scrollStamp;
+	private long lastControlsShowTimestamp;
 	private boolean preparationControlsVisible;
 	private boolean textInputActive;
 
@@ -388,13 +389,31 @@ public class ControlPanelView extends ConstraintLayout
 	@Override
 	public boolean onDoubleTap(MotionEvent e) {
 		if (!(gestureSource instanceof VideoView)) return false;
+		if (!isVideoControlsVisible()) {
+			return onTouch((VideoView) gestureSource);
+		}
+		if (System.currentTimeMillis() - lastControlsShowTimestamp < 400) {
+			return true;
+		}
 		getActivity().getMediaServiceBinder().onPlayPauseButtonClick();
 		return true;
 	}
 
 	@Override
+	public boolean onSingleTapUp(MotionEvent e) {
+		if (!(gestureSource instanceof VideoView)) return false;
+		if (!isVideoControlsVisible()) {
+			return onTouch((VideoView) gestureSource);
+		}
+		return false;
+	}
+
+	@Override
 	public boolean onSingleTapConfirmed(MotionEvent e) {
 		if (!(gestureSource instanceof VideoView)) return false;
+		if (System.currentTimeMillis() - lastControlsShowTimestamp < 500) {
+			return true;
+		}
 		return onTouch((VideoView) gestureSource);
 	}
 
@@ -408,6 +427,7 @@ public class ControlPanelView extends ConstraintLayout
 		int delay = getTouchDelay();
 		if (delay == 0) return false;
 
+		lastControlsShowTimestamp = System.currentTimeMillis();
 		presentationCoordinator.toggleControls(delay, a.getMediaServiceBinder().isPlaying());
 		return true;
 	}

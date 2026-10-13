@@ -18,7 +18,20 @@ public class GlassSettingsDecorator {
 
     public static void apply(@NonNull RecyclerView recyclerView, boolean isNight) {
         Context ctx = recyclerView.getContext();
-        recyclerView.setBackgroundColor(0xFF0A0F1D);
+        recyclerView.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            int w = r - l;
+            int h = b - t;
+            if (w > 0 && h > 0) {
+                recyclerView.setBackground(GlassDrawables.createBackgroundGradient(w, h, isNight));
+            }
+        });
+        int rw = recyclerView.getWidth();
+        int rh = recyclerView.getHeight();
+        if (rw > 0 && rh > 0) {
+            recyclerView.setBackground(GlassDrawables.createBackgroundGradient(rw, rh, isNight));
+        } else {
+            recyclerView.setBackgroundColor(0xFF0A0F1D);
+        }
         recyclerView.setClipToPadding(false);
         int pad = GlassDimensions.dpToPx(ctx, 12);
         recyclerView.setPadding(pad, pad, pad, pad);
