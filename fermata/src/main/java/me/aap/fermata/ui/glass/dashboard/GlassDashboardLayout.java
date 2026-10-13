@@ -74,6 +74,12 @@ public class GlassDashboardLayout extends ViewGroup {
         }
     }
 
+    private Mode lastMode = Mode.WIDE;
+
+    public Mode getMode() {
+        return lastMode;
+    }
+
     public Mode computeMode(int width, int height) {
         if (split) return Mode.SPLIT;
         if (height <= 0) return Mode.WIDE;
@@ -123,6 +129,10 @@ public class GlassDashboardLayout extends ViewGroup {
         // Layout Bottom Quick Bar
         int quickBarTop = height - padV - quickBarH;
         if (quickBarView != null && quickBarView.getVisibility() != GONE) {
+            if (quickBarView instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView) {
+                float widthDp = (width - 2 * padH) / getResources().getDisplayMetrics().density;
+                ((me.aap.fermata.ui.glass.quickbar.GlassQuickBarView) quickBarView).setActiveSlotCount(widthDp < 550f ? 4 : 6);
+            }
             layoutChild(quickBarView, padH, quickBarTop, width - 2 * padH, quickBarH);
         }
 
@@ -133,6 +143,7 @@ public class GlassDashboardLayout extends ViewGroup {
         int bodyWidth = Math.max(0, width - 2 * padH);
 
         Mode mode = computeMode(width, height);
+        this.lastMode = mode;
 
         // Ensure speedo visibility is properly restored when not in split mode (Fixes P1 defect 3)
         if (mode != Mode.SPLIT) {

@@ -3,6 +3,7 @@ package me.aap.fermata.ui.glass.dashboard;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.location.Location;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -182,18 +183,8 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         navWeatherView = new GlassNavWeatherView(ctx);
         weatherClient = new GlassOpenMeteoClient();
 
-        // Query default weather (Hanoi lat=21.0285, lon=105.8542 as initial or device location)
-        weatherClient.fetchForecast(21.0285, 105.8542, isMetric, new GlassOpenMeteoClient.ForecastCallback() {
-            @Override
-            public void onSuccess(@NonNull GlassOpenMeteoClient.HourlyForecast forecast) {
-                navWeatherView.bindWeather(forecast, isMetric);
-                String unit = isMetric ? "°C" : "°F";
-                tvWeatherChip.setText(String.format(Locale.US, "%.0f%s", forecast.getCurrentTemp(), unit));
-            }
-
-            @Override
-            public void onError(@NonNull Throwable error) {}
-        });
+        // Fetch real device/GPS location and weather states
+        refreshWeather(ctx);
 
         // Media Player Card
         mediaView = new GlassMediaPlayerView(ctx);
@@ -289,6 +280,57 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     @Override
     public void onNavTurnUpdated(@NonNull NavTurnInfo info) {
         navWeatherView.bindNavTurn(info);
+    }
+
+    private void refreshWeather(Context ctx) {
+        Location loc = me.aap.fermata.carfinder.CarLocatorManager.get().queryBestKnownUserLocation(ctx);
+        if (loc != null) {
+            fetchWeatherForLocation(ctx, loc.getLatitude(), loc.getLongitude());
+            return;
+        }
+
+        boolean hasPerm = androidx.core.content.ContextCompat.checkSelfPermission(
+                ctx, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                || androidx.core.content.ContextCompat.checkSelfPermission(
+                ctx, android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+
+        if (!hasPerm) {
+            navWeatherView.showPermissionNeeded("Please grant location permission on phone.", () -> {
+                Context c = activity.getContext();
+                if (c instanceof android.app.Activity) {
+                    androidx.core.app.ActivityCompat.requestPermissions((android.app.Activity) c,
+                            new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, 1010);
+                }
+            });
+            return;
+        }
+
+        navWeatherView.showLocating("Waiting for GPS satellite fix...");
+        me.aap.fermata.carfinder.CarLocatorManager.get().startTrackingUserLocation(ctx, new me.aap.fermata.carfinder.CarLocatorManager.UserLocationListener() {
+            @Override
+            public void onUserLocationChanged(Location updatedLoc) {
+                me.aap.fermata.carfinder.CarLocatorManager.get().stopTrackingUserLocation(this);
+                if (updatedLoc != null) {
+                    fetchWeatherForLocation(ctx, updatedLoc.getLatitude(), updatedLoc.getLongitude());
+                }
+            }
+        });
+    }
+
+    private void fetchWeatherForLocation(Context ctx, double lat, double lon) {
+        weatherClient.fetchForecast(lat, lon, isMetric, new GlassOpenMeteoClient.ForecastCallback() {
+            @Override
+            public void onSuccess(@NonNull GlassOpenMeteoClient.HourlyForecast forecast) {
+                navWeatherView.bindWeather(forecast, isMetric, null, forecast.isExpired());
+                String unit = isMetric ? "°C" : "°F";
+                tvWeatherChip.setText(String.format(Locale.US, "%.0f%s", forecast.getCurrentTemp(), unit));
+            }
+
+            @Override
+            public void onError(@NonNull Throwable error) {
+                navWeatherView.showError("Network error. Tap to retry.", () -> fetchWeatherForLocation(ctx, lat, lon));
+            }
+        });
     }
 
     public GlassSpeedoTripView getSpeedoView() {

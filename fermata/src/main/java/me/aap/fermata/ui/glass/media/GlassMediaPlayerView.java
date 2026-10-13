@@ -16,6 +16,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.R;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
@@ -28,9 +29,11 @@ public class GlassMediaPlayerView extends FrameLayout {
     private final boolean isNight;
     private final GlassThemeColors colors;
 
+    private TextView tvHeader;
     private ImageView ivAlbumArt;
     private TextView tvTrackTitle;
     private TextView tvArtist;
+    private LinearLayout timelineLayout;
     private TextView tvCurrentTime;
     private TextView tvTotalDuration;
     private ProgressBar progressBar;
@@ -52,9 +55,7 @@ public class GlassMediaPlayerView extends FrameLayout {
 
     public GlassMediaPlayerView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        int uiMode = getResources().getConfiguration().uiMode;
-        this.isNight = (uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                != android.content.res.Configuration.UI_MODE_NIGHT_NO;
+        this.isNight = GlassThemeColors.isNight(context);
         this.colors = GlassThemeColors.get(context, isNight);
         initView(context);
     }
@@ -70,7 +71,7 @@ public class GlassMediaPlayerView extends FrameLayout {
         contentLayout.setLayoutParams(lp);
 
         // Header
-        TextView tvHeader = new TextView(context);
+        tvHeader = new TextView(context);
         tvHeader.setText("NOW PLAYING");
         tvHeader.setTextSize(11f);
         tvHeader.setTypeface(Typeface.DEFAULT_BOLD);
@@ -108,7 +109,8 @@ public class GlassMediaPlayerView extends FrameLayout {
         tvTrackTitle.setTextSize(16f);
         tvTrackTitle.setTypeface(Typeface.DEFAULT_BOLD);
         tvTrackTitle.setTextColor(colors.getTextPrimary());
-        tvTrackTitle.setMaxLines(1);
+        tvTrackTitle.setMaxLines(2);
+        tvTrackTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
         textLayout.addView(tvTrackTitle);
 
         tvArtist = new TextView(context);
@@ -122,7 +124,7 @@ public class GlassMediaPlayerView extends FrameLayout {
         contentLayout.addView(centerLayout);
 
         // Timeline Progress Bar
-        LinearLayout timelineLayout = new LinearLayout(context);
+        timelineLayout = new LinearLayout(context);
         timelineLayout.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams tlLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -133,7 +135,25 @@ public class GlassMediaPlayerView extends FrameLayout {
         progressBar.setMax(1000);
         progressBar.setProgress(0);
         progressBar.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, GlassDimensions.dpToPx(context, 6)));
+                LinearLayout.LayoutParams.MATCH_PARENT, GlassDimensions.dpToPx(context, 8)));
+        progressBar.setOnTouchListener((v, event) -> {
+            if (controller == null || !controller.isSeekable()) return false;
+            float w = v.getWidth();
+            if (w <= 0) return false;
+            int action = event.getAction();
+            if (action == android.view.MotionEvent.ACTION_DOWN || action == android.view.MotionEvent.ACTION_MOVE || action == android.view.MotionEvent.ACTION_UP) {
+                float x = Math.max(0, Math.min(w, event.getX()));
+                float fraction = x / w;
+                long targetMs = (long) (fraction * controller.getDurationMs());
+                progressBar.setProgress((int) (fraction * 1000));
+                tvCurrentTime.setText(GlassMediaPlayerController.formatTime(targetMs));
+                if (action == android.view.MotionEvent.ACTION_UP) {
+                    controller.seekTo(targetMs);
+                }
+                return true;
+            }
+            return false;
+        });
         timelineLayout.addView(progressBar);
 
         LinearLayout timeTextRow = new LinearLayout(context);
@@ -161,7 +181,7 @@ public class GlassMediaPlayerView extends FrameLayout {
         LinearLayout transportBar = new LinearLayout(context);
         transportBar.setOrientation(LinearLayout.HORIZONTAL);
         transportBar.setGravity(Gravity.CENTER);
-        int transPadding = GlassDimensions.dpToPx(context, 6);
+        int transPadding = GlassDimensions.dpToPx(context, 4);
         transportBar.setPadding(transPadding, transPadding, transPadding, transPadding);
         transportBar.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
         LinearLayout.LayoutParams transLp = new LinearLayout.LayoutParams(
@@ -181,10 +201,11 @@ public class GlassMediaPlayerView extends FrameLayout {
         transportBar.addView(btnPrev);
 
         // Big Play/Pause Center Button
+        int playTargetDp = me.aap.fermata.BuildConfig.AUTO ? 76 : 52;
+        int playBtnSize = GlassDimensions.dpToPx(context, playTargetDp);
         btnPlayPause = createTransportButton(context, "▶", Color.WHITE);
-        int playBtnSize = GlassDimensions.dpToPx(context, 44);
         btnPlayPause.setLayoutParams(new LinearLayout.LayoutParams(playBtnSize, playBtnSize));
-        btnPlayPause.setBackground(GlassDrawables.createGlassPillDrawable(context, 22f, isNight));
+        btnPlayPause.setBackground(GlassDrawables.createGlassPillDrawable(context, playTargetDp / 2f, isNight));
         btnPlayPause.setOnClickListener(v -> {
             if (controller != null) controller.togglePlayPause();
         });
@@ -206,7 +227,8 @@ public class GlassMediaPlayerView extends FrameLayout {
         tv.setTextSize(18f);
         tv.setTextColor(color);
         tv.setGravity(Gravity.CENTER);
-        int size = GlassDimensions.dpToPx(context, 40);
+        int targetDp = me.aap.fermata.BuildConfig.AUTO ? 76 : 48;
+        int size = GlassDimensions.dpToPx(context, targetDp);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
         tv.setLayoutParams(lp);
         return tv;
@@ -221,30 +243,96 @@ public class GlassMediaPlayerView extends FrameLayout {
     public void updateFromController() {
         if (controller == null) return;
 
-        tvTrackTitle.setText(controller.getDisplayedTitle());
-        tvArtist.setText(controller.getDisplayedArtist());
+        GlassMediaPlayerController.PresentationState state = controller.getPresentationState();
+        switch (state) {
+            case IDLE_NO_RECENT:
+                tvHeader.setText("MEDIA LIBRARY");
+                tvTrackTitle.setText("Tap to browse media");
+                tvArtist.setText("Audio, Video, Addons");
+                ivAlbumArt.setImageResource(R.drawable.audiotrack);
+                timelineLayout.setVisibility(View.GONE);
+                btnPlayPause.setText("▶");
+                btnFavorite.setVisibility(View.GONE);
+                break;
+            case IDLE_WITH_RECENT:
+                tvHeader.setText("RECENT MEDIA");
+                tvTrackTitle.setText(controller.getDisplayedTitle());
+                tvArtist.setText(controller.getDisplayedArtist());
+                ivAlbumArt.setImageResource(R.drawable.audiotrack);
+                timelineLayout.setVisibility(View.GONE);
+                btnPlayPause.setText("▶");
+                btnFavorite.setVisibility(View.GONE);
+                break;
+            case LIVE:
+                tvHeader.setText("LIVE STREAM");
+                tvTrackTitle.setText(controller.getDisplayedTitle());
+                tvArtist.setText(controller.getDisplayedArtist());
+                timelineLayout.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.INVISIBLE);
+                tvCurrentTime.setText("LIVE");
+                tvCurrentTime.setTextColor(Color.RED);
+                tvTotalDuration.setText("");
+                btnFavorite.setVisibility(View.VISIBLE);
+                btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
+                break;
+            case BUFFERING:
+                tvHeader.setText("BUFFERING...");
+                tvTrackTitle.setText(controller.getDisplayedTitle());
+                tvArtist.setText(controller.getDisplayedArtist());
+                timelineLayout.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
+                tvCurrentTime.setTextColor(colors.getTextSecondary());
+                btnFavorite.setVisibility(View.VISIBLE);
+                btnPlayPause.setText("⏸");
+                break;
+            case ERROR:
+                tvHeader.setText("PLAYBACK ERROR");
+                tvTrackTitle.setText(controller.getDisplayedTitle());
+                tvArtist.setText("Playback failed. Tap to retry.");
+                timelineLayout.setVisibility(View.GONE);
+                btnFavorite.setVisibility(View.GONE);
+                btnPlayPause.setText("▶");
+                break;
+            case PLAYING:
+            case PAUSED:
+            default:
+                tvHeader.setText("NOW PLAYING");
+                tvTrackTitle.setText(controller.getDisplayedTitle());
+                tvArtist.setText(controller.getDisplayedArtist());
+                timelineLayout.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
+                btnFavorite.setVisibility(View.VISIBLE);
+                btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
+                tvCurrentTime.setTextColor(colors.getTextSecondary());
+                break;
+        }
 
         Bitmap art = controller.getAlbumArt();
         if (art != null) {
             ivAlbumArt.setImageBitmap(art);
-        } else {
-            ivAlbumArt.setImageDrawable(null);
+        } else if (state != GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT
+                && state != GlassMediaPlayerController.PresentationState.IDLE_WITH_RECENT) {
+            ivAlbumArt.setImageResource(R.drawable.audiotrack);
         }
 
-        btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
         btnFavorite.setTextColor(controller.isFavorite() ? Color.RED : colors.getTextSecondary());
 
-        long pos = controller.getPositionMs();
-        long dur = controller.getDurationMs();
+        if (state != GlassMediaPlayerController.PresentationState.LIVE
+                && state != GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT
+                && state != GlassMediaPlayerController.PresentationState.IDLE_WITH_RECENT
+                && state != GlassMediaPlayerController.PresentationState.ERROR) {
+            long pos = controller.getPositionMs();
+            long dur = controller.getDurationMs();
 
-        tvCurrentTime.setText(GlassMediaPlayerController.formatTime(pos));
-        tvTotalDuration.setText(GlassMediaPlayerController.formatTime(dur));
+            tvCurrentTime.setText(GlassMediaPlayerController.formatTime(pos));
+            tvTotalDuration.setText(GlassMediaPlayerController.formatTime(dur));
 
-        if (dur > 0) {
-            int progress = (int) ((pos * 1000) / dur);
-            progressBar.setProgress(Math.max(0, Math.min(1000, progress)));
-        } else {
-            progressBar.setProgress(0);
+            if (dur > 0) {
+                int progress = (int) ((pos * 1000) / dur);
+                progressBar.setProgress(Math.max(0, Math.min(1000, progress)));
+            } else {
+                progressBar.setProgress(0);
+            }
         }
     }
 }

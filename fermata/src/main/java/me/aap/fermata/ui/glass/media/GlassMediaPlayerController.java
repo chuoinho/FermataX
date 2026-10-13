@@ -18,6 +18,7 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.media.service.PlaybackTimelineSnapshot;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 
 /**
  * Controller connecting the Glass Media Player card with Fermata's media service and binder.
@@ -28,8 +29,23 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
         void onMediaUpdated();
     }
 
+    public enum PresentationState {
+        IDLE_NO_RECENT,
+        IDLE_WITH_RECENT,
+        BUFFERING,
+        PLAYING,
+        PAUSED,
+        LIVE,
+        ERROR
+    }
+
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Runnable progressTicker = this::onTick;
+
+    private PresentationState presentationState = PresentationState.IDLE_NO_RECENT;
+    private long presentationGeneration = 0L;
+    private MediaLib.PlayableItem currentItem = null;
+    private me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode timelineMode = me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.SEEKABLE;
 
     private String displayedTitle = "No Media Playing";
     private String displayedArtist = "FermataX";
@@ -78,6 +94,9 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
             return;
         }
 
+        this.presentationGeneration++;
+        this.currentItem = snapshot.getItem();
+
         MediaMetadataCompat metadata = snapshot.getMetadata();
         PlaybackStateCompat state = snapshot.getState();
         MediaLib.PlayableItem item = snapshot.getItem();
@@ -99,7 +118,8 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
             duration = metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
         }
 
-        boolean isPlay = state != null && state.getState() == PlaybackStateCompat.STATE_PLAYING;
+        int stateInt = state != null ? state.getState() : PlaybackStateCompat.STATE_NONE;
+        boolean isPlay = stateInt == PlaybackStateCompat.STATE_PLAYING;
         long pos = state != null ? state.getPosition() : 0L;
         boolean fav = item != null && item.isFavoriteItem();
         if (state != null) {
@@ -107,11 +127,32 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
             this.playbackSpeed = sp > 0 ? sp : 1.0f;
         }
 
+        if (item == null && (stateInt == PlaybackStateCompat.STATE_NONE || stateInt == PlaybackStateCompat.STATE_STOPPED)) {
+            resetToIdle();
+            return;
+        }
+
+        if (stateInt == PlaybackStateCompat.STATE_ERROR) {
+            this.presentationState = PresentationState.ERROR;
+        } else if (stateInt == PlaybackStateCompat.STATE_BUFFERING || stateInt == PlaybackStateCompat.STATE_CONNECTING) {
+            this.presentationState = PresentationState.BUFFERING;
+        } else if (duration <= 0L && isPlay) {
+            this.timelineMode = me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.LIVE;
+            this.presentationState = PresentationState.LIVE;
+        } else if (isPlay) {
+            this.timelineMode = me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.SEEKABLE;
+            this.presentationState = PresentationState.PLAYING;
+        } else {
+            this.timelineMode = (duration > 0L) ? me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.SEEKABLE : me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.LIVE;
+            this.presentationState = (this.timelineMode == me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.LIVE) ? PresentationState.LIVE : PresentationState.PAUSED;
+        }
+
         updatePlayback(title, artist, pos, duration, isPlay, fav);
         this.albumArt = art;
     }
 
     public synchronized void applyMetadataAndState(@Nullable MediaMetadataCompat metadata, @Nullable PlaybackStateCompat state) {
+        this.presentationGeneration++;
         String title = "Unknown Title";
         String artist = "FermataX";
         Bitmap art = null;
@@ -127,11 +168,27 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
             duration = metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
         }
 
-        boolean isPlay = state != null && state.getState() == PlaybackStateCompat.STATE_PLAYING;
+        int stateInt = state != null ? state.getState() : PlaybackStateCompat.STATE_NONE;
+        boolean isPlay = stateInt == PlaybackStateCompat.STATE_PLAYING;
         long pos = state != null ? state.getPosition() : 0L;
         if (state != null) {
             float sp = state.getPlaybackSpeed();
             this.playbackSpeed = sp > 0 ? sp : 1.0f;
+        }
+
+        if (stateInt == PlaybackStateCompat.STATE_ERROR) {
+            this.presentationState = PresentationState.ERROR;
+        } else if (stateInt == PlaybackStateCompat.STATE_BUFFERING || stateInt == PlaybackStateCompat.STATE_CONNECTING) {
+            this.presentationState = PresentationState.BUFFERING;
+        } else if (duration <= 0L && isPlay) {
+            this.timelineMode = me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.LIVE;
+            this.presentationState = PresentationState.LIVE;
+        } else if (isPlay) {
+            this.timelineMode = me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.SEEKABLE;
+            this.presentationState = PresentationState.PLAYING;
+        } else {
+            this.timelineMode = (duration > 0L) ? me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.SEEKABLE : me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.LIVE;
+            this.presentationState = (this.timelineMode == me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.LIVE) ? PresentationState.LIVE : PresentationState.PAUSED;
         }
 
         updatePlayback(title, artist, pos, duration, isPlay, false);
@@ -153,14 +210,34 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
 
     public synchronized void resetToIdle() {
         stopTicker();
-        this.displayedTitle = "No Media Playing";
-        this.displayedArtist = "FermataX";
+        this.currentItem = null;
         this.albumArt = null;
         this.positionMs = 0L;
         this.durationMs = 0L;
         this.lastPositionUpdateTime = 0L;
         this.playing = false;
         this.favorite = false;
+        this.timelineMode = me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.HIDDEN;
+
+        String recentTitle = null;
+        String recentSubtitle = null;
+        try {
+            MainActivityPrefs prefs = MainActivityPrefs.get();
+            if (prefs != null) {
+                recentTitle = prefs.getStringPref(MainActivityPrefs.SMART_TOP_RECENT_TITLE);
+                recentSubtitle = prefs.getStringPref(MainActivityPrefs.SMART_TOP_RECENT_SUBTITLE);
+            }
+        } catch (Throwable ignored) {}
+
+        if (recentTitle != null && !recentTitle.trim().isEmpty()) {
+            this.displayedTitle = recentTitle.trim();
+            this.displayedArtist = (recentSubtitle != null && !recentSubtitle.trim().isEmpty()) ? recentSubtitle.trim() : "Recent Media";
+            this.presentationState = PresentationState.IDLE_WITH_RECENT;
+        } else {
+            this.displayedTitle = "No Media Playing";
+            this.displayedArtist = "FermataX";
+            this.presentationState = PresentationState.IDLE_NO_RECENT;
+        }
         notifyListener();
     }
 
@@ -246,11 +323,27 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
     public void onPlaybackTimelineChanged(PlaybackTimelineSnapshot snapshot) {
         if (snapshot == null) return;
         synchronized (this) {
+            if (snapshot.presentationGeneration() < this.presentationGeneration) {
+                return;
+            }
+            if (this.currentItem != null && snapshot.item() != null && !snapshot.item().equals(this.currentItem)) {
+                return;
+            }
+            this.presentationGeneration = snapshot.presentationGeneration();
+            this.currentItem = snapshot.item();
+            this.timelineMode = snapshot.mode();
             this.positionMs = Math.max(0L, snapshot.positionMillis());
             if (snapshot.durationMillis() > 0L) {
                 this.durationMs = snapshot.durationMillis();
+            } else if (snapshot.mode() == me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.LIVE) {
+                this.durationMs = 0L;
             }
             this.playing = snapshot.playing();
+            if (snapshot.mode() == me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.LIVE) {
+                this.presentationState = PresentationState.LIVE;
+            } else {
+                this.presentationState = this.playing ? PresentationState.PLAYING : PresentationState.PAUSED;
+            }
             this.lastPositionUpdateTime = SystemClock.elapsedRealtime();
             updateTicker();
         }
@@ -326,6 +419,22 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
 
     public boolean isFavorite() {
         return favorite;
+    }
+
+    public PresentationState getPresentationState() {
+        return presentationState;
+    }
+
+    public me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode getTimelineMode() {
+        return timelineMode;
+    }
+
+    public boolean isSeekable() {
+        return timelineMode == me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.SEEKABLE && durationMs > 0L;
+    }
+
+    public long getPresentationGeneration() {
+        return presentationGeneration;
     }
 
     public static String formatTime(long ms) {

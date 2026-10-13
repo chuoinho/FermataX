@@ -51,6 +51,9 @@ public class GlassNavWeatherView extends FrameLayout {
     private TextView tvWeatherTemp;
     private TextView tvWeatherCondition;
     private TextView tvWeatherHighLow;
+    private TextView tvWeatherLocation;
+    private TextView btnWeatherAction;
+    private HorizontalScrollView weatherScroll;
     private LinearLayout hourlyTimelineRow;
 
     public GlassNavWeatherView(@NonNull Context context) {
@@ -63,9 +66,7 @@ public class GlassNavWeatherView extends FrameLayout {
 
     public GlassNavWeatherView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        int uiMode = getResources().getConfiguration().uiMode;
-        this.isNight = (uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                != android.content.res.Configuration.UI_MODE_NIGHT_NO;
+        this.isNight = GlassThemeColors.isNight(context);
         this.colors = GlassThemeColors.get(context, isNight);
         initView(context);
     }
@@ -233,21 +234,45 @@ public class GlassNavWeatherView extends FrameLayout {
         tvWeatherHighLow.setGravity(Gravity.CENTER);
         centerWeather.addView(tvWeatherHighLow);
 
+        tvWeatherLocation = new TextView(context);
+        tvWeatherLocation.setText("");
+        tvWeatherLocation.setTextSize(11f);
+        tvWeatherLocation.setTextColor(colors.getTextSecondary());
+        tvWeatherLocation.setGravity(Gravity.CENTER);
+        centerWeather.addView(tvWeatherLocation);
+
+        btnWeatherAction = new TextView(context);
+        btnWeatherAction.setText("Retry");
+        btnWeatherAction.setTextSize(11f);
+        btnWeatherAction.setTypeface(Typeface.DEFAULT_BOLD);
+        btnWeatherAction.setTextColor(colors.getActionText());
+        btnWeatherAction.setGravity(Gravity.CENTER);
+        int actPadH = GlassDimensions.dpToPx(context, 12);
+        int actPadV = GlassDimensions.dpToPx(context, 6);
+        btnWeatherAction.setPadding(actPadH, actPadV, actPadH, actPadV);
+        btnWeatherAction.setBackground(GlassDrawables.createGlassPillDrawable(context, 12f, isNight));
+        LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        btnLp.topMargin = GlassDimensions.dpToPx(context, 6);
+        btnWeatherAction.setLayoutParams(btnLp);
+        btnWeatherAction.setVisibility(View.GONE);
+        centerWeather.addView(btnWeatherAction);
+
         weatherContainer.addView(centerWeather);
 
         // Horizontal Hourly Timeline
-        HorizontalScrollView scroll = new HorizontalScrollView(context);
-        scroll.setHorizontalScrollBarEnabled(false);
+        weatherScroll = new HorizontalScrollView(context);
+        weatherScroll.setHorizontalScrollBarEnabled(false);
         LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        scroll.setLayoutParams(scrollLp);
+        weatherScroll.setLayoutParams(scrollLp);
 
         hourlyTimelineRow = new LinearLayout(context);
         hourlyTimelineRow.setOrientation(LinearLayout.HORIZONTAL);
         hourlyTimelineRow.setGravity(Gravity.CENTER_VERTICAL);
-        scroll.addView(hourlyTimelineRow);
+        weatherScroll.addView(hourlyTimelineRow);
 
-        weatherContainer.addView(scroll);
+        weatherContainer.addView(weatherScroll);
         addView(weatherContainer);
     }
 
@@ -271,13 +296,31 @@ public class GlassNavWeatherView extends FrameLayout {
     }
 
     public void bindWeather(@Nullable GlassOpenMeteoClient.HourlyForecast forecast, boolean isMetric) {
+        bindWeather(forecast, isMetric, null, false);
+    }
+
+    public void bindWeather(@Nullable GlassOpenMeteoClient.HourlyForecast forecast, boolean isMetric,
+                            @Nullable String locationName, boolean isStale) {
         if (forecast == null) return;
+
+        btnWeatherAction.setVisibility(View.GONE);
+        weatherScroll.setVisibility(View.VISIBLE);
 
         String unit = isMetric ? "°C" : "°F";
         tvWeatherTemp.setText(String.format(Locale.US, "%.0f%s", forecast.getCurrentTemp(), unit));
-        tvWeatherCondition.setText(GlassOpenMeteoClient.getWeatherConditionDescription(forecast.getCurrentWeatherCode()));
+        String condition = GlassOpenMeteoClient.getWeatherConditionDescription(forecast.getCurrentWeatherCode());
+        if (isStale) {
+            condition += " (Cached)";
+        }
+        tvWeatherCondition.setText(condition);
         tvWeatherHighLow.setText(String.format(Locale.US, "H: %.0f°  L: %.0f°",
                 forecast.getHighTemp(), forecast.getLowTemp()));
+        if (locationName != null && !locationName.trim().isEmpty()) {
+            tvWeatherLocation.setText(locationName.trim());
+            tvWeatherLocation.setVisibility(View.VISIBLE);
+        } else {
+            tvWeatherLocation.setVisibility(View.GONE);
+        }
 
         hourlyTimelineRow.removeAllViews();
         Context ctx = getContext();
@@ -309,6 +352,43 @@ public class GlassNavWeatherView extends FrameLayout {
 
             hourlyTimelineRow.addView(item);
         }
+    }
+
+    public void showPermissionNeeded(String message, Runnable onAction) {
+        tvWeatherTemp.setText("--°");
+        tvWeatherCondition.setText("Permission Needed");
+        tvWeatherHighLow.setText(message);
+        tvWeatherLocation.setVisibility(View.GONE);
+        weatherScroll.setVisibility(View.GONE);
+
+        btnWeatherAction.setText("Grant Permission");
+        btnWeatherAction.setVisibility(View.VISIBLE);
+        btnWeatherAction.setOnClickListener(v -> {
+            if (onAction != null) onAction.run();
+        });
+    }
+
+    public void showLocating(String message) {
+        tvWeatherTemp.setText("--°");
+        tvWeatherCondition.setText("Locating GPS...");
+        tvWeatherHighLow.setText(message);
+        tvWeatherLocation.setVisibility(View.GONE);
+        weatherScroll.setVisibility(View.GONE);
+        btnWeatherAction.setVisibility(View.GONE);
+    }
+
+    public void showError(String message, Runnable onRetry) {
+        tvWeatherTemp.setText("--°");
+        tvWeatherCondition.setText("Weather Unavailable");
+        tvWeatherHighLow.setText(message);
+        tvWeatherLocation.setVisibility(View.GONE);
+        weatherScroll.setVisibility(View.GONE);
+
+        btnWeatherAction.setText("Retry");
+        btnWeatherAction.setVisibility(View.VISIBLE);
+        btnWeatherAction.setOnClickListener(v -> {
+            if (onRetry != null) onRetry.run();
+        });
     }
 
     /**

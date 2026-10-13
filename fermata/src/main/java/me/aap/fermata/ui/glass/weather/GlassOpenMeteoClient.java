@@ -199,8 +199,28 @@ public class GlassOpenMeteoClient {
             JSONArray days = hourly.optJSONArray("is_day");
 
             if (times != null && temps != null && codes != null) {
-                int count = Math.min(24, times.length());
-                for (int i = 0; i < count; i++) {
+                int startIndex = 0;
+                String currentTimeStr = (current != null) ? current.optString("time", "") : "";
+                if (!currentTimeStr.isEmpty()) {
+                    for (int i = 0; i < times.length(); i++) {
+                        if (currentTimeStr.equals(times.optString(i, ""))) {
+                            startIndex = i;
+                            break;
+                        }
+                    }
+                } else {
+                    String sysHour = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:00", Locale.US).format(new java.util.Date());
+                    for (int i = 0; i < times.length(); i++) {
+                        if (times.optString(i, "").compareTo(sysHour) >= 0) {
+                            startIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                int totalAvailable = times.length();
+                int count = Math.min(24, Math.max(0, totalAvailable - startIndex));
+                for (int i = startIndex; i < startIndex + count; i++) {
                     String rawTime = times.optString(i, "");
                     // extract HH:mm from "2026-10-13T14:00"
                     String formattedTime = rawTime.contains("T") ? rawTime.substring(rawTime.indexOf("T") + 1) : rawTime;

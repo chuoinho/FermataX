@@ -100,5 +100,70 @@ public class GlassMediaPlayerControllerTest {
         assertTrue(controller.isPlaying());
         assertTrue(controller.getPositionMs() >= 10000L);
         assertEquals(60000L, controller.getDurationMs());
+        assertEquals(GlassMediaPlayerController.PresentationState.PLAYING, controller.getPresentationState());
+        assertTrue(controller.isSeekable());
+    }
+
+    @Test
+    public void testAtomicGenerationDiscardsStaleCallback() {
+        GlassMediaPlayerController controller = new GlassMediaPlayerController();
+
+        MediaMetadataCompat metaA = new MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "Track A")
+                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, 100000L)
+                .build();
+        PlaybackStateCompat stateA = new PlaybackStateCompat.Builder()
+                .setState(PlaybackStateCompat.STATE_PLAYING, 1000L, 1.0f, SystemClock.elapsedRealtime())
+                .build();
+        controller.applyMetadataAndState(metaA, stateA);
+        long genA = controller.getPresentationGeneration();
+        assertEquals("Track A", controller.getDisplayedTitle());
+
+        // Now Track B arrives
+        MediaMetadataCompat metaB = new MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "Track B")
+                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, 200000L)
+                .build();
+        PlaybackStateCompat stateB = new PlaybackStateCompat.Builder()
+                .setState(PlaybackStateCompat.STATE_PLAYING, 2000L, 1.0f, SystemClock.elapsedRealtime())
+                .build();
+        controller.applyMetadataAndState(metaB, stateB);
+        long genB = controller.getPresentationGeneration();
+        assertTrue(genB > genA);
+        assertEquals("Track B", controller.getDisplayedTitle());
+
+        // Stale timeline snapshot from Track A arrives with genA
+        me.aap.fermata.media.lib.MediaLib.PlayableItem mockItemA =
+                (me.aap.fermata.media.lib.MediaLib.PlayableItem) java.lang.reflect.Proxy.newProxyInstance(
+                        me.aap.fermata.media.lib.MediaLib.PlayableItem.class.getClassLoader(),
+                        new Class<?>[]{me.aap.fermata.media.lib.MediaLib.PlayableItem.class},
+                        (proxy, method, args) -> "Item A");
+        me.aap.fermata.media.service.PlaybackTimelineSnapshot staleTimeline =
+                new me.aap.fermata.media.service.PlaybackTimelineSnapshot(
+                        mockItemA, genA, me.aap.fermata.ui.policy.PlaybackTimelinePolicy.Mode.SEEKABLE,
+                        50000L, 100000L, true);
+
+        controller.onPlaybackTimelineChanged(staleTimeline);
+
+        // Track B's duration and generation should be preserved, not overwritten by stale callback A
+        assertEquals(200000L, controller.getDurationMs());
+        assertEquals(genB, controller.getPresentationGeneration());
+    }
+
+    @Test
+    public void testLiveStreamPresentationState() {
+        GlassMediaPlayerController controller = new GlassMediaPlayerController();
+        MediaMetadataCompat metaLive = new MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, "BBC Radio 1")
+                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, 0L)
+                .build();
+        PlaybackStateCompat stateLive = new PlaybackStateCompat.Builder()
+                .setState(PlaybackStateCompat.STATE_PLAYING, 0L, 1.0f, SystemClock.elapsedRealtime())
+                .build();
+        controller.applyMetadataAndState(metaLive, stateLive);
+
+        assertEquals(GlassMediaPlayerController.PresentationState.LIVE, controller.getPresentationState());
+        assertFalse(controller.isSeekable());
+        assertEquals(0L, controller.getDurationMs());
     }
 }

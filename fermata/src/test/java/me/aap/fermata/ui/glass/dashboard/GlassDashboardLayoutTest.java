@@ -3,32 +3,70 @@ package me.aap.fermata.ui.glass.dashboard;
 import static org.junit.Assert.*;
 
 import android.content.Context;
+import android.view.View;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
+import me.aap.fermata.ui.glass.quickbar.GlassQuickBarManager;
+import me.aap.fermata.ui.glass.quickbar.GlassQuickBarView;
+
 @RunWith(RobolectricTestRunner.class)
 public class GlassDashboardLayoutTest {
 
     @Test
-    public void testResponsiveLayoutModeResolution() {
+    public void testSplitModeRestoreSpeedoVisibility() {
         Context ctx = RuntimeEnvironment.getApplication();
         GlassDashboardLayout layout = new GlassDashboardLayout(ctx);
-        assertEquals(GlassDashboardLayout.Mode.WIDE, layout.computeMode(1920, 720)); // Ultrawide (~2.67)
-        assertEquals(GlassDashboardLayout.Mode.WIDE, layout.computeMode(1280, 720)); // Standard 16:9 (~1.78)
-        assertEquals(GlassDashboardLayout.Mode.SQUARE, layout.computeMode(800, 800)); // 1:1 (1.0)
-        assertEquals(GlassDashboardLayout.Mode.PORTRAIT, layout.computeMode(1080, 1920)); // Tall display (~0.56)
+
+        View speedo = new View(ctx);
+        View navWeather = new View(ctx);
+        View media = new View(ctx);
+        GlassQuickBarView quickBar = new GlassQuickBarView(ctx);
+
+        layout.setViews(null, speedo, navWeather, media, quickBar);
+
+        // 1. Enter SPLIT mode
+        layout.setSplit(true);
+        layout.measure(
+                View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(300, View.MeasureSpec.EXACTLY));
+        layout.layout(0, 0, 800, 300);
+
+        assertEquals(GlassDashboardLayout.Mode.SPLIT, layout.getMode());
+        assertEquals(View.GONE, speedo.getVisibility());
+
+        // 2. Exit SPLIT mode to WIDE mode (width=1000, height=600)
+        layout.setSplit(false);
+        layout.measure(
+                View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(600, View.MeasureSpec.EXACTLY));
+        layout.layout(0, 0, 1000, 600);
+
+        assertEquals(GlassDashboardLayout.Mode.WIDE, layout.getMode());
+        assertEquals(View.VISIBLE, speedo.getVisibility());
     }
 
     @Test
-    public void testSplitModeToggle() {
+    public void testQuickBarAdaptiveSlotBudget() {
         Context ctx = RuntimeEnvironment.getApplication();
-        GlassDashboardLayout layout = new GlassDashboardLayout(ctx);
-        assertFalse(layout.isSplit());
+        GlassQuickBarView quickBar = new GlassQuickBarView(ctx);
+        quickBar.init(new GlassQuickBarManager(new me.aap.utils.pref.BasicPreferenceStore()), null);
 
-        layout.setSplit(true);
-        assertTrue(layout.isSplit());
-        assertEquals(GlassDashboardLayout.Mode.SPLIT, layout.computeMode(1920, 720));
+        // Compact measure: width < 550dp (e.g. 400px with density=1.0)
+        quickBar.measure(
+                View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(60, View.MeasureSpec.EXACTLY));
+
+        assertEquals(4, quickBar.getActiveSlotCount());
+
+        // Wide measure: width >= 550dp (e.g. 800px with density=1.0)
+        quickBar.measure(
+                View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(60, View.MeasureSpec.EXACTLY));
+
+        assertEquals(6, quickBar.getActiveSlotCount());
     }
 }

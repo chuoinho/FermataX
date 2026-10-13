@@ -38,8 +38,9 @@ public class GlassQuickBarView extends LinearLayout {
     private final GlassThemeColors colors;
     private GlassQuickBarManager manager;
     private Listener listener;
+    private int activeSlotCount = 6;
 
-    private final View[] slotViews = new View[GlassQuickBarManager.TOTAL_SLOTS];
+    private View[] slotViews;
 
     public GlassQuickBarView(@NonNull Context context) {
         this(context, null);
@@ -51,15 +52,38 @@ public class GlassQuickBarView extends LinearLayout {
 
     public GlassQuickBarView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        int uiMode = getResources().getConfiguration().uiMode;
-        this.isNight = (uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
-                != android.content.res.Configuration.UI_MODE_NIGHT_NO;
+        this.isNight = GlassThemeColors.isNight(context);
         this.colors = GlassThemeColors.get(context, isNight);
 
         setOrientation(LinearLayout.HORIZONTAL);
         setGravity(Gravity.CENTER);
         int padding = GlassDimensions.dpToPx(context, 4);
         setPadding(padding, padding, padding, padding);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        if (width > 0) {
+            float widthDp = width / getResources().getDisplayMetrics().density;
+            int targetSlots = (widthDp < 550f) ? 4 : 6;
+            if (targetSlots != activeSlotCount) {
+                activeSlotCount = targetSlots;
+                renderSlots();
+            }
+        }
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    public int getActiveSlotCount() {
+        return activeSlotCount;
+    }
+
+    public void setActiveSlotCount(int count) {
+        if ((count == 4 || count == 6) && count != activeSlotCount) {
+            activeSlotCount = count;
+            renderSlots();
+        }
     }
 
     public void init(@NonNull GlassQuickBarManager manager, @Nullable Listener listener) {
@@ -76,10 +100,21 @@ public class GlassQuickBarView extends LinearLayout {
         removeAllViews();
         if (manager == null) return;
         Context context = getContext();
+        slotViews = new View[activeSlotCount];
 
-        for (int i = 0; i < GlassQuickBarManager.TOTAL_SLOTS; i++) {
+        for (int i = 0; i < activeSlotCount; i++) {
             final int slotIndex = i;
-            GlassQuickShortcut shortcut = manager.getSlot(i);
+            final GlassQuickShortcut shortcut;
+            final boolean isAddonCatalog = (activeSlotCount == 4 && i == 2) || (activeSlotCount == 6 && i == 4);
+            final boolean isExit = (activeSlotCount == 4 && i == 3) || (activeSlotCount == 6 && i == 5);
+
+            if (isAddonCatalog) {
+                shortcut = GlassQuickBarManager.SLOT_ADDON_CATALOG;
+            } else if (isExit) {
+                shortcut = GlassQuickBarManager.SLOT_EXIT;
+            } else {
+                shortcut = manager.getCustomShortcut(i);
+            }
 
             LinearLayout slotLayout = new LinearLayout(context);
             slotLayout.setOrientation(LinearLayout.VERTICAL);
@@ -91,12 +126,7 @@ public class GlassQuickBarView extends LinearLayout {
             if (i > 0) lp.leftMargin = GlassDimensions.dpToPx(context, 6);
             slotLayout.setLayoutParams(lp);
 
-            if (i == 5) {
-                // Exit button: Red tinted glass pill
-                slotLayout.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
-            } else {
-                slotLayout.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
-            }
+            slotLayout.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
 
             if (shortcut == null) {
                 // Empty customizable slot: [+] Add
@@ -134,7 +164,7 @@ public class GlassQuickBarView extends LinearLayout {
                 tvLabel.setText(shortcut.getTitle());
                 tvLabel.setTextSize(11f);
                 tvLabel.setTypeface(Typeface.DEFAULT_BOLD);
-                if (i == 5) {
+                if (isExit) {
                     tvLabel.setTextColor(Color.parseColor("#FF5252")); // Soft red for exit
                 } else {
                     tvLabel.setTextColor(colors.getTextPrimary());
@@ -145,16 +175,16 @@ public class GlassQuickBarView extends LinearLayout {
 
                 slotLayout.setOnClickListener(v -> {
                     if (listener == null) return;
-                    if (slotIndex == 4) {
+                    if (isAddonCatalog) {
                         listener.onAddonsCatalogClicked();
-                    } else if (slotIndex == 5) {
+                    } else if (isExit) {
                         listener.onExitClicked();
                     } else {
                         listener.onShortcutClicked(slotIndex, shortcut);
                     }
                 });
 
-                if (slotIndex < 4) {
+                if (!isAddonCatalog && !isExit) {
                     slotLayout.setOnLongClickListener(v -> {
                         if (listener != null) {
                             listener.onShortcutLongClicked(slotIndex, shortcut);
