@@ -36,7 +36,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:text="@string/support_banner_text"
-        android:textColor="#FFFFFFFF"
+        android:textColor="?android:attr/textColorPrimary"
         android:textSize="13sp"
         android:textStyle="bold" />
 
@@ -51,6 +51,6 @@
         android:contentDescription="@string/car_finder_close"
         android:padding="5dp"
         android:src="@drawable/keyboard_close"
-        app:tint="#80FFFFFF" />
+        app:tint="?android:attr/textColorSecondary" />
 
 </LinearLayout>

@@ -33,7 +33,7 @@ public final class GlassMediaLibDecorator {
         if (rw > 0 && rh > 0) {
             root.setBackground(GlassDrawables.createBackgroundGradient(rw, rh, isNight));
         } else {
-            root.setBackgroundColor(0xFF0A0F1D);
+            root.setBackgroundColor(isNight ? 0xFF07090D : 0xFFF8FAFC);
         }
 
         recyclerView.setClipToPadding(false);
@@ -69,6 +69,54 @@ public final class GlassMediaLibDecorator {
         int padH = GlassDimensions.dpToPx(ctx, 12);
         int padV = GlassDimensions.dpToPx(ctx, 8);
         view.setPadding(padH, padV, padH, padV);
-        view.setBackground(GlassDrawables.createGlassCardDrawable(ctx, 16f, isNight));
+
+        me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+                me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, isNight);
+        android.graphics.drawable.StateListDrawable sld = new android.graphics.drawable.StateListDrawable();
+
+        android.graphics.drawable.GradientDrawable sel = new android.graphics.drawable.GradientDrawable();
+        sel.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        sel.setCornerRadius(GlassDimensions.dpToPx(ctx, 16f));
+        sel.setColor(isNight ? 0x2A38BDF8 : 0x200284C7);
+        sel.setStroke(Math.round(GlassDimensions.dpToPx(ctx, 1.5f)), isNight ? 0xFF38BDF8 : 0xFF0284C7);
+
+        android.graphics.drawable.GradientDrawable foc = new android.graphics.drawable.GradientDrawable();
+        foc.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        foc.setCornerRadius(GlassDimensions.dpToPx(ctx, 16f));
+        foc.setColor(isNight ? 0x24FFFFFF : 0x15000000);
+        foc.setStroke(Math.round(GlassDimensions.dpToPx(ctx, 1.5f)), gc.getActionText());
+
+        android.graphics.drawable.GradientDrawable prs = new android.graphics.drawable.GradientDrawable();
+        prs.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        prs.setCornerRadius(GlassDimensions.dpToPx(ctx, 16f));
+        prs.setColor(isNight ? 0x33FFFFFF : 0x20000000);
+        prs.setStroke(Math.round(GlassDimensions.dpToPx(ctx, 1f)), gc.getCardBorder());
+
+        android.graphics.drawable.Drawable norm = GlassDrawables.createGlassCardDrawable(ctx, 16f, isNight);
+
+        sld.addState(new int[]{android.R.attr.state_selected}, sel);
+        sld.addState(new int[]{android.R.attr.state_activated}, sel);
+        sld.addState(new int[]{android.R.attr.state_focused}, foc);
+        sld.addState(new int[]{android.R.attr.state_pressed}, prs);
+        sld.addState(new int[]{}, norm);
+
+        view.setBackground(sld);
+
+        if (view instanceof me.aap.fermata.ui.view.MediaItemView miv) {
+            android.widget.TextView title = miv.getTitle();
+            if (title != null) {
+                title.setTextColor(gc.getTextPrimary());
+                title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15);
+            }
+            android.widget.TextView subtitle = miv.getSubtitle();
+            if (subtitle != null) {
+                subtitle.setTextColor(gc.getTextSecondary());
+                subtitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+            }
+            android.widget.ImageView icon = miv.getIcon();
+            if (icon != null) {
+                icon.setColorFilter(gc.getTextPrimary());
+            }
+        }
     }
 }

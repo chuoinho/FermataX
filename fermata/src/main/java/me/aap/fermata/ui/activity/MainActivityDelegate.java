@@ -571,6 +571,9 @@ public class MainActivityDelegate extends ActivityDelegate
 	public static void setTheme(Context ctx, boolean auto) {
 		@StyleRes int theme = switch (MainActivityPrefs.get().getThemePref(auto)) {
 			case MainActivityPrefs.THEME_MATERIAL_YOU -> R.style.AppTheme_MaterialYou;
+			case MainActivityPrefs.THEME_GLASS -> MainActivityPrefs.get().isGlassNightMode()
+					? R.style.AppTheme_Glass_Night
+					: R.style.AppTheme_Glass_Day;
 			default -> R.style.AppTheme_Classic;
 		};
 		ctx.setTheme(theme);

@@ -229,31 +229,41 @@ semantic and adaptive presentation contracts are canonical:
 
 ### Glass Theme Architecture and Visual Contracts
 
-Glassmorphism (Glass Theme) is a comprehensive translucent visual design system implemented across both Phone and Android Auto interfaces.
+Glassmorphism (Glass Theme) is an opt-in translucent visual design system implemented across Phone and Android Auto interfaces.
 
+- **Current Implementation Status**: **Đã tích hợp một phần / Chưa nghiệm thu** (Partially integrated / Unverified on DHU).
+- **Base Theme Hierarchy**:
+  - `AppTheme.Glass.Night` and `AppTheme.Glass.Day` defined in `theme_glass.xml`.
+  - Applied dynamically in `MainActivityDelegate.setTheme()` based on `THEME_GLASS` and `isGlassNightMode()`.
+  - Component style overrides provided for `appMediaItemStyle`, `appControlPanelStyle`, `appSeekBarStyle`, `appEqualizerStyle`, `android:preferenceStyle`, `toolBarStyle`, `navBarStyle`.
 - **Independent Surface Opt-In**:
-  - Theme selection remains strictly independent for Phone (`THEME_MAIN`) and Android Auto (`THEME_AA`).
-  - Glass theme is strictly opt-in (`THEME_GLASS`). Existing themes (`THEME_CLASSIC`, `THEME_MATERIAL_YOU`) are preserved without any behavioral or visual regression.
+  - Theme selection remains independent for Phone (`THEME_MAIN`) and Android Auto (`THEME_AA`).
+  - Glass theme is strictly opt-in (`THEME_GLASS`). Existing themes (`THEME_CLASSIC`, `THEME_MATERIAL_YOU`) are preserved.
 - **Manual Day/Night Appearance Decoupling**:
   - Controlled by a single shared user preference `GLASS_APPEARANCE` (`DAY = 0`, `NIGHT = 1`, fixed default `NIGHT`).
-  - Completely decoupled from system `uiMode`, time-of-day, ambient light sensors, or vehicle headlights. Toggling system dark/light mode has zero effect on Glass palette resolution.
-  - Preference state is persistently saved across app restarts, Android Auto reconnects, upgrades, and backup/restore cycles.
+  - Decoupled from system `uiMode`, time-of-day, ambient light sensors, or vehicle headlights.
+  - Preference state is saved across app restarts, Android Auto reconnects, upgrades, and backup/restore cycles.
 - **Unified Design Tokens & Common Components**:
   - `GlassThemeColors`: Resolves semantic tokens for surfaces, text, borders, glass cards, highlights, icons based strictly on `isNight(Context)` manual resolver.
   - `GlassDrawables`: Provides rounded glass card surfaces, border gradients, and frosted acrylic containers.
   - `GlassDimensions`: Standardizes spacing, corners, and touch targets (minimum 48dp touch targets, 76dp media transport cells).
-- **Surface Coverage**:
-  - **Topbar & Navbar**: `FermataToolBarView` and `TopBarController` dynamically reconcile title and icon color filters against `colors.getTextPrimary()`.
-  - **Dialogs & Menus**: `GlassDialogBuilder` and `OverlayMenuView` use acrylic frosted backgrounds, glass cards, and high-contrast typography.
-  - **Settings & Media Library**: `GlassSettingsDecorator` and `GlassMediaLibDecorator` style preference lists, folders, and source browsing.
+- **Surface Coverage & Reopened Items**:
+  - **Topbar**: `FermataToolBarView` and `TopBarController` dynamically reconcile title, subtitle, and icon color filters against `colors.getTextPrimary()`.
+  - **Navbar AA**: `FermataNavBarView` uses glass background, translucent glass divider, `StateListDrawable` buttons (selected/focused/pressed), and dynamic `ColorStateList` icon tints.
+  - **Dialogs & Menus**: `GlassDialogBuilder` styles root card, alertTitle, message, buttons, list choices, input fields, and custom child view hierarchies via `styleViewHierarchy()`.
+  - **Settings & Media Library**: `GlassSettingsDecorator` and `GlassMediaLibDecorator` apply stateful card drawables, padding, margins, Day/Night background fallback, and typography synchronization.
+  - **Phone Shell**: `PhoneSupportBannerController` and `PhonePlaybackCarHeaderController` use theme attributes and dynamic `GlassThemeColors` instead of fixed white text.
   - **Dashboard & Hero Media**:
     - Adaptive Quick Dock with 4 or 6 slots (Favorites, Add, Addons, Exit).
     - Hero media player card featuring 2-line track title, transport controls, and timeline seek vs live stream support.
-    - Live OpenMeteo GPS weather with full lifecycle states (`STATE_PERMISSION_NEEDED`, `STATE_NO_LOCATION`, `STATE_UPDATING`, `STATE_SUCCESS`, `STATE_STALE`, `STATE_ERROR`) and 11-hour forecast capsules.
+    - Live OpenMeteo GPS weather with full lifecycle states and 11-hour forecast capsules.
   - **Specialized Surfaces**:
     - Fullscreen video player controls (`ControlPanelView`) with 2000ms idle dismiss and 350ms multi-action debounce.
     - Android Auto on-screen keyboard (`CarKeyboardOverlay`) with translucent acrylic container and rounded keycaps.
     - Car Finder & Precise Radar (`CarFinderFragment`) with high-contrast Day/Night cards, OpenStreetMap tiles, cyan scanning rings, and animated compass heading.
+- **Verification Gates Pending**:
+  - DHU live execution with `THEME_AA = THEME_GLASS` in both Day and Night modes.
+  - Full per-screen evidence linking verified screenshots to specific APK builds and commits.
 
 ## 5. Navigation Rail Rules
 

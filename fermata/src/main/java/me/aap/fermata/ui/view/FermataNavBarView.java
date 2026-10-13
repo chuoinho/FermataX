@@ -239,7 +239,13 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 		fixedZone.setOrientation(VERTICAL);
 		fixedZone.setClipChildren(false);
 		View divider = new View(getContext());
-		divider.setBackgroundResource(R.drawable.aa_nav_divider);
+		MainActivityDelegate a = getMainActivity();
+		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			boolean isNight = a.getPrefs().isGlassNightMode();
+			divider.setBackgroundColor(isNight ? 0x2DFFFFFF : 0x20000000);
+		} else {
+			divider.setBackgroundResource(R.drawable.aa_nav_divider);
+		}
 		scrollViewport = new NavRailViewport(getContext(), getTint(), isRight());
 
 		super.addView(fixedZone, new LinearLayoutCompat.LayoutParams(
@@ -408,11 +414,47 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 		}
 
 		configureIcon(button);
-		button.setBackgroundResource((child.getId() == R.id.nav_voice) ?
-				R.drawable.aa_nav_voice_bg : isRight() ?
-				R.drawable.aa_projected_nav_button_bg_right :
-				R.drawable.aa_projected_nav_button_bg_left);
+		applyNavButtonBackground(button, child.getId() == R.id.nav_voice);
 		if (changed) child.setLayoutParams(lp);
+	}
+
+	private void applyNavButtonBackground(NavButtonView button, boolean isVoice) {
+		MainActivityDelegate a = getMainActivity();
+		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			boolean isNight = a.getPrefs().isGlassNightMode();
+			me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+					me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext(), isNight);
+			android.graphics.drawable.StateListDrawable sld = new android.graphics.drawable.StateListDrawable();
+
+			android.graphics.drawable.GradientDrawable sel = new android.graphics.drawable.GradientDrawable();
+			sel.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+			sel.setCornerRadius(UiUtils.toPx(getContext(), 14));
+			sel.setColor(isNight ? 0x2E38BDF8 : 0x220284C7);
+			sel.setStroke(UiUtils.toIntPx(getContext(), 2), isNight ? 0x8038BDF8 : 0x800284C7);
+
+			android.graphics.drawable.GradientDrawable foc = new android.graphics.drawable.GradientDrawable();
+			foc.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+			foc.setCornerRadius(UiUtils.toPx(getContext(), 14));
+			foc.setColor(isNight ? 0x20FFFFFF : 0x15000000);
+			foc.setStroke(UiUtils.toIntPx(getContext(), 2), gc.getActionText());
+
+			android.graphics.drawable.GradientDrawable prs = new android.graphics.drawable.GradientDrawable();
+			prs.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+			prs.setCornerRadius(UiUtils.toPx(getContext(), 14));
+			prs.setColor(isNight ? 0x33FFFFFF : 0x20000000);
+
+			sld.addState(new int[]{android.R.attr.state_selected}, sel);
+			sld.addState(new int[]{android.R.attr.state_activated}, sel);
+			sld.addState(new int[]{android.R.attr.state_focused}, foc);
+			sld.addState(new int[]{android.R.attr.state_pressed}, prs);
+			sld.addState(new int[]{}, new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+			button.setBackground(sld);
+		} else {
+			button.setBackgroundResource(isVoice ?
+					R.drawable.aa_nav_voice_bg : isRight() ?
+					R.drawable.aa_projected_nav_button_bg_right :
+					R.drawable.aa_projected_nav_button_bg_left);
+		}
 	}
 
 	private void configureIcon(NavButtonView button) {
@@ -429,8 +471,30 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 		button.setGravity(Gravity.CENTER);
 		button.setIconPadding(0);
 		icon.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-		ImageViewCompat.setImageTintList(icon,
-				AppCompatResources.getColorStateList(getContext(), R.color.aa_nav_icon_tint));
+		MainActivityDelegate a = getMainActivity();
+		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
+			boolean isNight = a.getPrefs().isGlassNightMode();
+			me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+					me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext(), isNight);
+			android.content.res.ColorStateList glassIconColors = new android.content.res.ColorStateList(
+					new int[][]{
+							new int[]{android.R.attr.state_selected},
+							new int[]{android.R.attr.state_activated},
+							new int[]{android.R.attr.state_focused},
+							new int[]{}
+					},
+					new int[]{
+							gc.getActionText(),
+							gc.getActionText(),
+							gc.getActionText(),
+							gc.getTextSecondary()
+					}
+			);
+			ImageViewCompat.setImageTintList(icon, glassIconColors);
+		} else {
+			ImageViewCompat.setImageTintList(icon,
+					AppCompatResources.getColorStateList(getContext(), R.color.aa_nav_icon_tint));
+		}
 	}
 
 	private MainActivityDelegate getMainActivity() {

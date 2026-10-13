@@ -199,6 +199,18 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 			next.setEnabled(presentation.canNext);
 			next.setAlpha(presentation.canNext ? 1f : 0.45f);
 
+			if (isGlassTheme()) {
+				android.content.Context ctx = header.getContext();
+				me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(ctx);
+				boolean isNight = (a != null) ? a.getPrefs().isGlassNightMode() : me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(ctx);
+				me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+						me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, isNight);
+				title.setTextColor(gc.getTextPrimary());
+				subtitle.setTextColor(gc.getTextSecondary());
+				previous.setColorFilter(gc.getTextPrimary());
+				next.setColorFilter(gc.getTextPrimary());
+			}
+
 			updateTimeline(presentation);
 		}
 

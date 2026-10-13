@@ -54,7 +54,17 @@ public final class PhoneSupportBannerController implements MainActivityListener 
 
 		if (isGlassTheme()) {
 			boolean isNight = activity.getPrefs().isGlassNightMode();
+			me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+					me.aap.fermata.ui.glass.theme.GlassThemeColors.get(activity.getContext(), isNight);
 			bannerView.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(activity.getContext(), 999f, isNight));
+			android.widget.TextView tv = bannerView.findViewById(R.id.phone_support_text);
+			if (tv != null) {
+				tv.setTextColor(gc.getTextPrimary());
+			}
+			android.widget.ImageView close = bannerView.findViewById(R.id.phone_support_close);
+			if (close != null) {
+				close.setColorFilter(gc.getTextSecondary());
+			}
 		}
 
 		activity.addBroadcastListener(this);
