@@ -52,7 +52,21 @@ public final class PhoneSupportBannerController implements MainActivityListener 
 			closeBtn.setOnClickListener(v -> dismissAnimated());
 		}
 
+		if (isGlassTheme()) {
+			boolean isNight = (activity.getContext().getResources().getConfiguration().uiMode &
+					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			bannerView.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(activity.getContext(), 999f, isNight));
+		}
+
 		activity.addBroadcastListener(this);
+	}
+
+	public boolean isGlassTheme() {
+		try {
+			return activity != null && activity.getPrefs().isGlassTheme(activity.isCarActivity());
+		} catch (Throwable e) {
+			return false;
+		}
 	}
 
 	public void start() {

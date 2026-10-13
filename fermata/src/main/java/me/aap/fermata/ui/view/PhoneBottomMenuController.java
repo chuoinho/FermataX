@@ -22,11 +22,25 @@ public final class PhoneBottomMenuController {
 			boolean isNight = (ctx.getResources().getConfiguration().uiMode &
 					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
 			view.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+			android.content.res.ColorStateList iconColors = new android.content.res.ColorStateList(
+					new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+					new int[]{0xFF00E5FF, 0x80FFFFFF}
+			);
+			view.setItemIconTintList(iconColors);
+			view.setItemTextColor(iconColors);
 		}
 		view.setOnItemSelectedListener(item -> {
 			if (rendering) return true;
 			return activity.showPhoneRoot(item.getItemId());
 		});
+	}
+
+	public boolean isGlassTheme() {
+		try {
+			return activity != null && activity.getPrefs().isGlassTheme(activity.isCarActivity());
+		} catch (Throwable e) {
+			return false;
+		}
 	}
 
 	public void refresh() {

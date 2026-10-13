@@ -53,10 +53,44 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 			if (!rendering) mode.setEnabled(checked);
 		});
 		wirePlaybackControls();
+		if (isGlassTheme()) {
+			android.content.Context ctx = header.getContext();
+			boolean isNight = (ctx.getResources().getConfiguration().uiMode &
+					android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+			header.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 16f, isNight));
+			SeekBar progress = header.findViewById(R.id.phone_header_progress);
+			if (progress != null) {
+				progress.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+				progress.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFFFFFFFF));
+				progress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x33FFFFFF));
+			}
+			if (toggle instanceof androidx.appcompat.widget.SwitchCompat switchCompat) {
+				switchCompat.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+				switchCompat.setTrackTintList(new android.content.res.ColorStateList(
+						new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+						new int[]{0x6600E5FF, 0x33FFFFFF}
+				));
+			} else if (toggle instanceof android.widget.Switch sw) {
+				sw.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+				sw.setTrackTintList(new android.content.res.ColorStateList(
+						new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+						new int[]{0x6600E5FF, 0x33FFFFFF}
+				));
+			}
+		}
 		binder.addBroadcastListener(this);
 		AutomotiveConnectionState.get().addListener(this);
 		mode.addListener(modeListener);
 		render();
+	}
+
+	public boolean isGlassTheme() {
+		try {
+			me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(header.getContext());
+			return a != null && a.getPrefs().isGlassTheme(a.isCarActivity());
+		} catch (Throwable e) {
+			return false;
+		}
 	}
 
 	public void refresh(RuntimeHostMode hostMode, boolean barsHidden) {
