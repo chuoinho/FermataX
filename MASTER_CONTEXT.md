@@ -1,6 +1,6 @@
 # FermataX Master Context
 
-> Last updated: 2026-09-24
+> Last updated: 2026-10-13
 >
 > This document is the primary project context for maintainers and coding agents. Read it
 > before changing product behavior, navigation, playback, addon activation, packaging, or
@@ -226,6 +226,34 @@ semantic and adaptive presentation contracts are canonical:
 - TV recent history is intentionally compact and should not grow into a noisy activity log.
 - Unified Favorites only includes item types that implement favorite support correctly.
 - Do not display a favorite action for unsupported or external items.
+
+### Glass Theme Architecture and Visual Contracts
+
+Glassmorphism (Glass Theme) is a comprehensive translucent visual design system implemented across both Phone and Android Auto interfaces.
+
+- **Independent Surface Opt-In**:
+  - Theme selection remains strictly independent for Phone (`THEME_MAIN`) and Android Auto (`THEME_AA`).
+  - Glass theme is strictly opt-in (`THEME_GLASS`). Existing themes (`THEME_CLASSIC`, `THEME_MATERIAL_YOU`) are preserved without any behavioral or visual regression.
+- **Manual Day/Night Appearance Decoupling**:
+  - Controlled by a single shared user preference `GLASS_APPEARANCE` (`DAY = 0`, `NIGHT = 1`, fixed default `NIGHT`).
+  - Completely decoupled from system `uiMode`, time-of-day, ambient light sensors, or vehicle headlights. Toggling system dark/light mode has zero effect on Glass palette resolution.
+  - Preference state is persistently saved across app restarts, Android Auto reconnects, upgrades, and backup/restore cycles.
+- **Unified Design Tokens & Common Components**:
+  - `GlassThemeColors`: Resolves semantic tokens for surfaces, text, borders, glass cards, highlights, icons based strictly on `isNight(Context)` manual resolver.
+  - `GlassDrawables`: Provides rounded glass card surfaces, border gradients, and frosted acrylic containers.
+  - `GlassDimensions`: Standardizes spacing, corners, and touch targets (minimum 48dp touch targets, 76dp media transport cells).
+- **Surface Coverage**:
+  - **Topbar & Navbar**: `FermataToolBarView` and `TopBarController` dynamically reconcile title and icon color filters against `colors.getTextPrimary()`.
+  - **Dialogs & Menus**: `GlassDialogBuilder` and `OverlayMenuView` use acrylic frosted backgrounds, glass cards, and high-contrast typography.
+  - **Settings & Media Library**: `GlassSettingsDecorator` and `GlassMediaLibDecorator` style preference lists, folders, and source browsing.
+  - **Dashboard & Hero Media**:
+    - Adaptive Quick Dock with 4 or 6 slots (Favorites, Add, Addons, Exit).
+    - Hero media player card featuring 2-line track title, transport controls, and timeline seek vs live stream support.
+    - Live OpenMeteo GPS weather with full lifecycle states (`STATE_PERMISSION_NEEDED`, `STATE_NO_LOCATION`, `STATE_UPDATING`, `STATE_SUCCESS`, `STATE_STALE`, `STATE_ERROR`) and 11-hour forecast capsules.
+  - **Specialized Surfaces**:
+    - Fullscreen video player controls (`ControlPanelView`) with 2000ms idle dismiss and 350ms multi-action debounce.
+    - Android Auto on-screen keyboard (`CarKeyboardOverlay`) with translucent acrylic container and rounded keycaps.
+    - Car Finder & Precise Radar (`CarFinderFragment`) with high-contrast Day/Night cards, OpenStreetMap tiles, cyan scanning rings, and animated compass heading.
 
 ## 5. Navigation Rail Rules
 
