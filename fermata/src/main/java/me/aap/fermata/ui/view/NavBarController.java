@@ -15,6 +15,10 @@ public final class NavBarController {
 	public static void refresh(MainActivityDelegate activity) {
 		NavBarView navBar = activity.getNavBar();
 		if (navBar == null) return;
+		if (activity.isGlassTheme()) {
+			navBar.setVisibility(View.GONE);
+			return;
+		}
 		navBar.setVisibility(PhoneRootPolicy.showAddonNavBar(activity.getRuntimeHostMode(),
 				activity.getPhoneRootId(), activity.isBarsHidden()) ? View.VISIBLE : View.GONE);
 		applySelection(navBar, activity.getActiveNavItemId());

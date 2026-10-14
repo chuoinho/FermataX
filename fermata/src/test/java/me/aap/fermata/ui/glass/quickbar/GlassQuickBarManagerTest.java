@@ -11,8 +11,10 @@ import org.robolectric.RuntimeEnvironment;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import me.aap.fermata.R;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceStore;
 
@@ -29,40 +31,36 @@ public class GlassQuickBarManagerTest {
     }
 
     @Test
-    public void testCleanInstallSlotsAreEmptyAndFixedSlotsExist() {
-        // Customizable slots 0-3 must be empty on clean install
-        for (int i = 0; i < 4; i++) {
+    public void testCleanInstallAll6SlotsAreEmpty() {
+        // All 6 customizable slots must be empty on clean install
+        for (int i = 0; i < GlassQuickBarManager.TOTAL_SLOTS; i++) {
             assertNull(manager.getCustomShortcut(i));
             assertNull(manager.getSlot(i));
         }
-
-        // Fixed slots 4 (Addon Catalog) and 5 (Exit) must always exist
-        assertNotNull(manager.getFixedSlot(4));
-        assertEquals("ADDON_CATALOG", manager.getFixedSlot(4).getId());
-        assertEquals("Addons", manager.getFixedSlot(4).getTitle());
-
-        assertNotNull(manager.getFixedSlot(5));
-        assertEquals("EXIT", manager.getFixedSlot(5).getId());
-        assertEquals("Exit", manager.getFixedSlot(5).getTitle());
-
-        assertEquals(manager.getFixedSlot(4), manager.getSlot(4));
-        assertEquals(manager.getFixedSlot(5), manager.getSlot(5));
     }
 
     @Test
-    public void testAddUpdateAndRemoveCustomShortcut() {
+    public void testAddUpdateAndRemoveCustomShortcutAcrossAllSlots() {
         GlassQuickShortcut yt = new GlassQuickShortcut("addon:youtube", "YouTube", R.drawable.youtube, "addon");
         manager.setCustomShortcut(0, yt);
 
+        GlassQuickShortcut tv = new GlassQuickShortcut("addon:tv", "TV", R.drawable.tv, "addon");
+        manager.setCustomShortcut(5, tv); // Slot 5 is now fully customizable!
+
         assertEquals(yt, manager.getCustomShortcut(0));
         assertEquals(yt, manager.getSlot(0));
+        assertEquals(tv, manager.getCustomShortcut(5));
+        assertEquals(tv, manager.getSlot(5));
 
         // Recreate manager with same preference store to test persistence
         GlassQuickBarManager reloaded = new GlassQuickBarManager(store);
         GlassQuickShortcut loadedYt = reloaded.getCustomShortcut(0);
         assertNotNull(loadedYt);
         assertEquals("addon:youtube", loadedYt.getId());
-        assertEquals("YouTube", loadedYt.getTitle());
+
+        GlassQuickShortcut loadedTv = reloaded.getCustomShortcut(5);
+        assertNotNull(loadedTv);
+        assertEquals("addon:tv", loadedTv.getId());
 
         // Remove shortcut
         reloaded.removeCustomShortcut(0);
@@ -70,54 +68,69 @@ public class GlassQuickBarManagerTest {
 
         GlassQuickBarManager reloadedAfterRemoval = new GlassQuickBarManager(store);
         assertNull(reloadedAfterRemoval.getCustomShortcut(0));
+        assertNotNull(reloadedAfterRemoval.getCustomShortcut(5));
     }
 
     @Test
-    public void testFixedSlotsCannotBeOverwritten() {
+    public void testOutOfBoundsSlotIndexThrows() {
         GlassQuickShortcut custom = new GlassQuickShortcut("custom:test", "Test", 0, "custom");
-        assertThrows(IllegalArgumentException.class, () -> manager.setCustomShortcut(4, custom));
-        assertThrows(IllegalArgumentException.class, () -> manager.setCustomShortcut(5, custom));
+        assertThrows(IllegalArgumentException.class, () -> manager.setCustomShortcut(-1, custom));
+        assertThrows(IllegalArgumentException.class, () -> manager.setCustomShortcut(6, custom));
     }
 
     @Test
-    public void testGlassQuickBarViewRendering() {
+    public void testMigrationCleansLegacyFixedSlots() {
+        // Simulate an older preference JSON with ADDON_CATALOG and EXIT in slots 4 and 5
+        String legacyJson = "[{\"id\":\"addon:1\",\"title\":\"App1\",\"icon\":0,\"type\":\"addon\"},null,null,null,{\"id\":\"ADDON_CATALOG\",\"title\":\"Addons\",\"icon\":0,\"type\":\"fixed\"},{\"id\":\"EXIT\",\"title\":\"Exit\",\"icon\":0,\"type\":\"fixed\"}]";
+        PreferenceStore legacyStore = new BasicPreferenceStore();
+        legacyStore.applyStringPref(MainActivityPrefs.PREF_GLASS_QUICK_SHORTCUTS, legacyJson);
+
+        GlassQuickBarManager migrated = new GlassQuickBarManager(legacyStore);
+        // Slot 0 is preserved
+        assertNotNull(migrated.getSlot(0));
+        assertEquals("addon:1", migrated.getSlot(0).getId());
+
+        // Slots 4 and 5 must be migrated to clean null customizable slots
+        assertNull(migrated.getSlot(4));
+        assertNull(migrated.getSlot(5));
+    }
+
+    @Test
+    public void testGlassQuickBarViewRenderingAndInteractions() {
         Context context = RuntimeEnvironment.getApplication();
         GlassQuickBarView view = new GlassQuickBarView(context);
         assertNotNull(view);
 
-        AtomicBoolean catalogClicked = new AtomicBoolean(false);
-        AtomicBoolean exitClicked = new AtomicBoolean(false);
+        GlassQuickShortcut yt = new GlassQuickShortcut("addon:youtube", "YouTube", R.drawable.youtube, "addon");
+        manager.setCustomShortcut(0, yt);
+
+        AtomicInteger clickedSlot = new AtomicInteger(-1);
+        AtomicInteger emptyClickedSlot = new AtomicInteger(-1);
 
         view.init(manager, new GlassQuickBarView.Listener() {
             @Override
-            public void onShortcutClicked(int slotIndex, GlassQuickShortcut shortcut) {}
+            public void onShortcutClicked(int slotIndex, GlassQuickShortcut shortcut) {
+                clickedSlot.set(slotIndex);
+            }
 
             @Override
-            public void onEmptySlotClicked(int slotIndex) {}
+            public void onEmptySlotClicked(int slotIndex) {
+                emptyClickedSlot.set(slotIndex);
+            }
 
             @Override
             public void onShortcutLongClicked(int slotIndex, GlassQuickShortcut shortcut) {}
-
-            @Override
-            public void onAddonsCatalogClicked() {
-                catalogClicked.set(true);
-            }
-
-            @Override
-            public void onExitClicked() {
-                exitClicked.set(true);
-            }
         });
 
-        assertEquals(GlassQuickBarManager.TOTAL_SLOTS, view.getChildCount());
+        assertEquals(view.getActiveSlotCount(), view.getChildCount());
 
-        // Simulate click on Addons (slot 4)
-        view.getChildAt(4).performClick();
-        assertTrue(catalogClicked.get());
+        // Click assigned slot 0
+        view.getChildAt(0).performClick();
+        assertEquals(0, clickedSlot.get());
 
-        // Simulate click on Exit (slot 5)
-        view.getChildAt(5).performClick();
-        assertTrue(exitClicked.get());
+        // Click empty slot 1
+        view.getChildAt(1).performClick();
+        assertEquals(1, emptyClickedSlot.get());
     }
 
     @Test

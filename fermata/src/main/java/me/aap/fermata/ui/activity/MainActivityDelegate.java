@@ -160,6 +160,8 @@ public class MainActivityDelegate extends ActivityDelegate
 	private PhoneBottomMenuController phoneBottomMenuController;
 	private PhonePlaybackCarHeaderController phonePlaybackCarHeaderController;
 	private PhoneSupportBannerController phoneSupportBannerController;
+	private final me.aap.fermata.ui.glass.rail.GlassNavigationRailController glassRailController =
+			new me.aap.fermata.ui.glass.rail.GlassNavigationRailController();
 	private FutureSupplier<?> contentLoading;
 	private final AsyncOperationController contentOperations =
 			new AsyncOperationController(this::onContentOperationChanged);
@@ -644,26 +646,18 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	@Override
-	public float getToolBarSize() {
-		return getPrefs().getToolBarSizePref(this);
-	}
+	public float getToolBarSize() { return getPrefs().getToolBarSizePref(this); }
 
-	public NavBarView getNavBar() {
-		return navBar;
-	}
+	public NavBarView getNavBar() { return navBar; }
 
 	@Override
-	public float getNavBarSize() {
-		return getPrefs().getNavBarSizePref(this);
-	}
+	public float getNavBarSize() { return getPrefs().getNavBarSizePref(this); }
 
-	public BodyLayout getBody() {
-		return body;
-	}
+	public BodyLayout getBody() { return body; }
 
-	public NavBarMediator getNavBarMediator() {
-		return navBarMediator;
-	}
+	public NavBarMediator getNavBarMediator() { return navBarMediator; }
+
+	public me.aap.fermata.ui.glass.rail.GlassNavigationRailController getGlassRailController() { return glassRailController; }
 
 
 	public ControlPanelView getControlPanel() {
@@ -708,6 +702,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		ToolBarView tb = getToolBar();
 		if (barsHidden) tb.setVisibility(GONE);
 		else tb.refreshMediatorVisibility();
+		glassRailController.setBarsHidden(barsHidden);
 		UiShellController.onRouteChanged(this);
 	}
 
@@ -1350,6 +1345,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		if (getRuntimeHostMode().usesAutomotivePresentation()) floatingButton.setVisibility(GONE);
 		controlPanel.bind(getMediaServiceBinder());
 		phoneBottomMenuController.refresh();
+		glassRailController.init(this);
 
 		if (VERSION.SDK_INT >= VERSION_CODES.VANILLA_ICE_CREAM && !a.isCarActivity()) {
 			ViewCompat.setOnApplyWindowInsetsListener(toolBar, (v, insets) -> {
@@ -1376,7 +1372,10 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (MainActivityPrefs.hasThemePref(this, prefs)) {
-			recreate();
+			if (isGlassTheme()) glassRailController.refreshAppearance(this);
+			if (BuildConfig.AUTO && isCarActivityNotMirror() && prefs.contains(MainActivityPrefs.GLASS_APPEARANCE) && !prefs.contains(MainActivityPrefs.THEME_AA) && !prefs.contains(MainActivityPrefs.THEME_MAIN)) {
+				fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+			} else recreate();
 		} else if (MainActivityPrefs.hasNavBarPosPref(this, prefs)) {
 			if (BuildConfig.AUTO && prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
 				int pos = getPrefs().getIntPref(MainActivityPrefs.NAV_BAR_POS_AA);

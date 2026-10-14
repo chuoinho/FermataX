@@ -11,7 +11,6 @@ import java.util.List;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
-import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.glass.dialog.GlassDialogBuilder;
 
 /**
@@ -43,12 +42,23 @@ public class GlassShortcutPickerDialog {
         } catch (Throwable ignored) {}
 
         // Library destinations
-        list.add(new GlassQuickShortcut("lib:playlists", "Playlists", R.drawable.playlist, "library"));
-        list.add(new GlassQuickShortcut("lib:folders", "Folders", R.drawable.add_folder, "library"));
-        list.add(new GlassQuickShortcut("lib:favorites", "Favorites", R.drawable.favorite, "library"));
-        list.add(new GlassQuickShortcut("lib:recent", "Recent", R.drawable.timer, "library"));
+        list.add(new GlassQuickShortcut("lib:playlists", safeGetString(context, R.string.playlists, "Playlists"), R.drawable.playlist, "library"));
+        list.add(new GlassQuickShortcut("lib:folders", safeGetString(context, R.string.folders, "Folders"), R.drawable.add_folder, "library"));
+        list.add(new GlassQuickShortcut("lib:favorites", safeGetString(context, R.string.favorites, "Favorites"), R.drawable.favorite, "library"));
+        list.add(new GlassQuickShortcut("lib:recent", safeGetString(context, R.string.recent, "Recent"), R.drawable.timer, "library"));
+        list.add(new GlassQuickShortcut("car_finder", "Car Finder", R.drawable.ic_car_find, "addon"));
+        list.add(new GlassQuickShortcut("settings", safeGetString(context, R.string.settings, "Settings"), R.drawable.settings, "system"));
 
         return list;
+    }
+
+    private static String safeGetString(@NonNull Context context, int resId, String fallback) {
+        try {
+            if (resId != 0) {
+                return context.getString(resId);
+            }
+        } catch (Throwable ignored) {}
+        return fallback;
     }
 
     public static void show(@NonNull Context context, @NonNull OnShortcutSelectedListener listener) {
@@ -60,7 +70,7 @@ public class GlassShortcutPickerDialog {
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(context.getString(R.string.theme_glass) + " Shortcuts");
+        builder.setTitle(safeGetString(context, R.string.theme_glass, "Glass") + " Shortcuts");
         builder.setItems(titles, (dialog, which) -> {
             if (which >= 0 && which < shortcuts.size()) {
                 listener.onShortcutSelected(shortcuts.get(which));

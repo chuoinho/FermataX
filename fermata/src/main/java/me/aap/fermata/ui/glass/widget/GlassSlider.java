@@ -74,6 +74,13 @@ public class GlassSlider extends View {
 		setClickable(true);
 		setFocusable(true);
 
+		boolean isNight = GlassThemeColors.isNight(context);
+		GlassThemeColors colors = GlassThemeColors.get(context, isNight);
+
+		trackColor = isNight ? 0x2AFFFFFF : 0x2A000000;
+		progressStartColor = colors.getActionText();
+		progressEndColor = isNight ? GlassThemeColors.ACCENT_BLUE : colors.getActionText();
+
 		trackPaint.setStyle(Paint.Style.FILL);
 		progressPaint.setStyle(Paint.Style.FILL);
 
@@ -82,7 +89,7 @@ public class GlassSlider extends View {
 
 		thumbStrokePaint.setStyle(Paint.Style.STROKE);
 		thumbStrokePaint.setStrokeWidth(1.5f * density);
-		thumbStrokePaint.setColor(GlassThemeColors.ACCENT_CYAN);
+		thumbStrokePaint.setColor(colors.getActionText());
 	}
 
 	public float getProgress() {
@@ -163,7 +170,8 @@ public class GlassSlider extends View {
 
 		// 3. Draw thumb
 		if (thumbGlow) {
-			thumbPaint.setShadowLayer(4.0f * density, 0.0f, 1.0f * density, 0x8000E5FF);
+			int glow = (progressStartColor & 0x00FFFFFF) | 0x80000000;
+			thumbPaint.setShadowLayer(4.0f * density, 0.0f, 1.0f * density, glow);
 		} else {
 			thumbPaint.clearShadowLayer();
 		}

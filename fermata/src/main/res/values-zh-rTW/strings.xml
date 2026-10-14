@@ -533,6 +533,7 @@
     <string name="glass_appearance_sub">套用於手機與 Android Auto 上的毛玻璃主題：%1$s</string>
     <string name="glass_appearance_day">淺色</string>
     <string name="glass_appearance_night">深色</string>
+    <string name="glass_quick_add">新增</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">尋找車輛</string>

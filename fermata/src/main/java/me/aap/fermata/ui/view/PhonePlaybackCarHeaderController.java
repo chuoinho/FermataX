@@ -208,7 +208,12 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 				title.setTextColor(gc.getTextPrimary());
 				subtitle.setTextColor(gc.getTextSecondary());
 				previous.setColorFilter(gc.getTextPrimary());
+				playPause.setColorFilter(gc.getTextPrimary());
 				next.setColorFilter(gc.getTextPrimary());
+				TextView pos = header.findViewById(R.id.phone_header_elapsed);
+				if (pos != null) pos.setTextColor(gc.getTextSecondary());
+				TextView dur = header.findViewById(R.id.phone_header_duration);
+				if (dur != null) dur.setTextColor(gc.getTextSecondary());
 			}
 
 			updateTimeline(presentation);

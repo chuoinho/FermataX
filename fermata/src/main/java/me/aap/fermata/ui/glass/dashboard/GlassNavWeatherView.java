@@ -168,7 +168,7 @@ public class GlassNavWeatherView extends FrameLayout {
         btnNavExit.setText("EXIT");
         btnNavExit.setTextSize(11f);
         btnNavExit.setTypeface(Typeface.DEFAULT_BOLD);
-        btnNavExit.setTextColor(Color.WHITE);
+        btnNavExit.setTextColor(colors.getTextPrimary());
         btnNavExit.setGravity(Gravity.CENTER);
         int btnPadH = GlassDimensions.dpToPx(context, 14);
         int btnPadV = GlassDimensions.dpToPx(context, 6);
@@ -223,7 +223,7 @@ public class GlassNavWeatherView extends FrameLayout {
         tvWeatherCondition.setText("Updating...");
         tvWeatherCondition.setTextSize(14f);
         tvWeatherCondition.setTypeface(Typeface.DEFAULT_BOLD);
-        tvWeatherCondition.setTextColor(GlassThemeColors.ACCENT_CYAN);
+        tvWeatherCondition.setTextColor(colors.getActionText());
         tvWeatherCondition.setGravity(Gravity.CENTER);
         centerWeather.addView(tvWeatherCondition);
 
@@ -313,8 +313,13 @@ public class GlassNavWeatherView extends FrameLayout {
             condition += " (Cached)";
         }
         tvWeatherCondition.setText(condition);
-        tvWeatherHighLow.setText(String.format(Locale.US, "H: %.0f°  L: %.0f°",
-                forecast.getHighTemp(), forecast.getLowTemp()));
+        String highLow = String.format(Locale.US, "H: %.0f°  L: %.0f°",
+                forecast.getHighTemp(), forecast.getLowTemp());
+        if (forecast.getTimestamp() > 0) {
+            String updateTime = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new java.util.Date(forecast.getTimestamp()));
+            highLow += " • " + (isStale ? "Cached " : "Updated ") + updateTime;
+        }
+        tvWeatherHighLow.setText(highLow);
         if (locationName != null && !locationName.trim().isEmpty()) {
             tvWeatherLocation.setText(locationName.trim());
             tvWeatherLocation.setVisibility(View.VISIBLE);
@@ -324,12 +329,13 @@ public class GlassNavWeatherView extends FrameLayout {
 
         hourlyTimelineRow.removeAllViews();
         Context ctx = getContext();
+        boolean isAuto = me.aap.fermata.BuildConfig.AUTO;
+        int padH = GlassDimensions.dpToPx(ctx, 10);
+        int padV = GlassDimensions.dpToPx(ctx, isAuto ? 4 : 6);
         for (GlassOpenMeteoClient.HourlyPoint point : forecast.getHourlyPoints()) {
             LinearLayout item = new LinearLayout(ctx);
             item.setOrientation(LinearLayout.VERTICAL);
             item.setGravity(Gravity.CENTER);
-            int padH = GlassDimensions.dpToPx(ctx, 10);
-            int padV = GlassDimensions.dpToPx(ctx, 6);
             item.setPadding(padH, padV, padH, padV);
             item.setBackground(GlassDrawables.createGlassPillDrawable(ctx, 12f, isNight));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(

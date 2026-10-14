@@ -150,22 +150,25 @@ public class GlassSwitch extends View implements Checkable {
 		float cornerRadius = height / 2.0f;
 		trackRect.set(0.0f, 0.0f, width, height);
 
+		boolean isNight = GlassThemeColors.isNight(getContext());
+		GlassThemeColors colors = GlassThemeColors.get(getContext(), isNight);
+
 		// 1. Render Track
 		if (thumbPosition > 0.0f) {
-			// Checked / active transition: Cyan glow
-			trackPaint.setColor(GlassThemeColors.ACCENT_CYAN);
+			// Checked / active transition: Action color glow
+			trackPaint.setColor(colors.getActionText());
 			trackPaint.setAlpha(Math.round(255 * thumbPosition * 0.9f));
 			canvas.drawRoundRect(trackRect, cornerRadius, cornerRadius, trackPaint);
 		}
 		if (thumbPosition < 1.0f) {
-			// Unchecked track: Translucent obsidian glass
-			trackPaint.setColor(0x2AFFFFFF);
+			// Unchecked track: Translucent obsidian / frosted glass
+			trackPaint.setColor(isNight ? 0x2AFFFFFF : 0x2A000000);
 			trackPaint.setAlpha(Math.round(255 * (1.0f - thumbPosition) * 0.4f));
 			canvas.drawRoundRect(trackRect, cornerRadius, cornerRadius, trackPaint);
 		}
 
 		// Track outline border
-		trackStrokePaint.setColor(0x33FFFFFF);
+		trackStrokePaint.setColor(isNight ? 0x33FFFFFF : 0x33000000);
 		canvas.drawRoundRect(trackRect, cornerRadius, cornerRadius, trackStrokePaint);
 
 		// 2. Render Thumb

@@ -131,7 +131,7 @@ public class GlassSpeedoTripView extends FrameLayout {
         tvSpeedUnit.setText("KM/H");
         tvSpeedUnit.setTextSize(12f);
         tvSpeedUnit.setTypeface(Typeface.DEFAULT_BOLD);
-        tvSpeedUnit.setTextColor(GlassThemeColors.ACCENT_CYAN);
+        tvSpeedUnit.setTextColor(colors.getActionText());
         tvSpeedUnit.setLetterSpacing(0.12f);
         tvSpeedUnit.setGravity(Gravity.CENTER);
         speedCenter.addView(tvSpeedUnit);
@@ -259,7 +259,7 @@ public class GlassSpeedoTripView extends FrameLayout {
 
             arcProgressPaint.setStyle(Paint.Style.STROKE);
             arcProgressPaint.setStrokeWidth(GlassDimensions.dpToPx(context, 5));
-            arcProgressPaint.setColor(GlassThemeColors.ACCENT_CYAN);
+            arcProgressPaint.setColor(colors.getActionText());
             arcProgressPaint.setStrokeCap(Paint.Cap.ROUND);
         }
 

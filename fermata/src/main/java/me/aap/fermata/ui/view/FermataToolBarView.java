@@ -54,12 +54,15 @@ public class FermataToolBarView extends ToolBarView {
 	private static void styleToolbarChildren(ViewGroup parent, me.aap.fermata.ui.glass.theme.GlassThemeColors colors, Context ctx, boolean isNight) {
 		for (int i = 0, count = parent.getChildCount(); i < count; i++) {
 			View child = parent.getChildAt(i);
-			if (child instanceof TextView text) {
+			if (child instanceof android.widget.EditText et) {
+				et.setTextColor(colors.getInputText());
+				et.setHintTextColor(colors.getInputHint());
+			} else if (child instanceof TextView text) {
 				text.setTextColor(colors.getTextPrimary());
 				text.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
-			} else if (child instanceof ImageButton button) {
-				button.setColorFilter(colors.getTextPrimary());
-				button.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassItemHighlightDrawable(ctx, isNight));
+			} else if (child instanceof android.widget.ImageView iv) {
+				iv.setColorFilter(colors.getTextPrimary());
+				iv.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassItemHighlightDrawable(ctx, isNight));
 			} else if (child instanceof ViewGroup vg) {
 				styleToolbarChildren(vg, colors, ctx, isNight);
 			}

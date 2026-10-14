@@ -70,6 +70,8 @@ public final class BackNavigationPolicy {
 	}
 
 	public static void handleActivityBack(MainActivityDelegate a) {
+		if (a.getGlassRailController().onBackPressed()) return;
+
 		OverlayMenu menu = a.getActiveMenu();
 		if (menu != null) {
 			if (menu.back()) return;

@@ -533,6 +533,7 @@
     <string name="glass_appearance_sub">Aplica-se ao tema vidro no telefone e Android Auto: %1$s</string>
     <string name="glass_appearance_day">Dia</string>
     <string name="glass_appearance_night">Noite</string>
+    <string name="glass_quick_add">Adicionar</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">Localizar veículo</string>

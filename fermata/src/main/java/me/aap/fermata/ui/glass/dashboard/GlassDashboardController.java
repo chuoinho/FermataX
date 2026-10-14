@@ -52,11 +52,10 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     private final GlassThemeColors colors;
 
     // Header views
-    private FrameLayout headerLayout;
+    private LinearLayout headerLayout;
     private TextView tvClock;
     private TextView tvDate;
-    private TextView tvWeatherChip;
-    private ImageView btnSettings;
+    private ImageView btnDayNight;
 
     // Cards & Managers
     private GlassSpeedoTripView speedoView;
@@ -95,13 +94,15 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     }
 
     private void initHeader(Context ctx) {
-        headerLayout = new FrameLayout(ctx);
+        headerLayout = new LinearLayout(ctx);
+        headerLayout.setOrientation(LinearLayout.HORIZONTAL);
+        headerLayout.setGravity(Gravity.CENTER_VERTICAL);
 
         LinearLayout leftSection = new LinearLayout(ctx);
         leftSection.setOrientation(LinearLayout.HORIZONTAL);
         leftSection.setGravity(Gravity.CENTER_VERTICAL);
-        FrameLayout.LayoutParams leftLp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.MATCH_PARENT, Gravity.START | Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams leftLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         leftSection.setLayoutParams(leftLp);
 
         // Digital Clock
@@ -129,44 +130,32 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
         headerLayout.addView(leftSection);
 
-        // Right Section: Weather Chip + Settings Gear Button
-        LinearLayout rightSection = new LinearLayout(ctx);
-        rightSection.setOrientation(LinearLayout.HORIZONTAL);
-        rightSection.setGravity(Gravity.CENTER_VERTICAL);
-        FrameLayout.LayoutParams rightLp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.MATCH_PARENT, Gravity.END | Gravity.CENTER_VERTICAL);
-        rightSection.setLayoutParams(rightLp);
+        // Weight-based spacer pushes Day/Night quick switch reliably to right edge
+        View spacer = new View(ctx);
+        LinearLayout.LayoutParams spacerLp = new LinearLayout.LayoutParams(0, 1, 1.0f);
+        headerLayout.addView(spacer, spacerLp);
 
-        tvWeatherChip = new TextView(ctx);
-        tvWeatherChip.setText("--°");
-        tvWeatherChip.setTextSize(12f);
-        tvWeatherChip.setTypeface(Typeface.DEFAULT_BOLD);
-        tvWeatherChip.setTextColor(colors.getTextPrimary());
-        int chipPadH = GlassDimensions.dpToPx(ctx, 12);
-        int chipPadV = GlassDimensions.dpToPx(ctx, 4);
-        tvWeatherChip.setPadding(chipPadH, chipPadV, chipPadH, chipPadV);
-        tvWeatherChip.setBackground(GlassDrawables.createGlassPillDrawable(ctx, 14f, isNight));
-        LinearLayout.LayoutParams chipLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        chipLp.rightMargin = GlassDimensions.dpToPx(ctx, 10);
-        tvWeatherChip.setLayoutParams(chipLp);
-        rightSection.addView(tvWeatherChip);
-
-        // Top-Right Frosted Glass Settings Button
-        btnSettings = new ImageView(ctx);
-        int gearSize = GlassDimensions.dpToPx(ctx, 36);
-        int gearPad = GlassDimensions.dpToPx(ctx, 8);
-        LinearLayout.LayoutParams gearLp = new LinearLayout.LayoutParams(gearSize, gearSize);
-        btnSettings.setLayoutParams(gearLp);
-        btnSettings.setPadding(gearPad, gearPad, gearPad, gearPad);
-        btnSettings.setImageResource(R.drawable.settings);
-        btnSettings.setBackground(GlassDrawables.createGlassPillDrawable(ctx, 18f, isNight));
-        btnSettings.setOnClickListener(v -> {
-            activity.showFragment(R.id.settings_fragment);
+        // Glass Day/Night Quick Toggle Switch
+        btnDayNight = new ImageView(ctx);
+        int toggleSize = GlassDimensions.dpToPx(ctx, 36);
+        int togglePad = GlassDimensions.dpToPx(ctx, 8);
+        LinearLayout.LayoutParams toggleLp = new LinearLayout.LayoutParams(toggleSize, toggleSize);
+        btnDayNight.setLayoutParams(toggleLp);
+        btnDayNight.setPadding(togglePad, togglePad, togglePad, togglePad);
+        btnDayNight.setImageResource(isNight ? R.drawable.ic_glass_night : R.drawable.ic_glass_day);
+        btnDayNight.setColorFilter(colors.getTextPrimary());
+        btnDayNight.setBackground(GlassDrawables.createGlassPillDrawable(ctx, 18f, isNight));
+        btnDayNight.setFocusable(true);
+        String dayNightDesc = isNight ? "Switch to Day Mode" : "Switch to Night Mode";
+        try {
+            dayNightDesc = ctx.getString(isNight ? R.string.glass_appearance_day : R.string.glass_appearance_night);
+        } catch (Throwable ignored) {}
+        btnDayNight.setContentDescription(dayNightDesc);
+        btnDayNight.setOnClickListener(v -> {
+            int nextMode = isNight ? MainActivityPrefs.GLASS_APPEARANCE_DAY : MainActivityPrefs.GLASS_APPEARANCE_NIGHT;
+            activity.getPrefs().setGlassAppearancePref(nextMode);
         });
-        rightSection.addView(btnSettings);
-
-        headerLayout.addView(rightSection);
+        headerLayout.addView(btnDayNight);
     }
 
     private void initCards(Context ctx) {
@@ -188,6 +177,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         mediaView = new GlassMediaPlayerView(ctx);
         mediaController = new GlassMediaPlayerController();
         mediaView.setController(mediaController);
+        mediaView.setOnBrowseMediaClickListener(() -> activity.showFragment(R.id.folders_fragment));
         if (binder != null) {
             mediaController.bind(binder);
         }
@@ -213,54 +203,108 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
             @Override
             public void onShortcutLongClicked(int slotIndex, @NonNull GlassQuickShortcut shortcut) {
-                // Long press gives option to replace or remove
+                String[] options = new String[]{"Open", "Replace", "Remove", "Manage All 6 Slots"};
                 android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(ctx)
                         .setTitle(shortcut.getTitle())
-                        .setItems(new String[]{"Replace", "Remove"}, (d, which) -> {
+                        .setItems(options, (d, which) -> {
                             if (which == 0) {
+                                handleShortcutLaunch(shortcut);
+                            } else if (which == 1) {
                                 GlassShortcutPickerDialog.show(ctx, selected -> {
                                     quickBarManager.setCustomShortcut(slotIndex, selected);
                                     quickBarView.refresh();
                                 });
-                            } else {
+                            } else if (which == 2) {
                                 quickBarManager.removeCustomShortcut(slotIndex);
                                 quickBarView.refresh();
+                            } else {
+                                showManageAllSlotsDialog(ctx);
                             }
                         })
+                        .setNegativeButton(android.R.string.cancel, null)
                         .create();
                 if (activity.isGlassTheme()) {
                     me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, ctx);
                 }
                 dialog.show();
             }
-
-            @Override
-            public void onAddonsCatalogClicked() {
-                activity.showFragment(R.id.glass_addons_catalog_fragment);
-            }
-
-            @Override
-            public void onExitClicked() {
-                activity.finish();
-            }
         });
     }
 
+    public void showManageAllSlotsDialog(Context ctx) {
+        String[] slotTitles = new String[GlassQuickBarManager.TOTAL_SLOTS];
+        for (int i = 0; i < GlassQuickBarManager.TOTAL_SLOTS; i++) {
+            GlassQuickShortcut s = quickBarManager.getSlot(i);
+            slotTitles[i] = "Slot " + (i + 1) + ": " + ((s != null) ? s.getTitle() : "[Empty]");
+        }
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(ctx)
+                .setTitle("Quick Dock Shortcuts (6 Slots)")
+                .setItems(slotTitles, (d, slotIdx) -> {
+                    GlassQuickShortcut cur = quickBarManager.getSlot(slotIdx);
+                    if (cur == null) {
+                        GlassShortcutPickerDialog.show(ctx, selected -> {
+                            quickBarManager.setCustomShortcut(slotIdx, selected);
+                            quickBarView.refresh();
+                        });
+                    } else {
+                        new android.app.AlertDialog.Builder(ctx)
+                                .setTitle("Slot " + (slotIdx + 1) + ": " + cur.getTitle())
+                                .setItems(new String[]{"Change", "Clear"}, (subD, choice) -> {
+                                    if (choice == 0) {
+                                        GlassShortcutPickerDialog.show(ctx, selected -> {
+                                            quickBarManager.setCustomShortcut(slotIdx, selected);
+                                            quickBarView.refresh();
+                                        });
+                                    } else {
+                                        quickBarManager.removeCustomShortcut(slotIdx);
+                                        quickBarView.refresh();
+                                    }
+                                })
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show();
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .create();
+        if (activity.isGlassTheme()) {
+            me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, ctx);
+        }
+        dialog.show();
+    }
+
     private void handleShortcutLaunch(GlassQuickShortcut shortcut) {
+        if (shortcut == null) return;
         String id = shortcut.getId();
-        if (id.startsWith("addon:")) {
-            try {
+        boolean launched = false;
+        try {
+            if (id.startsWith("addon:")) {
                 int addonId = Integer.parseInt(id.substring(6));
-                activity.showFragmentWhenReady(addonId);
-            } catch (Exception ignored) {}
-        } else if (id.equals("lib:playlists")) {
-            activity.showFragment(R.id.playlists_fragment);
-        } else if (id.equals("lib:folders")) {
-            activity.showFragment(R.id.folders_fragment);
-        } else if (id.equals("lib:favorites")) {
-            activity.showFragment(R.id.favorites_fragment);
-        } else if (id.equals("lib:recent")) {
-            activity.showFragment(R.id.recent_fragment);
+                launched = activity.showFragmentWhenReady(addonId);
+            } else if (id.equals("lib:playlists")) {
+                activity.showFragment(R.id.playlists_fragment);
+                launched = true;
+            } else if (id.equals("lib:folders")) {
+                activity.showFragment(R.id.folders_fragment);
+                launched = true;
+            } else if (id.equals("lib:favorites")) {
+                activity.showFragment(R.id.favorites_fragment);
+                launched = true;
+            } else if (id.equals("lib:recent")) {
+                activity.showFragment(R.id.recent_fragment);
+                launched = true;
+            } else if (id.equals("car_finder")) {
+                activity.showFragment(R.id.car_finder_fragment);
+                launched = true;
+            } else if (id.equals("settings")) {
+                activity.showFragment(R.id.settings_fragment);
+                launched = true;
+            }
+        } catch (Throwable e) {
+            launched = false;
+        }
+
+        if (!launched) {
+            me.aap.utils.ui.UiUtils.showAlert(activity.getContext(), "Shortcut target unavailable: " + shortcut.getTitle());
         }
     }
 
@@ -320,8 +364,6 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             @Override
             public void onSuccess(@NonNull GlassOpenMeteoClient.HourlyForecast forecast) {
                 navWeatherView.bindWeather(forecast, isMetric, null, forecast.isExpired());
-                String unit = isMetric ? "°C" : "°F";
-                tvWeatherChip.setText(String.format(Locale.US, "%.0f%s", forecast.getCurrentTemp(), unit));
             }
 
             @Override

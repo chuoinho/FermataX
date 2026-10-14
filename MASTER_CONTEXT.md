@@ -266,16 +266,43 @@ Glassmorphism (Glass Theme) is an opt-in translucent visual design system implem
     - `testAutoDebugUnitTest`: 100% Passed.
     - `testMobileDebugUnitTest`: 100% Passed (1116 tests completed, 0 failed).
   - **Physical Hardware Execution (`15c36230` - Xiaomi Redmi Note 8, Android 14)**:
-    - Glass Night: Dashboard (`phone_debug_home.png`), Settings (`phone_debug_settings.png`), Dialog (`phone_glass_mode_dialog.png`), Radar (`phone_radar_screen.png`).
-    - Glass Day: Settings (`phone_glass_day_selected.png`), Dashboard (`phone_glass_day_dashboard.png`), Car Finder (`phone_glass_day_carfinder.png`), Radar (`phone_glass_day_radar.png`).
-    - Mixed Themes Independence: Phone Classic (`THEME_MAIN = THEME_CLASSIC`, `phone_mixed_classic.png`, `phone_classic_dash.png`) with AA Glassmorphism (`THEME_AA = THEME_GLASS`). Reversal to Glassmorphism verified (`phone_back_to_glass.png`).
-  - **Android Auto / DHU Live Verification (Desktop Head Unit `1280x720`, Virtual Display `11529215048273868778`)**:
-    - Dashboard in Glass Day mode (`dhu_car_captured.png`): 3 reflowed cards, 6 Quick Bar items, Topbar, left rail Navbar with cyan accent.
-    - Media Library / Folders (`dhu_after_tap_display.png`): Topbar back/filter/add, empty state card, active rail indicator.
-    - TV (`dhu_tv.png`): Topbar, empty state, active TV icon.
-    - Radio (`dhu_radio.png`): Frosted glass card items (Popular, Top voted, Countries, Tags).
-    - YouTube (`dhu_youtube.png`): Topbar with back and refresh.
-    - Return to Dashboard (`dhu_back_home.png`).
+    - Glass Day:
+      - Dashboard (`phone_dash_day.png`, `phone_dash_weather_loaded_day.png`): Frosted daylight glass cards, dark typography (`0 KM/H`, `Browse Media Library`, `Clear`, `25°C`), hourly pills, 4+2 quick bar.
+      - Media Folders (`phone_folders_day.png`): Topbar back/filter/grid/add, empty state with teal `ADD FOLDER` CTA.
+      - Car Finder (`phone_car_finder_day.png`, `phone_car_finder_clean_day.png`): OpenStreetMap with "You" marker, frosted card with teal outline pill `+ Pin current location here`, camera icon `Take spot photo`.
+      - Settings (`phone_settings_day.png`): Section headers (`INTERFACE`, `PLAYBACK SETTINGS`, `ADDONS`), frosted cards, high-contrast dark text, teal slider & switches.
+      - Addons (`phone_addons_screen_day.png`, `phone_tv_day.png`): Addons list and TV settings in Day mode.
+      - Audio & Equalizer (`phone_eq_day.png`, `phone_eq_active_day.png`, `phone_eq_presets_dialog_day.png`): Frosted sliders, preamp, bass/volume boost, floating frosted glass preset dropdown menu (`Flat`, `Pop`, `Rock`, `Classical`, `Dance`, `Custom`).
+    - Glass Night:
+      - Dashboard (`phone_dash_night.png`, `phone_dash_weather_loaded_night.png`): Dark frosted cards, crisp white text, teal gauge arc `0 KM/H`, stats pill, hourly forecast pills from current hour onwards (`00:00 25°` to `10:00 30°`), 4+2 quick bar.
+      - Car Finder (`phone_car_finder_night.png`): Dark glass topbar, OpenStreetMap tiles with "You" pin, bottom glass card with teal `+ Pin current location here` pill and `Take spot photo`.
+      - Settings (`phone_settings_night.png`): Dark frosted cards, white text, teal active tab, switches and sliders, "Applies to glass theme on phone and Android Auto: Night".
+      - Audio & Equalizer (`phone_eq_night.png`, `phone_eq_presets_dialog_night.png`): Dark glass graphic EQ, preamp, boost cards with teal switches/sliders, and floating frosted glass preset selector with active `Flat` teal pill.
+    - Mixed Themes Independence:
+      - Phone Classic (`THEME_MAIN = 1`) with AA Glassmorphism (`THEME_AA = 9`): Verified independent rendering without bleeding.
+      - Phone Glassmorphism (`THEME_MAIN = 9`) with AA Classic (`THEME_AA = 1`): Verified independent rendering.
+      - System uiMode Inversion: Inverted system `cmd uimode night yes` with Glass Day, and `cmd uimode night no` with Glass Night verified — manual user appearance preference strictly overrides system uiMode.
+  - **Android Auto / DHU Live Verification (Desktop Head Unit `1280x720`, Virtual Display `770x700`)**:
+    - Glass Day Mode:
+      - Dashboard (`dhu_dash_day.png`): Left glass rail with teal Home icon, dark Topbar with pencil edit and settings gear, speed card (`0 KM/H`), media library card, weather card (`25°C`, `Clear`), hourly forecast pills filtered from current hour, 4+2 quick bar (`+ Add`, `+ Add`, `+ Add`, `+ Add`, `Addons`, `Exit`).
+      - Media Folders (`dhu_folders_day.png`): High-contrast dark topbar, empty state with teal `ADD FOLDER` button.
+      - TV (`dhu_tv_day.png`): Topbar with filter/grid/add, empty state card, active rail indicator.
+      - YouTube (`dhu_youtube_day.png`): Topbar with back/refresh, YouTube webview/search, bottom tabs (`Home`, `Shorts`, `You`).
+      - Radio (`dhu_radio_day.png`): Categories (`Popular`, `Top voted`, `Countries`, `Tags`) in frosted cards with high-contrast dark typography and icons (Issue 2 resolved).
+      - Podcasts (`dhu_podcasts_day.png`): Items (`Search podcasts`, `Add RSS feed`, `Import OPML`, `Export OPML`) in frosted cards.
+      - Audiobooks (`dhu_audiobooks_day.png`, `dhu_sources_day.png`): Items (`Continue listening`, `Library`, `Downloads`, `Discover free books`, `Sources`) in frosted cards.
+      - Settings (`dhu_settings_day.png`): 64dp cards, high-contrast text, teal switches, teal slider.
+      - Theme Mode Popup (`dhu_theme_mode_dialog_day.png`): Floating frosted glass popup for `Glass theme mode` with `Day` (teal active pill) and `Night` (Issue 4 resolved).
+    - Glass Night Mode:
+      - Dashboard (`dhu_dash_night.png`): Left rail with teal Home icon, white icons; Topbar with white "Dashboard", pencil, gear; clock `00:48`, date pill; speed card with gauge arc, `0 KM/H`, stats pill; media card with teal tile; weather card (`25°C`, `Clear`) with hourly pills filtered from current hour (`00:00` to `12:00`); 4+2 quick bar.
+      - TV (`dhu_tv_night.png`): Rail TV icon active in teal; topbar with back/filter/grid/add; dark frosted empty card "No items yet".
+      - YouTube (`dhu_youtube_night.png`): Rail YouTube icon active in teal; dark web chrome with search bar, bottom tabs (`Home`, `Shorts`, `You`).
+      - Radio (`dhu_radio_night.png`): Rail Radio active in teal; frosted cards (`Popular`, `Top voted`, `Countries`, `Tags`) with crisp white typography and icons.
+      - Podcasts (`dhu_podcasts_night.png`): Rail Podcasts active in teal; frosted cards (`Search podcasts`, `Add RSS feed`, `Import OPML`, `Export OPML`) with white typography.
+      - Folders (`dhu_folders_night.png`): Rail Folder active in teal; dark frosted empty card "No items yet", teal `ADD FOLDER` CTA.
+      - Audiobooks (`dhu_audiobooks_night.png`, `dhu_sources_night.png`): Rail Audiobooks active in teal; cards (`Continue listening`, `Library`, `Downloads`, `Discover free books`, `Sources`) with white typography.
+      - Settings (`dhu_settings_night.png`): Dark frosted cards, white typography, teal delay slider and switches.
+      - Theme Mode Popup (`dhu_theme_dialog_night.png`): Floating dark frosted glass popup with `Night` active in teal pill.
   - **Git Commits on `feat/aa-glass-theme`**:
     - `96830bd7`: `feat(glass): add AppTheme.Glass XML styles and systematically synchronize NavBar, Dialogs, Lists, and Phone shell`
     - `807f4bf8`: `feat(glass): refine recursive styling in Settings, Toolbar, ControlPanel, EqualizerCurve, and MediaItem for Day/Night`

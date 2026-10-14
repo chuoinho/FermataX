@@ -90,6 +90,7 @@
     <string name="glass_appearance_sub">Áp dụng cho giao diện kính trên điện thoại và Android Auto: %1$s</string>
     <string name="glass_appearance_day">Sáng</string>
     <string name="glass_appearance_night">Tối</string>
+    <string name="glass_quick_add">Thêm</string>
 
     <string name="nav_bar_pos">Vị trí thanh điều hướng</string>
     <string name="nav_bar_pos_sub">Vị trí hiện tại: %1$s</string>

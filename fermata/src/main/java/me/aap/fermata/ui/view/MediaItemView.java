@@ -244,7 +244,7 @@ public class MediaItemView extends ConstraintLayout
 													icon.setImageTintList(null);
 													icon.setImageBitmap(bm);
 												} else {
-													icon.setImageTintList(iconTint);
+													icon.setImageTintList(getItemIconTint());
 													icon.setImageResource(i.getIcon());
 												}
 											});
@@ -252,13 +252,13 @@ public class MediaItemView extends ConstraintLayout
 							if (!loadIcon.isDone()) {
 								ImageView icon = getIcon();
 								icon.clearAnimation();
-								icon.setImageTintList(iconTint);
+								icon.setImageTintList(getItemIconTint());
 								icon.setImageResource(i.getIcon());
 							}
 						} else {
 							ImageView icon = getIcon();
 							icon.clearAnimation();
-							icon.setImageTintList(iconTint);
+							icon.setImageTintList(getItemIconTint());
 							icon.setImageResource(i.getIcon());
 							cancelLoading();
 						}
@@ -298,7 +298,7 @@ public class MediaItemView extends ConstraintLayout
 			getSubtitle().setText(R.string.loading);
 		} else {
 			icon.clearAnimation();
-			icon.setImageTintList(iconTint);
+			icon.setImageTintList(getItemIconTint());
 			icon.setImageResource(i.getIcon());
 			getSubtitle().setText("");
 		}
@@ -508,6 +508,15 @@ public class MediaItemView extends ConstraintLayout
 		}
 	}
 
+	private ColorStateList getItemIconTint() {
+		if (isGlassTheme()) {
+			MainActivityDelegate a = getMainActivity();
+			int color = (a != null) ? a.getGlassActionColor() : 0xFF00E5FF;
+			return ColorStateList.valueOf(color);
+		}
+		return iconTint;
+	}
+
 	private void setState(int surfaceType, boolean activated) {
 		Item item = getItem();
 		if ((item != null) && isTvSourceItem(item)) surfaceType = Typeface.BOLD;
@@ -522,9 +531,13 @@ public class MediaItemView extends ConstraintLayout
 		if (isGlassTheme()) {
 			MainActivityDelegate a = getMainActivity();
 			int titleColor = (a != null) ? (activated ? a.getGlassActionColor() : a.getGlassTextPrimary()) : (activated ? 0xFF00E5FF : 0xFFFFFFFF);
-			int subtitleColor = (a != null) ? a.getGlassTextSecondary() : 0x99FFFFFF;
+			int subtitleColor = (a != null) ? a.getGlassTextSecondary() : 0xFF94A3B8;
 			getTitle().setTextColor(titleColor);
 			getSubtitle().setTextColor(subtitleColor);
+			ImageView icon = getIcon();
+			if (icon != null && !(icon.getDrawable() instanceof android.graphics.drawable.BitmapDrawable)) {
+				icon.setImageTintList(getItemIconTint());
+			}
 			LinearProgressIndicator p = getProgress();
 			if (p != null) {
 				int progressColor = (a != null) ? a.getGlassActionColor() : 0xFF00E5FF;

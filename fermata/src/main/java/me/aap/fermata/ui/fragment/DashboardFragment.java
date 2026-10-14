@@ -269,6 +269,18 @@ public class DashboardFragment extends MainActivityFragment
 	}
 
 	public void reload() {
+		if (getView() instanceof me.aap.fermata.ui.glass.dashboard.GlassDashboardLayout glassLayout) {
+			if (glassDashboardController != null) {
+				glassDashboardController.stop();
+			}
+			MainActivityDelegate activity = getActivityDelegate();
+			if (activity != null) {
+				glassDashboardController = new me.aap.fermata.ui.glass.dashboard.GlassDashboardController(
+						activity, glassLayout, activity.getMediaServiceBinder());
+				glassDashboardController.start();
+			}
+			return;
+		}
 		DashboardAdapter adapter = this.adapter;
 		if (adapter != null) adapter.reload();
 	}

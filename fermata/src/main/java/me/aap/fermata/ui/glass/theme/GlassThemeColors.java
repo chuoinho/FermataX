@@ -47,8 +47,8 @@ public final class GlassThemeColors {
 			this.chipBg = 0x24FFFFFF;
 			this.chipBorder = 0x20FFFFFF;
 			this.textPrimary = 0xFFFFFFFF;
-			this.textSecondary = 0x99FFFFFF;
-			this.textTertiary = 0x66FFFFFF;
+			this.textSecondary = 0xFF94A3B8;
+			this.textTertiary = 0xFF64748B;
 			this.actionText = 0xFF00E5FF;
 			this.iconColor = 0xFF00E5FF;
 			this.inputBg = 0x26181C1E;
@@ -69,8 +69,8 @@ public final class GlassThemeColors {
 			this.chipBg = 0x14000000;
 			this.chipBorder = 0x10000000;
 			this.textPrimary = 0xFF15181A;
-			this.textSecondary = 0x9915181A;
-			this.textTertiary = 0x6615181A;
+			this.textSecondary = 0xFF475569;
+			this.textTertiary = 0xFF64748B;
 			this.actionText = 0xFF007A87;
 			this.iconColor = 0xFF007A87;
 			this.inputBg = 0xFFFFFFFF;

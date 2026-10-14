@@ -109,6 +109,10 @@ public class GlassOpenMeteoClient {
             return hourlyPoints;
         }
 
+        public long getTimestamp() {
+            return timestamp;
+        }
+
         public boolean isExpired() {
             return (System.currentTimeMillis() - timestamp) > CACHE_DURATION_MS;
         }
@@ -201,21 +205,24 @@ public class GlassOpenMeteoClient {
             if (times != null && temps != null && codes != null) {
                 int startIndex = 0;
                 String currentTimeStr = (current != null) ? current.optString("time", "") : "";
-                if (!currentTimeStr.isEmpty()) {
-                    for (int i = 0; i < times.length(); i++) {
-                        if (currentTimeStr.equals(times.optString(i, ""))) {
-                            startIndex = i;
-                            break;
-                        }
-                    }
+                String targetHourPrefix = null;
+                if (!currentTimeStr.isEmpty() && currentTimeStr.length() >= 13) {
+                    targetHourPrefix = currentTimeStr.substring(0, 13);
                 } else {
-                    String sysHour = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:00", Locale.US).format(new java.util.Date());
-                    for (int i = 0; i < times.length(); i++) {
-                        if (times.optString(i, "").compareTo(sysHour) >= 0) {
-                            startIndex = i;
-                            break;
-                        }
+                    targetHourPrefix = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH", Locale.US).format(new java.util.Date());
+                }
+
+                boolean found = false;
+                for (int i = 0; i < times.length(); i++) {
+                    String timeVal = times.optString(i, "");
+                    if (timeVal.startsWith(targetHourPrefix) || timeVal.compareTo(targetHourPrefix + ":00") >= 0) {
+                        startIndex = i;
+                        found = true;
+                        break;
                     }
+                }
+                if (!found && !currentTimeStr.isEmpty()) {
+                    startIndex = Math.max(0, times.length() - 24);
                 }
 
                 int totalAvailable = times.length();

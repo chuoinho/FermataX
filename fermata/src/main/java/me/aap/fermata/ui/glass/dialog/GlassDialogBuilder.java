@@ -42,6 +42,11 @@ public class GlassDialogBuilder extends DialogView.Builder {
 
 		root.setBackground(GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
 		GlassHardwareUtils.clipRound(root, GlassDimensions.dpToPx(context, 20f));
+		int pad = GlassDimensions.dpToPx(context, 16);
+		root.setPadding(pad, pad, pad, pad);
+
+		View div = root.findViewById(com.google.android.material.R.id.titleDividerNoCustom);
+		if (div != null) div.setVisibility(View.GONE);
 
 		styleViewHierarchy(root, colors, isNight);
 
@@ -54,6 +59,9 @@ public class GlassDialogBuilder extends DialogView.Builder {
 		if (btn instanceof TextView) {
 			TextView tv = (TextView) btn;
 			tv.setAllCaps(false);
+			int hPad = GlassDimensions.dpToPx(context, positive ? 16 : 12);
+			int vPad = GlassDimensions.dpToPx(context, 8);
+			tv.setPadding(hPad, vPad, hPad, vPad);
 			if (positive) {
 				tv.setTextColor(colors.getActionText());
 				tv.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
@@ -72,28 +80,57 @@ public class GlassDialogBuilder extends DialogView.Builder {
 		}
 		dialog.setOnShowListener(d -> {
 			if (dialog.getWindow() != null && dialog.getWindow().getDecorView() != null) {
-				styleViewHierarchy(dialog.getWindow().getDecorView(), colors, isNight);
+				View decor = dialog.getWindow().getDecorView();
+				int pad = GlassDimensions.dpToPx(context, 16);
+				decor.setPadding(pad, pad, pad, pad);
+				styleViewHierarchy(decor, colors, isNight);
 			}
 			if (dialog instanceof androidx.appcompat.app.AlertDialog ad) {
 				Button p = ad.getButton(DialogInterface.BUTTON_POSITIVE);
 				if (p != null) {
 					p.setTextColor(colors.getActionText());
 					p.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
+					int hPad = GlassDimensions.dpToPx(context, 16);
+					int vPad = GlassDimensions.dpToPx(context, 8);
+					p.setPadding(hPad, vPad, hPad, vPad);
 				}
 				Button n = ad.getButton(DialogInterface.BUTTON_NEGATIVE);
-				if (n != null) n.setTextColor(colors.getTextSecondary());
+				if (n != null) {
+					n.setTextColor(colors.getTextSecondary());
+					int hPad = GlassDimensions.dpToPx(context, 12);
+					int vPad = GlassDimensions.dpToPx(context, 8);
+					n.setPadding(hPad, vPad, hPad, vPad);
+				}
 				Button neu = ad.getButton(DialogInterface.BUTTON_NEUTRAL);
-				if (neu != null) neu.setTextColor(colors.getTextSecondary());
+				if (neu != null) {
+					neu.setTextColor(colors.getTextSecondary());
+					int hPad = GlassDimensions.dpToPx(context, 12);
+					int vPad = GlassDimensions.dpToPx(context, 8);
+					neu.setPadding(hPad, vPad, hPad, vPad);
+				}
 			} else if (dialog instanceof android.app.AlertDialog ad) {
 				Button p = ad.getButton(DialogInterface.BUTTON_POSITIVE);
 				if (p != null) {
 					p.setTextColor(colors.getActionText());
 					p.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
+					int hPad = GlassDimensions.dpToPx(context, 16);
+					int vPad = GlassDimensions.dpToPx(context, 8);
+					p.setPadding(hPad, vPad, hPad, vPad);
 				}
 				Button n = ad.getButton(DialogInterface.BUTTON_NEGATIVE);
-				if (n != null) n.setTextColor(colors.getTextSecondary());
+				if (n != null) {
+					n.setTextColor(colors.getTextSecondary());
+					int hPad = GlassDimensions.dpToPx(context, 12);
+					int vPad = GlassDimensions.dpToPx(context, 8);
+					n.setPadding(hPad, vPad, hPad, vPad);
+				}
 				Button neu = ad.getButton(DialogInterface.BUTTON_NEUTRAL);
-				if (neu != null) neu.setTextColor(colors.getTextSecondary());
+				if (neu != null) {
+					neu.setTextColor(colors.getTextSecondary());
+					int hPad = GlassDimensions.dpToPx(context, 12);
+					int vPad = GlassDimensions.dpToPx(context, 8);
+					neu.setPadding(hPad, vPad, hPad, vPad);
+				}
 			}
 		});
 	}
@@ -101,7 +138,7 @@ public class GlassDialogBuilder extends DialogView.Builder {
 	public static void styleViewHierarchy(View view, GlassThemeColors colors, boolean isNight) {
 		if (view == null) return;
 		if (view instanceof android.widget.EditText et) {
-			et.setTextColor(colors.getTextPrimary());
+			et.setTextColor(colors.getInputText());
 			et.setHintTextColor(colors.getInputHint());
 			android.graphics.drawable.GradientDrawable inputBg = new android.graphics.drawable.GradientDrawable();
 			inputBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
@@ -112,14 +149,31 @@ public class GlassDialogBuilder extends DialogView.Builder {
 			int p = GlassDimensions.dpToPx(view.getContext(), 10);
 			et.setPadding(p, p, p, p);
 		} else if (view instanceof android.widget.CheckedTextView ctv) {
-			ctv.setTextColor(colors.getTextPrimary());
+			android.content.res.ColorStateList ctvColors = new android.content.res.ColorStateList(
+					new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+					new int[]{colors.getActionText(), colors.getTextPrimary()}
+			);
+			ctv.setTextColor(ctvColors);
 			ctv.setCheckMarkTintList(android.content.res.ColorStateList.valueOf(colors.getActionText()));
+			int padH = GlassDimensions.dpToPx(ctv.getContext(), 16);
+			int padV = GlassDimensions.dpToPx(ctv.getContext(), 10);
+			ctv.setPadding(padH, padV, padH, padV);
 		} else if (view instanceof android.widget.CompoundButton cb) {
 			cb.setTextColor(colors.getTextPrimary());
 			cb.setButtonTintList(android.content.res.ColorStateList.valueOf(colors.getActionText()));
 		} else if (view instanceof android.widget.ListView lv) {
 			lv.setDivider(new android.graphics.drawable.ColorDrawable(colors.getDivider()));
 			lv.setDividerHeight(1);
+			lv.setSelector(GlassDrawables.createGlassItemHighlightDrawable(lv.getContext(), isNight));
+			lv.setOnHierarchyChangeListener(new android.view.ViewGroup.OnHierarchyChangeListener() {
+				@Override
+				public void onChildViewAdded(View parent, View child) {
+					styleViewHierarchy(child, colors, isNight);
+				}
+
+				@Override
+				public void onChildViewRemoved(View parent, View child) {}
+			});
 			lv.post(() -> {
 				for (int i = 0, count = lv.getChildCount(); i < count; i++) {
 					styleViewHierarchy(lv.getChildAt(i), colors, isNight);
@@ -127,10 +181,13 @@ public class GlassDialogBuilder extends DialogView.Builder {
 			});
 		} else if (view instanceof TextView tv) {
 			int id = tv.getId();
-			if (id == androidx.appcompat.R.id.alertTitle) {
+			if (id == androidx.appcompat.R.id.alertTitle || id == com.google.android.material.R.id.alertTitle) {
 				tv.setTextColor(colors.getTextPrimary());
+				tv.setTextSize(18f);
+				tv.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
 			} else if (id == android.R.id.message) {
 				tv.setTextColor(colors.getTextSecondary());
+				tv.setTextSize(14f);
 			} else if (id != android.R.id.button1 && id != android.R.id.button2 && id != android.R.id.button3) {
 				tv.setTextColor(colors.getTextPrimary());
 			}

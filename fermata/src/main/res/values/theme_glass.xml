@@ -14,12 +14,12 @@
         <!-- Status bar & Bars -->
         <item name="colorPrimaryDark">#0E141D</item>
         <item name="colorPrimary">#0E141D</item>
-        <item name="colorOnPrimary">#F2F5FB</item>
-        <item name="android:textColorPrimary">#F2F5FB</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
 
         <!-- Secondary Surface (Glass Cards & Rows) -->
         <item name="colorSecondary">#141B26</item>
-        <item name="colorOnSecondary">#38BDF8</item>
+        <item name="colorOnSecondary">#00E5FF</item>
         <item name="android:textColorSecondary">#94A3B8</item>
         <item name="boxStrokeColor">#2D3E56</item>
         <item name="boxStrokeWidth">1dp</item>
@@ -28,20 +28,20 @@
         <!-- Active Items & Accent Highlights -->
         <item name="alpha">1</item>
         <item name="colorSecondaryVariant">#1C263A</item>
-        <item name="android:textColorTertiary">#38BDF8</item>
+        <item name="android:textColorTertiary">#00E5FF</item>
 
         <!-- Surfaces & Dialogs -->
         <item name="colorSurface">#141B26</item>
-        <item name="colorOnSurface">#F2F5FB</item>
+        <item name="colorOnSurface">#FFFFFF</item>
         <item name="colorPrimarySurface">#1A2234</item>
-        <item name="colorOnPrimarySurface">#38BDF8</item>
+        <item name="colorOnPrimarySurface">#00E5FF</item>
 
         <!-- Controls, Tints & Cursors -->
-        <item name="colorAccent">#38BDF8</item>
-        <item name="rippleColor">#3338BDF8</item>
-        <item name="android:textColorHint">#64748B</item>
+        <item name="colorAccent">#00E5FF</item>
+        <item name="rippleColor">#3300E5FF</item>
+        <item name="android:textColorHint">#66FFFFFF</item>
         <item name="colorControlNormal">#94A3B8</item>
-        <item name="colorControlActivated">#38BDF8</item>
+        <item name="colorControlActivated">#00E5FF</item>
         <item name="android:colorButtonNormal">#141B26</item>
 
         <!-- Specialized Component Overrides -->
@@ -55,43 +55,43 @@
     </style>
 
     <style name="AppTheme.Glass.Night.MediaItemStyle" parent="AppTheme.MediaItemStyle">
-        <item name="iconColor">#38BDF8</item>
-        <item name="hintColor">#38BDF8</item>
-        <item name="android:textColor">#F2F5FB</item>
-        <item name="tint">#38BDF8</item>
-        <item name="indicatorColor">#38BDF8</item>
+        <item name="iconColor">#00E5FF</item>
+        <item name="hintColor">#00E5FF</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="tint">#00E5FF</item>
+        <item name="indicatorColor">#00E5FF</item>
     </style>
 
     <style name="AppTheme.Glass.Night.ControlPanelStyle" parent="AppTheme.ControlPanelStyle">
-        <item name="tint">#F2F5FB</item>
+        <item name="tint">#FFFFFF</item>
         <item name="android:colorBackground">#141B26</item>
     </style>
 
     <style name="AppTheme.Glass.Night.SeekBarStyle" parent="AppTheme.SeekBarStyle">
-        <item name="android:textColor">#F2F5FB</item>
-        <item name="android:thumbTint">#38BDF8</item>
-        <item name="android:progressTint">#38BDF8</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:thumbTint">#00E5FF</item>
+        <item name="android:progressTint">#00E5FF</item>
         <item name="android:secondaryProgressTint">#2D3E56</item>
     </style>
 
     <style name="AppTheme.Glass.Night.EqualizerStyle" parent="AppTheme.EqualizerStyle">
         <item name="android:textColor">#94A3B8</item>
-        <item name="tint">#38BDF8</item>
+        <item name="tint">#00E5FF</item>
     </style>
 
     <style name="AppTheme.Glass.Night.PreferenceStyle" parent="Theme.Utils.Base.PreferenceStyle">
-        <item name="android:textColor">#F2F5FB</item>
-        <item name="android:textColorHint">#64748B</item>
-        <item name="tint">#38BDF8</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorHint">#66FFFFFF</item>
+        <item name="tint">#00E5FF</item>
     </style>
 
     <style name="AppTheme.Glass.Night.ToolBarStyle" parent="Theme.Utils.Base.ToolBarStyle">
-        <item name="tint">#F2F5FB</item>
+        <item name="tint">#FFFFFF</item>
         <item name="android:colorBackground">#0E141D</item>
     </style>
 
     <style name="AppTheme.Glass.Night.NavBarStyle" parent="Theme.Utils.Base.NavBarStyle">
-        <item name="tint">#F2F5FB</item>
+        <item name="tint">#FFFFFF</item>
         <item name="android:colorBackground">#0E141D</item>
     </style>
 
@@ -107,12 +107,12 @@
         <!-- Status bar & Bars -->
         <item name="colorPrimaryDark">#E2E8F0</item>
         <item name="colorPrimary">#FFFFFF</item>
-        <item name="colorOnPrimary">#0F172A</item>
-        <item name="android:textColorPrimary">#0F172A</item>
+        <item name="colorOnPrimary">#15181A</item>
+        <item name="android:textColorPrimary">#15181A</item>
 
         <!-- Secondary Surface (Glass Cards & Rows) -->
         <item name="colorSecondary">#FFFFFF</item>
-        <item name="colorOnSecondary">#0284C7</item>
+        <item name="colorOnSecondary">#007A87</item>
         <item name="android:textColorSecondary">#475569</item>
         <item name="boxStrokeColor">#CBD5E1</item>
         <item name="boxStrokeWidth">1dp</item>
@@ -121,20 +121,20 @@
         <!-- Active Items & Accent Highlights -->
         <item name="alpha">1</item>
         <item name="colorSecondaryVariant">#F1F5F9</item>
-        <item name="android:textColorTertiary">#0284C7</item>
+        <item name="android:textColorTertiary">#007A87</item>
 
         <!-- Surfaces & Dialogs -->
         <item name="colorSurface">#FFFFFF</item>
-        <item name="colorOnSurface">#0F172A</item>
+        <item name="colorOnSurface">#15181A</item>
         <item name="colorPrimarySurface">#F1F5F9</item>
-        <item name="colorOnPrimarySurface">#0284C7</item>
+        <item name="colorOnPrimarySurface">#007A87</item>
 
         <!-- Controls, Tints & Cursors -->
-        <item name="colorAccent">#0284C7</item>
-        <item name="rippleColor">#260284C7</item>
+        <item name="colorAccent">#007A87</item>
+        <item name="rippleColor">#26007A87</item>
         <item name="android:textColorHint">#94A3B8</item>
         <item name="colorControlNormal">#64748B</item>
-        <item name="colorControlActivated">#0284C7</item>
+        <item name="colorControlActivated">#007A87</item>
         <item name="android:colorButtonNormal">#FFFFFF</item>
 
         <!-- Specialized Component Overrides -->
@@ -148,43 +148,43 @@
     </style>
 
     <style name="AppTheme.Glass.Day.MediaItemStyle" parent="AppTheme.MediaItemStyle">
-        <item name="iconColor">#0284C7</item>
-        <item name="hintColor">#0284C7</item>
-        <item name="android:textColor">#0F172A</item>
-        <item name="tint">#0284C7</item>
-        <item name="indicatorColor">#0284C7</item>
+        <item name="iconColor">#007A87</item>
+        <item name="hintColor">#007A87</item>
+        <item name="android:textColor">#15181A</item>
+        <item name="tint">#007A87</item>
+        <item name="indicatorColor">#007A87</item>
     </style>
 
     <style name="AppTheme.Glass.Day.ControlPanelStyle" parent="AppTheme.ControlPanelStyle">
-        <item name="tint">#0F172A</item>
+        <item name="tint">#15181A</item>
         <item name="android:colorBackground">#FFFFFF</item>
     </style>
 
     <style name="AppTheme.Glass.Day.SeekBarStyle" parent="AppTheme.SeekBarStyle">
-        <item name="android:textColor">#0F172A</item>
-        <item name="android:thumbTint">#0284C7</item>
-        <item name="android:progressTint">#0284C7</item>
+        <item name="android:textColor">#15181A</item>
+        <item name="android:thumbTint">#007A87</item>
+        <item name="android:progressTint">#007A87</item>
         <item name="android:secondaryProgressTint">#CBD5E1</item>
     </style>
 
     <style name="AppTheme.Glass.Day.EqualizerStyle" parent="AppTheme.EqualizerStyle">
         <item name="android:textColor">#475569</item>
-        <item name="tint">#0284C7</item>
+        <item name="tint">#007A87</item>
     </style>
 
     <style name="AppTheme.Glass.Day.PreferenceStyle" parent="Theme.Utils.Base.PreferenceStyle">
-        <item name="android:textColor">#0F172A</item>
+        <item name="android:textColor">#15181A</item>
         <item name="android:textColorHint">#94A3B8</item>
-        <item name="tint">#0284C7</item>
+        <item name="tint">#007A87</item>
     </style>
 
     <style name="AppTheme.Glass.Day.ToolBarStyle" parent="Theme.Utils.Base.ToolBarStyle">
-        <item name="tint">#0F172A</item>
+        <item name="tint">#15181A</item>
         <item name="android:colorBackground">#FFFFFF</item>
     </style>
 
     <style name="AppTheme.Glass.Day.NavBarStyle" parent="Theme.Utils.Base.NavBarStyle">
-        <item name="tint">#0F172A</item>
+        <item name="tint">#15181A</item>
         <item name="android:colorBackground">#FFFFFF</item>
     </style>
 

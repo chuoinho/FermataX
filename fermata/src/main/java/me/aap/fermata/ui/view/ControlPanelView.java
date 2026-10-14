@@ -561,6 +561,9 @@ public class ControlPanelView extends ConstraintLayout
 			View play = findViewById(R.id.control_play_pause);
 			if (play != null) {
 				play.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
+				if (play instanceof android.widget.ImageView ivPlay) {
+					ivPlay.setColorFilter(gc.getTextPrimary());
+				}
 			}
 			styleControlPanelChildren(this, gc);
 		} else if (BuildConfig.AUTO && a.isCarActivity()) {

@@ -428,9 +428,10 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 
 			android.graphics.drawable.GradientDrawable sel = new android.graphics.drawable.GradientDrawable();
 			sel.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-			sel.setCornerRadius(UiUtils.toPx(getContext(), 14));
-			sel.setColor(isNight ? 0x2E38BDF8 : 0x220284C7);
-			sel.setStroke(UiUtils.toIntPx(getContext(), 2), isNight ? 0x8038BDF8 : 0x800284C7);
+			int selFill = (gc.getActionText() & 0x00FFFFFF) | (isNight ? 0x2E000000 : 0x22000000);
+			int selStroke = (gc.getActionText() & 0x00FFFFFF) | 0x80000000;
+			sel.setColor(selFill);
+			sel.setStroke(UiUtils.toIntPx(getContext(), 2), selStroke);
 
 			android.graphics.drawable.GradientDrawable foc = new android.graphics.drawable.GradientDrawable();
 			foc.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);

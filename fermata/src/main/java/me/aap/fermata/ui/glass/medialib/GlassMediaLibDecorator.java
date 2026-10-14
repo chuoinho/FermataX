@@ -76,9 +76,9 @@ public final class GlassMediaLibDecorator {
 
         android.graphics.drawable.GradientDrawable sel = new android.graphics.drawable.GradientDrawable();
         sel.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        sel.setCornerRadius(GlassDimensions.dpToPx(ctx, 16f));
-        sel.setColor(isNight ? 0x2A38BDF8 : 0x200284C7);
-        sel.setStroke(Math.round(GlassDimensions.dpToPx(ctx, 1.5f)), isNight ? 0xFF38BDF8 : 0xFF0284C7);
+        int selFill = (gc.getActionText() & 0x00FFFFFF) | (isNight ? 0x2A000000 : 0x20000000);
+        sel.setColor(selFill);
+        sel.setStroke(Math.round(GlassDimensions.dpToPx(ctx, 1.5f)), gc.getActionText());
 
         android.graphics.drawable.GradientDrawable foc = new android.graphics.drawable.GradientDrawable();
         foc.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);

@@ -61,6 +61,22 @@ public class GlassDashboardLayout extends ViewGroup {
         if (navWeatherCard != null) addView(navWeatherCard);
         if (mediaCard != null) addView(mediaCard);
         if (quickBarView != null) addView(quickBarView);
+
+        refreshAppearance();
+    }
+
+    public void refreshAppearance() {
+        Context ctx = getContext();
+        isNight = GlassThemeColors.isNight(ctx);
+        int w = getWidth();
+        int h = getHeight();
+        if (w > 0 && h > 0) {
+            setBackground(GlassDrawables.createBackgroundGradient(w, h, isNight));
+        }
+        if (quickBarView instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView qb) {
+            qb.refreshAppearance();
+        }
+        requestLayout();
     }
 
     public boolean isSplit() {
@@ -112,7 +128,11 @@ public class GlassDashboardLayout extends ViewGroup {
         if (width <= 0 || height <= 0) return;
 
         Context ctx = getContext();
-        isNight = GlassThemeColors.isNight(ctx);
+        boolean newNight = GlassThemeColors.isNight(ctx);
+        if (newNight != isNight || getBackground() == null) {
+            isNight = newNight;
+            setBackground(GlassDrawables.createBackgroundGradient(width, height, isNight));
+        }
 
         int padH = GlassDimensions.dpToPx(ctx, 16);
         int padV = GlassDimensions.dpToPx(ctx, 12);

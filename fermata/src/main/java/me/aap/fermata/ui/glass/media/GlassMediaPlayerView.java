@@ -43,7 +43,16 @@ public class GlassMediaPlayerView extends FrameLayout {
     private TextView btnNext;
     private TextView btnFavorite;
 
+    public interface OnBrowseMediaClickListener {
+        void onBrowseMediaClick();
+    }
+
+    private OnBrowseMediaClickListener browseMediaClickListener;
     private GlassMediaPlayerController controller;
+
+    public void setOnBrowseMediaClickListener(OnBrowseMediaClickListener listener) {
+        this.browseMediaClickListener = listener;
+    }
 
     public GlassMediaPlayerView(@NonNull Context context) {
         this(context, null);
@@ -121,6 +130,13 @@ public class GlassMediaPlayerView extends FrameLayout {
         textLayout.addView(tvArtist);
 
         centerLayout.addView(textLayout);
+        centerLayout.setOnClickListener(v -> {
+            if (controller != null && controller.getPresentationState() == GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT) {
+                if (browseMediaClickListener != null) {
+                    browseMediaClickListener.onBrowseMediaClick();
+                }
+            }
+        });
         contentLayout.addView(centerLayout);
 
         // Timeline Progress Bar
@@ -201,13 +217,22 @@ public class GlassMediaPlayerView extends FrameLayout {
         transportBar.addView(btnPrev);
 
         // Big Play/Pause Center Button
-        int playTargetDp = me.aap.fermata.BuildConfig.AUTO ? 76 : 52;
+        int playTargetDp = me.aap.fermata.BuildConfig.AUTO ? 60 : 52;
         int playBtnSize = GlassDimensions.dpToPx(context, playTargetDp);
-        btnPlayPause = createTransportButton(context, "▶", Color.WHITE);
+        int playColor = isNight ? Color.WHITE : colors.getTextPrimary();
+        btnPlayPause = createTransportButton(context, "▶", playColor);
         btnPlayPause.setLayoutParams(new LinearLayout.LayoutParams(playBtnSize, playBtnSize));
         btnPlayPause.setBackground(GlassDrawables.createGlassPillDrawable(context, playTargetDp / 2f, isNight));
         btnPlayPause.setOnClickListener(v -> {
-            if (controller != null) controller.togglePlayPause();
+            if (controller != null) {
+                if (controller.getPresentationState() == GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT) {
+                    if (browseMediaClickListener != null) {
+                        browseMediaClickListener.onBrowseMediaClick();
+                        return;
+                    }
+                }
+                controller.togglePlayPause();
+            }
         });
         transportBar.addView(btnPlayPause);
 
@@ -247,20 +272,26 @@ public class GlassMediaPlayerView extends FrameLayout {
         switch (state) {
             case IDLE_NO_RECENT:
                 tvHeader.setText("MEDIA LIBRARY");
-                tvTrackTitle.setText("Tap to browse media");
-                tvArtist.setText("Audio, Video, Addons");
+                tvTrackTitle.setText("Browse Media Library");
+                tvArtist.setText("Tap to choose music or video");
                 ivAlbumArt.setImageResource(R.drawable.audiotrack);
+                ivAlbumArt.setColorFilter(colors.getActionText());
                 timelineLayout.setVisibility(View.GONE);
-                btnPlayPause.setText("▶");
+                btnPlayPause.setText("📁");
+                btnPrev.setVisibility(View.INVISIBLE);
+                btnNext.setVisibility(View.INVISIBLE);
                 btnFavorite.setVisibility(View.GONE);
                 break;
             case IDLE_WITH_RECENT:
-                tvHeader.setText("RECENT MEDIA");
+                tvHeader.setText("RESUME RECENT");
                 tvTrackTitle.setText(controller.getDisplayedTitle());
                 tvArtist.setText(controller.getDisplayedArtist());
                 ivAlbumArt.setImageResource(R.drawable.audiotrack);
+                ivAlbumArt.setColorFilter(colors.getActionText());
                 timelineLayout.setVisibility(View.GONE);
                 btnPlayPause.setText("▶");
+                btnPrev.setVisibility(View.INVISIBLE);
+                btnNext.setVisibility(View.INVISIBLE);
                 btnFavorite.setVisibility(View.GONE);
                 break;
             case LIVE:
@@ -272,6 +303,8 @@ public class GlassMediaPlayerView extends FrameLayout {
                 tvCurrentTime.setText("LIVE");
                 tvCurrentTime.setTextColor(Color.RED);
                 tvTotalDuration.setText("");
+                btnPrev.setVisibility(View.VISIBLE);
+                btnNext.setVisibility(View.VISIBLE);
                 btnFavorite.setVisibility(View.VISIBLE);
                 btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
                 break;
@@ -282,6 +315,8 @@ public class GlassMediaPlayerView extends FrameLayout {
                 timelineLayout.setVisibility(View.VISIBLE);
                 progressBar.setVisibility(View.VISIBLE);
                 tvCurrentTime.setTextColor(colors.getTextSecondary());
+                btnPrev.setVisibility(View.VISIBLE);
+                btnNext.setVisibility(View.VISIBLE);
                 btnFavorite.setVisibility(View.VISIBLE);
                 btnPlayPause.setText("⏸");
                 break;
@@ -290,6 +325,8 @@ public class GlassMediaPlayerView extends FrameLayout {
                 tvTrackTitle.setText(controller.getDisplayedTitle());
                 tvArtist.setText("Playback failed. Tap to retry.");
                 timelineLayout.setVisibility(View.GONE);
+                btnPrev.setVisibility(View.INVISIBLE);
+                btnNext.setVisibility(View.INVISIBLE);
                 btnFavorite.setVisibility(View.GONE);
                 btnPlayPause.setText("▶");
                 break;
@@ -301,6 +338,8 @@ public class GlassMediaPlayerView extends FrameLayout {
                 tvArtist.setText(controller.getDisplayedArtist());
                 timelineLayout.setVisibility(View.VISIBLE);
                 progressBar.setVisibility(View.VISIBLE);
+                btnPrev.setVisibility(View.VISIBLE);
+                btnNext.setVisibility(View.VISIBLE);
                 btnFavorite.setVisibility(View.VISIBLE);
                 btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
                 tvCurrentTime.setTextColor(colors.getTextSecondary());
@@ -309,9 +348,11 @@ public class GlassMediaPlayerView extends FrameLayout {
 
         Bitmap art = controller.getAlbumArt();
         if (art != null) {
+            ivAlbumArt.clearColorFilter();
             ivAlbumArt.setImageBitmap(art);
         } else if (state != GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT
                 && state != GlassMediaPlayerController.PresentationState.IDLE_WITH_RECENT) {
+            ivAlbumArt.setColorFilter(colors.getActionText());
             ivAlbumArt.setImageResource(R.drawable.audiotrack);
         }
 
