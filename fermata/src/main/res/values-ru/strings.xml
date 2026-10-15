@@ -529,6 +529,8 @@
     <string name="glass_appearance_day">День</string>
     <string name="glass_appearance_night">Ночь</string>
     <string name="glass_quick_add">Добавить</string>
+    <string name="glass_quick_manage_title">Управление ярлыками</string>
+    <string name="glass_quick_manage_sub">Настройка 6 ярлыков панели</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">Поиск машины</string>

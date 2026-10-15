@@ -51,6 +51,21 @@ public final class GlassDrawables {
 		return createGlassInputDrawable(context, radiusDp, GlassThemeColors.isNight(context));
 	}
 
+	public static Drawable createGlassDialogDrawable(Context context, float radiusDp, boolean isNight) {
+		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
+		GradientDrawable drawable = new GradientDrawable();
+		int bgColor = isNight ? 0xF0181C1E : 0xF8F4F3F1;
+		int borderColor = isNight ? 0x33FFFFFF : 0x20000000;
+		drawable.setColor(bgColor);
+		drawable.setCornerRadius(radiusDp * density);
+		drawable.setStroke(Math.max(1, (int) (1.0f * density)), borderColor);
+		return drawable;
+	}
+
+	public static Drawable createGlassDialogDrawable(Context context, float radiusDp) {
+		return createGlassDialogDrawable(context, radiusDp, GlassThemeColors.isNight(context));
+	}
+
 	public static Drawable createBackgroundGradient(int width, int height, boolean isNight) {
 		GlassThemeColors colors = isNight ? GlassThemeColors.get(null, true) : GlassThemeColors.get(null, false);
 		GradientDrawable gradient = new GradientDrawable();

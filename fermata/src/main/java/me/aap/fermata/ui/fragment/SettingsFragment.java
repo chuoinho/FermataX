@@ -140,6 +140,22 @@ public class SettingsFragment extends MainActivityFragment
 		super.onDestroyView();
 	}
 
+	public void refreshAppearance() {
+		View view = getView();
+		if (view == null) return;
+		MainActivityDelegate a = activityDelegate;
+		if (a == null || !a.isGlassTheme()) return;
+		boolean isNight = a.getPrefs().isGlassNightMode();
+		RecyclerView listView = view.findViewById(me.aap.utils.R.id.prefs_list_view);
+		if (listView != null) {
+			me.aap.fermata.ui.glass.settings.GlassSettingsDecorator.apply(listView, isNight);
+			RecyclerView.Adapter<?> aAdapter = listView.getAdapter();
+			if (aAdapter != null) {
+				aAdapter.notifyDataSetChanged();
+			}
+		}
+	}
+
 	private void cleanUp(MainActivityDelegate a) {
 		viewActive = false;
 		if (a != null) {
@@ -166,17 +182,22 @@ public class SettingsFragment extends MainActivityFragment
 	public void onResume() {
 		super.onResume();
 		if (readinessPrefsBuilder != null) readinessPrefsBuilder.refresh();
+		refreshAppearance();
 	}
 
 	@Override
 	public void onHiddenChanged(boolean hidden) {
 		super.onHiddenChanged(hidden);
-		if (!hidden && (readinessPrefsBuilder != null)) readinessPrefsBuilder.refresh();
+		if (!hidden) {
+			if (readinessPrefsBuilder != null) readinessPrefsBuilder.refresh();
+			refreshAppearance();
+		}
 	}
 
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
 		if (e == ACTIVITY_DESTROY) cleanUp(a);
+		else if (e == me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED) refreshAppearance();
 	}
 
 	@Override
@@ -184,6 +205,7 @@ public class SettingsFragment extends MainActivityFragment
 		MainActivityDelegate a = activityDelegate;
 		if (!viewActive || (adapter == null) || (a == null)) return;
 		if (MainActivityPrefs.hasTextIconSizePref(a, prefs)) adapter.setSize(a.getTextIconSize());
+		if (MainActivityPrefs.hasThemePref(a, prefs)) refreshAppearance();
 	}
 
 	@Override

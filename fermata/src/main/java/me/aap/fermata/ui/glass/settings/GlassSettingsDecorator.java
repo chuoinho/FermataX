@@ -24,17 +24,37 @@ import me.aap.fermata.ui.glass.theme.GlassThemeColors;
  * Decorator that transforms standard preference rows on Android Auto
  * into 64dp frosted glass cards with 20dp rounded corners.
  */
+import me.aap.fermata.R;
+
 public class GlassSettingsDecorator {
 
-    public static void apply(@NonNull RecyclerView recyclerView, boolean isNight) {
-        Context ctx = recyclerView.getContext();
-        recyclerView.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+    private static class DecoratorState implements View.OnLayoutChangeListener, RecyclerView.OnChildAttachStateChangeListener {
+        boolean isNight;
+
+        DecoratorState(boolean isNight) {
+            this.isNight = isNight;
+        }
+
+        @Override
+        public void onLayoutChange(View v, int l, int t, int r, int b, int ol, int ot, int or, int ob) {
             int w = r - l;
             int h = b - t;
             if (w > 0 && h > 0) {
-                recyclerView.setBackground(GlassDrawables.createBackgroundGradient(w, h, isNight));
+                v.setBackground(GlassDrawables.createBackgroundGradient(w, h, isNight));
             }
-        });
+        }
+
+        @Override
+        public void onChildViewAttachedToWindow(@NonNull View view) {
+            decorateRow(view, isNight);
+        }
+
+        @Override
+        public void onChildViewDetachedFromWindow(@NonNull View view) {}
+    }
+
+    public static void apply(@NonNull RecyclerView recyclerView, boolean isNight) {
+        Context ctx = recyclerView.getContext();
         int rw = recyclerView.getWidth();
         int rh = recyclerView.getHeight();
         if (rw > 0 && rh > 0) {
@@ -46,15 +66,15 @@ public class GlassSettingsDecorator {
         int pad = GlassDimensions.dpToPx(ctx, 12);
         recyclerView.setPadding(pad, pad, pad, pad);
 
-        recyclerView.addOnChildAttachStateChangeListener(new RecyclerView.OnChildAttachStateChangeListener() {
-            @Override
-            public void onChildViewAttachedToWindow(@NonNull View view) {
-                decorateRow(view, isNight);
-            }
-
-            @Override
-            public void onChildViewDetachedFromWindow(@NonNull View view) {}
-        });
+        DecoratorState state = (DecoratorState) recyclerView.getTag(R.id.dashboard_settings);
+        if (state == null) {
+            state = new DecoratorState(isNight);
+            recyclerView.setTag(R.id.dashboard_settings, state);
+            recyclerView.addOnLayoutChangeListener(state);
+            recyclerView.addOnChildAttachStateChangeListener(state);
+        } else {
+            state.isNight = isNight;
+        }
 
         for (int i = 0; i < recyclerView.getChildCount(); i++) {
             decorateRow(recyclerView.getChildAt(i), isNight);

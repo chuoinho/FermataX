@@ -249,15 +249,37 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment {
         return GlassThemeColors.ACCENT_CYAN;
     }
 
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) refreshAppearance();
+    }
+
+    public void refreshAppearance() {
+        View root = getView();
+        if (root == null) return;
+        Context ctx = root.getContext();
+        boolean isNight = GlassThemeColors.isNight(ctx);
+        root.setBackgroundColor(isNight ? 0xFF0A0F1D : 0xFFEBEAE8);
+        if (adapter != null) {
+            adapter.setNight(isNight);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
     private static class CatalogAdapter extends RecyclerView.Adapter<GlassAddonCardHolder> {
         private final List<CatalogItem> items;
-        private final boolean isNight;
+        private boolean isNight;
         private final java.util.function.Consumer<CatalogItem> listener;
 
         public CatalogAdapter(List<CatalogItem> items, boolean isNight, java.util.function.Consumer<CatalogItem> listener) {
             this.items = items;
             this.isNight = isNight;
             this.listener = listener;
+        }
+
+        public void setNight(boolean night) {
+            this.isNight = night;
         }
 
         @NonNull

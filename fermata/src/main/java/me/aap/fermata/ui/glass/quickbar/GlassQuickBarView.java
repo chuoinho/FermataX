@@ -118,9 +118,10 @@ public class GlassQuickBarView extends LinearLayout {
             int itemPadding = GlassDimensions.dpToPx(context, 4);
             slotLayout.setPadding(itemPadding, itemPadding, itemPadding, itemPadding);
 
-            LayoutParams lp = new LayoutParams(0, GlassDimensions.dpToPx(context, 58), 1.0f);
+            LayoutParams lp = new LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f);
             if (i > 0) lp.leftMargin = GlassDimensions.dpToPx(context, 6);
             slotLayout.setLayoutParams(lp);
+            slotLayout.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 
             slotLayout.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
             slotLayout.setFocusable(true);

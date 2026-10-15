@@ -138,8 +138,14 @@ public class GlassDashboardLayout extends ViewGroup {
         int padV = GlassDimensions.dpToPx(ctx, 12);
         int gap = GlassDimensions.dpToPx(ctx, 14);
 
+        float density = getResources().getDisplayMetrics().density;
+        float widthDp = (width - 2 * padH) / Math.max(0.1f, density);
+        float heightDp = height / Math.max(0.1f, density);
+
         int headerH = GlassDimensions.dpToPx(ctx, 42);
-        int quickBarH = GlassDimensions.dpToPx(ctx, 64);
+        int quickBarH = (heightDp >= 460f && widthDp >= 550f)
+                ? GlassDimensions.dpToPx(ctx, 76)
+                : (heightDp < 360f ? GlassDimensions.dpToPx(ctx, 52) : GlassDimensions.dpToPx(ctx, 64));
 
         // Layout Top Header
         if (headerView != null && headerView.getVisibility() != GONE) {
@@ -150,7 +156,6 @@ public class GlassDashboardLayout extends ViewGroup {
         int quickBarTop = height - padV - quickBarH;
         if (quickBarView != null && quickBarView.getVisibility() != GONE) {
             if (quickBarView instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView) {
-                float widthDp = (width - 2 * padH) / getResources().getDisplayMetrics().density;
                 ((me.aap.fermata.ui.glass.quickbar.GlassQuickBarView) quickBarView).setActiveSlotCount(widthDp < 550f ? 4 : 6);
             }
             layoutChild(quickBarView, padH, quickBarTop, width - 2 * padH, quickBarH);

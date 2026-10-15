@@ -1373,7 +1373,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (MainActivityPrefs.hasThemePref(this, prefs)) {
 			if (isGlassTheme()) glassRailController.refreshAppearance(this);
-			if (BuildConfig.AUTO && isCarActivityNotMirror() && prefs.contains(MainActivityPrefs.GLASS_APPEARANCE) && !prefs.contains(MainActivityPrefs.THEME_AA) && !prefs.contains(MainActivityPrefs.THEME_MAIN)) {
+			if (isGlassTheme() && prefs.contains(MainActivityPrefs.GLASS_APPEARANCE) && !prefs.contains(MainActivityPrefs.THEME_AA) && !prefs.contains(MainActivityPrefs.THEME_MAIN)) {
 				fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 			} else recreate();
 		} else if (MainActivityPrefs.hasNavBarPosPref(this, prefs)) {

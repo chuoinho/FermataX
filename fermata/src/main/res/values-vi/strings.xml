@@ -91,6 +91,8 @@
     <string name="glass_appearance_day">Sáng</string>
     <string name="glass_appearance_night">Tối</string>
     <string name="glass_quick_add">Thêm</string>
+    <string name="glass_quick_manage_title">Quản lý phím tắt Quick Dock</string>
+    <string name="glass_quick_manage_sub">Cấu hình 6 phím tắt màn hình chính</string>
 
     <string name="nav_bar_pos">Vị trí thanh điều hướng</string>
     <string name="nav_bar_pos_sub">Vị trí hiện tại: %1$s</string>

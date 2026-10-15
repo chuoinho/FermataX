@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.glass.rail;
 
 import static android.view.View.GONE;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 import android.view.ViewGroup;
 
@@ -11,8 +12,13 @@ import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.DashboardFragment;
+import me.aap.fermata.ui.fragment.MediaLibFragment;
+import me.aap.fermata.ui.fragment.SettingsFragment;
+import me.aap.fermata.ui.glass.catalog.GlassAddonsCatalogFragment;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
+import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.FermataToolBarView;
+import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.NavBarView;
 
 /**
@@ -58,9 +64,27 @@ public class GlassNavigationRailController {
     }
 
     public void refreshAppearance(@NonNull MainActivityDelegate activity) {
+        if (!activity.isGlassTheme()) return;
         activity.setTheme(activity.getContext(), activity.isCarActivity());
         if (activity.getToolBar() instanceof FermataToolBarView ftb) ftb.applyGlassThemeIfNeeded();
         if (glassRail != null) glassRail.onAppearanceChanged();
-        if (activity.getActiveFragment() instanceof DashboardFragment dashboard) dashboard.reload();
+
+        ActivityFragment frag = activity.getActiveFragment();
+        if (frag instanceof DashboardFragment dashboard) {
+            dashboard.reload();
+        } else if (frag instanceof MediaLibFragment mediaLib) {
+            mediaLib.refreshAppearance();
+        } else if (frag instanceof SettingsFragment settings) {
+            settings.refreshAppearance();
+        } else if (frag instanceof GlassAddonsCatalogFragment catalog) {
+            catalog.refreshAppearance();
+        }
+
+        ControlPanelView cp = activity.getControlPanel();
+        if (cp != null) {
+            cp.applyGlassStyling();
+        }
+
+        activity.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
     }
 }

@@ -6,11 +6,15 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
@@ -23,17 +27,17 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
+import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.NavBarView;
 
 /**
  * Independent 5-button automotive Glass Navigation Rail.
  * Exactly 5 buttons in order: Home, Voice, Apps, Settings, Exit.
  * No individual addons, no ScrollView, no scroll.
- * Collapsed: visible grabber handle at left/right edge.
+ * Collapsed: visible grabber handle at left/right edge with generous touch envelope.
  * Expanded: floats over content with scrim backdrop; does not push layout.
  */
 public class GlassNavigationRailView extends FrameLayout {
@@ -49,6 +53,8 @@ public class GlassNavigationRailView extends FrameLayout {
     private View scrimView;
     private LinearLayout railContainer;
     private FrameLayout grabberHandle;
+    private FrameLayout innerGrabberPill;
+    private TextView tvGrip;
     private View[] actionButtons;
 
     private boolean isOpen = false;
@@ -56,6 +62,7 @@ public class GlassNavigationRailView extends FrameLayout {
     private View previouslyFocusedView = null;
     private Runnable pendingFocusRunnable = null;
     private ValueAnimator activeAnimator = null;
+    private int animGeneration = 0;
 
     public GlassNavigationRailView(@NonNull Context context) {
         this(context, (MainActivityDelegate) null);
@@ -109,32 +116,58 @@ public class GlassNavigationRailView extends FrameLayout {
         railContainer.setVisibility(GONE);
         addView(railContainer);
 
-        // 3. Grabber Handle (Tay nắm tại mép)
-        int handleWidth = GlassDimensions.dpToPx(context, 26);
-        int handleHeight = GlassDimensions.dpToPx(context, 72);
+        // 3. Grabber Handle (Touch target envelope with visual pill inside)
+        boolean isCar = (activity != null) && activity.isCarActivity();
+        int hitWidth = GlassDimensions.dpToPx(context, isCar ? 56 : 48);
+        int hitHeight = GlassDimensions.dpToPx(context, 84);
+        int visualWidth = GlassDimensions.dpToPx(context, 26);
+        int visualHeight = GlassDimensions.dpToPx(context, 72);
+
         grabberHandle = new FrameLayout(context);
-        LayoutParams handleLp = new LayoutParams(handleWidth, handleHeight);
+        LayoutParams handleLp = new LayoutParams(hitWidth, hitHeight);
         handleLp.gravity = (isRight ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
         grabberHandle.setLayoutParams(handleLp);
-        grabberHandle.setBackground(GlassDrawables.createGlassPillDrawable(context, 13f, isNight));
-        grabberHandle.setElevation(GlassDimensions.dpToPx(context, 18));
         grabberHandle.setFocusable(true);
-        grabberHandle.setContentDescription(safeGetString(context, R.string.theme_glass, "Glass") + " Menu");
+        grabberHandle.setClickable(true);
 
-        // Subtle grip indicator inside handle
-        TextView tvGrip = new TextView(context);
+        innerGrabberPill = new FrameLayout(context);
+        FrameLayout.LayoutParams pillLp = new FrameLayout.LayoutParams(visualWidth, visualHeight);
+        pillLp.gravity = (isRight ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
+        innerGrabberPill.setLayoutParams(pillLp);
+        innerGrabberPill.setBackground(GlassDrawables.createGlassPillDrawable(context, 13f, isNight));
+        innerGrabberPill.setElevation(GlassDimensions.dpToPx(context, 18));
+        innerGrabberPill.setClipChildren(false);
+
+        // Grip indicator inside handle
+        tvGrip = new TextView(context);
         tvGrip.setText(isRight ? "‹" : "›");
         tvGrip.setTextSize(18f);
         tvGrip.setTypeface(Typeface.DEFAULT_BOLD);
         tvGrip.setTextColor(colors.getTextPrimary());
-        FrameLayout.LayoutParams gripLp = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        FrameLayout.LayoutParams gripLp = new FrameLayout.LayoutParams(
+                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER);
         tvGrip.setLayoutParams(gripLp);
-        grabberHandle.addView(tvGrip);
+        innerGrabberPill.addView(tvGrip);
 
+        grabberHandle.addView(innerGrabberPill);
         grabberHandle.setOnClickListener(v -> expand());
+        updateGrabberHandleAccessibility();
         addView(grabberHandle);
 
         buildActionButtons(context);
+    }
+
+    private void updateGrabberHandleAccessibility() {
+        if (grabberHandle == null) return;
+        String stateStr = isOpen ? " (Expanded)" : " (Collapsed)";
+        grabberHandle.setContentDescription(safeGetString(getContext(), R.string.theme_glass, "Glass") + " Navigation Rail" + stateStr);
+        if (tvGrip != null) {
+            if (isOpen) {
+                tvGrip.setText(isRight ? "›" : "‹");
+            } else {
+                tvGrip.setText(isRight ? "‹" : "›");
+            }
+        }
     }
 
     private void buildActionButtons(Context context) {
@@ -169,6 +202,7 @@ public class GlassNavigationRailView extends FrameLayout {
         for (View btn : actionButtons) {
             railContainer.addView(btn);
         }
+        updateSelectedRoute();
     }
 
     private static String safeGetString(Context context, int resId, String fallback) {
@@ -197,6 +231,7 @@ public class GlassNavigationRailView extends FrameLayout {
         btn.setFocusable(true);
         btn.setFocusableInTouchMode(false);
         btn.setContentDescription(title);
+        btn.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f);
@@ -206,7 +241,7 @@ public class GlassNavigationRailView extends FrameLayout {
 
         int pad = GlassDimensions.dpToPx(context, 6);
         btn.setPadding(pad, pad, pad, pad);
-        btn.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
+        btn.setBackground(createRailButtonDrawable(context, isNight, isExit, colors));
 
         ImageView iv = new ImageView(context);
         int iconSize = GlassDimensions.dpToPx(context, 24);
@@ -226,13 +261,16 @@ public class GlassNavigationRailView extends FrameLayout {
         btn.addView(tv);
 
         btn.setOnClickListener(v -> {
+            previouslyFocusedView = null; // Do not restore focus to old route
             collapse();
             if (action != null) action.run();
         });
 
         btn.setOnKeyListener((v, keyCode, event) -> {
-            if (event.getAction() == KeyEvent.ACTION_DOWN &&
+            // Guard against repeatCount > 0 to execute activation only once on initial key down
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0 &&
                     (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
+                previouslyFocusedView = null;
                 collapse();
                 if (action != null) action.run();
                 return true;
@@ -243,17 +281,130 @@ public class GlassNavigationRailView extends FrameLayout {
         return btn;
     }
 
+    public static Drawable createRailButtonDrawable(
+            Context ctx, boolean isNight, boolean isExit, GlassThemeColors colors) {
+        StateListDrawable sld = new StateListDrawable();
+        int radius = GlassDimensions.dpToPx(ctx, 16f);
+        int strokeWidth = Math.round(GlassDimensions.dpToPx(ctx, 1.5f));
+        int accent = isExit ? Color.parseColor("#FF5252") : colors.getActionText();
+
+        // 1. Focused state
+        GradientDrawable foc = new GradientDrawable();
+        foc.setShape(GradientDrawable.RECTANGLE);
+        foc.setCornerRadius(radius);
+        foc.setColor(isNight ? 0x38FFFFFF : 0x22000000);
+        foc.setStroke(strokeWidth, accent);
+
+        // 2. Pressed state
+        GradientDrawable prs = new GradientDrawable();
+        prs.setShape(GradientDrawable.RECTANGLE);
+        prs.setCornerRadius(radius);
+        prs.setColor(isNight ? 0x48FFFFFF : 0x30000000);
+        prs.setStroke(strokeWidth, accent);
+
+        // 3. Selected / Activated state
+        GradientDrawable sel = new GradientDrawable();
+        sel.setShape(GradientDrawable.RECTANGLE);
+        sel.setCornerRadius(radius);
+        int selFill = (accent & 0x00FFFFFF) | (isNight ? 0x2A000000 : 0x20000000);
+        sel.setColor(selFill);
+        sel.setStroke(strokeWidth, accent);
+
+        // 4. Normal state
+        Drawable norm = GlassDrawables.createGlassPillDrawable(ctx, 16f, isNight);
+
+        sld.addState(new int[]{android.R.attr.state_focused}, foc);
+        sld.addState(new int[]{android.R.attr.state_pressed}, prs);
+        sld.addState(new int[]{android.R.attr.state_selected}, sel);
+        sld.addState(new int[]{android.R.attr.state_activated}, sel);
+        sld.addState(new int[]{}, norm);
+
+        return sld;
+    }
+
+    public void updateSelectedRoute() {
+        if (activity == null || actionButtons == null || actionButtons.length < 5) return;
+        ActivityFragment frag = activity.getActiveFragment();
+        int activeId = (frag != null) ? frag.getFragmentId() : 0;
+
+        actionButtons[0].setSelected(activeId == R.id.dashboard_fragment);
+        actionButtons[1].setSelected(false);
+        actionButtons[2].setSelected(activeId == R.id.glass_addons_catalog_fragment);
+        actionButtons[3].setSelected(activeId == R.id.settings_fragment);
+        actionButtons[4].setSelected(false);
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int height = MeasureSpec.getSize(heightMeasureSpec);
         if (height > 0) {
-            float heightDp = height / getResources().getDisplayMetrics().density;
-            // 5 buttons need minimum 48dp touch target each = 240dp
+            float density = getResources().getDisplayMetrics().density;
+            float heightDp = height / Math.max(0.1f, density);
+
+            // Dynamic budget allocation for the 5 buttons
+            int vPad;
+            int containerPad;
+            int btnMargin;
+
+            if (heightDp >= 460f) {
+                // Automotive standard target (each action cell achieves 76dp when H >= 460dp)
+                vPad = GlassDimensions.dpToPx(getContext(), 12);
+                containerPad = GlassDimensions.dpToPx(getContext(), 8);
+                btnMargin = GlassDimensions.dpToPx(getContext(), 4);
+            } else if (heightDp >= 320f) {
+                // Compact viewport (e.g. phone landscape 360-392dp): tighten overhead so all 5 buttons >= 48dp
+                vPad = GlassDimensions.dpToPx(getContext(), 8);
+                containerPad = GlassDimensions.dpToPx(getContext(), 4);
+                btnMargin = GlassDimensions.dpToPx(getContext(), 2);
+            } else {
+                // Very low viewport: minimal overhead to preserve 48dp touch targets
+                vPad = GlassDimensions.dpToPx(getContext(), 4);
+                containerPad = GlassDimensions.dpToPx(getContext(), 2);
+                btnMargin = GlassDimensions.dpToPx(getContext(), 1);
+            }
+
+            if (railContainer != null && railContainer.getLayoutParams() instanceof LayoutParams lp) {
+                if (lp.topMargin != vPad || lp.bottomMargin != vPad) {
+                    lp.topMargin = vPad;
+                    lp.bottomMargin = vPad;
+                    railContainer.setLayoutParams(lp);
+                }
+                railContainer.setPadding(0, containerPad, 0, containerPad);
+            }
+
+            if (actionButtons != null) {
+                for (View btn : actionButtons) {
+                    if (btn != null && btn.getLayoutParams() instanceof LinearLayout.LayoutParams lp) {
+                        if (lp.topMargin != btnMargin || lp.bottomMargin != btnMargin) {
+                            lp.topMargin = btnMargin;
+                            lp.bottomMargin = btnMargin;
+                            btn.setLayoutParams(lp);
+                        }
+                    }
+                }
+            }
+
             if (heightDp < 240f) {
-                Log.w(TAG, "Viewport height (" + heightDp + "dp) is smaller than required 240dp for 5 buttons without scroll.");
+                Log.w(TAG, "Viewport height (" + heightDp + "dp) cannot fit 5 buttons with 48dp minimum touch target without conflict.");
             }
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (actionButtons != null) {
+            float density = getResources().getDisplayMetrics().density;
+            for (View btn : actionButtons) {
+                if (btn != null && btn.getHeight() > 0) {
+                    float btnHeightDp = btn.getHeight() / Math.max(0.1f, density);
+                    if (btnHeightDp < 44f) {
+                        Log.w(TAG, "Action button height (" + btnHeightDp + "dp) is below 48dp touch threshold.");
+                    }
+                }
+            }
+        }
     }
 
     public boolean isOpen() {
@@ -261,10 +412,11 @@ public class GlassNavigationRailView extends FrameLayout {
     }
 
     public void expand() {
-        if (isOpen) return;
+        if (isOpen || fullscreenHidden) return;
         isOpen = true;
 
         cancelPendingCallbacks();
+        final int gen = animGeneration;
 
         int railWidth = railContainer.getWidth();
         if (railWidth <= 0) railWidth = GlassDimensions.dpToPx(getContext(), 76);
@@ -275,13 +427,25 @@ public class GlassNavigationRailView extends FrameLayout {
         railContainer.setTranslationX(startX);
         grabberHandle.setVisibility(GONE);
 
-        previouslyFocusedView = findFocus();
+        // Look for focus in root window, not just within rail
+        previouslyFocusedView = null;
+        if (activity != null && activity.getAppActivity() != null) {
+            View content = activity.getAppActivity().findViewById(android.R.id.content);
+            if (content != null) previouslyFocusedView = content.findFocus();
+        }
+        if (previouslyFocusedView == null) {
+            previouslyFocusedView = getRootView().findFocus();
+        }
+
+        updateSelectedRoute();
+        updateGrabberHandleAccessibility();
 
         activeAnimator = ValueAnimator.ofFloat(0f, 1f);
         activeAnimator.setDuration(ANIM_DURATION_MS);
         activeAnimator.setInterpolator(new DecelerateInterpolator());
         final float animDistance = startX;
         activeAnimator.addUpdateListener(animation -> {
+            if (gen != animGeneration) return;
             float frac = (float) animation.getAnimatedValue();
             scrimView.setAlpha(frac);
             railContainer.setTranslationX(animDistance * (1f - frac));
@@ -289,15 +453,22 @@ public class GlassNavigationRailView extends FrameLayout {
         activeAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
+                if (gen != animGeneration) return;
                 activeAnimator = null;
                 railContainer.setTranslationX(0f);
                 scrimView.setAlpha(1f);
 
-                // Safe focus request guarded by pendingFocusRunnable
                 pendingFocusRunnable = () -> {
                     if (isOpen && isAttachedToWindow() && actionButtons != null && actionButtons.length > 0) {
-                        actionButtons[0].requestFocus();
-                        actionButtons[0].sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED);
+                        View targetFocus = actionButtons[0];
+                        for (View btn : actionButtons) {
+                            if (btn.isSelected()) {
+                                targetFocus = btn;
+                                break;
+                            }
+                        }
+                        targetFocus.requestFocus();
+                        targetFocus.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED);
                     }
                     pendingFocusRunnable = null;
                 };
@@ -312,15 +483,19 @@ public class GlassNavigationRailView extends FrameLayout {
         isOpen = false;
 
         cancelPendingCallbacks();
+        final int gen = animGeneration;
 
         int railWidth = railContainer.getWidth();
         if (railWidth <= 0) railWidth = GlassDimensions.dpToPx(getContext(), 76);
         final float endX = isRight ? railWidth : -railWidth;
 
+        updateGrabberHandleAccessibility();
+
         activeAnimator = ValueAnimator.ofFloat(0f, 1f);
         activeAnimator.setDuration(ANIM_DURATION_MS);
         activeAnimator.setInterpolator(new DecelerateInterpolator());
         activeAnimator.addUpdateListener(animation -> {
+            if (gen != animGeneration) return;
             float frac = (float) animation.getAnimatedValue();
             scrimView.setAlpha(1f - frac);
             railContainer.setTranslationX(endX * frac);
@@ -328,16 +503,19 @@ public class GlassNavigationRailView extends FrameLayout {
         activeAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
+                if (gen != animGeneration) return;
                 activeAnimator = null;
                 railContainer.setVisibility(GONE);
                 scrimView.setVisibility(GONE);
                 if (!fullscreenHidden) {
                     grabberHandle.setVisibility(VISIBLE);
                 }
-                if (previouslyFocusedView != null && previouslyFocusedView.isAttachedToWindow()) {
+                if (previouslyFocusedView != null && previouslyFocusedView.isAttachedToWindow() && previouslyFocusedView.isShown()) {
                     previouslyFocusedView.requestFocus();
-                    previouslyFocusedView = null;
+                } else if (grabberHandle != null && grabberHandle.isAttachedToWindow() && !fullscreenHidden) {
+                    grabberHandle.requestFocus();
                 }
+                previouslyFocusedView = null;
             }
         });
         activeAnimator.start();
@@ -349,6 +527,7 @@ public class GlassNavigationRailView extends FrameLayout {
         railContainer.setVisibility(GONE);
         scrimView.setVisibility(GONE);
         scrimView.setAlpha(0f);
+        updateGrabberHandleAccessibility();
         if (!fullscreenHidden) {
             grabberHandle.setVisibility(VISIBLE);
         }
@@ -378,16 +557,25 @@ public class GlassNavigationRailView extends FrameLayout {
         this.isNight = (activity != null) ? activity.getPrefs().isGlassNightMode() : GlassThemeColors.isNight(getContext());
         this.colors = GlassThemeColors.get(getContext(), isNight);
         railContainer.setBackground(GlassDrawables.createGlassCardDrawable(getContext(), GlassDimensions.CARD_RADIUS_DP, isNight));
-        grabberHandle.setBackground(GlassDrawables.createGlassPillDrawable(getContext(), 13f, isNight));
+        if (innerGrabberPill != null) {
+            innerGrabberPill.setBackground(GlassDrawables.createGlassPillDrawable(getContext(), 13f, isNight));
+        }
+        if (tvGrip != null) {
+            tvGrip.setTextColor(colors.getTextPrimary());
+        }
+        updateGrabberHandleAccessibility();
         buildActionButtons(getContext());
     }
 
     private void cancelPendingCallbacks() {
+        animGeneration++;
         if (pendingFocusRunnable != null) {
             removeCallbacks(pendingFocusRunnable);
             pendingFocusRunnable = null;
         }
         if (activeAnimator != null) {
+            activeAnimator.removeAllListeners();
+            activeAnimator.removeAllUpdateListeners();
             activeAnimator.cancel();
             activeAnimator = null;
         }

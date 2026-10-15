@@ -10,6 +10,12 @@ import org.json.JSONObject;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.pref.PreferenceStore;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.glass.dialog.GlassDialogBuilder;
+import me.aap.utils.ui.view.DialogBuilder;
+
 /**
  * Manager handling the 6 customizable shortcut slots in the automotive Glass Quick Bar.
  * All slots (0-5) are user-customizable. Addons and Exit are moved to the Glass Navigation Rail.
@@ -53,6 +59,48 @@ public class GlassQuickBarManager {
         }
         customSlots[index] = null;
         saveToPreferences();
+    }
+
+    public static void showManageDialog(@NonNull Context ctx, @Nullable MainActivityDelegate activity, @Nullable Runnable onUpdated) {
+        MainActivityDelegate a = (activity != null) ? activity : MainActivityDelegate.get(ctx);
+        PreferenceStore store = (a != null) ? a.getPrefs() : MainActivityPrefs.get();
+        GlassQuickBarManager mgr = new GlassQuickBarManager(store);
+        CharSequence[] slotTitles = new CharSequence[TOTAL_SLOTS];
+        for (int i = 0; i < TOTAL_SLOTS; i++) {
+            GlassQuickShortcut s = mgr.getSlot(i);
+            slotTitles[i] = "Slot " + (i + 1) + ": " + ((s != null) ? s.getTitle() : "[Empty]");
+        }
+        DialogBuilder builder = (a != null) ? a.createDialogBuilder(ctx) : me.aap.utils.ui.activity.ActivityDelegate.get(ctx).createDialogBuilder(ctx);
+        builder.setTitle(null, "Quick Dock Shortcuts (6 Slots)");
+        builder.setSingleChoiceItems(slotTitles, -1, (d, slotIdx) -> {
+            if (d != null) d.dismiss();
+            GlassQuickShortcut cur = mgr.getSlot(slotIdx);
+            if (cur == null) {
+                GlassShortcutPickerDialog.show(ctx, a, selected -> {
+                    mgr.setCustomShortcut(slotIdx, selected);
+                    if (onUpdated != null) onUpdated.run();
+                });
+            } else {
+                DialogBuilder subBuilder = (a != null) ? a.createDialogBuilder(ctx) : me.aap.utils.ui.activity.ActivityDelegate.get(ctx).createDialogBuilder(ctx);
+                subBuilder.setTitle(null, "Slot " + (slotIdx + 1) + ": " + cur.getTitle());
+                subBuilder.setSingleChoiceItems(new CharSequence[]{"Change", "Clear"}, -1, (subD, choice) -> {
+                    if (choice == 0) {
+                        GlassShortcutPickerDialog.show(ctx, a, selected -> {
+                            mgr.setCustomShortcut(slotIdx, selected);
+                            if (onUpdated != null) onUpdated.run();
+                        });
+                    } else {
+                        mgr.removeCustomShortcut(slotIdx);
+                        if (onUpdated != null) onUpdated.run();
+                    }
+                    if (subD != null) subD.dismiss();
+                });
+                subBuilder.setNegativeButton(android.R.string.cancel, null);
+                subBuilder.show();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, null);
+        builder.show();
     }
 
     private void loadFromPreferences() {

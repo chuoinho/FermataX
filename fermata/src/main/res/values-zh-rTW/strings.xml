@@ -534,6 +534,8 @@
     <string name="glass_appearance_day">淺色</string>
     <string name="glass_appearance_night">深色</string>
     <string name="glass_quick_add">新增</string>
+    <string name="glass_quick_manage_title">管理快速捷徑</string>
+    <string name="glass_quick_manage_sub">設定儀表板 6 個捷徑</string>
 
     <!-- Car Finder Strings -->
     <string name="car_finder_title">尋找車輛</string>

@@ -107,6 +107,8 @@
     <string name="glass_appearance_day">Day</string>
     <string name="glass_appearance_night">Night</string>
     <string name="glass_quick_add">Add</string>
+    <string name="glass_quick_manage_title">Manage Quick Dock shortcuts</string>
+    <string name="glass_quick_manage_sub">Configure 6 dashboard shortcuts</string>
 
     <string name="nav_bar_pos">Navigation bar position</string>
     <string name="nav_bar_pos_sub">Current position: %1$s</string>

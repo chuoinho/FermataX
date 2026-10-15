@@ -95,6 +95,15 @@ final class InterfacePrefsBuilder {
 				o.onClick = () -> activity.showFragment(R.id.initial_setup_fragment);
 			});
 		}
+
+		if (activity.isGlassTheme()) {
+			set.addButton(o -> {
+				o.title = R.string.glass_quick_manage_title;
+				o.subtitle = R.string.glass_quick_manage_sub;
+				o.onClick = () -> me.aap.fermata.ui.glass.quickbar.GlassQuickBarManager.showManageDialog(
+						activity.getContext(), activity, null);
+			});
+		}
 	}
 
 	private static void normalizeTheme(PreferenceStore store) {

@@ -541,7 +541,7 @@ public class ControlPanelView extends ConstraintLayout
 		favoriteController.refresh();
 	}
 
-	private void applyGlassStyling() {
+	public void applyGlassStyling() {
 		MainActivityDelegate a = getActivity();
 		Context context = getContext();
 		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {

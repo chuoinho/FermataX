@@ -1219,7 +1219,15 @@ public class DashboardFragment extends MainActivityFragment
 
 		private static void onEditClick(View v) {
 			ActivityFragment fragment = ActivityDelegate.get(v.getContext()).getActiveFragment();
-			if (fragment instanceof DashboardFragment dashboard) dashboard.toggleEditMode();
+			if (fragment instanceof DashboardFragment dashboard) {
+				MainActivityDelegate activity = dashboard.getActivityDelegate();
+				if (activity != null && activity.isGlassTheme()) {
+					me.aap.fermata.ui.glass.quickbar.GlassQuickBarManager.showManageDialog(
+							v.getContext(), activity, dashboard::reload);
+				} else {
+					dashboard.toggleEditMode();
+				}
+			}
 		}
 
 		private static void onSettingsClick(View v) {

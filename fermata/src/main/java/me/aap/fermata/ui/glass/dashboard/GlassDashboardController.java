@@ -135,16 +135,16 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         LinearLayout.LayoutParams spacerLp = new LinearLayout.LayoutParams(0, 1, 1.0f);
         headerLayout.addView(spacer, spacerLp);
 
-        // Glass Day/Night Quick Toggle Switch
+        // Glass Day/Night Quick Toggle Switch with 48dp touch target
         btnDayNight = new ImageView(ctx);
-        int toggleSize = GlassDimensions.dpToPx(ctx, 36);
-        int togglePad = GlassDimensions.dpToPx(ctx, 8);
+        int toggleSize = GlassDimensions.dpToPx(ctx, 48);
+        int togglePad = GlassDimensions.dpToPx(ctx, 12);
         LinearLayout.LayoutParams toggleLp = new LinearLayout.LayoutParams(toggleSize, toggleSize);
         btnDayNight.setLayoutParams(toggleLp);
         btnDayNight.setPadding(togglePad, togglePad, togglePad, togglePad);
         btnDayNight.setImageResource(isNight ? R.drawable.ic_glass_night : R.drawable.ic_glass_day);
         btnDayNight.setColorFilter(colors.getTextPrimary());
-        btnDayNight.setBackground(GlassDrawables.createGlassPillDrawable(ctx, 18f, isNight));
+        btnDayNight.setBackground(GlassDrawables.createGlassPillDrawable(ctx, 24f, isNight));
         btnDayNight.setFocusable(true);
         String dayNightDesc = isNight ? "Switch to Day Mode" : "Switch to Night Mode";
         try {
@@ -195,7 +195,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
             @Override
             public void onEmptySlotClicked(int slotIndex) {
-                GlassShortcutPickerDialog.show(ctx, selected -> {
+                GlassShortcutPickerDialog.show(ctx, activity, selected -> {
                     quickBarManager.setCustomShortcut(slotIndex, selected);
                     quickBarView.refresh();
                 });
@@ -203,73 +203,33 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
             @Override
             public void onShortcutLongClicked(int slotIndex, @NonNull GlassQuickShortcut shortcut) {
-                String[] options = new String[]{"Open", "Replace", "Remove", "Manage All 6 Slots"};
-                android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(ctx)
-                        .setTitle(shortcut.getTitle())
-                        .setItems(options, (d, which) -> {
-                            if (which == 0) {
-                                handleShortcutLaunch(shortcut);
-                            } else if (which == 1) {
-                                GlassShortcutPickerDialog.show(ctx, selected -> {
-                                    quickBarManager.setCustomShortcut(slotIndex, selected);
-                                    quickBarView.refresh();
-                                });
-                            } else if (which == 2) {
-                                quickBarManager.removeCustomShortcut(slotIndex);
-                                quickBarView.refresh();
-                            } else {
-                                showManageAllSlotsDialog(ctx);
-                            }
-                        })
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .create();
-                if (activity.isGlassTheme()) {
-                    me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, ctx);
-                }
+                CharSequence[] options = new CharSequence[]{"Open", "Replace", "Remove", "Manage All 6 Slots"};
+                me.aap.utils.ui.view.DialogBuilder dialog = activity.createDialogBuilder(ctx);
+                dialog.setTitle(null, shortcut.getTitle());
+                dialog.setSingleChoiceItems(options, -1, (d, which) -> {
+                    if (d != null) d.dismiss();
+                    if (which == 0) {
+                        handleShortcutLaunch(shortcut);
+                    } else if (which == 1) {
+                        GlassShortcutPickerDialog.show(ctx, activity, selected -> {
+                            quickBarManager.setCustomShortcut(slotIndex, selected);
+                            quickBarView.refresh();
+                        });
+                    } else if (which == 2) {
+                        quickBarManager.removeCustomShortcut(slotIndex);
+                        quickBarView.refresh();
+                    } else {
+                        showManageAllSlotsDialog(ctx);
+                    }
+                });
+                dialog.setNegativeButton(android.R.string.cancel, null);
                 dialog.show();
             }
         });
     }
 
     public void showManageAllSlotsDialog(Context ctx) {
-        String[] slotTitles = new String[GlassQuickBarManager.TOTAL_SLOTS];
-        for (int i = 0; i < GlassQuickBarManager.TOTAL_SLOTS; i++) {
-            GlassQuickShortcut s = quickBarManager.getSlot(i);
-            slotTitles[i] = "Slot " + (i + 1) + ": " + ((s != null) ? s.getTitle() : "[Empty]");
-        }
-        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(ctx)
-                .setTitle("Quick Dock Shortcuts (6 Slots)")
-                .setItems(slotTitles, (d, slotIdx) -> {
-                    GlassQuickShortcut cur = quickBarManager.getSlot(slotIdx);
-                    if (cur == null) {
-                        GlassShortcutPickerDialog.show(ctx, selected -> {
-                            quickBarManager.setCustomShortcut(slotIdx, selected);
-                            quickBarView.refresh();
-                        });
-                    } else {
-                        new android.app.AlertDialog.Builder(ctx)
-                                .setTitle("Slot " + (slotIdx + 1) + ": " + cur.getTitle())
-                                .setItems(new String[]{"Change", "Clear"}, (subD, choice) -> {
-                                    if (choice == 0) {
-                                        GlassShortcutPickerDialog.show(ctx, selected -> {
-                                            quickBarManager.setCustomShortcut(slotIdx, selected);
-                                            quickBarView.refresh();
-                                        });
-                                    } else {
-                                        quickBarManager.removeCustomShortcut(slotIdx);
-                                        quickBarView.refresh();
-                                    }
-                                })
-                                .setNegativeButton(android.R.string.cancel, null)
-                                .show();
-                    }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .create();
-        if (activity.isGlassTheme()) {
-            me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, ctx);
-        }
-        dialog.show();
+        GlassQuickBarManager.showManageDialog(ctx, activity, () -> quickBarView.refresh());
     }
 
     private void handleShortcutLaunch(GlassQuickShortcut shortcut) {

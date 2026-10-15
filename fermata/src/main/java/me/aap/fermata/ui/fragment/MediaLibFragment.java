@@ -144,6 +144,22 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		Log.d("MediaLibFragment view destroyed: ", this);
 	}
 
+	public void refreshAppearance() {
+		View view = getView();
+		if (view == null) return;
+		MainActivityDelegate a = getActivityDelegate();
+		if (a == null || !a.isGlassTheme()) return;
+		boolean isNight = a.getPrefs().isGlassNightMode();
+		MediaItemListView v = getListView();
+		if (v != null) {
+			me.aap.fermata.ui.glass.medialib.GlassMediaLibDecorator.apply(view, v, isNight);
+			MediaItemListViewAdapter adapter = v.getAdapter();
+			if (adapter != null) {
+				adapter.notifyDataSetChanged();
+			}
+		}
+	}
+
 	@Override
 	public void onConfigurationChanged(@NonNull Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
@@ -250,7 +266,10 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@Override
 	public void onHiddenChanged(boolean hidden) {
 		super.onHiddenChanged(hidden);
-		if (!hidden) scrollToPosition();
+		if (!hidden) {
+			scrollToPosition();
+			refreshAppearance();
+		}
 	}
 
 	@Override
@@ -483,6 +502,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			store.fireBroadcastEvent(l -> l.onPreferenceChanged(store, prefs));
 		} else if (e == ACTIVITY_DESTROY) {
 			cleanUp(a);
+		} else if (e == me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED) {
+			refreshAppearance();
 		}
 	}
 
@@ -499,6 +520,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		MainActivityDelegate a = getMainActivity();
+		if (MainActivityPrefs.hasThemePref(a, prefs)) {
+			refreshAppearance();
+		}
 		boolean viewChanged = hasGridViewPref(a, prefs);
 
 		if (viewChanged || hasTextIconSizePref(getMainActivity(), prefs)) {

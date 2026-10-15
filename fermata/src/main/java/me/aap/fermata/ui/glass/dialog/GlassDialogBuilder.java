@@ -40,10 +40,19 @@ public class GlassDialogBuilder extends DialogView.Builder {
 		boolean isNight = GlassThemeColors.isNight(context);
 		GlassThemeColors colors = GlassThemeColors.get(context, isNight);
 
-		root.setBackground(GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
+		root.setBackground(GlassDrawables.createGlassDialogDrawable(context, 20f, isNight));
 		GlassHardwareUtils.clipRound(root, GlassDimensions.dpToPx(context, 20f));
 		int pad = GlassDimensions.dpToPx(context, 16);
 		root.setPadding(pad, pad, pad, pad);
+		root.setElevation(GlassDimensions.dpToPx(context, 16));
+
+		me.aap.fermata.ui.activity.MainActivityDelegate mad = me.aap.fermata.ui.activity.MainActivityDelegate.get(context);
+		boolean isCar = (mad != null) && mad.isCarActivity();
+		int minW = GlassDimensions.dpToPx(context, isCar ? 380 : 320);
+		root.setMinimumWidth(minW);
+
+		if (root.getParent() instanceof View pv) pv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+		if (menu instanceof View mv) mv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
 
 		View div = root.findViewById(com.google.android.material.R.id.titleDividerNoCustom);
 		if (div != null) div.setVisibility(View.GONE);
@@ -59,14 +68,16 @@ public class GlassDialogBuilder extends DialogView.Builder {
 		if (btn instanceof TextView) {
 			TextView tv = (TextView) btn;
 			tv.setAllCaps(false);
-			int hPad = GlassDimensions.dpToPx(context, positive ? 16 : 12);
-			int vPad = GlassDimensions.dpToPx(context, 8);
+			int hPad = GlassDimensions.dpToPx(context, positive ? 16 : 14);
+			int vPad = GlassDimensions.dpToPx(context, 10);
 			tv.setPadding(hPad, vPad, hPad, vPad);
+			tv.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 			if (positive) {
 				tv.setTextColor(colors.getActionText());
 				tv.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
 			} else {
 				tv.setTextColor(colors.getTextSecondary());
+				tv.setBackground(GlassDrawables.createGlassItemHighlightDrawable(context, isNight));
 			}
 		}
 	}
@@ -76,7 +87,7 @@ public class GlassDialogBuilder extends DialogView.Builder {
 		boolean isNight = GlassThemeColors.isNight(context);
 		GlassThemeColors colors = GlassThemeColors.get(context, isNight);
 		if (dialog.getWindow() != null) {
-			dialog.getWindow().setBackgroundDrawable(GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
+			dialog.getWindow().setBackgroundDrawable(GlassDrawables.createGlassDialogDrawable(context, 20f, isNight));
 		}
 		dialog.setOnShowListener(d -> {
 			if (dialog.getWindow() != null && dialog.getWindow().getDecorView() != null) {
@@ -91,22 +102,27 @@ public class GlassDialogBuilder extends DialogView.Builder {
 					p.setTextColor(colors.getActionText());
 					p.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
 					int hPad = GlassDimensions.dpToPx(context, 16);
-					int vPad = GlassDimensions.dpToPx(context, 8);
+					int vPad = GlassDimensions.dpToPx(context, 10);
 					p.setPadding(hPad, vPad, hPad, vPad);
+					p.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 				}
 				Button n = ad.getButton(DialogInterface.BUTTON_NEGATIVE);
 				if (n != null) {
 					n.setTextColor(colors.getTextSecondary());
-					int hPad = GlassDimensions.dpToPx(context, 12);
-					int vPad = GlassDimensions.dpToPx(context, 8);
+					n.setBackground(GlassDrawables.createGlassItemHighlightDrawable(context, isNight));
+					int hPad = GlassDimensions.dpToPx(context, 14);
+					int vPad = GlassDimensions.dpToPx(context, 10);
 					n.setPadding(hPad, vPad, hPad, vPad);
+					n.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 				}
 				Button neu = ad.getButton(DialogInterface.BUTTON_NEUTRAL);
 				if (neu != null) {
 					neu.setTextColor(colors.getTextSecondary());
-					int hPad = GlassDimensions.dpToPx(context, 12);
-					int vPad = GlassDimensions.dpToPx(context, 8);
+					neu.setBackground(GlassDrawables.createGlassItemHighlightDrawable(context, isNight));
+					int hPad = GlassDimensions.dpToPx(context, 14);
+					int vPad = GlassDimensions.dpToPx(context, 10);
 					neu.setPadding(hPad, vPad, hPad, vPad);
+					neu.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 				}
 			} else if (dialog instanceof android.app.AlertDialog ad) {
 				Button p = ad.getButton(DialogInterface.BUTTON_POSITIVE);
@@ -114,22 +130,27 @@ public class GlassDialogBuilder extends DialogView.Builder {
 					p.setTextColor(colors.getActionText());
 					p.setBackground(GlassDrawables.createGlassPillDrawable(context, 999f, isNight));
 					int hPad = GlassDimensions.dpToPx(context, 16);
-					int vPad = GlassDimensions.dpToPx(context, 8);
+					int vPad = GlassDimensions.dpToPx(context, 10);
 					p.setPadding(hPad, vPad, hPad, vPad);
+					p.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 				}
 				Button n = ad.getButton(DialogInterface.BUTTON_NEGATIVE);
 				if (n != null) {
 					n.setTextColor(colors.getTextSecondary());
-					int hPad = GlassDimensions.dpToPx(context, 12);
-					int vPad = GlassDimensions.dpToPx(context, 8);
+					n.setBackground(GlassDrawables.createGlassItemHighlightDrawable(context, isNight));
+					int hPad = GlassDimensions.dpToPx(context, 14);
+					int vPad = GlassDimensions.dpToPx(context, 10);
 					n.setPadding(hPad, vPad, hPad, vPad);
+					n.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 				}
 				Button neu = ad.getButton(DialogInterface.BUTTON_NEUTRAL);
 				if (neu != null) {
 					neu.setTextColor(colors.getTextSecondary());
-					int hPad = GlassDimensions.dpToPx(context, 12);
-					int vPad = GlassDimensions.dpToPx(context, 8);
+					neu.setBackground(GlassDrawables.createGlassItemHighlightDrawable(context, isNight));
+					int hPad = GlassDimensions.dpToPx(context, 14);
+					int vPad = GlassDimensions.dpToPx(context, 10);
 					neu.setPadding(hPad, vPad, hPad, vPad);
+					neu.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
 				}
 			}
 		});
@@ -156,8 +177,9 @@ public class GlassDialogBuilder extends DialogView.Builder {
 			ctv.setTextColor(ctvColors);
 			ctv.setCheckMarkTintList(android.content.res.ColorStateList.valueOf(colors.getActionText()));
 			int padH = GlassDimensions.dpToPx(ctv.getContext(), 16);
-			int padV = GlassDimensions.dpToPx(ctv.getContext(), 10);
+			int padV = GlassDimensions.dpToPx(ctv.getContext(), 12);
 			ctv.setPadding(padH, padV, padH, padV);
+			ctv.setMinimumHeight(GlassDimensions.dpToPx(ctv.getContext(), 48));
 		} else if (view instanceof android.widget.CompoundButton cb) {
 			cb.setTextColor(colors.getTextPrimary());
 			cb.setButtonTintList(android.content.res.ColorStateList.valueOf(colors.getActionText()));
@@ -165,6 +187,11 @@ public class GlassDialogBuilder extends DialogView.Builder {
 			lv.setDivider(new android.graphics.drawable.ColorDrawable(colors.getDivider()));
 			lv.setDividerHeight(1);
 			lv.setSelector(GlassDrawables.createGlassItemHighlightDrawable(lv.getContext(), isNight));
+			android.view.ViewGroup.LayoutParams lp = lv.getLayoutParams();
+			if (lp != null && lp.width != android.view.ViewGroup.LayoutParams.MATCH_PARENT) {
+				lp.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+				lv.setLayoutParams(lp);
+			}
 			lv.setOnHierarchyChangeListener(new android.view.ViewGroup.OnHierarchyChangeListener() {
 				@Override
 				public void onChildViewAdded(View parent, View child) {
@@ -185,6 +212,9 @@ public class GlassDialogBuilder extends DialogView.Builder {
 				tv.setTextColor(colors.getTextPrimary());
 				tv.setTextSize(18f);
 				tv.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
+				int padH = GlassDimensions.dpToPx(tv.getContext(), 16);
+				int padV = GlassDimensions.dpToPx(tv.getContext(), 10);
+				tv.setPadding(padH, padV, padH, padV);
 			} else if (id == android.R.id.message) {
 				tv.setTextColor(colors.getTextSecondary());
 				tv.setTextSize(14f);

@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,27 +63,27 @@ public class GlassShortcutPickerDialog {
     }
 
     public static void show(@NonNull Context context, @NonNull OnShortcutSelectedListener listener) {
+        show(context, (me.aap.fermata.ui.activity.MainActivityDelegate) null, listener);
+    }
+
+    public static void show(@NonNull Context context, @Nullable me.aap.fermata.ui.activity.MainActivityDelegate activity, @NonNull OnShortcutSelectedListener listener) {
         List<GlassQuickShortcut> shortcuts = getAvailableShortcuts(context);
 
-        String[] titles = new String[shortcuts.size()];
+        CharSequence[] titles = new CharSequence[shortcuts.size()];
         for (int i = 0; i < shortcuts.size(); i++) {
             titles[i] = shortcuts.get(i).getTitle();
         }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(safeGetString(context, R.string.theme_glass, "Glass") + " Shortcuts");
-        builder.setItems(titles, (dialog, which) -> {
+        me.aap.fermata.ui.activity.MainActivityDelegate a = (activity != null) ? activity : me.aap.fermata.ui.activity.MainActivityDelegate.get(context);
+        me.aap.utils.ui.view.DialogBuilder builder = (a != null) ? a.createDialogBuilder(context) : me.aap.utils.ui.activity.ActivityDelegate.get(context).createDialogBuilder(context);
+        builder.setTitle(null, safeGetString(context, R.string.theme_glass, "Glass") + " Shortcuts");
+        builder.setSingleChoiceItems(titles, -1, (dialog, which) -> {
             if (which >= 0 && which < shortcuts.size()) {
                 listener.onShortcutSelected(shortcuts.get(which));
             }
+            if (dialog != null) dialog.dismiss();
         });
         builder.setNegativeButton(android.R.string.cancel, null);
-        AlertDialog dialog = builder.create();
-
-        me.aap.utils.ui.activity.ActivityDelegate a = me.aap.utils.ui.activity.ActivityDelegate.get(context);
-        if (a != null && a.isGlassTheme()) {
-            GlassDialogBuilder.styleAlertDialog(dialog, context);
-        }
-        dialog.show();
+        builder.show();
     }
 }
