@@ -412,7 +412,6 @@
         Người dùng tự chịu trách nhiệm với các nguồn mình thêm vào.</p>
         <p><b>Dự án gốc:</b> Fermata by Andrey Pavlenko</p>
         <p><b>Phiên bản:</b> %1$s (%2$d)</p>
-        <p><b>Trang chủ:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Lỗi phát nhạc %s</string>
@@ -592,7 +591,103 @@
     <string name="app_version">Phiên bản</string>
     <string name="support_kofi_title">Mua tặng tác giả ly cà phê ☕</string>
     <string name="support_kofi_sub">Ủng hộ dự án tại ko-fi.com/fermatax</string>
-    <string name="github_repo_title">Mã nguồn GitHub</string>
-    <string name="github_repo_sub">Mã nguồn, cập nhật và báo lỗi</string>
     <string name="support_banner_text">Thích FermataX? Mời dev ly cà phê nhé ☕</string>
+
+    <!-- Initial Setup Permissions -->
+    <string name="initial_setup_grant_permissions">Cấp quyền</string>
+    <string name="initial_setup_check_permissions">Kiểm tra quyền</string>
+    <string name="initial_setup_permissions_all_granted">✓ Đã cấp đủ quyền cần thiết</string>
+    <string name="initial_setup_permissions_needed">⚠ Cần cấp quyền để hoạt động đầy đủ</string>
+
+    <!-- Glass Addon Card Hints -->
+    <string name="glass_addon_enabled_hint">Đang bật · Chạm để tắt</string>
+    <string name="glass_addon_disabled_hint">Đã tắt · Chạm để bật</string>
+    <string name="glass_addon_drag_hint">Kéo để sắp xếp</string>
+
+    <!-- Glass Weather Conditions -->
+    <string name="weather_clear">Trời quang</string>
+    <string name="weather_mainly_clear">Ít mây</string>
+    <string name="weather_partly_cloudy">Có mây</string>
+    <string name="weather_overcast">Âm u</string>
+    <string name="weather_fog">Sương mù</string>
+    <string name="weather_drizzle">Mưa phùn</string>
+    <string name="weather_rain">Mưa</string>
+    <string name="weather_snow">Tuyết</string>
+    <string name="weather_rain_showers">Mưa rào</string>
+    <string name="weather_thunderstorm">Giông bão</string>
+    <string name="weather_fair">Thời tiết đẹp</string>
+    <string name="weather_cached_suffix"> (Đệm)</string>
+    <string name="weather_cached_prefix">Đệm </string>
+    <string name="weather_updated_prefix">Cập nhật </string>
+
+    <!-- Glass Speedo Trip -->
+    <string name="speedo_reset_trip">Đặt lại hành trình</string>
+    <string name="speedo_reset_trip_confirm">Đặt lại quãng đường, tốc độ trung bình và thời gian lái xe?</string>
+
+    <!-- Glass Weather & Speedo UI -->
+    <string name="glass_weather_waiting_gps">Đang tìm tín hiệu vệ tinh GPS...</string>
+    <string name="glass_weather_perm_phone_hint">Vui lòng cấp quyền vị trí trên điện thoại.</string>
+    <string name="glass_weather_perm_car_hint">Cấp quyền vị trí trên điện thoại để xem thời tiết.</string>
+    <string name="glass_weather_perm_needed">Cần cấp quyền</string>
+    <string name="glass_weather_grant_btn">Cấp quyền</string>
+    <string name="glass_weather_locating">Đang định vị GPS...</string>
+    <string name="glass_speedo_trip_dist">QUÃNG ĐƯỜNG</string>
+    <string name="glass_speedo_trip_avg">TỐC ĐỘ TB</string>
+    <string name="glass_speedo_trip_time">THỜI GIAN</string>
+    <!-- Glass Media Player UI -->
+    <string name="glass_media_now_playing">ĐANG PHÁT</string>
+    <string name="glass_media_library">THƯ VIỆN MEDIA</string>
+    <string name="glass_media_browse_library">Duyệt thư viện phương tiện</string>
+    <string name="glass_media_choose_hint">Chạm để chọn nhạc hoặc video</string>
+    <string name="glass_media_resume_recent">TIẾP TỤC GẦN ĐÂY</string>
+    <string name="glass_media_live_stream">PHÁT TRỰC TIẾP</string>
+    <string name="glass_media_live_badge">TRỰC TIẾP</string>
+    <string name="glass_media_error">LỖI PHÁT LẠI</string>
+    <string name="glass_media_retry_hint">Phát lại thất bại. Chạm để thử lại.</string>
+    <string name="glass_media_no_playing">Không có media đang phát</string>
+    <string name="glass_media_recent_media">Media gần đây</string>
+
+    <!-- Glass Nav & Weather UI -->
+    <string name="glass_nav_header">ĐIỀU HƯỚNG</string>
+    <string name="glass_nav_exit">THOÁT</string>
+    <string name="glass_nav_gps_timeout">Hết thời gian chờ GPS. Chạm để thử lại.</string>
+    <string name="glass_nav_network_error">Lỗi kết nối mạng. Chạm để thử lại.</string>
+    <string name="glass_nav_weather_unavailable">Thời tiết không khả dụng</string>
+
+    <!-- Glass QuickBar & Shortcuts -->
+    <string name="glass_quickbar_title">Phím tắt thanh Dock (6 ô)</string>
+    <string name="glass_quickbar_slot_format">Ô %1$d: %2$s</string>
+    <string name="glass_quickbar_empty">[Trống]</string>
+    <string name="glass_shortcuts_dialog_title">Phím tắt %1$s</string>
+
+    <!-- Glass Addon Descriptions -->
+    <string name="glass_addon_desc_playlists">Bộ sưu tập danh sách phát đã lưu</string>
+    <string name="glass_addon_desc_folders">Bộ nhớ trong &amp; thẻ nhớ ngoài</string>
+    <string name="glass_addon_desc_favorites">Truy cập nhanh các mục yêu thích</string>
+    <string name="glass_addon_desc_recent">Lịch sử phát gần đây</string>
+    <string name="glass_media_buffering">ĐANG TẢI ĐỆM...</string>
+    <string name="glass_media_unknown_title">Tiêu đề không xác định</string>
+
+    <!-- Units -->
+    <string name="unit_m">m</string>
+    <string name="unit_km">km</string>
+    <string name="unit_ft">ft</string>
+
+    <!-- Car Finder Radar Telemetry -->
+    <string name="car_finder_radar_sub_here">XE Ở NGAY ĐÂY</string>
+    <string name="car_finder_radar_sub_front">XE Ở PHÍA TRƯỚC</string>
+    <string name="car_finder_radar_sub_arrow">HÃY ĐI THEO MŨI TÊN</string>
+    <string name="car_finder_radar_accuracy_in_range">±%1$d %2$s  ·  Đã trong phạm vi sai số của GPS — hãy nhìn quanh</string>
+    <string name="car_finder_camera_error">Lỗi máy ảnh: %1$s</string>
+
+    <!-- Glass Addons & Headers -->
+    <string name="glass_addon_module_desc">Tiện ích mở rộng</string>
+    <string name="glass_weather_header">THỜI TIẾT &amp; DỰ BÁO</string>
+    <string name="glass_weather_updating">Đang cập nhật...</string>
+    <string name="glass_speedo_card_title">TỐC ĐỘ &amp; HÀNH TRÌNH</string>
+
+    <!-- Glass Quick Dock Actions -->
+    <string name="glass_shortcut_open">Mở</string>
+    <string name="glass_shortcut_replace">Thay thế</string>
+    <string name="glass_shortcut_remove">Xóa</string>
 </resources>

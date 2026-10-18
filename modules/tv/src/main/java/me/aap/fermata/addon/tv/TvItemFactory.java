@@ -103,9 +103,17 @@ final class TvItemFactory {
 				return StalkerSeasonItem.create(root, id);
 			case StalkerEpisodeItem.SCHEME:
 				return StalkerEpisodeItem.create(root, id);
+			case UnavailableTvSourceItem.SCHEME: {
+				int srcId = toUnavailableSourceId(id);
+				return completed(TvRootItem.createUnavailableSource(null, root, srcId, root.getSourceName(srcId), null));
+			}
 			default:
 				return null;
 		}
+	}
+
+	private int toUnavailableSourceId(String id) {
+		return Integer.parseInt(id.substring(UnavailableTvSourceItem.SCHEME.length() + 1));
 	}
 
 	private int toM3uSourceId(String id) {

@@ -25,6 +25,8 @@ compile_commands.json
 *.zip
 aa-menu*.xml
 aa-settings.xml
+fermata_*.xml
+*_temp.xml
 window_views_dump/
 window_views_raw/
 .agents/

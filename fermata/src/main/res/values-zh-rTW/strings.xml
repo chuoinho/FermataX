@@ -397,7 +397,6 @@
         使用者須自行負責其新增的媒體來源。</p>
         <p><b>原始專案:</b> Fermata by Andrey Pavlenko</p>
         <p><b>版本:</b> %1$s (%2$d)</p>
-        <p><b>首頁:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">無法播放 %s</string>
@@ -596,7 +595,103 @@
     <string name="app_version">版本</string>
     <string name="support_kofi_title">請開發者喝杯咖啡 ☕</string>
     <string name="support_kofi_sub">前往 ko-fi.com/fermatax 支持開發</string>
-    <string name="github_repo_title">GitHub 儲存庫</string>
-    <string name="github_repo_sub">原始碼、版本更新與問題回報</string>
     <string name="support_banner_text">喜歡 FermataX 嗎？請喝杯咖啡支持開發 ☕</string>
+
+    <!-- Initial Setup Permissions -->
+    <string name="initial_setup_grant_permissions">授予權限</string>
+    <string name="initial_setup_check_permissions">檢查狀態</string>
+    <string name="initial_setup_permissions_all_granted">✓ 已授予所有必要權限</string>
+    <string name="initial_setup_permissions_needed">⚠ 媒體、車輛及語音功能需要權限</string>
+
+    <!-- Glass Addon Card Hints -->
+    <string name="glass_addon_enabled_hint">已啟用 · 輕觸以停用</string>
+    <string name="glass_addon_disabled_hint">已停用 · 輕觸以啟用</string>
+    <string name="glass_addon_drag_hint">拖曳以重新排序</string>
+
+    <!-- Glass Weather Conditions -->
+    <string name="weather_clear">晴朗</string>
+    <string name="weather_mainly_clear">大致晴朗</string>
+    <string name="weather_partly_cloudy">局部多雲</string>
+    <string name="weather_overcast">陰天</string>
+    <string name="weather_fog">有霧</string>
+    <string name="weather_drizzle">毛毛雨</string>
+    <string name="weather_rain">下雨</string>
+    <string name="weather_snow">下雪</string>
+    <string name="weather_rain_showers">陣雨</string>
+    <string name="weather_thunderstorm">雷陣雨</string>
+    <string name="weather_fair">天氣晴朗</string>
+    <string name="weather_cached_suffix"> (快取)</string>
+    <string name="weather_cached_prefix">快取 </string>
+    <string name="weather_updated_prefix">已更新 </string>
+
+    <!-- Glass Speedo Trip -->
+    <string name="speedo_reset_trip">重設旅程</string>
+    <string name="speedo_reset_trip_confirm">重設里程、平均速度及駕駛時間？</string>
+
+    <!-- Glass Weather & Speedo UI -->
+    <string name="glass_weather_waiting_gps">正在等待 GPS 衛星定位...</string>
+    <string name="glass_weather_perm_phone_hint">請在手機上授予位置權限。</string>
+    <string name="glass_weather_perm_car_hint">請在手機上授予位置權限以查看天氣。</string>
+    <string name="glass_weather_perm_needed">需要權限</string>
+    <string name="glass_weather_grant_btn">授予權限</string>
+    <string name="glass_weather_locating">正在定位 GPS...</string>
+    <string name="glass_speedo_trip_dist">里程</string>
+    <string name="glass_speedo_trip_avg">平均時速</string>
+    <string name="glass_speedo_trip_time">時間</string>
+    <!-- Glass Media Player UI -->
+    <string name="glass_media_now_playing">正在播放</string>
+    <string name="glass_media_library">媒體庫</string>
+    <string name="glass_media_browse_library">瀏覽媒體庫</string>
+    <string name="glass_media_choose_hint">點擊以選擇音樂或影片</string>
+    <string name="glass_media_resume_recent">繼續播放最近</string>
+    <string name="glass_media_live_stream">直播串流</string>
+    <string name="glass_media_live_badge">直播</string>
+    <string name="glass_media_error">播放錯誤</string>
+    <string name="glass_media_retry_hint">播放失敗。點擊重試。</string>
+    <string name="glass_media_no_playing">未播放媒體</string>
+    <string name="glass_media_recent_media">最近的媒體</string>
+
+    <!-- Glass Nav & Weather UI -->
+    <string name="glass_nav_header">導航</string>
+    <string name="glass_nav_exit">退出</string>
+    <string name="glass_nav_gps_timeout">GPS 超時。點擊重試。</string>
+    <string name="glass_nav_network_error">網路錯誤。點擊重試。</string>
+    <string name="glass_nav_weather_unavailable">天氣資訊不可用</string>
+
+    <!-- Glass QuickBar & Shortcuts -->
+    <string name="glass_quickbar_title">快捷停靠欄（6 個捷徑）</string>
+    <string name="glass_quickbar_slot_format">位置 %1$d: %2$s</string>
+    <string name="glass_quickbar_empty">[空白]</string>
+    <string name="glass_shortcuts_dialog_title">%1$s 捷徑</string>
+
+    <!-- Glass Addon Descriptions -->
+    <string name="glass_addon_desc_playlists">已儲存的播放清單集合</string>
+    <string name="glass_addon_desc_folders">本機與外部儲存裝置</string>
+    <string name="glass_addon_desc_favorites">快速存取收藏的曲目</string>
+    <string name="glass_addon_desc_recent">最近播放記錄</string>
+    <string name="glass_media_buffering">正在緩衝...</string>
+    <string name="glass_media_unknown_title">未知標題</string>
+
+    <!-- Units -->
+    <string name="unit_m">公尺</string>
+    <string name="unit_km">公里</string>
+    <string name="unit_ft">英呎</string>
+
+    <!-- Car Finder Radar Telemetry -->
+    <string name="car_finder_radar_sub_here">車輛就在這裡</string>
+    <string name="car_finder_radar_sub_front">車輛在正前方</string>
+    <string name="car_finder_radar_sub_arrow">跟隨箭頭指引</string>
+    <string name="car_finder_radar_accuracy_in_range">±%1$d %2$s  ·  已在 GPS 誤差範圍內 — 請環顧四周</string>
+    <string name="car_finder_camera_error">相機錯誤：%1$s</string>
+
+    <!-- Glass Addons & Headers -->
+    <string name="glass_addon_module_desc">外掛模組</string>
+    <string name="glass_weather_header">天氣與預報</string>
+    <string name="glass_weather_updating">更新中...</string>
+    <string name="glass_speedo_card_title">速度與旅程</string>
+
+    <!-- Glass Quick Dock Actions -->
+    <string name="glass_shortcut_open">開啟</string>
+    <string name="glass_shortcut_replace">替換</string>
+    <string name="glass_shortcut_remove">移除</string>
 </resources>

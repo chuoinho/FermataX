@@ -124,7 +124,19 @@ public class GlassOpenMeteoClient {
     private double lastLat = 0;
     private double lastLon = 0;
 
+    private volatile boolean cancelled = false;
+
+    public void cancel() {
+        cancelled = true;
+    }
+
+    public void shutdown() {
+        cancelled = true;
+        executor.shutdownNow();
+    }
+
     public void fetchForecast(double lat, double lon, boolean isMetric, @NonNull ForecastCallback callback) {
+        this.cancelled = false;
         if (cachedForecast != null && !cachedForecast.isExpired()
                 && Math.abs(lastLat - lat) < 0.05 && Math.abs(lastLon - lon) < 0.05) {
             callback.onSuccess(cachedForecast);
@@ -132,6 +144,7 @@ public class GlassOpenMeteoClient {
         }
 
         executor.execute(() -> {
+            HttpURLConnection conn = null;
             try {
                 String tempUnit = isMetric ? "celsius" : "fahrenheit";
                 String windUnit = isMetric ? "kmh" : "mph";
@@ -143,31 +156,49 @@ public class GlassOpenMeteoClient {
                         BASE_URL, lat, lon, tempUnit, windUnit);
 
                 URL url = new URL(urlStr);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(8000);
                 conn.setReadTimeout(8000);
                 conn.setRequestMethod("GET");
 
                 int responseCode = conn.getResponseCode();
+                if (cancelled) return;
                 if (responseCode >= 200 && responseCode < 300) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        sb.append(line);
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            sb.append(line);
+                        }
                     }
-                    reader.close();
 
+                    if (cancelled) return;
                     HourlyForecast forecast = parseForecastJson(sb.toString());
                     this.cachedForecast = forecast;
                     this.lastLat = lat;
                     this.lastLon = lon;
-                    mainHandler.post(() -> callback.onSuccess(forecast));
+                    if (!cancelled) {
+                        mainHandler.post(() -> {
+                            if (!cancelled) callback.onSuccess(forecast);
+                        });
+                    }
                 } else {
-                    mainHandler.post(() -> callback.onError(new Exception("HTTP Error: " + responseCode)));
+                    if (!cancelled) {
+                        mainHandler.post(() -> {
+                            if (!cancelled) callback.onError(new Exception("HTTP Error: " + responseCode));
+                        });
+                    }
                 }
             } catch (Exception e) {
-                mainHandler.post(() -> callback.onError(e));
+                if (!cancelled) {
+                    mainHandler.post(() -> {
+                        if (!cancelled) callback.onError(e);
+                    });
+                }
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
             }
         });
     }
@@ -242,7 +273,61 @@ public class GlassOpenMeteoClient {
         return new HourlyForecast(currentTemp, weatherCode, isDay, highTemp, lowTemp, points);
     }
 
+    public static int getWeatherConditionResId(int weatherCode) {
+        switch (weatherCode) {
+            case 0:
+                return me.aap.fermata.R.string.weather_clear;
+            case 1:
+                return me.aap.fermata.R.string.weather_mainly_clear;
+            case 2:
+                return me.aap.fermata.R.string.weather_partly_cloudy;
+            case 3:
+                return me.aap.fermata.R.string.weather_overcast;
+            case 45:
+            case 48:
+                return me.aap.fermata.R.string.weather_fog;
+            case 51:
+            case 53:
+            case 55:
+                return me.aap.fermata.R.string.weather_drizzle;
+            case 61:
+            case 63:
+            case 65:
+                return me.aap.fermata.R.string.weather_rain;
+            case 71:
+            case 73:
+            case 75:
+                return me.aap.fermata.R.string.weather_snow;
+            case 80:
+            case 81:
+            case 82:
+                return me.aap.fermata.R.string.weather_rain_showers;
+            case 95:
+            case 96:
+            case 99:
+                return me.aap.fermata.R.string.weather_thunderstorm;
+            default:
+                return me.aap.fermata.R.string.weather_fair;
+        }
+    }
+
+    public static String getWeatherConditionDescription(@Nullable Context context, int weatherCode) {
+        if (context != null) {
+            try {
+                return context.getString(getWeatherConditionResId(weatherCode));
+            } catch (Throwable ignored) {
+            }
+        }
+        return getWeatherConditionDescription(weatherCode);
+    }
+
     public static String getWeatherConditionDescription(int weatherCode) {
+        try {
+            if (me.aap.utils.app.App.get() != null) {
+                return me.aap.utils.app.App.get().getString(getWeatherConditionResId(weatherCode));
+            }
+        } catch (Throwable ignored) {
+        }
         switch (weatherCode) {
             case 0:
                 return "Clear";
@@ -280,3 +365,4 @@ public class GlassOpenMeteoClient {
         }
     }
 }
+

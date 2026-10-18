@@ -20,16 +20,43 @@ import me.aap.utils.ui.UiUtils;
  * @author Andrey Pavlenko
  */
 public class PreferenceViewAdapter extends RecyclerView.Adapter<PreferenceViewAdapter.PrefViewHolder> {
+	public static final int VIEW_TYPE_NORMAL = 0;
+	public static final int VIEW_TYPE_CUSTOM = 1;
+
+	public interface OnBindListener {
+		void onBindPreferenceView(PreferenceView view, PreferenceViewAdapter adapter, int position);
+	}
+
 	private PreferenceSet set;
 	private RecyclerView recyclerView;
+	private OnBindListener onBindListener;
 
 	public PreferenceViewAdapter(PreferenceSet set) {
 		this.set = set;
 	}
 
+	public void setOnBindListener(OnBindListener listener) {
+		this.onBindListener = listener;
+	}
+
+	public OnBindListener getOnBindListener() {
+		return onBindListener;
+	}
+
 	@Override
 	public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
 		this.recyclerView = recyclerView;
+	}
+
+	@Override
+	public int getItemViewType(int position) {
+		if (position >= 0 && position < set.preferences.size()) {
+			var s = set.preferences.get(position);
+			if (s != null && s.get() instanceof PreferenceView.ViewOpts) {
+				return VIEW_TYPE_CUSTOM;
+			}
+		}
+		return VIEW_TYPE_NORMAL;
 	}
 
 	@NonNull
@@ -38,19 +65,28 @@ public class PreferenceViewAdapter extends RecyclerView.Adapter<PreferenceViewAd
 		Context ctx = parent.getContext();
 		PreferenceView v = new PreferenceView(ctx);
 		RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-		int margin = (int) UiUtils.toPx(ctx, 1);
-		int padding = (int) UiUtils.toPx(ctx, 5);
-		v.setLayoutParams(lp);
-		lp.setMargins(margin, margin, margin, margin);
-		v.setPadding(padding, padding, padding, padding);
-		v.setFocusable(true);
-		v.setBackgroundResource(R.drawable.box_secondary);
+		if (viewType == VIEW_TYPE_CUSTOM) {
+			v.setLayoutParams(lp);
+			v.setFocusable(false);
+			v.setClickable(false);
+		} else {
+			int margin = (int) UiUtils.toPx(ctx, 1);
+			int padding = (int) UiUtils.toPx(ctx, 5);
+			v.setLayoutParams(lp);
+			lp.setMargins(margin, margin, margin, margin);
+			v.setPadding(padding, padding, padding, padding);
+			v.setFocusable(true);
+			v.setBackgroundResource(R.drawable.box_secondary);
+		}
 		return new PrefViewHolder(v);
 	}
 
 	@Override
 	public void onBindViewHolder(@NonNull PrefViewHolder holder, int position) {
 		holder.getPreferenceView().setPreference(this, set.preferences.get(position));
+		if (onBindListener != null) {
+			onBindListener.onBindPreferenceView(holder.getPreferenceView(), this, position);
+		}
 	}
 
 	@Override

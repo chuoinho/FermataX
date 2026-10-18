@@ -55,8 +55,10 @@ public class GlassQuickBarView extends LinearLayout {
 
         setOrientation(LinearLayout.HORIZONTAL);
         setGravity(Gravity.CENTER);
-        int padding = GlassDimensions.dpToPx(context, 4);
-        setPadding(padding, padding, padding, padding);
+        boolean isCar = GlassDimensions.isCar(context);
+        int padH = GlassDimensions.dpToPx(context, 4);
+        int padV = isCar ? 0 : GlassDimensions.dpToPx(context, 4);
+        setPadding(padH, padV, padH, padV);
     }
 
     @Override
@@ -92,6 +94,9 @@ public class GlassQuickBarView extends LinearLayout {
     }
 
     public void refresh() {
+        if (manager != null) {
+            manager.reload();
+        }
         renderSlots();
     }
 
@@ -108,6 +113,8 @@ public class GlassQuickBarView extends LinearLayout {
         Context context = getContext();
         slotViews = new View[activeSlotCount];
 
+        boolean isCar = GlassDimensions.isCar(context);
+
         for (int i = 0; i < activeSlotCount; i++) {
             final int slotIndex = i;
             final GlassQuickShortcut shortcut = manager.getSlot(i);
@@ -121,9 +128,9 @@ public class GlassQuickBarView extends LinearLayout {
             LayoutParams lp = new LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f);
             if (i > 0) lp.leftMargin = GlassDimensions.dpToPx(context, 6);
             slotLayout.setLayoutParams(lp);
-            slotLayout.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
+            slotLayout.setMinimumHeight(GlassDimensions.dpToPx(context, isCar ? 76 : 48));
 
-            slotLayout.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
+            slotLayout.setBackground(GlassDrawables.createGlassPillStateDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
             slotLayout.setFocusable(true);
             slotLayout.setFocusableInTouchMode(false);
 
@@ -156,8 +163,15 @@ public class GlassQuickBarView extends LinearLayout {
                 ImageView ivIcon = new ImageView(context);
                 int iconSize = GlassDimensions.dpToPx(context, 22);
                 ivIcon.setLayoutParams(new LayoutParams(iconSize, iconSize));
-                if (shortcut.getIconResId() != 0) {
-                    ivIcon.setImageResource(shortcut.getIconResId());
+                int iconRes = shortcut.getIconResId();
+                if ("addon".equals(shortcut.getType()) || shortcut.getId().startsWith("addon:")) {
+                    me.aap.fermata.addon.AddonInfo info = GlassQuickBarManager.resolveAddonInfo(shortcut, context);
+                    if (info != null && info.icon != 0) {
+                        iconRes = info.icon;
+                    }
+                }
+                if (iconRes != 0) {
+                    ivIcon.setImageResource(iconRes);
                 } else {
                     ivIcon.setImageResource(R.drawable.view_grid);
                 }

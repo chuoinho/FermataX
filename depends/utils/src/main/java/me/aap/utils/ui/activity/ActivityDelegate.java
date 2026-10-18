@@ -359,7 +359,17 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 	}
 
 	@Nullable
+	public Drawable getGlassDialogDrawable(Context ctx, float radiusDp) {
+		return null;
+	}
+
+	@Nullable
 	public Drawable getGlassItemHighlightDrawable(Context ctx) {
+		return null;
+	}
+
+	@Nullable
+	public Drawable getGlassPreferenceDrawable(Context ctx, float radiusDp) {
 		return null;
 	}
 

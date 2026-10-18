@@ -3,6 +3,8 @@ package me.aap.fermata.addon.web;
 import static android.os.Build.*;
 import static me.aap.fermata.addon.web.FermataWebClient.isYoutubeUri;
 import static me.aap.fermata.util.Utils.dynCtx;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -308,7 +310,7 @@ public class WebBrowserFragment extends MainActivityFragment
 	}
 
 	protected void registerListeners(MainActivityDelegate a) {
-		a.addBroadcastListener(this, MainActivityListener.ACTIVITY_DESTROY | FRAGMENT_CHANGED);
+		a.addBroadcastListener(this, MainActivityListener.ACTIVITY_DESTROY | FRAGMENT_CHANGED | FRAGMENT_CONTENT_CHANGED);
 	}
 
 	protected void unregisterListeners(MainActivityDelegate a) {
@@ -324,6 +326,9 @@ public class WebBrowserFragment extends MainActivityFragment
 		else if (e == FRAGMENT_CHANGED) {
 			if (a.getActiveFragment() == this) tryAttachUrlObserver();
 			else detachUrlObserver();
+		} else if (e == FRAGMENT_CONTENT_CHANGED) {
+			FermataWebView v = getWebView();
+			if (v != null) v.checkThemeChanged();
 		}
 	}
 

@@ -52,20 +52,7 @@ public final class PhoneSupportBannerController implements MainActivityListener 
 			closeBtn.setOnClickListener(v -> dismissAnimated());
 		}
 
-		if (isGlassTheme()) {
-			boolean isNight = activity.getPrefs().isGlassNightMode();
-			me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
-					me.aap.fermata.ui.glass.theme.GlassThemeColors.get(activity.getContext(), isNight);
-			bannerView.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(activity.getContext(), 999f, isNight));
-			android.widget.TextView tv = bannerView.findViewById(R.id.phone_support_text);
-			if (tv != null) {
-				tv.setTextColor(gc.getTextPrimary());
-			}
-			android.widget.ImageView close = bannerView.findViewById(R.id.phone_support_close);
-			if (close != null) {
-				close.setColorFilter(gc.getTextSecondary());
-			}
-		}
+		refreshAppearance();
 
 		activity.addBroadcastListener(this);
 	}
@@ -76,6 +63,38 @@ public final class PhoneSupportBannerController implements MainActivityListener 
 		} catch (Throwable e) {
 			return false;
 		}
+	}
+
+	public void refreshAppearance() {
+		if (bannerView == null || !isGlassTheme()) return;
+		boolean isNight = activity.getPrefs().isGlassNightMode();
+		me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+				me.aap.fermata.ui.glass.theme.GlassThemeColors.get(activity.getContext(), isNight);
+		bannerView.setBackground(createSolidPillDrawable(activity.getContext(), isNight));
+		bannerView.setElevation(me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(activity.getContext(), 14));
+		android.widget.TextView tv = bannerView.findViewById(R.id.phone_support_text);
+		if (tv != null) {
+			tv.setTextColor(gc.getTextPrimary());
+		}
+		android.widget.ImageView close = bannerView.findViewById(R.id.phone_support_close);
+		if (close != null) {
+			close.setColorFilter(gc.getTextSecondary());
+		}
+	}
+
+	public static android.graphics.drawable.Drawable createSolidPillDrawable(android.content.Context context, boolean isNight) {
+		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
+		android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+		int bgColor = isNight ? 0xFF1E293B : 0xFFFFFFFF;
+		int borderColor = isNight ? 0x33FFFFFF : 0x22000000;
+		pill.setColor(bgColor);
+		pill.setCornerRadius(999f * density);
+		pill.setStroke(Math.max(1, (int) (1.2f * density)), borderColor);
+		return pill;
+	}
+
+	public static android.graphics.drawable.Drawable createGlassPillDrawable(android.content.Context ctx, boolean isNight) {
+		return createSolidPillDrawable(ctx, isNight);
 	}
 
 	public void start() {
@@ -167,6 +186,8 @@ public final class PhoneSupportBannerController implements MainActivityListener 
 			if (bannerView != null && bannerView.getVisibility() == VISIBLE) {
 				dismissAnimated();
 			}
+		} else if (e == me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED) {
+			refreshAppearance();
 		}
 	}
 

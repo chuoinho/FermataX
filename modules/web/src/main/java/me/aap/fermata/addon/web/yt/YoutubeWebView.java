@@ -117,6 +117,25 @@ public class YoutubeWebView extends FermataWebView {
 		if (preferredHost && (callback.getEngine() instanceof YoutubeSessionEngine stable) &&
 				stable.belongsTo(getAddon()))
 			initialPlaybackNavigationClaimed = stable.owns(mediaEngine);
+		syncYoutubeTheme(isDarkTheme());
+	}
+
+	@Override
+	protected void applyTheme(boolean dark) {
+		super.applyTheme(dark);
+		syncYoutubeTheme(dark);
+	}
+
+	public void syncYoutubeTheme(boolean dark) {
+		try {
+			android.webkit.CookieManager cm = android.webkit.CookieManager.getInstance();
+			String targetF6 = dark ? "400" : "401";
+			String cookieVal = "PREF=f6=" + targetF6 + "; domain=.youtube.com; path=/";
+			cm.setCookie("https://m.youtube.com", cookieVal);
+			cm.setCookie("https://www.youtube.com", cookieVal);
+			cm.flush();
+		} catch (Throwable ignored) {}
+		post(() -> evaluateJavascript(YoutubeScripts.themeSync(dark), null));
 	}
 
 	boolean consumeInitialPlaybackNavigationClaim() {

@@ -10,6 +10,7 @@
 	<string name="add_tv_source">添加IPTV源</string>
 	<string name="add_xtream_source">新增 Xtream 程式碼來源</string>
 	<string name="tv_source_name">來源名稱</string>
+	<string name="tv_source_unavailable">無法使用</string>
 	<string name="xtream_live_tv">電視直播</string>
 	<string name="xtream_movies">電影</string>
 	<string name="xtream_series">系列</string>
@@ -49,7 +50,7 @@
 	<string name="xtream_error_api_not_found">在此伺服器上找不到 Xtream API (HTTP 404)。檢查入口網站 URL、主機和連接埠。</string>
 	<string name="xtream_error_server">Xtream 伺服器錯誤 (HTTP %1$d%2$s)。稍後再試。</string>
 	<string name="xtream_error_http">Xtream 請求失敗 (HTTP %1$d%2$s)。</string>
-	<string name="err_failed_to_load_tv_sources">無法載入下列來源：\\n%1$s</string>
+	<string name="err_failed_to_load_tv_sources">無法載入以下來源：\n%1$s\n\n這些來源已標記為無法使用，您可以從列表中編輯或刪除它們。</string>
 	<string name="add_stalker_source">新增 Stalker 入口網站</string>
 	<string name="stalker_portal_url">入口網站 URL</string>
 	<string name="stalker_mac_address">MAC 位址</string>

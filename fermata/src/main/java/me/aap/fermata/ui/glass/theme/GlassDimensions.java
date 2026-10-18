@@ -16,4 +16,14 @@ public final class GlassDimensions {
 		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
 		return Math.round(dp * density);
 	}
+
+	public static boolean isCar(Context context) {
+		if (context == null) return false;
+		try {
+			me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(context);
+			return a != null && a.isCarActivity();
+		} catch (Throwable ignored) {
+			return false;
+		}
+	}
 }

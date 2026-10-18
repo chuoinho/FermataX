@@ -69,4 +69,28 @@ public class GlassDashboardLayoutTest {
 
         assertEquals(6, quickBar.getActiveSlotCount());
     }
+
+    @Test
+    public void testRefreshAppearanceDayNightPropagation() {
+        Context ctx = RuntimeEnvironment.getApplication();
+        GlassDashboardLayout layout = new GlassDashboardLayout(ctx);
+
+        me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView speedo = new me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView(ctx);
+        GlassNavWeatherView navWeather = new GlassNavWeatherView(ctx);
+        me.aap.fermata.ui.glass.media.GlassMediaPlayerView media = new me.aap.fermata.ui.glass.media.GlassMediaPlayerView(ctx);
+        GlassQuickBarView quickBar = new GlassQuickBarView(ctx);
+        quickBar.init(new GlassQuickBarManager(new me.aap.utils.pref.BasicPreferenceStore()), null);
+
+        layout.setViews(null, speedo, navWeather, media, quickBar);
+
+        layout.measure(
+                View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(300, View.MeasureSpec.EXACTLY));
+        layout.layout(0, 0, 800, 300);
+
+        // Call refreshAppearance directly
+        layout.refreshAppearance();
+
+        assertNotNull(layout.getBackground());
+    }
 }

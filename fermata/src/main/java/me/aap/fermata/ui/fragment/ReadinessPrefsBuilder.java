@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Environment;
 import android.os.PowerManager;
@@ -91,6 +93,7 @@ final class ReadinessPrefsBuilder {
 		target.addButton(o -> {
 			o.title = R.string.readiness_refresh;
 			o.subtitle = R.string.readiness_refresh_subtitle;
+			o.hideChevron = true;
 			o.onClick = this::refresh;
 		});
 
@@ -99,6 +102,8 @@ final class ReadinessPrefsBuilder {
 			target.addButton(o -> {
 				o.title = title(row.check());
 				o.csubtitle = subtitle(row, current.input());
+				boolean granted = (row.status() == Status.OK);
+				o.valueDrawable = createStatusDotDrawable(granted);
 				o.onClick = (row.action() == Action.NONE) ? () -> {
 				} : () -> performAction(row.action());
 			});
@@ -109,10 +114,21 @@ final class ReadinessPrefsBuilder {
 			o.title = R.string.readiness_nav_notification_access;
 			o.subtitle = granted ? R.string.readiness_nav_notification_access_granted :
 					R.string.readiness_nav_notification_access_not_granted;
+			o.valueDrawable = createStatusDotDrawable(granted);
 			o.onClick = () -> {
 				startSettings(PhoneReadiness.createNotificationListenerSettingsIntent());
 			};
 		});
+	}
+
+	private Drawable createStatusDotDrawable(boolean granted) {
+		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
+		int size = Math.round(12 * density);
+		GradientDrawable dot = new GradientDrawable();
+		dot.setShape(GradientDrawable.OVAL);
+		dot.setSize(size, size);
+		dot.setColor(granted ? 0xFF22C55E : 0xFFEF4444);
+		return dot;
 	}
 
 	private Snapshot collect() {

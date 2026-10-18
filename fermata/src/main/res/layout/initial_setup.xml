@@ -101,6 +101,43 @@
             android:layout_marginTop="4dp"
             android:textAppearance="?android:attr/textAppearanceSmall" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/readiness_title"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/initial_setup_permissions_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/initial_setup_grant_permissions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:text="@string/initial_setup_grant_permissions" />
+
+            <Button
+                android:id="@+id/initial_setup_check_permissions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:text="@string/initial_setup_check_permissions" />
+        </LinearLayout>
+
         <Button
             android:id="@+id/initial_setup_continue"
             android:layout_width="match_parent"

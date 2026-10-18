@@ -460,11 +460,16 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 							String loc = location.toString();
 
 							if (resp.isConnectionClose()) {
+								cancelTimer();
 								redirect(loc, status, o.maxRedirects--);
+								return completedVoid();
 							} else {
 								return resp.skipPayload().onCompletion((v, fail) -> {
-									if (fail != null) consumer.apply(null, fail);
-									else redirect(loc, status, o.maxRedirects--);
+									if (fail != null) deliver(null, fail);
+									else {
+										cancelTimer();
+										redirect(loc, status, o.maxRedirects--);
+									}
 								});
 							}
 						} else {
@@ -485,13 +490,7 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 			else Log.d("Temporary redirect(", n, "): ", o.url, " -> ", location);
 
 			try {
-				URL u;
-
-				if (location.startsWith("/")) {
-					u = new URL(o.url.getProtocol(), o.url.getHost(), o.url.getPort(), location);
-				} else {
-					u = new URL(location);
-				}
+				URL u = new URL(o.url, location);
 
 				URL cached = null;
 				if (permanent) cached = CollectionUtils.putIfAbsent(permRedirects, o.url, u);

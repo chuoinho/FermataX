@@ -74,6 +74,9 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	private SwitchCompat voiceEnabled;
 	private Button microphoneTest;
 	private TextView microphoneStatus;
+	private TextView permissionsStatus;
+	private Button grantPermissions;
+	private Button checkPermissions;
 	private Cancellable speech;
 
 	@Override
@@ -118,9 +121,13 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		voiceEnabled = view.findViewById(R.id.initial_setup_voice_enabled);
 		microphoneTest = view.findViewById(R.id.initial_setup_microphone_test);
 		microphoneStatus = view.findViewById(R.id.initial_setup_microphone_status);
+		permissionsStatus = view.findViewById(R.id.initial_setup_permissions_status);
+		grantPermissions = view.findViewById(R.id.initial_setup_grant_permissions);
+		checkPermissions = view.findViewById(R.id.initial_setup_check_permissions);
 
 		setupAppLanguage(activity);
 		setupVoiceLanguage(activity);
+		setupPermissions(activity);
 		navPosition.check(activity.getPrefs().getNavBarPosPref(activity) == NavBarView.POSITION_RIGHT
 				? R.id.initial_setup_nav_right : R.id.initial_setup_nav_left);
 		voiceEnabled.setChecked(activity.getPrefs().getVoiceControlEnabledPref());
@@ -151,7 +158,100 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 				microphoneTest.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
 				microphoneTest.setTextColor(actionColor);
 			}
+			if (grantPermissions != null) {
+				grantPermissions.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
+				grantPermissions.setTextColor(actionColor);
+			}
+			if (checkPermissions != null) {
+				checkPermissions.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
+				checkPermissions.setTextColor(actionColor);
+			}
 		}
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		updatePermissionsStatus();
+	}
+
+	private void setupPermissions(MainActivityDelegate activity) {
+		updatePermissionsStatus();
+		if (grantPermissions != null) {
+			grantPermissions.setOnClickListener(v -> requestSetupPermissions(activity));
+		}
+		if (checkPermissions != null) {
+			checkPermissions.setOnClickListener(v -> updatePermissionsStatus());
+		}
+	}
+
+	private void updatePermissionsStatus() {
+		if (permissionsStatus == null) return;
+		android.content.Context ctx = getContext();
+		if (ctx == null) return;
+		boolean storage = isStorageGranted(ctx);
+		boolean location = androidx.core.content.ContextCompat.checkSelfPermission(
+				ctx, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+		boolean mic = androidx.core.content.ContextCompat.checkSelfPermission(
+				ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+		boolean notif = androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled();
+
+		boolean allGranted = storage && location && mic && notif;
+		if (allGranted) {
+			permissionsStatus.setText(R.string.initial_setup_permissions_all_granted);
+			permissionsStatus.setTextColor(0xFF22C55E);
+		} else {
+			permissionsStatus.setText(R.string.initial_setup_permissions_needed);
+			permissionsStatus.setTextColor(0xFFEF4444);
+		}
+	}
+
+	private static boolean isStorageGranted(android.content.Context ctx) {
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+			return android.os.Environment.isExternalStorageManager();
+		}
+		return androidx.core.content.ContextCompat.checkSelfPermission(
+				ctx, android.Manifest.permission.READ_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+	}
+
+	private void requestSetupPermissions(MainActivityDelegate activity) {
+		android.content.Context ctx = getContext();
+		if (ctx == null) return;
+		List<String> needed = new ArrayList<>();
+		if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO)
+				!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
+			needed.add(android.Manifest.permission.RECORD_AUDIO);
+		}
+		if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)
+				!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
+			needed.add(android.Manifest.permission.ACCESS_FINE_LOCATION);
+		}
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+				androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS)
+						!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
+			needed.add(android.Manifest.permission.POST_NOTIFICATIONS);
+		}
+		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R &&
+				androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+						!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
+			needed.add(android.Manifest.permission.READ_EXTERNAL_STORAGE);
+		}
+
+		if (!needed.isEmpty()) {
+			activity.getAppActivity().checkPermissions(needed.toArray(new String[0]))
+					.thenRun(this::updatePermissionsStatus);
+		}
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R &&
+				!android.os.Environment.isExternalStorageManager()) {
+			try {
+				android.content.Intent intent = new android.content.Intent(
+						android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+						android.net.Uri.parse("package:" + ctx.getPackageName()));
+				activity.getAppActivity().startActivity(intent);
+			} catch (Exception ignored) {
+			}
+		}
+		updatePermissionsStatus();
 	}
 
 	@Override

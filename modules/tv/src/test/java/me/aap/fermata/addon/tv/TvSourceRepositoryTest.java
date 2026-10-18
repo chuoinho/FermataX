@@ -72,4 +72,28 @@ public class TvSourceRepositoryTest {
 		assertEquals(TvSourceItem.TYPE_M3U, repo.getSourceType(1));
 		assertEquals(null, repo.getM3uId(1));
 	}
+
+	@Test
+	public void removesXtreamAndStalkerSourcePrefs() {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+		TvSourceRepository repo = new TvSourceRepository(store);
+
+		try (PreferenceStore.Edit edit = store.editPreferenceStore()) {
+			edit.setStringPref(TvSourceRepository.sourceTypePref(5), TvSourceItem.TYPE_XTREAM);
+			edit.setStringPref(me.aap.fermata.addon.tv.xtream.XtreamAccount.hostPref(5), "http://broken.host:8080");
+			edit.setStringPref(TvSourceRepository.sourceTypePref(6), TvSourceItem.TYPE_STALKER);
+			edit.setStringPref(me.aap.fermata.addon.tv.stalker.StalkerAccount.portalPref(6), "http://dead.portal/c/");
+		}
+		repo.setSourceIds(new int[]{5, 6});
+
+		repo.removeSource(5);
+		assertArrayEquals(new int[]{6}, repo.getSourceIds());
+		assertFalse(repo.hasSource(5));
+		assertEquals(null, store.getStringPref(me.aap.fermata.addon.tv.xtream.XtreamAccount.hostPref(5)));
+
+		repo.removeSource(6);
+		assertArrayEquals(new int[0], repo.getSourceIds());
+		assertFalse(repo.hasSource(6));
+		assertEquals(null, store.getStringPref(me.aap.fermata.addon.tv.stalker.StalkerAccount.portalPref(6)));
+	}
 }

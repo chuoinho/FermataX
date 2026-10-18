@@ -68,6 +68,8 @@ public final class CarMapTileView extends View {
 	private Drawable carDrawable;
 	private CarParkingLocation carLocation;
 	private Location userLocation;
+	private boolean nightMode = false;
+	private android.graphics.ColorMatrixColorFilter nightModeFilter;
 
 	public CarMapTileView(Context context) {
 		super(context);
@@ -77,6 +79,33 @@ public final class CarMapTileView extends View {
 	public CarMapTileView(Context context, @Nullable AttributeSet attrs) {
 		super(context, attrs);
 		initMapPaints(context);
+	}
+
+	public void setNightMode(boolean night) {
+		if (this.nightMode == night && (nightModeFilter != null || !night)) return;
+		this.nightMode = night;
+		if (night) {
+			if (nightModeFilter == null) {
+				android.graphics.ColorMatrix invert = new android.graphics.ColorMatrix(new float[] {
+						-0.82f,  0.00f,  0.00f, 0f, 230f,
+						 0.00f, -0.82f,  0.00f, 0f, 230f,
+						 0.00f,  0.00f, -0.82f, 0f, 240f,
+						 0.00f,  0.00f,  0.00f, 1f,   0f
+				});
+				android.graphics.ColorMatrix tint = new android.graphics.ColorMatrix();
+				tint.setScale(0.85f, 0.90f, 1.05f, 1.0f);
+				invert.preConcat(tint);
+				nightModeFilter = new android.graphics.ColorMatrixColorFilter(invert);
+			}
+			tilePaint.setColorFilter(nightModeFilter);
+		} else {
+			tilePaint.setColorFilter(null);
+		}
+		invalidate();
+	}
+
+	public boolean isNightMode() {
+		return nightMode;
 	}
 
 	private void initMapPaints(Context context) {
@@ -124,7 +153,7 @@ public final class CarMapTileView extends View {
 		int height = getHeight();
 		if (width <= 0 || height <= 0) return;
 
-		canvas.drawColor(0xFFE5E9EC); // Light neutral map background while tiles load
+		canvas.drawColor(nightMode ? 0xFF14181B : 0xFFE5E9EC); // Dark/Light background while tiles load
 
 		boolean hasCar = (carLocation != null && carLocation.isValid());
 		boolean hasUser = (userLocation != null);
@@ -456,7 +485,7 @@ public final class CarMapTileView extends View {
 			HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
 			conn.setConnectTimeout(3500);
 			conn.setReadTimeout(4000);
-			conn.setRequestProperty("User-Agent", "FermataX/2.0.1 (Android; +https://github.com/chuoinho/FermataX)");
+			conn.setRequestProperty("User-Agent", "FermataX/2.0.1 (Android)");
 			conn.setRequestProperty("Connection", "Keep-Alive");
 			if (conn.getResponseCode() == 200) {
 				try (InputStream in = conn.getInputStream();

@@ -158,6 +158,19 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 				adapter.notifyDataSetChanged();
 			}
 		}
+		View panel = view.findViewById(R.id.media_items_state_panel);
+		if (panel != null && panel.getVisibility() == View.VISIBLE) {
+			panel.setBackground(a.getGlassCardDrawable(requireContext(), 16f));
+			TextView message = view.findViewById(R.id.media_items_state_message);
+			if (message != null) {
+				message.setTextColor(a.getGlassTextSecondary());
+			}
+			Button action = view.findViewById(R.id.media_items_state_action);
+			if (action != null) {
+				action.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(requireContext(), 20f, isNight));
+				action.setTextColor(a.getGlassActionColor());
+			}
+		}
 	}
 
 	@Override
@@ -425,6 +438,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		if (a != null && a.getPrefs().isGlassTheme(a.isCarActivity())) {
 			if (panel != null) {
 				panel.setBackground(a.getGlassCardDrawable(requireContext(), 16f));
+			}
+			if (message != null) {
+				message.setTextColor(a.getGlassTextSecondary());
 			}
 			if (action != null) {
 				boolean isNight = a.getPrefs().isGlassNightMode();

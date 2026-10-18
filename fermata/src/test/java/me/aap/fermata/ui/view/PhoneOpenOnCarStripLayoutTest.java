@@ -74,18 +74,18 @@ public class PhoneOpenOnCarStripLayoutTest {
 		String strings = new String(Files.readAllBytes(repositoryRoot().resolve(
 				"fermata/src/main/res/values/control_strings.xml")), StandardCharsets.UTF_8);
 		assertTrue(strings.contains(
-				"name=\"phone_header_aa_disconnect\" translatable=\"false\">AA disconnect"));
+				"name=\"phone_header_aa_disconnect\">AA disconnected"));
 		assertTrue(strings.contains(
-				"name=\"phone_header_aa_connected\" translatable=\"false\">AA connected"));
+				"name=\"phone_header_aa_connected\">AA connected"));
 		assertTrue(strings.contains(
-				"name=\"phone_open_on_car_strip_title\" translatable=\"false\">Open on car"));
+				"name=\"phone_open_on_car_strip_title\">Open on car"));
 		assertEquals(2, count(strings, "name=\"phone_header_aa_"));
 		String vietnameseStrings = new String(Files.readAllBytes(repositoryRoot().resolve(
 				"fermata/src/main/res/values-vi/control_strings.xml")), StandardCharsets.UTF_8);
 		assertTrue(vietnameseStrings.contains(
-				"name=\"phone_header_aa_disconnect\">AA disconnect"));
+				"name=\"phone_header_aa_disconnect\">Đã ngắt kết nối AA"));
 		assertTrue(vietnameseStrings.contains(
-				"name=\"phone_header_aa_connected\">AA connected"));
+				"name=\"phone_header_aa_connected\">Đã kết nối AA"));
 	}
 
 	@Test public void headerMapsEveryConnectedAutomotiveStateToTheSameCompactLabel() {

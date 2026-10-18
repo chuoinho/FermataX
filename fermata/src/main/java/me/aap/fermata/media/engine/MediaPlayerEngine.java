@@ -41,6 +41,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 	private final Context ctx;
 	private final MediaPlayer player;
 	private final EnginePrepareWatchdog prepareWatchdog;
+	private final AudioVolumeFader volumeFader;
 	private PlayableItem source;
 
 	public MediaPlayerEngine(Context ctx, Listener listener) {
@@ -58,6 +59,12 @@ public class MediaPlayerEngine extends MediaEngineBase
 		Handler handler = new Handler(Looper.getMainLooper());
 		prepareWatchdog = new EnginePrepareWatchdog(handler::postDelayed,
 				this::onPrepareTimeout);
+		volumeFader = new AudioVolumeFader(handler, vol -> {
+			try {
+				player.setVolume(vol, vol);
+			} catch (IllegalStateException ignored) {
+			}
+		});
 	}
 
 	@Override
@@ -260,6 +267,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 
 	@Override
 	public void close() {
+		volumeFader.cancel();
 		prepareWatchdog.cancel();
 		super.close();
 
@@ -273,13 +281,23 @@ public class MediaPlayerEngine extends MediaEngineBase
 	}
 
 	@Override
+	public void duck(Context ctx) {
+		volumeFader.duck();
+	}
+
+	@Override
+	public void unduck(Context ctx) {
+		volumeFader.unduck();
+	}
+
+	@Override
 	public void mute(Context ctx) {
-		player.setVolume(0f, 0f);
+		volumeFader.mute();
 	}
 
 	@Override
 	public void unmute(Context ctx) {
-		player.setVolume(1f, 1f);
+		volumeFader.unmute();
 	}
 
 	@Override

@@ -2,7 +2,6 @@ package me.aap.fermata.ui.glass.speedo;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -19,11 +18,6 @@ import java.util.Locale;
  * Controller and state engine for automotive GPS speedometer and trip computer.
  */
 public class GlassSpeedoTripController {
-
-    private static final String PREF_NAME = "fermata_glass_trip";
-    private static final String KEY_TRIP_METERS = "trip_distance_meters";
-    private static final String KEY_DRIVE_SECONDS = "drive_time_seconds";
-    private static final String KEY_MAX_SPEED = "max_speed_kmh";
 
     private static final float SPEED_THRESHOLD_KMH = 3.0f;
     private static final float MAX_ACCURACY_METERS = 35.0f;
@@ -109,35 +103,19 @@ public class GlassSpeedoTripController {
     private final Context context;
     private final Listener listener;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final SharedPreferences prefs;
     private final TripState tripState;
 
     private Location lastLocation;
     private long lastLocationTimestampMs;
     private boolean running = false;
+    private float currentSpeedKmh = -1f;
     private LocationManager locationManager;
     private LocationListener locationListener;
 
     public GlassSpeedoTripController(@NonNull Context context, @Nullable Listener listener) {
         this.context = context.getApplicationContext();
         this.listener = listener;
-        this.prefs = this.context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        this.tripState = loadPersistedState();
-    }
-
-    private TripState loadPersistedState() {
-        float meters = prefs.getFloat(KEY_TRIP_METERS, 0f);
-        long seconds = prefs.getLong(KEY_DRIVE_SECONDS, 0L);
-        float maxSpeed = prefs.getFloat(KEY_MAX_SPEED, 0f);
-        return new TripState(meters, seconds, maxSpeed);
-    }
-
-    private void persistState() {
-        prefs.edit()
-                .putFloat(KEY_TRIP_METERS, tripState.getDistanceMeters())
-                .putLong(KEY_DRIVE_SECONDS, tripState.getDriveTimeSeconds())
-                .putFloat(KEY_MAX_SPEED, tripState.getMaxSpeedKmh())
-                .apply();
+        this.tripState = new TripState();
     }
 
     @SuppressLint("MissingPermission")
@@ -161,7 +139,12 @@ public class GlassSpeedoTripController {
             public void onProviderEnabled(@NonNull String provider) {}
 
             @Override
-            public void onProviderDisabled(@NonNull String provider) {}
+            public void onProviderDisabled(@NonNull String provider) {
+                if (LocationManager.GPS_PROVIDER.equals(provider)) {
+                    currentSpeedKmh = -1f;
+                    notifyListener(currentSpeedKmh, tripState);
+                }
+            }
         };
 
         try {
@@ -178,8 +161,8 @@ public class GlassSpeedoTripController {
             // Permission might be denied or provider missing in emulator/DHU
         }
 
-        // Notify initial state
-        notifyListener(0f, tripState);
+        // Notify initial state: -1f indicates no GPS fix yet
+        notifyListener(currentSpeedKmh, tripState);
     }
 
     public synchronized void stop() {
@@ -190,13 +173,12 @@ public class GlassSpeedoTripController {
                 locationManager.removeUpdates(locationListener);
             } catch (Exception ignored) {}
         }
-        persistState();
+        currentSpeedKmh = -1f;
     }
 
     public synchronized void resetTrip() {
         tripState.reset();
-        persistState();
-        notifyListener(0f, tripState);
+        notifyListener(currentSpeedKmh, tripState);
     }
 
     public TripState getTripState() {
@@ -206,6 +188,7 @@ public class GlassSpeedoTripController {
     public void onLocationReceived(@NonNull Location location) {
         float rawSpeedKmh = location.hasSpeed() ? (location.getSpeed() * 3.6f) : 0f;
         float filteredSpeedKmh = (rawSpeedKmh >= SPEED_THRESHOLD_KMH) ? rawSpeedKmh : 0f;
+        currentSpeedKmh = filteredSpeedKmh;
 
         boolean accurate = !location.hasAccuracy() || (location.getAccuracy() <= MAX_ACCURACY_METERS);
         long now = location.getTime();
@@ -224,7 +207,6 @@ public class GlassSpeedoTripController {
         }
 
         tripState.updateMaxSpeed(filteredSpeedKmh);
-        persistState();
 
         notifyListener(filteredSpeedKmh, tripState);
     }

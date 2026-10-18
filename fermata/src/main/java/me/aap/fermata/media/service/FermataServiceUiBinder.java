@@ -23,6 +23,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -96,14 +97,21 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 				session.getSessionToken());
 	}
 
+	@VisibleForTesting
+	public FermataServiceUiBinder(@Nullable MediaSessionCallback sessionCallback, @Nullable MediaControllerCompat mediaController) {
+		this.sessionCallback = sessionCallback;
+		this.mediaController = mediaController;
+	}
+
 	@NonNull
 	public MediaSessionCallback getMediaSessionCallback() {
 		return sessionCallback;
 	}
 
-	@NonNull
+	@Nullable
 	public MediaLib getLib() {
-		return getMediaSessionCallback().getMediaLib();
+		MediaSessionCallback cb = getMediaSessionCallback();
+		return (cb != null) ? cb.getMediaLib() : null;
 	}
 
 	public boolean isPlaying() {

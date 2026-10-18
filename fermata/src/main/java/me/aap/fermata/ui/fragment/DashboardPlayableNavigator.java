@@ -13,31 +13,27 @@ import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoPresentationController;
 
-final class DashboardPlayableNavigator {
+public final class DashboardPlayableNavigator {
 	private DashboardPlayableNavigator() {
 	}
 
-	static boolean isSamePlayable(PlayableItem first, PlayableItem second) {
+	public static boolean isSamePlayable(PlayableItem first, PlayableItem second) {
 		first = PlayableItemResolver.unwrap(first);
 		second = PlayableItemResolver.unwrap(second);
 		return TextUtils.equals(first.getOrigId(), second.getOrigId()) ||
 				TextUtils.equals(first.getId(), second.getId());
 	}
 
-	static void goToPlayable(MainActivityDelegate activity, PlayableItem item) {
-		route(activity, item, null, false);
-	}
-
-	static void openSmartTop(MainActivityDelegate activity, PlayableItem item) {
+	public static void openSmartTop(MainActivityDelegate activity, PlayableItem item) {
 		route(activity, item,
 				resolved -> onSmartTopTargetOpened(activity, resolved), true);
 	}
 
-	static void playAndGoToPlayable(MainActivityDelegate activity, PlayableItem item) {
+	public static void playAndGoToPlayable(MainActivityDelegate activity, PlayableItem item) {
 		route(activity, item, null, true);
 	}
 
-	static void togglePlayback(MainActivityDelegate activity, PlayableItem item) {
+	public static void togglePlayback(MainActivityDelegate activity, PlayableItem item) {
 		activity.getMediaServiceBinder().togglePlayback(item);
 	}
 

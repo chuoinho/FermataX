@@ -46,6 +46,7 @@ public class GlassNavigationRailView extends FrameLayout {
     private static final long ANIM_DURATION_MS = 220L;
 
     private final MainActivityDelegate activity;
+    private final Boolean isCarOverride;
     private boolean isNight;
     private GlassThemeColors colors;
     private boolean isRight;
@@ -65,19 +66,36 @@ public class GlassNavigationRailView extends FrameLayout {
     private int animGeneration = 0;
 
     public GlassNavigationRailView(@NonNull Context context) {
-        this(context, (MainActivityDelegate) null);
+        this(context, (MainActivityDelegate) null, null);
     }
 
     public GlassNavigationRailView(@NonNull Context context, @Nullable MainActivityDelegate activity) {
+        this(context, activity, null);
+    }
+
+    // Visible for testing automotive host layout
+    GlassNavigationRailView(@NonNull Context context, boolean isCar) {
+        this(context, null, isCar);
+    }
+
+    private GlassNavigationRailView(@NonNull Context context, @Nullable MainActivityDelegate activity, @Nullable Boolean isCarOverride) {
         super(context);
         this.activity = activity;
+        this.isCarOverride = isCarOverride;
         init(context);
     }
 
     public GlassNavigationRailView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         this.activity = (context instanceof me.aap.fermata.ui.activity.MainActivity) ? MainActivityDelegate.get(context) : null;
+        this.isCarOverride = null;
         init(context);
+    }
+
+    public boolean isCar() {
+        if (isCarOverride != null) return isCarOverride;
+        if (activity != null) return activity.isCarActivity();
+        return GlassDimensions.isCar(getContext());
     }
 
     private void init(Context context) {
@@ -92,18 +110,18 @@ public class GlassNavigationRailView extends FrameLayout {
         // 1. Scrim Backdrop
         scrimView = new View(context);
         scrimView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-        scrimView.setBackgroundColor(Color.argb(135, 0, 0, 0));
+        scrimView.setBackgroundColor(Color.argb(90, 0, 0, 0));
         scrimView.setVisibility(GONE);
         scrimView.setAlpha(0f);
         scrimView.setOnClickListener(v -> collapse());
         addView(scrimView);
 
-        // 2. Rail Container (Floating overlay)
+        // 2. Rail Container (Floating overlay with high-opacity frosted glass)
         int railWidth = GlassDimensions.dpToPx(context, 76);
         railContainer = new LinearLayout(context);
         railContainer.setOrientation(LinearLayout.VERTICAL);
         railContainer.setGravity(Gravity.CENTER_HORIZONTAL);
-        railContainer.setBackground(GlassDrawables.createGlassCardDrawable(context, GlassDimensions.CARD_RADIUS_DP, isNight));
+        railContainer.setBackground(GlassDrawables.createGlassRailDrawable(context, GlassDimensions.CARD_RADIUS_DP, isNight));
         railContainer.setElevation(GlassDimensions.dpToPx(context, 16));
 
         LayoutParams railLp = new LayoutParams(railWidth, LayoutParams.MATCH_PARENT);
@@ -117,8 +135,8 @@ public class GlassNavigationRailView extends FrameLayout {
         addView(railContainer);
 
         // 3. Grabber Handle (Touch target envelope with visual pill inside)
-        boolean isCar = (activity != null) && activity.isCarActivity();
-        int hitWidth = GlassDimensions.dpToPx(context, isCar ? 56 : 48);
+        boolean isCar = isCar();
+        int hitWidth = GlassDimensions.dpToPx(context, isCar ? 76 : 48);
         int hitHeight = GlassDimensions.dpToPx(context, 84);
         int visualWidth = GlassDimensions.dpToPx(context, 26);
         int visualHeight = GlassDimensions.dpToPx(context, 72);
@@ -134,7 +152,7 @@ public class GlassNavigationRailView extends FrameLayout {
         FrameLayout.LayoutParams pillLp = new FrameLayout.LayoutParams(visualWidth, visualHeight);
         pillLp.gravity = (isRight ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
         innerGrabberPill.setLayoutParams(pillLp);
-        innerGrabberPill.setBackground(GlassDrawables.createGlassPillDrawable(context, 13f, isNight));
+        innerGrabberPill.setBackground(GlassDrawables.createGlassGrabberPillDrawable(context, 13f, isNight));
         innerGrabberPill.setElevation(GlassDimensions.dpToPx(context, 18));
         innerGrabberPill.setClipChildren(false);
 
@@ -185,7 +203,7 @@ public class GlassNavigationRailView extends FrameLayout {
         });
 
         // Button 3: Apps / Addons Catalog
-        actionButtons[2] = createButton(context, R.drawable.view_grid, "Apps", false, () -> {
+        actionButtons[2] = createButton(context, R.drawable.view_grid, R.string.addons, false, () -> {
             if (activity != null) activity.showFragment(R.id.glass_addons_catalog_fragment);
         });
 
@@ -218,6 +236,7 @@ public class GlassNavigationRailView extends FrameLayout {
         String title;
         if (titleResId == R.string.home) title = safeGetString(context, titleResId, "Home");
         else if (titleResId == R.string.voice_control) title = safeGetString(context, titleResId, "Voice");
+        else if (titleResId == R.string.addons) title = safeGetString(context, titleResId, "Apps");
         else if (titleResId == R.string.settings) title = safeGetString(context, titleResId, "Settings");
         else if (titleResId == R.string.exit) title = safeGetString(context, titleResId, "Exit");
         else title = safeGetString(context, titleResId, "");
@@ -231,7 +250,8 @@ public class GlassNavigationRailView extends FrameLayout {
         btn.setFocusable(true);
         btn.setFocusableInTouchMode(false);
         btn.setContentDescription(title);
-        btn.setMinimumHeight(GlassDimensions.dpToPx(context, 48));
+        boolean isCar = isCar();
+        btn.setMinimumHeight(GlassDimensions.dpToPx(context, isCar ? 76 : 48));
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f);
@@ -302,16 +322,18 @@ public class GlassNavigationRailView extends FrameLayout {
         prs.setColor(isNight ? 0x48FFFFFF : 0x30000000);
         prs.setStroke(strokeWidth, accent);
 
-        // 3. Selected / Activated state
+        // 3. Selected / Activated state (soft accent fill, no border)
         GradientDrawable sel = new GradientDrawable();
         sel.setShape(GradientDrawable.RECTANGLE);
         sel.setCornerRadius(radius);
         int selFill = (accent & 0x00FFFFFF) | (isNight ? 0x2A000000 : 0x20000000);
         sel.setColor(selFill);
-        sel.setStroke(strokeWidth, accent);
 
-        // 4. Normal state
-        Drawable norm = GlassDrawables.createGlassPillDrawable(ctx, 16f, isNight);
+        // 4. Normal state (clean, borderless)
+        GradientDrawable norm = new GradientDrawable();
+        norm.setShape(GradientDrawable.RECTANGLE);
+        norm.setCornerRadius(radius);
+        norm.setColor(Color.TRANSPARENT);
 
         sld.addState(new int[]{android.R.attr.state_focused}, foc);
         sld.addState(new int[]{android.R.attr.state_pressed}, prs);
@@ -340,27 +362,44 @@ public class GlassNavigationRailView extends FrameLayout {
         if (height > 0) {
             float density = getResources().getDisplayMetrics().density;
             float heightDp = height / Math.max(0.1f, density);
+            boolean isCar = isCar();
 
             // Dynamic budget allocation for the 5 buttons
             int vPad;
             int containerPad;
             int btnMargin;
 
-            if (heightDp >= 460f) {
-                // Automotive standard target (each action cell achieves 76dp when H >= 460dp)
-                vPad = GlassDimensions.dpToPx(getContext(), 12);
-                containerPad = GlassDimensions.dpToPx(getContext(), 8);
-                btnMargin = GlassDimensions.dpToPx(getContext(), 4);
-            } else if (heightDp >= 320f) {
-                // Compact viewport (e.g. phone landscape 360-392dp): tighten overhead so all 5 buttons >= 48dp
-                vPad = GlassDimensions.dpToPx(getContext(), 8);
-                containerPad = GlassDimensions.dpToPx(getContext(), 4);
-                btnMargin = GlassDimensions.dpToPx(getContext(), 2);
+            if (isCar) {
+                if (heightDp >= 480f) {
+                    // Standard AA height: generous overhead
+                    vPad = GlassDimensions.dpToPx(getContext(), 10);
+                    containerPad = GlassDimensions.dpToPx(getContext(), 6);
+                    btnMargin = GlassDimensions.dpToPx(getContext(), 2);
+                } else if (heightDp >= 262f) {
+                    // Compact AA height (262dp - 480dp): tight overhead (22dp total: vPad 4, pad 2, margin 1)
+                    // At H >= 402dp: (H - 22) / 5 >= 76dp target.
+                    // At 262dp <= H < 402dp: (H - 22) / 5 >= 48dp accessibility floor.
+                    vPad = GlassDimensions.dpToPx(getContext(), 4);
+                    containerPad = GlassDimensions.dpToPx(getContext(), 2);
+                    btnMargin = GlassDimensions.dpToPx(getContext(), 1);
+                } else {
+                    // Ultra-low viewport H < 262dp: minimal overhead (4dp total) to maximize button touch area
+                    vPad = GlassDimensions.dpToPx(getContext(), 2);
+                    containerPad = 0;
+                    btnMargin = 0;
+                }
             } else {
-                // Very low viewport: minimal overhead to preserve 48dp touch targets
-                vPad = GlassDimensions.dpToPx(getContext(), 4);
-                containerPad = GlassDimensions.dpToPx(getContext(), 2);
-                btnMargin = GlassDimensions.dpToPx(getContext(), 1);
+                if (heightDp >= 320f) {
+                    // Compact phone viewport: tighten overhead so all 5 buttons >= 48dp
+                    vPad = GlassDimensions.dpToPx(getContext(), 8);
+                    containerPad = GlassDimensions.dpToPx(getContext(), 4);
+                    btnMargin = GlassDimensions.dpToPx(getContext(), 2);
+                } else {
+                    // Very low phone viewport
+                    vPad = GlassDimensions.dpToPx(getContext(), 4);
+                    containerPad = GlassDimensions.dpToPx(getContext(), 2);
+                    btnMargin = GlassDimensions.dpToPx(getContext(), 1);
+                }
             }
 
             if (railContainer != null && railContainer.getLayoutParams() instanceof LayoutParams lp) {
@@ -372,20 +411,35 @@ public class GlassNavigationRailView extends FrameLayout {
                 railContainer.setPadding(0, containerPad, 0, containerPad);
             }
 
+            int totalOverheadPx = (vPad * 2) + (containerPad * 2) + (btnMargin * 10);
+            int availHeightPx = height - totalOverheadPx;
+            int perBtnHeightPx = Math.max(0, availHeightPx / 5);
+
             if (actionButtons != null) {
+                int targetMinHeightPx = GlassDimensions.dpToPx(getContext(), isCar ? 76 : 48);
                 for (View btn : actionButtons) {
-                    if (btn != null && btn.getLayoutParams() instanceof LinearLayout.LayoutParams lp) {
-                        if (lp.topMargin != btnMargin || lp.bottomMargin != btnMargin) {
-                            lp.topMargin = btnMargin;
-                            lp.bottomMargin = btnMargin;
-                            btn.setLayoutParams(lp);
+                    if (btn != null) {
+                        // Clamp minimum height to available budget per button to prevent container clipping on H < 402dp
+                        btn.setMinimumHeight(Math.min(targetMinHeightPx, perBtnHeightPx));
+                        if (btn.getLayoutParams() instanceof LinearLayout.LayoutParams lp) {
+                            if (lp.topMargin != btnMargin || lp.bottomMargin != btnMargin) {
+                                lp.topMargin = btnMargin;
+                                lp.bottomMargin = btnMargin;
+                                btn.setLayoutParams(lp);
+                            }
                         }
                     }
                 }
             }
 
-            if (heightDp < 240f) {
-                Log.w(TAG, "Viewport height (" + heightDp + "dp) cannot fit 5 buttons with 48dp minimum touch target without conflict.");
+            if (isCar) {
+                if (heightDp < 262f) {
+                    Log.w(TAG, "Automotive viewport height (" + heightDp + "dp) cannot achieve 48dp accessibility floor without conflict. Floor threshold: 262dp. Achieved: " + (perBtnHeightPx / Math.max(0.1f, density)) + "dp.");
+                } else if (heightDp < 402f) {
+                    Log.w(TAG, "Automotive viewport height (" + heightDp + "dp) cannot fit 5 vertical buttons with 76dp touch target without conflict. Minimum required: 402dp. Achieved: " + (perBtnHeightPx / Math.max(0.1f, density)) + "dp (>= 48dp accessibility floor).");
+                }
+            } else if (!isCar && heightDp < 240f) {
+                Log.w(TAG, "Phone viewport height (" + heightDp + "dp) cannot fit 5 vertical buttons with 48dp minimum touch target without conflict. Minimum required: 240dp.");
             }
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -396,11 +450,15 @@ public class GlassNavigationRailView extends FrameLayout {
         super.onLayout(changed, left, top, right, bottom);
         if (actionButtons != null) {
             float density = getResources().getDisplayMetrics().density;
+            boolean isCar = isCar();
+            float minTarget = isCar ? 76f : 48f;
             for (View btn : actionButtons) {
                 if (btn != null && btn.getHeight() > 0) {
                     float btnHeightDp = btn.getHeight() / Math.max(0.1f, density);
-                    if (btnHeightDp < 44f) {
-                        Log.w(TAG, "Action button height (" + btnHeightDp + "dp) is below 48dp touch threshold.");
+                    if (isCar && btnHeightDp < 48f) {
+                        Log.w(TAG, "Action button layout height (" + btnHeightDp + "dp) is below 48dp accessibility floor.");
+                    } else if (btnHeightDp < (minTarget - 4f)) {
+                        Log.w(TAG, "Action button layout height (" + btnHeightDp + "dp) is below " + minTarget + "dp touch target.");
                     }
                 }
             }
@@ -556,9 +614,9 @@ public class GlassNavigationRailView extends FrameLayout {
     public void onAppearanceChanged() {
         this.isNight = (activity != null) ? activity.getPrefs().isGlassNightMode() : GlassThemeColors.isNight(getContext());
         this.colors = GlassThemeColors.get(getContext(), isNight);
-        railContainer.setBackground(GlassDrawables.createGlassCardDrawable(getContext(), GlassDimensions.CARD_RADIUS_DP, isNight));
+        railContainer.setBackground(GlassDrawables.createGlassRailDrawable(getContext(), GlassDimensions.CARD_RADIUS_DP, isNight));
         if (innerGrabberPill != null) {
-            innerGrabberPill.setBackground(GlassDrawables.createGlassPillDrawable(getContext(), 13f, isNight));
+            innerGrabberPill.setBackground(GlassDrawables.createGlassGrabberPillDrawable(getContext(), 13f, isNight));
         }
         if (tvGrip != null) {
             tvGrip.setTextColor(colors.getTextPrimary());

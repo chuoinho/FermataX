@@ -79,7 +79,9 @@ public class GenericFragment extends ActivityFragment {
 		LinearLayout v = new LinearLayout(getContext());
 		ActivityDelegate a = ActivityDelegate.get(getContext());
 		if (a != null && a.isGlassTheme()) {
-			Drawable glass = a.getGlassCardDrawable(getContext(), 20f);
+			Drawable glass = (this instanceof me.aap.utils.ui.fragment.GenericDialogFragment) ?
+					a.getGlassDialogDrawable(getContext(), 20f) : null;
+			if (glass == null) glass = a.getGlassCardDrawable(getContext(), 20f);
 			if (glass != null) {
 				v.setBackground(glass);
 			}

@@ -160,13 +160,12 @@ public class MainActivityDelegate extends ActivityDelegate
 	private PhoneBottomMenuController phoneBottomMenuController;
 	private PhonePlaybackCarHeaderController phonePlaybackCarHeaderController;
 	private PhoneSupportBannerController phoneSupportBannerController;
-	private final me.aap.fermata.ui.glass.rail.GlassNavigationRailController glassRailController =
-			new me.aap.fermata.ui.glass.rail.GlassNavigationRailController();
+	private final me.aap.fermata.ui.glass.rail.GlassNavigationRailController glassRailController = new me.aap.fermata.ui.glass.rail.GlassNavigationRailController();
 	private FutureSupplier<?> contentLoading;
 	private final AsyncOperationController contentOperations =
 			new AsyncOperationController(this::onContentOperationChanged);
 	private boolean barsHidden;
-	private int phoneRootId = R.id.dashboard_fragment;
+	private int phoneRootId = PhoneRootPolicy.initialDestination(RuntimeHostMode.PHONE);
 	private boolean videoMode;
 	private int brightness = 255;
 	private final VoiceInteractionCoordinator voiceInteraction;
@@ -261,7 +260,7 @@ public class MainActivityDelegate extends ActivityDelegate
 			navId = state.getInt("navId", ID_NULL);
 			fragmentId = state.getInt("fragmentId", ID_NULL);
 			phoneRootId = PhoneRootPolicy.resolvePhoneRoot(
-					state.getInt("phoneRootId", R.id.dashboard_fragment), fragmentId);
+					state.getInt("phoneRootId", PhoneRootPolicy.initialDestination(RuntimeHostMode.PHONE)), fragmentId);
 		} else {
 			navId = ID_NULL;
 			fragmentId = ID_NULL;
@@ -389,7 +388,7 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public void showDashboard() {
 		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
-			showPhoneRoot(R.id.dashboard_fragment);
+			showPhoneRoot(PhoneRootPolicy.initialDestination(RuntimeHostMode.PHONE));
 			return;
 		}
 		hideActiveMenu();
@@ -419,7 +418,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		hideActiveMenu();
 		BodyLayout body = getBody();
 		if (!body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
-		if (rootId == R.id.dashboard_fragment) setActiveNavItemId(R.id.dashboard_fragment);
+		setActiveNavItemId(rootId);
 		showFragment(rootId);
 		UiShellController.onRouteChanged(this);
 		return true;
@@ -869,11 +868,6 @@ public class MainActivityDelegate extends ActivityDelegate
 				AsyncOperationController.State.RUNNING || listStateVisible) progressBar.hide();
 	}
 
-	public void backToNavFragment() {
-		int id = getActiveNavItemId();
-		showFragment((id == ID_NULL) ? R.id.dashboard_fragment : id);
-	}
-
 	@Override
 	protected int getFrameContainerId() {
 		return R.id.frame_layout;
@@ -1010,11 +1004,6 @@ public class MainActivityDelegate extends ActivityDelegate
 		}
 
 		return null;
-	}
-
-	public boolean hasCurrent() {
-		PlayableItem pi = getMediaServiceBinder().getCurrentItem();
-		return (pi != null) || (getLib().getPrefs().getLastPlayedItemPref() != null);
 	}
 
 	public FutureSupplier<Boolean> goToCurrent() {
@@ -1216,9 +1205,13 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	@Override
-	public Drawable getGlassItemHighlightDrawable(Context ctx) {
-		return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassItemHighlightDrawable(ctx, isGlassNightMode());
-	}
+	public Drawable getGlassDialogDrawable(Context ctx, float radiusDp) { return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassDialogDrawable(ctx, radiusDp, isGlassNightMode()); }
+
+	@Override
+	public Drawable getGlassItemHighlightDrawable(Context ctx) { return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassItemHighlightDrawable(ctx, isGlassNightMode()); }
+
+	@Override
+	public Drawable getGlassPreferenceDrawable(Context ctx, float radiusDp) { return me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPreferenceDrawable(ctx, radiusDp, isGlassNightMode()); }
 
 	@Override
 	public View createSwitch(Context ctx) {
@@ -1372,9 +1365,13 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (MainActivityPrefs.hasThemePref(this, prefs)) {
-			if (isGlassTheme()) glassRailController.refreshAppearance(this);
-			if (isGlassTheme() && prefs.contains(MainActivityPrefs.GLASS_APPEARANCE) && !prefs.contains(MainActivityPrefs.THEME_AA) && !prefs.contains(MainActivityPrefs.THEME_MAIN)) {
-				fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+			if (isGlassTheme()) {
+				glassRailController.refreshAppearance(this);
+				refreshPhoneBottomMenu();
+				refreshPhonePlaybackCarHeader();
+				if (prefs.contains(MainActivityPrefs.GLASS_APPEARANCE) && !prefs.contains(MainActivityPrefs.THEME_AA) && !prefs.contains(MainActivityPrefs.THEME_MAIN)) {
+					fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+				} else recreate();
 			} else recreate();
 		} else if (MainActivityPrefs.hasNavBarPosPref(this, prefs)) {
 			if (BuildConfig.AUTO && prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
@@ -1452,21 +1449,6 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public Cancellable postDelayed(Runnable task, long delay) {
 		return getHandler().schedule(task, delay);
-	}
-
-	public Cancellable interruptPlayback() {
-		MediaSessionCallback cb = getMediaSessionCallback();
-		if (!cb.isPlaying()) return Cancellable.CANCELED;
-		PlaybackStateCompat playbackState = cb.getPlaybackState();
-		cb.onPause();
-		return () -> {
-			PlaybackStateCompat state = cb.getPlaybackState();
-			if ((state.getState() == PlaybackStateCompat.STATE_PAUSED) &&
-					((state == playbackState) || (state.getPosition() != playbackState.getPosition()))) {
-				cb.onPlay();
-			}
-			return true;
-		};
 	}
 
 	@Override

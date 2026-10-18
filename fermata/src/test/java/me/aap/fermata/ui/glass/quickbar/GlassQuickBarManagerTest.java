@@ -56,11 +56,11 @@ public class GlassQuickBarManagerTest {
         GlassQuickBarManager reloaded = new GlassQuickBarManager(store);
         GlassQuickShortcut loadedYt = reloaded.getCustomShortcut(0);
         assertNotNull(loadedYt);
-        assertEquals("addon:youtube", loadedYt.getId());
+        assertEquals("addon:me.aap.fermata.addon.web.yt.YoutubeAddon", loadedYt.getId());
 
         GlassQuickShortcut loadedTv = reloaded.getCustomShortcut(5);
         assertNotNull(loadedTv);
-        assertEquals("addon:tv", loadedTv.getId());
+        assertEquals("addon:me.aap.fermata.addon.tv.TvAddon", loadedTv.getId());
 
         // Remove shortcut
         reloaded.removeCustomShortcut(0);
@@ -139,5 +139,83 @@ public class GlassQuickBarManagerTest {
         List<GlassQuickShortcut> shortcuts = GlassShortcutPickerDialog.getAvailableShortcuts(context);
         assertNotNull(shortcuts);
         assertFalse(shortcuts.isEmpty());
+        // Verify Google Cast is excluded
+        for (GlassQuickShortcut s : shortcuts) {
+            assertFalse(s.getId().toLowerCase().contains("cast"));
+            assertFalse(s.getTitle().toLowerCase().contains("cast"));
+        }
+    }
+
+    @Test
+    public void testResolveAddonInfoByLegacyIdAndTitle() {
+        Context context = RuntimeEnvironment.getApplication();
+
+        // 1. Stale numeric ID with title "Youtube"
+        GlassQuickShortcut staleYt = new GlassQuickShortcut("addon:2131297099", "Youtube", 0, "addon");
+        me.aap.fermata.addon.AddonInfo ytInfo = GlassQuickBarManager.resolveAddonInfo(staleYt, context);
+        assertNotNull(ytInfo);
+        assertEquals("me.aap.fermata.addon.web.yt.YoutubeAddon", ytInfo.className);
+
+        // 2. Stale numeric ID with title "TV"
+        GlassQuickShortcut staleTv = new GlassQuickShortcut("addon:2131297054", "TV", 0, "addon");
+        me.aap.fermata.addon.AddonInfo tvInfo = GlassQuickBarManager.resolveAddonInfo(staleTv, context);
+        assertNotNull(tvInfo);
+        assertEquals("me.aap.fermata.addon.tv.TvAddon", tvInfo.className);
+
+        // 3. Stale numeric ID with title "Web browser"
+        GlassQuickShortcut staleWeb = new GlassQuickShortcut("addon:2131297086", "Web browser", 0, "addon");
+        me.aap.fermata.addon.AddonInfo webInfo = GlassQuickBarManager.resolveAddonInfo(staleWeb, context);
+        assertNotNull(webInfo);
+        assertEquals("me.aap.fermata.addon.web.WebBrowserAddon", webInfo.className);
+
+        // 4. Short alias "addon:youtube"
+        GlassQuickShortcut aliasYt = new GlassQuickShortcut("addon:youtube", "YouTube", 0, "addon");
+        me.aap.fermata.addon.AddonInfo aliasYtInfo = GlassQuickBarManager.resolveAddonInfo(aliasYt, context);
+        assertNotNull(aliasYtInfo);
+        assertEquals("me.aap.fermata.addon.web.yt.YoutubeAddon", aliasYtInfo.className);
+
+        // 5. Canonical class name "addon:me.aap.fermata.addon.web.yt.YoutubeAddon"
+        GlassQuickShortcut canonicalYt = new GlassQuickShortcut("addon:me.aap.fermata.addon.web.yt.YoutubeAddon", "YouTube", 0, "addon");
+        me.aap.fermata.addon.AddonInfo canonicalYtInfo = GlassQuickBarManager.resolveAddonInfo(canonicalYt, context);
+        assertNotNull(canonicalYtInfo);
+        assertEquals("me.aap.fermata.addon.web.yt.YoutubeAddon", canonicalYtInfo.className);
+    }
+
+    @Test
+    public void testMigrationAutoCorrectsStalePreferences() {
+        // Simulating the exact JSON found on the device
+        String deviceJson = "[{\"id\":\"addon:2131297054\",\"title\":\"TV\",\"iconResId\":2131231211,\"type\":\"addon\"}," +
+                "{\"id\":\"addon:2131297099\",\"title\":\"Youtube\",\"iconResId\":2131231219,\"type\":\"addon\"}," +
+                "{\"id\":\"addon:2131297086\",\"title\":\"Web browser\",\"iconResId\":2131231218,\"type\":\"addon\"}," +
+                "null,null,null]";
+
+        PreferenceStore devStore = new BasicPreferenceStore();
+        devStore.applyStringPref(MainActivityPrefs.PREF_GLASS_QUICK_SHORTCUTS, deviceJson);
+
+        GlassQuickBarManager migratedMgr = new GlassQuickBarManager(devStore);
+
+        // Verify slot 0 (TV) migrated to canonical class name and fresh icon
+        GlassQuickShortcut tvSlot = migratedMgr.getSlot(0);
+        assertNotNull(tvSlot);
+        assertEquals("addon:me.aap.fermata.addon.tv.TvAddon", tvSlot.getId());
+        assertEquals(R.drawable.tv, tvSlot.getIconResId());
+
+        // Verify slot 1 (Youtube) migrated to canonical class name and fresh icon
+        GlassQuickShortcut ytSlot = migratedMgr.getSlot(1);
+        assertNotNull(ytSlot);
+        assertEquals("addon:me.aap.fermata.addon.web.yt.YoutubeAddon", ytSlot.getId());
+        assertEquals(R.drawable.youtube, ytSlot.getIconResId());
+
+        // Verify slot 2 (Web browser) migrated to canonical class name and fresh icon
+        GlassQuickShortcut webSlot = migratedMgr.getSlot(2);
+        assertNotNull(webSlot);
+        assertEquals("addon:me.aap.fermata.addon.web.WebBrowserAddon", webSlot.getId());
+        assertEquals(R.drawable.web, webSlot.getIconResId());
+
+        // Verify the preference store was updated with canonical IDs
+        String updatedJson = devStore.getStringPref(MainActivityPrefs.PREF_GLASS_QUICK_SHORTCUTS);
+        assertTrue(updatedJson.contains("me.aap.fermata.addon.web.yt.YoutubeAddon"));
+        assertTrue(updatedJson.contains("me.aap.fermata.addon.tv.TvAddon"));
+        assertTrue(updatedJson.contains("me.aap.fermata.addon.web.WebBrowserAddon"));
     }
 }

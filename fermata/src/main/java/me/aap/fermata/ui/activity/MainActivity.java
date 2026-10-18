@@ -14,6 +14,8 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewParent;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -32,6 +34,7 @@ import me.aap.fermata.ui.view.UiShellController;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.activity.SplitCompatActivityBase;
+import me.aap.utils.ui.menu.OverlayMenu;
 
 public class MainActivity extends SplitCompatActivityBase
 		implements FermataActivity, AddonManager.Listener {
@@ -160,6 +163,27 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	public boolean onGenericMotionEvent(MotionEvent event) {
+		MainActivityDelegate d = getActivityDelegate().peek();
+		if (d != null) {
+			OverlayMenu activeMenu = d.getActiveMenu();
+			if (activeMenu instanceof View menuView && menuView.isAttachedToWindow() && menuView.getVisibility() == View.VISIBLE) {
+				if (event.getAction() == ACTION_SCROLL) {
+					float scroll = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
+					if (scroll == 0f) scroll = event.getAxisValue(MotionEvent.AXIS_SCROLL);
+					if (scroll != 0f) {
+						int dir = (scroll < 0) ? View.FOCUS_DOWN : View.FOCUS_UP;
+						View focused = menuView.findFocus();
+						View searchRoot = (focused != null && isDescendant(menuView, focused)) ? focused : menuView;
+						View nextFocus = searchRoot.focusSearch(dir);
+						if (nextFocus != null && isDescendant(menuView, nextFocus) && nextFocus != focused) {
+							nextFocus.requestFocus();
+						}
+						return true;
+					}
+				}
+			}
+		}
+
 		if (((event.getSource() & SOURCE_CLASS_POINTER) != 0) && (event.getAction() == ACTION_SCROLL)) {
 			AudioManager amgr = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
 			if (amgr == null) return false;
@@ -169,5 +193,16 @@ public class MainActivity extends SplitCompatActivityBase
 		}
 
 		return super.onGenericMotionEvent(event);
+	}
+
+	private static boolean isDescendant(View root, @Nullable View view) {
+		if (view == null) return false;
+		if (view == root) return true;
+		ViewParent parent = view.getParent();
+		while (parent instanceof View pv) {
+			if (pv == root) return true;
+			parent = pv.getParent();
+		}
+		return false;
 	}
 }

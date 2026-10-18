@@ -71,6 +71,8 @@ public final class AudioEffectsScreenView extends FrameLayout
 	private final SwitchCompat virtualizerSwitch;
 	private final List<GainControl> gainControls = new ArrayList<>();
 	private final AudioEffectsBandView[] bands;
+	@androidx.annotation.Nullable
+	private final EqualizerCurveView curveView;
 	private final float density;
 	private final int primaryColor;
 	private final int secondaryColor;
@@ -118,7 +120,10 @@ public final class AudioEffectsScreenView extends FrameLayout
 		masterSwitch.setContentDescription(context.getString(R.string.audio_effects));
 		topRow.addView(masterSwitch, new LinearLayout.LayoutParams(WRAP_CONTENT, MATCH_PARENT));
 		masterSwitch.setOnCheckedChangeListener((button, checked) -> {
-			if (!updating) store.applyBooleanPref(AudioEffectsProfileRepository.ENABLED, checked);
+			if (!updating) {
+				store.applyBooleanPref(AudioEffectsProfileRepository.ENABLED, checked);
+				store.applyBooleanPref(AudioEffectsProfileRepository.EQUALIZER_ENABLED, checked);
+			}
 		});
 		if (isGlassTheme()) {
 			topRow.setBackground(getGlassCard(context, 14f));
@@ -180,6 +185,19 @@ public final class AudioEffectsScreenView extends FrameLayout
 			bandParams.setMargins(i == 0 ? 0 : dp(AudioEffectsScreenLayoutPolicy.bandGapDp()), 0, 0, 0);
 			bandStrip.addView(bands[i], bandParams);
 		}
+		if (isGlassTheme()) {
+			curveView = new EqualizerCurveView(context, store);
+			curveView.setBackground(getGlassCard(context, 16f));
+			int padH = dp(14);
+			int padV = dp(8);
+			curveView.setPadding(padH, padV, padH, padV);
+			LinearLayout.LayoutParams curveParams = new LinearLayout.LayoutParams(MATCH_PARENT, dp(88));
+			curveParams.bottomMargin = dp(8);
+			equalizerColumn.addView(curveView, curveParams);
+		} else {
+			curveView = null;
+		}
+
 		LinearLayout bandArea = new LinearLayout(context);
 		bandArea.setOrientation(LinearLayout.HORIZONTAL);
 		bandArea.addView(equalizerScale, new LinearLayout.LayoutParams(dp(
@@ -322,6 +340,11 @@ public final class AudioEffectsScreenView extends FrameLayout
 		bandStrip.requestLayout();
 	}
 
+	@androidx.annotation.Nullable
+	public EqualizerCurveView getCurveView() {
+		return curveView;
+	}
+
 	private void refreshSwitch(SwitchCompat toggle,
 			PreferenceStore.Pref<me.aap.utils.function.BooleanSupplier> pref, boolean master) {
 		toggle.setEnabled(master);
@@ -447,10 +470,7 @@ public final class AudioEffectsScreenView extends FrameLayout
 		AlertDialog dialog = new AlertDialog.Builder(getContext()).setTitle(title)
 				.setView(input).setNegativeButton(R.string.cancel, null)
 				.setPositiveButton(android.R.string.ok, null).create();
-		if (isGlassTheme()) {
-			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, getContext());
-		}
-		dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+		android.content.DialogInterface.OnShowListener onShow = ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
 				.setOnClickListener(v -> {
 					try {
 						String text = input.getText().toString().trim();
@@ -463,7 +483,12 @@ public final class AudioEffectsScreenView extends FrameLayout
 					} catch (NumberFormatException error) {
 						input.setError(rangeError);
 					}
-				}));
+				});
+		if (isGlassTheme()) {
+			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, getContext(), onShow);
+		} else {
+			dialog.setOnShowListener(onShow);
+		}
 		dialog.show();
 	}
 

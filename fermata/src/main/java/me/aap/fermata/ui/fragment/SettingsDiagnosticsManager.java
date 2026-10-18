@@ -54,11 +54,11 @@ final class SettingsDiagnosticsManager {
 
 	static void clear(MainActivityDelegate activity, BooleanSupplier uiActive) {
 		Context context = activity.getContext();
-		new MaterialAlertDialogBuilder(context)
+		var dialog = new MaterialAlertDialogBuilder(context)
 				.setMessage(context.getString(R.string.delete_confirm,
 						context.getString(R.string.diagnostics)))
 				.setNegativeButton(android.R.string.cancel, null)
-				.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+				.setPositiveButton(android.R.string.ok, (d, which) -> {
 					AndroidDiagnosticsRuntime runtime = FermataApplication.get().getDiagnostics();
 					App.get().execute(() -> {
 						boolean cleared = runtime.clear(3000L);
@@ -78,8 +78,11 @@ final class SettingsDiagnosticsManager {
 											R.string.diagnostic_data_cleared);
 								}
 							});
-				})
-				.show();
+				}).create();
+		if (activity.isGlassTheme()) {
+			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, context);
+		}
+		dialog.show();
 	}
 
 	static void testVehicleKeys(MainActivityDelegate activity, BooleanSupplier uiActive) {
@@ -112,15 +115,19 @@ final class SettingsDiagnosticsManager {
 				context.getText(R.string.share_diagnostic_report),
 				context.getText(R.string.save_diagnostic_report)
 		};
-		new MaterialAlertDialogBuilder(context)
+		var dialog = new MaterialAlertDialogBuilder(context)
 				.setTitle(R.string.export_diagnostic_report)
-				.setItems(actions, (dialog, which) -> {
+				.setItems(actions, (d, which) -> {
 					if (!canUseUi(activity, uiActive)) return;
 					if (which == 0) share(activity, report, uiActive);
 					else save(activity, report, uiActive);
 				})
 				.setNegativeButton(android.R.string.cancel, null)
-				.show();
+				.create();
+		if (activity.isGlassTheme()) {
+			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(dialog, context);
+		}
+		dialog.show();
 	}
 
 	private static void share(MainActivityDelegate activity, File report,

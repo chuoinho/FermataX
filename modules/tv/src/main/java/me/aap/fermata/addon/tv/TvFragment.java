@@ -239,12 +239,81 @@ public class TvFragment extends MediaLibFragment {
 								refreshEditedSource(stalker);
 							}
 						});
+			} else if (source instanceof UnavailableTvSourceItem) {
+				editUnavailableSource((UnavailableTvSourceItem) source);
 			}
 		} else if (id == me.aap.fermata.R.id.delete) {
 			TvRootItem root = getRootItem();
 			root.removeItem(item.getData()).onSuccess(v -> getAdapter().setParent(root));
 		}
 		return true;
+	}
+
+	private void editUnavailableSource(UnavailableTvSourceItem source) {
+		String type = source.getSourceType();
+		int sourceId = source.getSourceId();
+
+		if (TvSourceItem.TYPE_XTREAM.equals(type)) {
+			XtreamAccount account = XtreamAccount.load(getRootItem(), sourceId);
+			if (account == null) {
+				UiUtils.showAlert(getContext(), getString(R.string.xtream_error_incomplete_account));
+				return;
+			}
+			new XtreamFileSystemProvider().edit(getMainActivity(), account)
+					.onCompletion((acc, err) -> {
+						if ((err != null) && !(err instanceof CancellationException)) {
+							Log.e(err, "Failed to edit TV source ", source);
+							UiUtils.showAlert(getContext(), err.getLocalizedMessage());
+						}
+						getMainActivity().showFragment(getFragmentId());
+						if (acc != null) {
+							try {
+								getRootItem().updateSource(acc);
+							} catch (RuntimeException ex) {
+								failedToAddSource(ex);
+								return;
+							}
+							refreshEditedSource(source);
+						}
+					});
+		} else if (TvSourceItem.TYPE_STALKER.equals(type)) {
+			StalkerAccount account = StalkerAccount.load(getRootItem(), sourceId);
+			if (account == null) {
+				UiUtils.showAlert(getContext(), getString(R.string.stalker_error_incomplete_account));
+				return;
+			}
+			new StalkerFileSystemProvider().edit(getMainActivity(), account)
+					.onCompletion((acc, err) -> {
+						if ((err != null) && !(err instanceof CancellationException)) {
+							Log.e(err, "Failed to edit TV source ", source);
+							UiUtils.showAlert(getContext(), err.getLocalizedMessage());
+						}
+						getMainActivity().showFragment(getFragmentId());
+						if (acc != null) {
+							try {
+								getRootItem().updateSource(acc);
+							} catch (RuntimeException ex) {
+								failedToAddSource(ex);
+								return;
+							}
+							refreshEditedSource(source);
+						}
+					});
+		} else {
+			String m3uId = getRootItem().getM3uId(sourceId);
+			if (m3uId != null) {
+				TvM3uFile file = new TvM3uFile(TvM3uFileSystem.getInstance().toRid(m3uId));
+				new TvM3uFileSystemProvider().edit(getMainActivity(), file)
+						.onCompletion((ok, err) -> {
+							if ((err != null) && !(err instanceof CancellationException)) {
+								Log.e(err, "Failed to edit TV source ", source);
+								UiUtils.showAlert(getContext(), err.getLocalizedMessage());
+							}
+							getMainActivity().showFragment(getFragmentId());
+							if ((ok != null) && ok) refreshEditedSource(source);
+						});
+			}
+		}
 	}
 
 	private void checkStalkerSource(StalkerSourceItem source) {

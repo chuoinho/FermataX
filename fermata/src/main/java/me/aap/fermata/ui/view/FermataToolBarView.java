@@ -44,7 +44,12 @@ public class FermataToolBarView extends ToolBarView {
 		if (a.getPrefs().isGlassTheme(a.isCarActivity())) {
 			Context ctx = getContext();
 			boolean isNight = a.getPrefs().isGlassNightMode();
-			setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+			int tbBg = isNight ? 0xF00E141D : 0xF4FFFFFF;
+			float density = ctx.getResources().getDisplayMetrics().density;
+			android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+			gd.setColor(tbBg);
+			gd.setStroke(Math.max(1, (int) (1.0f * density)), isNight ? 0x18FFFFFF : 0x14000000);
+			setBackground(gd);
 			me.aap.fermata.ui.glass.theme.GlassThemeColors colors =
 					me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, isNight);
 			styleToolbarChildren(this, colors, ctx, isNight);

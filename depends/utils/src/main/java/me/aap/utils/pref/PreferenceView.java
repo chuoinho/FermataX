@@ -21,6 +21,7 @@ import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -124,10 +125,12 @@ public class PreferenceView extends ConstraintLayout {
 	}
 
 	private void setTextAppearance(Context ctx, TextView v, @StyleRes int res, float scale) {
-		v.setTextAppearance(res);
-		TypedArray ta = ctx.obtainStyledAttributes(res, new int[]{android.R.attr.textSize});
-		v.setTextSize(COMPLEX_UNIT_PX, ta.getDimensionPixelSize(0, 0) * scale);
-		ta.recycle();
+		if (res != 0) {
+			v.setTextAppearance(res);
+			TypedArray ta = ctx.obtainStyledAttributes(res, new int[]{android.R.attr.textSize});
+			v.setTextSize(COMPLEX_UNIT_PX, ta.getDimensionPixelSize(0, 0) * scale);
+			ta.recycle();
+		}
 		v.setTextColor(textTint);
 	}
 
@@ -164,6 +167,11 @@ public class PreferenceView extends ConstraintLayout {
 		this.opts = supplier.get();
 		this.adapter = adapter;
 		this.supplier = supplier;
+
+		if (opts != null && !(opts instanceof ViewOpts)) {
+			setFocusable(true);
+			setClickable(true);
+		}
 
 		if (supplier instanceof PreferenceSet) {
 			setPreferenceSet(adapter, (PreferenceSet) supplier, opts);
@@ -754,15 +762,48 @@ public class PreferenceView extends ConstraintLayout {
 
 	private void setButtonPreference(ButtonOpts o) {
 		setPreference(R.layout.set_pref_layout, o);
-		setOnClickListener(v -> o.onClick.run());
+		ImageView chevron = findViewById(R.id.pref_value);
+		if (chevron != null) {
+			if (o.valueDrawable != null) {
+				chevron.setVisibility(VISIBLE);
+				chevron.setImageDrawable(o.valueDrawable);
+				chevron.setImageTintList(null);
+				chevron.setTag("status_dot");
+			} else if (o.hideChevron) {
+				chevron.setVisibility(GONE);
+				chevron.setTag(null);
+			} else {
+				chevron.setVisibility(VISIBLE);
+				chevron.setTag(null);
+				chevron.setImageResource(me.aap.utils.R.drawable.chevron_right);
+				ActivityDelegate a = ActivityDelegate.get(getContext());
+				if (a != null && a.isGlassTheme()) {
+					chevron.setImageTintList(ColorStateList.valueOf(a.getGlassActionColor()));
+				} else {
+					chevron.setImageTintList(null);
+				}
+			}
+		}
+		setOnClickListener(v -> {
+			if (o.onClick != null) o.onClick.run();
+		});
 	}
 
 	private void setViewPreference(ViewOpts o) {
 		removeAllViews();
+		setBackground(null);
+		setPadding(0, 0, 0, 0);
+		setMinimumHeight(0);
+		setFocusable(false);
+		setClickable(false);
+		ViewGroup.LayoutParams currentLp = getLayoutParams();
+		if (currentLp instanceof ViewGroup.MarginLayoutParams mlp) {
+			mlp.setMargins(0, 0, 0, 0);
+		}
 		addView(o.view.get(), new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
 				ViewGroup.LayoutParams.WRAP_CONTENT));
 		setVisibility(VISIBLE);
-		if (getLayoutParams().height != WRAP_CONTENT) {
+		if (getLayoutParams() != null && getLayoutParams().height != WRAP_CONTENT) {
 			getLayoutParams().height = WRAP_CONTENT;
 			requestLayout();
 		}
@@ -860,9 +901,14 @@ public class PreferenceView extends ConstraintLayout {
 			if (iconView.getVisibility() == VISIBLE) {
 				iconView.setImageTintList(ColorStateList.valueOf(a.getGlassActionColor()));
 			}
-			android.graphics.drawable.Drawable itemHighlight = a.getGlassItemHighlightDrawable(ctx);
-			if (itemHighlight != null) {
-				setBackground(itemHighlight);
+			android.graphics.drawable.Drawable prefBg = a.getGlassPreferenceDrawable(ctx, 20f);
+			if (prefBg != null) {
+				setBackground(prefBg);
+			} else {
+				android.graphics.drawable.Drawable itemHighlight = a.getGlassItemHighlightDrawable(ctx);
+				if (itemHighlight != null) {
+					setBackground(itemHighlight);
+				}
 			}
 		}
 
@@ -1045,6 +1091,8 @@ public class PreferenceView extends ConstraintLayout {
 
 	public static class ButtonOpts extends Opts {
 		public Runnable onClick;
+		public Drawable valueDrawable;
+		public boolean hideChevron;
 	}
 
 	public static class ViewOpts extends Opts {

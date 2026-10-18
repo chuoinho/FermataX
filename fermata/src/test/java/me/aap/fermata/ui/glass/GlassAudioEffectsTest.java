@@ -27,6 +27,13 @@ public class GlassAudioEffectsTest {
 		assertTrue(source.contains("isGlassTheme"));
 	}
 
+	@Test
+	public void testAudioEffectsScreenViewIntegratesEqualizerCurveView() throws Exception {
+		String source = source("AudioEffectsScreenView.java");
+		assertTrue(source.contains("EqualizerCurveView curveView"));
+		assertTrue(source.contains("getCurveView()"));
+	}
+
 	private static String source(String name) throws Exception {
 		Path root = Path.of(System.getProperty("user.dir"));
 		Path file = root.resolve("src/main/java/me/aap/fermata/ui/view").resolve(name);

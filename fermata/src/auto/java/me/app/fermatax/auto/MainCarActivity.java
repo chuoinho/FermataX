@@ -30,6 +30,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.WebView;
@@ -37,6 +38,7 @@ import android.widget.EditText;
 import android.widget.TextView.OnEditorActionListener;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -851,6 +853,16 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		MainActivityDelegate d = delegate.peek();
 		if (d == null) return super.onKeyUp(keyCode, keyEvent);
 
+		OverlayMenu activeMenu = d.getActiveMenu();
+		if (activeMenu instanceof View menuView && menuView.isAttachedToWindow() && menuView.getVisibility() == View.VISIBLE) {
+			if (keyCode == KEYCODE_DPAD_UP || keyCode == KEYCODE_DPAD_DOWN) {
+				return true;
+			}
+			if (keyCode == KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+				return true;
+			}
+		}
+
 		if (d.getPrefs().useDpadCursor(d)) {
 			switch (keyCode) {
 				case KEYCODE_DPAD_UP, KEYCODE_DPAD_DOWN, KEYCODE_DPAD_RIGHT, KEYCODE_DPAD_LEFT,
@@ -890,6 +902,29 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		if ((keyboardOverlay != null) && keyboardOverlay.onKeyDown(keyCode, keyEvent)) return true;
 		MainActivityDelegate d = delegate.peek();
 		if (d == null) return super.onKeyDown(keyCode, keyEvent);
+
+		OverlayMenu activeMenu = d.getActiveMenu();
+		if (activeMenu instanceof View menuView && menuView.isAttachedToWindow() && menuView.getVisibility() == View.VISIBLE) {
+			if (keyCode == KEYCODE_DPAD_UP || keyCode == KEYCODE_DPAD_DOWN) {
+				int dir = (keyCode == KEYCODE_DPAD_DOWN) ? View.FOCUS_DOWN : View.FOCUS_UP;
+				View focused = menuView.findFocus();
+				View searchRoot = (focused != null && isDescendant(menuView, focused)) ? focused : menuView;
+				View nextFocus = searchRoot.focusSearch(dir);
+				if (nextFocus != null && isDescendant(menuView, nextFocus) && nextFocus != focused) {
+					nextFocus.requestFocus();
+				}
+				return true;
+			} else if (keyCode == KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+				if (keyEvent.getRepeatCount() == 0) {
+					View focused = menuView.findFocus();
+					if (focused != null && isDescendant(menuView, focused)) {
+						focused.performClick();
+					}
+				}
+				return true;
+			}
+		}
+
 		if (!d.getPrefs().useDpadCursor(d)) return d.onKeyDown(keyCode, keyEvent, super::onKeyDown);
 
 		float x = 0;
@@ -980,6 +1015,17 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		MainActivityDelegate d = delegate.peek();
 		return (d != null) ? d.onKeyLongPress(keyCode, keyEvent, super::onKeyLongPress) :
 				super.onKeyLongPress(keyCode, keyEvent);
+	}
+
+	private static boolean isDescendant(View root, @Nullable View view) {
+		if (view == null) return false;
+		if (view == root) return true;
+		ViewParent parent = view.getParent();
+		while (parent instanceof View pv) {
+			if (pv == root) return true;
+			parent = pv.getParent();
+		}
+		return false;
 	}
 
 	private final class Cursor extends AppCompatImageView

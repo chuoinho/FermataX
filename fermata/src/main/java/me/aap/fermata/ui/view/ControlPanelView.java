@@ -427,7 +427,15 @@ public class ControlPanelView extends ConstraintLayout
 		if (System.currentTimeMillis() - lastControlsShowTimestamp < 500) {
 			return true;
 		}
+		if (isVideoControlsVisible()) {
+			a.getMediaServiceBinder().onPlayPauseButtonClick();
+			return true;
+		}
 		return onTouch((VideoView) gestureSource);
+	}
+
+	public long getLastControlsShowTimestamp() {
+		return lastControlsShowTimestamp;
 	}
 
 	public boolean onTouch(@Nullable VideoView video) {

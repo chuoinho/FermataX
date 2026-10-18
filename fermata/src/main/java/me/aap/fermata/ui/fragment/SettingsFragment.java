@@ -390,18 +390,12 @@ public class SettingsFragment extends MainActivityFragment
 			set.addButton(o -> {
 				o.title = R.string.app_version;
 				o.csubtitle = "v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")";
-				o.onClick = () -> Utils.openUrl(ctx, "https://github.com/chuoinho/FermataX/releases");
 			});
 			set.addButton(o -> {
 				o.title = R.string.support_kofi_title;
 				o.subtitle = R.string.support_kofi_sub;
 				o.icon = R.drawable.coffee;
 				o.onClick = () -> Utils.openUrl(ctx, "https://ko-fi.com/fermatax");
-			});
-			set.addButton(o -> {
-				o.title = R.string.github_repo_title;
-				o.subtitle = R.string.github_repo_sub;
-				o.onClick = () -> Utils.openUrl(ctx, "https://github.com/chuoinho/FermataX");
 			});
 		}
 
@@ -462,6 +456,8 @@ public class SettingsFragment extends MainActivityFragment
 		set.addView(o -> {
 			o.view = () -> {
 				TextView tv = new TextView(ctx);
+				tv.setId(R.id.settings_section_header);
+				tv.setTag(R.id.settings_section_header, Boolean.TRUE);
 				int padStart = (int) UiUtils.toPx(ctx, 14);
 				int padTop = (int) UiUtils.toPx(ctx, 18);
 				int padBottom = (int) UiUtils.toPx(ctx, 6);
@@ -476,10 +472,17 @@ public class SettingsFragment extends MainActivityFragment
 				Runnable resetParent = () -> {
 					ViewParent p = tv.getParent();
 					if (p instanceof me.aap.utils.pref.PreferenceView pv) {
+						pv.setTag(R.id.settings_section_header, Boolean.TRUE);
 						pv.setBackground(null);
 						pv.setPadding(0, 0, 0, 0);
+						pv.setMinimumHeight(0);
 						pv.setFocusable(false);
 						pv.setClickable(false);
+						ViewGroup.LayoutParams lp = pv.getLayoutParams();
+						if (lp instanceof ViewGroup.MarginLayoutParams mlp) {
+							mlp.setMargins(0, 0, 0, 0);
+							pv.setLayoutParams(mlp);
+						}
 					}
 				};
 				tv.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
@@ -490,14 +493,6 @@ public class SettingsFragment extends MainActivityFragment
 
 					@Override
 					public void onViewDetachedFromWindow(View v) {
-						ViewParent p = v.getParent();
-						if (p instanceof me.aap.utils.pref.PreferenceView pv) {
-							pv.setBackgroundResource(me.aap.utils.R.drawable.box_secondary);
-							int pad = (int) UiUtils.toPx(pv.getContext(), 5);
-							pv.setPadding(pad, pad, pad, pad);
-							pv.setFocusable(true);
-							pv.setClickable(true);
-						}
 					}
 				});
 				tv.post(resetParent);

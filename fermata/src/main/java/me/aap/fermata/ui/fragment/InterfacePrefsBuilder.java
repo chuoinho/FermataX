@@ -15,50 +15,33 @@ final class InterfacePrefsBuilder {
 	private InterfacePrefsBuilder() {
 	}
 
-	static void addAndroidAuto(MainActivityDelegate activity, PreferenceSet set) {
-		add(activity, set);
-	}
-
 	static void add(MainActivityDelegate activity, PreferenceSet set) {
 		PreferenceStore store = activity.getPrefs();
 
-		if (activity.isCarActivity()) {
-			normalizeThemeAA(store);
-			set.addListPref(o -> {
-				o.store = store;
-				o.pref = MainActivityPrefs.THEME_AA;
-				o.title = R.string.theme;
-				o.subtitle = R.string.theme_sub;
-				o.formatSubtitle = true;
-				o.values = new int[]{R.string.theme_classic, R.string.theme_material_you, R.string.theme_glass};
-				o.valuesMap = new int[]{MainActivityPrefs.THEME_CLASSIC, MainActivityPrefs.THEME_MATERIAL_YOU, MainActivityPrefs.THEME_GLASS};
-			});
-		} else {
-			normalizeTheme(store);
-			set.addListPref(o -> {
-				o.store = store;
-				o.pref = MainActivityPrefs.THEME_MAIN;
-				o.title = R.string.theme;
-				o.subtitle = R.string.theme_sub;
-				o.formatSubtitle = true;
-				o.values = new int[]{R.string.theme_classic, R.string.theme_material_you, R.string.theme_glass};
-				o.valuesMap = new int[]{MainActivityPrefs.THEME_CLASSIC, MainActivityPrefs.THEME_MATERIAL_YOU, MainActivityPrefs.THEME_GLASS};
-			});
-
-			if (BuildConfig.AUTO) {
-				normalizeThemeAA(store);
-				set.addListPref(o -> {
-					o.store = store;
-					o.pref = MainActivityPrefs.THEME_AA;
-					o.title = R.string.theme_aa;
-					o.subtitle = R.string.theme_aa_sub;
-					o.formatSubtitle = true;
-					o.values = new int[]{R.string.theme_classic, R.string.theme_material_you, R.string.theme_glass};
-					o.valuesMap = new int[]{MainActivityPrefs.THEME_CLASSIC, MainActivityPrefs.THEME_MATERIAL_YOU, MainActivityPrefs.THEME_GLASS};
-				});
-			}
-		}
+		normalizeTheme(store);
+		if (BuildConfig.AUTO) normalizeThemeAA(store);
+		set.addListPref(o -> {
+			o.store = store;
+			o.pref = MainActivityPrefs.THEME_MAIN;
+			o.title = R.string.theme;
+			o.subtitle = R.string.theme_sub;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.theme_classic, R.string.theme_material_you, R.string.theme_glass};
+			o.valuesMap = new int[]{MainActivityPrefs.THEME_CLASSIC, MainActivityPrefs.THEME_MATERIAL_YOU, MainActivityPrefs.THEME_GLASS};
+		});
 		normalizeGlassAppearance(store);
+		if (store.getIntPref(MainActivityPrefs.THEME_MAIN) == MainActivityPrefs.THEME_GLASS
+				|| (BuildConfig.AUTO && store.getIntPref(MainActivityPrefs.THEME_AA) == MainActivityPrefs.THEME_GLASS)) {
+			set.addListPref(o -> {
+				o.store = store;
+				o.pref = MainActivityPrefs.GLASS_APPEARANCE;
+				o.title = R.string.glass_appearance;
+				o.subtitle = R.string.glass_appearance_sub;
+				o.formatSubtitle = true;
+				o.values = new int[]{R.string.glass_appearance_day, R.string.glass_appearance_night};
+				o.valuesMap = new int[]{MainActivityPrefs.GLASS_APPEARANCE_DAY, MainActivityPrefs.GLASS_APPEARANCE_NIGHT};
+			});
+		}
 
 		Pref<IntSupplier> navBarPosition = BuildConfig.AUTO ?
 				MainActivityPrefs.NAV_BAR_POS_AA : MainActivityPrefs.NAV_BAR_POS;
@@ -101,7 +84,14 @@ final class InterfacePrefsBuilder {
 				o.title = R.string.glass_quick_manage_title;
 				o.subtitle = R.string.glass_quick_manage_sub;
 				o.onClick = () -> me.aap.fermata.ui.glass.quickbar.GlassQuickBarManager.showManageDialog(
-						activity.getContext(), activity, null);
+						activity.getContext(), activity, () -> {
+							me.aap.utils.ui.fragment.ActivityFragment f = activity.getActiveFragment();
+							if (f instanceof DashboardFragment df && df.getView() instanceof me.aap.fermata.ui.glass.dashboard.GlassDashboardLayout gl) {
+								if (gl.getQuickBarView() instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView qb) {
+									qb.refresh();
+								}
+							}
+						});
 			});
 		}
 	}

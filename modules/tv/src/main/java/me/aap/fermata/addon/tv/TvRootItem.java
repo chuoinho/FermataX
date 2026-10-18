@@ -4,9 +4,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import me.aap.fermata.addon.tv.m3u.TvM3uFile;
+import me.aap.fermata.addon.tv.m3u.TvM3uFileSystemProvider;
 import me.aap.fermata.addon.tv.m3u.TvM3uEpgItem;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystem;
 import me.aap.fermata.addon.tv.m3u.TvM3uGroupItem;
@@ -135,14 +138,26 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 		List<Integer> idList = new ArrayList<>(ids.length);
 		for (int i : ids) idList.add(i);
 		List<String> failures = new ArrayList<>();
+		Map<Integer, UnavailableTvSourceItem> unavailable = new HashMap<>();
 		return loadAvailableSources(idList, this::createSource, (id, failure) -> {
 			String name = getSourceName(id);
 			failures.add(name);
-			if (failure != null) Log.e(failure, "Skipping failed TV source ", name);
-			else Log.e("Skipping unavailable TV source ", name);
-		}).map(children -> {
+			if (failure != null) Log.e(failure, "TV source unavailable: ", name);
+			else Log.e("TV source unavailable: ", name);
+			unavailable.put(id, createUnavailableSource(sources.getStore(), this, id, name, failure));
+		}).map(available -> {
 			setFailedSourceNames(failures);
-			return new ArrayList<Item>(children);
+			List<Item> children = new ArrayList<>(idList.size());
+			int availIdx = 0;
+			for (int id : idList) {
+				UnavailableTvSourceItem item = unavailable.get(id);
+				if (item != null) {
+					children.add(item);
+				} else if (availIdx < available.size()) {
+					children.add(available.get(availIdx++));
+				}
+			}
+			return children;
 		});
 	}
 
@@ -174,7 +189,7 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 		}, sourceIds).map(v -> children);
 	}
 
-	private String getSourceName(int sourceId) {
+	String getSourceName(int sourceId) {
 		try {
 			if (TvSourceItem.TYPE_XTREAM.equals(sources.getSourceType(sourceId))) {
 				PreferenceStore store = sources.getStore();
@@ -254,11 +269,16 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 				|| id.startsWith(StalkerContentCategoryItem.SCHEME)
 				|| id.startsWith(StalkerSectionItem.SCHEME)
 				|| id.startsWith(StalkerCategoryItem.SCHEME)
-				|| id.startsWith(StalkerSourceItem.SCHEME);
+				|| id.startsWith(StalkerSourceItem.SCHEME)
+				|| id.startsWith(UnavailableTvSourceItem.SCHEME);
 	}
 
 	public void addSource(TvM3uFile m3u) {
 		m3uSources.addSource(m3u);
+	}
+
+	public String getM3uId(int sourceId) {
+		return sources.getM3uId(sourceId);
 	}
 
 	@Override
@@ -276,6 +296,18 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 			xtreamSources.sourceRemoved((XtreamSourceItem) i);
 		} else if (i instanceof StalkerSourceItem) {
 			stalkerSources.sourceRemoved((StalkerSourceItem) i);
+		} else if (i instanceof UnavailableTvSourceItem) {
+			String m3uId = sources.getM3uId(i.getSourceId());
+			if (m3uId != null) {
+				try {
+					TvM3uFileSystem fs = TvM3uFileSystem.getInstance();
+					TvM3uFile f = new TvM3uFile(fs.toRid(m3uId));
+					TvM3uFileSystemProvider.removeSource(f);
+				} catch (Throwable err) {
+					Log.e(err, "Failed to clean up M3U file for source ", i.getSourceId());
+				}
+			}
+			sources.removeSource(i.getSourceId());
 		}
 		invalidateSearch();
 	}
@@ -309,6 +341,20 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 			return stalkerSources.create(srcId);
 		}
 		return m3uSources.create(srcId);
+	}
+
+	public static UnavailableTvSourceItem createUnavailableSource(int id, String name, Throwable failure) {
+		return createUnavailableSource((PreferenceStore) null, null, id, name, failure);
+	}
+
+	public static UnavailableTvSourceItem createUnavailableSource(PreferenceStore store, int id, String name, Throwable failure) {
+		return createUnavailableSource(store, null, id, name, failure);
+	}
+
+	public static UnavailableTvSourceItem createUnavailableSource(PreferenceStore store, MediaLib.BrowsableItem parent,
+			int id, String name, Throwable failure) {
+		String type = (store != null) ? TvSourceRepository.getSourceType(store, id) : TvSourceItem.TYPE_M3U;
+		return new UnavailableTvSourceItem(parent, id, type, name, failure);
 	}
 
 	static String getSourceType(PreferenceStore ps, int sourceId) {

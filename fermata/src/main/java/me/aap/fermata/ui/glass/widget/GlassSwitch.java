@@ -183,4 +183,12 @@ public class GlassSwitch extends View implements Checkable {
 		canvas.drawCircle(currentThumbX, centerY, thumbRadius, thumbPaint);
 		thumbPaint.clearShadowLayer();
 	}
+
+	@Override
+	public void onInitializeAccessibilityNodeInfo(android.view.accessibility.AccessibilityNodeInfo info) {
+		super.onInitializeAccessibilityNodeInfo(info);
+		info.setClassName(android.widget.Switch.class.getName());
+		info.setCheckable(true);
+		info.setChecked(isChecked());
+	}
 }

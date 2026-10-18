@@ -22,6 +22,7 @@ import me.aap.fermata.addon.web.WebBrowserFragment;
 import me.aap.fermata.auto.AutomotiveNavigationController;
 import me.aap.fermata.auto.OpenOnCarKind;
 import me.aap.fermata.auto.OpenOnCarRequest;
+import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.VoiceCommand;
 import me.aap.fermata.ui.view.TopBarController;
@@ -105,6 +106,49 @@ public final class TikTokWebFragment extends WebBrowserFragment {
 		web.stopLoading();
 		web.loadUrl(targetUrl);
 		return AutomotiveNavigationController.OpenResult.LOAD_DISPATCHED;
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		stopConflictingExternalPlayback();
+	}
+
+	@Override
+	public void onPause() {
+		pauseTikTokPlayback();
+		super.onPause();
+	}
+
+	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		if (hidden) {
+			pauseTikTokPlayback();
+		} else {
+			stopConflictingExternalPlayback();
+		}
+	}
+
+	private void stopConflictingExternalPlayback() {
+		try {
+			android.content.Context ctx = getContext();
+			if (ctx == null) return;
+			MainActivityDelegate activity = MainActivityDelegate.get(ctx);
+			if (activity == null) return;
+			MediaSessionCallback callback = activity.getMediaSessionCallback();
+			if (callback != null && (callback.isPlaying() || callback.getEngine() != null)) {
+				callback.onStop();
+			}
+		} catch (Throwable ignored) {
+		}
+	}
+
+	private void pauseTikTokPlayback() {
+		TikTokWebView web = getTikTokWebView();
+		if (web != null) {
+			web.evaluateJavascript("(function(){ var v = (typeof window.__cntVideo === 'function' ? window.__cntVideo() : document.querySelector('video')); if (v && !v.paused) v.pause(); })()", null);
+		}
 	}
 
 	@Override

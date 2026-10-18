@@ -169,7 +169,15 @@ final class TikTokMediaSessionBridge implements MediaSessionCallback.ControlOnly
 		Context ctx = web.getContext();
 		if (ctx == null) return;
 		try {
-			MediaSessionCallback callback = MainActivityDelegate.get(ctx).getMediaSessionCallback();
+			MainActivityDelegate activity = MainActivityDelegate.get(ctx);
+			if (activity == null) return;
+			MediaSessionCallback callback = activity.getMediaSessionCallback();
+			if (callback == null) return;
+			if (state.isPlaying()) {
+				if (callback.isPlaying() || callback.getEngine() != null) {
+					callback.onStop();
+				}
+			}
 			if ((claimedCallback != null) && (claimedCallback != callback)) {
 				releaseClaim();
 			}

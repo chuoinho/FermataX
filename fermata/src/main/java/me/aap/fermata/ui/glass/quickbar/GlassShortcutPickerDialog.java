@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
@@ -34,8 +35,11 @@ public class GlassShortcutPickerDialog {
                 if (addons != null) {
                     for (AddonInfo info : addons) {
                         if (info != null && info.addonName != 0) {
+                            if (info.className.contains("cast") || "cast".equalsIgnoreCase(info.moduleName) || info.addonId == R.id.cast_addon) {
+                                continue;
+                            }
                             String title = context.getString(info.addonName);
-                            list.add(new GlassQuickShortcut("addon:" + info.addonId, title, info.icon, "addon"));
+                            list.add(new GlassQuickShortcut("addon:" + info.className, title, info.icon, "addon"));
                         }
                     }
                 }
@@ -47,7 +51,7 @@ public class GlassShortcutPickerDialog {
         list.add(new GlassQuickShortcut("lib:folders", safeGetString(context, R.string.folders, "Folders"), R.drawable.add_folder, "library"));
         list.add(new GlassQuickShortcut("lib:favorites", safeGetString(context, R.string.favorites, "Favorites"), R.drawable.favorite, "library"));
         list.add(new GlassQuickShortcut("lib:recent", safeGetString(context, R.string.recent, "Recent"), R.drawable.timer, "library"));
-        list.add(new GlassQuickShortcut("car_finder", "Car Finder", R.drawable.ic_car_find, "addon"));
+        list.add(new GlassQuickShortcut("car_finder", safeGetString(context, R.string.car_finder_title, "Find Car"), R.drawable.ic_car_find, "addon"));
         list.add(new GlassQuickShortcut("settings", safeGetString(context, R.string.settings, "Settings"), R.drawable.settings, "system"));
 
         return list;
@@ -76,7 +80,8 @@ public class GlassShortcutPickerDialog {
 
         me.aap.fermata.ui.activity.MainActivityDelegate a = (activity != null) ? activity : me.aap.fermata.ui.activity.MainActivityDelegate.get(context);
         me.aap.utils.ui.view.DialogBuilder builder = (a != null) ? a.createDialogBuilder(context) : me.aap.utils.ui.activity.ActivityDelegate.get(context).createDialogBuilder(context);
-        builder.setTitle(null, safeGetString(context, R.string.theme_glass, "Glass") + " Shortcuts");
+        String dialogTitle = String.format(Locale.getDefault(), safeGetString(context, R.string.glass_shortcuts_dialog_title, "%1$s Shortcuts"), safeGetString(context, R.string.theme_glass, "Glass"));
+        builder.setTitle(null, dialogTitle);
         builder.setSingleChoiceItems(titles, -1, (dialog, which) -> {
             if (which >= 0 && which < shortcuts.size()) {
                 listener.onShortcutSelected(shortcuts.get(which));

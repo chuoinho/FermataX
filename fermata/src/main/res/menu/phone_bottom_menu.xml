@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@id/dashboard_fragment"
-        android:icon="@drawable/home"
-        android:title="@string/home" />
+        android:id="@id/glass_addons_catalog_fragment"
+        android:icon="@drawable/view_grid"
+        android:title="@string/addons" />
     <item
         android:id="@id/car_finder_fragment"
         android:icon="@drawable/ic_car_find"

@@ -76,16 +76,87 @@ public class GlassSettingsDecorator {
             state.isNight = isNight;
         }
 
+        RecyclerView.Adapter<?> adapter = recyclerView.getAdapter();
+        if (adapter instanceof me.aap.utils.pref.PreferenceViewAdapter pva) {
+            final boolean night = isNight;
+            pva.setOnBindListener((pv, a, pos) -> decorateRow(pv, night));
+        }
+
         for (int i = 0; i < recyclerView.getChildCount(); i++) {
             decorateRow(recyclerView.getChildAt(i), isNight);
         }
     }
 
+    public static boolean isSectionHeader(@NonNull View view) {
+        if (view instanceof me.aap.utils.pref.PreferenceView pv) {
+            me.aap.utils.pref.PreferenceView.Opts opts = pv.getOpts();
+            if (opts instanceof me.aap.utils.pref.PreferenceView.ViewOpts) {
+                return true;
+            }
+            pv.setTag(R.id.settings_section_header, null);
+            return false;
+        }
+        if (view.getId() == R.id.settings_section_header) return true;
+        if (Boolean.TRUE.equals(view.getTag(R.id.settings_section_header))) return true;
+        if (view.findViewById(R.id.settings_section_header) != null) return true;
+        if (view instanceof ViewGroup vg) {
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                View child = vg.getChildAt(i);
+                if (child.getId() == R.id.settings_section_header ||
+                        Boolean.TRUE.equals(child.getTag(R.id.settings_section_header))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static void decorateSectionHeader(@NonNull View view, boolean isNight) {
+        Context ctx = view.getContext();
+        view.setBackground(null);
+        view.setMinimumHeight(0);
+        view.setPadding(0, 0, 0, 0);
+        view.setFocusable(false);
+        view.setClickable(false);
+
+        ViewGroup.LayoutParams lp = view.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+            mlp.setMargins(0, 0, 0, 0);
+            view.setLayoutParams(mlp);
+        }
+
+        GlassThemeColors gc = GlassThemeColors.get(ctx, isNight);
+        View headerView = (view.getId() == R.id.settings_section_header) ? view : view.findViewById(R.id.settings_section_header);
+        TextView tv = (headerView instanceof TextView) ? (TextView) headerView : null;
+        if (tv == null && view instanceof ViewGroup vg) {
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                View child = vg.getChildAt(i);
+                if (child instanceof TextView) {
+                    tv = (TextView) child;
+                    break;
+                }
+            }
+        }
+        if (tv != null) {
+            tv.setTextColor(gc.getTextSecondary());
+            tv.setTypeface(Typeface.DEFAULT_BOLD);
+            tv.setLetterSpacing(0.06f);
+        }
+    }
+
     public static void decorateRow(@NonNull View view, boolean isNight) {
+        if (isSectionHeader(view)) {
+            decorateSectionHeader(view, isNight);
+            return;
+        }
+
         Context ctx = view.getContext();
 
         int minHeight = GlassDimensions.dpToPx(ctx, 64);
         view.setMinimumHeight(minHeight);
+        view.setFocusable(true);
+        view.setClickable(true);
 
         ViewGroup.LayoutParams lp = view.getLayoutParams();
         if (lp instanceof ViewGroup.MarginLayoutParams) {
@@ -101,7 +172,7 @@ public class GlassSettingsDecorator {
         view.setPadding(padH, padV, padH, padV);
 
         GlassThemeColors gc = GlassThemeColors.get(ctx, isNight);
-        view.setBackground(GlassDrawables.createGlassCardDrawable(ctx, 20f, isNight));
+        view.setBackground(GlassDrawables.createGlassPreferenceDrawable(ctx, 20f, isNight));
         styleViewTree(view, gc, isNight);
     }
 
@@ -175,7 +246,7 @@ public class GlassSettingsDecorator {
         } else if (view instanceof ImageView iv) {
             int id = iv.getId();
             boolean isArt = iv.getDrawable() instanceof BitmapDrawable;
-            if (!isArt) {
+            if (!isArt && !"status_dot".equals(iv.getTag())) {
                 if (id == me.aap.utils.R.id.pref_icon || id == android.R.id.icon) {
                     iv.setColorFilter(gc.getActionText());
                 } else {

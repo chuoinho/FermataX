@@ -41,6 +41,7 @@ final class PlaybackAdvanceWatchdog {
 
 		private void durationResolved(long duration) {
 			if (active != this) return;
+			if ((duration <= 0) || (speed <= 0f) || (duration < position)) return;
 			long delay = (long) ((duration - position) / speed);
 			scheduler.postDelayed(this, delay);
 		}

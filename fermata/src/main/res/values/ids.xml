@@ -33,6 +33,7 @@
     <item name="phone_support_close" type="id" />
     <item name="dashboard_settings" type="id" />
     <item name="dashboard_edit" type="id" />
+    <item name="dashboard_glass_day_night" type="id" />
     <item name="dashboard_menu" type="id" />
     <item name="dashboard_smart_bind_token" type="id" />
     <item name="dashboard_smart_action_tag" type="id" />
@@ -46,6 +47,7 @@
     <item name="recent_fragment" type="id" />
     <item name="playlists_fragment" type="id" />
     <item name="settings_fragment" type="id" />
+    <item name="settings_section_header" type="id" />
     <item name="car_finder_fragment" type="id" />
     <item name="initial_setup_fragment" type="id" />
     <item name="subtitles_fragment" type="id" />
@@ -60,6 +62,7 @@
     <item name="cast_addon" type="id" />
     <item name="chat_addon" type="id" />
     <item name="glass_addons_catalog_fragment" type="id" />
+    <item name="catalog_addons_edit" type="id" />
 
 
     <item name="nav_got_to_current" type="id" />

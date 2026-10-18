@@ -73,4 +73,55 @@ public class TvRootItemTest extends Assert {
 		assertEquals(List.of("one"), available);
 		assertEquals(List.of(2, 3), failedIds);
 	}
+
+	@Test
+	public void createUnavailableSourceReturnsConfiguredItem() throws Exception {
+		BasicPreferenceStore ps = new BasicPreferenceStore();
+		ps.applyStringPref(TvRootItem.sourceTypePref(42), TvSourceItem.TYPE_XTREAM);
+		IOException failure = new IOException("Connection refused");
+
+		UnavailableTvSourceItem item = TvRootItem.createUnavailableSource(ps, 42, "My Xtream", failure);
+
+		assertEquals(42, item.getSourceId());
+		assertEquals(TvSourceItem.TYPE_XTREAM, item.getSourceType());
+		assertEquals("My Xtream", item.getName());
+		assertEquals(failure, item.getFailure());
+		assertTrue(item.listChildren().get().isEmpty());
+	}
+
+	@Test
+	public void createUnavailableSourceDefaultsToM3uWhenTypeMissing() throws Exception {
+		UnavailableTvSourceItem item = TvRootItem.createUnavailableSource(10, "Dead Stream", null);
+
+		assertEquals(10, item.getSourceId());
+		assertEquals(TvSourceItem.TYPE_M3U, item.getSourceType());
+		assertEquals("Dead Stream", item.getName());
+		assertTrue(item.listChildren().get().isEmpty());
+	}
+
+	@Test
+	public void unavailableSourcesMappedAndPreservedInOrder() throws Exception {
+		BasicPreferenceStore ps = new BasicPreferenceStore();
+		ps.applyStringPref(TvRootItem.sourceTypePref(2), TvSourceItem.TYPE_XTREAM);
+		List<Integer> ids = List.of(1, 2, 3);
+		IOException failure = new IOException("Server error");
+		java.util.Map<Integer, UnavailableTvSourceItem> unavailable = new java.util.HashMap<>();
+
+		List<String> available = TvRootItem.<String>loadAvailableSources(ids, id -> switch (id) {
+			case 1 -> completed("source-1");
+			case 2 -> failed(failure);
+			case 3 -> completed("source-3");
+			default -> throw new AssertionError(id);
+		}, (id, err) -> unavailable.put(id, TvRootItem.createUnavailableSource(ps, id, "Source-" + id, err))).get();
+
+		assertEquals(List.of("source-1", "source-3"), available);
+		assertEquals(1, unavailable.size());
+		UnavailableTvSourceItem item2 = unavailable.get(2);
+		assertNotNull(item2);
+		assertEquals(2, item2.getSourceId());
+		assertEquals(TvSourceItem.TYPE_XTREAM, item2.getSourceType());
+		assertEquals("Source-2", item2.getName());
+		assertEquals(failure, item2.getFailure());
+	}
 }
+

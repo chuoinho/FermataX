@@ -43,6 +43,7 @@ import me.aap.fermata.addon.external.ExternalPlaybackRequest;
 import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsSnapshot;
 import me.aap.fermata.addon.web.FermataWebClient.PageEvent;
 import me.aap.fermata.ui.activity.FermataActivity;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.fermata.ui.activity.MainActivityListener;
@@ -125,6 +126,7 @@ public class FermataWebView extends WebView
 	private final WebUrlDestination mirroredDestination = new WebUrlDestination();
 	private boolean mirroredPage;
 	private GenericWebAudioBridge genericAudioBridge;
+	protected Boolean lastAppliedDark;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -170,7 +172,13 @@ public class FermataWebView extends WebView
 		CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
 
 		addon.getPreferenceStore().addBroadcastListener(this);
-		getActivity().onSuccess(a -> a.addBroadcastListener(this));
+		try {
+			MainActivityPrefs.get().addBroadcastListener(this);
+		} catch (Throwable ignored) {}
+		getActivity().onSuccess(a -> {
+			a.addBroadcastListener(this);
+			a.getPrefs().addBroadcastListener(this);
+		});
 
 		if (getClass() == FermataWebView.class) {
 			genericAudioBridge = new GenericWebAudioBridge(this);
@@ -339,6 +347,8 @@ public class FermataWebView extends WebView
 			setDesktopMode(a, true);
 		} else if (prefs.contains(a.getForceDarkPref())) {
 			setForceDark(addon, true);
+		} else {
+			checkThemeChanged();
 		}
 	}
 
@@ -350,12 +360,21 @@ public class FermataWebView extends WebView
 				genericAudioBridge = null;
 			}
 			getAddon().getPreferenceStore().removeBroadcastListener(this);
+			try {
+				MainActivityPrefs.get().removeBroadcastListener(this);
+			} catch (Throwable ignored) {}
+			try {
+				a.getPrefs().removeBroadcastListener(this);
+			} catch (Throwable ignored) {}
+		} else if (e == me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED) {
+			checkThemeChanged();
 		}
 	}
 
 	@Override
 	protected void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
+		checkThemeChanged();
 		FermataChromeClient c = getWebChromeClient();
 		if ((c != null) && c.isFullScreen()) getActivity().onSuccess(a -> c.setFullScreen(a, true));
 	}
@@ -382,16 +401,17 @@ public class FermataWebView extends WebView
 	}
 
 	@SuppressWarnings("deprecation")
-	private void setForceDark(WebBrowserAddon a, boolean reload) {
+	protected void setForceDark(WebBrowserAddon a, boolean reload) {
+		boolean dark = isDarkTheme();
+		lastAppliedDark = dark;
 		if ((VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) &&
 				(WebViewFeature.isFeatureSupported(ALGORITHMIC_DARKENING))) {
-			boolean dark = a.isForceDark() || (isDarkPhoneTheme() && a.isAutoDark());
 			WebSettingsCompat.setAlgorithmicDarkeningAllowed(getSettings(), dark);
 			if (reload) reload();
 		} else if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
 			int force;
 			int strategy;
-			if (a.isForceDark() || (isDarkPhoneTheme() && a.isAutoDark())) {
+			if (dark) {
 				force = WebSettingsCompat.FORCE_DARK_ON;
 				strategy = WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING;
 			} else {
@@ -403,10 +423,31 @@ public class FermataWebView extends WebView
 				WebSettingsCompat.setForceDarkStrategy(getSettings(), strategy);
 			if (reload) reload();
 		}
+		applyTheme(dark);
+	}
+
+	public boolean isDarkTheme() {
+		WebBrowserAddon a = getAddon();
+		if (a == null) return isDarkPhoneTheme();
+		return a.isForceDark() || (isDarkPhoneTheme() && a.isAutoDark());
+	}
+
+	public void checkThemeChanged() {
+		boolean dark = isDarkTheme();
+		if (lastAppliedDark == null || lastAppliedDark != dark) {
+			setForceDark(getAddon(), false);
+		}
+	}
+
+	protected void applyTheme(boolean dark) {
 	}
 
 	private boolean isDarkPhoneTheme() {
 		try {
+			MainActivityPrefs p = MainActivityPrefs.get();
+			if (p != null && p.isGlassTheme(isCar)) {
+				return p.isGlassNightMode();
+			}
 			MainActivityDelegate a = MainActivityDelegate.get(getContext());
 			if (a != null && a.getPrefs().isGlassTheme(a.isCarActivity())) {
 				return a.getPrefs().isGlassNightMode();

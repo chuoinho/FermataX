@@ -98,6 +98,7 @@ public final class GlassMediaLibDecorator {
 
         android.graphics.drawable.GradientDrawable sel = new android.graphics.drawable.GradientDrawable();
         sel.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        sel.setCornerRadius(GlassDimensions.dpToPx(ctx, 16f));
         int selFill = (gc.getActionText() & 0x00FFFFFF) | (isNight ? 0x2A000000 : 0x20000000);
         sel.setColor(selFill);
         sel.setStroke(Math.round(GlassDimensions.dpToPx(ctx, 1.5f)), gc.getActionText());
@@ -128,16 +129,18 @@ public final class GlassMediaLibDecorator {
             android.widget.TextView title = miv.getTitle();
             if (title != null) {
                 title.setTextColor(gc.getTextPrimary());
-                title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15);
             }
             android.widget.TextView subtitle = miv.getSubtitle();
             if (subtitle != null) {
                 subtitle.setTextColor(gc.getTextSecondary());
-                subtitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
             }
             android.widget.ImageView icon = miv.getIcon();
             if (icon != null) {
-                icon.setColorFilter(gc.getTextPrimary());
+                if (icon.getDrawable() instanceof android.graphics.drawable.BitmapDrawable) {
+                    icon.clearColorFilter();
+                } else {
+                    icon.setColorFilter(gc.getTextPrimary());
+                }
             }
         }
     }

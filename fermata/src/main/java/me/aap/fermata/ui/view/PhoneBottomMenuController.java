@@ -28,7 +28,8 @@ public final class PhoneBottomMenuController {
 		if (activity.getPrefs().isGlassTheme(activity.isCarActivity())) {
 			android.content.Context ctx = view.getContext();
 			boolean isNight = activity.getPrefs().isGlassNightMode();
-			view.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+			view.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassRailDrawable(ctx, 0f, isNight));
+			view.setElevation(me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 8));
 			int actionColor = isNight ? 0xFF00E5FF : 0xFF007A87;
 			int unselectedColor = isNight ? 0xFF94A3B8 : 0xFF475569;
 			android.content.res.ColorStateList iconColors = new android.content.res.ColorStateList(
@@ -37,6 +38,13 @@ public final class PhoneBottomMenuController {
 			);
 			view.setItemIconTintList(iconColors);
 			view.setItemTextColor(iconColors);
+			try {
+				int indicatorColor = isNight ? 0x2400E5FF : 0x1E007A87;
+				view.setItemActiveIndicatorColor(android.content.res.ColorStateList.valueOf(indicatorColor));
+				view.setItemActiveIndicatorEnabled(true);
+				view.setItemRippleColor(android.content.res.ColorStateList.valueOf(isNight ? 0x1AFFFFFF : 0x1A000000));
+			} catch (Throwable ignored) {
+			}
 		}
 	}
 
@@ -49,10 +57,6 @@ public final class PhoneBottomMenuController {
 	}
 
 	public void refresh() {
-		if (isGlassTheme()) {
-			view.setVisibility(GONE);
-			return;
-		}
 		applyGlassStyling();
 		rendering = true;
 		try {

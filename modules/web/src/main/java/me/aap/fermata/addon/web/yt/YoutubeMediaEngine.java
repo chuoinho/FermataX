@@ -153,7 +153,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		}
 		if (!web.usesAutoPlaybackBehavior()) return;
 		boolean activeHost = isActivePlaybackHost();
-		boolean intentAccepted = activeHost && acceptsPlaybackSignal();
+		boolean intentAccepted = activeHost && acceptsPlaybackSignal(signal.pageUrl());
 		if (!canClaimExternalPlayback(false, activeHost, true, intentAccepted)) {
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
 			Log.d("Ignoring YouTube ready signal without playback intent");
@@ -184,7 +184,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		boolean activeHost = currentEngine || isActivePlaybackHost();
 		boolean autoPlayback = web.usesAutoPlaybackBehavior();
 		boolean intentAccepted = !autoPlayback || currentEngine ||
-				(activeHost && acceptsPlaybackSignal());
+				(activeHost && acceptsPlaybackSignal(signal.pageUrl()));
 		if (!canClaimExternalPlayback(currentEngine, activeHost, autoPlayback,
 				intentAccepted)) {
 			recordPlaybackSignal(PlaybackEvent.SIGNAL_REJECTED, signal, false);
@@ -359,7 +359,15 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		touchStamp = now;
 		web.post(() -> {
 			if (!isCurrentEngine()) return;
-			MainActivityDelegate.get(web.getContext()).getControlPanel().onTouch(null);
+			MainActivityDelegate a = MainActivityDelegate.get(web.getContext());
+			if (a == null) return;
+			var cp = a.getControlPanel();
+			if (cp == null) return;
+			if (a.isGlassTheme() && cp.isVideoControlsVisible() && (System.currentTimeMillis() - cp.getLastControlsShowTimestamp() >= 500)) {
+				a.getMediaServiceBinder().onPlayPauseButtonClick();
+			} else {
+				cp.onTouch(null);
+			}
 		});
 	}
 
@@ -744,7 +752,12 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	private boolean acceptsPlaybackSignal() {
-		return playbackIntentGate.accepts(web.getUrl(), SystemClock.uptimeMillis(), isCurrentEngine());
+		return acceptsPlaybackSignal(null);
+	}
+
+	private boolean acceptsPlaybackSignal(@Nullable String pageUrl) {
+		String targetUrl = (pageUrl != null && !pageUrl.isEmpty()) ? pageUrl : web.getUrl();
+		return playbackIntentGate.accepts(targetUrl, SystemClock.uptimeMillis(), isCurrentEngine());
 	}
 
 	private boolean isActivePlaybackHost() {
@@ -773,9 +786,9 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(data, web.getUrl());
 		if (!YoutubePlaybackMetadata.hasTrustedPlaybackIdentity(data, signal)) return false;
 		if (!acceptsExternalPlaybackVideo(externalPlaybackVideoId, signal.videoId())) return false;
-		boolean matchesLoadedPage = matchesLoadedPage(signal.pageUrl());
-		if (!matchesLoadedPage) return false;
 		long signalGeneration = YoutubePlaybackMetadata.playbackGeneration(data);
+		boolean matchesLoadedPage = matchesLoadedPage(signal.pageUrl(), signal.videoId(), signalGeneration);
+		if (!matchesLoadedPage) return false;
 		YoutubePlaybackSession.Snapshot snapshot = playbackSessionSnapshot;
 		if (snapshot == null) return signalGeneration == 0L && matchesLoadedPage;
 		if (!playbackSession.isCurrent(snapshot) ||
@@ -795,11 +808,46 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 				ownerVideoId.equals(signalVideoId);
 	}
 
-	private boolean matchesLoadedPage(String pageUrl) {
+	boolean matchesLoadedPage(String pageUrl) {
+		return matchesLoadedPage(pageUrl, null, -1L);
+	}
+
+	boolean matchesLoadedPage(String pageUrl, @Nullable String signalVideoId, long signalGeneration) {
+		return matchesLoadedPage(web.getUrl(), pageUrl, signalVideoId, signalGeneration,
+				targetPrepareGate, playbackSessionSnapshot, playbackSession);
+	}
+
+	static boolean matchesLoadedPage(@Nullable String webUrl, String pageUrl,
+			@Nullable String signalVideoId, long signalGeneration,
+			@Nullable YoutubeTargetPrepareGate targetPrepareGate,
+			@Nullable YoutubePlaybackSession.Snapshot snapshot,
+			@Nullable YoutubePlaybackSession session) {
 		try {
 			YoutubeItem signalItem = YoutubeItem.fromPageUrl(pageUrl, "", 0L);
-			YoutubeItem loadedItem = YoutubeItem.fromPageUrl(web.getUrl(), "", 0L);
-			return signalItem.videoId().equals(loadedItem.videoId());
+			String expectedVideoId = (signalVideoId != null && !signalVideoId.isEmpty()) ?
+					signalVideoId : signalItem.videoId();
+			if (webUrl != null && !webUrl.isEmpty()) {
+				try {
+					YoutubeItem loadedItem = YoutubeItem.fromPageUrl(webUrl, "", 0L);
+					if (expectedVideoId.equals(loadedItem.videoId())) {
+						return true;
+					}
+				} catch (IllegalArgumentException notVideoUrl) {
+					// Document URL is not a video page (e.g. m.youtube.com home page).
+				}
+			}
+			// WebView document URL does not match this video. Accept only if an SPA page transition
+			// is pending/recorded for this exact target video and generation.
+			if (targetPrepareGate != null && targetPrepareGate.isPending() &&
+					targetPrepareGate.matches(expectedVideoId, signalGeneration)) {
+				return true;
+			}
+			if (snapshot != null && session != null && session.isCurrent(snapshot) &&
+					(signalGeneration > 0L) && (snapshot.generation() == signalGeneration) &&
+					snapshot.item().videoId().equals(expectedVideoId)) {
+				return true;
+			}
+			return false;
 		} catch (IllegalArgumentException ignored) {
 			return false;
 		}
@@ -986,7 +1034,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 				(signalGeneration != playbackSessionSnapshot.generation())) return false;
 		YoutubePlaybackMetadata.Signal signal = YoutubePlaybackMetadata.parse(data, web.getUrl());
 		if (!YoutubePlaybackMetadata.hasTrustedPlaybackIdentity(data, signal)) return false;
-		if (!matchesLoadedPage(signal.pageUrl())) return false;
+		if (!matchesLoadedPage(signal.pageUrl(), signal.videoId(), signalGeneration)) return false;
 		me.aap.fermata.addon.web.yt.YoutubeItem descriptor = null;
 		try {
 			descriptor = me.aap.fermata.addon.web.yt.YoutubeItem.fromPageUrl(

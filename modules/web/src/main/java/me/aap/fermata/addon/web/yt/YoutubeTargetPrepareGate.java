@@ -42,7 +42,7 @@ final class YoutubeTargetPrepareGate {
 		if (!videoId.isEmpty()) clear();
 	}
 
-	private boolean matches(String videoId, long playbackGeneration) {
+	boolean matches(String videoId, long playbackGeneration) {
 		return admission.getAsBoolean() && !this.videoId.isEmpty() && this.videoId.equals(videoId) &&
 				(this.playbackGeneration == playbackGeneration);
 	}

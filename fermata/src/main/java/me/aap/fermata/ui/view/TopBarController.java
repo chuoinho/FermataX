@@ -75,15 +75,4 @@ public final class TopBarController {
 				playbackOwnerFragmentId, fragment.getTitle(), snapshot.getDisplayTitle(),
 				snapshot.getPreparationStatus());
 	}
-
-	@NonNull
-	public static CharSequence resolveTitle(MainActivityDelegate activity,
-			ActivityFragment fragment) {
-		return resolveState(activity, fragment).title();
-	}
-
-	public static int resolveBackVisibility(MainActivityDelegate activity,
-			ActivityFragment fragment) {
-		return resolveState(activity, fragment).backVisibility();
-	}
 }

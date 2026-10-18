@@ -182,7 +182,9 @@ public class FilePickerFragment extends GenericDialogFragment implements
 		if (state.supplier != null) v.setItems(requireNonNull(state.supplier));
 		ActivityDelegate a = getActivityDelegate();
 		if (a != null && a.isGlassTheme()) {
-			v.setBackground(a.getGlassCardDrawable(getContext(), 16f));
+			Drawable d = a.getGlassDialogDrawable(getContext(), 16f);
+			if (d == null) d = a.getGlassCardDrawable(getContext(), 16f);
+			v.setBackground(d);
 			v.setClipToPadding(false);
 			int pad = (int) (12 * getResources().getDisplayMetrics().density);
 			v.setPadding(pad, pad, pad, pad);
@@ -406,7 +408,8 @@ public class FilePickerFragment extends GenericDialogFragment implements
 			ConstraintLayout.LayoutParams lp = setLayoutParams(t, 0, WRAP_CONTENT);
 			ActivityDelegate a = f != null ? f.getActivityDelegate() : ActivityDelegate.get(tb.getContext());
 			if (a != null && a.isGlassTheme()) {
-				Drawable glassInput = a.getGlassCardDrawable(tb.getContext(), 8f);
+				Drawable glassInput = a.getGlassDialogDrawable(tb.getContext(), 8f);
+				if (glassInput == null) glassInput = a.getGlassCardDrawable(tb.getContext(), 8f);
 				if (glassInput != null) t.setBackground(glassInput);
 				t.setTextColor(a.getGlassTextPrimary());
 				t.setHintTextColor(a.getGlassTextSecondary());

@@ -53,6 +53,28 @@ public class EnginePrepareWatchdogTest {
 		assertEquals(1, timeouts.get());
 	}
 
+	@Test
+	public void delayBoundedByMaximum() {
+		FakeScheduler scheduler = new FakeScheduler();
+		AtomicInteger timeouts = new AtomicInteger();
+		EnginePrepareWatchdog watchdog =
+				new EnginePrepareWatchdog(scheduler, timeouts::incrementAndGet);
+
+		watchdog.arm(120_000L);
+		assertEquals(EnginePrepareWatchdog.DEFAULT_MAX_TIMEOUT_MS, scheduler.tasks.get(0).delayMillis);
+	}
+
+	@Test
+	public void negativeDelayClampedToZero() {
+		FakeScheduler scheduler = new FakeScheduler();
+		AtomicInteger timeouts = new AtomicInteger();
+		EnginePrepareWatchdog watchdog =
+				new EnginePrepareWatchdog(scheduler, timeouts::incrementAndGet);
+
+		watchdog.arm(-500L);
+		assertEquals(0L, scheduler.tasks.get(0).delayMillis);
+	}
+
 	private static final class FakeScheduler implements EnginePrepareWatchdog.Scheduler {
 		private final List<ScheduledTask> tasks = new ArrayList<>();
 

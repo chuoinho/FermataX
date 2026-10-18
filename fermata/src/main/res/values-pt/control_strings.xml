@@ -18,4 +18,9 @@
     <string name="control_aa_unknown">Android Auto connection not verified</string>
     <string name="control_aa_unknown_detail">Waiting for the official Android Auto connection status.</string>
     <string name="control_open_failed">Could not open this addon on the car screen.</string>
+    <string name="phone_header_nothing_playing">Nada a reproduzir</string>
+    <string name="phone_header_choose_media">Escolha mídia para controlar</string>
+    <string name="phone_header_aa_disconnect">AA desconectado</string>
+    <string name="phone_header_aa_connected">AA conectado</string>
+    <string name="phone_open_on_car_strip_title">Abrir no carro</string>
 </resources>

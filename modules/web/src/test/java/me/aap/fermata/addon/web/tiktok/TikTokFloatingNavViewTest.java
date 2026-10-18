@@ -86,4 +86,16 @@ public class TikTokFloatingNavViewTest {
 		assertNotNull(pauseScript);
 		assertTrue(pauseScript.contains("v.pause()"));
 	}
+
+	@Test
+	public void testFloatingNavThemeMethods() {
+		assertTrue(me.aap.utils.pref.PreferenceStore.Listener.class.isAssignableFrom(TikTokFloatingNavView.class));
+		assertNotNull(TikTokFloatingNavView.class.getDeclaredMethods());
+		try {
+			assertNotNull(TikTokFloatingNavView.class.getMethod("applyTheme"));
+			assertNotNull(TikTokFloatingNavView.class.getMethod("isGlassTheme"));
+		} catch (NoSuchMethodException e) {
+			throw new AssertionError(e);
+		}
+	}
 }

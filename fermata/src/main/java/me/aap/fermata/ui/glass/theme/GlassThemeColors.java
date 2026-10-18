@@ -51,7 +51,7 @@ public final class GlassThemeColors {
 			this.textTertiary = 0xFF64748B;
 			this.actionText = 0xFF00E5FF;
 			this.iconColor = 0xFF00E5FF;
-			this.inputBg = 0x26181C1E;
+			this.inputBg = 0xFF242A2E;
 			this.inputText = 0xFFFFFFFF;
 			this.inputHint = 0x66FFFFFF;
 			this.inputBorder = 0x20FFFFFF;
@@ -65,19 +65,19 @@ public final class GlassThemeColors {
 		} else {
 			this.cardBg = 0xE6F2F1EF;
 			this.cardBg2 = 0xFAF2F1EF;
-			this.cardBorder = 0x14000000;
-			this.chipBg = 0x14000000;
-			this.chipBorder = 0x10000000;
+			this.cardBorder = 0x24000000;
+			this.chipBg = 0x16000000;
+			this.chipBorder = 0x18000000;
 			this.textPrimary = 0xFF15181A;
-			this.textSecondary = 0xFF475569;
-			this.textTertiary = 0xFF64748B;
+			this.textSecondary = 0xFF334155;
+			this.textTertiary = 0xFF475569;
 			this.actionText = 0xFF007A87;
 			this.iconColor = 0xFF007A87;
 			this.inputBg = 0xFFFFFFFF;
 			this.inputText = 0xFF15181A;
 			this.inputHint = 0x6615181A;
-			this.inputBorder = 0x20000000;
-			this.divider = 0x1A000000;
+			this.inputBorder = 0x24000000;
+			this.divider = 0x20000000;
 			this.disabledText = 0x4D15181A;
 			this.errorText = 0xFFD32F2F;
 			this.surfaceBg = 0xFFEBEAE8;

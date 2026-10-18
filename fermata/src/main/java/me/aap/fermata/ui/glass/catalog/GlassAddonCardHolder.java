@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import me.aap.fermata.R;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
@@ -92,8 +93,54 @@ public class GlassAddonCardHolder extends RecyclerView.ViewHolder {
     }
 
     public void bind(@NonNull GlassAddonsCatalogFragment.CatalogItem item, boolean isNight) {
+        bind(item, isNight, false);
+    }
+
+    public void bind(@NonNull GlassAddonsCatalogFragment.CatalogItem item, boolean isNight, boolean isEditMode) {
+        Context ctx = itemView.getContext();
+        GlassThemeColors colors = GlassThemeColors.get(ctx, isNight);
+        float density = ctx != null ? ctx.getResources().getDisplayMetrics().density : 1.0f;
+
+        android.graphics.drawable.StateListDrawable sld = new android.graphics.drawable.StateListDrawable();
+        android.graphics.drawable.GradientDrawable active = new android.graphics.drawable.GradientDrawable();
+        active.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
+        active.setCornerRadius(20f * density);
+        active.setStroke(Math.max(1, (int) (1.5f * density)), isNight ? 0xCC00E5FF : 0xCC007A87);
+
+        android.graphics.drawable.GradientDrawable normal = new android.graphics.drawable.GradientDrawable();
+        normal.setColor(colors.getCardBg());
+        normal.setCornerRadius(20f * density);
+        normal.setStroke(Math.max(1, (int) (1.0f * density)), colors.getCardBorder());
+
+        sld.addState(new int[]{android.R.attr.state_focused}, active);
+        sld.addState(new int[]{android.R.attr.state_selected}, active);
+        sld.addState(new int[]{android.R.attr.state_pressed}, active);
+        sld.addState(new int[]{}, normal);
+        itemView.setBackground(sld);
+
+        titleView.setTextColor(colors.getTextPrimary());
         titleView.setText(item.title);
-        descView.setText(item.description);
+
+        if (isEditMode) {
+            if (item.isEnabled) {
+                itemView.setAlpha(1.0f);
+                if (item.isAddon) {
+                    descView.setText(safeGetString(ctx, R.string.glass_addon_enabled_hint, "Enabled · Tap to disable"));
+                    descView.setTextColor(colors.getTextSecondary());
+                } else {
+                    descView.setText(safeGetString(ctx, R.string.glass_addon_drag_hint, "Drag to reorder"));
+                    descView.setTextColor(colors.getTextSecondary());
+                }
+            } else {
+                itemView.setAlpha(0.38f);
+                descView.setText(safeGetString(ctx, R.string.glass_addon_disabled_hint, "Disabled · Tap to enable"));
+                descView.setTextColor(colors.getTextSecondary());
+            }
+        } else {
+            itemView.setAlpha(1.0f);
+            descView.setText(item.description);
+            descView.setTextColor(colors.getTextSecondary());
+        }
 
         if (item.iconRes != 0) {
             iconView.setImageResource(item.iconRes);
@@ -102,6 +149,18 @@ public class GlassAddonCardHolder extends RecyclerView.ViewHolder {
             } else {
                 iconView.setImageTintList(null);
             }
+        } else {
+            iconView.setImageDrawable(null);
+            iconView.setImageTintList(null);
+        }
+    }
+
+    private static String safeGetString(Context context, int resId, String fallback) {
+        if (context == null) return fallback;
+        try {
+            return context.getString(resId);
+        } catch (Throwable e) {
+            return fallback;
         }
     }
 }

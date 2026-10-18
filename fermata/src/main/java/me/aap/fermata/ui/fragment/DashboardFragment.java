@@ -86,7 +86,15 @@ public class DashboardFragment extends MainActivityFragment
 
 	@Override
 	public CharSequence getTitle() {
+		MainActivityDelegate a = getActivityDelegate();
+		if (a != null && a.isGlassTheme()) {
+			return getGlassDateTitle();
+		}
 		return getResources().getString(R.string.dashboard);
+	}
+
+	public static String getGlassDateTitle() {
+		return new java.text.SimpleDateFormat("EEEE, MMM d", java.util.Locale.getDefault()).format(new java.util.Date());
 	}
 
 	@Override
@@ -118,6 +126,8 @@ public class DashboardFragment extends MainActivityFragment
 
 		if (view instanceof GlassDashboardLayout) {
 			MainActivityDelegate activity = getActivityDelegate();
+			prefs = activity.getPrefs();
+			prefs.addBroadcastListener(this);
 			glassDashboardController = new GlassDashboardController(activity, (GlassDashboardLayout) view, activity.getMediaServiceBinder());
 			glassDashboardController.start();
 			return;
@@ -169,6 +179,9 @@ public class DashboardFragment extends MainActivityFragment
 		super.onResume();
 		DashboardAdapter adapter = this.adapter;
 		if (adapter != null) adapter.refreshSmartTopCard();
+		if (glassDashboardController != null) {
+			glassDashboardController.onHostResumed();
+		}
 		requestDashboardTopAfterRefresh();
 	}
 
@@ -228,6 +241,18 @@ public class DashboardFragment extends MainActivityFragment
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		if (getView() instanceof me.aap.fermata.ui.glass.dashboard.GlassDashboardLayout glassLayout) {
+			MainActivityDelegate activity = getActivityDelegate();
+			if (MainActivityPrefs.hasThemePref(activity, prefs) || prefs.contains(MainActivityPrefs.GLASS_APPEARANCE)) {
+				glassLayout.refreshAppearance();
+			}
+			if (prefs.contains(MainActivityPrefs.PREF_GLASS_QUICK_SHORTCUTS)) {
+				if (glassLayout.getQuickBarView() instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView qb) {
+					qb.refresh();
+				}
+			}
+			return;
+		}
 		DashboardAdapter adapter = this.adapter;
 		if (adapter == null) return;
 		if (prefs.contains(DashboardItems.PREF) && !adapter.isReordering()) {
@@ -1197,15 +1222,25 @@ public class DashboardFragment extends MainActivityFragment
 			ImageButton voice = addButton(tb, R.drawable.voice_microphone,
 					DashboardToolBarMediator::onVoiceClick, R.id.tool_voice);
 			voice.setContentDescription(tb.getContext().getString(R.string.action_activate_voice_ctrl));
-			ImageButton edit = addButton(tb, dashboard.editMode ? R.drawable.done : R.drawable.edit,
-					DashboardToolBarMediator::onEditClick, R.id.dashboard_edit);
-			edit.setContentDescription(tb.getContext().getString(dashboard.editMode ?
-					R.string.done : R.string.edit_dashboard));
+			if (activity.isGlassTheme()) {
+				TextView title = tb.findViewById(me.aap.utils.R.id.tool_bar_title);
+				if (title != null) {
+					title.setText(getGlassDateTitle());
+				}
+				me.aap.fermata.ui.glass.widget.GlassDayNightSwitchView dayNightSwitch =
+						new me.aap.fermata.ui.glass.widget.GlassDayNightSwitchView(tb.getContext(), activity);
+				addView(tb, dayNightSwitch, R.id.dashboard_glass_day_night);
+			} else {
+				ImageButton edit = addButton(tb, dashboard.editMode ? R.drawable.done : R.drawable.edit,
+						DashboardToolBarMediator::onEditClick, R.id.dashboard_edit);
+				edit.setContentDescription(tb.getContext().getString(dashboard.editMode ?
+						R.string.done : R.string.edit_dashboard));
+				ImageButton settings = addButton(tb, R.drawable.settings_gear, DashboardToolBarMediator::onSettingsClick,
+						R.id.dashboard_settings);
+				settings.setBackgroundResource(R.drawable.aa_toolbar_primary_button_bg);
+				settings.setContentDescription(tb.getContext().getString(R.string.settings));
+			}
 			updateVoiceVisibility(tb);
-			ImageButton settings = addButton(tb, R.drawable.settings_gear, DashboardToolBarMediator::onSettingsClick,
-					R.id.dashboard_settings);
-			settings.setBackgroundResource(R.drawable.aa_toolbar_primary_button_bg);
-			settings.setContentDescription(tb.getContext().getString(R.string.settings));
 			TopBarController.refresh(activity, f);
 		}
 
@@ -1213,7 +1248,20 @@ public class DashboardFragment extends MainActivityFragment
 		public void onActivityEvent(ToolBarView tb, ActivityDelegate activity, long event) {
 			if (event != FRAGMENT_CONTENT_CHANGED) return;
 			updateVoiceVisibility(tb);
+			if (activity instanceof MainActivityDelegate mad && mad.isGlassTheme()) {
+				TextView title = tb.findViewById(me.aap.utils.R.id.tool_bar_title);
+				if (title != null) {
+					title.setText(getGlassDateTitle());
+				}
+			}
+			View switchView = tb.findViewById(R.id.dashboard_glass_day_night);
+			if (switchView instanceof me.aap.fermata.ui.glass.widget.GlassDayNightSwitchView dns) {
+				dns.syncMode(true);
+			}
 			ActivityFragment fragment = activity.getActiveFragment();
+			if (fragment instanceof DashboardFragment df && df.getView() instanceof me.aap.fermata.ui.glass.dashboard.GlassDashboardLayout gdl) {
+				gdl.refreshAppearance();
+			}
 			if (fragment != null) TopBarController.refresh((MainActivityDelegate) activity, fragment);
 		}
 

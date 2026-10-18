@@ -240,8 +240,7 @@ public class NavBarMediator extends PrefNavBarMediator
 				Context ctx = g.getContext();
 				boolean isNight = a.getPrefs().isGlassNightMode();
 				boolean isGlass = a.getPrefs().isGlassTheme(a.isCarActivity());
-				String url = "https://github.com/chuoinho/FermataX";
-				String html = ctx.getString(R.string.about_html, VERSION_NAME, VERSION_CODE, url);
+				String html = ctx.getString(R.string.about_html, VERSION_NAME, VERSION_CODE);
 
 				if (isGlass) {
 					g.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
@@ -256,13 +255,12 @@ public class NavBarMediator extends PrefNavBarMediator
 					g.setPadding(padOuter, padOuter, padOuter, padOuter);
 
 					android.widget.FrameLayout card = new android.widget.FrameLayout(ctx);
-					card.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 20f, isNight));
+					card.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassDialogDrawable(ctx, 20f, isNight));
 					int cardPad = me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 20);
 					card.setPadding(cardPad, cardPad, cardPad, cardPad);
 
 					ScalableTextView v = new ScalableTextView(ctx);
 					v.setText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY));
-					v.setOnClickListener(t -> openUrl(t.getContext(), url));
 					card.addView(v);
 					g.addView(card);
 				} else {
@@ -270,7 +268,6 @@ public class NavBarMediator extends PrefNavBarMediator
 					int pad = UiUtils.toIntPx(ctx, 10);
 					v.setPadding(pad, pad, pad, pad);
 					v.setText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY));
-					v.setOnClickListener(t -> openUrl(t.getContext(), url));
 					g.addView(v);
 				}
 			});

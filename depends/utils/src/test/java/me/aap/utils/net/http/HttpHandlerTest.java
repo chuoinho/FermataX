@@ -491,6 +491,48 @@ public class HttpHandlerTest extends Assertions {
 		}
 	}
 
+	@Test
+	public void testRedirectWithConnectionClose() throws Exception {
+		Promise<HttpResponse> responsePromise = new Promise<>();
+		HttpConnectionHandler http = new HttpConnectionHandler();
+		http.addHandler("/redirect", (path, method, version) -> req -> {
+			NetChannel ch = req.getChannel();
+			return ch.write(HttpResponseBuilder.supplier(b -> {
+				b.setStatus(version, "301 Moved Permanently");
+				b.addHeader(LOCATION, "/target");
+				b.addHeader(CONNECTION);
+				return b.build();
+			})).thenRun(ch::close);
+		});
+		http.addHandler("/target", (path, method, version) -> req -> {
+			NetChannel ch = req.getChannel();
+			return ch.write(HttpResponseBuilder.supplier(b -> {
+				b.setStatusOk(version);
+				b.addHeader(CONNECTION);
+				return b.build(ByteBuffer.wrap("hello".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+			})).thenRun(ch::close);
+		});
+		NetServer server = handler.bind(o -> o.handler = http).get();
+
+		try {
+			HttpConnection.Opts opts = new HttpConnection.Opts();
+			opts.handler = handler;
+			opts.address = server.getBindAddress();
+			opts.url("http://localhost/redirect");
+			opts.keepAlive = false;
+			HttpConnection.connect(opts, (response, error) -> {
+				if (error != null) responsePromise.completeExceptionally(error);
+				else responsePromise.complete(response);
+				return completedVoid();
+			});
+
+			HttpResponse response = responsePromise.get(5, java.util.concurrent.TimeUnit.SECONDS);
+			assertEquals(HttpStatusCode.OK, response.getStatusCode());
+		} finally {
+			server.close();
+		}
+	}
+
 	private static final class TrackingNetHandler implements NetHandler {
 		private final NetHandler delegate;
 		private final AtomicReference<NetChannel> connected;

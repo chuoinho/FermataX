@@ -51,6 +51,7 @@ import me.aap.fermata.diagnostics.DiagnosticEvent;
 import me.aap.fermata.diagnostics.DiagnosticPriority;
 import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.engine.AudioStreamInfo;
+import me.aap.fermata.media.engine.AudioVolumeFader;
 import me.aap.fermata.media.engine.EnginePrepareWatchdog;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineBase;
@@ -99,6 +100,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	private final Timeline.Period period = new Timeline.Period();
 	private final ExoPlayer player;
 	private final EnginePrepareWatchdog prepareWatchdog;
+	private final AudioVolumeFader volumeFader;
 	private volatile PlayableItem source;
 	private FutureSupplier<RemotePlaybackRequest> remotePrepare;
 	private RemotePlaybackRequest remoteRequest;
@@ -156,6 +158,12 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		Handler handler = new Handler(Looper.getMainLooper());
 		prepareWatchdog = new EnginePrepareWatchdog(handler::postDelayed,
 				this::onPrepareTimeout);
+		volumeFader = new AudioVolumeFader(handler, vol -> {
+			try {
+				player.setVolume(vol);
+			} catch (IllegalStateException ignored) {
+			}
+		});
 	}
 
 	@Override
@@ -484,6 +492,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	@Override
 	public void close() {
+		volumeFader.cancel();
 		prepareWatchdog.cancel();
 		stop();
 		super.close();
@@ -493,13 +502,23 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	@Override
+	public void duck(Context ctx) {
+		volumeFader.duck();
+	}
+
+	@Override
+	public void unduck(Context ctx) {
+		volumeFader.unduck();
+	}
+
+	@Override
 	public void mute(Context ctx) {
-		player.setVolume(0f);
+		volumeFader.mute();
 	}
 
 	@Override
 	public void unmute(Context ctx) {
-		player.setVolume(1f);
+		volumeFader.unmute();
 	}
 
 	@Override

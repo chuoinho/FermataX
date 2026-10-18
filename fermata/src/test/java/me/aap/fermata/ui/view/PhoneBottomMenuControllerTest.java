@@ -11,8 +11,8 @@ import me.aap.fermata.R;
 public class PhoneBottomMenuControllerTest {
 	@Test
 	public void renderSelectsPhoneRootWithoutUsingAddonSelection() {
-		assertEquals(R.id.dashboard_fragment,
-				PhoneBottomMenuController.resolveSelectedRoot(R.id.dashboard_fragment));
+		assertEquals(R.id.glass_addons_catalog_fragment,
+				PhoneBottomMenuController.resolveSelectedRoot(R.id.glass_addons_catalog_fragment));
 		assertEquals(VISIBLE, PhoneBottomMenuController.resolveVisibility(true));
 	}
 

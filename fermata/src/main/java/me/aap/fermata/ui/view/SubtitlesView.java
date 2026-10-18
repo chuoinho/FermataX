@@ -123,7 +123,7 @@ public class SubtitlesView extends SplitLayout
 	private void applyGlassStyle(RecyclerView rv) {
 		Context ctx = getContext();
 		boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(ctx);
-		rv.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 14f, isNight));
+		rv.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassDialogDrawable(ctx, 14f, isNight));
 		me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(rv, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 14f));
 	}
 

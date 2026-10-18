@@ -43,7 +43,7 @@ public class VideoInfoView extends ConstraintLayout
 			a.getMediaServiceBinder().addBroadcastListener(this);
 			if (isGlassTheme()) {
 				boolean isNight = a.getPrefs().isGlassNightMode();
-				setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 16f, isNight));
+				setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassDialogDrawable(context, 16f, isNight));
 				me.aap.fermata.ui.glass.theme.GlassHardwareUtils.clipRound(this, me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(context, 16f));
 				me.aap.fermata.ui.glass.theme.GlassThemeColors colors = me.aap.fermata.ui.glass.theme.GlassThemeColors.get(context, isNight);
 				getTitleView().setTextColor(colors.getTextPrimary());

@@ -85,6 +85,67 @@ public class YoutubeMediaEngineOwnershipTest {
 		assertSame(parent, YoutubeFragment.externalPlaybackParent(owner));
 	}
 
+	@Test
+	public void staleSignalRejectedWhenOnHomePage() {
+		YoutubeTargetPrepareGate gate = new YoutubeTargetPrepareGate();
+		// Sitting on home page without target prepare gate: stale video signal must be rejected.
+		assertFalse(YoutubeMediaEngine.matchesLoadedPage(
+				"https://m.youtube.com/",
+				"https://m.youtube.com/watch?v=oldVideo",
+				"oldVideo",
+				1L,
+				gate,
+				null,
+				null));
+	}
+
+	@Test
+	public void matchingSpaTransitionAcceptedDuringTargetPrepare() {
+		YoutubeTargetPrepareGate gate = new YoutubeTargetPrepareGate();
+		gate.begin("newVideo", 5L);
+
+		// Stale signal with different video or older generation while on home page must be rejected.
+		assertFalse(YoutubeMediaEngine.matchesLoadedPage(
+				"https://m.youtube.com/",
+				"https://m.youtube.com/watch?v=oldVideo",
+				"oldVideo",
+				4L,
+				gate,
+				null,
+				null));
+
+		// Signal matching recorded target video and generation during SPA transition must be accepted.
+		assertTrue(YoutubeMediaEngine.matchesLoadedPage(
+				"https://m.youtube.com/",
+				"https://m.youtube.com/watch?v=newVideo",
+				"newVideo",
+				5L,
+				gate,
+				null,
+				null));
+	}
+
+	@Test
+	public void directVideoPageUrlMatchesLoadedPage() {
+		assertTrue(YoutubeMediaEngine.matchesLoadedPage(
+				"https://m.youtube.com/watch?v=directVid",
+				"https://m.youtube.com/watch?v=directVid",
+				"directVid",
+				0L,
+				null,
+				null,
+				null));
+
+		assertFalse(YoutubeMediaEngine.matchesLoadedPage(
+				"https://m.youtube.com/watch?v=otherVid",
+				"https://m.youtube.com/watch?v=directVid",
+				"directVid",
+				0L,
+				null,
+				null,
+				null));
+	}
+
 	@SuppressWarnings("unchecked")
 	private static <T> T proxy(Class<T> type, Invocation invocation) {
 		return (T) proxy(new Class<?>[]{type}, invocation);

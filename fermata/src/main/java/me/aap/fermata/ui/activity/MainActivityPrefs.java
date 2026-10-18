@@ -112,6 +112,7 @@ public interface MainActivityPrefs
 
 	default int getThemePref(boolean auto) {
 		if (auto) {
+			if (hasPref(THEME_MAIN)) return getThemePref(false);
 			int aaTheme = getIntPref(THEME_AA);
 			if (aaTheme == THEME_CLASSIC || aaTheme == THEME_MATERIAL_YOU || aaTheme == THEME_GLASS) {
 				return aaTheme;

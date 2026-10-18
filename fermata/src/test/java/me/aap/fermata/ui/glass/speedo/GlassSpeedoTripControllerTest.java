@@ -86,5 +86,20 @@ public class GlassSpeedoTripControllerTest {
         // Switch to imperial
         view.updateSpeed(65f, state, false);
         view.setSpeedLimit(50);
+
+        // Test unmeasured / no GPS state (R12)
+        view.updateSpeed(-1f, state, true);
+        view.refreshAppearance();
+    }
+
+    @Test
+    public void testInitialSpeedUnmeasured() {
+        AtomicReference<Float> reportedSpeed = new AtomicReference<>(0f);
+        GlassSpeedoTripController controller = new GlassSpeedoTripController(
+                RuntimeEnvironment.getApplication(),
+                (speedKmh, state) -> reportedSpeed.set(speedKmh)
+        );
+        controller.start();
+        assertEquals(-1f, reportedSpeed.get(), 0.01f);
     }
 }

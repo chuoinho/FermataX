@@ -8,6 +8,9 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.ui.glass.media.GlassMediaPlayerView;
+import me.aap.fermata.ui.glass.quickbar.GlassQuickBarView;
+import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
@@ -66,6 +69,10 @@ public class GlassDashboardLayout extends ViewGroup {
     }
 
     public void refreshAppearance() {
+        refreshAppearance(true);
+    }
+
+    public void refreshAppearance(boolean requestLayout) {
         Context ctx = getContext();
         isNight = GlassThemeColors.isNight(ctx);
         int w = getWidth();
@@ -73,10 +80,25 @@ public class GlassDashboardLayout extends ViewGroup {
         if (w > 0 && h > 0) {
             setBackground(GlassDrawables.createBackgroundGradient(w, h, isNight));
         }
-        if (quickBarView instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView qb) {
+        if (speedoCard instanceof GlassSpeedoTripView s) {
+            s.refreshAppearance();
+        }
+        if (navWeatherCard instanceof GlassNavWeatherView nw) {
+            nw.refreshAppearance();
+        }
+        if (mediaCard instanceof GlassMediaPlayerView m) {
+            m.refreshAppearance();
+        }
+        if (quickBarView instanceof GlassQuickBarView qb) {
             qb.refreshAppearance();
         }
-        requestLayout();
+        if (requestLayout) {
+            requestLayout();
+        }
+    }
+
+    public View getQuickBarView() {
+        return quickBarView;
     }
 
     public boolean isSplit() {
@@ -130,31 +152,43 @@ public class GlassDashboardLayout extends ViewGroup {
         Context ctx = getContext();
         boolean newNight = GlassThemeColors.isNight(ctx);
         if (newNight != isNight || getBackground() == null) {
-            isNight = newNight;
-            setBackground(GlassDrawables.createBackgroundGradient(width, height, isNight));
+            refreshAppearance(false);
         }
 
-        int padH = GlassDimensions.dpToPx(ctx, 16);
-        int padV = GlassDimensions.dpToPx(ctx, 12);
-        int gap = GlassDimensions.dpToPx(ctx, 14);
-
         float density = getResources().getDisplayMetrics().density;
+        float rawHeightDp = height / Math.max(0.1f, density);
+        float rawWidthDp = width / Math.max(0.1f, density);
+
+        boolean isCar = GlassDimensions.isCar(ctx);
+        boolean isCompactH = rawHeightDp < 440f;
+        boolean isCompactW = rawWidthDp < 550f;
+
+        int padH = GlassDimensions.dpToPx(ctx, isCompactW ? 10 : 16);
+        int padV = GlassDimensions.dpToPx(ctx, isCompactH ? 6 : 10);
+        int gap = GlassDimensions.dpToPx(ctx, (isCompactH || isCompactW) ? 8 : 12);
+
         float widthDp = (width - 2 * padH) / Math.max(0.1f, density);
         float heightDp = height / Math.max(0.1f, density);
 
-        int headerH = GlassDimensions.dpToPx(ctx, 42);
-        int quickBarH = (heightDp >= 460f && widthDp >= 550f)
-                ? GlassDimensions.dpToPx(ctx, 76)
-                : (heightDp < 360f ? GlassDimensions.dpToPx(ctx, 52) : GlassDimensions.dpToPx(ctx, 64));
+        boolean hasHeader = (headerView != null && headerView.getVisibility() != GONE);
+        int headerH = !hasHeader ? 0 : GlassDimensions.dpToPx(ctx, isCar
+                ? (heightDp < 440f ? 28 : (heightDp < 540f ? 30 : 34))
+                : 28);
+        boolean hasQuickBar = (quickBarView != null && quickBarView.getVisibility() != GONE);
+        int quickBarH = !hasQuickBar ? 0 : (isCar
+                ? GlassDimensions.dpToPx(ctx, heightDp < 440f ? 54 : (heightDp < 540f ? 62 : 72))
+                : ((heightDp >= 460f && widthDp >= 550f)
+                        ? GlassDimensions.dpToPx(ctx, 64)
+                        : (heightDp < 360f ? GlassDimensions.dpToPx(ctx, 52) : GlassDimensions.dpToPx(ctx, 56))));
 
         // Layout Top Header
-        if (headerView != null && headerView.getVisibility() != GONE) {
+        if (hasHeader) {
             layoutChild(headerView, padH, padV, width - 2 * padH, headerH);
         }
 
         // Layout Bottom Quick Bar
         int quickBarTop = height - padV - quickBarH;
-        if (quickBarView != null && quickBarView.getVisibility() != GONE) {
+        if (hasQuickBar) {
             if (quickBarView instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView) {
                 ((me.aap.fermata.ui.glass.quickbar.GlassQuickBarView) quickBarView).setActiveSlotCount(widthDp < 550f ? 4 : 6);
             }
@@ -162,8 +196,8 @@ public class GlassDashboardLayout extends ViewGroup {
         }
 
         // Available Body Area between Header and Quick Bar
-        int bodyTop = padV + headerH + gap;
-        int bodyBottom = quickBarTop - gap;
+        int bodyTop = hasHeader ? (padV + headerH + gap) : padV;
+        int bodyBottom = hasQuickBar ? (quickBarTop - gap) : (height - padV);
         int bodyHeight = Math.max(0, bodyBottom - bodyTop);
         int bodyWidth = Math.max(0, width - 2 * padH);
 
@@ -179,10 +213,14 @@ public class GlassDashboardLayout extends ViewGroup {
 
         switch (mode) {
             case WIDE: {
-                // Priority budget: Speedo takes compact width, Media and Nav/Weather get remaining width
-                int minSpeedoWidth = GlassDimensions.dpToPx(ctx, 180);
-                int speedoWidth = Math.max(minSpeedoWidth, (bodyWidth - 2 * gap) / 4);
-                int remainingWidth = Math.max(0, bodyWidth - speedoWidth - 2 * gap);
+                // Proportional distribution across all 3 cards:
+                // Speedo card takes ~28% of available cards width (bounded between 130dp and 220dp),
+                // while Nav/Weather and Media cards share the remaining width equally.
+                int availCardsWidth = Math.max(0, bodyWidth - 2 * gap);
+                int minSpeedo = GlassDimensions.dpToPx(ctx, 130);
+                int maxSpeedo = GlassDimensions.dpToPx(ctx, 220);
+                int speedoWidth = Math.max(minSpeedo, Math.min(maxSpeedo, Math.round(availCardsWidth * 0.28f)));
+                int remainingWidth = Math.max(0, availCardsWidth - speedoWidth);
                 int navWeatherWidth = remainingWidth / 2;
                 int mediaWidth = remainingWidth - navWeatherWidth;
 
@@ -206,15 +244,33 @@ public class GlassDashboardLayout extends ViewGroup {
                 break;
             }
             case PORTRAIT: {
-                // 3 rows stacked
-                int rowHeight = (bodyHeight - 2 * gap) / 3;
-                int y0 = bodyTop;
-                int y1 = y0 + rowHeight + gap;
-                int y2 = y1 + rowHeight + gap;
+                float fontScale = getContext().getResources().getConfiguration().fontScale;
+                int minCardHeight = GlassDimensions.dpToPx(ctx, Math.round(96 * Math.max(1.0f, fontScale)));
+                if (bodyHeight < minCardHeight * 3 + 2 * gap) {
+                    // Height-constrained portrait: Prioritize NavWeather and Media cards, hide Speedo to preserve minimum touch targets
+                    if (speedoCard != null) speedoCard.setVisibility(GONE);
+                    int rowHeight = (bodyHeight - gap) / 2;
+                    if (navWeatherCard != null) {
+                        navWeatherCard.setVisibility(VISIBLE);
+                        layoutChild(navWeatherCard, padH, bodyTop, bodyWidth, rowHeight);
+                    }
+                    if (mediaCard != null) {
+                        mediaCard.setVisibility(VISIBLE);
+                        layoutChild(mediaCard, padH, bodyTop + rowHeight + gap, bodyWidth, rowHeight);
+                    }
+                } else {
+                    if (speedoCard != null && speedoCard.getVisibility() != VISIBLE) {
+                        speedoCard.setVisibility(VISIBLE);
+                    }
+                    int rowHeight = (bodyHeight - 2 * gap) / 3;
+                    int y0 = bodyTop;
+                    int y1 = y0 + rowHeight + gap;
+                    int y2 = y1 + rowHeight + gap;
 
-                if (navWeatherCard != null) layoutChild(navWeatherCard, padH, y0, bodyWidth, rowHeight);
-                if (mediaCard != null) layoutChild(mediaCard, padH, y1, bodyWidth, rowHeight);
-                if (speedoCard != null) layoutChild(speedoCard, padH, y2, bodyWidth, rowHeight);
+                    if (navWeatherCard != null) layoutChild(navWeatherCard, padH, y0, bodyWidth, rowHeight);
+                    if (mediaCard != null) layoutChild(mediaCard, padH, y1, bodyWidth, rowHeight);
+                    if (speedoCard != null) layoutChild(speedoCard, padH, y2, bodyWidth, rowHeight);
+                }
                 break;
             }
             case SPLIT: {

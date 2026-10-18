@@ -166,6 +166,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
 	private boolean isMuted;
+	private boolean isDucked;
+	private MediaEngine duckedEngine;
 	private boolean tryAnotherEngine;
 	private final VideoOutputCoordinator videoOutput = new VideoOutputCoordinator();
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
@@ -183,7 +185,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				@Override public long requestRevision() { return playbackRequestRevision; }
 				@Override public void requestRevision(long revision) { playbackRequestRevision = revision; }
 				@Override public MediaEngine engineSlot() { return engine; }
-				@Override public void engineSlot(MediaEngine value) { engine = value; }
+				@Override public void engineSlot(MediaEngine value) {
+					engine = value;
+					syncDuckingOnEngineChange(value);
+				}
 			});
 	private final RemotePlaybackLifecycleController playbackLifecycle;
 	private final PlaybackTransition playbackTransition = new PlaybackTransition();
@@ -465,6 +470,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			return false;
 		}
 		engine = replacement;
+		syncDuckingOnEngineChange(replacement);
 		bindVideoOutput(replacement);
 		session.setActive(true);
 		recordPlaybackDiagnostic("engine_handoff", DiagnosticScope.ESSENTIAL,
@@ -500,6 +506,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 		if (engine == expected) {
 			engine = replacement;
+			syncDuckingOnEngineChange(replacement);
 			bindVideoOutput(replacement);
 		}
 		session.setActive(true);
@@ -558,6 +565,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask.cancel();
 		onStop(false);
 		this.engine = engine;
+		syncDuckingOnEngineChange(engine);
 		PlayableItem source = engine.getSource(); bindVideoOutput(engine);
 		if (source != null) adoptPlaybackOwner(PlayableItemResolver.unwrap(source), engine);
 		session.setActive(true);
@@ -836,6 +844,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			// The legacy factory closes its input; detach native output first.
 			if (previous != null) videoOutput.clearIfBound(previous);
 			engine = getEngineManager().createEngine(previous, i, this);
+			syncDuckingOnEngineChange(engine);
 			Log.d("MediaEngine ", engine + " created for ", i);
 			if (engine == null) return completedVoid();
 			adoptPlaybackOwner(i, engine);
@@ -1005,6 +1014,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playbackOwnership.reviseState();
 		playerTask.cancel();
 		resetStreamRetry();
+		isDucked = false;
+		if (duckedEngine != null) {
+			duckedEngine.unduck(getContext());
+			duckedEngine = null;
+		}
 		onStop(true);
 	}
 
@@ -1027,6 +1041,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		if (current) {
 			videoOutput.clear();
 			engine = null;
+			syncDuckingOnEngineChange(null);
 		}
 		if (current || (eng == null)) {
 			MediaEngineShutdown.run("remote_lifecycle", this::cancelPlaybackLifecycle);
@@ -1430,6 +1445,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onEngineStarted(MediaEngine engine) {
 		if (!acceptsEngineCallback(engine)) return;
+		syncDuckingOnEngineChange(engine);
 		audioEffectsController.bind(engine);
 		notifyPlaybackLifecycle((l, revision) -> l.onPlaybackAttemptStarted(revision));
 		long requestRevision = playbackRequestRevision;
@@ -1801,6 +1817,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 					if (engine != failedEngine) return;
 				} else {
 					this.engine = replacement;
+					syncDuckingOnEngineChange(replacement);
 					Log.i("Trying another engine: ", this.engine);
 					tryAnotherEngine = false;
 					bindVideoOutput(replacement, i.isVideo());
@@ -1877,7 +1894,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				if (playOnAudioFocus) {
 					playOnAudioFocus = false;
 					onPlay();
-				} else if (isMuted) {
+				}
+				if (isDucked) {
+					unduck();
+				}
+				if (isMuted) {
 					isMuted = false;
 					var eng = getEngine();
 					if (eng != null) eng.unmute(getContext());
@@ -1885,10 +1906,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				break;
 			case AUDIOFOCUS_LOSS:
 				playOnAudioFocus = false;
+				if (isDucked) unduck();
 				if (isPlaying()) onPause();
 				permanentFocusLoss.schedule();
 				break;
 			case AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+				if (isPlaying()) {
+					duck();
+				}
 				break;
 			case AUDIOFOCUS_LOSS_TRANSIENT:
 				if (!isPlaying()) return;
@@ -1905,6 +1930,61 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				}
 
 				break;
+		}
+	}
+
+	public void duck() {
+		MediaEngine eng = getEngine();
+		if (isDucked && (duckedEngine == eng)) return;
+		isDucked = true;
+		if ((duckedEngine != null) && (duckedEngine != eng)) {
+			duckedEngine.unduck(getContext());
+		}
+		duckedEngine = eng;
+		if (eng != null) {
+			eng.duck(getContext());
+		}
+	}
+
+	public void unduck() {
+		if (!isDucked && (duckedEngine == null)) return;
+		isDucked = false;
+		MediaEngine target = (duckedEngine != null) ? duckedEngine : getEngine();
+		duckedEngine = null;
+		if (target != null) {
+			target.unduck(getContext());
+		}
+	}
+
+	public boolean isDucked() {
+		return isDucked;
+	}
+
+	@Nullable
+	MediaEngine getDuckedEngine() {
+		return duckedEngine;
+	}
+
+	private void syncDuckingOnEngineChange(@Nullable MediaEngine newEngine) {
+		if (!isDucked) {
+			if ((duckedEngine != null) && (duckedEngine != newEngine)) {
+				duckedEngine.unduck(getContext());
+				duckedEngine = null;
+			}
+			return;
+		}
+		if (duckedEngine == newEngine) {
+			if (newEngine != null) {
+				newEngine.duck(getContext());
+			}
+			return;
+		}
+		if (duckedEngine != null) {
+			duckedEngine.unduck(getContext());
+		}
+		duckedEngine = newEngine;
+		if (newEngine != null) {
+			newEngine.duck(getContext());
 		}
 	}
 

@@ -34,6 +34,7 @@ import java.util.Locale;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
+import me.aap.fermata.ui.policy.PhoneRootPolicy;
 
 /**
  * Main Phone UI Fragment for the Car Finder feature.
@@ -46,7 +47,8 @@ import me.aap.fermata.ui.fragment.MainActivityFragment;
  * - In-page settings and instant cleanup upon finding the car
  */
 public class CarFinderFragment extends MainActivityFragment
-		implements CarLocatorManager.UserLocationListener, CompassSensorManager.HeadingListener, CarFinderPrefs.Listener {
+		implements CarLocatorManager.UserLocationListener, CompassSensorManager.HeadingListener, CarFinderPrefs.Listener,
+		me.aap.fermata.ui.activity.MainActivityListener {
 
 	private static final int ACCENT_BLUE = 0xFF3B82F6;
 	private static final int SURFACE_DARK = 0xFF0F141F;
@@ -65,12 +67,20 @@ public class CarFinderFragment extends MainActivityFragment
 	private me.aap.fermata.ui.glass.carfinder.GlassRadarView glassRadarView;
 
 	// Overview mode views
+	private LinearLayout overviewHeader;
+	private TextView textHeaderTitle;
+	private ImageView btnSettings;
+	private LinearLayout cardContainer;
 	private TextView textCarTitle;
 	private TextView textConfidenceBadge;
 	private TextView textBasementHint;
 	private TextView textCarAddress;
 	private TextView textDistance;
 	private TextView textWalkingTime;
+	private TextView btnRadar;
+	private ImageView btnDirections;
+	private TextView btnPinManual;
+	private LinearLayout btnEmptyPhoto;
 	private View cardFoundCar;
 	private View cardEmpty;
 	private View cardActiveInfo;
@@ -84,11 +94,18 @@ public class CarFinderFragment extends MainActivityFragment
 	private TextView textNote;
 
 	// Radar mode views
+	private ImageView overviewBackButton;
+	private LinearLayout radarHeader;
+	private LinearLayout radarCenterPill;
+	private TextView radarPillText;
+	private ImageView radarBackButton;
 	private TextView textRadarSubHeader;
 	private TextView textRadarDistance;
 	private TextView textRadarUnit;
 	private TextView textRadarDirection;
 	private TextView textRadarAccuracy;
+	private TextView btnViewOnMap;
+	private TextView btnRadarFound;
 
 	private CompassSensorManager compassManager;
 	private CarParkingLocation currentParkingLocation;
@@ -132,6 +149,10 @@ public class CarFinderFragment extends MainActivityFragment
 	@Override
 	public void onStart() {
 		super.onStart();
+		MainActivityDelegate a = getActivityDelegate();
+		if (a != null) {
+			a.addBroadcastListener(this, me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED);
+		}
 		requestLocationPermissionsIfNeeded();
 		CarFinderPrefs.registerListener(requireContext(), this);
 		currentParkingLocation = CarFinderPrefs.getParkingLocation(requireContext());
@@ -143,7 +164,148 @@ public class CarFinderFragment extends MainActivityFragment
 		if (compassManager != null && isRadarMode) {
 			compassManager.start();
 		}
+		applyAppearanceTheme();
 		renderParkingStateToViews();
+	}
+
+	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		if (e == me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED) {
+			applyAppearanceTheme();
+			renderParkingStateToViews();
+		}
+	}
+
+	public void applyAppearanceTheme() {
+		Context ctx = getContext();
+		if (ctx == null || rootContainer == null) return;
+		boolean isGlass = isGlassTheme();
+		boolean isNight = (getActivityDelegate() != null) ? getActivityDelegate().getPrefs().isGlassNightMode()
+				: me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(ctx);
+		me.aap.fermata.ui.glass.theme.GlassThemeColors gc =
+				me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, isNight);
+
+		int bgCol = isGlass ? (isNight ? 0xFF07090D : 0xFFF8FAFC) : 0xFF07090D;
+		if (overviewContainer != null) overviewContainer.setBackgroundColor(bgCol);
+		if (radarContainer != null) radarContainer.setBackgroundColor(bgCol);
+
+		if (mapTileView != null) {
+			mapTileView.setNightMode(isNight);
+		}
+		if (glassRadarView != null) {
+			glassRadarView.setNightMode(isNight);
+		}
+
+		if (overviewHeader != null && isGlass) {
+			overviewHeader.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+		}
+		if (overviewBackButton != null && isGlass) {
+			overviewBackButton.setColorFilter(isNight ? 0xFFFFFFFF : 0xFF15181A);
+			overviewBackButton.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(ctx, 20f, isNight));
+		}
+		if (radarHeader != null && isGlass) {
+			radarHeader.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 0f, isNight));
+		}
+		if (textHeaderTitle != null) {
+			textHeaderTitle.setTextColor(isGlass ? gc.getTextPrimary() : 0xFFFFFFFF);
+		}
+		if (btnSettings != null) {
+			btnSettings.setColorFilter(isGlass ? gc.getTextPrimary() : 0xFFC3CDDE);
+		}
+		if (cardContainer != null) {
+			if (isGlass) {
+				cardContainer.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 24f, isNight));
+			} else {
+				float density = getResources().getDisplayMetrics().density;
+				GradientDrawable sheetBg = new GradientDrawable();
+				sheetBg.setColor(SURFACE_DARK);
+				float cornerR = 24f * density;
+				sheetBg.setCornerRadii(new float[]{cornerR, cornerR, cornerR, cornerR, 0f, 0f, 0f, 0f});
+				sheetBg.setStroke(Math.round(1 * density), CARD_BORDER);
+				cardContainer.setBackground(sheetBg);
+			}
+		}
+		if (textEmptyStatus != null) {
+			textEmptyStatus.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
+		}
+		if (btnPinManual != null && isGlass) {
+			btnPinManual.setTextColor(isNight ? 0xFF00E5FF : 0xFF007A87);
+			float density = getResources().getDisplayMetrics().density;
+			GradientDrawable gd = new GradientDrawable();
+			gd.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
+			gd.setCornerRadius(21f * density);
+			gd.setStroke(Math.round(1.5f * density), isNight ? 0xFF00E5FF : 0xFF007A87);
+			btnPinManual.setBackground(gd);
+		}
+		if (textCarTitle != null) {
+			textCarTitle.setTextColor(isGlass ? gc.getTextPrimary() : 0xFFFFFFFF);
+		}
+		if (textCarAddress != null) {
+			textCarAddress.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
+		}
+		if (textWalkingTime != null) {
+			textWalkingTime.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
+		}
+		if (textNote != null) {
+			textNote.setTextColor(isGlass ? gc.getTextPrimary() : 0xFFFFFFFF);
+			if (isGlass) {
+				textNote.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 8f, isNight));
+			}
+		}
+		if (cardFoundCar instanceof TextView btnFound) {
+			btnFound.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
+			if (isGlass) {
+				btnFound.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(ctx, 21f, isNight));
+			}
+		}
+		if (btnRadar != null && isGlass) {
+			btnRadar.setTextColor(isNight ? 0xFF00E5FF : 0xFF007A87);
+			float density = getResources().getDisplayMetrics().density;
+			GradientDrawable gd = new GradientDrawable();
+			gd.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
+			gd.setCornerRadius(24f * density);
+			gd.setStroke(Math.round(1.5f * density), isNight ? 0xFF00E5FF : 0xFF007A87);
+			btnRadar.setBackground(gd);
+		}
+		if (btnDirections != null && isGlass) {
+			btnDirections.setColorFilter(isNight ? 0xFF00E5FF : 0xFF007A87);
+			btnDirections.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(ctx, 24f, isNight));
+		}
+		if (radarPillText != null) {
+			radarPillText.setTextColor(isGlass ? (isNight ? 0xFF00E5FF : 0xFF007A87) : 0xFFFFFFFF);
+		}
+		if (radarCenterPill != null && isGlass) {
+			float density = getResources().getDisplayMetrics().density;
+			GradientDrawable pillBg = new GradientDrawable();
+			pillBg.setColor(isNight ? 0x2500E5FF : 0x1800E5FF);
+			pillBg.setStroke(Math.round(1 * density), isNight ? 0xFF00E5FF : 0xFF007A87);
+			pillBg.setCornerRadius(18f * density);
+			radarCenterPill.setBackground(pillBg);
+		}
+		if (radarBackButton != null && isGlass) {
+			radarBackButton.setColorFilter(isNight ? 0xFFFFFFFF : 0xFF15181A);
+			radarBackButton.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(ctx, 20f, isNight));
+		}
+		if (textRadarDistance != null) {
+			textRadarDistance.setTextColor(isGlass ? (isNight ? 0xFFFFFFFF : 0xFF0F172A) : 0xFFFFFFFF);
+		}
+		if (textRadarUnit != null) {
+			textRadarUnit.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
+		}
+		if (textRadarSubHeader != null) {
+			textRadarSubHeader.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
+		}
+		if (textRadarAccuracy != null) {
+			textRadarAccuracy.setTextColor(isGlass ? gc.getTextSecondary() : TEXT_MUTED);
+		}
+		if (btnViewOnMap != null && isGlass) {
+			btnViewOnMap.setTextColor(isNight ? 0xFFFFFFFF : 0xFF15181A);
+			btnViewOnMap.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(ctx, 24f, isNight));
+		}
+		if (btnRadarFound != null && isGlass) {
+			btnRadarFound.setTextColor(gc.getTextSecondary());
+			btnRadarFound.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(ctx, 20f, isNight));
+		}
 	}
 
 	private void requestLocationPermissionsIfNeeded() {
@@ -170,6 +332,10 @@ public class CarFinderFragment extends MainActivityFragment
 	@Override
 	public void onStop() {
 		super.onStop();
+		MainActivityDelegate a = getActivityDelegate();
+		if (a != null) {
+			a.removeBroadcastListener(this);
+		}
 		CarFinderPrefs.unregisterListener(requireContext(), this);
 		CarLocatorManager.get().stopTrackingUserLocation(this);
 		if (compassManager != null) {
@@ -198,6 +364,7 @@ public class CarFinderFragment extends MainActivityFragment
 
 		// Header Bar
 		LinearLayout header = new LinearLayout(requireContext());
+		this.overviewHeader = header;
 		header.setOrientation(LinearLayout.HORIZONTAL);
 		header.setGravity(Gravity.CENTER_VERTICAL);
 		header.setPadding(Math.round(16 * density), Math.round(10 * density), Math.round(16 * density), Math.round(10 * density));
@@ -205,7 +372,18 @@ public class CarFinderFragment extends MainActivityFragment
 			header.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(requireContext(), 0f, isNight));
 		}
 
+		ImageView backBtn = (ImageView) createCircularBackButton(density);
+		this.overviewBackButton = backBtn;
+		backBtn.setOnClickListener(v -> {
+			MainActivityDelegate a = getActivityDelegate();
+			if (a != null) a.onBackPressed();
+		});
+		LinearLayout.LayoutParams pBack = new LinearLayout.LayoutParams(Math.round(40 * density), Math.round(40 * density));
+		pBack.rightMargin = Math.round(12 * density);
+		header.addView(backBtn, pBack);
+
 		TextView title = new TextView(requireContext());
+		this.textHeaderTitle = title;
 		title.setText(R.string.car_finder_title);
 		title.setTextSize(20);
 		title.setTextColor(isGlass ? gc.getTextPrimary() : 0xFFFFFFFF);
@@ -214,6 +392,7 @@ public class CarFinderFragment extends MainActivityFragment
 
 		// In-page Settings Button using Fermata's official settings gear drawable
 		ImageView btnSettings = new ImageView(requireContext());
+		this.btnSettings = btnSettings;
 		btnSettings.setImageResource(R.drawable.settings_gear);
 		btnSettings.setColorFilter(isGlass ? gc.getTextPrimary() : 0xFFC3CDDE);
 		btnSettings.setPadding(Math.round(8 * density), Math.round(8 * density), Math.round(8 * density), Math.round(8 * density));
@@ -234,10 +413,12 @@ public class CarFinderFragment extends MainActivityFragment
 
 		// Map Canvas View (Takes top remaining height)
 		mapTileView = new CarMapTileView(requireContext());
+		mapTileView.setNightMode(isNight);
 		overviewContainer.addView(mapTileView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
 
 		// Bottom Card Container (Material 3 rounded bottom sheet in Fermata dark navy / Glass)
 		LinearLayout cardContainer = new LinearLayout(requireContext());
+		this.cardContainer = cardContainer;
 		cardContainer.setOrientation(LinearLayout.VERTICAL);
 		if (isGlass) {
 			cardContainer.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(requireContext(), 24f, isNight));
@@ -274,10 +455,12 @@ public class CarFinderFragment extends MainActivityFragment
 				Toast.makeText(requireContext(), R.string.car_finder_waiting_gps, Toast.LENGTH_SHORT).show();
 			}
 		});
+		this.btnPinManual = btnPinManual;
 		btnPinManual.setPadding(Math.round(16 * density), 0, Math.round(16 * density), 0);
 		emptyActions.addView(btnPinManual, new LinearLayout.LayoutParams(-2, Math.round(42 * density)));
 
 		LinearLayout btnEmptyPhoto = new LinearLayout(requireContext());
+		this.btnEmptyPhoto = btnEmptyPhoto;
 		btnEmptyPhoto.setOrientation(LinearLayout.HORIZONTAL);
 		btnEmptyPhoto.setGravity(Gravity.CENTER_VERTICAL);
 		btnEmptyPhoto.setPadding(Math.round(12 * density), Math.round(8 * density), Math.round(12 * density), Math.round(8 * density));
@@ -398,12 +581,14 @@ public class CarFinderFragment extends MainActivityFragment
 
 		// Main Button: Tìm chính xác (Fermata Electric Blue)
 		TextView btnRadar = createStyledPillButton("▲  " + getString(R.string.car_finder_precise_find), 0xFFFFFFFF, ACCENT_BLUE, 0, v -> setRadarModeVisible(true));
+		this.btnRadar = btnRadar;
 		actionsRow.addView(btnRadar, new LinearLayout.LayoutParams(0, Math.round(48 * density), 1.0f));
 
 		// Circle Button: Chỉ đường (Google Maps) with subtle blue highlight
 		LinearLayout.LayoutParams pMaps = new LinearLayout.LayoutParams(Math.round(48 * density), Math.round(48 * density));
 		pMaps.leftMargin = Math.round(12 * density);
 		ImageView btnDirections = createCircularActionButton(R.drawable.ic_nav_arrow, ACCENT_BLUE, CARD_BUTTON_BG, CARD_BUTTON_BORDER, v -> launchWalkingNavigationInExternalMap());
+		this.btnDirections = btnDirections;
 		actionsRow.addView(btnDirections, pMaps);
 		((LinearLayout) cardActiveInfo).addView(actionsRow);
 
@@ -499,14 +684,18 @@ public class CarFinderFragment extends MainActivityFragment
 
 		// Header Bar with Back Button + Centered Pill
 		LinearLayout header = new LinearLayout(requireContext());
+		this.radarHeader = header;
 		header.setOrientation(LinearLayout.HORIZONTAL);
 		header.setGravity(Gravity.CENTER_VERTICAL);
 		header.setPadding(Math.round(16 * density), Math.round(12 * density), Math.round(16 * density), Math.round(12 * density));
 
-		header.addView(createCircularBackButton(density), new LinearLayout.LayoutParams(Math.round(40 * density), Math.round(40 * density)));
+		ImageView backBtn = (ImageView) createCircularBackButton(density);
+		this.radarBackButton = backBtn;
+		header.addView(backBtn, new LinearLayout.LayoutParams(Math.round(40 * density), Math.round(40 * density)));
 
 		// Center Pill: "▲ Tìm chính xác"
 		LinearLayout centerPill = new LinearLayout(requireContext());
+		this.radarCenterPill = centerPill;
 		centerPill.setOrientation(LinearLayout.HORIZONTAL);
 		centerPill.setGravity(Gravity.CENTER);
 		GradientDrawable pillBg = new GradientDrawable();
@@ -517,6 +706,7 @@ public class CarFinderFragment extends MainActivityFragment
 		centerPill.setPadding(Math.round(16 * density), Math.round(6 * density), Math.round(16 * density), Math.round(6 * density));
 
 		TextView pillText = new TextView(requireContext());
+		this.radarPillText = pillText;
 		pillText.setText("▲  " + getString(R.string.car_finder_precise_find));
 		pillText.setTextColor(0xFFFFFFFF);
 		pillText.setTextSize(13);
@@ -549,7 +739,7 @@ public class CarFinderFragment extends MainActivityFragment
 		bottomRadar.setPadding(Math.round(24 * density), 0, Math.round(24 * density), Math.round(20 * density));
 
 		textRadarSubHeader = new TextView(requireContext());
-		textRadarSubHeader.setText("XE Ở NGAY ĐÂY");
+		textRadarSubHeader.setText(R.string.car_finder_radar_sub_here);
 		textRadarSubHeader.setTextSize(12);
 		textRadarSubHeader.setTextColor(TEXT_MUTED);
 		textRadarSubHeader.setTypeface(null, Typeface.BOLD);
@@ -574,7 +764,7 @@ public class CarFinderFragment extends MainActivityFragment
 		unitDirCol.setPadding(Math.round(10 * density), 0, 0, 0);
 
 		textRadarUnit = new TextView(requireContext());
-		textRadarUnit.setText("mét");
+		textRadarUnit.setText(R.string.unit_m);
 		textRadarUnit.setTextSize(14);
 		textRadarUnit.setTextColor(TEXT_MUTED);
 		unitDirCol.addView(textRadarUnit);
@@ -598,10 +788,12 @@ public class CarFinderFragment extends MainActivityFragment
 
 		// Big Pill Button: "Xem trên bản đồ"
 		TextView btnViewOnMap = createStyledPillButton(getString(R.string.car_finder_view_on_map), 0xFFFFFFFF, CARD_BUTTON_BG, CARD_BUTTON_BORDER, v -> setRadarModeVisible(false));
+		this.btnViewOnMap = btnViewOnMap;
 		bottomRadar.addView(btnViewOnMap, new LinearLayout.LayoutParams(-1, Math.round(48 * density)));
 
 		// Secondary "Đã tìm thấy xe"
 		TextView btnRadarFound = createStyledPillButton(getString(R.string.car_finder_found_car), TEXT_MUTED, CARD_SURFACE, CARD_BORDER, v -> promptCarFoundConfirmationAndReset());
+		this.btnRadarFound = btnRadarFound;
 		LinearLayout.LayoutParams pFound = new LinearLayout.LayoutParams(-1, Math.round(40 * density));
 		pFound.topMargin = Math.round(8 * density);
 		bottomRadar.addView(btnRadarFound, pFound);
@@ -723,6 +915,11 @@ public class CarFinderFragment extends MainActivityFragment
 	 * Synchronizes the visual state of all cards, maps, and radar with current parking & user data.
 	 */
 	public void renderParkingStateToViews() {
+		if (overviewBackButton != null) {
+			MainActivityDelegate a = getActivityDelegate();
+			boolean canBack = a != null && (a.isCarActivity() || !PhoneRootPolicy.isPhoneRoot(R.id.car_finder_fragment));
+			overviewBackButton.setVisibility(canBack ? View.VISIBLE : View.GONE);
+		}
 		if (currentParkingLocation == null || !currentParkingLocation.isValid()) {
 			cardEmpty.setVisibility(View.VISIBLE);
 			cardActiveInfo.setVisibility(View.GONE);
@@ -826,20 +1023,20 @@ public class CarFinderFragment extends MainActivityFragment
 			if ("ft".equals(unit)) {
 				int feet = Math.round(dist * 3.28084f);
 				distNumStr = String.valueOf(feet);
-				distUnitStr = "ft";
+				distUnitStr = getString(R.string.unit_ft);
 			} else if (dist < 10.0f) {
 				distNumStr = String.format(Locale.US, "%.1f", dist).replace('.', ',');
-				distUnitStr = "mét";
+				distUnitStr = getString(R.string.unit_m);
 			} else if (dist < 1000.0f) {
 				distNumStr = String.valueOf(Math.round(dist));
-				distUnitStr = "mét";
+				distUnitStr = getString(R.string.unit_m);
 			} else {
 				distNumStr = String.format(Locale.US, "%.1f", dist / 1000.0f).replace('.', ',');
-				distUnitStr = "km";
+				distUnitStr = getString(R.string.unit_km);
 			}
 
 			textDistance.setText(distNumStr);
-			textWalkingTime.setText(distUnitStr + " · " + getString(R.string.car_finder_walk_minutes, walkMin));
+			textWalkingTime.setText(distUnitStr + " " + getString(R.string.car_finder_walk_minutes, walkMin));
 
 			textRadarDistance.setText(distNumStr);
 			textRadarUnit.setText(distUnitStr);
@@ -894,21 +1091,22 @@ public class CarFinderFragment extends MainActivityFragment
 		textRadarDirection.setText(directionStr);
 
 		if (distanceMeters < 5f) {
-			textRadarSubHeader.setText("XE Ở NGAY ĐÂY");
+			textRadarSubHeader.setText(R.string.car_finder_radar_sub_here);
 			textRadarDirection.setText(getString(R.string.car_finder_right_here));
 		} else if (absAngle <= 20f) {
-			textRadarSubHeader.setText("XE Ở PHÍA TRƯỚC");
+			textRadarSubHeader.setText(R.string.car_finder_radar_sub_front);
 		} else {
-			textRadarSubHeader.setText("HÃY ĐI THEO MŨI TÊN");
+			textRadarSubHeader.setText(R.string.car_finder_radar_sub_arrow);
 		}
 
 		float totalError = (float) Math.sqrt(Math.pow(currentParkingLocation.getAccuracy(), 2) +
 				(currentUserLocation != null ? Math.pow(currentUserLocation.getAccuracy(), 2) : 100));
 		int errM = Math.round(totalError);
+		String unitM = getString(R.string.unit_m);
 		if (distanceMeters <= Math.max(10f, totalError)) {
-			textRadarAccuracy.setText("±" + errM + " m  ·  Đã trong phạm vi sai số của GPS — hãy nhìn quanh");
+			textRadarAccuracy.setText(getString(R.string.car_finder_radar_accuracy_in_range, errM, unitM));
 		} else {
-			textRadarAccuracy.setText("±" + errM + " m  ·  " + getString(R.string.car_finder_follow_arrow));
+			textRadarAccuracy.setText("±" + errM + " " + unitM + "  ·  " + getString(R.string.car_finder_follow_arrow));
 		}
 	}
 
@@ -989,7 +1187,7 @@ public class CarFinderFragment extends MainActivityFragment
 				}
 			});
 		} catch (Throwable t) {
-			Toast.makeText(requireContext(), "Camera error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+			Toast.makeText(requireContext(), getString(R.string.car_finder_camera_error, String.valueOf(t.getMessage())), Toast.LENGTH_SHORT).show();
 		}
 	}
 

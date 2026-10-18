@@ -12,6 +12,7 @@ public class TopBarPolicyTest {
 	@Test
 	public void stremioHidesTheEntireTopBarWithoutAffectingOtherFragments() {
 		assertEquals(GONE, TopBarPolicy.resolveTopBarVisibility(R.id.stremio_fragment));
+		assertEquals(GONE, TopBarPolicy.resolveTopBarVisibility(R.id.car_finder_fragment));
 		assertEquals(VISIBLE, TopBarPolicy.resolveTopBarVisibility(R.id.youtube_fragment));
 		assertEquals(VISIBLE, TopBarPolicy.resolveTopBarVisibility(R.id.dashboard_fragment));
 	}

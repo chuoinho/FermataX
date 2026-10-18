@@ -91,8 +91,7 @@ public final class EqualizerCurveView extends View implements PreferenceStore.Li
 		float top = getPaddingTop() + dp(VERTICAL_PADDING_DP);
 		float bottom = getHeight() - getPaddingBottom() - dp(VERTICAL_PADDING_DP);
 		float center = (top + bottom) / 2f;
-		boolean active = store.getBooleanPref(AudioEffectsProfileRepository.ENABLED) &&
-				store.getBooleanPref(AudioEffectsProfileRepository.EQUALIZER_ENABLED);
+		boolean active = store.getBooleanPref(AudioEffectsProfileRepository.ENABLED);
 
 		if (isGlassTheme()) {
 			boolean isNight = isGlassNight();

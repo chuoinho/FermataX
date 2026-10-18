@@ -301,6 +301,10 @@ public interface MediaEngine extends Closeable {
 		return false;
 	}
 
+	default void duck(Context ctx) {}
+
+	default void unduck(Context ctx) {}
+
 	default void mute(Context ctx) {
 		var amgr = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
 		if (amgr != null) amgr.adjustStreamVolume(STREAM_MUSIC, ADJUST_MUTE, FLAG_SHOW_UI);

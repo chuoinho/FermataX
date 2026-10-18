@@ -22,6 +22,7 @@ public class YoutubeScriptsTest {
 		assertTrue(YoutubeScripts.AD_SKIP.contains("state.configure = function(skipEnabled, eventCode)"));
 		assertTrue(YoutubeScripts.AD_SKIP.contains("state.retryAd = function()"));
 		assertTrue(YoutubeScripts.ADBLOCK_CSS.contains("ytm-rich-item-renderer:has(ad-slot-renderer)"));
+		assertTrue(YoutubeScripts.ADBLOCK_CSS.contains("justify-content: center !important"));
 	}
 
 	@Test

@@ -390,7 +390,6 @@
         Пользователи отвечают за добавленные источники.</p>
         <p><b>Исходный проект:</b> Fermata by Andrey Pavlenko</p>
         <p><b>Версия:</b> %1$s (%2$d)</p>
-        <p><b>Домашняя страница:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Не удалось воспроизвести %s</string>
@@ -591,7 +590,103 @@
     <string name="app_version">Версия</string>
     <string name="support_kofi_title">Угостить разработчика кофе ☕</string>
     <string name="support_kofi_sub">Поддержите разработку на ko-fi.com/fermatax</string>
-    <string name="github_repo_title">Репозиторий GitHub</string>
-    <string name="github_repo_sub">Исходный код, выпуски и сообщения об ошибках</string>
     <string name="support_banner_text">Нравится FermataX? Поддержите проект чашкой кофе ☕</string>
+
+    <!-- Initial Setup Permissions -->
+    <string name="initial_setup_grant_permissions">Предоставить разрешения</string>
+    <string name="initial_setup_check_permissions">Проверить статус</string>
+    <string name="initial_setup_permissions_all_granted">✓ Все необходимые разрешения предоставлены</string>
+    <string name="initial_setup_permissions_needed">⚠ Требуются разрешения для медиа, авто и голоса</string>
+
+    <!-- Glass Addon Card Hints -->
+    <string name="glass_addon_enabled_hint">Включено · Нажмите, чтобы отключить</string>
+    <string name="glass_addon_disabled_hint">Отключено · Нажмите, чтобы включить</string>
+    <string name="glass_addon_drag_hint">Перетащите для изменения порядка</string>
+
+    <!-- Glass Weather Conditions -->
+    <string name="weather_clear">Ясно</string>
+    <string name="weather_mainly_clear">В основном ясно</string>
+    <string name="weather_partly_cloudy">Переменная облачность</string>
+    <string name="weather_overcast">Пасмурно</string>
+    <string name="weather_fog">Туман</string>
+    <string name="weather_drizzle">Морось</string>
+    <string name="weather_rain">Дождь</string>
+    <string name="weather_snow">Снег</string>
+    <string name="weather_rain_showers">Ливень</string>
+    <string name="weather_thunderstorm">Гроза</string>
+    <string name="weather_fair">Ясно</string>
+    <string name="weather_cached_suffix"> (Кэш)</string>
+    <string name="weather_cached_prefix">Кэш </string>
+    <string name="weather_updated_prefix">Обновлено </string>
+
+    <!-- Glass Speedo Trip -->
+    <string name="speedo_reset_trip">Сбросить поездку</string>
+    <string name="speedo_reset_trip_confirm">Сбросить расстояние, среднюю скорость и время в пути?</string>
+
+    <!-- Glass Weather & Speedo UI -->
+    <string name="glass_weather_waiting_gps">Поиск сигнала GPS...</string>
+    <string name="glass_weather_perm_phone_hint">Предоставьте разрешение на геолокацию на телефоне.</string>
+    <string name="glass_weather_perm_car_hint">Предоставьте доступ к геолокации на телефоне для погоды.</string>
+    <string name="glass_weather_perm_needed">Требуется разрешение</string>
+    <string name="glass_weather_grant_btn">Предоставить доступ</string>
+    <string name="glass_weather_locating">Определение GPS...</string>
+    <string name="glass_speedo_trip_dist">ДИСТАНЦИЯ</string>
+    <string name="glass_speedo_trip_avg">СРЕД. СКОРОСТЬ</string>
+    <string name="glass_speedo_trip_time">ВРЕМЯ</string>
+    <!-- Glass Media Player UI -->
+    <string name="glass_media_now_playing">СЕЙЧАС ИГРАЕТ</string>
+    <string name="glass_media_library">МЕДИАТЕКА</string>
+    <string name="glass_media_browse_library">Обзор медиатеки</string>
+    <string name="glass_media_choose_hint">Нажмите для выбора музыки или видео</string>
+    <string name="glass_media_resume_recent">ПРОДОЛЖИТЬ НЕДАВНЕЕ</string>
+    <string name="glass_media_live_stream">ПРЯМОЙ ЭФИР</string>
+    <string name="glass_media_live_badge">В ЭФИРЕ</string>
+    <string name="glass_media_error">ОШИБКА ВОСПРОИЗВЕДЕНИЯ</string>
+    <string name="glass_media_retry_hint">Сбой воспроизведения. Нажмите для повтора.</string>
+    <string name="glass_media_no_playing">Ничего не воспроизводится</string>
+    <string name="glass_media_recent_media">Недавние медиа</string>
+
+    <!-- Glass Nav & Weather UI -->
+    <string name="glass_nav_header">НАВИГАЦИЯ</string>
+    <string name="glass_nav_exit">ВЫХОД</string>
+    <string name="glass_nav_gps_timeout">Тайм-аут GPS. Нажмите для повтора.</string>
+    <string name="glass_nav_network_error">Ошибка сети. Нажмите для повтора.</string>
+    <string name="glass_nav_weather_unavailable">Погода недоступна</string>
+
+    <!-- Glass QuickBar & Shortcuts -->
+    <string name="glass_quickbar_title">Быстрые ярлыки Dock (6 слотов)</string>
+    <string name="glass_quickbar_slot_format">Слот %1$d: %2$s</string>
+    <string name="glass_quickbar_empty">[Пусто]</string>
+    <string name="glass_shortcuts_dialog_title">Ярлыки %1$s</string>
+
+    <!-- Glass Addon Descriptions -->
+    <string name="glass_addon_desc_playlists">Сохраненные коллекции медиа</string>
+    <string name="glass_addon_desc_folders">Локальное и внешнее хранилище</string>
+    <string name="glass_addon_desc_favorites">Быстрый доступ к избранным трекам</string>
+    <string name="glass_addon_desc_recent">История недавнего воспроизведения</string>
+    <string name="glass_media_buffering">БУФЕРИЗАЦИЯ...</string>
+    <string name="glass_media_unknown_title">Неизвестное название</string>
+
+    <!-- Units -->
+    <string name="unit_m">м</string>
+    <string name="unit_km">км</string>
+    <string name="unit_ft">фт</string>
+
+    <!-- Car Finder Radar Telemetry -->
+    <string name="car_finder_radar_sub_here">МАШИНА ЗДЕСЬ</string>
+    <string name="car_finder_radar_sub_front">МАШИНА ВПЕРЕДИ</string>
+    <string name="car_finder_radar_sub_arrow">СЛЕДУЙТЕ ПО СТРЕЛКЕ</string>
+    <string name="car_finder_radar_accuracy_in_range">±%1$d %2$s  ·  В пределах погрешности GPS — оглянитесь</string>
+    <string name="car_finder_camera_error">Ошибка камеры: %1$s</string>
+
+    <!-- Glass Addons & Headers -->
+    <string name="glass_addon_module_desc">Модуль дополнения</string>
+    <string name="glass_weather_header">ПОГОДА И ПРОГНОЗ</string>
+    <string name="glass_weather_updating">Обновление...</string>
+    <string name="glass_speedo_card_title">СКОРОСТЬ И МАРШРУТ</string>
+
+    <!-- Glass Quick Dock Actions -->
+    <string name="glass_shortcut_open">Открыть</string>
+    <string name="glass_shortcut_replace">Заменить</string>
+    <string name="glass_shortcut_remove">Удалить</string>
 </resources>

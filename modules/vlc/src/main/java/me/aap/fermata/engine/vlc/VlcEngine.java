@@ -15,6 +15,8 @@ import static me.aap.utils.async.Completed.completedEmptyList;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.view.SurfaceView;
 
@@ -46,6 +48,7 @@ import me.aap.fermata.diagnostics.DiagnosticEvent;
 import me.aap.fermata.diagnostics.DiagnosticPriority;
 import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.engine.AudioStreamInfo;
+import me.aap.fermata.media.engine.AudioVolumeFader;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineBase;
 import me.aap.fermata.media.engine.MediaEngineException;
@@ -77,6 +80,7 @@ public class VlcEngine extends MediaEngineBase
 	private final VlcEngineProvider provider;
 	private final LibVLC vlc;
 	private final MediaPlayer player;
+	private final AudioVolumeFader volumeFader;
 	@NonNull
 	private Source source = Source.NULL;
 	private long pendingPosition = -1;
@@ -115,6 +119,13 @@ public class VlcEngine extends MediaEngineBase
 		this.vlc = vlc;
 		player = new MediaPlayer(vlc);
 		player.setEventListener(this);
+		Handler handler = new Handler(Looper.getMainLooper());
+		volumeFader = new AudioVolumeFader(handler, vol -> {
+			try {
+				player.setVolume(Math.round(vol * 100f));
+			} catch (Throwable ignored) {
+			}
+		});
 	}
 
 	@Override
@@ -613,6 +624,7 @@ public class VlcEngine extends MediaEngineBase
 
 	@Override
 	public void close() {
+		volumeFader.cancel();
 		stop();
 		super.close();
 		player.release();
@@ -771,13 +783,23 @@ public class VlcEngine extends MediaEngineBase
 	}
 
 	@Override
+	public void duck(Context ctx) {
+		volumeFader.duck();
+	}
+
+	@Override
+	public void unduck(Context ctx) {
+		volumeFader.unduck();
+	}
+
+	@Override
 	public void mute(Context ctx) {
-		player.setVolume(0);
+		volumeFader.mute();
 	}
 
 	@Override
 	public void unmute(Context ctx) {
-		player.setVolume(100);
+		volumeFader.unmute();
 	}
 
 	private static class Source implements Closeable {

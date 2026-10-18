@@ -214,14 +214,6 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		super.onDestroy();
 	}
 
-	/** Stops the in-process playback service at an explicit automotive session boundary. */
-	public static boolean shutdownActiveInstance() {
-		FermataMediaService service = activeInstance;
-		if (service == null) return false;
-		service.shutdownImmediately();
-		return true;
-	}
-
 	public static boolean isPlaybackActive() {
 		FermataMediaService service = activeInstance;
 		return (service != null) && (service.callback != null) && service.callback.isPlaying();

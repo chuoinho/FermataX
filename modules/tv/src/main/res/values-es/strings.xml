@@ -10,6 +10,7 @@
 	<string name="add_tv_source">Agregar fuente de IPTV</string>
 	<string name="add_xtream_source">Agregar fuente de Xtream Codes</string>
 	<string name="tv_source_name">Nombre de la fuente</string>
+	<string name="tv_source_unavailable">No disponible</string>
 	<string name="xtream_live_tv">Televisión en vivo</string>
 	<string name="xtream_movies">Cine</string>
 	<string name="xtream_series">Serie</string>
@@ -49,7 +50,7 @@
 	<string name="xtream_error_api_not_found">No se encontró la API de Xtream en este servidor (HTTP 404). Verifique la URL del portal, el host y el puerto.</string>
 	<string name="xtream_error_server">Error del servidor Xtream (HTTP %1$d%2$s). Vuelve a intentarlo más tarde.</string>
 	<string name="xtream_error_http">La solicitud de Xtream falló (HTTP %1$d%2$s).</string>
-	<string name="err_failed_to_load_tv_sources">No se pudieron cargar las siguientes fuentes:\\n%1$s</string>
+	<string name="err_failed_to_load_tv_sources">No se pudieron cargar las siguientes fuentes:\n%1$s\n\nSe han marcado como no disponibles y se pueden editar o eliminar de la lista.</string>
 	<string name="add_stalker_source">Añadir portal Stalker</string>
 	<string name="stalker_portal_url">URL del portal</string>
 	<string name="stalker_mac_address">Dirección MAC</string>

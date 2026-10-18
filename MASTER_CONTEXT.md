@@ -303,6 +303,22 @@ Glassmorphism (Glass Theme) is an opt-in translucent visual design system implem
       - Audiobooks (`dhu_audiobooks_night.png`, `dhu_sources_night.png`): Rail Audiobooks active in teal; cards (`Continue listening`, `Library`, `Downloads`, `Discover free books`, `Sources`) with white typography.
       - Settings (`dhu_settings_night.png`): Dark frosted cards, white typography, teal delay slider and switches.
       - Theme Mode Popup (`dhu_theme_dialog_night.png`): Floating dark frosted glass popup with `Night` active in teal pill.
+- **Dynamic Day/Night Synchronizer (`GlassThemeManager`)**:
+  - Manages live appearance transitions for all active fragments (`DashboardFragment`, `MediaLibFragment`, `SettingsFragment`, `GlassAddonsCatalogFragment`, `GenericFragment` / source dialogs) without recreating `Activity`.
+  - Propagates surface drawables, background gradients, and text color tokens. Recursively updates child `RecyclerView`s via `GlassSettingsDecorator.apply(rv, isNight)` and re-styles empty/error state panels (`media_items_state_panel`).
+- **TopBar & Navigation Policy (`TopBarPolicy`, `PhoneRootPolicy`)**:
+  - Centralized policy classes govern topbar title, subtitle, and action items (`resolveActions`, `resolveBackTarget`).
+  - Car Finder integrates directly with `TopBarPolicy` for Day/Night topbars with explicit title, back routing, and settings gear/radar actions.
+- **Preference View Adapter Architecture (`PreferenceViewAdapter`)**:
+  - Custom preference item view types (`VIEW_TYPE_SWITCH`, `VIEW_TYPE_DAY_NIGHT_SWITCH`, `VIEW_TYPE_SLIDER`) decouple view recycling from string-based layout lookups.
+  - Prevents view-type misbinding, item duplication, or scroll instability across dynamic rebinds.
+- **Audio Lifecycle & Volume Ducking (`AudioVolumeFader`)**:
+  - Orchestrates gradual volume ramp-up and ramp-down when transitioning between Web media engines (TikTok, YouTube) and core media services (ExoPlayer, VLC).
+  - Eliminates audio thread race conditions, audio stutter, and reverse-camera surface rebind collisions.
+- **Dashboard Speedometer & Trip Computer (`GlassSpeedoTripController`, `GlassSpeedoTripView`)**:
+  - Emits unmeasured/no-fix state (`-1f`) until a valid GPS fix arrives; displays `--` to avoid confusing uninitialized state with stationary `0 KM/H`.
+  - Provides a prominent reset action button in the card header with a glass confirmation dialog, while preserving long-press on trip stats as a quick shortcut.
+  - Full navigation turn arrow vector mapping for `SLIGHT_LEFT/RIGHT` (45°), `TURN_LEFT/RIGHT` (90°), `SHARP_LEFT/RIGHT` (acute), and `DESTINATION` (pin).
   - **Git Commits on `feat/aa-glass-theme`**:
     - `96830bd7`: `feat(glass): add AppTheme.Glass XML styles and systematically synchronize NavBar, Dialogs, Lists, and Phone shell`
     - `807f4bf8`: `feat(glass): refine recursive styling in Settings, Toolbar, ControlPanel, EqualizerCurve, and MediaItem for Day/Night`

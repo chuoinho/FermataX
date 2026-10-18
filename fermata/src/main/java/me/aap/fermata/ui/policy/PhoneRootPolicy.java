@@ -12,7 +12,7 @@ public final class PhoneRootPolicy {
 	}
 
 	public static int initialDestination(RuntimeHostMode mode) {
-		return R.id.dashboard_fragment;
+		return usesPhoneRoots(mode) ? R.id.glass_addons_catalog_fragment : R.id.dashboard_fragment;
 	}
 
 	public static boolean isPrimaryRoot(RuntimeHostMode mode, int fragmentId) {
@@ -27,13 +27,13 @@ public final class PhoneRootPolicy {
 	}
 
 	public static boolean isPhoneRoot(int fragmentId) {
-		return (fragmentId == R.id.dashboard_fragment) ||
+		return (fragmentId == R.id.glass_addons_catalog_fragment) ||
 				(fragmentId == R.id.car_finder_fragment) ||
 				(fragmentId == R.id.settings_fragment);
 	}
 
 	public static int normalizePhoneRoot(int fragmentId) {
-		return isPhoneRoot(fragmentId) ? fragmentId : R.id.dashboard_fragment;
+		return isPhoneRoot(fragmentId) ? fragmentId : R.id.glass_addons_catalog_fragment;
 	}
 
 	public static int resolvePhoneRoot(int currentRootId, int routeId) {

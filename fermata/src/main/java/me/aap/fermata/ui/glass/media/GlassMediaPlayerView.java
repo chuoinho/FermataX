@@ -17,6 +17,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.service.ControlOnlyPresentation;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
@@ -26,8 +28,8 @@ import me.aap.fermata.ui.glass.theme.GlassThemeColors;
  */
 public class GlassMediaPlayerView extends FrameLayout {
 
-    private final boolean isNight;
-    private final GlassThemeColors colors;
+    private boolean isNight;
+    private GlassThemeColors colors;
 
     private TextView tvHeader;
     private ImageView ivAlbumArt;
@@ -38,6 +40,7 @@ public class GlassMediaPlayerView extends FrameLayout {
     private TextView tvTotalDuration;
     private ProgressBar progressBar;
 
+    private LinearLayout transportBar;
     private TextView btnPrev;
     private TextView btnPlayPause;
     private TextView btnNext;
@@ -47,11 +50,23 @@ public class GlassMediaPlayerView extends FrameLayout {
         void onBrowseMediaClick();
     }
 
+    public interface OnMediaCardClickListener {
+        void onBrowseMedia();
+        void onResumeRecent();
+        void onOpenPlayingItem(MediaLib.PlayableItem item);
+        void onOpenControlOnly(ControlOnlyPresentation controlOnly);
+    }
+
     private OnBrowseMediaClickListener browseMediaClickListener;
+    private OnMediaCardClickListener cardClickListener;
     private GlassMediaPlayerController controller;
 
     public void setOnBrowseMediaClickListener(OnBrowseMediaClickListener listener) {
         this.browseMediaClickListener = listener;
+    }
+
+    public void setOnMediaCardClickListener(OnMediaCardClickListener listener) {
+        this.cardClickListener = listener;
     }
 
     public GlassMediaPlayerView(@NonNull Context context) {
@@ -71,8 +86,9 @@ public class GlassMediaPlayerView extends FrameLayout {
 
     private void initView(Context context) {
         setBackground(GlassDrawables.createGlassCardDrawable(context, GlassDimensions.CARD_RADIUS_DP, isNight));
-        int padding = GlassDimensions.dpToPx(context, 16);
-        setPadding(padding, padding, padding, padding);
+        int padH = GlassDimensions.dpToPx(context, 12);
+        int padV = GlassDimensions.dpToPx(context, 10);
+        setPadding(padH, padV, padH, padV);
 
         LinearLayout contentLayout = new LinearLayout(context);
         contentLayout.setOrientation(LinearLayout.VERTICAL);
@@ -81,7 +97,7 @@ public class GlassMediaPlayerView extends FrameLayout {
 
         // Header
         tvHeader = new TextView(context);
-        tvHeader.setText("NOW PLAYING");
+        tvHeader.setText(safeGetString(R.string.glass_media_now_playing, "NOW PLAYING"));
         tvHeader.setTextSize(11f);
         tvHeader.setTypeface(Typeface.DEFAULT_BOLD);
         tvHeader.setTextColor(colors.getTextSecondary());
@@ -98,11 +114,12 @@ public class GlassMediaPlayerView extends FrameLayout {
 
         // Album Art
         ivAlbumArt = new ImageView(context);
-        int artSize = GlassDimensions.dpToPx(context, 72);
+        int artSize = GlassDimensions.dpToPx(context, 52);
         LinearLayout.LayoutParams artLp = new LinearLayout.LayoutParams(artSize, artSize);
-        artLp.rightMargin = GlassDimensions.dpToPx(context, 14);
+        artLp.rightMargin = GlassDimensions.dpToPx(context, 10);
         ivAlbumArt.setLayoutParams(artLp);
-        ivAlbumArt.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        ivAlbumArt.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        ivAlbumArt.setAdjustViewBounds(false);
         ivAlbumArt.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.ICON_RADIUS_DP, isNight));
         centerLayout.addView(ivAlbumArt);
 
@@ -114,7 +131,7 @@ public class GlassMediaPlayerView extends FrameLayout {
         textLayout.setLayoutParams(textLp);
 
         tvTrackTitle = new TextView(context);
-        tvTrackTitle.setText("No Media Playing");
+        tvTrackTitle.setText(safeGetString(R.string.glass_media_no_playing, "No Media Playing"));
         tvTrackTitle.setTextSize(16f);
         tvTrackTitle.setTypeface(Typeface.DEFAULT_BOLD);
         tvTrackTitle.setTextColor(colors.getTextPrimary());
@@ -130,13 +147,7 @@ public class GlassMediaPlayerView extends FrameLayout {
         textLayout.addView(tvArtist);
 
         centerLayout.addView(textLayout);
-        centerLayout.setOnClickListener(v -> {
-            if (controller != null && controller.getPresentationState() == GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT) {
-                if (browseMediaClickListener != null) {
-                    browseMediaClickListener.onBrowseMediaClick();
-                }
-            }
-        });
+        centerLayout.setOnClickListener(v -> handleCardClick());
         contentLayout.addView(centerLayout);
 
         // Timeline Progress Bar
@@ -144,7 +155,7 @@ public class GlassMediaPlayerView extends FrameLayout {
         timelineLayout.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams tlLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        tlLp.bottomMargin = GlassDimensions.dpToPx(context, 8);
+        tlLp.bottomMargin = GlassDimensions.dpToPx(context, 4);
         timelineLayout.setLayoutParams(tlLp);
 
         progressBar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
@@ -194,10 +205,10 @@ public class GlassMediaPlayerView extends FrameLayout {
         contentLayout.addView(timelineLayout);
 
         // Bottom Transport Bar
-        LinearLayout transportBar = new LinearLayout(context);
+        transportBar = new LinearLayout(context);
         transportBar.setOrientation(LinearLayout.HORIZONTAL);
-        transportBar.setGravity(Gravity.CENTER);
-        int transPadding = GlassDimensions.dpToPx(context, 4);
+        transportBar.setGravity(Gravity.CENTER_VERTICAL);
+        int transPadding = GlassDimensions.dpToPx(context, 3);
         transportBar.setPadding(transPadding, transPadding, transPadding, transPadding);
         transportBar.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
         LinearLayout.LayoutParams transLp = new LinearLayout.LayoutParams(
@@ -216,20 +227,26 @@ public class GlassMediaPlayerView extends FrameLayout {
         });
         transportBar.addView(btnPrev);
 
-        // Big Play/Pause Center Button
-        int playTargetDp = me.aap.fermata.BuildConfig.AUTO ? 60 : 52;
+        // Center Play/Pause Button
+        int playTargetDp = me.aap.fermata.BuildConfig.AUTO ? 46 : 42;
         int playBtnSize = GlassDimensions.dpToPx(context, playTargetDp);
         int playColor = isNight ? Color.WHITE : colors.getTextPrimary();
-        btnPlayPause = createTransportButton(context, "▶", playColor);
-        btnPlayPause.setLayoutParams(new LinearLayout.LayoutParams(playBtnSize, playBtnSize));
+        btnPlayPause = new TextView(context);
+        btnPlayPause.setText("▶");
+        btnPlayPause.setTextSize(18f);
+        btnPlayPause.setTextColor(playColor);
+        btnPlayPause.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams playLp = new LinearLayout.LayoutParams(playBtnSize, playBtnSize);
+        int playMarginH = GlassDimensions.dpToPx(context, 4);
+        playLp.leftMargin = playMarginH;
+        playLp.rightMargin = playMarginH;
+        btnPlayPause.setLayoutParams(playLp);
         btnPlayPause.setBackground(GlassDrawables.createGlassPillDrawable(context, playTargetDp / 2f, isNight));
         btnPlayPause.setOnClickListener(v -> {
             if (controller != null) {
                 if (controller.getPresentationState() == GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT) {
-                    if (browseMediaClickListener != null) {
-                        browseMediaClickListener.onBrowseMediaClick();
-                        return;
-                    }
+                    handleCardClick();
+                    return;
                 }
                 controller.togglePlayPause();
             }
@@ -246,17 +263,121 @@ public class GlassMediaPlayerView extends FrameLayout {
         addView(contentLayout);
     }
 
+    public void refreshAppearance() {
+        Context context = getContext();
+        this.isNight = GlassThemeColors.isNight(context);
+        this.colors = GlassThemeColors.get(context, isNight);
+
+        setBackground(GlassDrawables.createGlassCardDrawable(context, GlassDimensions.CARD_RADIUS_DP, isNight));
+
+        if (tvHeader != null) {
+            tvHeader.setTextColor(colors.getTextSecondary());
+        }
+        if (ivAlbumArt != null) {
+            ivAlbumArt.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.ICON_RADIUS_DP, isNight));
+        }
+        if (tvTrackTitle != null) {
+            tvTrackTitle.setTextColor(colors.getTextPrimary());
+        }
+        if (tvArtist != null) {
+            tvArtist.setTextColor(colors.getTextSecondary());
+        }
+        if (tvCurrentTime != null) {
+            tvCurrentTime.setTextColor(colors.getTextSecondary());
+        }
+        if (tvTotalDuration != null) {
+            tvTotalDuration.setTextColor(colors.getTextSecondary());
+        }
+        if (transportBar != null) {
+            transportBar.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
+        }
+        if (btnFavorite != null) {
+            btnFavorite.setTextColor(controller != null && controller.isFavorite() ? Color.RED : colors.getTextSecondary());
+        }
+        if (btnPrev != null) {
+            btnPrev.setTextColor(colors.getTextPrimary());
+        }
+        if (btnNext != null) {
+            btnNext.setTextColor(colors.getTextPrimary());
+        }
+        if (btnPlayPause != null) {
+            int playTargetDp = me.aap.fermata.BuildConfig.AUTO ? 46 : 42;
+            int playColor = isNight ? Color.WHITE : colors.getTextPrimary();
+            btnPlayPause.setTextColor(playColor);
+            btnPlayPause.setBackground(GlassDrawables.createGlassPillDrawable(context, playTargetDp / 2f, isNight));
+        }
+        if (ivAlbumArt != null) {
+            ivAlbumArt.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.ICON_RADIUS_DP, isNight));
+        }
+        if (controller != null) {
+            controller.refresh();
+        }
+        invalidate();
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w > 0 && h > 0) {
+            float density = getResources().getDisplayMetrics().density;
+            float hDp = h / Math.max(0.1f, density);
+            float wDp = w / Math.max(0.1f, density);
+            if (hDp < 220f || wDp < 160f) {
+                tvTrackTitle.setTextSize(14f);
+                tvArtist.setTextSize(11f);
+            } else if (hDp < 260f || wDp < 190f) {
+                tvTrackTitle.setTextSize(15f);
+                tvArtist.setTextSize(12f);
+            } else {
+                tvTrackTitle.setTextSize(16f);
+                tvArtist.setTextSize(13f);
+            }
+        }
+    }
+
     private TextView createTransportButton(Context context, String symbol, int color) {
         TextView tv = new TextView(context);
         tv.setText(symbol);
-        tv.setTextSize(18f);
+        tv.setTextSize(17f);
         tv.setTextColor(color);
         tv.setGravity(Gravity.CENTER);
-        int targetDp = me.aap.fermata.BuildConfig.AUTO ? 76 : 48;
-        int size = GlassDimensions.dpToPx(context, targetDp);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
+        int targetHeightDp = me.aap.fermata.BuildConfig.AUTO ? 44 : 40;
+        int heightPx = GlassDimensions.dpToPx(context, targetHeightDp);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, heightPx, 1.0f);
         tv.setLayoutParams(lp);
         return tv;
+    }
+
+    private void handleCardClick() {
+        if (controller == null) return;
+        GlassMediaPlayerController.PresentationState state = controller.getPresentationState();
+        if (state == GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT) {
+            if (cardClickListener != null) {
+                cardClickListener.onBrowseMedia();
+            } else if (browseMediaClickListener != null) {
+                browseMediaClickListener.onBrowseMediaClick();
+            }
+            return;
+        }
+        if (state == GlassMediaPlayerController.PresentationState.IDLE_WITH_RECENT) {
+            if (cardClickListener != null) {
+                cardClickListener.onResumeRecent();
+            }
+            return;
+        }
+        ControlOnlyPresentation controlOnly = controller.getControlOnly();
+        if (controlOnly != null) {
+            if (cardClickListener != null) {
+                cardClickListener.onOpenControlOnly(controlOnly);
+            }
+            return;
+        }
+        MediaLib.PlayableItem item = controller.getCurrentItem();
+        if (item != null) {
+            if (cardClickListener != null) {
+                cardClickListener.onOpenPlayingItem(item);
+            }
+        }
     }
 
     public void setController(@NonNull GlassMediaPlayerController controller) {
@@ -269,96 +390,130 @@ public class GlassMediaPlayerView extends FrameLayout {
         if (controller == null) return;
 
         GlassMediaPlayerController.PresentationState state = controller.getPresentationState();
-        switch (state) {
-            case IDLE_NO_RECENT:
-                tvHeader.setText("MEDIA LIBRARY");
-                tvTrackTitle.setText("Browse Media Library");
-                tvArtist.setText("Tap to choose music or video");
-                ivAlbumArt.setImageResource(R.drawable.audiotrack);
-                ivAlbumArt.setColorFilter(colors.getActionText());
-                timelineLayout.setVisibility(View.GONE);
-                btnPlayPause.setText("📁");
-                btnPrev.setVisibility(View.INVISIBLE);
-                btnNext.setVisibility(View.INVISIBLE);
-                btnFavorite.setVisibility(View.GONE);
-                break;
-            case IDLE_WITH_RECENT:
-                tvHeader.setText("RESUME RECENT");
-                tvTrackTitle.setText(controller.getDisplayedTitle());
-                tvArtist.setText(controller.getDisplayedArtist());
-                ivAlbumArt.setImageResource(R.drawable.audiotrack);
-                ivAlbumArt.setColorFilter(colors.getActionText());
-                timelineLayout.setVisibility(View.GONE);
-                btnPlayPause.setText("▶");
-                btnPrev.setVisibility(View.INVISIBLE);
-                btnNext.setVisibility(View.INVISIBLE);
-                btnFavorite.setVisibility(View.GONE);
-                break;
-            case LIVE:
-                tvHeader.setText("LIVE STREAM");
-                tvTrackTitle.setText(controller.getDisplayedTitle());
-                tvArtist.setText(controller.getDisplayedArtist());
-                timelineLayout.setVisibility(View.VISIBLE);
-                progressBar.setVisibility(View.INVISIBLE);
-                tvCurrentTime.setText("LIVE");
-                tvCurrentTime.setTextColor(Color.RED);
-                tvTotalDuration.setText("");
-                btnPrev.setVisibility(View.VISIBLE);
-                btnNext.setVisibility(View.VISIBLE);
-                btnFavorite.setVisibility(View.VISIBLE);
-                btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
-                break;
-            case BUFFERING:
-                tvHeader.setText("BUFFERING...");
-                tvTrackTitle.setText(controller.getDisplayedTitle());
-                tvArtist.setText(controller.getDisplayedArtist());
-                timelineLayout.setVisibility(View.VISIBLE);
-                progressBar.setVisibility(View.VISIBLE);
-                tvCurrentTime.setTextColor(colors.getTextSecondary());
-                btnPrev.setVisibility(View.VISIBLE);
-                btnNext.setVisibility(View.VISIBLE);
-                btnFavorite.setVisibility(View.VISIBLE);
-                btnPlayPause.setText("⏸");
-                break;
-            case ERROR:
-                tvHeader.setText("PLAYBACK ERROR");
-                tvTrackTitle.setText(controller.getDisplayedTitle());
-                tvArtist.setText("Playback failed. Tap to retry.");
-                timelineLayout.setVisibility(View.GONE);
-                btnPrev.setVisibility(View.INVISIBLE);
-                btnNext.setVisibility(View.INVISIBLE);
-                btnFavorite.setVisibility(View.GONE);
-                btnPlayPause.setText("▶");
-                break;
-            case PLAYING:
-            case PAUSED:
-            default:
-                tvHeader.setText("NOW PLAYING");
-                tvTrackTitle.setText(controller.getDisplayedTitle());
-                tvArtist.setText(controller.getDisplayedArtist());
-                timelineLayout.setVisibility(View.VISIBLE);
-                progressBar.setVisibility(View.VISIBLE);
-                btnPrev.setVisibility(View.VISIBLE);
-                btnNext.setVisibility(View.VISIBLE);
-                btnFavorite.setVisibility(View.VISIBLE);
-                btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
-                tvCurrentTime.setTextColor(colors.getTextSecondary());
-                break;
+        ControlOnlyPresentation controlOnly = controller.getControlOnly();
+
+        if (controlOnly != null) {
+            tvHeader.setText(safeGetString(R.string.glass_media_now_playing, "NOW PLAYING"));
+            tvTrackTitle.setText(controller.getDisplayedTitle());
+            tvArtist.setText(controller.getDisplayedArtist());
+            timelineLayout.setVisibility(View.GONE);
+            btnPrev.setVisibility(controller.canSkipPrevious() ? View.VISIBLE : View.INVISIBLE);
+            btnNext.setVisibility(controller.canSkipNext() ? View.VISIBLE : View.INVISIBLE);
+            btnFavorite.setVisibility(View.GONE);
+            btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
+        } else {
+            switch (state) {
+                case IDLE_NO_RECENT:
+                    tvHeader.setText(safeGetString(R.string.glass_media_library, "MEDIA LIBRARY"));
+                    tvTrackTitle.setText(safeGetString(R.string.glass_media_browse_library, "Browse Media Library"));
+                    tvArtist.setText(safeGetString(R.string.glass_media_choose_hint, "Tap to choose music or video"));
+                    ivAlbumArt.setImageResource(R.drawable.audiotrack);
+                    ivAlbumArt.setColorFilter(colors.getActionText());
+                    timelineLayout.setVisibility(View.GONE);
+                    btnPlayPause.setText("📁");
+                    btnPrev.setVisibility(View.INVISIBLE);
+                    btnNext.setVisibility(View.INVISIBLE);
+                    btnFavorite.setVisibility(View.GONE);
+                    break;
+                case IDLE_WITH_RECENT:
+                    tvHeader.setText(safeGetString(R.string.glass_media_resume_recent, "RESUME RECENT"));
+                    tvTrackTitle.setText(controller.getDisplayedTitle());
+                    tvArtist.setText(controller.getDisplayedArtist());
+                    ivAlbumArt.setImageResource(R.drawable.audiotrack);
+                    ivAlbumArt.setColorFilter(colors.getActionText());
+                    timelineLayout.setVisibility(View.GONE);
+                    btnPlayPause.setText("▶");
+                    btnPrev.setVisibility(View.INVISIBLE);
+                    btnNext.setVisibility(View.INVISIBLE);
+                    btnFavorite.setVisibility(View.GONE);
+                    break;
+                case LIVE:
+                    tvHeader.setText(safeGetString(R.string.glass_media_live_stream, "LIVE STREAM"));
+                    tvTrackTitle.setText(controller.getDisplayedTitle());
+                    tvArtist.setText(controller.getDisplayedArtist());
+                    timelineLayout.setVisibility(View.VISIBLE);
+                    progressBar.setVisibility(View.INVISIBLE);
+                    tvCurrentTime.setText(safeGetString(R.string.glass_media_live_badge, "LIVE"));
+                    tvCurrentTime.setTextColor(Color.RED);
+                    tvTotalDuration.setText("");
+                    btnPrev.setVisibility(controller.canSkipPrevious() ? View.VISIBLE : View.INVISIBLE);
+                    btnNext.setVisibility(controller.canSkipNext() ? View.VISIBLE : View.INVISIBLE);
+                    btnFavorite.setVisibility(View.VISIBLE);
+                    btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
+                    break;
+                case BUFFERING:
+                    tvHeader.setText(safeGetString(R.string.glass_media_buffering, "BUFFERING..."));
+                    tvTrackTitle.setText(controller.getDisplayedTitle());
+                    tvArtist.setText(controller.getDisplayedArtist());
+                    if (controller.isSeekable()) {
+                        timelineLayout.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.VISIBLE);
+                    } else {
+                        timelineLayout.setVisibility(View.GONE);
+                    }
+                    tvCurrentTime.setTextColor(colors.getTextSecondary());
+                    btnPrev.setVisibility(controller.canSkipPrevious() ? View.VISIBLE : View.INVISIBLE);
+                    btnNext.setVisibility(controller.canSkipNext() ? View.VISIBLE : View.INVISIBLE);
+                    btnFavorite.setVisibility(View.VISIBLE);
+                    btnPlayPause.setText("⏸");
+                    break;
+                case ERROR:
+                    tvHeader.setText(safeGetString(R.string.glass_media_error, "PLAYBACK ERROR"));
+                    tvTrackTitle.setText(controller.getDisplayedTitle());
+                    tvArtist.setText(safeGetString(R.string.glass_media_retry_hint, "Playback failed. Tap to retry."));
+                    timelineLayout.setVisibility(View.GONE);
+                    btnPrev.setVisibility(View.INVISIBLE);
+                    btnNext.setVisibility(View.INVISIBLE);
+                    btnFavorite.setVisibility(View.GONE);
+                    btnPlayPause.setText("▶");
+                    break;
+                case PLAYING:
+                case PAUSED:
+                default:
+                    tvHeader.setText(safeGetString(R.string.glass_media_now_playing, "NOW PLAYING"));
+                    tvTrackTitle.setText(controller.getDisplayedTitle());
+                    tvArtist.setText(controller.getDisplayedArtist());
+                    if (controller.isSeekable()) {
+                        timelineLayout.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.VISIBLE);
+                    } else {
+                        timelineLayout.setVisibility(View.GONE);
+                    }
+                    btnPrev.setVisibility(controller.canSkipPrevious() ? View.VISIBLE : View.INVISIBLE);
+                    btnNext.setVisibility(controller.canSkipNext() ? View.VISIBLE : View.INVISIBLE);
+                    btnFavorite.setVisibility(View.VISIBLE);
+                    btnPlayPause.setText(controller.isPlaying() ? "⏸" : "▶");
+                    tvCurrentTime.setTextColor(colors.getTextSecondary());
+                    break;
+            }
         }
 
         Bitmap art = controller.getAlbumArt();
         if (art != null) {
             ivAlbumArt.clearColorFilter();
+            ivAlbumArt.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            int pad = GlassDimensions.dpToPx(getContext(), 4);
+            ivAlbumArt.setPadding(pad, pad, pad, pad);
             ivAlbumArt.setImageBitmap(art);
         } else if (state != GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT
                 && state != GlassMediaPlayerController.PresentationState.IDLE_WITH_RECENT) {
             ivAlbumArt.setColorFilter(colors.getActionText());
+            ivAlbumArt.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            int pad = GlassDimensions.dpToPx(getContext(), 10);
+            ivAlbumArt.setPadding(pad, pad, pad, pad);
+            ivAlbumArt.setImageResource(R.drawable.audiotrack);
+        } else {
+            ivAlbumArt.setColorFilter(colors.getActionText());
+            ivAlbumArt.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            int pad = GlassDimensions.dpToPx(getContext(), 10);
+            ivAlbumArt.setPadding(pad, pad, pad, pad);
             ivAlbumArt.setImageResource(R.drawable.audiotrack);
         }
 
         btnFavorite.setTextColor(controller.isFavorite() ? Color.RED : colors.getTextSecondary());
 
-        if (state != GlassMediaPlayerController.PresentationState.LIVE
+        if (controlOnly == null && controller.isSeekable()
+                && state != GlassMediaPlayerController.PresentationState.LIVE
                 && state != GlassMediaPlayerController.PresentationState.IDLE_NO_RECENT
                 && state != GlassMediaPlayerController.PresentationState.IDLE_WITH_RECENT
                 && state != GlassMediaPlayerController.PresentationState.ERROR) {
@@ -374,6 +529,14 @@ public class GlassMediaPlayerView extends FrameLayout {
             } else {
                 progressBar.setProgress(0);
             }
+        }
+    }
+
+    private String safeGetString(int resId, String fallback) {
+        try {
+            return getContext().getString(resId);
+        } catch (Throwable e) {
+            return fallback;
         }
     }
 }

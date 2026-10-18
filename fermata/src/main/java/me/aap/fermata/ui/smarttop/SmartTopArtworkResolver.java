@@ -17,12 +17,12 @@ import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 
 /** Enforces direct-item artwork provenance and a transport-safe URI allowlist. */
-final class SmartTopArtworkResolver {
+public final class SmartTopArtworkResolver {
 	private SmartTopArtworkResolver() {
 	}
 
 	@Nullable
-	static Uri directArtworkUri(@Nullable MediaMetadataCompat metadata) {
+	public static Uri directArtworkUri(@Nullable MediaMetadataCompat metadata) {
 		if (metadata == null) return null;
 		for (String key : new String[]{MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
 				MediaMetadataCompat.METADATA_KEY_ART_URI}) {
@@ -35,7 +35,7 @@ final class SmartTopArtworkResolver {
 	}
 
 	@Nullable
-	static Bitmap directArtworkBitmap(@Nullable MediaMetadataCompat metadata) {
+	public static Bitmap directArtworkBitmap(@Nullable MediaMetadataCompat metadata) {
 		if (metadata == null) return null;
 		for (String key : new String[]{MediaMetadataCompat.METADATA_KEY_ALBUM_ART,
 				MediaMetadataCompat.METADATA_KEY_ART}) {

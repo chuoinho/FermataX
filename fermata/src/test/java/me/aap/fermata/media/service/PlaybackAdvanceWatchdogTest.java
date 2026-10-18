@@ -108,6 +108,48 @@ public class PlaybackAdvanceWatchdogTest {
 		assertEquals(1, advances.get());
 	}
 
+	@Test
+	public void negativeOrZeroDurationDoesNotSchedule() {
+		FakeScheduler scheduler = new FakeScheduler();
+		AtomicInteger advances = new AtomicInteger();
+		PlaybackAdvanceWatchdog watchdog = watchdog(scheduler,
+				queue(completedDuration(0L), completedDuration(-1000L)), advances::incrementAndGet);
+
+		watchdog.arm(item(), 0L, 1F);
+		assertEquals(0, scheduler.tasks.size());
+
+		watchdog.arm(item(), 0L, 1F);
+		assertEquals(0, scheduler.tasks.size());
+		assertEquals(0, advances.get());
+	}
+
+	@Test
+	public void nonPositiveSpeedDoesNotSchedule() {
+		FakeScheduler scheduler = new FakeScheduler();
+		AtomicInteger advances = new AtomicInteger();
+		PlaybackAdvanceWatchdog watchdog = watchdog(scheduler,
+				queue(completedDuration(10_000L), completedDuration(10_000L)), advances::incrementAndGet);
+
+		watchdog.arm(item(), 0L, 0F);
+		assertEquals(0, scheduler.tasks.size());
+
+		watchdog.arm(item(), 0L, -1F);
+		assertEquals(0, scheduler.tasks.size());
+		assertEquals(0, advances.get());
+	}
+
+	@Test
+	public void durationLessThanPositionDoesNotSchedule() {
+		FakeScheduler scheduler = new FakeScheduler();
+		AtomicInteger advances = new AtomicInteger();
+		PlaybackAdvanceWatchdog watchdog = watchdog(scheduler,
+				queue(completedDuration(5_000L)), advances::incrementAndGet);
+
+		watchdog.arm(item(), 6_000L, 1F);
+		assertEquals(0, scheduler.tasks.size());
+		assertEquals(0, advances.get());
+	}
+
 	private static PlaybackAdvanceWatchdog watchdog(FakeScheduler scheduler,
 			Queue<FutureSupplier<Long>> durations, Runnable advance) {
 		return new PlaybackAdvanceWatchdog(scheduler,

@@ -29,13 +29,15 @@ public class GlassNavigationRailController {
     private GlassNavigationRailView glassRail;
 
     public void init(@NonNull MainActivityDelegate activity) {
-        if (!activity.isGlassTheme()) return;
+        if (!activity.isGlassTheme() || !activity.isCarActivity()) return;
         NavBarView navBar = activity.getNavBar();
         if (navBar != null) navBar.setVisibility(GONE);
         mount(activity);
+        refreshAppearance(activity);
     }
 
     public void mount(@NonNull MainActivityDelegate activity) {
+        if (!activity.isGlassTheme() || !activity.isCarActivity()) return;
         if (glassRail != null) return;
         FermataActivity a = activity.getAppActivity();
         ViewGroup root = a.findViewById(R.id.main_activity);
@@ -64,27 +66,6 @@ public class GlassNavigationRailController {
     }
 
     public void refreshAppearance(@NonNull MainActivityDelegate activity) {
-        if (!activity.isGlassTheme()) return;
-        activity.setTheme(activity.getContext(), activity.isCarActivity());
-        if (activity.getToolBar() instanceof FermataToolBarView ftb) ftb.applyGlassThemeIfNeeded();
-        if (glassRail != null) glassRail.onAppearanceChanged();
-
-        ActivityFragment frag = activity.getActiveFragment();
-        if (frag instanceof DashboardFragment dashboard) {
-            dashboard.reload();
-        } else if (frag instanceof MediaLibFragment mediaLib) {
-            mediaLib.refreshAppearance();
-        } else if (frag instanceof SettingsFragment settings) {
-            settings.refreshAppearance();
-        } else if (frag instanceof GlassAddonsCatalogFragment catalog) {
-            catalog.refreshAppearance();
-        }
-
-        ControlPanelView cp = activity.getControlPanel();
-        if (cp != null) {
-            cp.applyGlassStyling();
-        }
-
-        activity.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+        me.aap.fermata.ui.glass.theme.GlassThemeManager.applyAppearance(activity);
     }
 }

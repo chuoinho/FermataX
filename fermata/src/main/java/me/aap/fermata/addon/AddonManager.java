@@ -80,7 +80,8 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	public static AddonManager get() {
-		return FermataApplication.get().getAddonManager();
+		FermataApplication app = FermataApplication.get();
+		return (app != null) ? app.getAddonManager() : null;
 	}
 
 	public boolean isFreshInstall() {

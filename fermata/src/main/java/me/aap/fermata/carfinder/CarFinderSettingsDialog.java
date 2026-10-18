@@ -62,9 +62,11 @@ public final class CarFinderSettingsDialog {
 		root.setOrientation(LinearLayout.VERTICAL);
 
 		boolean isGlass = isGlassTheme(context);
+		boolean isNight = isGlass && me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(context);
+		me.aap.fermata.ui.glass.theme.GlassThemeColors gc = isGlass ? me.aap.fermata.ui.glass.theme.GlassThemeColors.get(context, isNight) : null;
+
 		if (isGlass) {
-			boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(context);
-			root.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(context, 20f, isNight));
+			root.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassDialogDrawable(context, 20f, isNight));
 		} else {
 			GradientDrawable rootBg = new GradientDrawable();
 			rootBg.setColor(0xFF131926); // Fermata dark surface
@@ -78,17 +80,17 @@ public final class CarFinderSettingsDialog {
 		TextView title = new TextView(context);
 		title.setText(R.string.car_finder_settings_title);
 		title.setTextSize(20);
-		title.setTextColor(0xFFFFFFFF);
+		title.setTextColor(isGlass ? gc.getTextPrimary() : 0xFFFFFFFF);
 		title.setTypeface(null, Typeface.BOLD);
 		root.addView(title);
 
-		View divider1 = createSettingsDividerView(context, pad16);
+		View divider1 = createSettingsDividerView(context, pad16, isGlass, gc);
 		root.addView(divider1);
 
 		// Switch 1: Auto-save on disconnect
 		SwitchCompat switchAutoSave = new SwitchCompat(context);
 		switchAutoSave.setText(R.string.car_finder_pref_auto_save);
-		switchAutoSave.setTextColor(0xFFE2E8F0);
+		switchAutoSave.setTextColor(isGlass ? gc.getTextSecondary() : 0xFFE2E8F0);
 		switchAutoSave.setTextSize(15);
 		switchAutoSave.setChecked(CarFinderPrefs.isAutoSaveEnabled(context));
 		switchAutoSave.setOnCheckedChangeListener((btn, checked) -> {
@@ -102,7 +104,7 @@ public final class CarFinderSettingsDialog {
 		// Switch 2: Notification on disconnect
 		SwitchCompat switchNotif = new SwitchCompat(context);
 		switchNotif.setText(R.string.car_finder_pref_notif);
-		switchNotif.setTextColor(0xFFE2E8F0);
+		switchNotif.setTextColor(isGlass ? gc.getTextSecondary() : 0xFFE2E8F0);
 		switchNotif.setTextSize(15);
 		switchNotif.setChecked(CarFinderPrefs.isNotifOnDisconnectEnabled(context));
 		switchNotif.setOnCheckedChangeListener((btn, checked) -> {
@@ -116,20 +118,20 @@ public final class CarFinderSettingsDialog {
 		if (isGlass) {
 			android.content.res.ColorStateList trackColors = new android.content.res.ColorStateList(new int[][]{
 					new int[]{android.R.attr.state_checked}, new int[]{}
-			}, new int[]{0x6600E5FF, 0x33FFFFFF});
-			switchAutoSave.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+			}, new int[]{isNight ? 0x6600E5FF : 0x55007A87, isNight ? 0x33FFFFFF : 0x22000000});
+			switchAutoSave.setThumbTintList(android.content.res.ColorStateList.valueOf(gc.getActionText()));
 			switchAutoSave.setTrackTintList(trackColors);
-			switchNotif.setThumbTintList(android.content.res.ColorStateList.valueOf(0xFF00E5FF));
+			switchNotif.setThumbTintList(android.content.res.ColorStateList.valueOf(gc.getActionText()));
 			switchNotif.setTrackTintList(trackColors);
 		}
 
-		View divider2 = createSettingsDividerView(context, pad12);
+		View divider2 = createSettingsDividerView(context, pad12, isGlass, gc);
 		root.addView(divider2);
 
 		// Action: Clear current parking location
 		TextView clearBtn = new TextView(context);
 		clearBtn.setText(R.string.car_finder_clear_location);
-		clearBtn.setTextColor(0xFFFF5252); // Red warning accent
+		clearBtn.setTextColor(isGlass ? (isNight ? 0xFFFF5252 : 0xFFD32F2F) : 0xFFFF5252); // Red warning accent
 		clearBtn.setTextSize(15);
 		clearBtn.setPadding(0, pad12, 0, pad12);
 		clearBtn.setOnClickListener(v -> {
@@ -159,8 +161,8 @@ public final class CarFinderSettingsDialog {
 
 		// Close button
 		TextView closeBtn = new TextView(context);
-		boolean isNight = me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(context);
-		closeBtn.setTextColor(isGlass ? (isNight ? 0xFF00E5FF : 0xFF007A87) : 0xFF3B82F6);
+		closeBtn.setText(android.R.string.ok);
+		closeBtn.setTextColor(isGlass ? gc.getActionText() : 0xFF3B82F6);
 		closeBtn.setTextSize(15);
 		closeBtn.setTypeface(null, Typeface.BOLD);
 		closeBtn.setGravity(Gravity.END);
@@ -172,14 +174,16 @@ public final class CarFinderSettingsDialog {
 		Window window = dialog.getWindow();
 		if (window != null) {
 			window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-			window.setLayout(Math.round(340 * density), ViewGroup.LayoutParams.WRAP_CONTENT);
+			int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
+			int dialogWidth = Math.min(Math.round(340 * density), (int) (screenWidth * 0.9f));
+			window.setLayout(dialogWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
 		}
 		dialog.show();
 	}
 
-	private static View createSettingsDividerView(Context context, int marginVertical) {
+	private static View createSettingsDividerView(Context context, int marginVertical, boolean isGlass, me.aap.fermata.ui.glass.theme.GlassThemeColors gc) {
 		View div = new View(context);
-		div.setBackgroundColor(0x33263552);
+		div.setBackgroundColor(isGlass && gc != null ? gc.getDivider() : 0x33263552);
 		LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
 		lp.topMargin = marginVertical;
 		lp.bottomMargin = marginVertical;

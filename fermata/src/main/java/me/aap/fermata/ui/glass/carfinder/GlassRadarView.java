@@ -20,6 +20,7 @@ import me.aap.fermata.carfinder.AngleUtils;
 public final class GlassRadarView extends View {
 	public static final int ACCENT_CYAN = 0xFF00E5FF;
 	public static final int ACCENT_BLUE = 0xFF2979FF;
+	private static final float[] RING_RATIOS = {1.0f, 0.70f, 0.40f};
 
 	private final Paint circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 	private final Paint pulsePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -36,6 +37,8 @@ public final class GlassRadarView extends View {
 	private float currentAngleDegrees = 0.0f;
 	private boolean hasValidDirection = false;
 
+	private boolean nightMode = true;
+
 	public GlassRadarView(Context context) {
 		super(context);
 		initPaints();
@@ -44,6 +47,26 @@ public final class GlassRadarView extends View {
 	public GlassRadarView(Context context, @Nullable AttributeSet attrs) {
 		super(context, attrs);
 		initPaints();
+	}
+
+	public void setNightMode(boolean night) {
+		this.nightMode = night;
+		int primaryAccent = night ? ACCENT_CYAN : 0xFF007A87;
+		int ringColor = night ? 0x3500E5FF : 0x40007A87;
+		int discColor = night ? 0x1800E5FF : 0x18007A87;
+		int crossColor = night ? 0x20FFFFFF : 0x20000000;
+		int glowColor = night ? 0x4000E5FF : 0x30007A87;
+
+		circlePaint.setColor(ringColor);
+		innerRingPaint.setColor(discColor);
+		crosshairPaint.setColor(crossColor);
+		arrowPaint.setColor(primaryAccent);
+		arrowGlowPaint.setColor(glowColor);
+		invalidate();
+	}
+
+	public boolean isNightMode() {
+		return nightMode;
 	}
 
 	private void initPaints() {
@@ -147,10 +170,9 @@ public final class GlassRadarView extends View {
 	}
 
 	private void drawConcentricReferenceRings(Canvas canvas, float cx, float cy, float maxRadius) {
-		float[] ringRatios = {1.0f, 0.70f, 0.40f};
-		for (int i = 0; i < ringRatios.length; i++) {
-			circlePaint.setColor(i == 0 ? 0x4000E5FF : 0x2500E5FF);
-			canvas.drawCircle(cx, cy, maxRadius * ringRatios[i], circlePaint);
+		for (int i = 0; i < RING_RATIOS.length; i++) {
+			circlePaint.setColor(i == 0 ? (nightMode ? 0x4000E5FF : 0x50007A87) : (nightMode ? 0x2500E5FF : 0x30007A87));
+			canvas.drawCircle(cx, cy, maxRadius * RING_RATIOS[i], circlePaint);
 		}
 	}
 
@@ -206,7 +228,8 @@ public final class GlassRadarView extends View {
 	private void renderSinglePulseRing(Canvas canvas, float cx, float cy, float maxRadius, float progress, float maxAlpha) {
 		float radius = maxRadius * (0.35f + progress * 0.65f);
 		int alpha = Math.round(Math.max(0f, 1.0f - progress) * maxAlpha * 255f);
-		pulsePaint.setColor((alpha << 24) | (ACCENT_CYAN & 0x00FFFFFF));
+		int accent = nightMode ? ACCENT_CYAN : 0xFF007A87;
+		pulsePaint.setColor((alpha << 24) | (accent & 0x00FFFFFF));
 		canvas.drawCircle(cx, cy, radius, pulsePaint);
 	}
 }

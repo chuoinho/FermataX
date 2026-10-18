@@ -32,7 +32,7 @@ import me.aap.utils.text.TextUtils;
 
 /** Phone-only compact playback and Android Auto status header. */
 public final class PhonePlaybackCarHeaderController implements FermataServiceUiBinder.Listener,
-		AutomotiveConnectionState.Listener {
+		AutomotiveConnectionState.Listener, me.aap.fermata.ui.activity.MainActivityListener {
 	private final FermataServiceUiBinder binder;
 	private final OpenOnCarMode mode;
 	private final View header;
@@ -53,35 +53,12 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 			if (!rendering) mode.setEnabled(checked);
 		});
 		wirePlaybackControls();
-		if (isGlassTheme()) {
-			android.content.Context ctx = header.getContext();
-			me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(ctx);
-			boolean isNight = (a != null) ? a.getPrefs().isGlassNightMode() : me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(ctx);
-			header.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 16f, isNight));
-			int actionColor = isNight ? 0xFF00E5FF : 0xFF007A87;
-			int thumbColor = isNight ? 0xFFFFFFFF : 0xFF15181A;
-			int bgTint = isNight ? 0x33FFFFFF : 0x20000000;
-			SeekBar progress = header.findViewById(R.id.phone_header_progress);
-			if (progress != null) {
-				progress.setProgressTintList(android.content.res.ColorStateList.valueOf(actionColor));
-				progress.setThumbTintList(android.content.res.ColorStateList.valueOf(thumbColor));
-				progress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(bgTint));
-			}
-			android.content.res.ColorStateList trackStateList = new android.content.res.ColorStateList(
-					new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
-					new int[]{isNight ? 0x6600E5FF : 0x66007A87, bgTint}
-			);
-			if (toggle instanceof androidx.appcompat.widget.SwitchCompat switchCompat) {
-				switchCompat.setThumbTintList(android.content.res.ColorStateList.valueOf(actionColor));
-				switchCompat.setTrackTintList(trackStateList);
-			} else if (toggle instanceof android.widget.Switch sw) {
-				sw.setThumbTintList(android.content.res.ColorStateList.valueOf(actionColor));
-				sw.setTrackTintList(trackStateList);
-			}
-		}
+		refreshAppearance();
 		binder.addBroadcastListener(this);
 		AutomotiveConnectionState.get().addListener(this);
 		mode.addListener(modeListener);
+		me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(header.getContext());
+		if (a != null) a.addBroadcastListener(this);
 		render();
 	}
 
@@ -92,6 +69,61 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 		} catch (Throwable e) {
 			return false;
 		}
+	}
+
+	public void refreshAppearance() {
+		if (!isGlassTheme() || header == null) return;
+		android.content.Context ctx = header.getContext();
+		me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(ctx);
+		boolean isNight = (a != null) ? a.getPrefs().isGlassNightMode() : me.aap.fermata.ui.glass.theme.GlassThemeColors.isNight(ctx);
+		me.aap.fermata.ui.glass.theme.GlassThemeColors colors = me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, isNight);
+
+		header.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassCardDrawable(ctx, 16f, isNight));
+		int actionColor = isNight ? 0xFF00E5FF : 0xFF007A87;
+		int thumbColor = isNight ? 0xFFFFFFFF : 0xFF15181A;
+		int bgTint = isNight ? 0x33FFFFFF : 0x20000000;
+
+		SeekBar progress = header.findViewById(R.id.phone_header_progress);
+		if (progress != null) {
+			progress.setProgressTintList(android.content.res.ColorStateList.valueOf(actionColor));
+			progress.setThumbTintList(android.content.res.ColorStateList.valueOf(thumbColor));
+			progress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(bgTint));
+		}
+		android.content.res.ColorStateList trackStateList = new android.content.res.ColorStateList(
+				new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+				new int[]{isNight ? 0x6600E5FF : 0x66007A87, bgTint}
+		);
+		if (toggle instanceof androidx.appcompat.widget.SwitchCompat switchCompat) {
+			switchCompat.setThumbTintList(android.content.res.ColorStateList.valueOf(actionColor));
+			switchCompat.setTrackTintList(trackStateList);
+		} else if (toggle instanceof android.widget.Switch sw) {
+			sw.setThumbTintList(android.content.res.ColorStateList.valueOf(actionColor));
+			sw.setTrackTintList(trackStateList);
+		}
+
+		TextView aaStatus = header.findViewById(R.id.phone_header_aa_status);
+		if (aaStatus != null) aaStatus.setTextColor(colors.getTextSecondary());
+
+		View openCarGroup = header.findViewById(R.id.phone_header_open_on_car_group);
+		if (openCarGroup instanceof android.view.ViewGroup vg) {
+			for (int i = 0; i < vg.getChildCount(); i++) {
+				View c = vg.getChildAt(i);
+				if (c instanceof TextView tv && !(c instanceof CompoundButton)) {
+					tv.setTextColor(colors.getTextSecondary());
+				}
+			}
+		}
+
+		TextView title = header.findViewById(R.id.phone_header_title);
+		if (title != null) title.setTextColor(colors.getTextPrimary());
+		TextView subtitle = header.findViewById(R.id.phone_header_subtitle);
+		if (subtitle != null) subtitle.setTextColor(colors.getTextSecondary());
+		ImageButton previous = header.findViewById(R.id.phone_header_previous);
+		if (previous != null) previous.setColorFilter(colors.getTextPrimary());
+		ImageButton playPause = header.findViewById(R.id.phone_header_play_pause);
+		if (playPause != null) playPause.setColorFilter(colors.getTextPrimary());
+		ImageButton next = header.findViewById(R.id.phone_header_next);
+		if (next != null) next.setColorFilter(colors.getTextPrimary());
 	}
 
 	public void refresh(RuntimeHostMode hostMode, boolean barsHidden) {
@@ -105,9 +137,19 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 
 	public void close() {
 		cancelSeek();
+		me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(header.getContext());
+		if (a != null) a.removeBroadcastListener(this);
 		mode.removeListener(modeListener);
 		AutomotiveConnectionState.get().removeListener(this);
 		binder.removeBroadcastListener(this);
+	}
+
+	@Override
+	public void onActivityEvent(me.aap.fermata.ui.activity.MainActivityDelegate a, long event) {
+		if (event == me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED) {
+			renderLater();
+			refreshAppearance();
+		}
 	}
 
 	@Override
@@ -183,8 +225,23 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 			MediaMetadataCompat metadata = presentation.metadata;
 			Bitmap bitmap = (metadata == null) ? null :
 					metadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART);
-			if (bitmap == null) artwork.setImageResource(R.drawable.audiotrack);
-			else artwork.setImageBitmap(bitmap);
+			float density = header.getResources().getDisplayMetrics().density;
+			if (bitmap == null) {
+				int pad = Math.round(8 * density);
+				artwork.setPadding(pad, pad, pad, pad);
+				artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);
+				artwork.setImageResource(R.drawable.audiotrack);
+				me.aap.fermata.ui.activity.MainActivityDelegate a = me.aap.fermata.ui.activity.MainActivityDelegate.get(header.getContext());
+				int iconTint = (a != null && a.isGlassTheme()) ?
+						me.aap.fermata.ui.glass.theme.GlassThemeColors.get(header.getContext()).getIconColor() : 0xFF94A3B8;
+				artwork.setColorFilter(iconTint);
+			} else {
+				int pad = Math.round(4 * density);
+				artwork.setPadding(pad, pad, pad, pad);
+				artwork.setScaleType(ImageView.ScaleType.FIT_CENTER);
+				artwork.clearColorFilter();
+				artwork.setImageBitmap(bitmap);
+			}
 
 			ImageButton previous = header.findViewById(R.id.phone_header_previous);
 			ImageButton playPause = header.findViewById(R.id.phone_header_play_pause);

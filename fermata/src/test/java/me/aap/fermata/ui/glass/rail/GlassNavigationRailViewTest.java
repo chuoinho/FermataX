@@ -109,6 +109,125 @@ public class GlassNavigationRailViewTest {
     }
 
     @Test
+    public void testMeasurementBudgetAutomotiveHostHighViewport() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.expand();
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(1280, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(720, View.MeasureSpec.EXACTLY);
+        carRail.measure(widthSpec, heightSpec);
+        carRail.layout(0, 0, 1280, 720);
+
+        ViewGroup railContainer = (ViewGroup) carRail.getChildAt(1);
+        int minTargetPx = GlassDimensions.dpToPx(context, 76);
+        for (int i = 0; i < 5; i++) {
+            View btn = railContainer.getChildAt(i);
+            assertTrue("Automotive 720p button height must be >= 76dp, was: " + btn.getHeight(),
+                    btn.getHeight() >= minTargetPx);
+        }
+    }
+
+    @Test
+    public void testMeasurementBudgetAutomotiveHostStandardViewport() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.expand();
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(480, View.MeasureSpec.EXACTLY);
+        carRail.measure(widthSpec, heightSpec);
+        carRail.layout(0, 0, 800, 480);
+
+        ViewGroup railContainer = (ViewGroup) carRail.getChildAt(1);
+        int minTargetPx = GlassDimensions.dpToPx(context, 76);
+        for (int i = 0; i < 5; i++) {
+            View btn = railContainer.getChildAt(i);
+            assertTrue("Automotive 480p button height must be >= 76dp, was: " + btn.getHeight(),
+                    btn.getHeight() >= minTargetPx);
+        }
+    }
+
+    @Test
+    public void testMeasurementBudgetAutomotiveHostCompactBoundary() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.expand();
+        // At 402dp compact boundary: (402 - 22) / 5 = 76dp per button
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(402, View.MeasureSpec.EXACTLY);
+        carRail.measure(widthSpec, heightSpec);
+        carRail.layout(0, 0, 800, 402);
+
+        ViewGroup railContainer = (ViewGroup) carRail.getChildAt(1);
+        int minTargetPx = GlassDimensions.dpToPx(context, 76);
+        for (int i = 0; i < 5; i++) {
+            View btn = railContainer.getChildAt(i);
+            assertTrue("Automotive 402dp boundary button height must be >= 76dp, was: " + btn.getHeight(),
+                    btn.getHeight() >= minTargetPx);
+        }
+    }
+
+    @Test
+    public void testMeasurementBudgetAutomotiveHostLowViewportUnder402dp() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.expand();
+        // At 360dp low viewport
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(360, View.MeasureSpec.EXACTLY);
+        carRail.measure(widthSpec, heightSpec);
+        carRail.layout(0, 0, 800, 360);
+
+        ViewGroup railContainer = (ViewGroup) carRail.getChildAt(1);
+        // Container must not overflow parent
+        assertTrue("Rail container must fit within 360dp viewport without clipping",
+                railContainer.getBottom() <= 360);
+
+        // Buttons scale to available space (~67.6dp), remaining well above 48dp floor
+        int minTouchPx = GlassDimensions.dpToPx(context, 48);
+        for (int i = 0; i < 5; i++) {
+            View btn = railContainer.getChildAt(i);
+            assertTrue("Automotive 360dp button height must be >= 48dp accessible floor, was: " + btn.getHeight(),
+                    btn.getHeight() >= minTouchPx);
+            assertTrue("Automotive 360dp button height should achieve ~67dp, was: " + btn.getHeight(),
+                    btn.getHeight() >= 67);
+        }
+
+        // Grabber handle hit target for Car must be 76dp
+        FrameLayout grabber = (FrameLayout) carRail.getChildAt(2);
+        assertEquals(GlassDimensions.dpToPx(context, 76), grabber.getLayoutParams().width);
+    }
+
+    @Test
+    public void testMeasurementBudgetAutomotiveHostAccessibilityFloorBoundary() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.expand();
+        // At 262dp accessibility floor boundary: (262 - 22) / 5 = 48dp per button
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(262, View.MeasureSpec.EXACTLY);
+        carRail.measure(widthSpec, heightSpec);
+        carRail.layout(0, 0, 800, 262);
+
+        ViewGroup railContainer = (ViewGroup) carRail.getChildAt(1);
+        assertTrue("Rail container must fit within 262dp viewport without clipping",
+                railContainer.getBottom() <= 262);
+
+        int minFloorPx = GlassDimensions.dpToPx(context, 48);
+        for (int i = 0; i < 5; i++) {
+            View btn = railContainer.getChildAt(i);
+            assertTrue("Automotive 262dp boundary button height must be >= 48dp accessibility floor, was: " + btn.getHeight(),
+                    btn.getHeight() >= minFloorPx);
+        }
+    }
+
+    @Test
+    public void testRailBackgroundHighOpacityAndScrim() {
+        // Scrim background must be gentle dimming (alpha = 90)
+        View scrim = railView.getChildAt(0);
+        android.graphics.drawable.ColorDrawable scrimBg = (android.graphics.drawable.ColorDrawable) scrim.getBackground();
+        assertEquals(90, android.graphics.Color.alpha(scrimBg.getColor()));
+
+        // Rail container background must exist with high-opacity frosted glass
+        ViewGroup railContainer = (ViewGroup) railView.getChildAt(1);
+        assertNotNull(railContainer.getBackground());
+    }
+
+    @Test
     public void testExpandAndCollapseImmediate() {
         railView.expand();
         assertTrue(railView.isOpen());

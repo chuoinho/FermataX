@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Locale;
 
+import me.aap.fermata.R;
 import me.aap.fermata.ui.glass.nav.NavTurnInfo;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
@@ -33,21 +34,24 @@ import me.aap.fermata.ui.glass.weather.GlassOpenMeteoClient;
  */
 public class GlassNavWeatherView extends FrameLayout {
 
-    private final boolean isNight;
-    private final GlassThemeColors colors;
+    private boolean isNight;
+    private GlassThemeColors colors;
 
     // Nav container
     private LinearLayout navContainer;
+    private TextView tvNavHeader;
     private TurnArrowView navArrowView;
     private TextView tvNavInstruction;
     private TextView tvNavDistance;
     private TextView tvNavEta;
     private TextView tvNavRemaining;
     private TextView btnNavExit;
+    private LinearLayout navBottomBar;
     private PendingIntent activeExitIntent;
 
     // Weather container
     private LinearLayout weatherContainer;
+    private TextView tvWeatherHeader;
     private TextView tvWeatherTemp;
     private TextView tvWeatherCondition;
     private TextView tvWeatherHighLow;
@@ -55,6 +59,11 @@ public class GlassNavWeatherView extends FrameLayout {
     private TextView btnWeatherAction;
     private HorizontalScrollView weatherScroll;
     private LinearLayout hourlyTimelineRow;
+
+    private GlassOpenMeteoClient.HourlyForecast lastForecast;
+    private boolean lastIsMetric = true;
+    private String lastLocationName;
+    private boolean lastIsStale;
 
     public GlassNavWeatherView(@NonNull Context context) {
         this(context, null);
@@ -73,8 +82,9 @@ public class GlassNavWeatherView extends FrameLayout {
 
     private void initView(Context context) {
         setBackground(GlassDrawables.createGlassCardDrawable(context, GlassDimensions.CARD_RADIUS_DP, isNight));
-        int padding = GlassDimensions.dpToPx(context, 16);
-        setPadding(padding, padding, padding, padding);
+        int padH = GlassDimensions.dpToPx(context, 12);
+        int padV = GlassDimensions.dpToPx(context, 10);
+        setPadding(padH, padV, padH, padV);
 
         initNavLayout(context);
         initWeatherLayout(context);
@@ -82,6 +92,23 @@ public class GlassNavWeatherView extends FrameLayout {
         // Default to weather fallback view
         navContainer.setVisibility(View.GONE);
         weatherContainer.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w > 0 && h > 0) {
+            float density = getResources().getDisplayMetrics().density;
+            float hDp = h / Math.max(0.1f, density);
+            float wDp = w / Math.max(0.1f, density);
+            if (hDp < 220f || wDp < 160f) {
+                tvWeatherTemp.setTextSize(36f);
+            } else if (hDp < 260f || wDp < 190f) {
+                tvWeatherTemp.setTextSize(42f);
+            } else {
+                tvWeatherTemp.setTextSize(50f);
+            }
+        }
     }
 
     private void initNavLayout(Context context) {
@@ -92,13 +119,13 @@ public class GlassNavWeatherView extends FrameLayout {
         navContainer.setLayoutParams(lp);
 
         // Header
-        TextView tvHeader = new TextView(context);
-        tvHeader.setText("NAVIGATION");
-        tvHeader.setTextSize(11f);
-        tvHeader.setTypeface(Typeface.DEFAULT_BOLD);
-        tvHeader.setTextColor(colors.getTextSecondary());
-        tvHeader.setLetterSpacing(0.08f);
-        navContainer.addView(tvHeader);
+        tvNavHeader = new TextView(context);
+        tvNavHeader.setText(safeGetString(context, R.string.glass_nav_header, "NAVIGATION"));
+        tvNavHeader.setTextSize(11f);
+        tvNavHeader.setTypeface(Typeface.DEFAULT_BOLD);
+        tvNavHeader.setTextColor(colors.getTextSecondary());
+        tvNavHeader.setLetterSpacing(0.08f);
+        navContainer.addView(tvNavHeader);
 
         // Turn Maneuver Center
         LinearLayout maneuverLayout = new LinearLayout(context);
@@ -118,7 +145,7 @@ public class GlassNavWeatherView extends FrameLayout {
         tvNavDistance.setText("");
         tvNavDistance.setTextSize(26f);
         tvNavDistance.setTypeface(Typeface.DEFAULT_BOLD);
-        tvNavDistance.setTextColor(GlassThemeColors.ACCENT_CYAN);
+        tvNavDistance.setTextColor(colors.getActionText());
         tvNavDistance.setGravity(Gravity.CENTER);
         maneuverLayout.addView(tvNavDistance);
 
@@ -134,15 +161,15 @@ public class GlassNavWeatherView extends FrameLayout {
         navContainer.addView(maneuverLayout);
 
         // Bottom Nav Bar (ETA, remaining distance, exit button)
-        LinearLayout bottomBar = new LinearLayout(context);
-        bottomBar.setOrientation(LinearLayout.HORIZONTAL);
-        bottomBar.setGravity(Gravity.CENTER_VERTICAL);
+        navBottomBar = new LinearLayout(context);
+        navBottomBar.setOrientation(LinearLayout.HORIZONTAL);
+        navBottomBar.setGravity(Gravity.CENTER_VERTICAL);
         int barPadding = GlassDimensions.dpToPx(context, 8);
-        bottomBar.setPadding(barPadding, barPadding, barPadding, barPadding);
-        bottomBar.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
+        navBottomBar.setPadding(barPadding, barPadding, barPadding, barPadding);
+        navBottomBar.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
         LinearLayout.LayoutParams botLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        bottomBar.setLayoutParams(botLp);
+        navBottomBar.setLayoutParams(botLp);
 
         LinearLayout etaLayout = new LinearLayout(context);
         etaLayout.setOrientation(LinearLayout.VERTICAL);
@@ -162,10 +189,10 @@ public class GlassNavWeatherView extends FrameLayout {
         tvNavRemaining.setTextColor(colors.getTextSecondary());
         etaLayout.addView(tvNavRemaining);
 
-        bottomBar.addView(etaLayout);
+        navBottomBar.addView(etaLayout);
 
         btnNavExit = new TextView(context);
-        btnNavExit.setText("EXIT");
+        btnNavExit.setText(safeGetString(context, R.string.glass_nav_exit, "EXIT"));
         btnNavExit.setTextSize(11f);
         btnNavExit.setTypeface(Typeface.DEFAULT_BOLD);
         btnNavExit.setTextColor(colors.getTextPrimary());
@@ -181,9 +208,9 @@ public class GlassNavWeatherView extends FrameLayout {
                 } catch (Exception ignored) {}
             }
         });
-        bottomBar.addView(btnNavExit);
+        navBottomBar.addView(btnNavExit);
 
-        navContainer.addView(bottomBar);
+        navContainer.addView(navBottomBar);
         addView(navContainer);
     }
 
@@ -195,13 +222,13 @@ public class GlassNavWeatherView extends FrameLayout {
         weatherContainer.setLayoutParams(lp);
 
         // Header
-        TextView tvHeader = new TextView(context);
-        tvHeader.setText("WEATHER & FORECAST");
-        tvHeader.setTextSize(11f);
-        tvHeader.setTypeface(Typeface.DEFAULT_BOLD);
-        tvHeader.setTextColor(colors.getTextSecondary());
-        tvHeader.setLetterSpacing(0.08f);
-        weatherContainer.addView(tvHeader);
+        tvWeatherHeader = new TextView(context);
+        tvWeatherHeader.setText(safeGetString(context, R.string.glass_weather_header, "WEATHER & FORECAST"));
+        tvWeatherHeader.setTextSize(11f);
+        tvWeatherHeader.setTypeface(Typeface.DEFAULT_BOLD);
+        tvWeatherHeader.setTextColor(colors.getTextSecondary());
+        tvWeatherHeader.setLetterSpacing(0.08f);
+        weatherContainer.addView(tvWeatherHeader);
 
         // Center Current Weather
         LinearLayout centerWeather = new LinearLayout(context);
@@ -220,7 +247,7 @@ public class GlassNavWeatherView extends FrameLayout {
         centerWeather.addView(tvWeatherTemp);
 
         tvWeatherCondition = new TextView(context);
-        tvWeatherCondition.setText("Updating...");
+        tvWeatherCondition.setText(safeGetString(context, R.string.glass_weather_updating, "Updating..."));
         tvWeatherCondition.setTextSize(14f);
         tvWeatherCondition.setTypeface(Typeface.DEFAULT_BOLD);
         tvWeatherCondition.setTextColor(colors.getActionText());
@@ -242,7 +269,7 @@ public class GlassNavWeatherView extends FrameLayout {
         centerWeather.addView(tvWeatherLocation);
 
         btnWeatherAction = new TextView(context);
-        btnWeatherAction.setText("Retry");
+        btnWeatherAction.setText(safeGetString(context, R.string.retry, "Retry"));
         btnWeatherAction.setTextSize(11f);
         btnWeatherAction.setTypeface(Typeface.DEFAULT_BOLD);
         btnWeatherAction.setTextColor(colors.getActionText());
@@ -295,6 +322,10 @@ public class GlassNavWeatherView extends FrameLayout {
         }
     }
 
+    public boolean hasForecastData() {
+        return lastForecast != null;
+    }
+
     public void bindWeather(@Nullable GlassOpenMeteoClient.HourlyForecast forecast, boolean isMetric) {
         bindWeather(forecast, isMetric, null, false);
     }
@@ -302,22 +333,28 @@ public class GlassNavWeatherView extends FrameLayout {
     public void bindWeather(@Nullable GlassOpenMeteoClient.HourlyForecast forecast, boolean isMetric,
                             @Nullable String locationName, boolean isStale) {
         if (forecast == null) return;
+        this.lastForecast = forecast;
+        this.lastIsMetric = isMetric;
+        this.lastLocationName = locationName;
+        this.lastIsStale = isStale;
 
         btnWeatherAction.setVisibility(View.GONE);
         weatherScroll.setVisibility(View.VISIBLE);
 
         String unit = isMetric ? "°C" : "°F";
         tvWeatherTemp.setText(String.format(Locale.US, "%.0f%s", forecast.getCurrentTemp(), unit));
-        String condition = GlassOpenMeteoClient.getWeatherConditionDescription(forecast.getCurrentWeatherCode());
+        String condition = GlassOpenMeteoClient.getWeatherConditionDescription(getContext(), forecast.getCurrentWeatherCode());
         if (isStale) {
-            condition += " (Cached)";
+            condition += safeGetString(getContext(), me.aap.fermata.R.string.weather_cached_suffix, " (Cached)");
         }
         tvWeatherCondition.setText(condition);
         String highLow = String.format(Locale.US, "H: %.0f°  L: %.0f°",
                 forecast.getHighTemp(), forecast.getLowTemp());
         if (forecast.getTimestamp() > 0) {
             String updateTime = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new java.util.Date(forecast.getTimestamp()));
-            highLow += " • " + (isStale ? "Cached " : "Updated ") + updateTime;
+            String prefix = isStale ? safeGetString(getContext(), me.aap.fermata.R.string.weather_cached_prefix, "Cached ")
+                    : safeGetString(getContext(), me.aap.fermata.R.string.weather_updated_prefix, "Updated ");
+            highLow += " • " + prefix + updateTime;
         }
         tvWeatherHighLow.setText(highLow);
         if (locationName != null && !locationName.trim().isEmpty()) {
@@ -361,22 +398,26 @@ public class GlassNavWeatherView extends FrameLayout {
     }
 
     public void showPermissionNeeded(String message, Runnable onAction) {
+        Context ctx = getContext();
         tvWeatherTemp.setText("--°");
-        tvWeatherCondition.setText("Permission Needed");
+        tvWeatherCondition.setText(safeGetString(ctx, R.string.glass_weather_perm_needed, "Permission Needed"));
         tvWeatherHighLow.setText(message);
         tvWeatherLocation.setVisibility(View.GONE);
         weatherScroll.setVisibility(View.GONE);
 
-        btnWeatherAction.setText("Grant Permission");
-        btnWeatherAction.setVisibility(View.VISIBLE);
-        btnWeatherAction.setOnClickListener(v -> {
-            if (onAction != null) onAction.run();
-        });
+        if (onAction != null) {
+            btnWeatherAction.setText(safeGetString(ctx, R.string.glass_weather_grant_btn, "Grant Permission"));
+            btnWeatherAction.setVisibility(View.VISIBLE);
+            btnWeatherAction.setOnClickListener(v -> onAction.run());
+        } else {
+            btnWeatherAction.setVisibility(View.GONE);
+        }
     }
 
     public void showLocating(String message) {
+        Context ctx = getContext();
         tvWeatherTemp.setText("--°");
-        tvWeatherCondition.setText("Locating GPS...");
+        tvWeatherCondition.setText(safeGetString(ctx, R.string.glass_weather_locating, "Locating GPS..."));
         tvWeatherHighLow.setText(message);
         tvWeatherLocation.setVisibility(View.GONE);
         weatherScroll.setVisibility(View.GONE);
@@ -385,16 +426,73 @@ public class GlassNavWeatherView extends FrameLayout {
 
     public void showError(String message, Runnable onRetry) {
         tvWeatherTemp.setText("--°");
-        tvWeatherCondition.setText("Weather Unavailable");
+        tvWeatherCondition.setText(safeGetString(getContext(), R.string.glass_nav_weather_unavailable, "Weather Unavailable"));
         tvWeatherHighLow.setText(message);
         tvWeatherLocation.setVisibility(View.GONE);
         weatherScroll.setVisibility(View.GONE);
 
-        btnWeatherAction.setText("Retry");
+        btnWeatherAction.setText(safeGetString(getContext(), R.string.retry, "Retry"));
         btnWeatherAction.setVisibility(View.VISIBLE);
         btnWeatherAction.setOnClickListener(v -> {
             if (onRetry != null) onRetry.run();
         });
+    }
+
+    public void refreshAppearance() {
+        Context context = getContext();
+        this.isNight = GlassThemeColors.isNight(context);
+        this.colors = GlassThemeColors.get(context, isNight);
+
+        setBackground(GlassDrawables.createGlassCardDrawable(context, GlassDimensions.CARD_RADIUS_DP, isNight));
+
+        if (tvNavHeader != null) {
+            tvNavHeader.setTextColor(colors.getTextSecondary());
+        }
+        if (tvWeatherHeader != null) {
+            tvWeatherHeader.setTextColor(colors.getTextSecondary());
+        }
+        if (tvNavDistance != null) {
+            tvNavDistance.setTextColor(colors.getActionText());
+        }
+        if (tvNavInstruction != null) {
+            tvNavInstruction.setTextColor(colors.getTextPrimary());
+        }
+        if (tvNavEta != null) {
+            tvNavEta.setTextColor(colors.getTextPrimary());
+        }
+        if (tvNavRemaining != null) {
+            tvNavRemaining.setTextColor(colors.getTextSecondary());
+        }
+        if (btnNavExit != null) {
+            btnNavExit.setTextColor(colors.getTextPrimary());
+            btnNavExit.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        }
+        if (navBottomBar != null) {
+            navBottomBar.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
+        }
+        if (navArrowView != null) {
+            navArrowView.refreshAppearance(isNight, colors);
+        }
+        if (tvWeatherTemp != null) {
+            tvWeatherTemp.setTextColor(colors.getTextPrimary());
+        }
+        if (tvWeatherCondition != null) {
+            tvWeatherCondition.setTextColor(colors.getActionText());
+        }
+        if (tvWeatherHighLow != null) {
+            tvWeatherHighLow.setTextColor(colors.getTextSecondary());
+        }
+        if (tvWeatherLocation != null) {
+            tvWeatherLocation.setTextColor(colors.getTextSecondary());
+        }
+        if (btnWeatherAction != null) {
+            btnWeatherAction.setTextColor(colors.getActionText());
+            btnWeatherAction.setBackground(GlassDrawables.createGlassPillDrawable(context, 12f, isNight));
+        }
+        if (lastForecast != null) {
+            bindWeather(lastForecast, lastIsMetric, lastLocationName, lastIsStale);
+        }
+        invalidate();
     }
 
     /**
@@ -414,6 +512,11 @@ public class GlassNavWeatherView extends FrameLayout {
             arrowPaint.setStrokeJoin(Paint.Join.ROUND);
         }
 
+        public void refreshAppearance(boolean isNight, GlassThemeColors colors) {
+            arrowPaint.setColor(isNight ? GlassThemeColors.ACCENT_CYAN : colors.getActionText());
+            invalidate();
+        }
+
         public void setDirection(NavTurnInfo.TurnDirection direction) {
             this.direction = direction != null ? direction : NavTurnInfo.TurnDirection.STRAIGHT;
             invalidate();
@@ -431,9 +534,16 @@ public class GlassNavWeatherView extends FrameLayout {
             float cy = h / 2f;
 
             switch (direction) {
-                case TURN_LEFT:
                 case SLIGHT_LEFT:
-                case SHARP_LEFT:
+                    arrowPath.moveTo(cx + w * 0.15f, cy + h * 0.3f);
+                    arrowPath.lineTo(cx + w * 0.15f, cy + h * 0.05f);
+                    arrowPath.lineTo(cx - w * 0.15f, cy - h * 0.25f);
+                    // Arrow head
+                    arrowPath.moveTo(cx - w * 0.05f, cy - h * 0.3f);
+                    arrowPath.lineTo(cx - w * 0.15f, cy - h * 0.25f);
+                    arrowPath.lineTo(cx - w * 0.2f, cy - h * 0.15f);
+                    break;
+                case TURN_LEFT:
                     arrowPath.moveTo(cx + w * 0.2f, cy + h * 0.3f);
                     arrowPath.lineTo(cx + w * 0.2f, cy);
                     arrowPath.lineTo(cx - w * 0.2f, cy);
@@ -442,9 +552,25 @@ public class GlassNavWeatherView extends FrameLayout {
                     arrowPath.lineTo(cx - w * 0.2f, cy);
                     arrowPath.lineTo(cx - w * 0.05f, cy + h * 0.15f);
                     break;
-                case TURN_RIGHT:
+                case SHARP_LEFT:
+                    arrowPath.moveTo(cx, cy + h * 0.3f);
+                    arrowPath.lineTo(cx, cy - h * 0.1f);
+                    arrowPath.lineTo(cx - w * 0.25f, cy + h * 0.15f);
+                    // Arrow head
+                    arrowPath.moveTo(cx - w * 0.12f, cy + h * 0.15f);
+                    arrowPath.lineTo(cx - w * 0.25f, cy + h * 0.15f);
+                    arrowPath.lineTo(cx - w * 0.22f, cy + h * 0.02f);
+                    break;
                 case SLIGHT_RIGHT:
-                case SHARP_RIGHT:
+                    arrowPath.moveTo(cx - w * 0.15f, cy + h * 0.3f);
+                    arrowPath.lineTo(cx - w * 0.15f, cy + h * 0.05f);
+                    arrowPath.lineTo(cx + w * 0.15f, cy - h * 0.25f);
+                    // Arrow head
+                    arrowPath.moveTo(cx + w * 0.05f, cy - h * 0.3f);
+                    arrowPath.lineTo(cx + w * 0.15f, cy - h * 0.25f);
+                    arrowPath.lineTo(cx + w * 0.2f, cy - h * 0.15f);
+                    break;
+                case TURN_RIGHT:
                     arrowPath.moveTo(cx - w * 0.2f, cy + h * 0.3f);
                     arrowPath.lineTo(cx - w * 0.2f, cy);
                     arrowPath.lineTo(cx + w * 0.2f, cy);
@@ -452,6 +578,15 @@ public class GlassNavWeatherView extends FrameLayout {
                     arrowPath.moveTo(cx + w * 0.05f, cy - h * 0.15f);
                     arrowPath.lineTo(cx + w * 0.2f, cy);
                     arrowPath.lineTo(cx + w * 0.05f, cy + h * 0.15f);
+                    break;
+                case SHARP_RIGHT:
+                    arrowPath.moveTo(cx, cy + h * 0.3f);
+                    arrowPath.lineTo(cx, cy - h * 0.1f);
+                    arrowPath.lineTo(cx + w * 0.25f, cy + h * 0.15f);
+                    // Arrow head
+                    arrowPath.moveTo(cx + w * 0.12f, cy + h * 0.15f);
+                    arrowPath.lineTo(cx + w * 0.25f, cy + h * 0.15f);
+                    arrowPath.lineTo(cx + w * 0.22f, cy + h * 0.02f);
                     break;
                 case U_TURN:
                     arrowPath.moveTo(cx - w * 0.15f, cy + h * 0.3f);
@@ -466,6 +601,11 @@ public class GlassNavWeatherView extends FrameLayout {
                 case ROUNDABOUT:
                     arrowPath.addCircle(cx, cy, w * 0.25f, Path.Direction.CW);
                     break;
+                case DESTINATION:
+                    arrowPath.addCircle(cx, cy - h * 0.08f, w * 0.18f, Path.Direction.CW);
+                    arrowPath.moveTo(cx, cy + h * 0.1f);
+                    arrowPath.lineTo(cx, cy + h * 0.3f);
+                    break;
                 case STRAIGHT:
                 default:
                     arrowPath.moveTo(cx, cy + h * 0.3f);
@@ -477,6 +617,15 @@ public class GlassNavWeatherView extends FrameLayout {
             }
 
             canvas.drawPath(arrowPath, arrowPaint);
+        }
+    }
+
+    private static String safeGetString(Context context, int resId, String fallback) {
+        if (context == null) return fallback;
+        try {
+            return context.getString(resId);
+        } catch (Throwable e) {
+            return fallback;
         }
     }
 }

@@ -206,10 +206,19 @@ public class GlassSlider extends View {
 				break;
 
 			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_CANCEL:
 				if (isDragging) {
 					isDragging = false;
 					handleTouchMove(event.getX());
+					if (listener != null) {
+						listener.onStopTrackingTouch(this);
+					}
+					return true;
+				}
+				break;
+
+			case MotionEvent.ACTION_CANCEL:
+				if (isDragging) {
+					isDragging = false;
 					if (listener != null) {
 						listener.onStopTrackingTouch(this);
 					}
@@ -227,6 +236,16 @@ public class GlassSlider extends View {
 		if (endX > startX) {
 			float newProgress = (touchX - startX) / (endX - startX);
 			setProgressInternal(newProgress, true);
+		}
+	}
+
+	@Override
+	public void onInitializeAccessibilityNodeInfo(android.view.accessibility.AccessibilityNodeInfo info) {
+		super.onInitializeAccessibilityNodeInfo(info);
+		info.setClassName(android.widget.SeekBar.class.getName());
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+			info.setRangeInfo(android.view.accessibility.AccessibilityNodeInfo.RangeInfo.obtain(
+					android.view.accessibility.AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_FLOAT, min, 1.0f, progress));
 		}
 	}
 }

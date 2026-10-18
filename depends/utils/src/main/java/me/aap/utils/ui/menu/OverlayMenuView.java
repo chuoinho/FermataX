@@ -53,7 +53,8 @@ public class OverlayMenuView extends ScrollView implements OverlayMenu {
 		headerColor = ta.getColor(OverlayMenuView_colorPrimarySurface, Color.TRANSPARENT);
 		ActivityDelegate a = ActivityDelegate.get(ctx);
 		if (a != null && a.isGlassTheme()) {
-			Drawable glassCard = a.getGlassCardDrawable(ctx, 16f);
+			Drawable glassCard = a.getGlassDialogDrawable(ctx, 16f);
+			if (glassCard == null) glassCard = a.getGlassCardDrawable(ctx, 16f);
 			if (glassCard != null) {
 				setBackground(glassCard);
 			} else {
@@ -78,7 +79,8 @@ public class OverlayMenuView extends ScrollView implements OverlayMenu {
 		a.setActiveMenu(this);
 		this.builder = builder;
 		if (a.isGlassTheme()) {
-			Drawable glassCard = a.getGlassCardDrawable(getContext(), 16f);
+			Drawable glassCard = a.getGlassDialogDrawable(getContext(), 16f);
+			if (glassCard == null) glassCard = a.getGlassCardDrawable(getContext(), 16f);
 			if (glassCard != null) {
 				setBackground(glassCard);
 			}

@@ -25,12 +25,12 @@ public final class PlaybackSnapshot {
 	private final MediaMetadataCompat metadata;
 	private final boolean canonical;
 
-	PlaybackSnapshot(long revision, @Nullable PlayableItem item,
+	public PlaybackSnapshot(long revision, @Nullable PlayableItem item,
 			@NonNull PlaybackStateCompat state, @Nullable MediaMetadataCompat metadata) {
 		this(revision, item, state, metadata, false);
 	}
 
-	PlaybackSnapshot(long revision, @Nullable PlayableItem item,
+	public PlaybackSnapshot(long revision, @Nullable PlayableItem item,
 			@NonNull PlaybackStateCompat state, @Nullable MediaMetadataCompat metadata,
 			boolean canonical) {
 		this.revision = revision;

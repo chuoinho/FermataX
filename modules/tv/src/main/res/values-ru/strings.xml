@@ -23,6 +23,7 @@
 	<string name="sub_episodes">Эпизоды: %1$d.</string>
 	<string name="add_xtream_source">Добавить источник кодов Xtream</string>
 	<string name="tv_source_name">Название источника</string>
+	<string name="tv_source_unavailable">Недоступно</string>
 	<string name="xtream_live_tv">Прямой эфир</string>
 	<string name="xtream_movies">Фильмы</string>
 	<string name="xtream_series">Ряд</string>
@@ -50,7 +51,7 @@
 	<string name="xtream_error_api_not_found">Xtream API не найден на этом сервере (HTTP 404). Проверьте URL-адрес портала, хост и порт.</string>
 	<string name="xtream_error_server">Ошибка сервера Xtream (HTTP %1$d%2$s). Повторите попытку позже.</string>
 	<string name="xtream_error_http">Запрос Xtream не выполнен (HTTP %1$d%2$s).</string>
-	<string name="err_failed_to_load_tv_sources">Не удалось загрузить следующие источники:\\n%1$s</string>
+	<string name="err_failed_to_load_tv_sources">Не удалось загрузить следующие источники:\n%1$s\n\nОни помечены как недоступные и могут быть отредактированы или удалены из списка.</string>
 	<string name="add_stalker_source">Добавить портал Stalker</string>
 	<string name="stalker_portal_url">URL-адрес портала</string>
 	<string name="stalker_mac_address">MAC-адрес</string>

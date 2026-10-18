@@ -89,8 +89,8 @@
 	<string name="car_keyboard_send">Send</string>
 	<string name="car_keyboard_enter">Enter</string>
 
-    <string name="theme">Application theme</string>
-    <string name="theme_sub">Current theme: %1$s</string>
+    <string name="theme">Theme</string>
+    <string name="theme_sub">Active theme: %1$s</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_system">System</string>
@@ -476,7 +476,6 @@
         Users are responsible for the sources they add.</p>
         <p><b>Original project:</b> Fermata by Andrey Pavlenko</p>
         <p><b>Version:</b> %1$s (%2$d)</p>
-        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Failed to play %s</string>
@@ -586,7 +585,103 @@
     <string name="app_version">Version</string>
     <string name="support_kofi_title">Buy Me a Coffee ☕</string>
     <string name="support_kofi_sub">Support development at ko-fi.com/fermatax</string>
-    <string name="github_repo_title">GitHub Repository</string>
-    <string name="github_repo_sub">Source code, releases, and issue tracker</string>
     <string name="support_banner_text">Enjoying FermataX? Support with a coffee ☕</string>
+
+    <!-- Initial Setup Permissions -->
+    <string name="initial_setup_grant_permissions">Grant Permissions</string>
+    <string name="initial_setup_check_permissions">Check Status</string>
+    <string name="initial_setup_permissions_all_granted">✓ All required permissions granted</string>
+    <string name="initial_setup_permissions_needed">⚠ Permissions needed for media, car &amp; voice</string>
+
+    <!-- Glass Weather Conditions -->
+    <string name="weather_clear">Clear</string>
+    <string name="weather_mainly_clear">Mainly Clear</string>
+    <string name="weather_partly_cloudy">Partly Cloudy</string>
+    <string name="weather_overcast">Overcast</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_rain_showers">Rain Showers</string>
+    <string name="weather_thunderstorm">Thunderstorm</string>
+    <string name="weather_fair">Fair</string>
+    <string name="weather_cached_suffix"> (Cached)</string>
+    <string name="weather_cached_prefix">Cached </string>
+    <string name="weather_updated_prefix">Updated </string>
+    <!-- Glass Addon Action Hints -->
+    <string name="glass_addon_enabled_hint">Enabled · Tap to disable</string>
+    <string name="glass_addon_drag_hint">Drag to reorder</string>
+    <string name="glass_addon_disabled_hint">Disabled · Tap to enable</string>
+
+    <!-- Glass Speedo Trip -->
+    <string name="speedo_reset_trip">Reset Trip</string>
+    <string name="speedo_reset_trip_confirm">Reset trip distance, average speed, and driving time?</string>
+
+    <!-- Glass Weather & Speedo UI -->
+    <string name="glass_weather_waiting_gps">Waiting for GPS satellite fix...</string>
+    <string name="glass_weather_perm_phone_hint">Please grant location permission on phone.</string>
+    <string name="glass_weather_perm_car_hint">Grant location permission on phone to view weather.</string>
+    <string name="glass_weather_perm_needed">Permission Needed</string>
+    <string name="glass_weather_grant_btn">Grant Permission</string>
+    <string name="glass_weather_locating">Locating GPS...</string>
+    <string name="glass_speedo_trip_dist">DISTANCE</string>
+    <string name="glass_speedo_trip_avg">AVG SPEED</string>
+    <string name="glass_speedo_trip_time">TIME</string>
+    <!-- Glass Media Player UI -->
+    <string name="glass_media_now_playing">NOW PLAYING</string>
+    <string name="glass_media_library">MEDIA LIBRARY</string>
+    <string name="glass_media_browse_library">Browse Media Library</string>
+    <string name="glass_media_choose_hint">Tap to choose music or video</string>
+    <string name="glass_media_resume_recent">RESUME RECENT</string>
+    <string name="glass_media_live_stream">LIVE STREAM</string>
+    <string name="glass_media_live_badge">LIVE</string>
+    <string name="glass_media_error">PLAYBACK ERROR</string>
+    <string name="glass_media_retry_hint">Playback failed. Tap to retry.</string>
+    <string name="glass_media_no_playing">No Media Playing</string>
+    <string name="glass_media_recent_media">Recent Media</string>
+
+    <!-- Glass Nav & Weather UI -->
+    <string name="glass_nav_header">NAVIGATION</string>
+    <string name="glass_nav_exit">EXIT</string>
+    <string name="glass_nav_gps_timeout">GPS timeout. Tap to retry.</string>
+    <string name="glass_nav_network_error">Network error. Tap to retry.</string>
+    <string name="glass_nav_weather_unavailable">Weather Unavailable</string>
+
+    <!-- Glass QuickBar & Shortcuts -->
+    <string name="glass_quickbar_title">Quick Dock Shortcuts (6 Slots)</string>
+    <string name="glass_quickbar_slot_format">Slot %1$d: %2$s</string>
+    <string name="glass_quickbar_empty">[Empty]</string>
+    <string name="glass_shortcuts_dialog_title">%1$s Shortcuts</string>
+
+    <!-- Glass Addon Descriptions -->
+    <string name="glass_addon_desc_playlists">Saved media collections</string>
+    <string name="glass_addon_desc_folders">Local &amp; external storage</string>
+    <string name="glass_addon_desc_favorites">Quick access starred tracks</string>
+    <string name="glass_addon_desc_recent">Recently played history</string>
+    <string name="glass_media_buffering">BUFFERING...</string>
+    <string name="glass_media_unknown_title">Unknown Title</string>
+
+    <!-- Units -->
+    <string name="unit_m">m</string>
+    <string name="unit_km">km</string>
+    <string name="unit_ft">ft</string>
+
+    <!-- Car Finder Radar Telemetry -->
+    <string name="car_finder_radar_sub_here">CAR IS RIGHT HERE</string>
+    <string name="car_finder_radar_sub_front">CAR IS STRAIGHT AHEAD</string>
+    <string name="car_finder_radar_sub_arrow">FOLLOW THE ARROW</string>
+    <string name="car_finder_radar_accuracy_in_range">±%1$d %2$s  ·  Within GPS accuracy range — look around</string>
+    <string name="car_finder_camera_error">Camera error: %1$s</string>
+
+    <!-- Glass Addons & Headers -->
+    <string name="glass_addon_module_desc">Addon Module</string>
+    <string name="glass_weather_header">WEATHER &amp; FORECAST</string>
+    <string name="glass_weather_updating">Updating...</string>
+    <string name="glass_speedo_card_title">SPEED &amp; TRIP</string>
+
+    <!-- Glass Quick Dock Actions -->
+    <string name="glass_shortcut_open">Open</string>
+    <string name="glass_shortcut_replace">Replace</string>
+    <string name="glass_shortcut_remove">Remove</string>
 </resources>
+

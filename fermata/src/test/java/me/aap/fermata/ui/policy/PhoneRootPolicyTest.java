@@ -10,8 +10,8 @@ import me.aap.fermata.R;
 
 public class PhoneRootPolicyTest {
 	@Test
-	public void everyHostStartsOnDashboard() {
-		assertEquals(R.id.dashboard_fragment,
+	public void initialDestinationDependsOnHost() {
+		assertEquals(R.id.glass_addons_catalog_fragment,
 				PhoneRootPolicy.initialDestination(RuntimeHostMode.PHONE));
 		assertEquals(R.id.dashboard_fragment,
 				PhoneRootPolicy.initialDestination(RuntimeHostMode.AA_PROJECTION));
@@ -29,7 +29,7 @@ public class PhoneRootPolicyTest {
 	@Test
 	public void primaryRootDependsOnRuntimeHost() {
 		assertTrue(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.PHONE,
-				R.id.dashboard_fragment));
+				R.id.glass_addons_catalog_fragment));
 		assertTrue(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.AA_PROJECTION,
 				R.id.dashboard_fragment));
 	}
@@ -37,33 +37,34 @@ public class PhoneRootPolicyTest {
 	@Test
 	public void eachSelectedPhoneAreaIsItsOwnBackRoot() {
 		assertTrue(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.PHONE,
-				R.id.dashboard_fragment, R.id.dashboard_fragment));
+				R.id.glass_addons_catalog_fragment, R.id.glass_addons_catalog_fragment));
 		assertTrue(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.PHONE,
 				R.id.settings_fragment, R.id.settings_fragment));
 		assertFalse(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.PHONE,
-				R.id.dashboard_fragment, R.id.youtube_fragment));
+				R.id.glass_addons_catalog_fragment, R.id.youtube_fragment));
 		assertTrue(PhoneRootPolicy.isPrimaryRoot(RuntimeHostMode.AA_PROJECTION,
 				R.id.youtube_fragment, R.id.dashboard_fragment));
 	}
 
 	@Test
-	public void validatesAndNormalizesOnlyDashboardAndSettingsPhoneRoots() {
+	public void validatesAndNormalizesPhoneRoots() {
 		assertFalse(PhoneRootPolicy.isPhoneRoot(R.id.folders_fragment));
-		assertTrue(PhoneRootPolicy.isPhoneRoot(R.id.dashboard_fragment));
+		assertTrue(PhoneRootPolicy.isPhoneRoot(R.id.glass_addons_catalog_fragment));
+		assertTrue(PhoneRootPolicy.isPhoneRoot(R.id.car_finder_fragment));
 		assertTrue(PhoneRootPolicy.isPhoneRoot(R.id.settings_fragment));
 		assertFalse(PhoneRootPolicy.isPhoneRoot(R.id.youtube_fragment));
-		assertEquals(R.id.dashboard_fragment,
+		assertEquals(R.id.glass_addons_catalog_fragment,
 				PhoneRootPolicy.normalizePhoneRoot(R.id.youtube_fragment));
 	}
 
 	@Test
-	public void dashboardDescendantsPreserveTheDashboardPhoneRoot() {
-		assertEquals(R.id.dashboard_fragment, PhoneRootPolicy.resolvePhoneRoot(
-				R.id.dashboard_fragment, R.id.youtube_fragment));
-		assertEquals(R.id.dashboard_fragment, PhoneRootPolicy.resolvePhoneRoot(
-				R.id.dashboard_fragment, R.id.folders_fragment));
+	public void descendantsPreserveThePhoneRoot() {
+		assertEquals(R.id.glass_addons_catalog_fragment, PhoneRootPolicy.resolvePhoneRoot(
+				R.id.glass_addons_catalog_fragment, R.id.youtube_fragment));
+		assertEquals(R.id.glass_addons_catalog_fragment, PhoneRootPolicy.resolvePhoneRoot(
+				R.id.glass_addons_catalog_fragment, R.id.folders_fragment));
 		assertEquals(R.id.settings_fragment, PhoneRootPolicy.resolvePhoneRoot(
-				R.id.dashboard_fragment, R.id.settings_fragment));
+				R.id.glass_addons_catalog_fragment, R.id.settings_fragment));
 	}
 
 	@Test

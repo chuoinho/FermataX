@@ -37,9 +37,10 @@ public final class TopBarPolicy {
 		return resolveTopBarVisibility(activeFragmentId, false);
 	}
 
-	/** A hidden shell always wins over route-specific top-bar visibility. */
+	/** In-page chrome routes (Stremio, Car Finder) own their headers and must use full content height. */
 	public static int resolveTopBarVisibility(int activeFragmentId, boolean barsHidden) {
-		return barsHidden || (activeFragmentId == me.aap.fermata.R.id.stremio_fragment) ?
+		return barsHidden || (activeFragmentId == me.aap.fermata.R.id.stremio_fragment)
+				|| (activeFragmentId == me.aap.fermata.R.id.car_finder_fragment) ?
 				GONE : VISIBLE;
 	}
 

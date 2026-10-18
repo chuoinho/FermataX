@@ -236,15 +236,30 @@ public final class DiagnosticReportExporter {
 	}
 
 	private static String manifest(Context context, DiagnosticRecorder recorder) {
-		StringBuilder manifest = new StringBuilder(512).append('{').append(
+		Runtime rt = Runtime.getRuntime();
+		android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+		StringBuilder manifest = new StringBuilder(1024).append('{').append(
 				"\"schema_version\":1," +
 				"\"package\":\"" + json(context.getPackageName()) + "\"," +
 				"\"version_name\":\"" + json(BuildConfig.VERSION_NAME) + "\"," +
 				"\"version_code\":" + BuildConfig.VERSION_CODE + ',' +
 				"\"build_type\":\"" + json(BuildConfig.BUILD_TYPE) + "\"," +
 				"\"android_api\":" + SDK_INT + ',' +
+				"\"android_release\":\"" + json(Build.VERSION.RELEASE) + "\"," +
 				"\"device_manufacturer\":\"" + json(Build.MANUFACTURER) + "\"," +
 				"\"device_model\":\"" + json(Build.MODEL) + "\"," +
+				"\"device_board\":\"" + json(Build.BOARD) + "\"," +
+				"\"device_hardware\":\"" + json(Build.HARDWARE) + "\"," +
+				"\"device_product\":\"" + json(Build.PRODUCT) + "\"," +
+				"\"display\":{" +
+				"\"width\":" + dm.widthPixels + ',' +
+				"\"height\":" + dm.heightPixels + ',' +
+				"\"density\":" + dm.density + ',' +
+				"\"density_dpi\":" + dm.densityDpi + "}," +
+				"\"memory\":{" +
+				"\"free_bytes\":" + rt.freeMemory() + ',' +
+				"\"total_bytes\":" + rt.totalMemory() + ',' +
+				"\"max_bytes\":" + rt.maxMemory() + "}," +
 				"\"exported_at_ms\":" + System.currentTimeMillis());
 		if (recorder != null) {
 			DiagnosticRecorder.Stats stats = recorder.getStats();

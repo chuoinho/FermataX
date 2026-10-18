@@ -44,14 +44,6 @@ public final class PlaybackUiPolicy {
 		return presentationVisible && !textInputActive;
 	}
 
-	public static boolean goToCurrentAudioSource(MainActivityDelegate activity) {
-		PlayableItem source = getAudioSource(activity.getMediaServiceBinder().getCurrentEngine());
-		if ((source != null) && activity.goToItem(source)) return true;
-
-		PlayableItem current = activity.getMediaServiceBinder().getCurrentItem();
-		return (current != null) && !current.isVideo() && activity.goToItem(current);
-	}
-
 	public static boolean isActiveListOnCurrentAudioPath(MainActivityDelegate activity) {
 		PlayableItem source = getAudioSource(activity.getMediaServiceBinder().getCurrentEngine());
 		ActivityFragment fragment = activity.getActiveFragment();

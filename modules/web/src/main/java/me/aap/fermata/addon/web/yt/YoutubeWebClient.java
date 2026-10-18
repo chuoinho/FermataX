@@ -33,6 +33,7 @@ public class YoutubeWebClient extends FermataWebClient {
 		MainActivityDelegate.get(view.getContext()).clearVoiceSelection();
 		if (view instanceof YoutubeWebView youtube) {
 			youtube.onMainFramePageStarted();
+			youtube.syncYoutubeTheme(youtube.isDarkTheme());
 			youtube.evaluateJavascript(YoutubeScripts.PREFER_H264 + YoutubeScripts.ADBLOCK_CSS + YoutubeScripts.NETWORK_ADBLOCK, null);
 		}
 		super.onPageStarted(view, url, favicon);
@@ -69,7 +70,10 @@ public class YoutubeWebClient extends FermataWebClient {
 	@Override
 	public void onPageFinished(WebView view, String url) {
 		super.onPageFinished(view, url);
-		if ((view instanceof YoutubeWebView youtube) && youtube.acceptsPageCallback(url))
-			youtube.collectVoiceSearchResults(url);
+		if (view instanceof YoutubeWebView youtube) {
+			youtube.syncYoutubeTheme(youtube.isDarkTheme());
+			if (youtube.acceptsPageCallback(url))
+				youtube.collectVoiceSearchResults(url);
+		}
 	}
 }

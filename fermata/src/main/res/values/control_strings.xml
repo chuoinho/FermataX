@@ -19,9 +19,9 @@
     <string name="control_open_car_first" translatable="false">Open FermataX on the car screen first.</string>
     <string name="control_open_failed" translatable="false">Could not open this addon on the car screen.</string>
     <string name="control_no_addons" translatable="false">No enabled addons with a car screen.</string>
-    <string name="phone_header_nothing_playing" translatable="false">Nothing playing</string>
-    <string name="phone_header_choose_media" translatable="false">Choose media to control</string>
-    <string name="phone_header_aa_disconnect" translatable="false">AA disconnect</string>
-    <string name="phone_header_aa_connected" translatable="false">AA connected</string>
-    <string name="phone_open_on_car_strip_title" translatable="false">Open on car</string>
+    <string name="phone_header_nothing_playing">Nothing playing</string>
+    <string name="phone_header_choose_media">Choose media to control</string>
+    <string name="phone_header_aa_disconnect">AA disconnected</string>
+    <string name="phone_header_aa_connected">AA connected</string>
+    <string name="phone_open_on_car_strip_title">Open on car</string>
 </resources>
