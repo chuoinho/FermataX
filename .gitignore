@@ -91,3 +91,7 @@ build-custom.gradle
 /.retired-module-build-cache-*/
 /.codex-gradle/
 /.gradle-fermata-temp/
+
+# Local tooling
+run_dhu.bat
+.delegate/

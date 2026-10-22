@@ -12,6 +12,7 @@ def youtubeDiagnosticsEnabled = project.getProperties()
         .getOrDefault('YT_DIAGNOSTICS', 'false').toString().toBoolean()
 
 android {
+    testOptions.unitTests.includeAndroidResources = true
     defaultConfig {
         namespace = 'me.aap.fermata'
         applicationId configuredApplicationId

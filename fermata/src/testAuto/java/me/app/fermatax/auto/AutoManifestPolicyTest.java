@@ -35,6 +35,9 @@ public class AutoManifestPolicyTest {
 		assertEquals("remove", legacy.getAttributeNS(TOOLS_NS, "node"));
 		assertNotNull(internal);
 		assertEquals("true", internal.getAttributeNS(ANDROID_NS, "exported"));
+		String fgsType = internal.getAttributeNS(ANDROID_NS, "foregroundServiceType");
+		assertEquals("mediaPlayback", fgsType);
+		assertFalse(fgsType.contains("location"));
 		assertTrue(hasNamed(internal, "action", "android.intent.action.MEDIA_BUTTON"));
 		assertTrue(hasNamed(internal, "action", "android.media.browse.MediaBrowserService"));
 		assertTrue(hasNamed(internal, "action",
@@ -104,6 +107,16 @@ public class AutoManifestPolicyTest {
 		Element mirrorService = findNamed(manifest, "service", "me.app.fermatax.auto.MirrorService");
 		assertNotNull(mirrorService);
 		assertEquals("false", mirrorService.getAttributeNS(ANDROID_NS, "enabled"));
+	}
+
+	@Test
+	public void manifestsDoNotRequestBackgroundLocation() throws Exception {
+		Document mainManifest = parse("src/main/AndroidManifest.xml");
+		assertFalse(hasNamed(mainManifest, "uses-permission",
+				"android.permission.ACCESS_BACKGROUND_LOCATION"));
+		Document autoManifest = parse("src/auto/AndroidManifest.xml");
+		assertFalse(hasNamed(autoManifest, "uses-permission",
+				"android.permission.ACCESS_BACKGROUND_LOCATION"));
 	}
 
 	private static Document parse(String path) throws Exception {

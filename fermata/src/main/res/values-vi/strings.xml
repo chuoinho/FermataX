@@ -632,7 +632,23 @@
     <string name="glass_weather_grant_btn">Cấp quyền</string>
     <string name="glass_weather_locating">Đang định vị GPS...</string>
     <string name="glass_speedo_trip_dist">QUÃNG ĐƯỜNG</string>
-    <string name="glass_speedo_trip_avg">TỐC ĐỘ TB</string>
+    <string name="glass_speedo_trip_avg">TB CHUYẾN</string>
+    <string name="speedo_total_average">Trung bình gồm thời gian dừng</string>
+    <string name="speedo_recording_title">Đang ghi hành trình</string>
+    <string name="speedo_recording_text">GPS tiếp tục đo khi tắt màn hình. Tạm dừng khi kết thúc chuyến đi.</string>
+    <string name="speedo_pause_trip">Tạm dừng hành trình</string>
+    <string name="speedo_resume_trip">Tiếp tục hành trình</string>
+    <string name="speedo_waiting">Đang tìm GPS</string>
+    <string name="speedo_gps_ready">Đã kết nối GPS</string>
+    <string name="speedo_speed_unknown">Chưa đủ dữ liệu tốc độ</string>
+    <string name="speedo_signal_lost">Mất tín hiệu GPS</string>
+    <string name="speedo_gps_off">Bật GPS</string>
+    <string name="speedo_permission">Cấp vị trí chính xác trên điện thoại</string>
+    <string name="speedo_paused">Đã tạm dừng</string>
+    <string name="speedo_start_error">Chưa đo được. Nhấn tiếp tục để thử lại.</string>
+    <string name="speedo_estimated">%1$s ước tính</string>
+    <string name="speedo_incomplete">Thiếu dữ liệu</string>
+    <string name="speedo_tap_to_enable">Chạm để bật GPS</string>
     <string name="glass_speedo_trip_time">THỜI GIAN</string>
     <!-- Glass Media Player UI -->
     <string name="glass_media_now_playing">ĐANG PHÁT</string>

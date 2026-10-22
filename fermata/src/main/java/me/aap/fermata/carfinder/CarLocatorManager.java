@@ -1,6 +1,7 @@
 package me.aap.fermata.carfinder;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -56,6 +57,9 @@ public final class CarLocatorManager {
 
 	private Location currentUserLocation;
 	private LocationListener activeLocationListener;
+	private LocationListener networkLocationListener;
+	private LocationListener fusedLocationListener;
+	private LocationListener passiveLocationListener;
 	private boolean isTrackingLocation;
 	private boolean isTrackingVehicularLocation;
 	private boolean isDisconnectReceiverRegistered;
@@ -63,22 +67,30 @@ public final class CarLocatorManager {
 
 	private final BroadcastReceiver disconnectReceiver = new BroadcastReceiver() {
 		@Override
+		@SuppressLint("MissingPermission")
 		public void onReceive(Context context, Intent intent) {
 			if (intent == null || intent.getAction() == null) return;
 			String action = intent.getAction();
 			if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				if (device != null) {
-					BluetoothClass btClass = device.getBluetoothClass();
-					if (btClass != null) {
-						int major = btClass.getMajorDeviceClass();
-						int deviceClass = btClass.getDeviceClass();
-						boolean isVehicular = (deviceClass == BluetoothClass.Device.AUDIO_VIDEO_CAR_AUDIO)
-								|| (deviceClass == BluetoothClass.Device.AUDIO_VIDEO_HANDSFREE);
-						if (!isVehicular) {
-							Log.i("CarFinder: Ignoring BT disconnect from non-vehicular device (major=", major, ", class=", deviceClass, ")");
-							return;
+					try {
+						if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+								|| ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+							BluetoothClass btClass = device.getBluetoothClass();
+							if (btClass != null) {
+								int major = btClass.getMajorDeviceClass();
+								int deviceClass = btClass.getDeviceClass();
+								boolean isVehicular = (deviceClass == BluetoothClass.Device.AUDIO_VIDEO_CAR_AUDIO)
+										|| (deviceClass == BluetoothClass.Device.AUDIO_VIDEO_HANDSFREE);
+								if (!isVehicular) {
+									Log.i("CarFinder: Ignoring BT disconnect from non-vehicular device (major=", major, ", class=", deviceClass, ")");
+									return;
+								}
+							}
 						}
+					} catch (SecurityException e) {
+						Log.w("CarFinder: SecurityException reading BluetoothClass", e);
 					}
 				}
 				if (me.aap.fermata.auto.AutomotiveConnectionState.get().isProjectionConnected()
@@ -128,24 +140,48 @@ public final class CarLocatorManager {
 	 * Queries the best known current or last-known location across GPS, Network, and Fused providers.
 	 */
 	@Nullable
+	@SuppressLint("MissingPermission")
 	public Location queryBestKnownUserLocation(Context context) {
 		if (currentUserLocation != null) return currentUserLocation;
+		Context app = context.getApplicationContext();
+		if (ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+				&& ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+			return null;
+		}
 		try {
-			LocationManager lm = (LocationManager) context.getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+			LocationManager lm = (LocationManager) app.getSystemService(Context.LOCATION_SERVICE);
 			if (lm != null) {
-				Location loc = null;
-				if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-					loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+				Location best = null;
+				String[] providers = {
+						LocationManager.GPS_PROVIDER,
+						LocationManager.NETWORK_PROVIDER,
+						LocationManager.PASSIVE_PROVIDER
+				};
+				for (String p : providers) {
+					try {
+						Location cand = lm.getLastKnownLocation(p);
+						if (cand != null) {
+							if (best == null || cand.getTime() > best.getTime()
+									|| (cand.getTime() >= best.getTime() - 10_000L && cand.getAccuracy() < best.getAccuracy())) {
+								best = cand;
+							}
+						}
+					} catch (Throwable ignored) {}
 				}
-				if (loc == null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-					loc = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+					try {
+						Location cand = lm.getLastKnownLocation(LocationManager.FUSED_PROVIDER);
+						if (cand != null) {
+							if (best == null || cand.getTime() > best.getTime()
+									|| (cand.getTime() >= best.getTime() - 10_000L && cand.getAccuracy() < best.getAccuracy())) {
+								best = cand;
+							}
+						}
+					} catch (Throwable ignored) {}
 				}
-				if (loc == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lm.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
-					loc = lm.getLastKnownLocation(LocationManager.FUSED_PROVIDER);
-				}
-				if (loc != null) {
-					currentUserLocation = loc;
-					return loc;
+				if (best != null) {
+					currentUserLocation = best;
+					return best;
 				}
 			}
 		} catch (Throwable ignored) {
@@ -490,58 +526,65 @@ public final class CarLocatorManager {
 		}
 
 		activeLocationListener = new LocationListener() {
-			@Override
-			public void onLocationChanged(@NonNull Location location) {
-				currentUserLocation = location;
-
-				kalmanFilter.update(location.getLatitude(), location.getLongitude(),
-						location.hasAccuracy() ? location.getAccuracy() : 25.0f,
-						location.hasSpeed() ? location.getSpeed() : -1.0f,
-						location.getTime());
-
-				smoother.recordLocationSample(location);
-
-				for (UserLocationListener l : userLocationListeners) {
-					l.onUserLocationChanged(location);
-				}
-			}
-
-			@Override
-			public void onStatusChanged(String provider, int status, android.os.Bundle extras) {
-			}
-
-			@Override
-			public void onProviderEnabled(@NonNull String provider) {
-			}
-
-			@Override
-			public void onProviderDisabled(@NonNull String provider) {
-			}
+			@Override public void onLocationChanged(@NonNull Location location) { handleTrackedLocation(location); }
+			@Override public void onStatusChanged(String provider, int status, android.os.Bundle extras) {}
+			@Override public void onProviderEnabled(@NonNull String provider) {}
+			@Override public void onProviderDisabled(@NonNull String provider) {}
+		};
+		networkLocationListener = new LocationListener() {
+			@Override public void onLocationChanged(@NonNull Location location) { handleTrackedLocation(location); }
+			@Override public void onStatusChanged(String provider, int status, android.os.Bundle extras) {}
+			@Override public void onProviderEnabled(@NonNull String provider) {}
+			@Override public void onProviderDisabled(@NonNull String provider) {}
+		};
+		fusedLocationListener = new LocationListener() {
+			@Override public void onLocationChanged(@NonNull Location location) { handleTrackedLocation(location); }
+			@Override public void onStatusChanged(String provider, int status, android.os.Bundle extras) {}
+			@Override public void onProviderEnabled(@NonNull String provider) {}
+			@Override public void onProviderDisabled(@NonNull String provider) {}
+		};
+		passiveLocationListener = new LocationListener() {
+			@Override public void onLocationChanged(@NonNull Location location) { handleTrackedLocation(location); }
+			@Override public void onStatusChanged(String provider, int status, android.os.Bundle extras) {}
+			@Override public void onProviderEnabled(@NonNull String provider) {}
+			@Override public void onProviderDisabled(@NonNull String provider) {}
 		};
 
 		try {
-			boolean requested = false;
+			if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+				lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0.0f, activeLocationListener, Looper.getMainLooper());
+			}
+			if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+				lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000L, 0.0f, networkLocationListener, Looper.getMainLooper());
+			}
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 				try {
 					if (lm.getProvider(LocationManager.FUSED_PROVIDER) != null) {
-						lm.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 1000L, 0.0f, activeLocationListener, Looper.getMainLooper());
-						requested = true;
+						lm.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 1000L, 0.0f, fusedLocationListener, Looper.getMainLooper());
 					}
-				} catch (Throwable ignored) {
-				}
+				} catch (Throwable ignored) {}
 			}
-			if (!requested) {
-				if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-					lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 1.0f, activeLocationListener, Looper.getMainLooper());
+			try {
+				if (lm.getProvider(LocationManager.PASSIVE_PROVIDER) != null) {
+					lm.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 1000L, 0.0f, passiveLocationListener, Looper.getMainLooper());
 				}
-				if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-					lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000L, 2.0f, activeLocationListener, Looper.getMainLooper());
-				}
-			}
+			} catch (Throwable ignored) {}
 			isTrackingLocation = true;
-			Log.i("CarFinder: Started location tracking (vehicular=", isTrackingVehicularLocation, ")");
+			Log.i("CarFinder: Started multi-source location tracking (vehicular=", isTrackingVehicularLocation, ")");
 		} catch (SecurityException e) {
 			Log.w(e, "CarFinder: Location permission missing during update request");
+		}
+	}
+
+	private void handleTrackedLocation(@NonNull Location location) {
+		currentUserLocation = location;
+		kalmanFilter.update(location.getLatitude(), location.getLongitude(),
+				location.hasAccuracy() ? location.getAccuracy() : 25.0f,
+				location.hasSpeed() ? location.getSpeed() : -1.0f,
+				location.getTime());
+		smoother.recordLocationSample(location);
+		for (UserLocationListener l : userLocationListeners) {
+			l.onUserLocationChanged(location);
 		}
 	}
 
@@ -556,13 +599,13 @@ public final class CarLocatorManager {
 	private synchronized void stopLocationTrackingInternal(Context app) {
 		if (!isTrackingLocation) return;
 		LocationManager lm = (LocationManager) app.getSystemService(Context.LOCATION_SERVICE);
-		if (lm != null && activeLocationListener != null) {
-			try {
-				lm.removeUpdates(activeLocationListener);
-			} catch (SecurityException ignored) {
-			}
+		if (lm != null) {
+			try { if (activeLocationListener != null) lm.removeUpdates(activeLocationListener); } catch (SecurityException ignored) {}
+			try { if (networkLocationListener != null) lm.removeUpdates(networkLocationListener); } catch (SecurityException ignored) {}
+			try { if (fusedLocationListener != null) lm.removeUpdates(fusedLocationListener); } catch (SecurityException ignored) {}
+			try { if (passiveLocationListener != null) lm.removeUpdates(passiveLocationListener); } catch (SecurityException ignored) {}
 		}
-		activeLocationListener = null;
+		activeLocationListener = networkLocationListener = fusedLocationListener = passiveLocationListener = null;
 		isTrackingLocation = false;
 		Log.i("CarFinder: Stopped location tracking");
 	}

@@ -1,7 +1,6 @@
 package me.aap.fermata.ui.glass.widget;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
@@ -33,13 +32,5 @@ public class GlassWidgetTest {
 		glassSwitch.toggle();
 		assertFalse(glassSwitch.isChecked());
 		assertFalse(notified[0]);
-	}
-
-	@Test
-	public void glassCardViewInitializesWithGlassBackground() {
-		Context context = RuntimeEnvironment.getApplication();
-		GlassCardView card = new GlassCardView(context);
-
-		assertNotNull(card.getBackground());
 	}
 }

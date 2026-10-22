@@ -40,6 +40,8 @@ import me.aap.fermata.ui.glass.quickbar.GlassQuickShortcut;
 import me.aap.fermata.ui.glass.quickbar.GlassShortcutPickerDialog;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripController;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView;
+import me.aap.fermata.ui.glass.speedo.TripTrackingRegistry;
+import me.aap.fermata.ui.glass.speedo.TripTrackingService;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
@@ -58,7 +60,8 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
     // Cards & Managers
     private GlassSpeedoTripView speedoView;
-    private GlassSpeedoTripController speedoController;
+    private final TripTrackingRegistry tripRegistry;
+    private TripTrackingRegistry.Listener tripListener;
 
     private GlassNavWeatherView navWeatherView;
     private GlassOpenMeteoClient weatherClient;
@@ -77,6 +80,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         this.activity = activity;
         this.layout = layout;
         this.binder = binder;
+        this.tripRegistry = TripTrackingService.registry();
 
         Context ctx = layout.getContext();
         this.isNight = activity.getPrefs().isGlassNightMode();
@@ -94,10 +98,13 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     private void initCards(Context ctx) {
         // Speedo & Trip
         speedoView = new GlassSpeedoTripView(ctx);
-        speedoController = new GlassSpeedoTripController(ctx, (speedKmh, state) -> {
-            speedoView.updateSpeed(speedKmh, state, isMetric);
-        });
-        speedoView.setOnResetTripListener(speedoController::resetTrip);
+        tripListener = (speedKmh, state) -> {
+            if (speedoView != null) {
+                speedoView.updateSpeed(speedKmh, state, isMetric);
+            }
+        };
+        speedoView.setOnResetTripListener(tripRegistry::resetTrip);
+        speedoView.setOnToggleTripListener(tripRegistry::toggleTrip);
 
         // Nav & Weather
         navWeatherView = new GlassNavWeatherView(ctx);
@@ -271,7 +278,9 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
     public void start() {
         isStopped = false;
-        speedoController.start();
+        tripRegistry.addListener(tripListener);
+        // The visible dashboard always records; the service only keeps recording when it is allowed to.
+        tripRegistry.getController().start();
         AutomotiveNavNotificationService.registerListener(this);
     }
 
@@ -285,13 +294,15 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             me.aap.fermata.carfinder.CarLocatorManager.get().stopTrackingUserLocation(activeLocationListener);
             activeLocationListener = null;
         }
-        weatherClient.cancel();
-        speedoController.stop();
+        weatherClient.shutdown();
+        tripRegistry.removeListener(tripListener);
+        tripRegistry.getController().stop();
         AutomotiveNavNotificationService.unregisterListener(this);
         mediaController.unbind();
     }
 
     public void onHostResumed() {
+        if (!isStopped) tripRegistry.getController().onHostResumed();
         if (!isStopped && navWeatherView != null && !navWeatherView.hasForecastData()) {
             refreshWeather(activity.getContext());
         }

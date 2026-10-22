@@ -1,0 +1,18 @@
+<resources>
+    <string name="speedo_total_average">Media incluidas las paradas</string>
+    <string name="speedo_recording_title">Registrando trayecto</string>
+    <string name="speedo_recording_text">El GPS sigue registrando con la pantalla apagada. Pausa al terminar el trayecto.</string>
+    <string name="speedo_pause_trip">Pausar trayecto</string>
+    <string name="speedo_resume_trip">Reanudar trayecto</string>
+    <string name="speedo_waiting">Buscando GPS</string>
+    <string name="speedo_gps_ready">GPS conectado</string>
+    <string name="speedo_speed_unknown">Velocidad no disponible</string>
+    <string name="speedo_signal_lost">Señal GPS perdida</string>
+    <string name="speedo_gps_off">Activa el GPS</string>
+    <string name="speedo_permission">Permite la ubicación precisa en el teléfono</string>
+    <string name="speedo_paused">Trayecto en pausa</string>
+    <string name="speedo_start_error">No se puede registrar. Toca reanudar para reintentar.</string>
+    <string name="speedo_estimated">%1$s estimados</string>
+    <string name="speedo_incomplete">Faltan datos</string>
+    <string name="speedo_tap_to_enable">Toca para activar el GPS</string>
+</resources>

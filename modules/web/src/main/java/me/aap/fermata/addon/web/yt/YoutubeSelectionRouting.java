@@ -8,7 +8,7 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 /** Only explicit selection may leave a WebView; transport keeps its existing session owner. */
 final class YoutubeSelectionRouting {
 	static String clickScript(int intentEvent) {
-		return """
+		return String.format(java.util.Locale.ROOT, """
 				if (state.intentListener) document.removeEventListener('click', state.intentListener, true);
 				state.intentListener = function(e) {
 				  var href = '';
@@ -38,7 +38,7 @@ final class YoutubeSelectionRouting {
 				  } catch (err) {}
 				};
 				document.addEventListener('click', state.intentListener, true);
-				""".formatted(intentEvent);
+				""", intentEvent);
 	}
 	private final YoutubeWebView web;
 	private Selection selection;

@@ -60,6 +60,7 @@ public class FermataApplication extends NetSplitCompatApp {
 				DiagnosticPriority.STATE, null, null);
 		vfsManager = new FermataVfsManager();
 		bitmapCache = new BitmapCache();
+		me.aap.fermata.ui.glass.speedo.TripTrackingAutoBinder.install(this);
 		diagnostics.recordEssential("application", "application_initialized",
 				DiagnosticPriority.STATE, null, null);
 	}

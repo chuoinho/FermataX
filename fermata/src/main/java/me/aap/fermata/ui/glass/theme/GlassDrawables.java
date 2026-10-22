@@ -51,6 +51,26 @@ public final class GlassDrawables {
 		return createGlassGrabberPillDrawable(context, radiusDp, GlassThemeColors.isNight(context));
 	}
 
+	public static Drawable createGlassGrabberSemicircleDrawable(Context context, float radiusDp, boolean isNight, boolean isRight) {
+		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
+		float r = radiusDp * density;
+		GradientDrawable drawable = new GradientDrawable();
+		int bgColor = isNight ? 0xFF14181B : 0xFFF4F3F1;
+		int borderColor = isNight ? 0x40FFFFFF : 0x28000000;
+		drawable.setColor(bgColor);
+		drawable.setStroke(Math.max(1, (int) (1.2f * density)), borderColor);
+		if (isRight) {
+			drawable.setCornerRadii(new float[]{r, r, 0f, 0f, 0f, 0f, r, r});
+		} else {
+			drawable.setCornerRadii(new float[]{0f, 0f, r, r, r, r, 0f, 0f});
+		}
+		return drawable;
+	}
+
+	public static Drawable createGlassGrabberSemicircleDrawable(Context context, float radiusDp, boolean isRight) {
+		return createGlassGrabberSemicircleDrawable(context, radiusDp, GlassThemeColors.isNight(context), isRight);
+	}
+
 	public static Drawable createGlassPillDrawable(Context context, float radiusDp, boolean isNight) {
 		GlassThemeColors colors = GlassThemeColors.get(context, isNight);
 		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;

@@ -73,7 +73,7 @@ public final class CarFinderPrefs {
 	}
 
 	public static void persistParkingLocation(Context context, CarParkingLocation location) {
-		getPrefs(context).edit().putString(KEY_PARKING_LOCATION, location.toJson()).commit();
+		getPrefs(context).edit().putString(KEY_PARKING_LOCATION, location.toJson()).apply();
 		notifyLocationChanged(location);
 	}
 
@@ -82,7 +82,7 @@ public final class CarFinderPrefs {
 	}
 
 	public static void deleteParkingLocation(Context context) {
-		getPrefs(context).edit().remove(KEY_PARKING_LOCATION).commit();
+		getPrefs(context).edit().remove(KEY_PARKING_LOCATION).apply();
 		notifyLocationChanged(null);
 	}
 
@@ -95,7 +95,7 @@ public final class CarFinderPrefs {
 	}
 
 	public static void setAutoSaveEnabled(Context context, boolean enabled) {
-		getPrefs(context).edit().putBoolean(KEY_AUTO_SAVE, enabled).commit();
+		getPrefs(context).edit().putBoolean(KEY_AUTO_SAVE, enabled).apply();
 		CarLocatorManager.get().onAutoSaveSettingChanged(context, enabled);
 	}
 

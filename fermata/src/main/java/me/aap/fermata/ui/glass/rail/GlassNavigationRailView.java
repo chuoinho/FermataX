@@ -13,14 +13,20 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import androidx.core.content.ContextCompat;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -44,6 +50,7 @@ public class GlassNavigationRailView extends FrameLayout {
 
     private static final String TAG = "GlassNavRail";
     private static final long ANIM_DURATION_MS = 220L;
+    public static final long AUTO_HIDE_DELAY_MS = 5000L;
 
     private final MainActivityDelegate activity;
     private final Boolean isCarOverride;
@@ -55,8 +62,23 @@ public class GlassNavigationRailView extends FrameLayout {
     private LinearLayout railContainer;
     private FrameLayout grabberHandle;
     private FrameLayout innerGrabberPill;
-    private TextView tvGrip;
+    private ImageView ivLauncher;
     private View[] actionButtons;
+
+    private final Handler autoHideHandler = new Handler(Looper.getMainLooper());
+    private final Runnable autoHideRunnable = this::collapse;
+    private float downRawX = 0f;
+    private float downRawY = 0f;
+    private float initialTranslationY = 0f;
+    private boolean isDragging = false;
+    private boolean isHorizontalSwipe = false;
+    private int touchSlop = 0;
+
+    private float edgeDownX = 0f;
+    private float edgeDownY = 0f;
+    private boolean edgeTracking = false;
+    private boolean edgeBackIntercepted = false;
+    private Runnable backActionListenerForTesting = null;
 
     private boolean isOpen = false;
     private boolean fullscreenHidden = false;
@@ -135,15 +157,16 @@ public class GlassNavigationRailView extends FrameLayout {
         addView(railContainer);
 
         // 3. Grabber Handle (Touch target envelope with visual pill inside)
+        this.touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         boolean isCar = isCar();
-        int hitWidth = GlassDimensions.dpToPx(context, isCar ? 76 : 48);
-        int hitHeight = GlassDimensions.dpToPx(context, 84);
-        int visualWidth = GlassDimensions.dpToPx(context, 26);
-        int visualHeight = GlassDimensions.dpToPx(context, 72);
+        int hitWidth = GlassDimensions.dpToPx(context, isCar ? 80 : 64);
+        int hitHeight = GlassDimensions.dpToPx(context, 104);
+        int visualWidth = GlassDimensions.dpToPx(context, 44);
+        int visualHeight = GlassDimensions.dpToPx(context, 88);
 
         grabberHandle = new FrameLayout(context);
         LayoutParams handleLp = new LayoutParams(hitWidth, hitHeight);
-        handleLp.gravity = (isRight ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
+        handleLp.gravity = (isRight ? Gravity.END : Gravity.START) | Gravity.TOP;
         grabberHandle.setLayoutParams(handleLp);
         grabberHandle.setFocusable(true);
         grabberHandle.setClickable(true);
@@ -152,23 +175,106 @@ public class GlassNavigationRailView extends FrameLayout {
         FrameLayout.LayoutParams pillLp = new FrameLayout.LayoutParams(visualWidth, visualHeight);
         pillLp.gravity = (isRight ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
         innerGrabberPill.setLayoutParams(pillLp);
-        innerGrabberPill.setBackground(GlassDrawables.createGlassGrabberPillDrawable(context, 13f, isNight));
+        innerGrabberPill.setBackground(GlassDrawables.createGlassGrabberSemicircleDrawable(context, 44f, isNight, isRight));
         innerGrabberPill.setElevation(GlassDimensions.dpToPx(context, 18));
         innerGrabberPill.setClipChildren(false);
 
-        // Grip indicator inside handle
-        tvGrip = new TextView(context);
-        tvGrip.setText(isRight ? "‹" : "›");
-        tvGrip.setTextSize(18f);
-        tvGrip.setTypeface(Typeface.DEFAULT_BOLD);
-        tvGrip.setTextColor(colors.getTextPrimary());
-        FrameLayout.LayoutParams gripLp = new FrameLayout.LayoutParams(
-                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER);
-        tvGrip.setLayoutParams(gripLp);
-        innerGrabberPill.addView(tvGrip);
+        // App grid / launcher icon inside handle
+        ivLauncher = new ImageView(context);
+        int iconPx = GlassDimensions.dpToPx(context, 24);
+        FrameLayout.LayoutParams iconLp = new FrameLayout.LayoutParams(
+                iconPx, iconPx, Gravity.CENTER);
+        ivLauncher.setLayoutParams(iconLp);
+        try {
+            Drawable d = ContextCompat.getDrawable(context, R.drawable.ic_glass_rail_launcher);
+            if (d != null) {
+                ivLauncher.setImageDrawable(d);
+            } else {
+                ivLauncher.setImageResource(R.drawable.ic_glass_rail_launcher);
+            }
+        } catch (Throwable ignored) {
+            ivLauncher.setImageResource(R.drawable.ic_glass_rail_launcher);
+        }
+        ivLauncher.setColorFilter(colors.getTextPrimary());
+        innerGrabberPill.addView(ivLauncher);
 
         grabberHandle.addView(innerGrabberPill);
         grabberHandle.setOnClickListener(v -> expand());
+        grabberHandle.setOnTouchListener((v, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    downRawX = event.getRawX();
+                    downRawY = event.getRawY();
+                    initialTranslationY = grabberHandle.getTranslationY();
+                    isDragging = false;
+                    isHorizontalSwipe = false;
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float deltaX = event.getRawX() - downRawX;
+                    float deltaY = event.getRawY() - downRawY;
+                    int swipeThreshold = GlassDimensions.dpToPx(getContext(), 30);
+
+                    if (!isDragging && !isHorizontalSwipe) {
+                        if (Math.abs(deltaY) > touchSlop && Math.abs(deltaY) > Math.abs(deltaX)) {
+                            isDragging = true;
+                            if (v.getParent() != null) {
+                                v.getParent().requestDisallowInterceptTouchEvent(true);
+                            }
+                        } else if (((!isRight && deltaX >= swipeThreshold) || (isRight && deltaX <= -swipeThreshold))
+                                && Math.abs(deltaX) > Math.abs(deltaY)) {
+                            isHorizontalSwipe = true;
+                            if (v.getParent() != null) {
+                                v.getParent().requestDisallowInterceptTouchEvent(true);
+                            }
+                        }
+                    }
+
+                    if (isHorizontalSwipe) {
+                        if (!isOpen) {
+                            expand();
+                        }
+                        return true;
+                    }
+
+                    if (isDragging) {
+                        int parentH = getHeight();
+                        int handleH = grabberHandle.getHeight();
+                        if (handleH <= 0) handleH = GlassDimensions.dpToPx(getContext(), 104);
+                        int minMargin = GlassDimensions.dpToPx(getContext(), 12);
+                        int minY = minMargin;
+                        int maxY = Math.max(minY, parentH - handleH - minMargin);
+                        float targetY = Math.max(minY, Math.min(maxY, initialTranslationY + deltaY));
+                        grabberHandle.setTranslationY(targetY);
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (isHorizontalSwipe) {
+                        isHorizontalSwipe = false;
+                        return true;
+                    }
+                    if (isDragging) {
+                        int parentH = getHeight();
+                        int handleH = grabberHandle.getHeight();
+                        if (handleH <= 0) handleH = GlassDimensions.dpToPx(getContext(), 104);
+                        int minMargin = GlassDimensions.dpToPx(getContext(), 12);
+                        int minY = minMargin;
+                        int maxY = Math.max(minY, parentH - handleH - minMargin);
+                        float currentY = grabberHandle.getTranslationY();
+                        float ratio = (maxY > minY) ? (currentY - minY) / (float) (maxY - minY) : 0.5f;
+                        ratio = Math.max(0f, Math.min(1f, ratio));
+                        saveYRatio(ratio);
+                        isDragging = false;
+                    } else {
+                        v.performClick();
+                    }
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    isDragging = false;
+                    isHorizontalSwipe = false;
+                    return true;
+            }
+            return false;
+        });
         updateGrabberHandleAccessibility();
         addView(grabberHandle);
 
@@ -179,13 +285,6 @@ public class GlassNavigationRailView extends FrameLayout {
         if (grabberHandle == null) return;
         String stateStr = isOpen ? " (Expanded)" : " (Collapsed)";
         grabberHandle.setContentDescription(safeGetString(getContext(), R.string.theme_glass, "Glass") + " Navigation Rail" + stateStr);
-        if (tvGrip != null) {
-            if (isOpen) {
-                tvGrip.setText(isRight ? "›" : "‹");
-            } else {
-                tvGrip.setText(isRight ? "‹" : "›");
-            }
-        }
     }
 
     private void buildActionButtons(Context context) {
@@ -448,6 +547,16 @@ public class GlassNavigationRailView extends FrameLayout {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
+        int parentH = bottom - top;
+        if (parentH > 0 && grabberHandle != null && !isDragging) {
+            int handleH = grabberHandle.getHeight();
+            if (handleH <= 0) handleH = GlassDimensions.dpToPx(getContext(), 104);
+            int minMargin = GlassDimensions.dpToPx(getContext(), 12);
+            int minY = minMargin;
+            int maxY = Math.max(minY, parentH - handleH - minMargin);
+            float ratio = getSavedYRatio();
+            grabberHandle.setTranslationY(minY + ratio * (maxY - minY));
+        }
         if (actionButtons != null) {
             float density = getResources().getDisplayMetrics().density;
             boolean isCar = isCar();
@@ -497,6 +606,7 @@ public class GlassNavigationRailView extends FrameLayout {
 
         updateSelectedRoute();
         updateGrabberHandleAccessibility();
+        scheduleAutoHide();
 
         activeAnimator = ValueAnimator.ofFloat(0f, 1f);
         activeAnimator.setDuration(ANIM_DURATION_MS);
@@ -616,10 +726,10 @@ public class GlassNavigationRailView extends FrameLayout {
         this.colors = GlassThemeColors.get(getContext(), isNight);
         railContainer.setBackground(GlassDrawables.createGlassRailDrawable(getContext(), GlassDimensions.CARD_RADIUS_DP, isNight));
         if (innerGrabberPill != null) {
-            innerGrabberPill.setBackground(GlassDrawables.createGlassGrabberPillDrawable(getContext(), 13f, isNight));
+            innerGrabberPill.setBackground(GlassDrawables.createGlassGrabberSemicircleDrawable(getContext(), 44f, isNight, isRight));
         }
-        if (tvGrip != null) {
-            tvGrip.setTextColor(colors.getTextPrimary());
+        if (ivLauncher != null) {
+            ivLauncher.setColorFilter(colors.getTextPrimary());
         }
         updateGrabberHandleAccessibility();
         buildActionButtons(getContext());
@@ -627,6 +737,7 @@ public class GlassNavigationRailView extends FrameLayout {
 
     private void cancelPendingCallbacks() {
         animGeneration++;
+        cancelAutoHide();
         if (pendingFocusRunnable != null) {
             removeCallbacks(pendingFocusRunnable);
             pendingFocusRunnable = null;
@@ -640,8 +751,198 @@ public class GlassNavigationRailView extends FrameLayout {
     }
 
     @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (isOpen) {
+            int action = ev.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
+                cancelAutoHide();
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                scheduleAutoHide();
+            }
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (isOpen) {
+            scheduleAutoHide();
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    public void scheduleAutoHide() {
+        cancelAutoHide();
+        if (isOpen) {
+            autoHideHandler.postDelayed(autoHideRunnable, AUTO_HIDE_DELAY_MS);
+        }
+    }
+
+    public void cancelAutoHide() {
+        autoHideHandler.removeCallbacks(autoHideRunnable);
+    }
+
+    public void resetAutoHideTimer() {
+        scheduleAutoHide();
+    }
+
+    void setBackActionListenerForTesting(@Nullable Runnable listener) {
+        this.backActionListenerForTesting = listener;
+    }
+
+    void setRightForTesting(boolean isRight) {
+        this.isRight = isRight;
+    }
+
+    private boolean isInsideGrabberHandle(float y) {
+        if (grabberHandle == null || grabberHandle.getVisibility() != VISIBLE) {
+            return false;
+        }
+        float handleY = grabberHandle.getY();
+        int handleH = grabberHandle.getHeight();
+        if (handleH <= 0) handleH = GlassDimensions.dpToPx(getContext(), 104);
+        return y >= handleY && y <= (handleY + handleH);
+    }
+
+    private boolean isAtRailEdge(float x) {
+        int w = getWidth();
+        if (w <= 0) return false;
+        int edgeSlop = GlassDimensions.dpToPx(getContext(), 36);
+        return !isRight ? (x <= edgeSlop) : (x >= w - edgeSlop);
+    }
+
+    private void performBackAction() {
+        if (backActionListenerForTesting != null) {
+            backActionListenerForTesting.run();
+            return;
+        }
+        if (activity != null) {
+            activity.onBackPressed();
+        }
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        if (isOpen || !isCar()) {
+            return super.onInterceptTouchEvent(ev);
+        }
+
+        switch (ev.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                if (isAtRailEdge(ev.getX()) && !isInsideGrabberHandle(ev.getY())) {
+                    edgeDownX = ev.getX();
+                    edgeDownY = ev.getY();
+                    edgeTracking = true;
+                    edgeBackIntercepted = false;
+                } else {
+                    edgeTracking = false;
+                    edgeBackIntercepted = false;
+                }
+                return false;
+
+            case MotionEvent.ACTION_MOVE:
+                if (!edgeTracking) {
+                    return false;
+                }
+                float dx = ev.getX() - edgeDownX;
+                float dy = ev.getY() - edgeDownY;
+                int threshold = GlassDimensions.dpToPx(getContext(), 45);
+
+                if (Math.abs(dy) > touchSlop && Math.abs(dy) > Math.abs(dx)) {
+                    edgeTracking = false;
+                    return false;
+                }
+
+                boolean inwardSwipe = !isRight ? (dx >= threshold) : (dx <= -threshold);
+                if (inwardSwipe && Math.abs(dx) > 1.3f * Math.abs(dy)) {
+                    edgeBackIntercepted = true;
+                    edgeTracking = false;
+                    performBackAction();
+                    return true;
+                }
+                return false;
+
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                edgeTracking = false;
+                edgeBackIntercepted = false;
+                return false;
+        }
+
+        return super.onInterceptTouchEvent(ev);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        if (edgeBackIntercepted) {
+            if (ev.getActionMasked() == MotionEvent.ACTION_UP || ev.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                edgeBackIntercepted = false;
+            }
+            return true;
+        }
+        if (!isOpen && isCar()) {
+            switch (ev.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (isAtRailEdge(ev.getX()) && !isInsideGrabberHandle(ev.getY())) {
+                        edgeDownX = ev.getX();
+                        edgeDownY = ev.getY();
+                        edgeTracking = true;
+                        edgeBackIntercepted = false;
+                        return true;
+                    }
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (edgeTracking && !edgeBackIntercepted) {
+                        float dx = ev.getX() - edgeDownX;
+                        float dy = ev.getY() - edgeDownY;
+                        int threshold = GlassDimensions.dpToPx(getContext(), 45);
+                        if (Math.abs(dy) > touchSlop && Math.abs(dy) > Math.abs(dx)) {
+                            edgeTracking = false;
+                        } else {
+                            boolean inwardSwipe = !isRight ? (dx >= threshold) : (dx <= -threshold);
+                            if (inwardSwipe && Math.abs(dx) > 1.3f * Math.abs(dy)) {
+                                edgeBackIntercepted = true;
+                                edgeTracking = false;
+                                performBackAction();
+                                return true;
+                            }
+                        }
+                    }
+                    if (edgeBackIntercepted) {
+                        return true;
+                    }
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    if (edgeTracking || edgeBackIntercepted) {
+                        edgeTracking = false;
+                        edgeBackIntercepted = false;
+                        return true;
+                    }
+                    break;
+            }
+        }
+        return super.onTouchEvent(ev);
+    }
+
+    private float getSavedYRatio() {
+        if (activity != null) {
+            float r = activity.getPrefs().getGlassRailYRatioPref();
+            return Math.max(0f, Math.min(1f, r));
+        }
+        return 0.5f;
+    }
+
+    private void saveYRatio(float ratio) {
+        if (activity != null) {
+            activity.getPrefs().setGlassRailYRatioPref(ratio);
+        }
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         cancelPendingCallbacks();
+        cancelAutoHide();
     }
 }

@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.os.Build;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -19,12 +20,11 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 
 import java.util.Locale;
 
 import me.aap.fermata.R;
-import me.aap.fermata.ui.glass.dialog.GlassDialogBuilder;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
@@ -40,9 +40,9 @@ public class GlassSpeedoTripView extends FrameLayout {
     private TextView tvSpeedValue;
     private TextView tvSpeedUnit;
     private TextView tvCardTitle;
-    private TextView tvSpeedLimit;
-    private FrameLayout speedLimitContainer;
-    private ImageView btnResetTrip;
+    private TextView tvSignal;
+    private TextView btnToggleTrip;
+    private TripEngine.State lastTripState;
 
     private TextView tvTripDistance;
     private TextView tvAvgSpeed;
@@ -54,8 +54,8 @@ public class GlassSpeedoTripView extends FrameLayout {
     private SpeedArcView speedArcView;
 
     private boolean isMetric = true;
-    private int speedLimit = 0;
     private Runnable onResetTripListener;
+    private Runnable onToggleTripListener;
 
     public GlassSpeedoTripView(@NonNull Context context) {
         this(context, null);
@@ -100,59 +100,47 @@ public class GlassSpeedoTripView extends FrameLayout {
         tvCardTitle.setTypeface(Typeface.DEFAULT_BOLD);
         tvCardTitle.setTextColor(colors.getTextSecondary());
         tvCardTitle.setLetterSpacing(0.08f);
+        tvCardTitle.setSingleLine(true);
+        tvCardTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams titleLp = new FrameLayout.LayoutParams(
-                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL);
+                LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL);
+        boolean isCar = GlassDimensions.isCar(context);
+        titleLp.setMarginEnd(GlassDimensions.dpToPx(context, isCar ? 120 : 90));
         topBar.addView(tvCardTitle, titleLp);
 
-        // Top-end actions: Reset button + Speed Limit Container
-        LinearLayout topEndLayout = new LinearLayout(context);
-        topEndLayout.setOrientation(LinearLayout.HORIZONTAL);
-        topEndLayout.setGravity(Gravity.CENTER_VERTICAL);
-        FrameLayout.LayoutParams topEndLp = new FrameLayout.LayoutParams(
+        LinearLayout topActions = new LinearLayout(context);
+        topActions.setOrientation(LinearLayout.HORIZONTAL);
+        topActions.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        FrameLayout.LayoutParams actionsLp = new FrameLayout.LayoutParams(
                 LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.END | Gravity.CENTER_VERTICAL);
-        topBar.addView(topEndLayout, topEndLp);
+        topActions.setLayoutParams(actionsLp);
 
-        // Explicit reset trip button (R12)
-        btnResetTrip = new ImageView(context);
-        int resetSize = GlassDimensions.dpToPx(context, 26);
-        LinearLayout.LayoutParams resetLp = new LinearLayout.LayoutParams(resetSize, resetSize);
-        resetLp.setMarginEnd(GlassDimensions.dpToPx(context, 4));
-        btnResetTrip.setLayoutParams(resetLp);
-        btnResetTrip.setImageResource(R.drawable.refresh);
-        btnResetTrip.setColorFilter(colors.getTextSecondary());
-        int pad = GlassDimensions.dpToPx(context, 5);
-        btnResetTrip.setPadding(pad, pad, pad, pad);
-        btnResetTrip.setBackground(GlassDrawables.createGlassPillStateDrawable(context, 13f, isNight));
-        String resetDesc = "Reset Trip";
-        try {
-            resetDesc = context.getString(R.string.speedo_reset_trip);
-        } catch (Exception ignored) {}
-        btnResetTrip.setContentDescription(resetDesc);
-        btnResetTrip.setFocusable(true);
-        btnResetTrip.setClickable(true);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            btnResetTrip.setTooltipText(resetDesc);
-        }
-        btnResetTrip.setOnClickListener(v -> confirmResetTrip(context));
-        topEndLayout.addView(btnResetTrip);
+        btnToggleTrip = new TextView(context);
+        int minH = GlassDimensions.dpToPx(context, isCar ? 48 : 36);
+        btnToggleTrip.setMinHeight(minH);
+        btnToggleTrip.setMinWidth(minH);
+        btnToggleTrip.setGravity(Gravity.CENTER);
+        btnToggleTrip.setTextSize(10f);
+        btnToggleTrip.setTypeface(Typeface.DEFAULT_BOLD);
+        btnToggleTrip.setTextColor(colors.getTextPrimary());
+        int padHBtn = GlassDimensions.dpToPx(context, 10);
+        btnToggleTrip.setPadding(padHBtn, 0, padHBtn, 0);
+        btnToggleTrip.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        btnToggleTrip.setText(context.getString(R.string.speedo_pause_trip));
+        btnToggleTrip.setContentDescription(context.getString(R.string.speedo_pause_trip));
+        btnToggleTrip.setClickable(true);
+        btnToggleTrip.setFocusable(true);
+        btnToggleTrip.setOnClickListener(v -> {
+            if (onToggleTripListener != null) {
+                onToggleTripListener.run();
+            }
+        });
+        LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, minH);
+        btnLp.setMarginEnd(GlassDimensions.dpToPx(context, 6));
+        topActions.addView(btnToggleTrip, btnLp);
 
-        // Speed limit circle badge (standard EU/international sign)
-        speedLimitContainer = new FrameLayout(context);
-        int badgeSize = GlassDimensions.dpToPx(context, 34);
-        LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(badgeSize, badgeSize);
-        speedLimitContainer.setLayoutParams(badgeLp);
-        speedLimitContainer.setBackground(GlassDrawables.createGlassPillDrawable(context, 17f, isNight));
-
-        tvSpeedLimit = new TextView(context);
-        tvSpeedLimit.setGravity(Gravity.CENTER);
-        tvSpeedLimit.setTextSize(13f);
-        tvSpeedLimit.setTypeface(Typeface.DEFAULT_BOLD);
-        tvSpeedLimit.setTextColor(Color.RED);
-        tvSpeedLimit.setText("--");
-        speedLimitContainer.addView(tvSpeedLimit, new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-        speedLimitContainer.setVisibility(View.GONE); // Default hidden until speed limit set
-        topEndLayout.addView(speedLimitContainer);
-
+        topBar.addView(topActions);
         contentLayout.addView(topBar);
 
         // Central Speedometer Section
@@ -180,6 +168,15 @@ public class GlassSpeedoTripView extends FrameLayout {
         tvSpeedUnit.setGravity(Gravity.CENTER);
         speedCenter.addView(tvSpeedUnit);
 
+        tvSignal = new TextView(context);
+        tvSignal.setTextSize(10f);
+        tvSignal.setTextColor(colors.getTextSecondary());
+        tvSignal.setGravity(Gravity.CENTER);
+        tvSignal.setMaxLines(1);
+        tvSignal.setEllipsize(TextUtils.TruncateAt.END);
+        tvSignal.setText("◌ " + context.getString(R.string.speedo_waiting));
+        speedCenter.addView(tvSignal);
+
         contentLayout.addView(speedCenter);
 
         // Bottom Trip Computer Section
@@ -187,7 +184,6 @@ public class GlassSpeedoTripView extends FrameLayout {
         tripStatsRow.setOrientation(LinearLayout.HORIZONTAL);
         tripStatsRow.setGravity(Gravity.CENTER);
         int tripPadH = GlassDimensions.dpToPx(context, 6);
-        boolean isCar = GlassDimensions.isCar(context);
         int tripPadV = GlassDimensions.dpToPx(context, isCar ? 6 : 4);
         tripStatsRow.setPadding(tripPadH, tripPadV, tripPadH, tripPadV);
         tripStatsRow.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
@@ -206,12 +202,18 @@ public class GlassSpeedoTripView extends FrameLayout {
         addStatDivider(context, tripStatsRow);
         tvDriveTime = createStatItem(context, tripStatsRow, timeLabel, "00h 00m", isCar);
 
-        // Click or long-press on trip stats triggers reset with confirmation (R12)
+        // Long-press or click on trip stats triggers reset dialog (R12)
+        tripStatsRow.setClickable(true);
+        tripStatsRow.setFocusable(true);
         tripStatsRow.setOnClickListener(v -> confirmResetTrip(context));
         tripStatsRow.setOnLongClickListener(v -> {
             confirmResetTrip(context);
             return true;
         });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String resetTip = safeGetString(context, R.string.speedo_reset_trip, "Reset Trip");
+            tripStatsRow.setTooltipText(resetTip);
+        }
 
         contentLayout.addView(tripStatsRow);
     }
@@ -295,13 +297,7 @@ public class GlassSpeedoTripView extends FrameLayout {
         if (tvCardTitle != null) {
             tvCardTitle.setTextColor(colors.getTextSecondary());
         }
-        if (btnResetTrip != null) {
-            btnResetTrip.setColorFilter(colors.getTextSecondary());
-            btnResetTrip.setBackground(GlassDrawables.createGlassPillStateDrawable(context, 13f, isNight));
-        }
-        if (speedLimitContainer != null) {
-            speedLimitContainer.setBackground(GlassDrawables.createGlassPillDrawable(context, 17f, isNight));
-        }
+        tvSignal.setTextColor(colors.getTextSecondary());
         if (tvSpeedValue != null) {
             tvSpeedValue.setTextColor(colors.getTextPrimary());
         }
@@ -329,72 +325,156 @@ public class GlassSpeedoTripView extends FrameLayout {
         if (speedArcView != null) {
             speedArcView.refreshAppearance(isNight, colors);
         }
+        if (btnToggleTrip != null) {
+            btnToggleTrip.setBackground(GlassDrawables.createGlassPillDrawable(context, 12f, isNight));
+            btnToggleTrip.setTextColor(colors.getActionText());
+        }
         invalidate();
     }
 
-    public void updateSpeed(float speedKmh, GlassSpeedoTripController.TripState tripState, boolean isMetric) {
+    public void updateSpeed(float speedKmh, TripEngine.State tripState, boolean isMetric) {
         this.isMetric = isMetric;
-        if (speedKmh < 0f) {
-            tvSpeedValue.setText("--");
+        this.lastTripState = tripState;
+        Locale locale = displayLocale();
+        // Unknown speed is never rendered as 0, whatever the signal says.
+        if (!Float.isFinite(speedKmh) || speedKmh < 0f) {
+            tvSpeedValue.setText("—");
+            tvSpeedValue.setAlpha(1f);
+            tvSpeedValue.setContentDescription(getContext().getString(R.string.speedo_speed_unknown));
             speedArcView.setSpeedRatio(0f);
         } else {
+            boolean estimate = tripState != null && tripState.speedEstimated();
             float displayedSpeed = isMetric ? speedKmh : (speedKmh * 0.621371f);
-            tvSpeedValue.setText(String.format(Locale.US, "%.0f", displayedSpeed));
+            String formatted = String.format(locale, "%.0f", displayedSpeed);
+            tvSpeedValue.setText(estimate ? "~" + formatted : formatted);
+            tvSpeedValue.setAlpha(estimate ? 0.6f : 1f);
+            tvSpeedValue.setContentDescription(null);
             speedArcView.setSpeedRatio(Math.min(1.0f, speedKmh / 220f));
         }
         tvSpeedUnit.setText(isMetric ? "KM/H" : "MPH");
 
         if (tripState != null) {
+            boolean isPaused = tripState.isPaused();
+            if (btnToggleTrip != null) {
+                if (isPaused) {
+                    btnToggleTrip.setText(R.string.speedo_resume_trip);
+                    btnToggleTrip.setContentDescription(getContext().getString(R.string.speedo_resume_trip));
+                } else {
+                    btnToggleTrip.setText(R.string.speedo_pause_trip);
+                    btnToggleTrip.setContentDescription(getContext().getString(R.string.speedo_pause_trip));
+                }
+            }
+            String approx = tripState.isMostlyEstimated() ? "≈" : "";
             if (isMetric) {
-                tvTripDistance.setText(String.format(Locale.US, "%.1f km", tripState.getDistanceKm()));
-                tvAvgSpeed.setText(String.format(Locale.US, "%.0f km/h", tripState.getAverageSpeedKmh()));
+                tvTripDistance.setText(approx + String.format(locale, "%.1f km", tripState.getDistanceKm()));
+                tvAvgSpeed.setText(String.format(locale, "%.0f km/h", tripState.getAverageSpeedKmh()));
             } else {
-                tvTripDistance.setText(String.format(Locale.US, "%.1f mi", tripState.getDistanceMiles()));
-                tvAvgSpeed.setText(String.format(Locale.US, "%.0f mph", tripState.getAverageSpeedMph()));
+                tvTripDistance.setText(approx + String.format(locale, "%.1f mi", tripState.getDistanceMiles()));
+                tvAvgSpeed.setText(String.format(locale, "%.0f mph", tripState.getAverageSpeedMph()));
             }
             tvDriveTime.setText(tripState.getFormattedDriveTime());
+            String description = switch (tripState.signal()) {
+                case TRACKING -> "● " + getContext().getString(R.string.speedo_gps_ready);
+                case WAITING -> "◌ " + getContext().getString(R.string.speedo_waiting);
+                case STALE -> "◌ " + getContext().getString(R.string.speedo_signal_lost);
+                case GPS_OFF -> getContext().getString(R.string.speedo_gps_off);
+                case PERMISSION -> getContext().getString(R.string.speedo_permission);
+                case PAUSED -> getContext().getString(R.string.speedo_paused);
+                case ERROR -> getContext().getString(R.string.speedo_start_error);
+                case BACKGROUND_BLOCKED -> "⚠ " + getContext().getString(R.string.speedo_tap_to_enable);
+            };
+            if (tripState.signal() == TripEngine.Signal.BACKGROUND_BLOCKED) {
+                tvSignal.setText(description);
+                tvSignal.setTextColor(colors.getActionText());
+                tvSignal.setClickable(true);
+                tvSignal.setFocusable(true);
+                tvSignal.setOnClickListener(v -> TripTrackingService.start(getContext()));
+                setClickable(true);
+                setFocusable(true);
+                setOnClickListener(v -> TripTrackingService.start(getContext()));
+            } else {
+                tvSignal.setText(description);
+                tvSignal.setTextColor(colors.getTextSecondary());
+                tvSignal.setClickable(false);
+                tvSignal.setFocusable(false);
+                tvSignal.setOnClickListener(null);
+                setOnClickListener(null);
+                setClickable(false);
+            }
+            String distanceText = tvTripDistance.getText().toString();
+            if (tripState.isMostlyEstimated()) {
+                distanceText = getContext().getString(R.string.speedo_estimated, distanceText);
+            }
+            if (tripState.incomplete()) {
+                distanceText += ". " + getContext().getString(R.string.speedo_incomplete);
+            }
+            tvTripDistance.setContentDescription(distanceText + ". " + description);
+            tvAvgSpeed.setContentDescription(getContext().getString(R.string.speedo_total_average)
+                    + ": " + tvAvgSpeed.getText());
         }
     }
 
     private void confirmResetTrip(Context context) {
-        if (onResetTripListener == null) return;
-        Context actCtx = context;
-        while (actCtx instanceof ContextWrapper && !(actCtx instanceof Activity)) {
-            actCtx = ((ContextWrapper) actCtx).getBaseContext();
-        }
-        if (actCtx instanceof Activity && !((Activity) actCtx).isFinishing()) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(actCtx);
-            try {
-                builder.setTitle(R.string.speedo_reset_trip)
-                        .setMessage(R.string.speedo_reset_trip_confirm);
-            } catch (Exception ignored) {
-                builder.setTitle("Reset Trip")
-                        .setMessage("Reset trip distance, average speed, and driving time?");
+        try {
+            performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+        } catch (Throwable ignored) {}
+        me.aap.utils.ui.view.DialogBuilder builder = null;
+        try {
+            MainActivityDelegate a = MainActivityDelegate.get(context);
+            if (a != null) {
+                builder = a.createDialogBuilder(context);
             }
-            AlertDialog dialog = builder
-                    .setPositiveButton(android.R.string.ok, (d, which) -> onResetTripListener.run())
+        } catch (Throwable ignored) {}
+        if (builder == null) {
+            try {
+                me.aap.utils.ui.activity.ActivityDelegate ad = me.aap.utils.ui.activity.ActivityDelegate.get(context);
+                if (ad != null) {
+                    builder = ad.createDialogBuilder(context);
+                }
+            } catch (Throwable ignored) {}
+        }
+        if (builder != null) {
+            builder.setTitle(R.string.speedo_reset_trip);
+            builder.setMessage(R.string.speedo_reset_trip_confirm);
+            builder.setPositiveButton(android.R.string.ok, (d, which) -> {
+                if (onResetTripListener != null) {
+                    onResetTripListener.run();
+                }
+            });
+            builder.setNegativeButton(android.R.string.cancel, null);
+            builder.show();
+        } else {
+            android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(context)
+                    .setTitle(R.string.speedo_reset_trip)
+                    .setMessage(R.string.speedo_reset_trip_confirm)
+                    .setPositiveButton(android.R.string.ok, (d, which) -> {
+                        if (onResetTripListener != null) {
+                            onResetTripListener.run();
+                        }
+                    })
                     .setNegativeButton(android.R.string.cancel, null)
                     .create();
-            GlassDialogBuilder.styleAlertDialog(dialog, actCtx, null);
             dialog.show();
-        } else {
-            onResetTripListener.run();
         }
     }
 
-    public void setSpeedLimit(int limitKmh) {
-        this.speedLimit = limitKmh;
-        if (limitKmh > 0) {
-            speedLimitContainer.setVisibility(View.VISIBLE);
-            int displayLimit = isMetric ? limitKmh : Math.round(limitKmh * 0.621371f);
-            tvSpeedLimit.setText(String.valueOf(displayLimit));
-        } else {
-            speedLimitContainer.setVisibility(View.GONE);
-        }
+    private Locale displayLocale() {
+        android.os.LocaleList locales = getResources().getConfiguration().getLocales();
+        return locales.isEmpty() ? Locale.getDefault() : locales.get(0);
     }
 
     public void setOnResetTripListener(Runnable listener) {
         this.onResetTripListener = listener;
+    }
+
+    public void setOnToggleTripListener(Runnable listener) { onToggleTripListener = listener; }
+
+    public boolean performToggleTrip() {
+        return btnToggleTrip != null && btnToggleTrip.performClick();
+    }
+
+    boolean performTripStatsLongClick() {
+        return tripStatsRow != null && tripStatsRow.performLongClick();
     }
 
     /**

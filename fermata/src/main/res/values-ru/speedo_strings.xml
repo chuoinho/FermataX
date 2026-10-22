@@ -1,0 +1,18 @@
+<resources>
+    <string name="speedo_total_average">Средняя скорость с учётом остановок</string>
+    <string name="speedo_recording_title">Запись поездки</string>
+    <string name="speedo_recording_text">GPS продолжает запись при выключенном экране. Приостановите запись в конце поездки.</string>
+    <string name="speedo_pause_trip">Приостановить поездку</string>
+    <string name="speedo_resume_trip">Продолжить поездку</string>
+    <string name="speedo_waiting">Ожидание GPS</string>
+    <string name="speedo_gps_ready">GPS подключён</string>
+    <string name="speedo_speed_unknown">Скорость недоступна</string>
+    <string name="speedo_signal_lost">Сигнал GPS потерян</string>
+    <string name="speedo_gps_off">Включите GPS</string>
+    <string name="speedo_permission">Разрешите точное местоположение на телефоне</string>
+    <string name="speedo_paused">Поездка приостановлена</string>
+    <string name="speedo_start_error">Не удалось начать запись. Нажмите продолжение для повтора.</string>
+    <string name="speedo_estimated">%1$s приблизительно</string>
+    <string name="speedo_incomplete">Неполные данные</string>
+    <string name="speedo_tap_to_enable">Нажмите для включения GPS</string>
+</resources>

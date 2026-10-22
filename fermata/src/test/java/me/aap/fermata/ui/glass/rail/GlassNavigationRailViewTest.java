@@ -3,11 +3,17 @@ package me.aap.fermata.ui.glass.rail;
 import static org.junit.Assert.*;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.util.concurrent.TimeUnit;
+import org.robolectric.shadows.ShadowLooper;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -68,18 +74,24 @@ public class GlassNavigationRailViewTest {
         FrameLayout grabber = (FrameLayout) railView.getChildAt(2);
         ViewGroup.LayoutParams lp = grabber.getLayoutParams();
 
-        // Hit envelope must be at least 48dp width and 84dp height
-        int minHitWidth = GlassDimensions.dpToPx(context, 48);
-        int expectedHitHeight = GlassDimensions.dpToPx(context, 84);
-        assertTrue("Grabber hit width must be at least 48dp", lp.width >= minHitWidth);
+        // Hit envelope must be at least 64dp width and 104dp height
+        int minHitWidth = GlassDimensions.dpToPx(context, 64);
+        int expectedHitHeight = GlassDimensions.dpToPx(context, 104);
+        assertTrue("Grabber hit width must be at least 64dp", lp.width >= minHitWidth);
         assertEquals(expectedHitHeight, lp.height);
 
-        // Inner visual pill must be 26dp width x 72dp height
+        // Inner visual semicircle pill must be 44dp width x 88dp height
         assertEquals(1, grabber.getChildCount());
         View innerPill = grabber.getChildAt(0);
         ViewGroup.LayoutParams pillLp = innerPill.getLayoutParams();
-        assertEquals(GlassDimensions.dpToPx(context, 26), pillLp.width);
-        assertEquals(GlassDimensions.dpToPx(context, 72), pillLp.height);
+        assertEquals(GlassDimensions.dpToPx(context, 44), pillLp.width);
+        assertEquals(GlassDimensions.dpToPx(context, 88), pillLp.height);
+
+        // Child of inner pill is the app launcher ImageView
+        assertEquals(1, ((FrameLayout) innerPill).getChildCount());
+        ImageView ivLauncher = (ImageView) ((FrameLayout) innerPill).getChildAt(0);
+        assertNotNull("Launcher icon must not be null", ivLauncher);
+        assertEquals(View.VISIBLE, ivLauncher.getVisibility());
     }
 
     @Test
@@ -188,9 +200,9 @@ public class GlassNavigationRailViewTest {
                     btn.getHeight() >= 67);
         }
 
-        // Grabber handle hit target for Car must be 76dp
+        // Grabber handle hit target for Car must be 80dp
         FrameLayout grabber = (FrameLayout) carRail.getChildAt(2);
-        assertEquals(GlassDimensions.dpToPx(context, 76), grabber.getLayoutParams().width);
+        assertEquals(GlassDimensions.dpToPx(context, 80), grabber.getLayoutParams().width);
     }
 
     @Test
@@ -286,10 +298,11 @@ public class GlassNavigationRailViewTest {
         assertNotNull(grabber.getContentDescription());
         assertTrue(grabber.getContentDescription().toString().contains("Glass"));
 
-        // Verify inner grip text
+        // Verify inner launcher icon
         FrameLayout innerPill = (FrameLayout) grabber.getChildAt(0);
-        TextView tvGrip = (TextView) innerPill.getChildAt(0);
-        assertEquals("›", tvGrip.getText().toString());
+        ImageView ivLauncher = (ImageView) innerPill.getChildAt(0);
+        assertNotNull(ivLauncher);
+        assertEquals(View.VISIBLE, ivLauncher.getVisibility());
     }
 
     @Test
@@ -325,5 +338,236 @@ public class GlassNavigationRailViewTest {
         KeyEvent repeatedDown = new KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 1);
         boolean handledRepeated = homeBtn.dispatchKeyEvent(repeatedDown);
         assertFalse("Repeated key down (holding key) must not re-trigger action", handledRepeated);
+    }
+
+    @Test
+    public void testAutoHideTimerCollapsesAfterDelay() {
+        railView.expand();
+        assertTrue(railView.isOpen());
+
+        ShadowLooper.idleMainLooper(5000, TimeUnit.MILLISECONDS);
+
+        assertFalse("Rail must auto-collapse after 5000ms idle timeout", railView.isOpen());
+    }
+
+    @Test
+    public void testTouchEventResetsAutoHideTimer() {
+        railView.expand();
+        assertTrue(railView.isOpen());
+
+        // Advance 3000ms
+        ShadowLooper.idleMainLooper(3000, TimeUnit.MILLISECONDS);
+        assertTrue(railView.isOpen());
+
+        // Touch event down and up resets timer
+        long now = SystemClock.uptimeMillis();
+        railView.dispatchTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 10f, 10f, 0));
+        railView.dispatchTouchEvent(MotionEvent.obtain(now, now + 10, MotionEvent.ACTION_UP, 10f, 10f, 0));
+
+        // Advance another 3000ms (total 6000ms from start, but only 3000ms from touch reset)
+        ShadowLooper.idleMainLooper(3000, TimeUnit.MILLISECONDS);
+        assertTrue("Rail must remain open because touch event reset the 5000ms countdown", railView.isOpen());
+
+        // Advance remaining 2000ms to hit 5000ms from touch reset
+        ShadowLooper.idleMainLooper(2000, TimeUnit.MILLISECONDS);
+        assertFalse("Rail must auto-collapse when 5000ms elapses after last touch", railView.isOpen());
+    }
+
+    @Test
+    public void testVerticalDragClampingAndRatioCalculation() {
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(480, View.MeasureSpec.EXACTLY);
+        railView.measure(widthSpec, heightSpec);
+        railView.layout(0, 0, 800, 480);
+
+        FrameLayout grabber = (FrameLayout) railView.getChildAt(2);
+        // Default ratio 0.5f: parent 480, handle 104, minMargin 12 -> minY 12, maxY 364
+        // targetY = 12 + 0.5 * 352 = 188
+        assertEquals(188f, grabber.getTranslationY(), 1.0f);
+
+        long now = SystemClock.uptimeMillis();
+        grabber.dispatchTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 10f, 188f, 0));
+        grabber.dispatchTouchEvent(MotionEvent.obtain(now, now + 50, MotionEvent.ACTION_MOVE, 10f, 288f, 0));
+        assertEquals(288f, grabber.getTranslationY(), 1.0f);
+
+        // Past top boundary (clamped to 12)
+        grabber.dispatchTouchEvent(MotionEvent.obtain(now, now + 100, MotionEvent.ACTION_MOVE, 10f, -50f, 0));
+        assertEquals(12f, grabber.getTranslationY(), 1.0f);
+
+        grabber.dispatchTouchEvent(MotionEvent.obtain(now, now + 150, MotionEvent.ACTION_UP, 10f, -50f, 0));
+        assertFalse("Dragging must not expand the rail", railView.isOpen());
+    }
+
+    @Test
+    public void testQuickTapExpandsRailWithoutDrag() {
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(800, View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(480, View.MeasureSpec.EXACTLY);
+        railView.measure(widthSpec, heightSpec);
+        railView.layout(0, 0, 800, 480);
+
+        FrameLayout grabber = (FrameLayout) railView.getChildAt(2);
+        long now = SystemClock.uptimeMillis();
+        grabber.dispatchTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 10f, 188f, 0));
+        grabber.dispatchTouchEvent(MotionEvent.obtain(now, now + 20, MotionEvent.ACTION_UP, 10f, 189f, 0));
+
+        assertTrue("Quick tap on grabber must expand the rail", railView.isOpen());
+    }
+
+    @Test
+    public void testSwipeInwardOnGrabberHandleExpandsRail() {
+        railView.collapse();
+        assertFalse(railView.isOpen());
+
+        FrameLayout grabber = (FrameLayout) railView.getChildAt(2);
+        long downTime = SystemClock.uptimeMillis();
+
+        // Down on grabber handle
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 20f, 50f, 0);
+        grabber.dispatchTouchEvent(down);
+
+        // Swipe horizontally inward by 50px (rail is on left)
+        MotionEvent move = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_MOVE, 70f, 52f, 0);
+        grabber.dispatchTouchEvent(move);
+
+        assertTrue("Inward horizontal swipe on grabber handle must expand rail during move", railView.isOpen());
+    }
+
+    @Test
+    public void testVerticalDragOnGrabberHandleRepositionsWithoutExpanding() {
+        railView.collapse();
+        FrameLayout grabber = (FrameLayout) railView.getChildAt(2);
+        grabber.layout(0, 0, 80, 104);
+        railView.layout(0, 0, 800, 480);
+        float initialY = grabber.getTranslationY();
+
+        long downTime = SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 20f, 50f, 0);
+        grabber.dispatchTouchEvent(down);
+
+        // Drag vertically down by 80px
+        MotionEvent move = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_MOVE, 22f, 130f, 0);
+        grabber.dispatchTouchEvent(move);
+
+        MotionEvent up = MotionEvent.obtain(downTime, downTime + 100, MotionEvent.ACTION_UP, 22f, 130f, 0);
+        grabber.dispatchTouchEvent(up);
+
+        assertFalse("Vertical drag must not expand rail", railView.isOpen());
+        assertNotEquals("Vertical drag must update grabber translationY", initialY, grabber.getTranslationY(), 0.1f);
+    }
+
+    @Test
+    public void testEdgeSwipeOutsideHandleTriggersBackAction() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.collapse();
+        FrameLayout grabber = (FrameLayout) carRail.getChildAt(2);
+        carRail.layout(0, 0, 800, 480);
+        grabber.setTranslationY(200f);
+
+        final boolean[] backTriggered = {false};
+        carRail.setBackActionListenerForTesting(() -> backTriggered[0] = true);
+
+        long downTime = SystemClock.uptimeMillis();
+        // Touch near left edge (x=10, y=50) - clearly above grabber handle
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 10f, 50f, 0);
+        assertFalse("ACTION_DOWN must not intercept immediately so children receive touch", carRail.onInterceptTouchEvent(down));
+
+        // Swipe inward to x=70, y=52 (> 45px and dominant horizontal)
+        MotionEvent move = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_MOVE, 70f, 52f, 0);
+        assertTrue("Inward edge swipe must be intercepted", carRail.onInterceptTouchEvent(move));
+
+        // Deliver to onTouchEvent
+        carRail.onTouchEvent(move);
+        MotionEvent up = MotionEvent.obtain(downTime, downTime + 100, MotionEvent.ACTION_UP, 70f, 52f, 0);
+        carRail.onTouchEvent(up);
+
+        assertTrue("Edge swipe outside grabber handle must trigger Back action", backTriggered[0]);
+    }
+
+    @Test
+    public void testCenterScreenSwipeDoesNotInterceptOrTriggerBack() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.collapse();
+        carRail.layout(0, 0, 800, 480);
+
+        final boolean[] backTriggered = {false};
+        carRail.setBackActionListenerForTesting(() -> backTriggered[0] = true);
+
+        long downTime = SystemClock.uptimeMillis();
+        // Touch in center of screen: x=300, y=200
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 300f, 200f, 0);
+        assertFalse(carRail.onInterceptTouchEvent(down));
+
+        MotionEvent move = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_MOVE, 380f, 200f, 0);
+        assertFalse("Center screen swipe must NOT be intercepted", carRail.onInterceptTouchEvent(move));
+
+        assertFalse("Back must NOT trigger for center screen swipe", backTriggered[0]);
+    }
+
+    @Test
+    public void testEdgeSwipeInsideHandleBoundsDoesNotTriggerBack() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.collapse();
+        FrameLayout grabber = (FrameLayout) carRail.getChildAt(2);
+        carRail.layout(0, 0, 800, 480);
+        grabber.setTranslationY(150f);
+
+        final boolean[] backTriggered = {false};
+        carRail.setBackActionListenerForTesting(() -> backTriggered[0] = true);
+
+        long downTime = SystemClock.uptimeMillis();
+        // Touch at y=180 (inside grabber handle envelope)
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 10f, 180f, 0);
+        assertFalse("Touch inside grabber handle envelope must not be intercepted for Back", carRail.onInterceptTouchEvent(down));
+
+        MotionEvent move = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_MOVE, 70f, 180f, 0);
+        assertFalse("Swipe inside grabber handle must not be intercepted as edge Back", carRail.onInterceptTouchEvent(move));
+        assertFalse("Back must NOT trigger inside grabber handle", backTriggered[0]);
+    }
+
+    @Test
+    public void testPhoneHostDoesNotInterceptEdgeSwipe() {
+        // Phone host: isCar = false
+        GlassNavigationRailView phoneRail = new GlassNavigationRailView(context, false);
+        phoneRail.collapse();
+        phoneRail.layout(0, 0, 800, 480);
+
+        final boolean[] backTriggered = {false};
+        phoneRail.setBackActionListenerForTesting(() -> backTriggered[0] = true);
+
+        long downTime = SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 10f, 50f, 0);
+        assertFalse(phoneRail.onInterceptTouchEvent(down));
+
+        MotionEvent move = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_MOVE, 70f, 52f, 0);
+        assertFalse("Phone host must not intercept edge swipe", phoneRail.onInterceptTouchEvent(move));
+        assertFalse("Back must NOT trigger on phone host", backTriggered[0]);
+    }
+
+    @Test
+    public void testEdgeSwipeInwardOnRightRailOrientation() {
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        carRail.setRightForTesting(true);
+        carRail.collapse();
+        carRail.layout(0, 0, 800, 480);
+        FrameLayout grabber = (FrameLayout) carRail.getChildAt(2);
+        grabber.setTranslationY(200f);
+
+        final boolean[] backTriggered = {false};
+        carRail.setBackActionListenerForTesting(() -> backTriggered[0] = true);
+
+        long downTime = SystemClock.uptimeMillis();
+        // Right edge: x=790 (width 800, edge slop 36), y=50 (outside grabber at 200..304)
+        MotionEvent down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 790f, 50f, 0);
+        assertFalse(carRail.onInterceptTouchEvent(down));
+
+        // Swipe inward to the left: x=730 (dx = -60px <= -45px)
+        MotionEvent move = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_MOVE, 730f, 52f, 0);
+        assertTrue("Inward edge swipe from right edge must be intercepted", carRail.onInterceptTouchEvent(move));
+
+        carRail.onTouchEvent(move);
+        MotionEvent up = MotionEvent.obtain(downTime, downTime + 100, MotionEvent.ACTION_UP, 730f, 52f, 0);
+        carRail.onTouchEvent(up);
+
+        assertTrue("Edge swipe on right rail must trigger Back action", backTriggered[0]);
     }
 }

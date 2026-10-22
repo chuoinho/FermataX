@@ -89,6 +89,7 @@ public interface MainActivityPrefs
 	int GLASS_APPEARANCE_DAY = 0;
 	int GLASS_APPEARANCE_NIGHT = 1;
 	Pref<IntSupplier> GLASS_APPEARANCE = Pref.i("GLASS_APPEARANCE", GLASS_APPEARANCE_NIGHT);
+	Pref<DoubleSupplier> GLASS_RAIL_Y_RATIO = Pref.f("GLASS_RAIL_Y_RATIO", 0.5f);
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_CLASSIC);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
@@ -145,6 +146,14 @@ public interface MainActivityPrefs
 
 	default boolean isGlassTheme(boolean auto) {
 		return auto ? (getThemePref(true) == THEME_GLASS) : (getThemePref(false) == THEME_GLASS);
+	}
+
+	default float getGlassRailYRatioPref() {
+		return getFloatPref(GLASS_RAIL_Y_RATIO);
+	}
+
+	default void setGlassRailYRatioPref(float ratio) {
+		applyFloatPref(GLASS_RAIL_Y_RATIO, ratio);
 	}
 
 	@Nullable

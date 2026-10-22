@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Free, keyless global weather client powered by Open-Meteo REST API.
@@ -120,9 +121,10 @@ public class GlassOpenMeteoClient {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private HourlyForecast cachedForecast = null;
-    private double lastLat = 0;
-    private double lastLon = 0;
+    private volatile HourlyForecast cachedForecast = null;
+    private volatile double lastLat = 0;
+    private volatile double lastLon = 0;
+    private volatile Boolean cachedIsMetric = null;
 
     private volatile boolean cancelled = false;
 
@@ -138,69 +140,77 @@ public class GlassOpenMeteoClient {
     public void fetchForecast(double lat, double lon, boolean isMetric, @NonNull ForecastCallback callback) {
         this.cancelled = false;
         if (cachedForecast != null && !cachedForecast.isExpired()
+                && cachedIsMetric != null && cachedIsMetric == isMetric
                 && Math.abs(lastLat - lat) < 0.05 && Math.abs(lastLon - lon) < 0.05) {
             callback.onSuccess(cachedForecast);
             return;
         }
 
-        executor.execute(() -> {
-            HttpURLConnection conn = null;
-            try {
-                String tempUnit = isMetric ? "celsius" : "fahrenheit";
-                String windUnit = isMetric ? "kmh" : "mph";
-                String urlStr = String.format(Locale.US,
-                        "%s?latitude=%.4f&longitude=%.4f&current=temperature_2m,weather_code,is_day" +
-                                "&hourly=temperature_2m,weather_code,is_day" +
-                                "&daily=temperature_2m_max,temperature_2m_min" +
-                                "&temperature_unit=%s&wind_speed_unit=%s&timezone=auto&forecast_days=2",
-                        BASE_URL, lat, lon, tempUnit, windUnit);
+        try {
+            executor.execute(() -> {
+                HttpURLConnection conn = null;
+                try {
+                    String tempUnit = isMetric ? "celsius" : "fahrenheit";
+                    String windUnit = isMetric ? "kmh" : "mph";
+                    String urlStr = String.format(Locale.US,
+                            "%s?latitude=%.4f&longitude=%.4f&current=temperature_2m,weather_code,is_day" +
+                                    "&hourly=temperature_2m,weather_code,is_day" +
+                                    "&daily=temperature_2m_max,temperature_2m_min" +
+                                    "&temperature_unit=%s&wind_speed_unit=%s&timezone=auto&forecast_days=2",
+                            BASE_URL, lat, lon, tempUnit, windUnit);
 
-                URL url = new URL(urlStr);
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(8000);
-                conn.setReadTimeout(8000);
-                conn.setRequestMethod("GET");
+                    URL url = new URL(urlStr);
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(8000);
+                    conn.setReadTimeout(8000);
+                    conn.setRequestMethod("GET");
 
-                int responseCode = conn.getResponseCode();
-                if (cancelled) return;
-                if (responseCode >= 200 && responseCode < 300) {
-                    StringBuilder sb = new StringBuilder();
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            sb.append(line);
+                    int responseCode = conn.getResponseCode();
+                    if (cancelled) return;
+                    if (responseCode >= 200 && responseCode < 300) {
+                        StringBuilder sb = new StringBuilder();
+                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                sb.append(line);
+                            }
+                        }
+
+                        if (cancelled) return;
+                        HourlyForecast forecast = parseForecastJson(sb.toString());
+                        this.cachedForecast = forecast;
+                        this.lastLat = lat;
+                        this.lastLon = lon;
+                        this.cachedIsMetric = isMetric;
+                        if (!cancelled) {
+                            mainHandler.post(() -> {
+                                if (!cancelled) callback.onSuccess(forecast);
+                            });
+                        }
+                    } else {
+                        if (!cancelled) {
+                            mainHandler.post(() -> {
+                                if (!cancelled) callback.onError(new Exception("HTTP Error: " + responseCode));
+                            });
                         }
                     }
-
-                    if (cancelled) return;
-                    HourlyForecast forecast = parseForecastJson(sb.toString());
-                    this.cachedForecast = forecast;
-                    this.lastLat = lat;
-                    this.lastLon = lon;
+                } catch (Exception e) {
                     if (!cancelled) {
                         mainHandler.post(() -> {
-                            if (!cancelled) callback.onSuccess(forecast);
+                            if (!cancelled) callback.onError(e);
                         });
                     }
-                } else {
-                    if (!cancelled) {
-                        mainHandler.post(() -> {
-                            if (!cancelled) callback.onError(new Exception("HTTP Error: " + responseCode));
-                        });
+                } finally {
+                    if (conn != null) {
+                        conn.disconnect();
                     }
                 }
-            } catch (Exception e) {
-                if (!cancelled) {
-                    mainHandler.post(() -> {
-                        if (!cancelled) callback.onError(e);
-                    });
-                }
-            } finally {
-                if (conn != null) {
-                    conn.disconnect();
-                }
+            });
+        } catch (RejectedExecutionException e) {
+            if (!cancelled) {
+                mainHandler.post(() -> callback.onError(e));
             }
-        });
+        }
     }
 
     public static HourlyForecast parseForecastJson(String jsonString) throws JSONException {

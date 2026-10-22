@@ -625,7 +625,23 @@
     <string name="glass_weather_grant_btn">Grant Permission</string>
     <string name="glass_weather_locating">Locating GPS...</string>
     <string name="glass_speedo_trip_dist">DISTANCE</string>
-    <string name="glass_speedo_trip_avg">AVG SPEED</string>
+    <string name="glass_speedo_trip_avg">TRIP AVG</string>
+    <string name="speedo_total_average">Average including stops</string>
+    <string name="speedo_recording_title">Recording trip</string>
+    <string name="speedo_recording_text">GPS recording continues with the screen off. Pause when your trip ends.</string>
+    <string name="speedo_pause_trip">Pause trip</string>
+    <string name="speedo_resume_trip">Resume trip</string>
+    <string name="speedo_waiting">Waiting for GPS</string>
+    <string name="speedo_gps_ready">GPS connected</string>
+    <string name="speedo_speed_unknown">Speed unavailable</string>
+    <string name="speedo_signal_lost">GPS signal lost</string>
+    <string name="speedo_gps_off">Turn on GPS</string>
+    <string name="speedo_permission">Allow precise location on your phone</string>
+    <string name="speedo_paused">Trip paused</string>
+    <string name="speedo_start_error">Unable to record. Tap resume to retry.</string>
+    <string name="speedo_estimated">%1$s estimated</string>
+    <string name="speedo_incomplete">Missing data</string>
+    <string name="speedo_tap_to_enable">Tap to enable GPS</string>
     <string name="glass_speedo_trip_time">TIME</string>
     <!-- Glass Media Player UI -->
     <string name="glass_media_now_playing">NOW PLAYING</string>
