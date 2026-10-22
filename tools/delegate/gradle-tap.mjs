@@ -43,7 +43,7 @@ if (fs.existsSync(resultsDir)) {
 }
 
 let fail = cases.filter(c => c.status === 'fail').length;
-const lines = ['TAP version 13'];
+const lines = ['TAP version 13', `# filter: ${filter ?? 'all fermata autoDebug unit tests'}`];
 const total = cases.length + (run.status !== 0 && fail === 0 ? 1 : 0);
 lines.push(`1..${total}`);
 cases.forEach((c, i) => {
