@@ -6,6 +6,7 @@ import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -29,7 +30,7 @@ import java.util.concurrent.RejectedExecutionException;
 public class GlassOpenMeteoClient {
 
     private static final String BASE_URL = "https://api.open-meteo.com/v1/forecast";
-    private static final long CACHE_DURATION_MS = 20 * 60 * 1000L; // 20 minutes
+    public static final long CACHE_DURATION_MS = 60 * 60_000L;
 
     public interface ForecastCallback {
         void onSuccess(@NonNull HourlyForecast forecast);
@@ -77,13 +78,18 @@ public class GlassOpenMeteoClient {
 
         public HourlyForecast(float currentTemp, int currentWeatherCode, boolean isDay,
                               float highTemp, float lowTemp, List<HourlyPoint> hourlyPoints) {
+            this(currentTemp, currentWeatherCode, isDay, highTemp, lowTemp, hourlyPoints, System.currentTimeMillis());
+        }
+
+        public HourlyForecast(float currentTemp, int currentWeatherCode, boolean isDay,
+                              float highTemp, float lowTemp, List<HourlyPoint> hourlyPoints, long timestamp) {
             this.currentTemp = currentTemp;
             this.currentWeatherCode = currentWeatherCode;
             this.isDay = isDay;
             this.highTemp = highTemp;
             this.lowTemp = lowTemp;
             this.hourlyPoints = hourlyPoints != null ? hourlyPoints : Collections.emptyList();
-            this.timestamp = System.currentTimeMillis();
+            this.timestamp = timestamp;
         }
 
         public float getCurrentTemp() {
@@ -115,18 +121,34 @@ public class GlassOpenMeteoClient {
         }
 
         public boolean isExpired() {
-            return (System.currentTimeMillis() - timestamp) > CACHE_DURATION_MS;
+            return isExpired(System.currentTimeMillis());
+        }
+
+        public boolean isExpired(long nowMs) {
+            return (nowMs - timestamp) >= CACHE_DURATION_MS;
         }
     }
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private volatile HourlyForecast cachedForecast = null;
-    private volatile double lastLat = 0;
-    private volatile double lastLon = 0;
+    private volatile String cachedLatRounded = null;
+    private volatile String cachedLonRounded = null;
     private volatile Boolean cachedIsMetric = null;
 
     private volatile boolean cancelled = false;
+
+    public static String buildUrl(double lat, double lon, boolean metric) {
+        String tempUnit = metric ? "celsius" : "fahrenheit";
+        String windUnit = metric ? "kmh" : "mph";
+        return String.format(Locale.US,
+                "%s?latitude=%s&longitude=%s&current=temperature_2m,weather_code,is_day" +
+                        "&hourly=temperature_2m,weather_code,is_day" +
+                        "&daily=temperature_2m_max,temperature_2m_min" +
+                        "&temperature_unit=%s&wind_speed_unit=%s&timezone=auto&forecast_days=2",
+                BASE_URL, WeatherLocationPolicy.roundCoordinate(lat), WeatherLocationPolicy.roundCoordinate(lon),
+                tempUnit, windUnit);
+    }
 
     public void cancel() {
         cancelled = true;
@@ -138,11 +160,20 @@ public class GlassOpenMeteoClient {
     }
 
     public void fetchForecast(double lat, double lon, boolean isMetric, @NonNull ForecastCallback callback) {
+        fetchForecast(lat, lon, isMetric, false, callback);
+    }
+
+    public void fetchForecast(double lat, double lon, boolean isMetric, boolean forceRefresh, @NonNull ForecastCallback callback) {
         this.cancelled = false;
-        if (cachedForecast != null && !cachedForecast.isExpired()
+        String latRounded = WeatherLocationPolicy.roundCoordinate(lat);
+        String lonRounded = WeatherLocationPolicy.roundCoordinate(lon);
+        if (!forceRefresh && cachedForecast != null && !cachedForecast.isExpired()
                 && cachedIsMetric != null && cachedIsMetric == isMetric
-                && Math.abs(lastLat - lat) < 0.05 && Math.abs(lastLon - lon) < 0.05) {
-            callback.onSuccess(cachedForecast);
+                && latRounded.equals(cachedLatRounded) && lonRounded.equals(cachedLonRounded)) {
+            HourlyForecast forecast = cachedForecast;
+            mainHandler.post(() -> {
+                if (!cancelled) callback.onSuccess(forecast);
+            });
             return;
         }
 
@@ -150,14 +181,7 @@ public class GlassOpenMeteoClient {
             executor.execute(() -> {
                 HttpURLConnection conn = null;
                 try {
-                    String tempUnit = isMetric ? "celsius" : "fahrenheit";
-                    String windUnit = isMetric ? "kmh" : "mph";
-                    String urlStr = String.format(Locale.US,
-                            "%s?latitude=%.4f&longitude=%.4f&current=temperature_2m,weather_code,is_day" +
-                                    "&hourly=temperature_2m,weather_code,is_day" +
-                                    "&daily=temperature_2m_max,temperature_2m_min" +
-                                    "&temperature_unit=%s&wind_speed_unit=%s&timezone=auto&forecast_days=2",
-                            BASE_URL, lat, lon, tempUnit, windUnit);
+                    String urlStr = buildUrl(lat, lon, isMetric);
 
                     URL url = new URL(urlStr);
                     conn = (HttpURLConnection) url.openConnection();
@@ -179,8 +203,8 @@ public class GlassOpenMeteoClient {
                         if (cancelled) return;
                         HourlyForecast forecast = parseForecastJson(sb.toString());
                         this.cachedForecast = forecast;
-                        this.lastLat = lat;
-                        this.lastLon = lon;
+                        this.cachedLatRounded = latRounded;
+                        this.cachedLonRounded = lonRounded;
                         this.cachedIsMetric = isMetric;
                         if (!cancelled) {
                             mainHandler.post(() -> {
@@ -373,6 +397,20 @@ public class GlassOpenMeteoClient {
             default:
                 return "Fair";
         }
+    }
+
+    @VisibleForTesting
+    public void setCachedForecastForTesting(@Nullable HourlyForecast forecast, double lat, double lon, boolean isMetric) {
+        this.cachedForecast = forecast;
+        this.cachedLatRounded = WeatherLocationPolicy.roundCoordinate(lat);
+        this.cachedLonRounded = WeatherLocationPolicy.roundCoordinate(lon);
+        this.cachedIsMetric = isMetric;
+    }
+
+    @VisibleForTesting
+    @Nullable
+    public HourlyForecast getCachedForecastForTesting() {
+        return cachedForecast;
     }
 }
 

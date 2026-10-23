@@ -11,6 +11,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import me.aap.fermata.location.LocationHub;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,6 +22,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 
 import java.util.Locale;
@@ -47,6 +49,8 @@ public final class GlassSpeedoTripController {
 
     private final HandlerThread thread;
     private final Handler worker;
+    private final LocationHub.Listener hubListener;
+    @VisibleForTesting volatile Thread lastHandleLocationThread;
 
     private volatile TripEngine.State snapshot;
     private boolean attached, registered, imuRegistered;
@@ -76,6 +80,7 @@ public final class GlassSpeedoTripController {
         this.thread = new HandlerThread("GlassSpeedo");
         this.thread.start();
         this.worker = new Handler(this.thread.getLooper());
+        this.hubListener = loc -> worker.post(() -> handleLocation(loc));
         this.tripLog = TripLogRecorder.create(this.context);
         engine.restore(store.load(), store.suspendedForMs());
         snapshot = engine.state();
@@ -108,7 +113,7 @@ public final class GlassSpeedoTripController {
         store.setUserPaused(false);
         worker.post(() -> {
             running = true;
-            Location seed = queryRecentSeedLocation();
+            Location seed = LocationHub.get(context).freshSystemLocation(60_000L);
             long nowTime = now();
             long seedElapsed = (seed != null && seed.getElapsedRealtimeNanos() > 0)
                     ? seed.getElapsedRealtimeNanos() / 1_000_000
@@ -119,7 +124,8 @@ public final class GlassSpeedoTripController {
             lastCallback = lastProgress = nowTime;
             retryDelay = 5_000;
             nextRetry = 0;
-            registerLocation();
+            LocationHub.get(context).acquire("speedo", hubListener);
+            registered = true;
             if (seedValid) handleLocation(seed);
             checkpoint();
             worker.removeCallbacks(heartbeat);
@@ -134,7 +140,8 @@ public final class GlassSpeedoTripController {
         worker.post(() -> {
             running = false;
             worker.removeCallbacks(heartbeat);
-            unregisterLocation();
+            LocationHub.get(context).release("speedo");
+            registered = false;
             unregisterImu();
             // A system stop: the trip clock stops and no position is bridged across it.
             engine.suspend(now());
@@ -155,7 +162,8 @@ public final class GlassSpeedoTripController {
             } else {
                 worker.post(() -> {
                     if (running && (!registered || now() - lastProgress > 8_000)) {
-                        registerLocation();
+                        LocationHub.get(context).acquire("speedo", hubListener);
+                        registered = true;
                     }
                 });
             }
@@ -175,7 +183,8 @@ public final class GlassSpeedoTripController {
         worker.post(() -> {
             running = false;
             worker.removeCallbacks(heartbeat);
-            unregisterLocation();
+            LocationHub.get(context).release("speedo");
+            registered = false;
             unregisterImu();
             engine.pause(now());
             if (tripLog != null) tripLog.event("pause", now());
@@ -199,6 +208,7 @@ public final class GlassSpeedoTripController {
     public boolean isTracking() { return running; }
 
     private void handleLocation(Location location) {
+        lastHandleLocationThread = Thread.currentThread();
         if (!running || location == null) return;
         if (!store.isAllowMock() && isMock(location)) return;
         long nowTime = now();
@@ -217,27 +227,6 @@ public final class GlassSpeedoTripController {
         publish();
     }
 
-    private final LocationListener locationListener = new LocationListener() {
-        @Override public void onLocationChanged(Location location) { handleLocation(location); }
-        @Override public void onProviderEnabled(String provider) {
-            if (running) { retryDelay = 5_000; nextRetry = 0; registerLocation(); }
-        }
-        @Override public void onProviderDisabled(String provider) {
-            if (!isLocationEnabled()) {
-                engine.unavailable(TripEngine.Signal.GPS_OFF, now());
-                publish();
-            }
-        }
-        @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
-    };
-
-    private final LocationListener fusedListener = new LocationListener() {
-        @Override public void onLocationChanged(Location location) { handleLocation(location); }
-        @Override public void onProviderEnabled(String provider) {}
-        @Override public void onProviderDisabled(String provider) {}
-        @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
-    };
-
     private final Runnable heartbeat = new Runnable() {
         @SuppressLint("MissingPermission")
         @Override public void run() {
@@ -249,10 +238,13 @@ public final class GlassSpeedoTripController {
             engine.tick(time);
             engine.motion(time, stationary, Double.NaN);
             if (!hasPermission()) {
-                unregisterLocation();
+                LocationHub.get(context).release("speedo");
+                registered = false;
                 unregisterImu();
                 engine.unavailable(TripEngine.Signal.PERMISSION, time);
             } else if (!isLocationEnabled()) {
+                LocationHub.get(context).release("speedo");
+                registered = false;
                 unregisterImu();
                 engine.unavailable(TripEngine.Signal.GPS_OFF, time);
             } else {
@@ -262,10 +254,11 @@ public final class GlassSpeedoTripController {
                         nextRetry = time + 5_000;
                     }
                 }
-                // Re-registering does not help inside a tunnel; only a dead or silent provider warrants it.
+                // Watchdog retry: re-acquire from hub if unregistered or silent
                 if (time >= nextRetry && (!registered || time - lastCallback > 60_000)) {
                     Log.d(TAG, "Watchdog retry location registration; callbackAgeMs=" + (time - lastCallback));
-                    registerLocation();
+                    LocationHub.get(context).acquire("speedo", hubListener);
+                    registered = true;
                 }
             }
             if (time - lastSave >= 10_000) checkpoint();
@@ -273,93 +266,6 @@ public final class GlassSpeedoTripController {
             worker.postDelayed(this, 1_000);
         }
     };
-
-    @SuppressLint("MissingPermission")
-    private Location queryRecentSeedLocation() {
-        if (locationManager == null || !hasPermission()) return null;
-        Location best = null;
-        String[] providers = {
-                LocationManager.GPS_PROVIDER,
-                LocationManager.NETWORK_PROVIDER,
-                LocationManager.PASSIVE_PROVIDER
-        };
-        for (String p : providers) {
-            try {
-                Location cand = locationManager.getLastKnownLocation(p);
-                if (cand != null) {
-                    if (best == null || cand.getTime() > best.getTime()
-                            || (cand.getTime() >= best.getTime() - 10_000L && cand.getAccuracy() < best.getAccuracy())) {
-                        best = cand;
-                    }
-                }
-            } catch (Throwable ignored) {}
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            try {
-                Location cand = locationManager.getLastKnownLocation(LocationManager.FUSED_PROVIDER);
-                if (cand != null) {
-                    if (best == null || cand.getTime() > best.getTime()
-                            || (cand.getTime() >= best.getTime() - 10_000L && cand.getAccuracy() < best.getAccuracy())) {
-                        best = cand;
-                    }
-                }
-            } catch (Throwable ignored) {}
-        }
-        if (best != null) {
-            long ageMs = System.currentTimeMillis() - best.getTime();
-            if (ageMs <= 60_000) { // Valid seed if within last 60 seconds
-                Log.d(TAG, "Found recent seed location from " + best.getProvider() + " (age=" + ageMs + "ms)");
-                return best;
-            }
-        }
-        return null;
-    }
-
-    @SuppressLint("MissingPermission")
-    private void registerLocation() {
-        unregisterLocation();
-        long time = now();
-        nextRetry = time + retryDelay;
-        retryDelay = Math.min(60_000, retryDelay * 2);
-        if (!hasPermission() || !isLocationEnabled() || locationManager == null) return;
-
-        boolean registeredAny = false;
-        Looper looper = thread.getLooper();
-        // F-4: Single provider owns measurement stream.
-        // API >= 31 and FUSED_PROVIDER available -> use FUSED only. Otherwise use GPS.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            try {
-                if (locationManager.getProvider(LocationManager.FUSED_PROVIDER) != null) {
-                    locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER,
-                            1_000L, 0f, fusedListener, looper);
-                    registeredAny = true;
-                }
-            } catch (Throwable error) {
-                Log.d(TAG, "FUSED_PROVIDER unavailable", error);
-            }
-        }
-        if (!registeredAny) {
-            try {
-                if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                            1_000L, 0f, locationListener, looper);
-                    registeredAny = true;
-                }
-            } catch (Throwable error) {
-                Log.d(TAG, "GPS_PROVIDER registration failed", error);
-            }
-        }
-        registered = registeredAny;
-        Log.d(TAG, "Registered GNSS single-source; success=" + registeredAny + ", retryDelayMs=" + retryDelay);
-    }
-
-    private void unregisterLocation() {
-        if (locationManager != null && registered) {
-            try { locationManager.removeUpdates(locationListener); } catch (Throwable ignored) {}
-            try { locationManager.removeUpdates(fusedListener); } catch (Throwable ignored) {}
-        }
-        registered = false;
-    }
 
     private void updateImuRegistration(long now) {
         if (now - lastCallback > 2_000) {
@@ -443,6 +349,8 @@ public final class GlassSpeedoTripController {
     @androidx.annotation.VisibleForTesting
     public void destroyForTesting() {
         stop();
+        LocationHub.get(context).release("speedo");
+        registered = false;
         thread.quitSafely();
     }
 
@@ -513,5 +421,10 @@ public final class GlassSpeedoTripController {
     TripEngine getEngineForTesting() { return this.engine; }
     void handleLocationForTesting(Location loc) { handleLocation(loc); }
     boolean isRegisteredForTesting() { return this.registered; }
-    void registerLocationForTesting() { registerLocation(); }
+    void registerLocationForTesting() {
+        LocationHub.get(context).acquire("speedo", hubListener);
+        this.registered = true;
+    }
+    @VisibleForTesting
+    Thread getLastHandleLocationThreadForTesting() { return this.lastHandleLocationThread; }
 }

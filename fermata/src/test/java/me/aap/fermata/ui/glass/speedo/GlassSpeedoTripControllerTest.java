@@ -29,6 +29,8 @@ import org.robolectric.annotation.Config;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
+import me.aap.fermata.location.LocationHub;
+
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35, application = Application.class)
 public class GlassSpeedoTripControllerTest {
@@ -38,6 +40,7 @@ public class GlassSpeedoTripControllerTest {
         context = RuntimeEnvironment.getApplication();
         context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit().clear().commit();
         TripTrackingService.resetForTests();
+        LocationHub.resetForTesting();
         for (Thread t : Thread.getAllStackTraces().keySet()) {
             if (t.getName().contains("GlassSpeedo") && t instanceof HandlerThread ht) {
                 ht.quitSafely();
@@ -48,6 +51,7 @@ public class GlassSpeedoTripControllerTest {
 
     @org.junit.After public void tearDown() {
         TripTrackingService.resetForTests();
+        LocationHub.resetForTesting();
         for (Thread t : Thread.getAllStackTraces().keySet()) {
             if (t.getName().contains("GlassSpeedo") && t instanceof HandlerThread ht) {
                 ht.quitSafely();
@@ -467,6 +471,35 @@ public class GlassSpeedoTripControllerTest {
                 .filter(t -> t.getName().contains("GlassSpeedo") && t.isAlive())
                 .count();
         assertTrue("Expected <= 1 GlassSpeedo thread, found: " + threadCount, threadCount <= 1);
+    }
+
+    @Test
+    public void handleLocationRunsOnWorkerThread() {
+        Shadows.shadowOf((Application) context).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION);
+        LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        Shadows.shadowOf(lm).setLocationEnabled(true);
+        Shadows.shadowOf(lm).setProviderEnabled(LocationManager.GPS_PROVIDER, true);
+
+        GlassSpeedoTripController c = new GlassSpeedoTripController(context, (v, s) -> {});
+        c.start();
+        android.os.Looper workerLooper = c.getThreadForTesting().getLooper();
+        Shadows.shadowOf(workerLooper).idle();
+
+        Location fix = new Location(LocationManager.GPS_PROVIDER);
+        fix.setLatitude(21.0);
+        fix.setLongitude(105.0);
+        fix.setAccuracy(5.0f);
+        fix.setSpeed(10.0f);
+        fix.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+        Shadows.shadowOf(lm).simulateLocation(fix);
+
+        LocationHub hub = LocationHub.get(context);
+        Shadows.shadowOf(hub.getLooperForTesting()).idle();
+        Shadows.shadowOf(workerLooper).idle();
+
+        assertSame("handleLocation must execute on worker thread", c.getThreadForTesting(), c.getLastHandleLocationThreadForTesting());
+        c.stop();
+        c.destroyForTesting();
     }
 
     private static String text(View view) {

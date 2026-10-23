@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
+import android.os.SystemClock;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -23,6 +24,8 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonState;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.auto.AutomotiveConnectionState;
+import me.aap.fermata.location.LocationHub;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.service.ControlOnlyPresentation;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
@@ -46,6 +49,7 @@ import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
 import me.aap.fermata.ui.glass.weather.GlassOpenMeteoClient;
+import me.aap.fermata.ui.glass.weather.WeatherLocationPolicy;
 
 /**
  * Orchestrator connecting the Glass Dashboard components with Android Auto and Fermata services.
@@ -109,9 +113,6 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         // Nav & Weather
         navWeatherView = new GlassNavWeatherView(ctx);
         weatherClient = new GlassOpenMeteoClient();
-
-        // Fetch real device/GPS location and weather states
-        refreshWeather(ctx);
 
         // Media Player Card
         mediaView = new GlassMediaPlayerView(ctx);
@@ -271,10 +272,35 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         return fallback;
     }
 
-    private me.aap.fermata.carfinder.CarLocatorManager.UserLocationListener activeLocationListener;
     private final android.os.Handler weatherHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable gpsTimeoutRunnable;
+    private final Runnable scheduledWeatherRefresh = new Runnable() {
+        @Override
+        public void run() {
+            if (isStopped) return;
+            Context ctx = activity.getContext();
+            if (ctx != null) {
+                refreshWeather(ctx, true);
+            }
+        }
+    };
     private volatile boolean isStopped = false;
+    private boolean weatherAcquired = false;
+    // True from the start of a refresh until its forecast or error arrives.
+    private boolean weatherBusy = false;
+    // Identifies the current one-shot location request; stale hub callbacks are ignored.
+    @Nullable private Object weatherRequest;
+    private long lastWeatherFetchMs = 0L;
+
+    private void scheduleNextWeatherRefresh() {
+        if (isStopped) return;
+        weatherHandler.removeCallbacks(scheduledWeatherRefresh);
+        if (AutomotiveConnectionState.get().isProjectionConnected()) {
+            long delay = WeatherLocationPolicy.nextFetchDelayMs(System.currentTimeMillis(), lastWeatherFetchMs);
+            if (delay <= 0) delay = WeatherLocationPolicy.REFRESH_MS;
+            weatherHandler.postDelayed(scheduledWeatherRefresh, delay);
+        }
+    }
 
     public void start() {
         isStopped = false;
@@ -282,17 +308,24 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         // The visible dashboard always records; the service only keeps recording when it is allowed to.
         tripRegistry.getController().start();
         AutomotiveNavNotificationService.registerListener(this);
+
+        // On Android Auto this is the single initial load; the schedule takes over afterwards.
+        refreshWeather(activity.getContext(), AutomotiveConnectionState.get().isProjectionConnected());
     }
 
     public void stop() {
         isStopped = true;
+        weatherHandler.removeCallbacks(scheduledWeatherRefresh);
         if (gpsTimeoutRunnable != null) {
             weatherHandler.removeCallbacks(gpsTimeoutRunnable);
             gpsTimeoutRunnable = null;
         }
-        if (activeLocationListener != null) {
-            me.aap.fermata.carfinder.CarLocatorManager.get().stopTrackingUserLocation(activeLocationListener);
-            activeLocationListener = null;
+        if (weatherAcquired) {
+            Context ctx = activity.getContext();
+            if (ctx != null) {
+                LocationHub.get(ctx).release("weather");
+            }
+            weatherAcquired = false;
         }
         weatherClient.shutdown();
         tripRegistry.removeListener(tripListener);
@@ -303,7 +336,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
     public void onHostResumed() {
         if (!isStopped) tripRegistry.getController().onHostResumed();
-        if (!isStopped && navWeatherView != null && !navWeatherView.hasForecastData()) {
+        if (!isStopped) {
             refreshWeather(activity.getContext());
         }
     }
@@ -314,19 +347,47 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     }
 
     private void refreshWeather(Context ctx) {
-        if (isStopped) return;
+        refreshWeather(ctx, false);
+    }
+
+    private void refreshWeather(Context ctx, boolean force) {
+        if (isStopped || ctx == null) return;
+        boolean isAA = AutomotiveConnectionState.get().isProjectionConnected();
+        boolean hasData = navWeatherView != null && navWeatherView.hasForecastData();
+        if (!WeatherLocationPolicy.shouldRefresh(force, weatherBusy, isAA,
+                System.currentTimeMillis(), lastWeatherFetchMs, hasData)) {
+            return;
+        }
+        weatherBusy = true;
+        weatherRequest = null;
+
         if (gpsTimeoutRunnable != null) {
             weatherHandler.removeCallbacks(gpsTimeoutRunnable);
             gpsTimeoutRunnable = null;
         }
-        if (activeLocationListener != null) {
-            me.aap.fermata.carfinder.CarLocatorManager.get().stopTrackingUserLocation(activeLocationListener);
-            activeLocationListener = null;
+        if (weatherAcquired) {
+            LocationHub.get(ctx).release("weather");
+            weatherAcquired = false;
         }
 
-        Location loc = me.aap.fermata.carfinder.CarLocatorManager.get().queryBestKnownUserLocation(ctx);
+        LocationHub hub = LocationHub.get(ctx);
+        Location loc = null;
+        Location latest = hub.latest();
+        if (latest != null) {
+            long ageMs = latest.getElapsedRealtimeNanos() > 0
+                    ? (SystemClock.elapsedRealtimeNanos() - latest.getElapsedRealtimeNanos()) / 1_000_000L
+                    : Math.max(0, System.currentTimeMillis() - latest.getTime());
+            if (ageMs <= 5 * 60_000L) {
+                loc = latest;
+            }
+        }
+
+        if (loc == null) {
+            loc = hub.freshSystemLocation(30 * 60_000L);
+        }
+
         if (loc != null) {
-            fetchWeatherForLocation(ctx, loc.getLatitude(), loc.getLongitude());
+            fetchWeatherForLocation(ctx, loc.getLatitude(), loc.getLongitude(), force);
             return;
         }
 
@@ -340,6 +401,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             String hint = ctx.getString(isCar ?
                     me.aap.fermata.R.string.glass_weather_perm_car_hint :
                     me.aap.fermata.R.string.glass_weather_perm_phone_hint);
+            weatherBusy = false;
             Runnable req = isCar ? null : () -> {
                 Context c = activity.getContext();
                 if (c instanceof android.app.Activity) {
@@ -348,58 +410,74 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
                 }
             };
             navWeatherView.showPermissionNeeded(hint, req);
+            // On Android Auto non-forced refreshes are blocked, so the schedule is the only retry.
+            scheduleNextWeatherRefresh();
             return;
         }
 
         navWeatherView.showLocating(ctx.getString(me.aap.fermata.R.string.glass_weather_waiting_gps));
-        activeLocationListener = new me.aap.fermata.carfinder.CarLocatorManager.UserLocationListener() {
-            @Override
-            public void onUserLocationChanged(Location updatedLoc) {
-                if (isStopped) return;
-                if (gpsTimeoutRunnable != null) {
-                    weatherHandler.removeCallbacks(gpsTimeoutRunnable);
-                    gpsTimeoutRunnable = null;
-                }
-                me.aap.fermata.carfinder.CarLocatorManager.get().stopTrackingUserLocation(this);
-                activeLocationListener = null;
-                if (updatedLoc != null) {
-                    fetchWeatherForLocation(ctx, updatedLoc.getLatitude(), updatedLoc.getLongitude());
-                }
-            }
-        };
+        weatherAcquired = true;
+        final Object request = new Object();
+        weatherRequest = request;
 
         gpsTimeoutRunnable = () -> {
-            if (isStopped) return;
-            if (activeLocationListener != null) {
-                me.aap.fermata.carfinder.CarLocatorManager.get().stopTrackingUserLocation(activeLocationListener);
-                activeLocationListener = null;
+            if (isStopped || weatherRequest != request) return;
+            weatherRequest = null;
+            if (weatherAcquired) {
+                hub.release("weather");
+                weatherAcquired = false;
             }
-            Location fallback = me.aap.fermata.carfinder.CarLocatorManager.get().queryBestKnownUserLocation(ctx);
+            Location fallback = hub.freshSystemLocation(30 * 60_000L);
             if (fallback != null) {
-                fetchWeatherForLocation(ctx, fallback.getLatitude(), fallback.getLongitude());
+                fetchWeatherForLocation(ctx, fallback.getLatitude(), fallback.getLongitude(), force);
             } else {
-                navWeatherView.showError(safeGetString(ctx, R.string.glass_nav_gps_timeout, "GPS timeout. Tap to retry."), () -> refreshWeather(ctx));
+                weatherBusy = false;
+                navWeatherView.showError(safeGetString(ctx, R.string.glass_nav_gps_timeout, "GPS timeout. Tap to retry."), () -> refreshWeather(ctx, force));
+                scheduleNextWeatherRefresh();
             }
         };
         weatherHandler.postDelayed(gpsTimeoutRunnable, 15000L);
 
-        me.aap.fermata.carfinder.CarLocatorManager.get().startTrackingUserLocation(ctx, activeLocationListener);
+        hub.acquire("weather", new LocationHub.Listener() {
+            @Override
+            public void onLocation(@NonNull Location updatedLoc) {
+                weatherHandler.post(() -> {
+                    // The hub delivers at 1 Hz: only the first fix of this request is used.
+                    if (isStopped || weatherRequest != request) return;
+                    weatherRequest = null;
+                    if (gpsTimeoutRunnable != null) {
+                        weatherHandler.removeCallbacks(gpsTimeoutRunnable);
+                        gpsTimeoutRunnable = null;
+                    }
+                    hub.release("weather");
+                    weatherAcquired = false;
+                    if (updatedLoc != null) {
+                        fetchWeatherForLocation(ctx, updatedLoc.getLatitude(), updatedLoc.getLongitude(), force);
+                    }
+                });
+            }
+        });
     }
 
-    private void fetchWeatherForLocation(Context ctx, double lat, double lon) {
-        weatherClient.fetchForecast(lat, lon, isMetric, new GlassOpenMeteoClient.ForecastCallback() {
+    private void fetchWeatherForLocation(Context ctx, double lat, double lon, boolean force) {
+        weatherClient.fetchForecast(lat, lon, isMetric, force, new GlassOpenMeteoClient.ForecastCallback() {
             @Override
             public void onSuccess(@NonNull GlassOpenMeteoClient.HourlyForecast forecast) {
+                lastWeatherFetchMs = forecast.getTimestamp();
+                weatherBusy = false;
                 if (!isStopped) {
                     navWeatherView.bindWeather(forecast, isMetric, null, forecast.isExpired());
                 }
+                scheduleNextWeatherRefresh();
             }
 
             @Override
             public void onError(@NonNull Throwable error) {
+                weatherBusy = false;
                 if (!isStopped) {
-                    navWeatherView.showError(safeGetString(ctx, R.string.glass_nav_network_error, "Network error. Tap to retry."), () -> fetchWeatherForLocation(ctx, lat, lon));
+                    navWeatherView.showError(safeGetString(ctx, R.string.glass_nav_network_error, "Network error. Tap to retry."), () -> fetchWeatherForLocation(ctx, lat, lon, false));
                 }
+                scheduleNextWeatherRefresh();
             }
         });
     }

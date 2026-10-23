@@ -20,8 +20,10 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
@@ -33,6 +35,7 @@ import java.util.concurrent.Executors;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.location.LocationHub;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.log.Log;
 
@@ -45,7 +48,7 @@ public final class CarLocatorManager {
 	private static final String CHANNEL_ID = "fermata_car_finder_channel";
 	private static final int NOTIF_ID = 4040;
 	private static final long DEBOUNCE_DISCONNECT_MS = 10_000L; // 10s debounce to prevent duplicate anchors
-	private static final CarLocatorManager INSTANCE = new CarLocatorManager();
+	private static CarLocatorManager INSTANCE;
 
 	public interface UserLocationListener {
 		void onUserLocationChanged(Location location);
@@ -54,12 +57,11 @@ public final class CarLocatorManager {
 	private final LocationKalmanFilter kalmanFilter = new LocationKalmanFilter();
 	private final ParkingLocationSmoother smoother = new ParkingLocationSmoother();
 	private final Set<UserLocationListener> userLocationListeners = new CopyOnWriteArraySet<>();
+	private final Handler mainHandler = new Handler(Looper.getMainLooper());
+	private final LocationHub.Listener hubListener = location -> mainHandler.post(() -> handleTrackedLocation(location));
 
+	private Context appContext;
 	private Location currentUserLocation;
-	private LocationListener activeLocationListener;
-	private LocationListener networkLocationListener;
-	private LocationListener fusedLocationListener;
-	private LocationListener passiveLocationListener;
 	private boolean isTrackingLocation;
 	private boolean isTrackingVehicularLocation;
 	private boolean isDisconnectReceiverRegistered;
@@ -116,7 +118,10 @@ public final class CarLocatorManager {
 		}
 	};
 
-	public static CarLocatorManager get() {
+	public static synchronized CarLocatorManager get() {
+		if (INSTANCE == null) {
+			INSTANCE = new CarLocatorManager();
+		}
 		return INSTANCE;
 	}
 
@@ -136,57 +141,66 @@ public final class CarLocatorManager {
 		return currentUserLocation;
 	}
 
+	/** Input for the parking fix at disconnect. */
+	@Nullable
+	static Location chooseParkingInput(@Nullable Location bufferNewest, @Nullable Location system, long nowElapsedMs) {
+		long bufferAge = (bufferNewest != null && bufferNewest.getElapsedRealtimeNanos() > 0)
+				? (long) (nowElapsedMs - bufferNewest.getElapsedRealtimeNanos() / 1e6)
+				: (bufferNewest != null ? (System.currentTimeMillis() - bufferNewest.getTime()) : Long.MAX_VALUE);
+		long systemAge = (system != null && system.getElapsedRealtimeNanos() > 0)
+				? (long) (nowElapsedMs - system.getElapsedRealtimeNanos() / 1e6)
+				: (system != null ? (System.currentTimeMillis() - system.getTime()) : Long.MAX_VALUE);
+
+		boolean bufferStale = (bufferNewest == null || bufferAge > 30_000L);
+		boolean systemFresh = (system != null && systemAge <= 30_000L);
+
+		if (bufferStale && systemFresh) {
+			return system;
+		}
+		return bufferNewest;
+	}
+
 	/**
-	 * Queries the best known current or last-known location across GPS, Network, and Fused providers.
+	 * Queries the best known current or last-known location according to LocationHub precedence:
+	 * 1. hub.latest() if age <= 2 minutes
+	 * 2. hub.freshSystemLocation(10 minutes)
+	 * 3. currentUserLocation if age <= 2 minutes
+	 * 4. null
 	 */
 	@Nullable
 	@SuppressLint("MissingPermission")
 	public Location queryBestKnownUserLocation(Context context) {
-		if (currentUserLocation != null) return currentUserLocation;
-		Context app = context.getApplicationContext();
-		if (ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-				&& ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-			return null;
+		if (context != null) appContext = context.getApplicationContext();
+		Context app = appContext != null ? appContext : context;
+		if (app == null) return null;
+
+		LocationHub hub = LocationHub.get(app);
+		long twoMinutesMs = 2 * 60_000L;
+		long tenMinutesMs = 10 * 60_000L;
+
+		Location latest = hub.latest();
+		if (latest != null && getAgeMs(latest) <= twoMinutesMs) {
+			return latest;
 		}
-		try {
-			LocationManager lm = (LocationManager) app.getSystemService(Context.LOCATION_SERVICE);
-			if (lm != null) {
-				Location best = null;
-				String[] providers = {
-						LocationManager.GPS_PROVIDER,
-						LocationManager.NETWORK_PROVIDER,
-						LocationManager.PASSIVE_PROVIDER
-				};
-				for (String p : providers) {
-					try {
-						Location cand = lm.getLastKnownLocation(p);
-						if (cand != null) {
-							if (best == null || cand.getTime() > best.getTime()
-									|| (cand.getTime() >= best.getTime() - 10_000L && cand.getAccuracy() < best.getAccuracy())) {
-								best = cand;
-							}
-						}
-					} catch (Throwable ignored) {}
-				}
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-					try {
-						Location cand = lm.getLastKnownLocation(LocationManager.FUSED_PROVIDER);
-						if (cand != null) {
-							if (best == null || cand.getTime() > best.getTime()
-									|| (cand.getTime() >= best.getTime() - 10_000L && cand.getAccuracy() < best.getAccuracy())) {
-								best = cand;
-							}
-						}
-					} catch (Throwable ignored) {}
-				}
-				if (best != null) {
-					currentUserLocation = best;
-					return best;
-				}
-			}
-		} catch (Throwable ignored) {
+
+		Location freshSystem = hub.freshSystemLocation(tenMinutesMs);
+		if (freshSystem != null) {
+			return freshSystem;
 		}
+
+		if (currentUserLocation != null && getAgeMs(currentUserLocation) <= twoMinutesMs) {
+			return currentUserLocation;
+		}
+
 		return null;
+	}
+
+	private static long getAgeMs(Location loc) {
+		long elapsed = loc.getElapsedRealtimeNanos();
+		if (elapsed > 0) {
+			return (SystemClock.elapsedRealtimeNanos() - elapsed) / 1_000_000L;
+		}
+		return Math.max(0, System.currentTimeMillis() - loc.getTime());
 	}
 
 	/** Backwards-compatible alias */
@@ -277,7 +291,24 @@ public final class CarLocatorManager {
 			return;
 		}
 
-		Location bestLocation = sampleLatestAccurateLocation(app);
+		Location system = LocationHub.get(app).freshSystemLocation(30_000L);
+		long nowElapsedMs = SystemClock.elapsedRealtime();
+		Location bestLocation = chooseParkingInput(currentUserLocation, system, nowElapsedMs);
+		if (bestLocation == system) {
+			Log.i("CarFinder: Chosen parking input source: system");
+		} else if (bestLocation != null) {
+			long age = (bestLocation.getElapsedRealtimeNanos() > 0)
+					? (long) (nowElapsedMs - bestLocation.getElapsedRealtimeNanos() / 1e6)
+					: (System.currentTimeMillis() - bestLocation.getTime());
+			if (age > 30_000L) {
+				Log.i("CarFinder: Chosen parking input source: stale");
+			} else {
+				Log.i("CarFinder: Chosen parking input source: buffer");
+			}
+		} else {
+			Log.i("CarFinder: Chosen parking input source: stale");
+		}
+
 		if (bestLocation != null) {
 			smoother.recordLocationSample(bestLocation);
 		}
@@ -336,34 +367,6 @@ public final class CarLocatorManager {
 		} catch (Throwable ignored) {
 		}
 		isDisconnectReceiverRegistered = false;
-	}
-
-	@Nullable
-	private Location sampleLatestAccurateLocation(Context app) {
-		if (kalmanFilter.isInitialized()) {
-			Location loc = new Location("kalman");
-			loc.setLatitude(kalmanFilter.getLatitude());
-			loc.setLongitude(kalmanFilter.getLongitude());
-			loc.setAccuracy(kalmanFilter.getAccuracy());
-			loc.setTime(System.currentTimeMillis());
-			return loc;
-		}
-
-		Location bestLocation = currentUserLocation;
-		LocationManager lm = (LocationManager) app.getSystemService(Context.LOCATION_SERVICE);
-		if (lm != null) {
-			List<String> providers = lm.getProviders(true);
-			for (String provider : providers) {
-				try {
-					Location loc = lm.getLastKnownLocation(provider);
-					if (loc != null && (bestLocation == null || loc.getTime() > bestLocation.getTime())) {
-						bestLocation = loc;
-					}
-				} catch (SecurityException ignored) {
-				}
-			}
-		}
-		return bestLocation;
 	}
 
 	/**
@@ -494,28 +497,24 @@ public final class CarLocatorManager {
 	}
 
 	public synchronized void startTrackingUserLocation(Context context, UserLocationListener listener) {
+		if (context != null) appContext = context.getApplicationContext();
 		userLocationListeners.add(listener);
-		if (isTrackingLocation) {
-			if (currentUserLocation != null) listener.onUserLocationChanged(currentUserLocation);
-			return;
-		}
-
-		Context app = context.getApplicationContext();
-		startLocationTrackingInternal(app);
+		if (isTrackingLocation && currentUserLocation != null) listener.onUserLocationChanged(currentUserLocation);
+		startLocationTrackingInternal(appContext != null ? appContext : context);
 	}
 
 	private synchronized void startLocationTrackingInternal(Context app) {
-		if (isTrackingLocation) return;
-		if (ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-				&& ActivityCompat.checkSelfPermission(app, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+		if (app != null) appContext = app.getApplicationContext();
+		Context ctx = appContext != null ? appContext : app;
+		if (ctx == null) return;
+		if (isTrackingLocation) {
+			// Retry: the hub only registers once permission is granted and location is on.
+			LocationHub.get(ctx).acquire("carfinder", hubListener);
 			return;
 		}
 
-		LocationManager lm = (LocationManager) app.getSystemService(Context.LOCATION_SERVICE);
-		if (lm == null) return;
-
 		if (currentUserLocation == null) {
-			Location seed = queryBestKnownUserLocation(app);
+			Location seed = queryBestKnownUserLocation(ctx);
 			if (seed != null) {
 				kalmanFilter.update(seed.getLatitude(), seed.getLongitude(),
 						seed.hasAccuracy() ? seed.getAccuracy() : 20.0f,
@@ -525,58 +524,12 @@ public final class CarLocatorManager {
 			}
 		}
 
-		activeLocationListener = new LocationListener() {
-			@Override public void onLocationChanged(@NonNull Location location) { handleTrackedLocation(location); }
-			@Override public void onStatusChanged(String provider, int status, android.os.Bundle extras) {}
-			@Override public void onProviderEnabled(@NonNull String provider) {}
-			@Override public void onProviderDisabled(@NonNull String provider) {}
-		};
-		networkLocationListener = new LocationListener() {
-			@Override public void onLocationChanged(@NonNull Location location) { handleTrackedLocation(location); }
-			@Override public void onStatusChanged(String provider, int status, android.os.Bundle extras) {}
-			@Override public void onProviderEnabled(@NonNull String provider) {}
-			@Override public void onProviderDisabled(@NonNull String provider) {}
-		};
-		fusedLocationListener = new LocationListener() {
-			@Override public void onLocationChanged(@NonNull Location location) { handleTrackedLocation(location); }
-			@Override public void onStatusChanged(String provider, int status, android.os.Bundle extras) {}
-			@Override public void onProviderEnabled(@NonNull String provider) {}
-			@Override public void onProviderDisabled(@NonNull String provider) {}
-		};
-		passiveLocationListener = new LocationListener() {
-			@Override public void onLocationChanged(@NonNull Location location) { handleTrackedLocation(location); }
-			@Override public void onStatusChanged(String provider, int status, android.os.Bundle extras) {}
-			@Override public void onProviderEnabled(@NonNull String provider) {}
-			@Override public void onProviderDisabled(@NonNull String provider) {}
-		};
-
-		try {
-			if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-				lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0.0f, activeLocationListener, Looper.getMainLooper());
-			}
-			if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-				lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000L, 0.0f, networkLocationListener, Looper.getMainLooper());
-			}
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-				try {
-					if (lm.getProvider(LocationManager.FUSED_PROVIDER) != null) {
-						lm.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 1000L, 0.0f, fusedLocationListener, Looper.getMainLooper());
-					}
-				} catch (Throwable ignored) {}
-			}
-			try {
-				if (lm.getProvider(LocationManager.PASSIVE_PROVIDER) != null) {
-					lm.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 1000L, 0.0f, passiveLocationListener, Looper.getMainLooper());
-				}
-			} catch (Throwable ignored) {}
-			isTrackingLocation = true;
-			Log.i("CarFinder: Started multi-source location tracking (vehicular=", isTrackingVehicularLocation, ")");
-		} catch (SecurityException e) {
-			Log.w(e, "CarFinder: Location permission missing during update request");
-		}
+		LocationHub.get(ctx).acquire("carfinder", hubListener);
+		isTrackingLocation = true;
+		Log.i("CarFinder: Started location tracking with LocationHub (vehicular=", isTrackingVehicularLocation, ")");
 	}
 
-	private void handleTrackedLocation(@NonNull Location location) {
+	private synchronized void handleTrackedLocation(@NonNull Location location) {
 		currentUserLocation = location;
 		kalmanFilter.update(location.getLatitude(), location.getLongitude(),
 				location.hasAccuracy() ? location.getAccuracy() : 25.0f,
@@ -584,29 +537,47 @@ public final class CarLocatorManager {
 				location.getTime());
 		smoother.recordLocationSample(location);
 		for (UserLocationListener l : userLocationListeners) {
-			l.onUserLocationChanged(location);
+			try {
+				l.onUserLocationChanged(location);
+			} catch (Throwable t) {
+				Log.w("CarFinder: listener error", t);
+			}
 		}
 	}
 
 	public synchronized void stopTrackingUserLocation(UserLocationListener listener) {
 		userLocationListeners.remove(listener);
 		if (userLocationListeners.isEmpty() && !isTrackingVehicularLocation) {
-			Context app = FermataApplication.get();
+			Context app = appContext != null ? appContext : FermataApplication.get();
 			stopLocationTrackingInternal(app);
 		}
 	}
 
-	private synchronized void stopLocationTrackingInternal(Context app) {
+	private synchronized void stopLocationTrackingInternal(@Nullable Context app) {
 		if (!isTrackingLocation) return;
-		LocationManager lm = (LocationManager) app.getSystemService(Context.LOCATION_SERVICE);
-		if (lm != null) {
-			try { if (activeLocationListener != null) lm.removeUpdates(activeLocationListener); } catch (SecurityException ignored) {}
-			try { if (networkLocationListener != null) lm.removeUpdates(networkLocationListener); } catch (SecurityException ignored) {}
-			try { if (fusedLocationListener != null) lm.removeUpdates(fusedLocationListener); } catch (SecurityException ignored) {}
-			try { if (passiveLocationListener != null) lm.removeUpdates(passiveLocationListener); } catch (SecurityException ignored) {}
+		Context ctx = app != null ? app : (appContext != null ? appContext : FermataApplication.get());
+		if (ctx != null) {
+			LocationHub.get(ctx).release("carfinder");
 		}
-		activeLocationListener = networkLocationListener = fusedLocationListener = passiveLocationListener = null;
 		isTrackingLocation = false;
-		Log.i("CarFinder: Stopped location tracking");
+		Log.i("CarFinder: Stopped location tracking with LocationHub");
+	}
+
+	@VisibleForTesting
+	public static synchronized void resetForTesting() {
+		if (INSTANCE != null) {
+			Context app = INSTANCE.appContext != null ? INSTANCE.appContext : FermataApplication.get();
+			if (app != null) {
+				INSTANCE.unregisterDisconnectReceiver(app);
+				INSTANCE.stopLocationTrackingInternal(app);
+			}
+			INSTANCE.userLocationListeners.clear();
+			INSTANCE.smoother.clear();
+			INSTANCE.kalmanFilter.reset();
+			INSTANCE.currentUserLocation = null;
+			INSTANCE.isTrackingLocation = false;
+			INSTANCE.isTrackingVehicularLocation = false;
+		}
+		INSTANCE = new CarLocatorManager();
 	}
 }
