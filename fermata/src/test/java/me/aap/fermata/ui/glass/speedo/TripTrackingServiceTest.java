@@ -39,9 +39,24 @@ public class TripTrackingServiceTest {
         context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit().clear().commit();
         Shadows.shadowOf((Application) context).grantPermissions(
                 Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
         );
+        TripModePolicy.setEnabled(context, true);
         TripTrackingService.init(context);
+    }
+
+    @Test
+    public void startDoesNothingUnlessBackgroundRecordingIsOn() {
+        while (Shadows.shadowOf((Application) context).getNextStartedService() != null) {}
+        TripModePolicy.setEnabled(context, false);
+        TripTrackingService.start(context);
+        assertNull("opt-in is off", Shadows.shadowOf((Application) context).getNextStartedService());
+
+        TripModePolicy.setEnabled(context, true);
+        Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+        TripTrackingService.start(context);
+        assertNull("no 'Allow all the time'", Shadows.shadowOf((Application) context).getNextStartedService());
     }
 
     @Test
@@ -161,16 +176,16 @@ public class TripTrackingServiceTest {
 
         TripTrackingAutoBinder binder = new TripTrackingAutoBinder(context, testStarter, store);
 
-        // Sequence: DISCONNECTED -> CONNECTED (no start)
+        // Sequence: DISCONNECTED -> CONNECTED (starts: background location allows it before the app shows)
         binder.onStateChanged(AutomotiveConnectionState.State.DISCONNECTED);
         assertEquals(0, startCalls.get());
         assertEquals(0, stopCalls.get());
 
         binder.onStateChanged(AutomotiveConnectionState.State.CONNECTED);
-        assertEquals("CONNECTED should not trigger startService", 0, startCalls.get());
+        assertEquals(1, startCalls.get());
         assertEquals(0, stopCalls.get());
 
-        // CONNECTED -> APP_VISIBLE (triggers start)
+        // CONNECTED -> APP_VISIBLE while running: no duplicate start
         binder.onStateChanged(AutomotiveConnectionState.State.APP_VISIBLE);
         assertEquals(1, startCalls.get());
         assertEquals(0, stopCalls.get());

@@ -36,6 +36,9 @@ final class TripStore {
     boolean isUserPaused() { return prefs.getBoolean("user_paused", false); }
     void setUserPaused(boolean paused) { prefs.edit().putBoolean("user_paused", paused).apply(); }
 
+    boolean isTripStatsEnabled() { return prefs.getBoolean("trip_stats_enabled", false); }
+    void setTripStatsEnabled(boolean enabled) { prefs.edit().putBoolean("trip_stats_enabled", enabled).apply(); }
+
     boolean isAllowMock() { return prefs.getBoolean("allow_mock", false); }
     void setAllowMock(boolean allow) { prefs.edit().putBoolean("allow_mock", allow).apply(); }
 

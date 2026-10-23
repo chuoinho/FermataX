@@ -1,14 +1,23 @@
 package me.aap.fermata.ui.fragment;
 
+import android.Manifest;
+import android.content.Context;
+
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
+import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.glass.speedo.TripModePolicy;
+import me.aap.fermata.ui.glass.speedo.TripTrackingService;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.ui.UiUtils;
+import me.aap.utils.ui.activity.AppActivity;
+import me.aap.utils.ui.view.DialogBuilder;
 import me.aap.utils.ui.view.NavBarView;
 
 final class InterfacePrefsBuilder {
@@ -81,6 +90,15 @@ final class InterfacePrefsBuilder {
 
 		if (activity.isGlassTheme()) {
 			set.addButton(o -> {
+				o.title = R.string.trip_background_title;
+				o.subtitle = switch (TripModePolicy.current(activity.getContext())) {
+					case ON -> R.string.trip_background_sub_on;
+					case OFF -> R.string.trip_background_sub_off;
+					default -> R.string.trip_background_sub_needs_permission;
+				};
+				o.onClick = () -> toggleTripBackground(activity);
+			});
+			set.addButton(o -> {
 				o.title = R.string.glass_quick_manage_title;
 				o.subtitle = R.string.glass_quick_manage_sub;
 				o.onClick = () -> me.aap.fermata.ui.glass.quickbar.GlassQuickBarManager.showManageDialog(
@@ -94,6 +112,49 @@ final class InterfacePrefsBuilder {
 						});
 			});
 		}
+	}
+
+	private static void toggleTripBackground(MainActivityDelegate activity) {
+		Context ctx = activity.getContext();
+		if (TripModePolicy.isEnabled(ctx)) {
+			TripModePolicy.setEnabled(ctx, false);
+			TripTrackingService.stop(ctx);
+			UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_disabled));
+			return;
+		}
+		// Store policy: a prominent disclosure must precede the background location request.
+		DialogBuilder d = activity.createDialogBuilder(ctx);
+		d.setTitle(R.string.trip_background_title);
+		d.setMessage(R.string.trip_background_disclosure);
+		d.setPositiveButton(R.string.trip_background_continue, (dlg, which) -> requestTripBackground(activity));
+		d.setNegativeButton(android.R.string.cancel, null);
+		d.show();
+	}
+
+	private static void requestTripBackground(MainActivityDelegate activity) {
+		AppActivity app = activity.getAppActivity();
+		if (app == null) return;
+		Context ctx = activity.getContext();
+		app.checkPermissions(Manifest.permission.ACCESS_FINE_LOCATION,
+				Manifest.permission.ACCESS_COARSE_LOCATION).onCompletion((r, e) -> {
+			if (!TripModePolicy.hasForegroundLocation(ctx)) {
+				UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_denied));
+			} else if (TripModePolicy.hasBackgroundLocation(ctx)) {
+				enableTripBackground(ctx);
+			} else {
+				// Android 11+ opens the system page with "Allow all the time".
+				app.checkPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION).onCompletion((r2, e2) -> {
+					if (TripModePolicy.hasBackgroundLocation(ctx)) enableTripBackground(ctx);
+					else UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_denied));
+				});
+			}
+		});
+	}
+
+	private static void enableTripBackground(Context ctx) {
+		TripModePolicy.setEnabled(ctx, true);
+		if (AutomotiveConnectionState.get().isProjectionConnected()) TripTrackingService.start(ctx);
+		UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_enabled));
 	}
 
 	private static void normalizeTheme(PreferenceStore store) {

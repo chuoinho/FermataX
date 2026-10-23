@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trip_background_title">Ghi vị trí khi dùng app khác trên xe</string>
+    <string name="trip_background_sub_on">Đang bật: thống kê chuyến đi và vị trí đỗ xe luôn chính xác</string>
+    <string name="trip_background_sub_off">Đang tắt: thẻ tốc độ chỉ hiển thị tốc độ</string>
+    <string name="trip_background_sub_needs_permission">Cần quyền vị trí “Luôn cho phép”</string>
+    <string name="trip_background_disclosure">Để giữ quãng đường, thời gian, tốc độ trung bình của chuyến đi và lưu vị trí đỗ xe ngay cả khi app khác (như Maps) đang chiếm màn hình xe, FermataX thu thập vị trí ở chế độ nền, chỉ trong các phiên Android Auto. Vị trí không bao giờ rời khỏi điện thoại. Bạn có thể tắt bất cứ lúc nào trong Cài đặt.\n\nỞ màn hình tiếp theo, hãy chọn “Luôn cho phép”.</string>
+    <string name="trip_background_continue">Tiếp tục</string>
+    <string name="trip_background_enabled">Đã bật ghi vị trí ở chế độ nền</string>
+    <string name="trip_background_disabled">Đã tắt ghi vị trí ở chế độ nền</string>
+    <string name="trip_background_denied">Chưa được cấp quyền vị trí “Luôn cho phép”</string>
+    <string name="speedo_trip_hint_off">Bật ghi chuyến đi trong Cài đặt trên điện thoại</string>
+    <string name="speedo_trip_hint_background">Cho phép vị trí “Luôn cho phép” trên điện thoại để ghi chuyến đi</string>
+    <string name="speedo_trip_hint_location">Cho phép quyền vị trí trên điện thoại</string>
+</resources>

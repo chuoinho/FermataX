@@ -65,7 +65,8 @@ public final class TripTrackingAutoBinder implements AutomotiveConnectionState.L
     @Override
     public void onStateChanged(AutomotiveConnectionState.State state) {
         Log.d(TAG, "Automotive connection state: " + state);
-        if (state == AutomotiveConnectionState.State.APP_VISIBLE) {
+        // With background location the service may start as soon as the car connects.
+        if (state == AutomotiveConnectionState.State.CONNECTED || state == AutomotiveConnectionState.State.APP_VISIBLE) {
             if (!store.isUserPaused() && !starter.isServiceRunning()) {
                 starter.startService(context);
             }

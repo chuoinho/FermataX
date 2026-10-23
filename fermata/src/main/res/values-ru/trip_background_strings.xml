@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trip_background_title">Записывать местоположение, когда на экране авто другое приложение</string>
+    <string name="trip_background_sub_on">Включено: статистика поездки и место парковки остаются точными</string>
+    <string name="trip_background_sub_off">Выключено: карточка показывает только скорость</string>
+    <string name="trip_background_sub_needs_permission">Нужно разрешение на геоданные “Разрешить всегда”</string>
+    <string name="trip_background_disclosure">Чтобы сохранять расстояние, время и среднюю скорость поездки и запоминать место парковки, даже когда экран автомобиля занят другим приложением (например, Картами), FermataX получает ваше местоположение в фоне, только во время сеансов Android Auto. Местоположение никогда не покидает телефон. Это можно отключить в любой момент в Настройках.\n\nНа следующем экране выберите “Разрешить всегда”.</string>
+    <string name="trip_background_continue">Продолжить</string>
+    <string name="trip_background_enabled">Фоновая запись включена</string>
+    <string name="trip_background_disabled">Фоновая запись выключена</string>
+    <string name="trip_background_denied">Разрешение на геоданные “Разрешить всегда” не предоставлено</string>
+    <string name="speedo_trip_hint_off">Включите запись поездок в Настройках на телефоне</string>
+    <string name="speedo_trip_hint_background">Разрешите геоданные “Всегда” на телефоне для записи поездок</string>
+    <string name="speedo_trip_hint_location">Разрешите доступ к геоданным на телефоне</string>
+</resources>

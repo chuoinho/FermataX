@@ -93,58 +93,50 @@ Consumer giữ hub theo kiểu đếm tham chiếu (`acquire(tag)` / `release(ta
 
 ---
 
-## 4. Phần B: thẻ speedo kết hợp (mục 1)
+## 4. Phần B: quyền vị trí nền tuỳ chọn (sửa ngày 2026-10-23 theo kết quả T8)
 
-### B1. Trạng thái `TripMode`
-- [ ] `TripModePolicy` (thuần Java). Đầu vào gồm:
-  - `userEnabled` (pref `SPEEDO_TRIP_STATS`, mặc định `false`);
-  - `hasForegroundLocation`;
-  - `hasBackgroundLocation`;
-  - `backgroundSupportedInBuild` (cờ build, xem B6).
+### Bằng chứng từ kiểm thử thiết bị (Android 16, Android Auto 17.7)
+- Khi FermataX hiển thị trên xe, tiến trình ở BTOP (state 3) và có quyền vị trí tiền cảnh (`curCapability` có **L**); hub nhận vị trí 1 Hz (T1, T2).
+- Khi Google Maps chiếm màn hình xe, tiến trình xuống `curProcState=15`, **mất L**; listener của hub bị hạ xuống chu kỳ 10 phút và `(inactive)`; `getLastKnownLocation` cũng chỉ trả vị trí cũ. CarFinder lưu chỗ đỗ từ nguồn `stale` (T8).
+- `TripTrackingService` (FGS loại `location`) bị Android **từ chối** khi app chỉ có quyền "trong khi dùng", kể cả lúc `APP_VISIBLE` và khi người dùng bấm trên màn hình xe (log `SecurityException … must be in the eligible state`).
+- Hệ quả: chỉ khi có **`ACCESS_BACKGROUND_LOCATION`** thì service mới được phép chạy từ nền, giữ tiến trình ở mức foreground service và giữ GPS 1 Hz khi app khác chiếm màn hình. **Cần đo xác nhận** (H3, H4).
 
-  Đầu ra: `OFF | ON | NEEDS_BACKGROUND_PERMISSION | NEEDS_LOCATION_PERMISSION`.
-- [ ] Đánh giá lại ở mỗi `onResume` của activity trên điện thoại, mỗi lần dashboard hiển thị, và khi nhận broadcast đổi quyền (`onRequestPermissionsResult`).
-- [ ] Bị thu hồi quyền nền khi đang ON: chuyển về OFF hiển thị, **giữ** tổng đã lưu, hiện gợi ý một lần.
+### Quyết định
+Một tuỳ chọn duy nhất **"Ghi vị trí khi dùng app khác trên xe"** (mặc định tắt). Khi bật và đã cấp "Luôn cho phép":
+- `TripTrackingService` chạy suốt phiên Android Auto và giữ hub. **Hai** tính năng cùng hưởng: thống kê chuyến đi (distance / avg / time) và vị trí đỗ xe của CarFinder (bộ đệm luôn mới).
+- Khi tắt: thẻ speedo chỉ hiện tốc độ; không khởi động service (không còn log `SecurityException` mỗi lần kết nối); CarFinder giữ cơ chế dự phòng hiện có (`buffer` / `system` / `stale`).
 
-### B2. Thẻ speedo
-- [ ] **TripMode OFF:**
-  - Ẩn hàng thống kê (distance / avg / time), nút Pause/Resume và chạm giữ để reset.
-  - Phần tốc độ to hơn (dùng chỗ trống).
-  - Thêm một dòng nhỏ "Bật thống kê chuyến đi" chạm được, dẫn tới luồng B3.
-- [ ] **TripMode ON:** giữ nguyên giao diện hiện tại (đã refactor).
-- [ ] **TripMode NEEDS_BACKGROUND_PERMISSION** (người dùng đã bật nhưng chưa cấp quyền): chỉ hiện tốc độ, kèm dòng "Cần quyền vị trí 'Luôn cho phép' trên điện thoại".
-- [ ] Ở cả hai chế độ, phần tốc độ dùng `SpeedPresenter` / `FixNormalizer` hiện có ("—" khi không biết, "~" khi ước lượng ≤ 8 s).
-- [ ] Chế độ OFF chỉ hiển thị tốc độ: `GlassSpeedoTripController` chạy với engine ở chế độ **speed-only**: vẫn `accept` để có tốc độ, nhưng **không** `TripStore.save` và không hiển thị tổng. Thêm cờ `recordTrip` vào controller; khi false thì không checkpoint và không ghi log trip CSV.
+### B1. `TripModePolicy` (mới, `ui.glass.speedo`)
+- [ ] Hàm thuần `evaluate(userEnabled, hasForeground, hasBackground, supportedInBuild)` → `OFF | ON | NEEDS_LOCATION_PERMISSION | NEEDS_BACKGROUND_PERMISSION`. Dưới API 29 không có quyền nền riêng: coi như đã có.
+- [ ] `current(Context)`: đọc tuỳ chọn (lưu trong `TripStore`, pref `trip_stats_enabled`), quyền thật và cờ build. Có `isEnabled` / `setEnabled` công khai cho màn hình cài đặt.
+- [ ] Test thuần cho mọi tổ hợp.
 
-### B3. Luồng xin quyền (trên **điện thoại**, không trên màn hình xe)
-- [ ] **Chỗ bật:** trong Settings của điện thoại (mục Glass/Interface hoặc `ReadinessPrefsBuilder`, cạnh dòng quyền vị trí hiện có), thêm một công tắc "Thống kê chuyến đi (ghi cả khi dùng app khác trên xe)".
-- [ ] **Trên màn hình xe:** chạm dòng "Bật thống kê chuyến đi" thì đăng một notification trên điện thoại, mở thẳng màn hình Settings đó. Xe không hiển thị được hộp thoại xin quyền của hệ thống.
-- [ ] **Bật công tắc:**
-  1. **Bắt buộc theo chính sách Play:** hiện **hộp thoại công bố rõ ràng** (prominent disclosure) trước khi xin quyền. Hộp thoại nói rõ app thu thập vị trí cả khi chạy nền để tính quãng đường, thời gian và tốc độ trung bình của chuyến đi trong phiên Android Auto; không chia sẻ ra ngoài; tắt được bất cứ lúc nào.
-  2. Nếu chưa có FINE/COARSE thì xin trước.
-  3. Từ API 30 trở lên: `requestPermissions(ACCESS_BACKGROUND_LOCATION)`; hệ thống chuyển sang trang cài đặt "Luôn cho phép". Dưới API 30 thì xin trực tiếp.
-  4. Quay lại app: đánh giá `TripModePolicy`. Từ chối thì công tắc về OFF kèm giải thích ngắn.
-- [ ] **Tắt công tắc:** dừng `TripTrackingService`, giữ tổng đã lưu. Gợi ý (không ép) người dùng hạ quyền về "Trong khi dùng".
-- [ ] **Chuỗi:** công bố, công tắc, gợi ý, notification. Đủ **6 ngôn ngữ** (values, vi, es, pt, ru, zh-rTW).
+### B2. `TripTrackingService` chỉ chạy khi ON
+- [ ] `TripTrackingService.start()` trả về ngay nếu `TripModePolicy.current(ctx) != ON`. Tất cả đường khởi động (AutoBinder, toggle trip, chạm thẻ) đều đi qua đây.
+- [ ] `TripTrackingAutoBinder`: khởi động ở `CONNECTED` **hoặc** `APP_VISIBLE` (có quyền nền thì không cần đợi xe hiển thị app).
+- [ ] Không còn trạng thái `BACKGROUND_BLOCKED` khi OFF. Nếu ON mà vẫn bị từ chối (bất thường) thì giữ cách báo hiện tại.
+- [ ] Tắt tuỳ chọn trong cài đặt: gọi `TripTrackingService.stop()`.
 
-### B4. `TripTrackingService` khi TripMode ON
-- [ ] `TripTrackingAutoBinder` chỉ khởi động service khi `TripModePolicy == ON`. Có quyền nền thì khởi động ngay lúc `CONNECTED`; Android cho phép FGS location từ nền khi app có `ACCESS_BACKGROUND_LOCATION`, **cần đo xác nhận** trên Android 16.
-- [ ] Service `acquire` hub và giữ controller (`recordTrip = true`) suốt phiên AA. Notification có Pause/Resume như hiện tại.
-- [ ] Khi TripMode OFF, service không chạy; `start()` trả về ngay.
-- [ ] Giữ quy tắc "không báo BACKGROUND_BLOCKED khi controller đang ghi". Nếu ON mà vẫn bị Android từ chối (bất thường) thì ghi log, báo `NEEDS_BACKGROUND_PERMISSION` và về chế độ chỉ hiển thị tốc độ.
-- [ ] Ngắt AA: suspend như hiện tại (đã kiểm chứng ở V2).
-- [ ] Bản điện thoại (mobile flavor) có TripMode ON và không có AA: service **không** tự chạy. Dashboard điện thoại chỉ ghi khi đang hiển thị; ra nền thì `suspend` (D2).
+### B3. Thẻ speedo
+- [ ] `GlassSpeedoTripView.setTripMode(mode)`:
+  - **ON**: giữ nguyên giao diện hiện tại.
+  - **Khác ON**: ẩn hàng thống kê, nút Pause/Resume và chạm giữ để reset; thay bằng một dòng gợi ý: "Bật trong Cài đặt trên điện thoại để ghi chuyến đi" (OFF), "Cần quyền vị trí 'Luôn cho phép'" (NEEDS_BACKGROUND_PERMISSION), "Cần quyền vị trí" (NEEDS_LOCATION_PERMISSION).
+- [ ] `GlassDashboardController` gọi `setTripMode(TripModePolicy.current(ctx))` ở `start()` và `onHostResumed()`.
+- [ ] **Đơn giản hoá so với bản trước**: bỏ cờ `recordTrip` (bộ đo vẫn chạy khi dashboard hiển thị để có tốc độ; tổng chỉ là số liệu, không có toạ độ, nên lưu vẫn an toàn). Bỏ notification "mở cài đặt" từ xe sang điện thoại: xe chỉ hiện dòng gợi ý. Không phóng to phần tốc độ.
 
-### B5. Dọn dẹp
-- [ ] Bỏ việc `CarService` gọi start service nếu còn sót lại (đã xử lý ở vòng 2, kiểm tra lại).
-- [ ] `TripStore` giữ nguyên định dạng. TripMode OFF thì không ghi.
+### B4. Luồng bật trên điện thoại
+- [ ] **Chỗ bật:** `InterfacePrefsBuilder`, khi theme Glass đang dùng, thêm một nút "Ghi vị trí khi dùng app khác trên xe". Phụ đề cho biết trạng thái hiện tại (`TripModePolicy.current`).
+- [ ] **Bật:**
+  1. Hiện **hộp thoại công bố rõ ràng** (Play bắt buộc), nói rõ: thu thập vị trí cả khi chạy nền, chỉ trong phiên Android Auto, để tính thống kê chuyến đi và lưu chỗ đỗ xe; không chia sẻ ra ngoài; tắt được bất cứ lúc nào.
+  2. Đồng ý: xin FINE/COARSE nếu chưa có (`checkPermissions`), rồi xin `ACCESS_BACKGROUND_LOCATION` (API 30+ hệ thống mở trang "Luôn cho phép").
+  3. Chỉ lưu `enabled = true` khi đã có quyền nền. Bị từ chối thì báo ngắn và giữ tắt.
+- [ ] **Tắt:** lưu `enabled = false`, dừng service, giữ tổng đã lưu.
+- [ ] **Chuỗi:** tiêu đề, phụ đề trạng thái, hộp thoại công bố, các dòng gợi ý trên thẻ, thông báo bị từ chối. Đủ **6 ngôn ngữ**.
 
-### B6. Cờ build cho quyền nền
-- [ ] Mặc định **khai báo** `ACCESS_BACKGROUND_LOCATION`.
-- [ ] Thêm Gradle property `-PNO_BACKGROUND_LOCATION=true`: khi có cờ này, manifest dùng `tools:node="remove"` để gỡ quyền, và `BuildConfig.TRIP_BACKGROUND_SUPPORTED = false`. Mục đích: có thể phát hành một bản cho Play không chứa quyền nền nếu bị từ chối, mà **không sửa code**.
-- [ ] Test chính sách manifest cho cả hai trường hợp.
-
----
+### B5. Khai báo quyền và cờ build
+- [ ] Main manifest khai báo `ACCESS_BACKGROUND_LOCATION`.
+- [ ] Gradle property `-PNO_BACKGROUND_LOCATION=true`: thêm manifest phụ với `tools:node="remove"` cho quyền này và `BuildConfig.TRIP_BACKGROUND_SUPPORTED = false` (khi đó `TripModePolicy` luôn OFF). Dùng để phát hành bản không có quyền nền nếu Play từ chối, không cần sửa code.
+- [ ] Test chính sách manifest cho trường hợp mặc định.
 
 ## 5. Kiểm thử trên DHU với máy `15c36230`
 
@@ -171,6 +163,14 @@ adb -s 15c36230 shell pm revoke me.app.fermataX.auto.test.debug android.permissi
 | H9 | Số request vị trí | Trong phiên AA có speedo, CarFinder và thời tiết cùng chạy: `dumpsys location` có **1** request của app |
 
 Không làm được kịch bản nào thì ghi **KHÔNG CHẠY ĐƯỢC** kèm lý do, không ghi PASS.
+
+### Kết quả đo 2026-10-23 (máy 15c36230, Android 16 / SDK 36, DHU, đứng yên trong nhà)
+- H1 PASS: công tắc → hộp thoại công bố → trang hệ thống → "Luôn cho phép"; `ACCESS_BACKGROUND_LOCATION: granted=true`, `trip_stats_enabled=true`.
+- H2 PASS: chế độ tắt, thẻ chỉ có tốc độ + gợi ý, không có TripTrackingService.
+- H3 **một phần**: lúc CONNECTED (app cached, `uidState: LAST`) Android **vẫn từ chối** FGS dù có quyền nền (`ForegroundServiceStartNotAllowedException`, đã bắt lỗi). Quyền nền không phải ngoại lệ khởi động FGS. Service chỉ khởi động khi mở FermataX trên xe (APP_VISIBLE, BTOP); log có "can not have location access" (không có while-in-use) nhưng nhờ quyền nền vẫn nhận vị trí. Hệ quả: chưa mở FermataX trên xe thì chưa ghi chuyến.
+- H4 PASS (bằng chứng gián tiếp): Maps chiếm màn hình 3 phút, procState 4, request vẫn `@+1s` và vẫn nhận vị trí cùng nhịp lúc app hiển thị (30 s do đứng yên). T8 trước đó bị bóp còn 10 phút. Chưa đo khi chạy xe thật.
+- H8 PASS: rút AA, nguồn điểm đỗ là `system` (T8: `stale`); conf thấp do sai số 100 m trong nhà.
+- H5, H6, H7, H9: KHÔNG CHẠY lần này.
 
 ## 6. Tài liệu cho Google Play (nếu phát hành qua Play)
 - [ ] Soạn nháp trong `docs/play/background-location-declaration.md`:

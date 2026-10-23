@@ -97,6 +97,8 @@ public class TripTrackingService extends Service {
             registry().reportSignal(TripEngine.Signal.PERMISSION);
             return;
         }
+        // Opt-in only: without "Allow all the time" Android refuses a location service started here.
+        if (TripModePolicy.current(context) != TripModePolicy.Mode.ON) return;
         try {
             Intent intent = new Intent(context, TripTrackingService.class).setAction(ACTION_START);
             ContextCompat.startForegroundService(context, intent);

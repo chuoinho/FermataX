@@ -43,6 +43,7 @@ import me.aap.fermata.ui.glass.quickbar.GlassQuickShortcut;
 import me.aap.fermata.ui.glass.quickbar.GlassShortcutPickerDialog;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripController;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView;
+import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.glass.speedo.TripTrackingRegistry;
 import me.aap.fermata.ui.glass.speedo.TripTrackingService;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
@@ -308,6 +309,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         // The visible dashboard always records; the service only keeps recording when it is allowed to.
         tripRegistry.getController().start();
         AutomotiveNavNotificationService.registerListener(this);
+        speedoView.setTripMode(TripModePolicy.current(activity.getContext()));
 
         // On Android Auto this is the single initial load; the schedule takes over afterwards.
         refreshWeather(activity.getContext(), AutomotiveConnectionState.get().isProjectionConnected());
@@ -337,6 +339,8 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     public void onHostResumed() {
         if (!isStopped) tripRegistry.getController().onHostResumed();
         if (!isStopped) {
+            // The user may have changed the opt-in or the permission on the phone meanwhile.
+            speedoView.setTripMode(TripModePolicy.current(activity.getContext()));
             refreshWeather(activity.getContext());
         }
     }

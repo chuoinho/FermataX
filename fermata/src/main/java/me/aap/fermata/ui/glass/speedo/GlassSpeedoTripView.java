@@ -48,6 +48,7 @@ public class GlassSpeedoTripView extends FrameLayout {
     private TextView tvAvgSpeed;
     private TextView tvDriveTime;
     private LinearLayout tripStatsRow;
+    private TextView tvTripHint;
     private final java.util.List<TextView> statLabels = new java.util.ArrayList<>();
     private final java.util.List<View> statDividers = new java.util.ArrayList<>();
 
@@ -216,6 +217,30 @@ public class GlassSpeedoTripView extends FrameLayout {
         }
 
         contentLayout.addView(tripStatsRow);
+
+        // Replaces the trip row while background recording is off (TripModePolicy).
+        tvTripHint = new TextView(context);
+        tvTripHint.setTextSize(11f);
+        tvTripHint.setTextColor(colors.getTextSecondary());
+        tvTripHint.setGravity(Gravity.CENTER);
+        tvTripHint.setPadding(tripPadH, tripPadV, tripPadH, tripPadV);
+        tvTripHint.setVisibility(View.GONE);
+        contentLayout.addView(tvTripHint);
+    }
+
+    /** Trip statistics only make sense with background recording; otherwise the card shows speed only. */
+    public void setTripMode(@NonNull TripModePolicy.Mode mode) {
+        boolean on = mode == TripModePolicy.Mode.ON;
+        tripStatsRow.setVisibility(on ? View.VISIBLE : View.GONE);
+        btnToggleTrip.setVisibility(on ? View.VISIBLE : View.GONE);
+        tvTripHint.setVisibility(on ? View.GONE : View.VISIBLE);
+        if (!on) {
+            tvTripHint.setText(switch (mode) {
+                case NEEDS_LOCATION_PERMISSION -> R.string.speedo_trip_hint_location;
+                case NEEDS_BACKGROUND_PERMISSION -> R.string.speedo_trip_hint_background;
+                default -> R.string.speedo_trip_hint_off;
+            });
+        }
     }
 
     @Override
@@ -298,6 +323,7 @@ public class GlassSpeedoTripView extends FrameLayout {
             tvCardTitle.setTextColor(colors.getTextSecondary());
         }
         tvSignal.setTextColor(colors.getTextSecondary());
+        if (tvTripHint != null) tvTripHint.setTextColor(colors.getTextSecondary());
         if (tvSpeedValue != null) {
             tvSpeedValue.setTextColor(colors.getTextPrimary());
         }

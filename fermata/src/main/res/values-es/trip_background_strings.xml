@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trip_background_title">Registrar ubicación con otras apps en la pantalla del coche</string>
+    <string name="trip_background_sub_on">Activado: estadísticas del viaje y aparcamiento precisos</string>
+    <string name="trip_background_sub_off">Desactivado: la tarjeta solo muestra la velocidad</string>
+    <string name="trip_background_sub_needs_permission">Requiere el permiso de ubicación “Permitir todo el tiempo”</string>
+    <string name="trip_background_disclosure">Para conservar la distancia, el tiempo y la velocidad media del viaje y guardar dónde aparcaste incluso cuando otra app (como Maps) ocupa la pantalla del coche, FermataX recoge tu ubicación en segundo plano, solo durante las sesiones de Android Auto. La ubicación nunca sale de tu teléfono. Puedes desactivarlo en cualquier momento en Ajustes.\n\nEn la siguiente pantalla elige “Permitir todo el tiempo”.</string>
+    <string name="trip_background_continue">Continuar</string>
+    <string name="trip_background_enabled">Registro en segundo plano activado</string>
+    <string name="trip_background_disabled">Registro en segundo plano desactivado</string>
+    <string name="trip_background_denied">No se concedió el permiso de ubicación “Permitir todo el tiempo”</string>
+    <string name="speedo_trip_hint_off">Activa el registro de viajes en Ajustes del teléfono</string>
+    <string name="speedo_trip_hint_background">Permite la ubicación “Todo el tiempo” en el teléfono para registrar viajes</string>
+    <string name="speedo_trip_hint_location">Permite la ubicación en el teléfono</string>
+</resources>

@@ -110,13 +110,18 @@ public class AutoManifestPolicyTest {
 	}
 
 	@Test
-	public void manifestsDoNotRequestBackgroundLocation() throws Exception {
+	public void backgroundLocationIsDeclaredOnceAndRemovableByBuildFlag() throws Exception {
+		// Opt-in only (TripModePolicy); -PNO_BACKGROUND_LOCATION=true merges the removal manifest.
 		Document mainManifest = parse("src/main/AndroidManifest.xml");
-		assertFalse(hasNamed(mainManifest, "uses-permission",
+		assertTrue(hasNamed(mainManifest, "uses-permission",
 				"android.permission.ACCESS_BACKGROUND_LOCATION"));
 		Document autoManifest = parse("src/auto/AndroidManifest.xml");
 		assertFalse(hasNamed(autoManifest, "uses-permission",
 				"android.permission.ACCESS_BACKGROUND_LOCATION"));
+		Element removal = findNamed(parse("manifest-no-background-location/AndroidManifest.xml"),
+				"uses-permission", "android.permission.ACCESS_BACKGROUND_LOCATION");
+		assertNotNull(removal);
+		assertEquals("remove", removal.getAttributeNS(TOOLS_NS, "node"));
 	}
 
 	private static Document parse(String path) throws Exception {
