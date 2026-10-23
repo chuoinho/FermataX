@@ -148,13 +148,13 @@ public class GlassSpeedoTripControllerTest {
         assertEquals(10_000, new TripStore(context).load().totalTimeMs());
     }
 
-    @Test public void viewExplainsEstimatesAndNeverShowsStaleSpeedAsZero() {
+    @Test public void viewKeepsANumberAndReportsTheLostSignal() {
         GlassSpeedoTripView view = new GlassSpeedoTripView(context);
         TripEngine.State state = new TripEngine.State(12_000, 800, 720_000, 600_000,
                 70, -1, TripEngine.Signal.STALE, true, true);
         view.updateSpeed(-1, state, true);
         String text = text(view);
-        assertTrue(text.contains("—"));
+        assertFalse("no dash while tracking", text.contains("—"));
         assertTrue(text.contains("12.0 km"));
         assertFalse(text.contains("≈"));
         assertFalse(text.contains("Missing data"));
@@ -392,18 +392,28 @@ public class GlassSpeedoTripControllerTest {
         c.destroyForTesting();
     }
 
-    @Test public void viewNeverRendersUnknownSpeedAsZeroWhileTracking() {
+    @Test public void viewShowsHeldSpeedAsAPlainNumberAndFlagsTheSignal() {
         GlassSpeedoTripView view = new GlassSpeedoTripView(context);
-        TripEngine.State tracking = new TripEngine.State(1_000, 0, 60_000, 50_000, 50, -1,
+        TripEngine.State tracking = new TripEngine.State(1_000, 0, 60_000, 50_000, 50, 54,
                 TripEngine.Signal.TRACKING, false, true);
-        view.updateSpeed(-1, tracking, true);
+        view.updateSpeed(54, tracking, true);
+        assertTrue(text(view).contains("GPS connected"));
+        TripEngine.State noSpeed = new TripEngine.State(1_000, 0, 60_000, 50_000, 50, -1,
+                TripEngine.Signal.TRACKING, false, true);
+        view.updateSpeed(-1, noSpeed, true);
         String text = text(view);
-        assertTrue(text.contains("—"));
-        assertFalse(text.startsWith("0\n") || text.contains("\n0\n"));
+        assertTrue("last speed kept", text.contains("54"));
+        assertFalse(text.contains("—"));
+        assertTrue(text.contains("GPS signal lost"));
         TripEngine.State estimated = new TripEngine.State(1_000, 0, 0, 0, 60_000, 50_000, 50, 54,
                 TripEngine.Signal.STALE, false, true, true, false);
         view.updateSpeed(54, estimated, true);
-        assertTrue(text(view).contains("~54"));
+        assertFalse(text(view).contains("~"));
+        assertTrue(text(view).contains("54"));
+        TripEngine.State gpsOff = new TripEngine.State(1_000, 0, 60_000, 50_000, 50, -1,
+                TripEngine.Signal.GPS_OFF, false, true);
+        view.updateSpeed(-1, gpsOff, true);
+        assertTrue("nothing to measure with", text(view).contains("—"));
         TripEngine.State mostlyEstimated = new TripEngine.State(10_000, 2_000, 600_000, 500_000, 50, 40,
                 TripEngine.Signal.TRACKING, false, true);
         view.updateSpeed(40, mostlyEstimated, true);

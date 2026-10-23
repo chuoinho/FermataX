@@ -55,6 +55,7 @@ public class GlassSpeedoTripView extends FrameLayout {
     private SpeedArcView speedArcView;
 
     private boolean isMetric = true;
+    private final SpeedDisplay speedDisplay = new SpeedDisplay();
     private Runnable onResetTripListener;
     private Runnable onToggleTripListener;
 
@@ -361,20 +362,21 @@ public class GlassSpeedoTripView extends FrameLayout {
         this.isMetric = isMetric;
         this.lastTripState = tripState;
         Locale locale = displayLocale();
-        // Unknown speed is never rendered as 0, whatever the signal says.
-        if (!Float.isFinite(speedKmh) || speedKmh < 0f) {
+        TripEngine.Signal signal = (tripState != null) ? tripState.signal() : TripEngine.Signal.WAITING;
+        // A dash only when there is nothing to measure with; otherwise the number stays and the
+        // signal line below reports a weak signal.
+        float shown = speedDisplay.show(speedKmh, signal);
+        boolean weakSignal = !Float.isFinite(speedKmh) || speedKmh < 0f
+                || (tripState != null && tripState.speedEstimated());
+        if (shown < 0f) {
             tvSpeedValue.setText("—");
-            tvSpeedValue.setAlpha(1f);
             tvSpeedValue.setContentDescription(getContext().getString(R.string.speedo_speed_unknown));
             speedArcView.setSpeedRatio(0f);
         } else {
-            boolean estimate = tripState != null && tripState.speedEstimated();
-            float displayedSpeed = isMetric ? speedKmh : (speedKmh * 0.621371f);
-            String formatted = String.format(locale, "%.0f", displayedSpeed);
-            tvSpeedValue.setText(estimate ? "~" + formatted : formatted);
-            tvSpeedValue.setAlpha(estimate ? 0.6f : 1f);
+            float displayedSpeed = isMetric ? shown : (shown * 0.621371f);
+            tvSpeedValue.setText(String.format(locale, "%.0f", displayedSpeed));
             tvSpeedValue.setContentDescription(null);
-            speedArcView.setSpeedRatio(Math.min(1.0f, speedKmh / 220f));
+            speedArcView.setSpeedRatio(Math.min(1.0f, shown / 220f));
         }
         tvSpeedUnit.setText(isMetric ? "KM/H" : "MPH");
 
@@ -399,7 +401,8 @@ public class GlassSpeedoTripView extends FrameLayout {
             }
             tvDriveTime.setText(tripState.getFormattedDriveTime());
             String description = switch (tripState.signal()) {
-                case TRACKING -> "● " + getContext().getString(R.string.speedo_gps_ready);
+                case TRACKING -> weakSignal ? "◌ " + getContext().getString(R.string.speedo_signal_lost)
+                        : "● " + getContext().getString(R.string.speedo_gps_ready);
                 case WAITING -> "◌ " + getContext().getString(R.string.speedo_waiting);
                 case STALE -> "◌ " + getContext().getString(R.string.speedo_signal_lost);
                 case GPS_OFF -> getContext().getString(R.string.speedo_gps_off);
@@ -524,9 +527,31 @@ public class GlassSpeedoTripView extends FrameLayout {
             arcProgressPaint.setStrokeCap(Paint.Cap.ROUND);
         }
 
+        @Nullable private android.animation.ValueAnimator sweep;
+
+        /** Glides to the new value between the 1 Hz updates, then stops: no continuous frame loop. */
         public void setSpeedRatio(float ratio) {
-            this.speedRatio = Math.max(0f, Math.min(1f, ratio));
-            invalidate();
+            float target = Math.max(0f, Math.min(1f, ratio));
+            if (sweep != null) sweep.cancel();
+            if (!isAttachedToWindow() || Math.abs(target - speedRatio) < 0.002f) {
+                speedRatio = target;
+                invalidate();
+                return;
+            }
+            sweep = android.animation.ValueAnimator.ofFloat(speedRatio, target);
+            sweep.setDuration(600);
+            sweep.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            sweep.addUpdateListener(a -> {
+                speedRatio = (float) a.getAnimatedValue();
+                invalidate();
+            });
+            sweep.start();
+        }
+
+        @Override
+        protected void onDetachedFromWindow() {
+            if (sweep != null) sweep.cancel();
+            super.onDetachedFromWindow();
         }
 
         public void refreshAppearance(boolean isNight, GlassThemeColors colors) {

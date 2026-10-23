@@ -237,6 +237,7 @@ public final class GlassSpeedoTripController {
             if (tripLog != null && imuRegistered) tripLog.imu(time, stationary);
             engine.tick(time);
             engine.motion(time, stationary, Double.NaN);
+            if (stationary) engine.stillAtLowSpeed(time);
             if (!hasPermission()) {
                 LocationHub.get(context).release("speedo");
                 registered = false;
@@ -268,7 +269,10 @@ public final class GlassSpeedoTripController {
     };
 
     private void updateImuRegistration(long now) {
-        if (now - lastCallback > 2_000) {
+        // During a gap for dead reckoning, and at low speed to hold 0 against Doppler noise at a stop.
+        TripEngine.State s = snapshot;
+        boolean slow = s != null && s.speedKmh() >= 0 && s.speedKmh() < TripEngine.STILL_MAX_KMH;
+        if (now - lastCallback > 2_000 || slow) {
             if (!imuRegistered && sensorManager != null) {
                 stationaryDetector.reset();
                 if (linearAccSensor != null) sensorManager.registerListener(

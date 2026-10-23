@@ -12,6 +12,8 @@ public final class TripEngine {
     public static final long AUTO_NEW_TRIP_MS = 4 * 60 * 60_000L;
     private static final double EARTH_METERS = 6_371_000;
     private static final double MAX_ESTIMATED_SHARE = 0.10;
+    /** Below this displayed speed a still IMU wins over Doppler noise. */
+    static final float STILL_MAX_KMH = 5f;
 
     public enum Signal { WAITING, TRACKING, STALE, GPS_OFF, PERMISSION, PAUSED, ERROR, BACKGROUND_BLOCKED }
 
@@ -172,6 +174,17 @@ public final class TripEngine {
         if (Double.isFinite(v) && (Double.isFinite(vehicleSpeedMps) || stationary)) {
             speed.observe(v, now, false);
         }
+    }
+
+    /**
+     * The IMU reports the car as still while fixes keep arriving. Only a low displayed speed is
+     * zeroed: at cruising speed a quiet IMU is more likely a smooth road than a stop.
+     */
+    public void stillAtLowSpeed(long now) {
+        this.now = Math.max(this.now, now);
+        if (!clock.running()) return;
+        float kmh = speed.speedKmh(now);
+        if (kmh >= 0 && kmh < STILL_MAX_KMH) speed.observe(0, now, false);
     }
 
     public void unavailable(Signal reason, long now) {

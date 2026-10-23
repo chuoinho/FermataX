@@ -555,4 +555,17 @@ public class TripEngineTest {
         assertEquals(0f, e.state().speedKmh(), 0.001);
         assertEquals(TripEngine.Signal.TRACKING, e.state().signal());
     }
+
+    @Test public void stillnessZeroesOnlyALowDisplayedSpeed() {
+        TripEngine slow = engine();
+        feed(slow, 1_000, 0, 1.2);          // 4.3 km/h of Doppler noise at a stop
+        slow.stillAtLowSpeed(1_500);
+        assertEquals(0f, slow.state().speedKmh(), 0.001f);
+        assertEquals("distance is untouched", 0, slow.state().distanceMeters(), 0);
+
+        TripEngine fast = engine();
+        feed(fast, 1_000, 0, 20);           // cruising: a quiet IMU must not zero it
+        fast.stillAtLowSpeed(1_500);
+        assertEquals(72f, fast.state().speedKmh(), 0.001f);
+    }
 }
