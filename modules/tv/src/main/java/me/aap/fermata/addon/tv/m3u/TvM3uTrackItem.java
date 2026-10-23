@@ -299,6 +299,12 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 	}
 
 	@Override
+	public boolean isLiveStream() {
+		// Movies in an M3U playlist (.mkv/.mp4 links) are VOD, not a live feed.
+		return super.isStream();
+	}
+
+	@Override
 	public boolean isSeekable() {
 		if (!super.isStream()) return true;
 		return (getCatchUpDays() > 0) && (epgStart > 0) && (epgStart < epgStop) &&

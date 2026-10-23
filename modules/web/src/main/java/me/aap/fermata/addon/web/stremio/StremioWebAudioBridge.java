@@ -223,11 +223,12 @@ final class StremioWebAudioBridge implements PreferenceStore.Listener, AutoClose
 			    }
 			    catch (_) { owner.resuming = false; }
 			  };
+			  // createMediaElementSource reroutes the element for its whole life: closing the graph on a
+			  // source change, end or error would leave that <video> silent, so it lives as long as the element.
 			  var retainsOwner = function(owner){
-			    var media = owner.media, source = sourceOf(media);
-			    return media.isConnected && !media.ended && !media.error &&
-			        isBlob(source) && source === owner.sourceKey && owner.context.state !== 'closed' &&
-			        media.mediaKeys == null && !encrypted.has(media);
+			    if (!owner.media.isConnected || owner.context.state === 'closed') return false;
+			    owner.sourceKey = sourceOf(owner.media);
+			    return true;
 			  };
 			  var attach = function(selected){
 			    var prior = ownership.get(selected.media);

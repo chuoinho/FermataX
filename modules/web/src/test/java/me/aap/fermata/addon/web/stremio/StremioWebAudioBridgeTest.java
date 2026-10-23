@@ -34,8 +34,8 @@ public class StremioWebAudioBridgeTest {
 		assertTrue(source.contains("new MutationObserver(schedule)"));
 		assertTrue(source.contains("var retainsOwner = function(owner)"));
 		assertFalse(source.contains("return playerRoute() && media.isConnected"));
-		assertTrue(source.contains("source === owner.sourceKey"));
-		assertTrue(source.contains("!media.ended && !media.error"));
+		assertTrue(source.contains("owner.sourceKey = sourceOf(owner.media)"));
+		assertFalse("ending or replacing the source must not close the graph", source.contains("!media.ended && !media.error"));
 		assertTrue(source.contains("owner.terminal"));
 		assertTrue(source.contains("owner.context.close()"));
 		assertTrue(source.contains("owner.context.state !== 'suspended'"));

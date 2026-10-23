@@ -88,6 +88,9 @@ public class VlcEngine extends MediaEngineBase
 	private RemotePlaybackRequest remoteRequest;
 	private long prepareGeneration;
 	private boolean nativeSubtitleSurface = true;
+	// Video track parked while no surface is attached; NO_TRACK when nothing is parked.
+	private int parkedVideoTrack = NO_TRACK;
+	private static final int NO_TRACK = -1;
 	private boolean firstVideoOutputReported;
 	private int lastWindowW = -1;
 	private int lastWindowH = -1;
@@ -286,6 +289,7 @@ public class VlcEngine extends MediaEngineBase
 		long off = source.getItem().getOffset();
 		this.source = source.prepare();
 		pendingPosition = -1;
+		parkedVideoTrack = NO_TRACK; // track ids belong to the previous media
 		player.setMedia(media);
 		source.release();
 		if (off > 0) player.setTime(off);
@@ -401,8 +405,23 @@ public class VlcEngine extends MediaEngineBase
 	@Override
 	public void setVideoView(@Nullable VideoView view) {
 		resetWindowSizeMemo();
+		boolean detaching = (view == null) && (videoView != null);
 		super.setVideoView(view);
 		attachVideoViews(view, nativeSubtitleSurface);
+		// libVLC does not recreate the video output of a running live stream when a new surface is
+		// attached (black picture with audio after another app covered the car screen). Like the VLC
+		// app, park the video track while detached and select it again once a surface is back.
+		if (detaching) {
+			int track = player.getVideoTrack();
+			if (track != NO_TRACK) {
+				parkedVideoTrack = track;
+				player.setVideoTrack(NO_TRACK);
+			}
+		} else if ((view != null) && (parkedVideoTrack != NO_TRACK)) {
+			int track = parkedVideoTrack;
+			parkedVideoTrack = NO_TRACK;
+			player.setVideoTrack(track);
+		}
 	}
 
 	private void attachVideoViews(@Nullable VideoView view, boolean nativeSubtitles) {

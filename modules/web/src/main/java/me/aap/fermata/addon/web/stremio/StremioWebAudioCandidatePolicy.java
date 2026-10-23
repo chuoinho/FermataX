@@ -38,14 +38,12 @@ final class StremioWebAudioCandidatePolicy {
 	}
 
 	/**
-	 * A source node can be created only once, so an attached graph survives a normal pause or a
-	 * transient buffering stall. It is released only when ownership of that source generation ends.
+	 * A source node can be created only once and reroutes the element's audio for its whole life,
+	 * so the graph is kept across pause, stall, end, error and source changes. Releasing it earlier
+	 * would leave the element silent; it is released only when the element leaves the document.
 	 */
-	static boolean retainsAttachedOwner(Candidate candidate, boolean sourceUnchanged,
-			boolean mediaError) {
-		return candidate.mainDocument && candidate.connected && !candidate.ended &&
-				!mediaError && sourceUnchanged && !candidate.mediaKeysPresent &&
-				!candidate.encryptedObserved && (candidate.source == SourceKind.BLOB_MSE);
+	static boolean retainsAttachedOwner(Candidate candidate) {
+		return candidate.mainDocument && candidate.connected;
 	}
 
 	/** Returns one clear winner only; tied eligible candidates fail closed. */

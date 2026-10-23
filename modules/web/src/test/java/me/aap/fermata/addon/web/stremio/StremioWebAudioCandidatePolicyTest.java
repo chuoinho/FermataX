@@ -56,20 +56,15 @@ public class StremioWebAudioCandidatePolicyTest {
 	}
 
 	@Test
-	public void retainsAnAttachedGraphAcrossPauseAndShortStallOnly() {
+	public void keepsAnAttachedGraphForTheWholeLifeOfTheElement() {
 		var paused = with(true, true, true, false, true, false, 4, false, false, BLOB_MSE, 1);
-		var stalled = with(true, true, true, false, false, false, 0, false, false, BLOB_MSE, 1);
-		assertTrue(StremioWebAudioCandidatePolicy.retainsAttachedOwner(paused, true, false));
-		assertTrue(StremioWebAudioCandidatePolicy.retainsAttachedOwner(stalled, true, false));
+		var ended = with(true, true, true, true, false, true, 4, false, false, BLOB_MSE, 1);
+		var directSource = with(true, true, true, true, false, false, 4, false, false, DIRECT_HTTPS, 1);
+		assertTrue(StremioWebAudioCandidatePolicy.retainsAttachedOwner(paused));
+		assertTrue("a closed graph would leave the element silent", StremioWebAudioCandidatePolicy.retainsAttachedOwner(ended));
+		assertTrue(StremioWebAudioCandidatePolicy.retainsAttachedOwner(directSource));
 		assertFalse(StremioWebAudioCandidatePolicy.retainsAttachedOwner(
-				with(true, true, true, true, false, true, 4, false, false, BLOB_MSE, 1),
-				true, false));
-		assertFalse(StremioWebAudioCandidatePolicy.retainsAttachedOwner(candidate(), false, false));
-		assertFalse(StremioWebAudioCandidatePolicy.retainsAttachedOwner(candidate(), true, true));
-		assertTrue(StremioWebAudioCandidatePolicy.retainsAttachedOwner(candidate(), true, false));
-		assertFalse(StremioWebAudioCandidatePolicy.retainsAttachedOwner(
-				with(true, true, true, true, false, false, 4, false, false, DIRECT_HTTPS, 1),
-				true, false));
+				with(true, false, true, true, false, false, 4, false, false, BLOB_MSE, 1)));
 	}
 
 	private static StremioWebAudioCandidatePolicy.Candidate candidate() {
