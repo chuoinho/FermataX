@@ -43,7 +43,13 @@ public class SettingsMenuContractTest {
 	@Test
 	public void supportedLanguagesMapToExpectedLegacyOrdinals() {
 		var values = me.aap.fermata.ui.activity.MainActivityPrefs.Lang.getValues();
-		org.junit.Assert.assertEquals(6, values.size());
+		org.junit.Assert.assertEquals(9, values.size());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.TR, values.get(6));
+		org.junit.Assert.assertEquals(3, values.get(6).ordinal());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.DE, values.get(7));
+		org.junit.Assert.assertEquals(4, values.get(7).ordinal());
+		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.IT, values.get(8));
+		org.junit.Assert.assertEquals(2, values.get(8).ordinal());
 		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.EN, values.get(0));
 		org.junit.Assert.assertEquals(0, values.get(0).ordinal());
 		org.junit.Assert.assertEquals(me.aap.fermata.ui.activity.MainActivityPrefs.Lang.VI, values.get(1));
