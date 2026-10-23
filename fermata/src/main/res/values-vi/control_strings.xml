@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="phone_header_nothing_playing">Chưa phát nội dung</string>
-    <string name="phone_header_choose_media">Chọn media để điều khiển</string>
     <string name="phone_header_aa_disconnect">Đã ngắt kết nối AA</string>
     <string name="phone_header_aa_connected">Đã kết nối AA</string>
     <string name="phone_open_on_car_strip_title">Mở trên xe</string>

@@ -771,7 +771,8 @@ public class MainActivityDelegate extends ActivityDelegate
 					if (videoMode) {
 						getAppActivity().setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 					} else {
-						getAppActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+						// Back to the system default so the user's rotation lock applies again.
+						getAppActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 					}
 				}
 			}

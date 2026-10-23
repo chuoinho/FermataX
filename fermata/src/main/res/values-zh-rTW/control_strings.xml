@@ -19,7 +19,6 @@
     <string name="control_aa_unknown_detail">Waiting for the official Android Auto connection status.</string>
     <string name="control_open_failed">Could not open this addon on the car screen.</string>
     <string name="phone_header_nothing_playing">未播放內容</string>
-    <string name="phone_header_choose_media">選擇媒體進行控制</string>
     <string name="phone_header_aa_disconnect">AA 已斷開</string>
     <string name="phone_header_aa_connected">AA 已連線</string>
     <string name="phone_open_on_car_strip_title">在車載開啟</string>

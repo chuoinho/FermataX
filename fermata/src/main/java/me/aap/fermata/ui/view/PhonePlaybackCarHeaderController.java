@@ -219,8 +219,9 @@ public final class PhonePlaybackCarHeaderController implements FermataServiceUiB
 			TextView subtitle = header.findViewById(R.id.phone_header_subtitle);
 			title.setText((presentation.title.length() > 0) ?
 					presentation.title : header.getContext().getString(R.string.phone_header_nothing_playing));
-			subtitle.setText((presentation.subtitle.length() > 0) ?
-					presentation.subtitle : header.getContext().getString(R.string.phone_header_choose_media));
+			// Media is playing here, so an empty artist line stays empty rather than asking to choose media.
+			subtitle.setText(presentation.subtitle);
+			subtitle.setVisibility((presentation.subtitle.length() > 0) ? VISIBLE : GONE);
 			ImageView artwork = header.findViewById(R.id.phone_header_artwork);
 			MediaMetadataCompat metadata = presentation.metadata;
 			Bitmap bitmap = (metadata == null) ? null :

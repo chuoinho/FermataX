@@ -527,8 +527,10 @@ public class YoutubeFragment extends WebBrowserFragment
 	@Override
 	public boolean usePlaybackTitle(PlaybackSnapshot snapshot) {
 		YoutubeWebView web = getWebView();
-		return (web != null) && YoutubeToolbarPolicy.usePlaybackTitle(
-				web.getUrl(), YoutubeMediaEngine.isYoutubeItem(snapshot.getItem()));
+		// The phone and the car have separate WebViews: only the one playing may show the playing title.
+		return (web != null) && (web.getMediaEngine() != null) && web.getMediaEngine().isCurrentEngine() &&
+				YoutubeToolbarPolicy.usePlaybackTitle(web.getUrl(),
+						YoutubeMediaEngine.isYoutubeItem(snapshot.getItem()));
 	}
 
 	@Override
@@ -664,6 +666,9 @@ public class YoutubeFragment extends WebBrowserFragment
 			}
 			View fullScreen = tb.findViewById(R.id.fullscreen);
 			if (fullScreen != null) fullScreen.setVisibility(showFullScreen ? VISIBLE : GONE);
+			// Reload is not useful while a video fills the screen.
+			View refresh = tb.findViewById(me.aap.fermata.R.id.refresh);
+			if (refresh != null) refresh.setVisibility(a.isVideoMode() ? GONE : VISIBLE);
 			tb.setVisibility(getVisibility(tb, f));
 			TopBarController.refresh(a, f);
 		}

@@ -51,6 +51,13 @@ public class GlassNavigationRailView extends FrameLayout {
     private static final String TAG = "GlassNavRail";
     private static final long ANIM_DURATION_MS = 220L;
     public static final long AUTO_HIDE_DELAY_MS = 5000L;
+    // The idle grabber sits over page content (thumbnails, video); fade it until it is touched.
+    static final long GRABBER_DIM_DELAY_MS = 3000L;
+    static final float GRABBER_IDLE_ALPHA = 0.4f;
+    private final Runnable dimGrabber = () -> {
+        if (!this.isOpen && (this.grabberHandle != null))
+            this.grabberHandle.animate().alpha(GRABBER_IDLE_ALPHA).setDuration(300L);
+    };
 
     private final MainActivityDelegate activity;
     private final Boolean isCarOverride;
@@ -203,6 +210,7 @@ public class GlassNavigationRailView extends FrameLayout {
         grabberHandle.setOnTouchListener((v, event) -> {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    wakeGrabber();
                     downRawX = event.getRawX();
                     downRawY = event.getRawY();
                     initialTranslationY = grabberHandle.getTranslationY();
@@ -279,6 +287,7 @@ public class GlassNavigationRailView extends FrameLayout {
         addView(grabberHandle);
 
         buildActionButtons(context);
+        post(this::wakeGrabber);
     }
 
     private void updateGrabberHandleAccessibility() {
@@ -677,6 +686,7 @@ public class GlassNavigationRailView extends FrameLayout {
                 scrimView.setVisibility(GONE);
                 if (!fullscreenHidden) {
                     grabberHandle.setVisibility(VISIBLE);
+                    wakeGrabber();
                 }
                 if (previouslyFocusedView != null && previouslyFocusedView.isAttachedToWindow() && previouslyFocusedView.isShown()) {
                     previouslyFocusedView.requestFocus();
@@ -698,7 +708,17 @@ public class GlassNavigationRailView extends FrameLayout {
         updateGrabberHandleAccessibility();
         if (!fullscreenHidden) {
             grabberHandle.setVisibility(VISIBLE);
+            wakeGrabber();
         }
+    }
+
+    /** Shows the grabber fully, then fades it after a pause; only on the car where it overlaps content. */
+    void wakeGrabber() {
+        if (grabberHandle == null) return;
+        removeCallbacks(dimGrabber);
+        grabberHandle.animate().cancel();
+        grabberHandle.setAlpha(1f);
+        if (isCar()) postDelayed(dimGrabber, GRABBER_DIM_DELAY_MS);
     }
 
     public boolean onBackPressed() {
@@ -973,5 +993,6 @@ public class GlassNavigationRailView extends FrameLayout {
         super.onDetachedFromWindow();
         cancelPendingCallbacks();
         cancelAutoHide();
+        removeCallbacks(dimGrabber);
     }
 }

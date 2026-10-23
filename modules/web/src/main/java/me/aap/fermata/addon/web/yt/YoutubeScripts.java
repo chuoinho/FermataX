@@ -62,7 +62,9 @@ final class YoutubeScripts {
 			      'html:not([dark]) ytm-feed-filter-chip-bar-renderer ytm-chip-cloud-chip-renderer { background-color: rgba(0, 0, 0, 0.05) !important; color: #0f0f0f !important; } ' +
 			      'html:not([dark]) .ytLockupMetadataViewModelTitle, html:not([dark]) h3.media-item-headline { color: #0f0f0f !important; } ' +
 			      'html:not([dark]) .ytAttributedStringHost { color: #606060 !important; } ' +
-			      'html:not([dark]) .ytLockupMetadataViewModelTitle .ytAttributedStringHost { color: #0f0f0f !important; }';
+			      'html:not([dark]) .ytLockupMetadataViewModelTitle .ytAttributedStringHost { color: #0f0f0f !important; } ' +
+			      'c3-icon.mobile-topbar-logo:not(.full-logo) path:not(.logo-arrow) { fill: #FF0033 !important; } ' +
+			      'ytm-button-renderer:has(a[href^="intent:"]) { display: none !important; }';
 			  function inject() {
 			    if (document.getElementById(cssId)) return;
 			    var head = document.head || document.documentElement;

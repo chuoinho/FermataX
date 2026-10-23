@@ -38,6 +38,18 @@ public class ControlPanelSeekView extends AppCompatSeekBar {
 		super(context, attrs, defStyleAttr);
 	}
 
+	/** A larger thumb, so the position is readable while driving; it must fit the 12dp seek bar. */
+	void enlargeForCar() {
+		float d = getResources().getDisplayMetrics().density;
+		android.graphics.drawable.GradientDrawable thumb = new android.graphics.drawable.GradientDrawable();
+		thumb.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+		thumb.setColor(0xFFFFFFFF);
+		thumb.setSize(Math.round(12 * d), Math.round(12 * d));
+		android.content.res.ColorStateList tint = getThumbTintList();
+		setThumb(thumb);
+		if (tint != null) setThumbTintList(tint);
+	}
+
 	@Override
 	public void setEnabled(boolean enabled) {
 		if (isEnabled() == enabled) return;

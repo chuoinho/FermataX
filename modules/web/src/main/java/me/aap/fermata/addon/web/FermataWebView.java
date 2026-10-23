@@ -584,7 +584,9 @@ public class FermataWebView extends WebView
 				  if (document.getElementById('fermata-focus-style')) return;
 				  var style = document.createElement('style');
 				  style.id = 'fermata-focus-style';
-				  style.textContent = ':focus {outline: 2px solid blue !important; border-radius: 5px;}';
+				  // Keyboard/rotary focus only: pages (e.g. YouTube) focus their video programmatically.
+				  style.textContent = ':focus {outline: none !important;} ' +
+				      ':focus-visible:not(video) {outline: 2px solid #00E5FF !important; border-radius: 5px;}';
 				  (document.head || document.documentElement).appendChild(style);
 				})()""", null);
 	}

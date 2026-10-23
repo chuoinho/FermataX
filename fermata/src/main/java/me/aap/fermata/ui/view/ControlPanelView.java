@@ -195,9 +195,17 @@ public class ControlPanelView extends ConstraintLayout
 		int panelSize = getResources().getDimensionPixelSize(R.dimen.control_panel_height);
 		int buttonSize = getResources().getDimensionPixelSize(R.dimen.control_panel_transport_height);
 		ControlPanelSeekView seek = findViewById(R.id.seek_bar);
-		if (isAutoUi(getActivity())) {
-			findViewById(R.id.control_play_pause).setBackgroundResource(
-					R.drawable.aa_play_button_bg_automotive);
+		MainActivityDelegate activity = getActivity();
+		if (isAutoUi(activity)) {
+			View play = findViewById(R.id.control_play_pause);
+			play.setBackgroundResource(R.drawable.aa_play_button_bg_automotive);
+			if (activity.isGlassTheme()) {
+				// The car context resolves colorAccent to Android Auto's blue; use the theme's action colour.
+				play.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+						me.aap.fermata.ui.glass.theme.GlassThemeColors.get(getContext(),
+								activity.isGlassNightMode()).getActionText()));
+			}
+			seek.enlargeForCar();
 		}
 		setEdgeActionSize(R.id.show_hide_bars_icon, edgeActionSize, edgeActionPadding);
 		setEdgeActionSize(R.id.control_menu_button_icon, edgeActionSize, edgeActionPadding);
