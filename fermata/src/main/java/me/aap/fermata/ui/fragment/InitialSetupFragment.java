@@ -46,6 +46,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	private static final int VOICE_ENGLISH = 2;
 	private static final int VOICE_VIETNAMESE = 3;
 	private static final int VOICE_AUTO = 4;
+	// Marks status text that keeps its semantic colour.
+	private static final String STATE_TAG = "permission_state";
 	private static final NavBarView.Mediator HIDDEN_NAV = new NavBarView.Mediator() {
 		@Override
 		public void enable(NavBarView view, me.aap.utils.ui.fragment.ActivityFragment fragment) {
@@ -199,6 +201,22 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 					me.aap.fermata.ui.glass.speedo.TripModePolicy.current(ctx) == me.aap.fermata.ui.glass.speedo.TripModePolicy.Mode.ON,
 					() -> InterfacePrefsBuilder.toggleTripBackground(activity, this::updatePermissions));
 		}
+		if (activity.isGlassTheme() && (getView() != null)) {
+			applyGlassText(getView(), me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, activity.isGlassNightMode()));
+		}
+	}
+
+	/** Headings use the theme's primary text colour, everything else its secondary colour. */
+	private static void applyGlassText(View v, me.aap.fermata.ui.glass.theme.GlassThemeColors gc) {
+		if (v instanceof android.widget.AdapterView) return; // spinner rows are styled by their own layouts
+		if (v instanceof ViewGroup g) {
+			for (int i = 0; i < g.getChildCount(); i++) applyGlassText(g.getChildAt(i), gc);
+		} else if (v instanceof android.widget.CompoundButton cb) {
+			cb.setTextColor(gc.getTextPrimary());
+		} else if ((v instanceof TextView tv) && !(v instanceof Button) && !STATE_TAG.equals(v.getTag())) {
+			boolean heading = (tv.getTypeface() != null) && tv.getTypeface().isBold();
+			tv.setTextColor(heading ? gc.getTextPrimary() : gc.getTextSecondary());
+		}
 	}
 
 	private void addHeader(android.content.Context ctx, int text) {
@@ -243,6 +261,7 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 			TextView ok = new TextView(ctx);
 			ok.setText(R.string.initial_setup_allowed);
 			ok.setTextColor(0xFF22C55E);
+			ok.setTag(STATE_TAG);
 			ok.setPadding(dp(ctx, 12), 0, 0, 0);
 			row.addView(ok);
 		} else {
