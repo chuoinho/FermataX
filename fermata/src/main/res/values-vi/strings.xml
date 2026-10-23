@@ -598,10 +598,16 @@
     <string name="initial_setup_check_permissions">Kiểm tra quyền</string>
     <string name="initial_setup_permissions_all_granted">✓ Đã cấp đủ quyền cần thiết</string>
     <string name="initial_setup_permissions_needed">⚠ Cần cấp quyền để hoạt động đầy đủ</string>
+    <string name="initial_setup_location_title">Vị trí (tuỳ chọn)</string>
+    <string name="initial_setup_location_off">Chưa cho phép. Thẻ tốc độ, thời tiết và tự lưu vị trí đỗ xe sẽ không hoạt động. Bạn có thể cấp sau trong Cài đặt → Kiểm tra kết nối và quyền.</string>
+    <string name="initial_setup_allow_location">Cho phép vị trí</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">Đang bật · Chạm để tắt</string>
     <string name="glass_addon_disabled_hint">Đã tắt · Chạm để bật</string>
+    <string name="glass_shortcut_unavailable">Không mở được lối tắt: %s</string>
+    <string name="glass_rail_desc_expanded">Thanh điều hướng, đang mở</string>
+    <string name="glass_rail_desc_collapsed">Thanh điều hướng, đang thu gọn</string>
     <string name="glass_addon_drag_hint">Kéo để sắp xếp</string>
 
     <!-- Glass Weather Conditions -->

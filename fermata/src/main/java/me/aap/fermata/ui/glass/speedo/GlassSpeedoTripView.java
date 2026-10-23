@@ -233,13 +233,12 @@ public class GlassSpeedoTripView extends FrameLayout {
         boolean on = mode == TripModePolicy.Mode.ON;
         tripStatsRow.setVisibility(on ? View.VISIBLE : View.GONE);
         btnToggleTrip.setVisibility(on ? View.VISIBLE : View.GONE);
-        tvTripHint.setVisibility(on ? View.GONE : View.VISIBLE);
-        if (!on) {
-            tvTripHint.setText(switch (mode) {
-                case NEEDS_LOCATION_PERMISSION -> R.string.speedo_trip_hint_location;
-                case NEEDS_BACKGROUND_PERMISSION -> R.string.speedo_trip_hint_background;
-                default -> R.string.speedo_trip_hint_off;
-            });
+        // Without any location the speed status already asks for it; a second hint would only compete.
+        boolean hint = !on && TripModePolicy.hasForegroundLocation(getContext());
+        tvTripHint.setVisibility(hint ? View.VISIBLE : View.GONE);
+        if (hint) {
+            tvTripHint.setText(mode == TripModePolicy.Mode.NEEDS_BACKGROUND_PERMISSION
+                    ? R.string.speedo_trip_hint_background : R.string.speedo_trip_hint_off);
         }
     }
 

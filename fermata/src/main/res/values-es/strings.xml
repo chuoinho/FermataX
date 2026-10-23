@@ -605,10 +605,16 @@ Por favor, reinicie la aplicación.</string>
     <string name="initial_setup_check_permissions">Comprobar estado</string>
     <string name="initial_setup_permissions_all_granted">✓ Todos los permisos necesarios concedidos</string>
     <string name="initial_setup_permissions_needed">⚠ Se necesitan permisos para medios, coche y voz</string>
+    <string name="initial_setup_location_title">Ubicación (opcional)</string>
+    <string name="initial_setup_location_off">No permitido. La tarjeta de velocidad, el tiempo y el guardado automático del aparcamiento no funcionarán. Puedes permitirlo más tarde en Configuración → Comprobación de conexión y permisos.</string>
+    <string name="initial_setup_allow_location">Permitir ubicación</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">Habilitado · Toca para desactivar</string>
     <string name="glass_addon_disabled_hint">Deshabilitado · Toca para activar</string>
+    <string name="glass_shortcut_unavailable">Destino del acceso directo no disponible: %s</string>
+    <string name="glass_rail_desc_expanded">Barra de navegación, expandida</string>
+    <string name="glass_rail_desc_collapsed">Barra de navegación, contraída</string>
     <string name="glass_addon_drag_hint">Arrastra para reordenar</string>
 
     <!-- Glass Weather Conditions -->

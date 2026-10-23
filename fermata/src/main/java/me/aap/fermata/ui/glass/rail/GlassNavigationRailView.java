@@ -283,8 +283,8 @@ public class GlassNavigationRailView extends FrameLayout {
 
     private void updateGrabberHandleAccessibility() {
         if (grabberHandle == null) return;
-        String stateStr = isOpen ? " (Expanded)" : " (Collapsed)";
-        grabberHandle.setContentDescription(safeGetString(getContext(), R.string.theme_glass, "Glass") + " Navigation Rail" + stateStr);
+        grabberHandle.setContentDescription(getContext().getString(
+                isOpen ? R.string.glass_rail_desc_expanded : R.string.glass_rail_desc_collapsed));
     }
 
     private void buildActionButtons(Context context) {
@@ -883,7 +883,9 @@ public class GlassNavigationRailView extends FrameLayout {
         if (!isOpen && isCar()) {
             switch (ev.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
-                    if (isAtRailEdge(ev.getX()) && !isInsideGrabberHandle(ev.getY())) {
+                    // Leave taps and horizontal scrolls near the edge to the content under the rail overlay.
+                    if (isAtRailEdge(ev.getX()) && !isInsideGrabberHandle(ev.getY())
+                            && !contentWantsTouch(ev.getX() + getLeft(), ev.getY() + getTop())) {
                         edgeDownX = ev.getX();
                         edgeDownY = ev.getY();
                         edgeTracking = true;
@@ -923,6 +925,33 @@ public class GlassNavigationRailView extends FrameLayout {
             }
         }
         return super.onTouchEvent(ev);
+    }
+
+    private boolean contentWantsTouch(float x, float y) {
+        if (!(getParent() instanceof ViewGroup parent)) return false;
+        for (int i = parent.getChildCount() - 1; i >= 0; i--) {
+            View child = parent.getChildAt(i);
+            if (child != this && wantsTouch(child, x, y)) return true;
+        }
+        return false;
+    }
+
+    // shortcut: ignores view transforms (translation/scale), fine for the static dashboard layout.
+    private boolean wantsTouch(View v, float x, float y) {
+        if (v.getVisibility() != VISIBLE || x < v.getLeft() || x >= v.getRight() || y < v.getTop() || y >= v.getBottom()) {
+            return false;
+        }
+        if (v.canScrollHorizontally(-1) || v.canScrollHorizontally(1)) return true;
+        // Buttons and tiles keep their taps; full-width list rows still allow the Back swipe.
+        if ((v.isClickable() || v.isLongClickable()) && v.getWidth() < getWidth() / 2) return true;
+        if (v instanceof ViewGroup g) {
+            float cx = x - v.getLeft() + v.getScrollX();
+            float cy = y - v.getTop() + v.getScrollY();
+            for (int i = g.getChildCount() - 1; i >= 0; i--) {
+                if (wantsTouch(g.getChildAt(i), cx, cy)) return true;
+            }
+        }
+        return false;
     }
 
     private float getSavedYRatio() {

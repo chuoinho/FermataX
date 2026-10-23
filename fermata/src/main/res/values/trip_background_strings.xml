@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="trip_background_title">Record location while other apps are on the car screen</string>
-    <string name="trip_background_sub_on">On: trip statistics and parking position stay accurate</string>
-    <string name="trip_background_sub_off">Off: the speed card shows speed only</string>
-    <string name="trip_background_sub_needs_permission">Needs location permission “Allow all the time”</string>
+    <string name="trip_background_sub_on">On. Trip distance, time, average speed and the parking spot stay accurate even while Maps or another app is on the car screen.</string>
+    <string name="trip_background_sub_off">Off. While another app is on the car screen, trip statistics pause and the parking spot may be less accurate. Tap to turn on.</string>
+    <string name="trip_background_sub_needs_permission">Location is not set to “Allow all the time”, so recording stops while another app is on the car screen. Tap to fix.</string>
     <string name="trip_background_disclosure">To keep trip distance, time and average speed and to save where you parked even while another app (such as Maps) is on the car screen, FermataX collects your location in the background, only during Android Auto sessions. The location never leaves your phone. You can turn this off at any time in Settings.\n\nOn the next screen choose “Allow all the time”.</string>
     <string name="trip_background_continue">Continue</string>
     <string name="trip_background_enabled">Background recording is on</string>
@@ -11,5 +11,4 @@
     <string name="trip_background_denied">Location permission “Allow all the time” was not granted</string>
     <string name="speedo_trip_hint_off">Turn on trip recording in Settings on the phone</string>
     <string name="speedo_trip_hint_background">Allow location “All the time” on the phone to record trips</string>
-    <string name="speedo_trip_hint_location">Allow location on the phone</string>
 </resources>

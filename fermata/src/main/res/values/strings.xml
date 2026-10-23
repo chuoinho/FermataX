@@ -592,6 +592,9 @@
     <string name="initial_setup_check_permissions">Check Status</string>
     <string name="initial_setup_permissions_all_granted">✓ All required permissions granted</string>
     <string name="initial_setup_permissions_needed">⚠ Permissions needed for media, car &amp; voice</string>
+    <string name="initial_setup_location_title">Location (optional)</string>
+    <string name="initial_setup_location_off">Not allowed. The speed card, weather and automatic parking spot will not work. You can allow it later in Settings → Connection and permissions check.</string>
+    <string name="initial_setup_allow_location">Allow location</string>
 
     <!-- Glass Weather Conditions -->
     <string name="weather_clear">Clear</string>
@@ -612,6 +615,9 @@
     <string name="glass_addon_enabled_hint">Enabled · Tap to disable</string>
     <string name="glass_addon_drag_hint">Drag to reorder</string>
     <string name="glass_addon_disabled_hint">Disabled · Tap to enable</string>
+    <string name="glass_shortcut_unavailable">Shortcut target unavailable: %s</string>
+    <string name="glass_rail_desc_expanded">Navigation rail, expanded</string>
+    <string name="glass_rail_desc_collapsed">Navigation rail, collapsed</string>
 
     <!-- Glass Speedo Trip -->
     <string name="speedo_reset_trip">Reset Trip</string>

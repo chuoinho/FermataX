@@ -9,8 +9,8 @@
 	<string name="readiness_storage_granted">Đã cho phép. FermataX có thể quét và đọc nhạc, video, tệp cục bộ.</string>
 	<string name="readiness_storage_not_granted">Chưa cho phép. Chạm để cấp quyền quản lý tất cả tệp hoặc bộ nhớ.</string>
 	<string name="readiness_location">Quyền vị trí (Tìm xe)</string>
-	<string name="readiness_location_granted">Đã cho phép. Dùng để tự động ghi nhớ vị trí đỗ xe khi ngắt kết nối xe.</string>
-	<string name="readiness_location_not_granted">Chưa cho phép. Chạm để cấp quyền vị trí cho tính năng Tìm xe.</string>
+	<string name="readiness_location_granted">Đã cho phép. Dùng cho thẻ tốc độ, thời tiết và Tìm xe.</string>
+	<string name="readiness_location_not_granted">Chưa cho phép. Chạm để cấp quyền vị trí cho thẻ tốc độ, thời tiết và Tìm xe.</string>
 	<string name="readiness_accessibility">Hỗ trợ tiếp cận (Cảm ứng phản chiếu)</string>
 	<string name="readiness_accessibility_granted">Đang bật. Cho phép chạm và điều khiển điện thoại từ màn hình xe khi phản chiếu.</string>
 	<string name="readiness_accessibility_not_granted">Đang tắt. Chạm để bật nếu muốn điều khiển điện thoại từ màn hình xe.</string>

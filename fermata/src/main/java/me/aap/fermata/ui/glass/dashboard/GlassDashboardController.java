@@ -219,10 +219,10 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             } else if (id.equals("lib:recent")) {
                 activity.showFragment(R.id.recent_fragment);
                 launched = true;
-            } else if (id.equals("car_finder") || id.endsWith("car_finder")) {
+            } else if (id.equals("car_finder")) {
                 activity.showFragment(R.id.car_finder_fragment);
                 launched = true;
-            } else if (id.equals("settings") || id.endsWith("settings")) {
+            } else if (id.equals("settings")) {
                 activity.showFragment(R.id.settings_fragment);
                 launched = true;
             } else if (id.startsWith("addon:") || "addon".equals(shortcut.getType())) {
@@ -260,7 +260,8 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         }
 
         if (!launched) {
-            me.aap.utils.ui.UiUtils.showAlert(activity.getContext(), "Shortcut target unavailable: " + shortcut.getTitle());
+            Context ctx = activity.getContext();
+            me.aap.utils.ui.UiUtils.showAlert(ctx, ctx.getString(R.string.glass_shortcut_unavailable, shortcut.getTitle()));
         }
     }
 
@@ -283,6 +284,21 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             if (ctx != null) {
                 refreshWeather(ctx, true);
             }
+        }
+    };
+    // On Android Auto granting the permission on the phone does not resume the car screen, so poll until granted.
+    private final Runnable permissionWatch = new Runnable() {
+        @Override
+        public void run() {
+            Context ctx = activity.getContext();
+            if (isStopped || ctx == null) return;
+            if (!TripModePolicy.hasForegroundLocation(ctx)) {
+                weatherHandler.postDelayed(this, 2_000L);
+                return;
+            }
+            tripRegistry.getController().onHostResumed();
+            speedoView.setTripMode(TripModePolicy.current(ctx));
+            refreshWeather(ctx, true);
         }
     };
     private volatile boolean isStopped = false;
@@ -313,11 +329,13 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
         // On Android Auto this is the single initial load; the schedule takes over afterwards.
         refreshWeather(activity.getContext(), AutomotiveConnectionState.get().isProjectionConnected());
+        if (!TripModePolicy.hasForegroundLocation(activity.getContext())) weatherHandler.postDelayed(permissionWatch, 2_000L);
     }
 
     public void stop() {
         isStopped = true;
         weatherHandler.removeCallbacks(scheduledWeatherRefresh);
+        weatherHandler.removeCallbacks(permissionWatch);
         if (gpsTimeoutRunnable != null) {
             weatherHandler.removeCallbacks(gpsTimeoutRunnable);
             gpsTimeoutRunnable = null;

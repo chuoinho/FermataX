@@ -597,10 +597,16 @@
     <string name="initial_setup_check_permissions">Проверить статус</string>
     <string name="initial_setup_permissions_all_granted">✓ Все необходимые разрешения предоставлены</string>
     <string name="initial_setup_permissions_needed">⚠ Требуются разрешения для медиа, авто и голоса</string>
+    <string name="initial_setup_location_title">Геоданные (необязательно)</string>
+    <string name="initial_setup_location_off">Не разрешено. Карточка скорости, погода и автосохранение места парковки работать не будут. Разрешить можно позже в Настройках → Проверка подключения и разрешений.</string>
+    <string name="initial_setup_allow_location">Разрешить геоданные</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">Включено · Нажмите, чтобы отключить</string>
     <string name="glass_addon_disabled_hint">Отключено · Нажмите, чтобы включить</string>
+    <string name="glass_shortcut_unavailable">Ярлык недоступен: %s</string>
+    <string name="glass_rail_desc_expanded">Панель навигации, развёрнута</string>
+    <string name="glass_rail_desc_collapsed">Панель навигации, свёрнута</string>
     <string name="glass_addon_drag_hint">Перетащите для изменения порядка</string>
 
     <!-- Glass Weather Conditions -->

@@ -441,7 +441,11 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public void recreate() {
-		if (AUTO && isCarActivityNotMirror()) showAlert(getContext(), R.string.please_restart_app);
+		// The car screen cannot be recreated in place, so offer to exit and reopen.
+		if (AUTO && isCarActivityNotMirror()) createDialogBuilder()
+				.setMessage(R.string.please_restart_app)
+				.setPositiveButton(R.string.exit, (d, w) -> finish())
+				.show();
 		else getHandler().post(super::recreate);
 	}
 

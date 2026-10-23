@@ -602,10 +602,16 @@
     <string name="initial_setup_check_permissions">檢查狀態</string>
     <string name="initial_setup_permissions_all_granted">✓ 已授予所有必要權限</string>
     <string name="initial_setup_permissions_needed">⚠ 媒體、車輛及語音功能需要權限</string>
+    <string name="initial_setup_location_title">位置（選用）</string>
+    <string name="initial_setup_location_off">未允許。速度卡、天氣與自動記錄停車位置將無法使用。您之後可以在「設定」→「連線與權限檢查」中允許。</string>
+    <string name="initial_setup_allow_location">允許位置</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">已啟用 · 輕觸以停用</string>
     <string name="glass_addon_disabled_hint">已停用 · 輕觸以啟用</string>
+    <string name="glass_shortcut_unavailable">無法開啟捷徑：%s</string>
+    <string name="glass_rail_desc_expanded">導覽列，已展開</string>
+    <string name="glass_rail_desc_collapsed">導覽列，已收合</string>
     <string name="glass_addon_drag_hint">拖曳以重新排序</string>
 
     <!-- Glass Weather Conditions -->

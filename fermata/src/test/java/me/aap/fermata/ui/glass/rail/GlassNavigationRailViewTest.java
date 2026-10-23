@@ -296,7 +296,7 @@ public class GlassNavigationRailViewTest {
         railView.onAppearanceChanged();
         FrameLayout grabber = (FrameLayout) railView.getChildAt(2);
         assertNotNull(grabber.getContentDescription());
-        assertTrue(grabber.getContentDescription().toString().contains("Glass"));
+        assertEquals(context.getString(me.aap.fermata.R.string.glass_rail_desc_collapsed), grabber.getContentDescription().toString());
 
         // Verify inner launcher icon
         FrameLayout innerPill = (FrameLayout) grabber.getChildAt(0);
@@ -481,6 +481,34 @@ public class GlassNavigationRailViewTest {
         carRail.onTouchEvent(up);
 
         assertTrue("Edge swipe outside grabber handle must trigger Back action", backTriggered[0]);
+    }
+
+    @Test
+    public void testEdgeTouchOverClickableContentIsLeftToContent() {
+        FrameLayout root = new FrameLayout(context);
+        View content = new View(context);
+        root.addView(content);
+        GlassNavigationRailView carRail = new GlassNavigationRailView(context, true);
+        root.addView(carRail);
+        root.layout(0, 0, 800, 480);
+        content.layout(0, 0, 800, 100);
+        carRail.layout(0, 0, 800, 480);
+        carRail.collapse();
+        ((FrameLayout) carRail.getChildAt(2)).setTranslationY(200f);
+
+        long t = SystemClock.uptimeMillis();
+        assertTrue("Edge over plain content starts back tracking",
+                carRail.onTouchEvent(MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, 10f, 50f, 0)));
+        carRail.onTouchEvent(MotionEvent.obtain(t, t + 10, MotionEvent.ACTION_CANCEL, 10f, 50f, 0));
+
+        content.setOnClickListener(v -> {});
+        assertTrue("Edge over a full-width row still starts back tracking",
+                carRail.onTouchEvent(MotionEvent.obtain(t, t + 20, MotionEvent.ACTION_DOWN, 10f, 50f, 0)));
+        carRail.onTouchEvent(MotionEvent.obtain(t, t + 30, MotionEvent.ACTION_CANCEL, 10f, 50f, 0));
+
+        content.layout(0, 0, 200, 100);
+        assertFalse("Edge over a button or tile must reach the content",
+                carRail.onTouchEvent(MotionEvent.obtain(t, t + 40, MotionEvent.ACTION_DOWN, 10f, 50f, 0)));
     }
 
     @Test

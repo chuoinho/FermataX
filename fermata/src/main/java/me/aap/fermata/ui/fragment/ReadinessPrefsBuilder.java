@@ -33,6 +33,7 @@ import me.aap.fermata.ui.control.PhoneReadiness.Check;
 import me.aap.fermata.ui.control.PhoneReadiness.Input;
 import me.aap.fermata.ui.control.PhoneReadiness.Row;
 import me.aap.fermata.ui.control.PhoneReadiness.Status;
+import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.ui.UiUtils;
@@ -118,6 +119,18 @@ final class ReadinessPrefsBuilder {
 			o.onClick = () -> {
 				startSettings(PhoneReadiness.createNotificationListenerSettingsIntent());
 			};
+		});
+
+		if (BuildConfig.TRIP_BACKGROUND_SUPPORTED) target.addButton(o -> {
+			TripModePolicy.Mode mode = TripModePolicy.current(context);
+			o.title = R.string.trip_background_title;
+			o.subtitle = switch (mode) {
+				case ON -> R.string.trip_background_sub_on;
+				case OFF -> R.string.trip_background_sub_off;
+				default -> R.string.trip_background_sub_needs_permission;
+			};
+			o.valueDrawable = createStatusDotDrawable(mode == TripModePolicy.Mode.ON);
+			o.onClick = () -> InterfacePrefsBuilder.toggleTripBackground(activity, this::scheduleRefresh);
 		});
 	}
 

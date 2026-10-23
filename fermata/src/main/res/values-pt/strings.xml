@@ -602,10 +602,16 @@
     <string name="initial_setup_check_permissions">Verificar status</string>
     <string name="initial_setup_permissions_all_granted">✓ Todas as permissões necessárias concedidas</string>
     <string name="initial_setup_permissions_needed">⚠ Permissões necessárias para mídia, carro e voz</string>
+    <string name="initial_setup_location_title">Localização (opcional)</string>
+    <string name="initial_setup_location_off">Não permitido. O cartão de velocidade, o clima e o salvamento automático do estacionamento não funcionarão. Você pode permitir depois em Definições → Verificação de conexão e permissões.</string>
+    <string name="initial_setup_allow_location">Permitir localização</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">Ativado · Toque para desativar</string>
     <string name="glass_addon_disabled_hint">Desativado · Toque para ativar</string>
+    <string name="glass_shortcut_unavailable">Destino do atalho indisponível: %s</string>
+    <string name="glass_rail_desc_expanded">Barra de navegação, expandida</string>
+    <string name="glass_rail_desc_collapsed">Barra de navegação, recolhida</string>
     <string name="glass_addon_drag_hint">Arraste para reordenar</string>
 
     <!-- Glass Weather Conditions -->

@@ -77,6 +77,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	private TextView permissionsStatus;
 	private Button grantPermissions;
 	private Button checkPermissions;
+	private TextView locationStatus;
+	private Button allowLocation;
 	private Cancellable speech;
 
 	@Override
@@ -124,6 +126,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		permissionsStatus = view.findViewById(R.id.initial_setup_permissions_status);
 		grantPermissions = view.findViewById(R.id.initial_setup_grant_permissions);
 		checkPermissions = view.findViewById(R.id.initial_setup_check_permissions);
+		locationStatus = view.findViewById(R.id.initial_setup_location_status);
+		allowLocation = view.findViewById(R.id.initial_setup_allow_location);
 
 		setupAppLanguage(activity);
 		setupVoiceLanguage(activity);
@@ -162,6 +166,10 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 				grantPermissions.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
 				grantPermissions.setTextColor(actionColor);
 			}
+			if (allowLocation != null) {
+				allowLocation.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
+				allowLocation.setTextColor(actionColor);
+			}
 			if (checkPermissions != null) {
 				checkPermissions.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
 				checkPermissions.setTextColor(actionColor);
@@ -183,6 +191,12 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		if (checkPermissions != null) {
 			checkPermissions.setOnClickListener(v -> updatePermissionsStatus());
 		}
+		// Optional: the system dialog only exists on the phone. Android 12+ ignores FINE without COARSE.
+		if (allowLocation != null) {
+			allowLocation.setOnClickListener(v -> activity.getAppActivity().checkPermissions(
+					android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+					.thenRun(this::updatePermissionsStatus));
+		}
 	}
 
 	private void updatePermissionsStatus() {
@@ -190,13 +204,17 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		android.content.Context ctx = getContext();
 		if (ctx == null) return;
 		boolean storage = isStorageGranted(ctx);
-		boolean location = androidx.core.content.ContextCompat.checkSelfPermission(
-				ctx, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+		boolean location = me.aap.fermata.ui.glass.speedo.TripModePolicy.hasForegroundLocation(ctx);
+		if (locationStatus != null) {
+			locationStatus.setText(location ? R.string.readiness_location_granted : R.string.initial_setup_location_off);
+			if (allowLocation != null) allowLocation.setVisibility(
+					location || getActivityDelegate().isCarActivity() ? GONE : VISIBLE);
+		}
 		boolean mic = androidx.core.content.ContextCompat.checkSelfPermission(
 				ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED;
 		boolean notif = androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled();
 
-		boolean allGranted = storage && location && mic && notif;
+		boolean allGranted = storage && mic && notif;
 		if (allGranted) {
 			permissionsStatus.setText(R.string.initial_setup_permissions_all_granted);
 			permissionsStatus.setTextColor(0xFF22C55E);
@@ -221,10 +239,6 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO)
 				!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
 			needed.add(android.Manifest.permission.RECORD_AUDIO);
-		}
-		if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)
-				!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
-			needed.add(android.Manifest.permission.ACCESS_FINE_LOCATION);
 		}
 		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
 				androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS)

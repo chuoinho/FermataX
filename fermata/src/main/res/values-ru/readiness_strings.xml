@@ -1,5 +1,5 @@
 <resources>
-	<string name="readiness_title">Connection and permissions check</string>
+	<string name="readiness_title">Проверка подключения и разрешений</string>
 	<string name="readiness_subtitle">View Android Auto connection and optional system settings.</string>
 	<string name="readiness_refresh">Check again</string>
 	<string name="readiness_refresh_subtitle">Refresh status without changing any settings.</string>
@@ -9,8 +9,8 @@
 	<string name="readiness_storage_granted">Allowed. FermataX can read your local media files, folders, and playlists.</string>
 	<string name="readiness_storage_not_granted">Not allowed. Tap to grant permission to access local media files.</string>
 	<string name="readiness_location">Location access</string>
-	<string name="readiness_location_granted">Allowed. Used to record your parking spot in Car Finder.</string>
-	<string name="readiness_location_not_granted">Not allowed. Tap to allow location for Car Finder.</string>
+	<string name="readiness_location_granted">Разрешено. Используется для карточки скорости, погоды и Car Finder.</string>
+	<string name="readiness_location_not_granted">Не разрешено. Нажмите, чтобы разрешить геоданные для карточки скорости, погоды и Car Finder.</string>
 	<string name="readiness_accessibility">Accessibility service (Mirroring)</string>
 	<string name="readiness_accessibility_granted">Enabled. Allows touch control from the car screen during mirroring.</string>
 	<string name="readiness_accessibility_not_granted">Disabled. Required if you want to control your phone from the car screen.</string>
