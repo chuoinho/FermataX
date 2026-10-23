@@ -179,4 +179,42 @@ public class LocationHubTest {
         assertTrue(hub.isRegisteredForTesting());
         assertEquals(1, shadowOf(lm).getRequestLocationUpdateListeners().size());
     }
+
+    @Test
+    public void requestsHighAccuracyEverySecond() {
+        android.location.LocationRequest r = LocationHub.highAccuracyRequest();
+        assertEquals(android.location.LocationRequest.QUALITY_HIGH_ACCURACY, r.getQuality());
+        assertEquals(1000L, r.getIntervalMillis());
+    }
+
+    @Test
+    public void silentProviderIsRegisteredAgainWithBackoff() {
+        LocationHub hub = LocationHub.get(ctx);
+        hub.acquire("speedo", loc -> {});
+        long t0 = SystemClock.elapsedRealtime();
+
+        hub.checkWatchdogForTesting(t0 + 15_000);
+        assertEquals("not silent long enough", 0, hub.reRegistrationsForTesting());
+        hub.checkWatchdogForTesting(t0 + 21_000);
+        assertEquals(1, hub.reRegistrationsForTesting());
+        assertTrue(hub.isRegisteredForTesting());
+        assertEquals(1, shadowOf(lm).getRequestLocationUpdateListeners().size());
+
+        // A cold GNSS start can take longer than the first window: wait twice as long next time.
+        hub.checkWatchdogForTesting(SystemClock.elapsedRealtime() + 25_000);
+        assertEquals(1, hub.reRegistrationsForTesting());
+        hub.checkWatchdogForTesting(SystemClock.elapsedRealtime() + 41_000);
+        assertEquals(2, hub.reRegistrationsForTesting());
+    }
+
+    @Test
+    public void deliveriesKeepTheWatchdogQuiet() {
+        LocationHub hub = LocationHub.get(ctx);
+        hub.acquire("speedo", loc -> {});
+        ShadowSystemClock.advanceBy(Duration.ofSeconds(18));
+        shadowOf(lm).simulateLocation(createFix(LocationManager.GPS_PROVIDER, 21.0, 105.8, 0));
+        idleAll();
+        hub.checkWatchdogForTesting(SystemClock.elapsedRealtime() + 10_000);
+        assertEquals(0, hub.reRegistrationsForTesting());
+    }
 }

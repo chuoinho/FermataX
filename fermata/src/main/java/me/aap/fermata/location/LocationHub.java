@@ -34,6 +34,12 @@ public final class LocationHub {
     }
 
     private static final String TAG = "LocationHub";
+    private static final long INTERVAL_MS = 1_000;
+    // A provider can stop delivering without an error (stuck GNSS driver). Register again, but back off:
+    // a cold GNSS start can legitimately take longer than the first window.
+    private static final long WATCHDOG_CHECK_MS = 5_000;
+    private static final long WATCHDOG_FIRST_MS = 20_000;
+    private static final long WATCHDOG_MAX_MS = 120_000;
     private static volatile LocationHub INSTANCE;
 
     private final Context context;
@@ -45,6 +51,10 @@ public final class LocationHub {
 
     private volatile Location latestLocation;
     private boolean registered;
+    private volatile long lastDeliveryAt;
+    private long watchdogMs = WATCHDOG_FIRST_MS;
+    private int reRegistrations;
+    private final Runnable watchdog = () -> checkWatchdog(SystemClock.elapsedRealtime());
 
     public static LocationHub get(@NonNull Context context) {
         if (INSTANCE == null) {
@@ -69,6 +79,8 @@ public final class LocationHub {
                 latestLocation = location;
                 List<Listener> targets;
                 synchronized (LocationHub.this) {
+                    lastDeliveryAt = SystemClock.elapsedRealtime();
+                    watchdogMs = WATCHDOG_FIRST_MS;
                     targets = new ArrayList<>(consumers.values());
                 }
                 for (Listener l : targets) {
@@ -168,6 +180,39 @@ public final class LocationHub {
     }
 
     @VisibleForTesting
+    synchronized void checkWatchdogForTesting(long now) {
+        checkWatchdog(now);
+    }
+
+    @VisibleForTesting
+    synchronized int reRegistrationsForTesting() {
+        return reRegistrations;
+    }
+
+    /** Fused at high accuracy: the legacy request defaults to balanced power, which often has no Doppler speed. */
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.S)
+    static android.location.LocationRequest highAccuracyRequest() {
+        return new android.location.LocationRequest.Builder(INTERVAL_MS)
+                .setQuality(android.location.LocationRequest.QUALITY_HIGH_ACCURACY)
+                .setMinUpdateDistanceMeters(0f)
+                .build();
+    }
+
+    private synchronized void checkWatchdog(long now) {
+        if (!registered) return;
+        if (now - lastDeliveryAt > watchdogMs) {
+            Log.w(TAG, "No location for " + (now - lastDeliveryAt) + " ms, registering again");
+            unregister();
+            register();
+            reRegistrations++;
+            watchdogMs = Math.min(watchdogMs * 2, WATCHDOG_MAX_MS);
+        } else {
+            handler.removeCallbacks(watchdog);
+            handler.postDelayed(watchdog, WATCHDOG_CHECK_MS);
+        }
+    }
+
+    @VisibleForTesting
     public static synchronized void resetForTesting() {
         if (INSTANCE != null) {
             synchronized (INSTANCE) {
@@ -191,7 +236,7 @@ public final class LocationHub {
             try {
                 if (locationManager.getProvider(LocationManager.FUSED_PROVIDER) != null) {
                     locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER,
-                            1000L, 0f, locationListener, thread.getLooper());
+                            highAccuracyRequest(), handler::post, locationListener);
                     success = true;
                 }
             } catch (Throwable t) {
@@ -202,16 +247,22 @@ public final class LocationHub {
         if (!success) {
             try {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                        1000L, 0f, locationListener, thread.getLooper());
+                        INTERVAL_MS, 0f, locationListener, thread.getLooper());
                 success = true;
             } catch (Throwable t) {
                 Log.w(TAG, "GPS_PROVIDER registration failed", t);
             }
         }
         registered = success;
+        if (success) {
+            lastDeliveryAt = SystemClock.elapsedRealtime();
+            handler.removeCallbacks(watchdog);
+            handler.postDelayed(watchdog, WATCHDOG_CHECK_MS);
+        }
     }
 
     private void unregister() {
+        handler.removeCallbacks(watchdog);
         if (locationManager != null && registered) {
             try {
                 locationManager.removeUpdates(locationListener);
