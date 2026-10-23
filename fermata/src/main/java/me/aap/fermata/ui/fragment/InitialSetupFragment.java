@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -74,11 +75,7 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	private SwitchCompat voiceEnabled;
 	private Button microphoneTest;
 	private TextView microphoneStatus;
-	private TextView permissionsStatus;
-	private Button grantPermissions;
-	private Button checkPermissions;
-	private TextView locationStatus;
-	private Button allowLocation;
+	private LinearLayout permissions;
 	private Cancellable speech;
 
 	@Override
@@ -123,19 +120,17 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		voiceEnabled = view.findViewById(R.id.initial_setup_voice_enabled);
 		microphoneTest = view.findViewById(R.id.initial_setup_microphone_test);
 		microphoneStatus = view.findViewById(R.id.initial_setup_microphone_status);
-		permissionsStatus = view.findViewById(R.id.initial_setup_permissions_status);
-		grantPermissions = view.findViewById(R.id.initial_setup_grant_permissions);
-		checkPermissions = view.findViewById(R.id.initial_setup_check_permissions);
-		locationStatus = view.findViewById(R.id.initial_setup_location_status);
-		allowLocation = view.findViewById(R.id.initial_setup_allow_location);
+		permissions = view.findViewById(R.id.initial_setup_permissions);
 
 		setupAppLanguage(activity);
 		setupVoiceLanguage(activity);
-		setupPermissions(activity);
 		navPosition.check(activity.getPrefs().getNavBarPosPref(activity) == NavBarView.POSITION_RIGHT
 				? R.id.initial_setup_nav_right : R.id.initial_setup_nav_left);
 		voiceEnabled.setChecked(activity.getPrefs().getVoiceControlEnabledPref());
-		voiceEnabled.setOnCheckedChangeListener((button, checked) -> updateVoiceControls(checked));
+		voiceEnabled.setOnCheckedChangeListener((button, checked) -> {
+			updateVoiceControls(checked);
+			updatePermissions();
+		});
 		microphoneTest.setOnClickListener(v -> testMicrophone());
 		view.findViewById(R.id.initial_setup_continue).setOnClickListener(v -> applyAndContinue());
 		updateVoiceControls(voiceEnabled.isChecked());
@@ -162,110 +157,153 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 				microphoneTest.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
 				microphoneTest.setTextColor(actionColor);
 			}
-			if (grantPermissions != null) {
-				grantPermissions.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
-				grantPermissions.setTextColor(actionColor);
-			}
-			if (allowLocation != null) {
-				allowLocation.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
-				allowLocation.setTextColor(actionColor);
-			}
-			if (checkPermissions != null) {
-				checkPermissions.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(view.getContext(), 12f, isNight));
-				checkPermissions.setTextColor(actionColor);
-			}
+			view.findViewById(R.id.initial_setup_privacy).setBackground(activity.getGlassCardDrawable(view.getContext(), 12f));
 		}
+		updatePermissions();
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		updatePermissionsStatus();
+		updatePermissions();
 	}
 
-	private void setupPermissions(MainActivityDelegate activity) {
-		updatePermissionsStatus();
-		if (grantPermissions != null) {
-			grantPermissions.setOnClickListener(v -> requestSetupPermissions(activity));
-		}
-		if (checkPermissions != null) {
-			checkPermissions.setOnClickListener(v -> updatePermissionsStatus());
-		}
-		// Optional: the system dialog only exists on the phone. Android 12+ ignores FINE without COARSE.
-		if (allowLocation != null) {
-			allowLocation.setOnClickListener(v -> activity.getAppActivity().checkPermissions(
-					android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-					.thenRun(this::updatePermissionsStatus));
-		}
-	}
-
-	private void updatePermissionsStatus() {
-		if (permissionsStatus == null) return;
+	/** One row per permission: what it is for, its state and, when missing, a button to grant it. */
+	private void updatePermissions() {
 		android.content.Context ctx = getContext();
-		if (ctx == null) return;
-		boolean storage = isStorageGranted(ctx);
-		boolean location = me.aap.fermata.ui.glass.speedo.TripModePolicy.hasForegroundLocation(ctx);
-		if (locationStatus != null) {
-			locationStatus.setText(location ? R.string.readiness_location_granted : R.string.initial_setup_location_off);
-			if (allowLocation != null) allowLocation.setVisibility(
-					location || getActivityDelegate().isCarActivity() ? GONE : VISIBLE);
+		if ((permissions == null) || (ctx == null)) return;
+		MainActivityDelegate activity = getActivityDelegate();
+		permissions.removeAllViews();
+		addHeader(ctx, R.string.initial_setup_required);
+		addRow(activity, R.string.initial_setup_perm_storage, R.string.initial_setup_perm_storage_sub,
+				isStorageGranted(ctx), () -> requestStorage(activity));
+		addRow(activity, R.string.initial_setup_perm_notifications, R.string.initial_setup_perm_notifications_sub,
+				androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled(),
+				() -> requestNotifications(activity));
+		if (voiceEnabled.isChecked()) {
+			addRow(activity, R.string.initial_setup_perm_microphone, R.string.initial_setup_perm_microphone_sub,
+					isGranted(ctx, android.Manifest.permission.RECORD_AUDIO),
+					() -> request(activity, android.Manifest.permission.RECORD_AUDIO));
 		}
-		boolean mic = androidx.core.content.ContextCompat.checkSelfPermission(
-				ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED;
-		boolean notif = androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled();
+		addHeader(ctx, R.string.initial_setup_optional);
+		// Android 12+ ignores FINE without COARSE.
+		addRow(activity, R.string.initial_setup_perm_location, R.string.initial_setup_perm_location_sub,
+				me.aap.fermata.ui.glass.speedo.TripModePolicy.hasForegroundLocation(ctx),
+				() -> request(activity, android.Manifest.permission.ACCESS_FINE_LOCATION,
+						android.Manifest.permission.ACCESS_COARSE_LOCATION));
+		addRow(activity, R.string.initial_setup_perm_nav, R.string.initial_setup_perm_nav_sub,
+				me.aap.fermata.ui.control.PhoneReadiness.hasNotificationListenerCheck(ctx),
+				() -> startSafely(activity, me.aap.fermata.ui.control.PhoneReadiness.createNotificationListenerSettingsIntent()));
+		if (BuildConfig.TRIP_BACKGROUND_SUPPORTED) {
+			addRow(activity, R.string.trip_background_title, R.string.initial_setup_perm_background_sub,
+					me.aap.fermata.ui.glass.speedo.TripModePolicy.current(ctx) == me.aap.fermata.ui.glass.speedo.TripModePolicy.Mode.ON,
+					() -> InterfacePrefsBuilder.toggleTripBackground(activity, this::updatePermissions));
+		}
+	}
 
-		boolean allGranted = storage && mic && notif;
-		if (allGranted) {
-			permissionsStatus.setText(R.string.initial_setup_permissions_all_granted);
-			permissionsStatus.setTextColor(0xFF22C55E);
+	private void addHeader(android.content.Context ctx, int text) {
+		TextView tv = new TextView(ctx);
+		tv.setText(text);
+		tv.setTextAppearance(android.R.style.TextAppearance_Small);
+		tv.setAllCaps(true);
+		tv.setPadding(0, dp(ctx, 16), 0, dp(ctx, 4));
+		permissions.addView(tv);
+	}
+
+	private void addRow(MainActivityDelegate activity, int title, int purpose, boolean granted, Runnable request) {
+		android.content.Context ctx = permissions.getContext();
+		LinearLayout row = new LinearLayout(ctx);
+		row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+		row.setMinimumHeight(dp(ctx, 56));
+		row.setPadding(0, dp(ctx, 6), 0, dp(ctx, 6));
+
+		View dot = new View(ctx);
+		android.graphics.drawable.GradientDrawable shape = new android.graphics.drawable.GradientDrawable();
+		shape.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+		shape.setColor(granted ? 0xFF22C55E : 0xFFEF4444);
+		dot.setBackground(shape);
+		LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(dp(ctx, 10), dp(ctx, 10));
+		dotLp.setMarginEnd(dp(ctx, 12));
+		row.addView(dot, dotLp);
+
+		LinearLayout texts = new LinearLayout(ctx);
+		texts.setOrientation(LinearLayout.VERTICAL);
+		TextView tvTitle = new TextView(ctx);
+		tvTitle.setText(title);
+		tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+		TextView tvPurpose = new TextView(ctx);
+		tvPurpose.setText(purpose);
+		tvPurpose.setTextAppearance(android.R.style.TextAppearance_Small);
+		texts.addView(tvTitle);
+		texts.addView(tvPurpose);
+		row.addView(texts, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+		if (granted) {
+			// Text as well as colour, so the state does not depend on colour vision.
+			TextView ok = new TextView(ctx);
+			ok.setText(R.string.initial_setup_allowed);
+			ok.setTextColor(0xFF22C55E);
+			ok.setPadding(dp(ctx, 12), 0, 0, 0);
+			row.addView(ok);
 		} else {
-			permissionsStatus.setText(R.string.initial_setup_permissions_needed);
-			permissionsStatus.setTextColor(0xFFEF4444);
+			Button allow = new Button(ctx);
+			allow.setText(R.string.initial_setup_allow);
+			allow.setOnClickListener(v -> request.run());
+			if (activity.isGlassTheme()) {
+				allow.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(ctx, 12f, activity.isGlassNightMode()));
+				allow.setTextColor(activity.getGlassActionColor());
+			}
+			row.addView(allow);
 		}
+		permissions.addView(row);
+	}
+
+	private static int dp(android.content.Context ctx, int v) {
+		return Math.round(v * ctx.getResources().getDisplayMetrics().density);
+	}
+
+	private static boolean isGranted(android.content.Context ctx, String permission) {
+		return androidx.core.content.ContextCompat.checkSelfPermission(ctx, permission)
+				== android.content.pm.PackageManager.PERMISSION_GRANTED;
 	}
 
 	private static boolean isStorageGranted(android.content.Context ctx) {
 		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
 			return android.os.Environment.isExternalStorageManager();
 		}
-		return androidx.core.content.ContextCompat.checkSelfPermission(
-				ctx, android.Manifest.permission.READ_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+		return isGranted(ctx, android.Manifest.permission.READ_EXTERNAL_STORAGE);
 	}
 
-	private void requestSetupPermissions(MainActivityDelegate activity) {
-		android.content.Context ctx = getContext();
-		if (ctx == null) return;
-		List<String> needed = new ArrayList<>();
-		if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO)
-				!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
-			needed.add(android.Manifest.permission.RECORD_AUDIO);
-		}
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-				androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS)
-						!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
-			needed.add(android.Manifest.permission.POST_NOTIFICATIONS);
-		}
-		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R &&
-				androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.READ_EXTERNAL_STORAGE)
-						!= android.content.pm.PackageManager.PERMISSION_GRANTED) {
-			needed.add(android.Manifest.permission.READ_EXTERNAL_STORAGE);
-		}
+	private void request(MainActivityDelegate activity, String... perms) {
+		activity.getAppActivity().checkPermissions(perms).thenRun(this::updatePermissions);
+	}
 
-		if (!needed.isEmpty()) {
-			activity.getAppActivity().checkPermissions(needed.toArray(new String[0]))
-					.thenRun(this::updatePermissionsStatus);
+	private void requestStorage(MainActivityDelegate activity) {
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+			startSafely(activity, new android.content.Intent(
+					android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+					android.net.Uri.parse("package:" + activity.getContext().getPackageName())));
+		} else {
+			request(activity, android.Manifest.permission.READ_EXTERNAL_STORAGE);
 		}
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R &&
-				!android.os.Environment.isExternalStorageManager()) {
-			try {
-				android.content.Intent intent = new android.content.Intent(
-						android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-						android.net.Uri.parse("package:" + ctx.getPackageName()));
-				activity.getAppActivity().startActivity(intent);
-			} catch (Exception ignored) {
-			}
+	}
+
+	private void requestNotifications(MainActivityDelegate activity) {
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+				!isGranted(activity.getContext(), android.Manifest.permission.POST_NOTIFICATIONS)) {
+			request(activity, android.Manifest.permission.POST_NOTIFICATIONS);
+		} else {
+			// Granted at runtime but switched off by the user: only the system page can turn it back on.
+			startSafely(activity, new android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+					.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, activity.getContext().getPackageName()));
 		}
-		updatePermissionsStatus();
+	}
+
+	private static void startSafely(MainActivityDelegate activity, android.content.Intent intent) {
+		try {
+			activity.getAppActivity().startActivity(intent);
+		} catch (RuntimeException ignored) {
+		}
 	}
 
 	@Override

@@ -601,13 +601,24 @@ Por favor, reinicie la aplicación.</string>
     <string name="support_banner_text">¿Te gusta FermataX? Apoya el proyecto con un café ☕</string>
 
     <!-- Initial Setup Permissions -->
-    <string name="initial_setup_grant_permissions">Conceder permisos</string>
-    <string name="initial_setup_check_permissions">Comprobar estado</string>
-    <string name="initial_setup_permissions_all_granted">✓ Todos los permisos necesarios concedidos</string>
-    <string name="initial_setup_permissions_needed">⚠ Se necesitan permisos para medios, coche y voz</string>
-    <string name="initial_setup_location_title">Ubicación (opcional)</string>
-    <string name="initial_setup_location_off">No permitido. La tarjeta de velocidad, el tiempo y el guardado automático del aparcamiento no funcionarán. Puedes permitirlo más tarde en Configuración → Comprobación de conexión y permisos.</string>
-    <string name="initial_setup_allow_location">Permitir ubicación</string>
+    <string name="initial_setup_permissions_title">Permisos</string>
+    <string name="initial_setup_privacy">Privacidad: FermataX no recopila ni envía tus datos personales al desarrollador. Tus datos se quedan en tu teléfono. Algunas funciones (tiempo, mapas, complementos, voz) se conectan directamente a servicios de terceros cuando las usas.</string>
+    <string name="initial_setup_required">Necesarios para las funciones principales</string>
+    <string name="initial_setup_optional">Opcionales</string>
+    <string name="initial_setup_allow">Permitir</string>
+    <string name="initial_setup_allowed">✓ Permitido</string>
+    <string name="initial_setup_perm_storage">Archivos y almacenamiento</string>
+    <string name="initial_setup_perm_storage_sub">Reproducir música, vídeos, carpetas y listas guardadas en este teléfono.</string>
+    <string name="initial_setup_perm_notifications">Notificaciones</string>
+    <string name="initial_setup_perm_notifications_sub">Mostrar los controles de reproducción en las notificaciones y en la pantalla de bloqueo.</string>
+    <string name="initial_setup_perm_microphone">Micrófono</string>
+    <string name="initial_setup_perm_microphone_sub">Control y búsqueda por voz.</string>
+    <string name="initial_setup_perm_location">Ubicación</string>
+    <string name="initial_setup_perm_location_sub">Tarjeta de velocidad, tiempo y guardar dónde aparcaste.</string>
+    <string name="initial_setup_perm_nav">Notificaciones de navegación</string>
+    <string name="initial_setup_perm_nav_sub">Mostrar las indicaciones de Maps o Waze en la tarjeta del tiempo. Solo se usan las notificaciones de navegación.</string>
+    <string name="initial_setup_perm_background_sub">Conservar las estadísticas del viaje y un aparcamiento preciso mientras Maps ocupa la pantalla del coche. Requiere la ubicación “Permitir todo el tiempo”.</string>
+    <string name="initial_setup_advanced_note">Los permisos avanzados (mirroring, mostrar sobre otras apps, batería) están en Configuración → Comprobación de conexión y permisos.</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">Habilitado · Toca para desactivar</string>

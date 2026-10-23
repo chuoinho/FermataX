@@ -113,10 +113,9 @@ public final class PhoneReadiness {
 
 	public static boolean hasNotificationListenerCheck(android.content.Context ctx) {
 		if (ctx == null) return false;
-		String enabledListeners = android.provider.Settings.Secure.getString(
-				ctx.getContentResolver(), "enabled_notification_listeners");
-		String pkgName = ctx.getPackageName();
-		return (enabledListeners != null) && (pkgName != null) && enabledListeners.contains(pkgName);
+		// Exact package match: a substring check also matches e.g. the ".debug" build of this app.
+		return androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(ctx)
+				.contains(ctx.getPackageName());
 	}
 
 	public static android.content.Intent createNotificationListenerSettingsIntent() {

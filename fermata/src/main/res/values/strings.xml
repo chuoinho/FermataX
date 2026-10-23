@@ -588,13 +588,24 @@
     <string name="support_banner_text">Enjoying FermataX? Support with a coffee ☕</string>
 
     <!-- Initial Setup Permissions -->
-    <string name="initial_setup_grant_permissions">Grant Permissions</string>
-    <string name="initial_setup_check_permissions">Check Status</string>
-    <string name="initial_setup_permissions_all_granted">✓ All required permissions granted</string>
-    <string name="initial_setup_permissions_needed">⚠ Permissions needed for media, car &amp; voice</string>
-    <string name="initial_setup_location_title">Location (optional)</string>
-    <string name="initial_setup_location_off">Not allowed. The speed card, weather and automatic parking spot will not work. You can allow it later in Settings → Connection and permissions check.</string>
-    <string name="initial_setup_allow_location">Allow location</string>
+    <string name="initial_setup_permissions_title">Permissions</string>
+    <string name="initial_setup_privacy">Privacy: FermataX does not collect or send your personal data to the developer. Your data stays on your phone. Some features (weather, maps, addons, voice) connect directly to third-party services when you use them.</string>
+    <string name="initial_setup_required">Needed for core features</string>
+    <string name="initial_setup_optional">Optional</string>
+    <string name="initial_setup_allow">Allow</string>
+    <string name="initial_setup_allowed">✓ Allowed</string>
+    <string name="initial_setup_perm_storage">Files and storage</string>
+    <string name="initial_setup_perm_storage_sub">Play music, videos, folders and playlists stored on this phone.</string>
+    <string name="initial_setup_perm_notifications">Notifications</string>
+    <string name="initial_setup_perm_notifications_sub">Show playback controls in the notification shade and on the lock screen.</string>
+    <string name="initial_setup_perm_microphone">Microphone</string>
+    <string name="initial_setup_perm_microphone_sub">Voice control and voice search.</string>
+    <string name="initial_setup_perm_location">Location</string>
+    <string name="initial_setup_perm_location_sub">Speed card, weather and saving where you parked.</string>
+    <string name="initial_setup_perm_nav">Navigation notifications</string>
+    <string name="initial_setup_perm_nav_sub">Show turn-by-turn directions from Maps or Waze on the weather card. Only navigation notifications are used.</string>
+    <string name="initial_setup_perm_background_sub">Keep trip statistics and an accurate parking spot while Maps is on the car screen. Needs location “Allow all the time”.</string>
+    <string name="initial_setup_advanced_note">Advanced permissions (mirroring, display over other apps, battery) are in Settings → Connection and permissions check.</string>
 
     <!-- Glass Weather Conditions -->
     <string name="weather_clear">Clear</string>

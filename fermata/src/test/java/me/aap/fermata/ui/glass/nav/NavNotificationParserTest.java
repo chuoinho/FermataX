@@ -6,6 +6,8 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Process;
+import android.service.notification.StatusBarNotification;
 import android.view.View;
 
 import org.junit.Test;
@@ -92,5 +94,22 @@ public class NavNotificationParserTest {
 
         // Bind Inactive Nav Turn -> falls back to weather
         view.bindNavTurn(NavTurnInfo.inactive());
+    }
+
+    @Test
+    public void removingAnotherNotificationOfTheNavAppKeepsTheTurn() {
+        Notification n = new Notification.Builder(RuntimeEnvironment.getApplication(), "c")
+                .setCategory(Notification.CATEGORY_NAVIGATION)
+                .setContentTitle("In 300m Turn Right onto Broadway").setContentText("4.2 km · 12 min").build();
+        String pkg = "com.google.android.apps.maps";
+        StatusBarNotification nav = new StatusBarNotification(pkg, pkg, 1, null, 1000, 0, 0, n, Process.myUserHandle(), 0L);
+        StatusBarNotification other = new StatusBarNotification(pkg, pkg, 2, null, 1000, 0, 0, n, Process.myUserHandle(), 0L);
+
+        AutomotiveNavNotificationService.handlePosted(nav);
+        assertTrue(AutomotiveNavNotificationService.getCurrentInfo().isActive());
+        AutomotiveNavNotificationService.handleRemoved(other.getKey());
+        assertTrue("another Maps notification must not clear the turn", AutomotiveNavNotificationService.getCurrentInfo().isActive());
+        AutomotiveNavNotificationService.handleRemoved(nav.getKey());
+        assertFalse(AutomotiveNavNotificationService.getCurrentInfo().isActive());
     }
 }

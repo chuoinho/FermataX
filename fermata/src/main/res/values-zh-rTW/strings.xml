@@ -598,13 +598,24 @@
     <string name="support_banner_text">喜歡 FermataX 嗎？請喝杯咖啡支持開發 ☕</string>
 
     <!-- Initial Setup Permissions -->
-    <string name="initial_setup_grant_permissions">授予權限</string>
-    <string name="initial_setup_check_permissions">檢查狀態</string>
-    <string name="initial_setup_permissions_all_granted">✓ 已授予所有必要權限</string>
-    <string name="initial_setup_permissions_needed">⚠ 媒體、車輛及語音功能需要權限</string>
-    <string name="initial_setup_location_title">位置（選用）</string>
-    <string name="initial_setup_location_off">未允許。速度卡、天氣與自動記錄停車位置將無法使用。您之後可以在「設定」→「連線與權限檢查」中允許。</string>
-    <string name="initial_setup_allow_location">允許位置</string>
+    <string name="initial_setup_permissions_title">權限</string>
+    <string name="initial_setup_privacy">隱私權：FermataX 不會收集或傳送您的個人資料給開發者。您的資料只儲存在手機上。部分功能（天氣、地圖、外掛、語音）使用時會直接連線到第三方服務。</string>
+    <string name="initial_setup_required">主要功能所需</string>
+    <string name="initial_setup_optional">選用</string>
+    <string name="initial_setup_allow">允許</string>
+    <string name="initial_setup_allowed">✓ 已允許</string>
+    <string name="initial_setup_perm_storage">檔案與儲存空間</string>
+    <string name="initial_setup_perm_storage_sub">播放手機上的音樂、影片、資料夾與播放清單。</string>
+    <string name="initial_setup_perm_notifications">通知</string>
+    <string name="initial_setup_perm_notifications_sub">在通知欄與鎖定畫面顯示播放控制。</string>
+    <string name="initial_setup_perm_microphone">麥克風</string>
+    <string name="initial_setup_perm_microphone_sub">語音控制與語音搜尋。</string>
+    <string name="initial_setup_perm_location">位置</string>
+    <string name="initial_setup_perm_location_sub">速度卡、天氣與記錄停車位置。</string>
+    <string name="initial_setup_perm_nav">導航通知</string>
+    <string name="initial_setup_perm_nav_sub">在天氣卡上顯示地圖或 Waze 的轉向指示。只會使用導航通知。</string>
+    <string name="initial_setup_perm_background_sub">在地圖佔用車機螢幕時，保留行程統計與準確的停車位置。需要「一律允許」位置權限。</string>
+    <string name="initial_setup_advanced_note">進階權限（鏡像、顯示在其他應用程式上層、電池）位於「設定」→「連線與權限檢查」。</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">已啟用 · 輕觸以停用</string>

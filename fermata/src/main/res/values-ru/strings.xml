@@ -593,13 +593,24 @@
     <string name="support_banner_text">Нравится FermataX? Поддержите проект чашкой кофе ☕</string>
 
     <!-- Initial Setup Permissions -->
-    <string name="initial_setup_grant_permissions">Предоставить разрешения</string>
-    <string name="initial_setup_check_permissions">Проверить статус</string>
-    <string name="initial_setup_permissions_all_granted">✓ Все необходимые разрешения предоставлены</string>
-    <string name="initial_setup_permissions_needed">⚠ Требуются разрешения для медиа, авто и голоса</string>
-    <string name="initial_setup_location_title">Геоданные (необязательно)</string>
-    <string name="initial_setup_location_off">Не разрешено. Карточка скорости, погода и автосохранение места парковки работать не будут. Разрешить можно позже в Настройках → Проверка подключения и разрешений.</string>
-    <string name="initial_setup_allow_location">Разрешить геоданные</string>
+    <string name="initial_setup_permissions_title">Разрешения</string>
+    <string name="initial_setup_privacy">Конфиденциальность: FermataX не собирает и не отправляет ваши персональные данные разработчику. Данные хранятся только на телефоне. Некоторые функции (погода, карты, дополнения, голос) при использовании напрямую обращаются к сторонним сервисам.</string>
+    <string name="initial_setup_required">Нужны для основных функций</string>
+    <string name="initial_setup_optional">Необязательные</string>
+    <string name="initial_setup_allow">Разрешить</string>
+    <string name="initial_setup_allowed">✓ Разрешено</string>
+    <string name="initial_setup_perm_storage">Файлы и память</string>
+    <string name="initial_setup_perm_storage_sub">Воспроизведение музыки, видео, папок и плейлистов на этом телефоне.</string>
+    <string name="initial_setup_perm_notifications">Уведомления</string>
+    <string name="initial_setup_perm_notifications_sub">Показ кнопок воспроизведения в шторке уведомлений и на экране блокировки.</string>
+    <string name="initial_setup_perm_microphone">Микрофон</string>
+    <string name="initial_setup_perm_microphone_sub">Голосовое управление и голосовой поиск.</string>
+    <string name="initial_setup_perm_location">Геоданные</string>
+    <string name="initial_setup_perm_location_sub">Карточка скорости, погода и сохранение места парковки.</string>
+    <string name="initial_setup_perm_nav">Уведомления навигации</string>
+    <string name="initial_setup_perm_nav_sub">Показ подсказок поворотов из Карт или Waze на карточке погоды. Используются только уведомления навигации.</string>
+    <string name="initial_setup_perm_background_sub">Сохранять статистику поездки и точное место парковки, пока экран авто занят Картами. Нужно разрешение «Разрешить всегда».</string>
+    <string name="initial_setup_advanced_note">Расширенные разрешения (зеркалирование, поверх других приложений, батарея) — в Настройках → Проверка подключения и разрешений.</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">Включено · Нажмите, чтобы отключить</string>

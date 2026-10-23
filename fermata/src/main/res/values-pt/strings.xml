@@ -598,13 +598,24 @@
     <string name="support_banner_text">Gostou do FermataX? Apoie o projeto com um café ☕</string>
 
     <!-- Initial Setup Permissions -->
-    <string name="initial_setup_grant_permissions">Conceder permissões</string>
-    <string name="initial_setup_check_permissions">Verificar status</string>
-    <string name="initial_setup_permissions_all_granted">✓ Todas as permissões necessárias concedidas</string>
-    <string name="initial_setup_permissions_needed">⚠ Permissões necessárias para mídia, carro e voz</string>
-    <string name="initial_setup_location_title">Localização (opcional)</string>
-    <string name="initial_setup_location_off">Não permitido. O cartão de velocidade, o clima e o salvamento automático do estacionamento não funcionarão. Você pode permitir depois em Definições → Verificação de conexão e permissões.</string>
-    <string name="initial_setup_allow_location">Permitir localização</string>
+    <string name="initial_setup_permissions_title">Permissões</string>
+    <string name="initial_setup_privacy">Privacidade: o FermataX não recolhe nem envia os seus dados pessoais ao programador. Os seus dados ficam no telefone. Algumas funções (clima, mapas, extras, voz) ligam-se diretamente a serviços de terceiros quando as usa.</string>
+    <string name="initial_setup_required">Necessárias para as funções principais</string>
+    <string name="initial_setup_optional">Opcionais</string>
+    <string name="initial_setup_allow">Permitir</string>
+    <string name="initial_setup_allowed">✓ Permitido</string>
+    <string name="initial_setup_perm_storage">Ficheiros e armazenamento</string>
+    <string name="initial_setup_perm_storage_sub">Reproduzir música, vídeos, pastas e listas guardadas neste telefone.</string>
+    <string name="initial_setup_perm_notifications">Notificações</string>
+    <string name="initial_setup_perm_notifications_sub">Mostrar os controlos de reprodução nas notificações e no ecrã de bloqueio.</string>
+    <string name="initial_setup_perm_microphone">Microfone</string>
+    <string name="initial_setup_perm_microphone_sub">Controlo e pesquisa por voz.</string>
+    <string name="initial_setup_perm_location">Localização</string>
+    <string name="initial_setup_perm_location_sub">Cartão de velocidade, clima e guardar onde estacionou.</string>
+    <string name="initial_setup_perm_nav">Notificações de navegação</string>
+    <string name="initial_setup_perm_nav_sub">Mostrar as indicações do Maps ou Waze no cartão do clima. Só são usadas notificações de navegação.</string>
+    <string name="initial_setup_perm_background_sub">Manter as estatísticas da viagem e um estacionamento preciso enquanto o Maps ocupa o ecrã do carro. Requer a localização “Permitir o tempo todo”.</string>
+    <string name="initial_setup_advanced_note">As permissões avançadas (mirroring, sobrepor a outras apps, bateria) estão em Definições → Verificação de conexão e permissões.</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">Ativado · Toque para desativar</string>

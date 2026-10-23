@@ -1,15 +1,12 @@
 package me.aap.fermata.ui.glass.nav;
 
 import android.app.Notification;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.Settings;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,7 +34,8 @@ public class AutomotiveNavNotificationService extends NotificationListenerServic
     private static final CopyOnWriteArraySet<NavListener> LISTENERS = new CopyOnWriteArraySet<>();
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
     private static volatile NavTurnInfo currentInfo = NavTurnInfo.inactive();
-    private static volatile String activeNavPackage = null;
+    // Key of the notification currently shown; nav apps post several notifications at once.
+    private static volatile String activeNavKey = null;
 
     public static void registerListener(@NonNull NavListener listener) {
         LISTENERS.add(listener);
@@ -53,19 +51,32 @@ public class AutomotiveNavNotificationService extends NotificationListenerServic
         return currentInfo;
     }
 
-    public static boolean isNotificationAccessGranted(@Nullable Context context) {
-        if (context == null) return false;
+    @Override
+    public void onListenerConnected() {
+        // Navigation may already be running when access is granted; its notification is not re-posted.
         try {
-            String listeners = Settings.Secure.getString(
-                    context.getContentResolver(), "enabled_notification_listeners");
-            return listeners != null && listeners.contains(context.getPackageName());
-        } catch (Exception e) {
-            return false;
+            StatusBarNotification[] active = getActiveNotifications();
+            if (active != null) for (StatusBarNotification sbn : active) onNotificationPosted(sbn);
+        } catch (RuntimeException ignored) {
         }
     }
 
     @Override
+    public void onListenerDisconnected() {
+        clear();
+    }
+
+    @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
+        handlePosted(sbn);
+    }
+
+    @Override
+    public void onNotificationRemoved(StatusBarNotification sbn) {
+        if (sbn != null) handleRemoved(sbn.getKey());
+    }
+
+    static void handlePosted(StatusBarNotification sbn) {
         if (sbn == null) return;
         String pkg = sbn.getPackageName();
         Notification n = sbn.getNotification();
@@ -78,21 +89,20 @@ public class AutomotiveNavNotificationService extends NotificationListenerServic
 
         NavTurnInfo info = NavTurnInfo.fromNotification(pkg, n.extras, n);
         if (info.isActive()) {
-            activeNavPackage = pkg;
+            activeNavKey = sbn.getKey();
             currentInfo = info;
             dispatchUpdate(info);
         }
     }
 
-    @Override
-    public void onNotificationRemoved(StatusBarNotification sbn) {
-        if (sbn == null) return;
-        String pkg = sbn.getPackageName();
-        if (pkg.equals(activeNavPackage)) {
-            activeNavPackage = null;
-            currentInfo = NavTurnInfo.inactive();
-            dispatchUpdate(currentInfo);
-        }
+    static void handleRemoved(String key) {
+        if (key != null && key.equals(activeNavKey)) clear();
+    }
+
+    private static void clear() {
+        activeNavKey = null;
+        currentInfo = NavTurnInfo.inactive();
+        dispatchUpdate(currentInfo);
     }
 
     private static void dispatchUpdate(NavTurnInfo info) {

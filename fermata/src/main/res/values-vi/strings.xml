@@ -594,13 +594,24 @@
     <string name="support_banner_text">Thích FermataX? Mời dev ly cà phê nhé ☕</string>
 
     <!-- Initial Setup Permissions -->
-    <string name="initial_setup_grant_permissions">Cấp quyền</string>
-    <string name="initial_setup_check_permissions">Kiểm tra quyền</string>
-    <string name="initial_setup_permissions_all_granted">✓ Đã cấp đủ quyền cần thiết</string>
-    <string name="initial_setup_permissions_needed">⚠ Cần cấp quyền để hoạt động đầy đủ</string>
-    <string name="initial_setup_location_title">Vị trí (tuỳ chọn)</string>
-    <string name="initial_setup_location_off">Chưa cho phép. Thẻ tốc độ, thời tiết và tự lưu vị trí đỗ xe sẽ không hoạt động. Bạn có thể cấp sau trong Cài đặt → Kiểm tra kết nối và quyền.</string>
-    <string name="initial_setup_allow_location">Cho phép vị trí</string>
+    <string name="initial_setup_permissions_title">Quyền truy cập</string>
+    <string name="initial_setup_privacy">Quyền riêng tư: FermataX không thu thập và không gửi dữ liệu cá nhân của bạn về nhà phát triển. Dữ liệu chỉ lưu trên điện thoại. Một số chức năng (thời tiết, bản đồ, addon, giọng nói) kết nối trực tiếp tới dịch vụ bên thứ ba khi bạn dùng.</string>
+    <string name="initial_setup_required">Cần cho chức năng chính</string>
+    <string name="initial_setup_optional">Tuỳ chọn</string>
+    <string name="initial_setup_allow">Cho phép</string>
+    <string name="initial_setup_allowed">✓ Đã cho phép</string>
+    <string name="initial_setup_perm_storage">File và bộ nhớ</string>
+    <string name="initial_setup_perm_storage_sub">Phát nhạc, video, thư mục và playlist lưu trên điện thoại.</string>
+    <string name="initial_setup_perm_notifications">Thông báo</string>
+    <string name="initial_setup_perm_notifications_sub">Hiện điều khiển phát nhạc trên thanh thông báo và màn hình khoá.</string>
+    <string name="initial_setup_perm_microphone">Micro</string>
+    <string name="initial_setup_perm_microphone_sub">Điều khiển và tìm kiếm bằng giọng nói.</string>
+    <string name="initial_setup_perm_location">Vị trí</string>
+    <string name="initial_setup_perm_location_sub">Thẻ tốc độ, thời tiết và lưu vị trí đỗ xe.</string>
+    <string name="initial_setup_perm_nav">Thông báo dẫn đường</string>
+    <string name="initial_setup_perm_nav_sub">Hiện chỉ dẫn rẽ của Maps hoặc Waze trên thẻ thời tiết. Chỉ dùng thông báo dẫn đường.</string>
+    <string name="initial_setup_perm_background_sub">Giữ thống kê chuyến đi và vị trí đỗ xe chính xác khi Maps chiếm màn hình xe. Cần quyền vị trí “Luôn cho phép”.</string>
+    <string name="initial_setup_advanced_note">Quyền nâng cao (mirroring, hiển thị trên app khác, pin) nằm trong Cài đặt → Kiểm tra kết nối và quyền.</string>
 
     <!-- Glass Addon Card Hints -->
     <string name="glass_addon_enabled_hint">Đang bật · Chạm để tắt</string>
