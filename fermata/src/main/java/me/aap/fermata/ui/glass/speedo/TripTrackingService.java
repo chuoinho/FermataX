@@ -25,6 +25,7 @@ import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
 
 import java.util.Locale;
+import java.util.Map;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -94,18 +95,30 @@ public class TripTrackingService extends Service {
         init(context);
         if (!hasLocationPermission(context)) {
             Log.w(TAG, "Cannot start TripTrackingService: location permission not granted");
+            recordStart("no_permission");
             registry().reportSignal(TripEngine.Signal.PERMISSION);
             return;
         }
         // Opt-in only: without "Allow all the time" Android refuses a location service started here.
-        if (TripModePolicy.current(context) != TripModePolicy.Mode.ON) return;
+        switch (TripModePolicy.current(context)) {
+            case ON -> { }
+            case OFF -> { recordStart("off"); return; }
+            case NEEDS_BACKGROUND_PERMISSION -> { recordStart("needs_background"); return; }
+            default -> { recordStart("no_permission"); return; }
+        }
         try {
             Intent intent = new Intent(context, TripTrackingService.class).setAction(ACTION_START);
             ContextCompat.startForegroundService(context, intent);
+            recordStart("started");
         } catch (SecurityException | IllegalStateException e) {
             Log.w(TAG, "Failed to start TripTrackingService", e);
+            recordStart("blocked");
             reportBlocked();
         }
+    }
+
+    private static void recordStart(String reason) {
+        GlassSpeedoTripController.diagnosticsSink.event("trip_service_start", Map.of("reason", reason));
     }
 
     /**
@@ -183,6 +196,7 @@ public class TripTrackingService extends Service {
                 isForeground = true;
             } catch (SecurityException | IllegalStateException e) {
                 Log.w(TAG, "ForegroundService start rejected", e);
+                recordStart("blocked");
                 reportBlocked();
                 stopSelf();
                 return START_NOT_STICKY;

@@ -278,4 +278,41 @@ public class TripTrackingServiceTest {
 
         controller.destroy();
     }
+
+    @Test
+    public void startRecordsWhyTheServiceDidOrDidNotStart() {
+        java.util.List<Object> reasons = new java.util.ArrayList<>();
+        GlassSpeedoTripController.diagnosticsSink = (name, a) -> {
+            if (name.equals("trip_service_start")) reasons.add(a.get("reason"));
+        };
+        try {
+            TripModePolicy.setEnabled(context, false);
+            TripTrackingService.start(context);
+            TripModePolicy.setEnabled(context, true);
+            Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+            TripTrackingService.start(context);
+            Shadows.shadowOf((Application) context).grantPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+            TripTrackingService.start(context);
+            assertEquals(java.util.List.of("off", "needs_background", "started"), reasons);
+        } finally {
+            GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
+        }
+    }
+
+    @Test
+    public void autoStateChangeIsRecorded() {
+        java.util.List<java.util.Map<String, Object>> events = new java.util.ArrayList<>();
+        TripTrackingAutoBinder.diagnostics = (name, a) -> {
+            if (name.equals("auto_state_changed")) events.add(a);
+        };
+        try {
+            new TripTrackingAutoBinder(context).onStateChanged(
+                    me.aap.fermata.auto.AutomotiveConnectionState.State.DISCONNECTED);
+            assertEquals(1, events.size());
+            assertEquals("DISCONNECTED", events.get(0).get("state"));
+            assertNotNull(events.get(0).get("importance"));
+        } finally {
+            TripTrackingAutoBinder.diagnostics = TripTrackingAutoBinder.DEFAULT_DIAGNOSTICS;
+        }
+    }
 }

@@ -56,6 +56,9 @@ public final class DiagnosticSanitizer {
 	private static final Set<String> EVENT_ATTRIBUTE_KEYS = Collections.unmodifiableSet(
 			new HashSet<>(Arrays.asList(
 					"accepted", "activity_id", "adaptive_allowed", "addon_id", "allowed", "app_fullscreen", "call_site",
+					"duplicate", "fixes", "invalid_accuracy", "invalid_position", "invalid_time", "mock", "not_running",
+					"provider", "recovering", "rejected", "signal", "signal_only", "speed_low_confidence",
+					"speed_missing", "speed_ok", "speed_out_of_range", "speed_stop", "speed_unknown",
 					"attached", "attempt", "auto", "automotive", "bound", "browser_fullscreen", "byte_count",
 					"command_type", "count", "current_engine_class", "current_engine_id",
 					"duration_ms", "endpoint", "engine_class", "engine_fingerprint", "engine_id", "epoch",

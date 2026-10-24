@@ -568,4 +568,20 @@ public class TripEngineTest {
         fast.stillAtLowSpeed(1_500);
         assertEquals(72f, fast.state().speedKmh(), 0.001f);
     }
+
+    @Test public void lastOutcomeExplainsRejectedFixes() {
+        TripEngine e = new TripEngine();
+        e.start(0);
+        e.accept(new TripEngine.Fix(1_000, 10, 106, 5, 10, 1), 10_000);
+        assertEquals(TripEngine.Outcome.INVALID_TIME, e.lastOutcome());
+        e.accept(new TripEngine.Fix(10_000, 10, 106, 400, 10, 1), 10_000);
+        assertEquals(TripEngine.Outcome.INVALID_ACCURACY, e.lastOutcome());
+        e.accept(new TripEngine.Fix(10_500, 10, 106, 5, 10, 1), 10_500);
+        assertEquals(TripEngine.Outcome.ACCEPTED, e.lastOutcome());
+        e.accept(new TripEngine.Fix(10_500, 10, 106, 5, 10, 1), 10_600);
+        assertEquals(TripEngine.Outcome.DUPLICATE, e.lastOutcome());
+        TripEngine stopped = new TripEngine();
+        stopped.accept(new TripEngine.Fix(10_000, 10, 106, 5, 10, 1), 10_000);
+        assertEquals(TripEngine.Outcome.NOT_RUNNING, stopped.lastOutcome());
+    }
 }

@@ -213,6 +213,13 @@ public final class AndroidDiagnosticsRuntime {
 				(attributes == null) ? Collections.emptyMap() : attributes);
 	}
 
+	/** Records a detailed event; dropped by the recorder while detailed diagnostics are off. */
+	public boolean recordDetailed(String category, String name, @Nullable Map<String, ?> attributes) {
+		if ((recorder == null) || stopped.get()) return false;
+		return recorder.recordDetailed(category, name, null,
+				(attributes == null) ? Collections.emptyMap() : attributes);
+	}
+
 	@Nullable
 	public DiagnosticOperation begin(String category, String operationName,
 			@Nullable Map<String, ?> attributes) {
@@ -227,8 +234,11 @@ public final class AndroidDiagnosticsRuntime {
 
 	public void setDetailedEnabled(boolean enabled) {
 		if ((preferences == null) || stopped.get()) return;
+		// Marks where detailed events start and stop: written while detailed is still/already on.
+		if (!enabled) recordDetailed("diagnostics", "detailed_changed", Map.of("enabled", false));
 		lastRequestedDetailedEnabled = enabled;
 		preferences.setDetailedEnabled(enabled, System.currentTimeMillis());
+		if (enabled) recordDetailed("diagnostics", "detailed_changed", Map.of("enabled", true));
 		executeSafely(this::syncDetailedState);
 	}
 

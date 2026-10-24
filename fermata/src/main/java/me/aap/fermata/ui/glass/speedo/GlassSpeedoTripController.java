@@ -11,6 +11,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.location.LocationHub;
 import android.os.Build;
 import android.os.Bundle;
@@ -61,6 +62,10 @@ public final class GlassSpeedoTripController {
     private volatile long nextRetry;
     private volatile long retryDelay = 5_000;
     @Nullable private final TripLogRecorder tripLog;
+    static final SpeedoDiagnostics.Sink DEFAULT_DIAGNOSTICS =
+            (name, a) -> AndroidDiagnosticsRuntime.get().recordDetailed("speedo", name, a);
+    @VisibleForTesting static volatile SpeedoDiagnostics.Sink diagnosticsSink = DEFAULT_DIAGNOSTICS;
+    private final SpeedoDiagnostics diagnostics = new SpeedoDiagnostics((name, a) -> diagnosticsSink.event(name, a));
 
     public GlassSpeedoTripController(@NonNull Context context, @Nullable Listener listener) {
         this.context = context.getApplicationContext();
@@ -210,17 +215,23 @@ public final class GlassSpeedoTripController {
     private void handleLocation(Location location) {
         lastHandleLocationThread = Thread.currentThread();
         if (!running || location == null) return;
-        if (!store.isAllowMock() && isMock(location)) return;
+        boolean mock = isMock(location);
         long nowTime = now();
-        lastCallback = nowTime;
-        if (tripLog != null) tripLog.location(location);
         long fixTime = location.getElapsedRealtimeNanos() > 0
                 ? location.getElapsedRealtimeNanos() / 1_000_000 : nowTime;
         boolean speedAcc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && location.hasSpeedAccuracy();
         TripEngine.Fix fix = FixNormalizer.of(fixTime, location.getLatitude(), location.getLongitude(),
                 location.hasAccuracy(), location.getAccuracy(), location.hasSpeed(), location.getSpeed(),
                 speedAcc, speedAcc ? location.getSpeedAccuracyMetersPerSecond() : 0f);
-        if (engine.accept(fix, nowTime)) {
+        if (mock && !store.isAllowMock()) {
+            diagnostics.onFix(TripEngine.Outcome.REJECTED, FixNormalizer.speedQuality(fix), true);
+            return;
+        }
+        lastCallback = nowTime;
+        if (tripLog != null) tripLog.location(location);
+        boolean accepted = engine.accept(fix, nowTime);
+        diagnostics.onFix(engine.lastOutcome(), FixNormalizer.speedQuality(fix), mock);
+        if (accepted) {
             lastProgress = nowTime;
             retryDelay = 5_000;
         }
@@ -262,6 +273,7 @@ public final class GlassSpeedoTripController {
                     registered = true;
                 }
             }
+            diagnostics.flush(time);
             if (time - lastSave >= 10_000) checkpoint();
             publish();
             worker.postDelayed(this, 1_000);
@@ -301,6 +313,9 @@ public final class GlassSpeedoTripController {
 
     private void publish() {
         snapshot = engine.state();
+        TripEngine.State s = snapshot;
+        diagnostics.onState(s.signal(), s.signal() == TripEngine.Signal.TRACKING
+                && (s.speedKmh() < 0 || s.speedEstimated()), now());
         mainHandler.removeCallbacks(deliver);
         mainHandler.post(deliver);
     }
@@ -420,6 +435,7 @@ public final class GlassSpeedoTripController {
     void setLastCallbackForTesting(long lastCallback) { this.lastCallback = lastCallback; }
     void setLastProgressForTesting(long lastProgress) { this.lastProgress = lastProgress; }
     void triggerHeartbeatForTesting() { heartbeat.run(); }
+    void flushDiagnosticsForTesting() { diagnostics.flush(now()); }
     void setImuRegisteredForTesting(boolean registered) { this.imuRegistered = registered; }
     StationaryDetector getStationaryDetectorForTesting() { return this.stationaryDetector; }
     TripEngine getEngineForTesting() { return this.engine; }

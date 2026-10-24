@@ -520,4 +520,34 @@ public class GlassSpeedoTripControllerTest {
         }
         return result.toString();
     }
+
+    @Test public void droppedMockFixIsStillCountedInDiagnostics() {
+        java.util.List<java.util.Map<String, Object>> summaries = new java.util.ArrayList<>();
+        GlassSpeedoTripController.diagnosticsSink = (name, a) -> {
+            if (name.equals("speedo_fix_summary")) summaries.add(a);
+        };
+        try {
+            GlassSpeedoTripController c = new GlassSpeedoTripController(context, null);
+            c.setRunningForTesting(true);
+            c.getEngineForTesting().start(SystemClock.elapsedRealtime());
+            c.flushDiagnosticsForTesting(); // the heartbeat runs from the start of tracking
+            android.location.Location mock = new android.location.Location("gps");
+            mock.setLatitude(21.0);
+            mock.setLongitude(105.8);
+            mock.setAccuracy(5);
+            mock.setSpeed(10);
+            mock.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+            mock.setMock(true);
+            c.handleLocationForTesting(mock);
+            org.robolectric.shadows.ShadowSystemClock.advanceBy(Duration.ofSeconds(31));
+            c.flushDiagnosticsForTesting();
+            c.flushDiagnosticsForTesting();
+            assertEquals(1, summaries.size());
+            assertEquals(1, summaries.get(0).get("mock"));
+            assertEquals(1, summaries.get(0).get("rejected"));
+            assertEquals(1, summaries.get(0).get("speed_ok"));
+        } finally {
+            GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
+        }
+    }
 }

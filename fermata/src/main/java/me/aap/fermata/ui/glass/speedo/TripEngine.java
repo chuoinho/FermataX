@@ -17,6 +17,12 @@ public final class TripEngine {
 
     public enum Signal { WAITING, TRACKING, STALE, GPS_OFF, PERMISSION, PAUSED, ERROR, BACKGROUND_BLOCKED }
 
+    /** What happened to a fix passed to {@link #accept}; diagnostics only. */
+    public enum Outcome {
+        ACCEPTED, NOT_RUNNING, INVALID_TIME, INVALID_ACCURACY, INVALID_POSITION, DUPLICATE, REJECTED,
+        SIGNAL_ONLY, RECOVERING
+    }
+
     public record Fix(long timeMs, double latitude, double longitude, double accuracy,
                       double speedMps, double speedAccuracy) {
         public boolean positionTrusted() {
@@ -82,6 +88,7 @@ public final class TripEngine {
     private final Odometer odo = new Odometer();
     private final SpeedPresenter speed = new SpeedPresenter();
     private Signal signal = Signal.PAUSED;
+    private Outcome lastOutcome = Outcome.NOT_RUNNING;
     private long now, lastFixAt = -1;
     private State previous;
 
@@ -194,25 +201,32 @@ public final class TripEngine {
         speed.clear();
     }
 
+    /** Why the last {@link #accept} call used or dropped its fix. */
+    public Outcome lastOutcome() { return lastOutcome; }
+
     public boolean accept(Fix fix, long now) {
         tick(now);
-        if (!clock.running() || !FixNormalizer.valid(fix, now) || fix.timeMs() < clock.startedAt()
-                || fix.timeMs() <= lastFixAt) return false;
+        if (!clock.running()) return outcome(Outcome.NOT_RUNNING, false);
+        Outcome invalid = FixNormalizer.invalidReason(fix, now);
+        if (invalid != null) return outcome(invalid, false);
+        if (fix.timeMs() < clock.startedAt()) return outcome(Outcome.INVALID_TIME, false);
+        if (fix.timeMs() <= lastFixAt) return outcome(Outcome.DUPLICATE, false);
         double v = FixNormalizer.trustedSpeed(fix);
         Odometer.Result result = odo.accept(fix, v);
         if (result == Odometer.Result.REJECTED) {
             speed.breakDopplerChain();
-            return false;
+            return outcome(Outcome.REJECTED, false);
         }
         clock.firstFix(fix.timeMs(), now);
         lastFixAt = fix.timeMs();
         speed.onFix(fix.timeMs());
-        if (result == Odometer.Result.SIGNAL_ONLY) return true;
+        if (result == Odometer.Result.SIGNAL_ONLY) return outcome(Outcome.SIGNAL_ONLY, true);
         if (result == Odometer.Result.RECOVERING) {
             // The display may trust a good Doppler at once; distance waits for the bridge.
             if (Double.isFinite(v) && fix.positionTrusted()) speed.observe(v, fix.timeMs(), true);
-            return false;
+            return outcome(Outcome.RECOVERING, false);
         }
+        lastOutcome = Outcome.ACCEPTED;
         if (Double.isFinite(v)) {
             speed.onDoppler(v, fix.timeMs());
             speed.observe(v, fix.timeMs(), true);
@@ -222,6 +236,11 @@ public final class TripEngine {
         }
         signal = Signal.TRACKING;
         return true;
+    }
+
+    private boolean outcome(Outcome o, boolean result) {
+        lastOutcome = o;
+        return result;
     }
 
     private static double nonnegative(double n) { return Double.isFinite(n) ? Math.max(0, n) : 0; }

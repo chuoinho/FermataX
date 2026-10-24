@@ -39,4 +39,12 @@ public class FixNormalizerTest {
         assertFalse(FixNormalizer.anchors(fix(150, Double.NaN, Double.NaN), Double.NaN));
         assertFalse(FixNormalizer.anchors(fix(30, Double.NaN, Double.NaN), Double.NaN));
     }
+
+    @Test public void speedQualityExplainsWhyDopplerIsUnusable() {
+        assertEquals(FixNormalizer.SpeedQuality.MISSING, FixNormalizer.speedQuality(fix(5, Double.NaN, Double.NaN)));
+        assertEquals(FixNormalizer.SpeedQuality.LOW_CONFIDENCE, FixNormalizer.speedQuality(fix(5, 10, 8)));
+        assertEquals(FixNormalizer.SpeedQuality.STOP, FixNormalizer.speedQuality(fix(5, 0.1, Double.NaN)));
+        assertEquals(FixNormalizer.SpeedQuality.OK, FixNormalizer.speedQuality(fix(5, 10, 1)));
+        assertEquals(FixNormalizer.SpeedQuality.OUT_OF_RANGE, FixNormalizer.speedQuality(fix(5, 90, 1)));
+    }
 }

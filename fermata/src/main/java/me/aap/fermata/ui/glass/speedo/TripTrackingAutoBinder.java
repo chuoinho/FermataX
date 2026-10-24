@@ -1,11 +1,17 @@
 package me.aap.fermata.ui.glass.speedo;
 
+import android.app.ActivityManager;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
+
 import me.aap.fermata.auto.AutomotiveConnectionState;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.utils.log.Log;
 
 /**
@@ -14,6 +20,9 @@ import me.aap.utils.log.Log;
 public final class TripTrackingAutoBinder implements AutomotiveConnectionState.Listener {
     private static final String TAG = "TripTrackingAutoBinder";
     private static volatile TripTrackingAutoBinder instance;
+    static final BiConsumer<String, Map<String, Object>> DEFAULT_DIAGNOSTICS =
+            (name, a) -> AndroidDiagnosticsRuntime.get().recordDetailed("auto", name, a);
+    @VisibleForTesting static volatile BiConsumer<String, Map<String, Object>> diagnostics = DEFAULT_DIAGNOSTICS;
 
     public interface ServiceStarter {
         void startService(Context context);
@@ -65,6 +74,13 @@ public final class TripTrackingAutoBinder implements AutomotiveConnectionState.L
     @Override
     public void onStateChanged(AutomotiveConnectionState.State state) {
         Log.d(TAG, "Automotive connection state: " + state);
+        ActivityManager.RunningAppProcessInfo process = new ActivityManager.RunningAppProcessInfo();
+        ActivityManager.getMyMemoryState(process);
+        Map<String, Object> a = new LinkedHashMap<>();
+        a.put("state", state.name());
+        a.put("importance", process.importance);
+        a.put("epoch", AutomotiveConnectionState.get().connectionEpoch());
+        diagnostics.accept("auto_state_changed", a);
         // With background location the service may start as soon as the car connects.
         if (state == AutomotiveConnectionState.State.CONNECTED || state == AutomotiveConnectionState.State.APP_VISIBLE) {
             if (!store.isUserPaused() && !starter.isServiceRunning()) {

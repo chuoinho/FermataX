@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 
 /**
  * Shared in-process location hub multiplexing a single GNSS request across multiple consumers.
@@ -40,7 +43,12 @@ public final class LocationHub {
     private static final long WATCHDOG_CHECK_MS = 5_000;
     private static final long WATCHDOG_FIRST_MS = 20_000;
     private static final long WATCHDOG_MAX_MS = 120_000;
+    private static final long GAP_MS = 8_000;
     private static volatile LocationHub INSTANCE;
+    static final BiConsumer<String, Map<String, Object>> DEFAULT_DIAGNOSTICS =
+            (name, a) -> AndroidDiagnosticsRuntime.get().recordDetailed("location", name, a);
+    @VisibleForTesting
+    static volatile BiConsumer<String, Map<String, Object>> diagnostics = DEFAULT_DIAGNOSTICS;
 
     private final Context context;
     private final LocationManager locationManager;
@@ -54,6 +62,8 @@ public final class LocationHub {
     private volatile long lastDeliveryAt;
     private long watchdogMs = WATCHDOG_FIRST_MS;
     private int reRegistrations;
+    private boolean inGap;
+    private long gapStartedAt;
     private final Runnable watchdog = () -> checkWatchdog(SystemClock.elapsedRealtime());
 
     public static LocationHub get(@NonNull Context context) {
@@ -81,6 +91,10 @@ public final class LocationHub {
                 synchronized (LocationHub.this) {
                     lastDeliveryAt = SystemClock.elapsedRealtime();
                     watchdogMs = WATCHDOG_FIRST_MS;
+                    if (inGap) {
+                        inGap = false;
+                        record("location_gap_ended", "duration_ms", lastDeliveryAt - gapStartedAt);
+                    }
                     targets = new ArrayList<>(consumers.values());
                 }
                 for (Listener l : targets) {
@@ -200,8 +214,14 @@ public final class LocationHub {
 
     private synchronized void checkWatchdog(long now) {
         if (!registered) return;
+        if (!inGap && now - lastDeliveryAt > GAP_MS) {
+            inGap = true;
+            gapStartedAt = lastDeliveryAt;
+            record("location_gap_started", "stalled_for_ms", now - lastDeliveryAt);
+        }
         if (now - lastDeliveryAt > watchdogMs) {
             Log.w(TAG, "No location for " + (now - lastDeliveryAt) + " ms, registering again");
+            record("location_watchdog", "stalled_for_ms", now - lastDeliveryAt, "attempt", reRegistrations + 1);
             unregister();
             register();
             reRegistrations++;
@@ -227,9 +247,16 @@ public final class LocationHub {
 
     @SuppressLint("MissingPermission")
     private void register() {
-        if (!hasPermission() || !isLocationEnabled() || locationManager == null) {
+        if (!hasPermission()) {
+            record("location_registered", "reason", "no_permission");
             return;
         }
+        if (!isLocationEnabled() || locationManager == null) {
+            record("location_registered", "reason", "location_off");
+            return;
+        }
+        String provider = null;
+        Throwable failure = null;
 
         boolean success = false;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -238,8 +265,10 @@ public final class LocationHub {
                     locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER,
                             highAccuracyRequest(), handler::post, locationListener);
                     success = true;
+                    provider = LocationManager.FUSED_PROVIDER;
                 }
             } catch (Throwable t) {
+                failure = t;
                 Log.d(TAG, "FUSED_PROVIDER registration failed, fallback to GPS", t);
             }
         }
@@ -249,11 +278,16 @@ public final class LocationHub {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                         INTERVAL_MS, 0f, locationListener, thread.getLooper());
                 success = true;
+                provider = LocationManager.GPS_PROVIDER;
             } catch (Throwable t) {
+                failure = t;
                 Log.w(TAG, "GPS_PROVIDER registration failed", t);
             }
         }
         registered = success;
+        if (success) record("location_registered", "reason", "ok", "provider", provider);
+        else record("location_registered", "reason", "failed", "error_class",
+                (failure == null) ? "unknown" : failure.getClass().getSimpleName());
         if (success) {
             lastDeliveryAt = SystemClock.elapsedRealtime();
             handler.removeCallbacks(watchdog);
@@ -263,12 +297,23 @@ public final class LocationHub {
 
     private void unregister() {
         handler.removeCallbacks(watchdog);
+        if (registered) record("location_unregistered");
         if (locationManager != null && registered) {
             try {
                 locationManager.removeUpdates(locationListener);
             } catch (Throwable ignored) {}
         }
         registered = false;
+    }
+
+    private static void record(String name, Object... keyValues) {
+        Map<String, Object> a = new LinkedHashMap<>();
+        for (int i = 0; i + 1 < keyValues.length; i += 2) a.put((String) keyValues[i], keyValues[i + 1]);
+        try {
+            diagnostics.accept(name, a);
+        } catch (Throwable ignored) {
+            // Diagnostics must never break location delivery.
+        }
     }
 
     private boolean hasPermission() {

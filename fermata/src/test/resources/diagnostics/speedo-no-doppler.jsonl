@@ -1,0 +1,4 @@
+{"schema_version":1,"elapsed_ms":0,"scope":"detailed","priority":"detail","category":"speedo","event":"speedo_signal_changed","data":{"signal":"WAITING","speed_unknown":false}}
+{"schema_version":1,"elapsed_ms":1000,"scope":"detailed","priority":"detail","category":"speedo","event":"speedo_signal_changed","data":{"signal":"TRACKING","speed_unknown":false}}
+{"schema_version":1,"elapsed_ms":4000,"scope":"detailed","priority":"detail","category":"speedo","event":"speedo_signal_changed","data":{"signal":"TRACKING","speed_unknown":true}}
+{"schema_version":1,"elapsed_ms":31000,"scope":"detailed","priority":"detail","category":"speedo","event":"speedo_fix_summary","data":{"fixes":30,"mock":0,"duration_ms":30000,"accepted":30,"not_running":0,"invalid_time":0,"invalid_accuracy":0,"invalid_position":0,"duplicate":0,"rejected":0,"signal_only":0,"recovering":0,"speed_ok":0,"speed_stop":0,"speed_missing":30,"speed_out_of_range":0,"speed_low_confidence":0}}
