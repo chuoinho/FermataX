@@ -335,6 +335,7 @@ public final class GlassSpeedoTripController {
     }
 
     public void showUnavailable(TripEngine.Signal reason) {
+        worker.post(() -> diagnostics.onState(reason, false, now()));
         TripEngine.State current = snapshot != null ? snapshot : store.load();
         snapshot = new TripEngine.State(current.distanceMeters(), current.estimatedMeters(),
                 current.uncertaintyMeters(), current.gapMeters(), current.totalTimeMs(),

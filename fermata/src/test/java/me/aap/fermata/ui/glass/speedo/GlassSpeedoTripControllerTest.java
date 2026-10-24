@@ -69,6 +69,25 @@ public class GlassSpeedoTripControllerTest {
         assertEquals("6.2 mi", GlassSpeedoTripController.formatDistance(10_000, false));
     }
 
+    @Test public void unavailableSignalsAreRecordedOncePerChange() {
+        java.util.List<Object> signals = new java.util.ArrayList<>();
+        GlassSpeedoTripController.diagnosticsSink = (name, a) -> {
+            if (name.equals("speedo_signal_changed")) signals.add(a.get("signal"));
+        };
+        try {
+            GlassSpeedoTripController c = new GlassSpeedoTripController(context, null);
+            for (TripEngine.Signal signal : new TripEngine.Signal[]{TripEngine.Signal.PAUSED,
+                    TripEngine.Signal.PERMISSION, TripEngine.Signal.GPS_OFF, TripEngine.Signal.BACKGROUND_BLOCKED}) {
+                c.showUnavailable(signal);
+                c.showUnavailable(signal);
+                Shadows.shadowOf(c.getThreadForTesting().getLooper()).idle();
+            }
+            assertEquals(java.util.List.of("PAUSED", "PERMISSION", "GPS_OFF", "BACKGROUND_BLOCKED"), signals);
+        } finally {
+            GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
+        }
+    }
+
     @Test public void missingPrecisePermissionReportsSignalPermission() {
         Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_FINE_LOCATION);
         AtomicReference<TripEngine.State> reported = new AtomicReference<>();
