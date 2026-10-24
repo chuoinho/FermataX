@@ -143,13 +143,12 @@ public class FermataApplication extends NetSplitCompatApp {
 	@Override
 	public void onLogFailure(Log.Level level, @Nullable Throwable error,
 			@Nullable StackTraceElement caller) {
+		onLogFailure(level, error);
 		AndroidDiagnosticsRuntime runtime = getDiagnostics();
 		DiagnosticRecorder recorder = runtime.getRecorder();
 		if ((recorder != null) && runtime.isDetailedEnabled()) {
 			logFailures.record(recorder, level == Log.Level.ERROR, error, caller,
 					SystemClock.elapsedRealtime());
-		} else {
-			onLogFailure(level, error);
 		}
 	}
 
