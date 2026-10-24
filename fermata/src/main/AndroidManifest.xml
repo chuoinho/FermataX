@@ -53,6 +53,7 @@
         android:required="false" />
 
     <queries>
+        <package android:name="com.google.android.projection.gearhead" />
         <intent>
             <action android:name="android.intent.action.OPEN_DOCUMENT_TREE" />
         </intent>

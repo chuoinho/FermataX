@@ -42,6 +42,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.diagnostics.android.DiagnosticStateSnapshot;
 import me.aap.fermata.diagnostics.DiagnosticRecorder;
 
 /** Creates a local, explicitly user-exported support bundle without legacy logs or raw traces. */
@@ -88,6 +89,7 @@ public final class DiagnosticReportExporter {
 			try (ZipOutputStream zip = new ZipOutputStream(
 					new BufferedOutputStream(new FileOutputStream(stagedReport)), UTF_8)) {
 				writeText(zip, "manifest.json", manifest(context, recorder));
+				writeText(zip, "state.json", DiagnosticStateSnapshot.toJson(context));
 				for (File source : snapshotFiles(staging)) {
 					validateSafePayload(source);
 					String parent = source.getParentFile().getName();
