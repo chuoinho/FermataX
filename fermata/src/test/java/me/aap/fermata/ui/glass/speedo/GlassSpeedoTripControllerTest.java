@@ -551,6 +551,34 @@ public class GlassSpeedoTripControllerTest {
         }
     }
 
+    @Test public void stopAndPauseFlushShortDiagnosticWindows() {
+        for (boolean pause : new boolean[]{false, true}) {
+            java.util.List<java.util.Map<String, Object>> summaries = new java.util.ArrayList<>();
+            GlassSpeedoTripController.diagnosticsSink = (name, a) -> {
+                if (name.equals("speedo_fix_summary")) summaries.add(a);
+            };
+            try {
+                GlassSpeedoTripController c = new GlassSpeedoTripController(context, null);
+                c.setRunningForTesting(true);
+                c.getEngineForTesting().start(SystemClock.elapsedRealtime());
+                c.flushDiagnosticsForTesting();
+                Location fix = new Location("gps");
+                fix.setAccuracy(5);
+                fix.setSpeed(10);
+                fix.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+                c.handleLocationForTesting(fix);
+                org.robolectric.shadows.ShadowSystemClock.advanceBy(Duration.ofSeconds(2));
+                if (pause) c.pauseTrip(); else c.stop();
+                Shadows.shadowOf(c.getThreadForTesting().getLooper()).idle();
+                assertEquals("pause=" + pause, 1, summaries.size());
+                assertEquals(1, summaries.get(0).get("fixes"));
+                assertEquals(2_000L, summaries.get(0).get("duration_ms"));
+            } finally {
+                GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
+            }
+        }
+    }
+
     @Test public void droppedMockFixIsStillWrittenToTheTripLog() throws Exception {
         java.io.File dir = context.getExternalFilesDir("trip_logs");
         java.io.File[] old = dir.listFiles();

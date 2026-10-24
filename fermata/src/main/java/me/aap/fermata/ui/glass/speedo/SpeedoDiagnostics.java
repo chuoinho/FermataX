@@ -78,8 +78,16 @@ final class SpeedoDiagnostics {
     }
 
     void flush(long nowMs) {
+        flush(nowMs, false);
+    }
+
+    void flushFinal(long nowMs) {
+        flush(nowMs, true);
+    }
+
+    private void flush(long nowMs, boolean force) {
         if (windowStart < 0) windowStart = nowMs;
-        if (nowMs - windowStart < SUMMARY_MS) return;
+        if (!force && nowMs - windowStart < SUMMARY_MS) return;
         if (fixes > 0) {
             Map<String, Object> a = new LinkedHashMap<>();
             a.put("fixes", fixes);

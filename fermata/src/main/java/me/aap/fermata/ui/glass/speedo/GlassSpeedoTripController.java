@@ -158,6 +158,7 @@ public final class GlassSpeedoTripController {
             unregisterImu();
             // A system stop: the trip clock stops and no position is bridged across it.
             engine.suspend(now());
+            diagnostics.flushFinal(now());
             if (tripLog != null) tripLog.event("stop", now());
             checkpoint();
             publish();
@@ -201,6 +202,7 @@ public final class GlassSpeedoTripController {
             registered = false;
             unregisterImu();
             engine.pause(now());
+            diagnostics.flushFinal(now());
             if (tripLog != null) tripLog.event("pause", now());
             checkpoint();
             publish();
