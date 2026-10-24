@@ -619,4 +619,16 @@ public class TripEngineTest {
         org.junit.Assert.assertTrue(Math.abs(e.state().speedKmh()-36) <= (before-36)*0.25+1);
     }
 
+
+    @org.junit.Test public void sourceSwitchToStoppedSpeedEasesInsteadOfJumping() {
+        TripEngine e = new TripEngine(); e.start(0);
+        for (int i=0;i<10;i++) e.accept(sourceFix(i, false, true, 20), i*1000L);
+        float before = e.state().speedKmh();
+        e.accept(sourceFix(10, true, true, 0), 10000);
+        org.junit.Assert.assertTrue("first switch step must retain at least half: " + e.state().speedKmh(), e.state().speedKmh() >= before/2-1);
+        e.accept(sourceFix(11, true, true, 0), 11000);
+        e.accept(sourceFix(12, true, true, 0), 12000);
+        org.junit.Assert.assertTrue(e.state().speedKmh() <= before*0.25+1);
+    }
+
 }

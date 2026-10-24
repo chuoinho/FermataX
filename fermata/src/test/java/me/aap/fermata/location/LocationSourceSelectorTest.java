@@ -77,4 +77,11 @@ public class LocationSourceSelectorTest {
   assertTrue(selector.offer(PLATFORM_FUSED, 1));
   assertEquals(PLATFORM_FUSED, selector.current());
  }
+ @Test public void outOfOrderSamplesCannotBuildPromotionStreak() {
+  selector.offer(PLATFORM_FUSED, 0);
+  assertFalse(selector.offer(GPS,1000));
+  assertFalse(selector.offer(GPS,900));
+  assertFalse(selector.offer(GPS,1001));
+  assertEquals(PLATFORM_FUSED,selector.current());
+ }
 }

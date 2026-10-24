@@ -14,6 +14,7 @@ final class SpeedPresenter {
     private double value = Double.NaN, prevDoppler = Double.NaN;
     private long observedAt = -1, lastFixAt = -1, prevDopplerAt = -1;
     private float maxKmh;
+    private boolean sourceTransition;
 
     float maxKmh() { return maxKmh; }
 
@@ -25,6 +26,7 @@ final class SpeedPresenter {
     }
 
     void clear() {
+        sourceTransition = false;
         value = prevDoppler = Double.NaN;
         observedAt = lastFixAt = prevDopplerAt = -1;
     }
@@ -36,7 +38,9 @@ final class SpeedPresenter {
     void observe(double mps, long time, boolean doppler) {
         if (!Double.isFinite(mps)) return;
         boolean fresh = Double.isFinite(value) && time - observedAt <= HOLD_MS;
-        value = (doppler && fresh && mps > 0) ? ALPHA * mps + (1 - ALPHA) * value : mps;
+        value = (fresh && ((doppler && mps > 0) || sourceTransition))
+                ? ALPHA * mps + (1 - ALPHA) * value : mps;
+        if (Math.abs(value - mps) < 0.1) sourceTransition = false;
         observedAt = Math.max(observedAt, time);
     }
 
@@ -50,6 +54,11 @@ final class SpeedPresenter {
     }
 
     void breakDopplerChain() { prevDoppler = Double.NaN; }
+
+    void sourceChanged() {
+        sourceTransition = true;
+        breakDopplerChain();
+    }
 
     float speedKmh(long now) {
         if (!Double.isFinite(value) || observedAt < 0) return -1;

@@ -97,7 +97,7 @@ public final class LocationHub {
             long now = SystemClock.elapsedRealtime();
             long fixTime = location.getElapsedRealtimeNanos() / 1_000_000L;
             if (fixTime > now || now - fixTime > 2000) return;
-            if (!selector.offer(source, fixTime)) return;
+            if (!selector.offer(source, fixTime, now)) return;
             latestLocation = location;
             lastDeliveryAt = now;
             watchdogMs = WATCHDOG_FIRST_MS;

@@ -18,10 +18,16 @@ final class LocationSourceSelector {
  }
 
  boolean offer(LocationSource source, long nowMs) {
+  return offer(source, nowMs, nowMs);
+ }
+
+ boolean offer(LocationSource source, long fixMs, long nowMs) {
   int i = source.ordinal();
-  consecutive[i] = consecutive[i] != 0 && nowMs - last[i] <= 2000
+  if (fixMs > nowMs || nowMs - fixMs > 2000
+    || (consecutive[i] != 0 && fixMs <= last[i])) return false;
+  consecutive[i] = consecutive[i] != 0 && fixMs - last[i] <= 2000
     ? consecutive[i] + 1 : 1;
-  last[i] = nowMs;
+  last[i] = fixMs;
   LocationSource next = current;
   String reason = null;
   if (current == null || !alive(current, nowMs)) {

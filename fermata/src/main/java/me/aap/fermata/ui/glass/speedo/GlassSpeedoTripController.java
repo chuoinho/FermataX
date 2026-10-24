@@ -138,7 +138,8 @@ public final class GlassSpeedoTripController {
             nextRetry = 0;
             LocationHub.get(context).acquire("speedo", hubListener);
             registered = true;
-            if (seedValid) handleLocation(seed);
+            if (seedValid) handleLocation(seed, LocationManager.GPS_PROVIDER.equals(seed.getProvider())
+                    ? LocationSource.GPS : LocationSource.PLATFORM_FUSED);
             checkpoint();
             worker.removeCallbacks(heartbeat);
             worker.post(heartbeat);

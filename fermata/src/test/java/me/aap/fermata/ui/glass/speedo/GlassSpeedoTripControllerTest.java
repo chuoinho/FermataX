@@ -572,4 +572,32 @@ public class GlassSpeedoTripControllerTest {
                 java.nio.charset.StandardCharsets.UTF_8);
         assertTrue(text, text.contains(",gps,,5.0,,,1"));
     }
+
+    @Test @org.robolectric.annotation.LooperMode(org.robolectric.annotation.LooperMode.Mode.PAUSED)
+    public void cachedGpsSeedNeverChordsToOffsetFused() {
+        Shadows.shadowOf((Application)context).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION);
+        LocationManager lm=(LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+        Shadows.shadowOf(lm).setLocationEnabled(true); Shadows.shadowOf(lm).setProviderEnabled("gps",true);
+        Shadows.shadowOf(lm).setProviderProperties("fused",new org.robolectric.shadows.ShadowLocationManager.ProviderProperties(false,false,false,false,true,true,true,3,1));
+        Shadows.shadowOf(lm).setProviderEnabled("fused",true);
+        org.robolectric.shadows.ShadowSystemClock.advanceBy(Duration.ofMinutes(10));
+        Location seed=new Location("gps"); seed.setAccuracy(5); seed.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+        Shadows.shadowOf(lm).setLastKnownLocation("gps",seed);
+        GlassSpeedoTripController c=new GlassSpeedoTripController(context,null);
+        try {
+            c.start(); Shadows.shadowOf(c.getThreadForTesting().getLooper()).idle();
+            assertEquals(TripEngine.Outcome.ACCEPTED,c.getEngineForTesting().lastOutcome());
+            for(int i=0;i<3;i++) {
+                org.robolectric.shadows.ShadowSystemClock.advanceBy(Duration.ofSeconds(1));
+                Location fused=new Location("fused"); fused.setAccuracy(5); fused.setLatitude(30/111194.9266);
+                fused.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+                Shadows.shadowOf(lm).simulateLocation(fused);
+                Shadows.shadowOf(LocationHub.get(context).getLooperForTesting()).idle();
+                Shadows.shadowOf(c.getThreadForTesting().getLooper()).idle();
+            }
+            assertEquals("stationary provider offset is not travel",0,c.getTripState().distanceMeters(),0.01);
+            assertTrue(c.getTripState().speedKmh()<=0);
+        } finally { c.destroyForTesting(); }
+    }
+
 }

@@ -384,5 +384,53 @@ public class TripTrackingServiceTest {
         TripTrackingService.registry().getController().pauseTrip();
         assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
     }
-}
 
+    @Test @org.robolectric.annotation.LooperMode(org.robolectric.annotation.LooperMode.Mode.PAUSED)
+    public void dashboardServiceSurvivesInitialPausedSnapshot() {
+        whileInUseOnly(); TripTrackingService.startForDashboard(context);
+        Intent intent = Shadows.shadowOf((Application) context).getNextStartedService();
+        ServiceController<TripTrackingService> controller = Robolectric.buildService(TripTrackingService.class).create();
+        TripTrackingService service = controller.get();
+        try {
+            service.onStartCommand(intent, 0, 1);
+            assertFalse("restored snapshot is not a user pause", Shadows.shadowOf(service).isStoppedBySelf());
+        } finally { controller.destroy(); }
+    }
+
+
+    private void startControllerWorker() {
+        android.location.LocationManager lm = (android.location.LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        Shadows.shadowOf(lm).setLocationEnabled(true);
+        Shadows.shadowOf(lm).setProviderEnabled("gps",true);
+        GlassSpeedoTripController c=TripTrackingService.registry().getController();
+        c.start(); Shadows.shadowOf(c.getThreadForTesting().getLooper()).idle();
+    }
+    @Test @org.robolectric.annotation.LooperMode(org.robolectric.annotation.LooperMode.Mode.PAUSED)
+    public void pendingDashboardStartCannotOutliveDisconnect() {
+        whileInUseOnly(); AutomotiveConnectionState.get().connectionChanged(true);
+        TripTrackingService.startForDashboard(context);
+        Intent pending=Shadows.shadowOf((Application)context).getNextStartedService();
+        startControllerWorker(); TripTrackingService.dashboardClosed(context);
+        AutomotiveConnectionState.get().connectionChanged(false);
+        new TripTrackingAutoBinder(context).onStateChanged(AutomotiveConnectionState.State.DISCONNECTED);
+        ServiceController<TripTrackingService> sc=Robolectric.buildService(TripTrackingService.class).create();
+        try {
+            sc.get().onStartCommand(pending,0,1);
+            assertTrue("closed/disconnected demand must reject late start", Shadows.shadowOf(sc.get()).isStoppedBySelf());
+        } finally { sc.destroy(); }
+    }
+    @Test @org.robolectric.annotation.LooperMode(org.robolectric.annotation.LooperMode.Mode.PAUSED)
+    public void pendingBackgroundStartCannotUndoOptInOff() {
+        TripTrackingService.start(context);
+        Intent pending=Shadows.shadowOf((Application)context).getNextStartedService();
+        TripTrackingService.startForDashboard(context); startControllerWorker();
+        TripModePolicy.setEnabled(context,false); TripTrackingService.backgroundDisabled(context);
+        ServiceController<TripTrackingService> sc=Robolectric.buildService(TripTrackingService.class).create();
+        try {
+            sc.get().onStartCommand(pending,0,1);
+            TripTrackingService.registry().getController().pauseTrip();
+            assertNotNull("late opt-in start must be downgraded to dashboard", Shadows.shadowOf((Application)context).getNextStoppedService());
+        } finally { sc.destroy(); }
+    }
+
+}

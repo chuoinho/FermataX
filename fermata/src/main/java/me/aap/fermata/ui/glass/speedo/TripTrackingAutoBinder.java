@@ -28,7 +28,7 @@ public final class TripTrackingAutoBinder implements AutomotiveConnectionState.L
         void startService(Context context);
         void stopService(Context context);
         default boolean isServiceRunning() {
-            return TripTrackingService.registry().isServiceRunning();
+            return TripTrackingService.registry().isServiceRunning() || TripTrackingService.hasPendingStart();
         }
     }
 

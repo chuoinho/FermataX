@@ -217,12 +217,16 @@ public final class TripEngine {
         if (fix.timeMs() < clock.startedAt()) return outcome(Outcome.INVALID_TIME, false);
         if (fix.timeMs() <= lastFixAt) return outcome(Outcome.DUPLICATE, false);
         double v = FixNormalizer.trustedSpeed(fix);
+        Fix previous = odo.last();
+        boolean sourceChanged = previous != null && previous.source() != null
+                && fix.source() != null && previous.source() != fix.source();
         Odometer.Result result = odo.accept(fix, v);
         if (result == Odometer.Result.REJECTED) {
             speed.breakDopplerChain();
             return outcome(Outcome.REJECTED, false);
         }
         clock.firstFix(fix.timeMs(), now);
+        if (sourceChanged) speed.sourceChanged();
         lastFixAt = fix.timeMs();
         speed.onFix(fix.timeMs());
         if (result == Odometer.Result.SIGNAL_ONLY) return outcome(Outcome.SIGNAL_ONLY, true);

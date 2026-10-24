@@ -41,6 +41,9 @@ public class TripTrackingService extends Service {
     public static final String ACTION_START_DASHBOARD = "me.aap.fermata.action.TRIP_START_DASHBOARD";
     private static int dashboards;
     private static boolean backgroundMode;
+    private static boolean startPending;
+    private static long startGeneration;
+    private static final String EXTRA_GENERATION = "trip_start_generation";
 
     public static final String ACTION_START = "me.aap.fermata.action.TRIP_START";
     public static final String ACTION_STOP = "me.aap.fermata.action.TRIP_STOP";
@@ -70,6 +73,8 @@ public class TripTrackingService extends Service {
     public static void resetForTests() {
         dashboards = 0;
         backgroundMode = false;
+        startPending = false;
+        startGeneration++;
         synchronized (REGISTRY_LOCK) {
             if (registryInstance != null) {
                 registryInstance.destroyForTesting();
@@ -113,8 +118,10 @@ public class TripTrackingService extends Service {
             default -> { recordStart("no_permission"); return; }
         }
         try {
-            Intent intent = new Intent(context, TripTrackingService.class).setAction(ACTION_START);
+            Intent intent = new Intent(context, TripTrackingService.class).setAction(ACTION_START)
+                    .putExtra(EXTRA_GENERATION, startGeneration);
             ContextCompat.startForegroundService(context, intent);
+            startPending = true;
             backgroundMode = true;
             recordStart("started");
         } catch (SecurityException | IllegalStateException e) {
@@ -134,7 +141,9 @@ public class TripTrackingService extends Service {
         init(context);
         try {
             ContextCompat.startForegroundService(context,
-                    new Intent(context, TripTrackingService.class).setAction(ACTION_START_DASHBOARD));
+                    new Intent(context, TripTrackingService.class).setAction(ACTION_START_DASHBOARD)
+                            .putExtra(EXTRA_GENERATION, startGeneration));
+            startPending = true;
             recordStart("dashboard");
         } catch (SecurityException | IllegalStateException e) {
             recordStart("blocked");
@@ -157,6 +166,8 @@ public class TripTrackingService extends Service {
         if (!backgroundMode) stop(context);
     }
 
+    static boolean hasPendingStart() { return startPending; }
+
     private static void recordStart(String reason) {
         GlassSpeedoTripController.diagnosticsSink.event("trip_service_start", Map.of("reason", reason));
     }
@@ -174,6 +185,8 @@ public class TripTrackingService extends Service {
 
     public static void stop(@NonNull Context context) {
         backgroundMode = false;
+        startPending = false;
+        startGeneration++;
         try {
             Intent intent = new Intent(context, TripTrackingService.class).setAction(ACTION_STOP);
             context.stopService(intent);
@@ -192,7 +205,8 @@ public class TripTrackingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent != null ? intent.getAction() : null;
-        if (ACTION_START.equals(action)) backgroundMode = true;
+        boolean obsolete = intent != null && intent.getLongExtra(EXTRA_GENERATION, startGeneration) != startGeneration;
+        if (!obsolete) startPending = false;
 
         if (ACTION_STOP.equals(action)) {
             stopSelf();
@@ -227,6 +241,14 @@ public class TripTrackingService extends Service {
             return START_NOT_STICKY;
         }
 
+        if (obsolete && isForeground) return START_NOT_STICKY;
+        backgroundMode = TripModePolicy.current(this) == TripModePolicy.Mode.ON
+                && (backgroundMode || ACTION_START.equals(action));
+        boolean dashboardWanted = dashboards > 0 || (ACTION_START_DASHBOARD.equals(action)
+                && me.aap.fermata.auto.AutomotiveConnectionState.get().isProjectionConnected());
+        boolean wanted = !obsolete && !new TripStore(this).isUserPaused()
+                && (backgroundMode || dashboardWanted);
+
         if (!isForeground) {
             Notification notif = buildNotification(registry().getController().getTripState());
             try {
@@ -244,12 +266,18 @@ public class TripTrackingService extends Service {
                 return START_NOT_STICKY;
             }
 
+            if (!wanted) {
+                stopForeground(true);
+                isForeground = false;
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+
             registry().getController().start();
             holdsController = true;
 
             if (tripListener == null) {
                 tripListener = (speedKmh, state) -> {
-                    if (state.isPaused() && !backgroundMode) { stopSelf(); return; }
                     long now = SystemClock.elapsedRealtime();
                     if (now - lastNotificationUpdate >= 10_000L) {
                         updateNotification(state);

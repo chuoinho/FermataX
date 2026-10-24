@@ -127,5 +127,22 @@ public class LocationHubSourcesTest {
   shadowOf(LocationHub.get(ctx).getLooperForTesting()).idle();
   assertTrue(received.isEmpty());
  }
-}
 
+ @Test public void delayedFallbackUsesCurrentClockForLiveness() {
+  LocationHub.googleFactory = (c,l,s) -> { googleSink=s; return new GoogleFusedSource() { public void start() {} public void stop() {} }; };
+  acquire(); send("gps");
+  ShadowSystemClock.advanceBy(Duration.ofMillis(2001));
+  Location delayed=fix("fused"); delayed.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos()-1_001_000_000L);
+  googleSink.accept(delayed);
+  assertEquals(List.of(LocationSource.GPS, LocationSource.GOOGLE_FUSED), received);
+ }
+ @Test public void outOfOrderFixDoesNotMoveSourceTimestampBackwards() {
+  acquire(); send("gps");
+  ShadowSystemClock.advanceBy(Duration.ofMillis(1000)); send("gps");
+  Location older=fix("gps"); older.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos()-500_000_000L);
+  shadowOf(lm).simulateLocation(older);
+  shadowOf(LocationHub.get(ctx).getLooperForTesting()).idle();
+  assertEquals(2, received.size());
+ }
+
+}
