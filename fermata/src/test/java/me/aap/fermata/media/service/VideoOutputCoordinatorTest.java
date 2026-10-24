@@ -21,6 +21,31 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.view.VideoView;
 
 public class VideoOutputCoordinatorTest {
+	@Test
+	public void foregroundKeepsRetainedSurfaceBoundWithoutReattachingDecoder() throws Exception {
+		var coordinator = new VideoOutputCoordinator();
+		var available = new java.util.concurrent.atomic.AtomicBoolean(true);
+		List<VideoView> bindings = new ArrayList<>();
+		MediaEngine engine = videoEngine(bindings);
+		VideoView car = view(), phone = view();
+		coordinator.add(phone, 1, me.aap.fermata.ui.policy.RuntimeHostMode.PHONE);
+		coordinator.add(car, 0, me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, 11L);
+		coordinator.selectHost(me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION,
+				available::get, 11L);
+		coordinator.bind(engine, true);
+		available.set(false);
+		// Pausing the host does not reconcile; surface destruction owns physical detach.
+		assertSame(car, coordinator.getSelected());
+		assertTrue(coordinator.isBound(engine));
+		available.set(true);
+		coordinator.reconcile();
+		assertSame(car, coordinator.getSelected());
+		assertTrue(coordinator.isBound(engine));
+		assertEquals(List.of(car), bindings);
+		coordinator.reconcile();
+		assertEquals(1, bindings.size());
+	}
+
 	@Test public void replacedCarHostCannotReattachPreviousRequest() throws Exception {
 		var coordinator = new VideoOutputCoordinator();
 		var alive = new java.util.concurrent.atomic.AtomicBoolean(true);

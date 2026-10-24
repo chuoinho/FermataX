@@ -162,7 +162,8 @@ public final class VideoOutputCoordinator {
 				(sourceGeneration == source.sourceGeneration());
 	}
 
-	private void reconcile() {
+	/** Re-evaluates the selected output; also called when host availability changes externally. */
+	public void reconcile() {
 		VideoView next = select();
 		boolean targetChanged = selected != next;
 		if (targetChanged) {

@@ -270,7 +270,10 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.RESUMED, diagnosticsActivityId);
 		resumed = true;
 		MainActivityDelegate d = createdDelegate;
-		if (d != null) resumeDelegate(d);
+		if (d != null) {
+			resumeDelegate(d);
+			d.getMediaSessionCallback().getVideoOutputCoordinator().reconcile();
+		}
 	}
 
 	@Override
@@ -291,7 +294,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@Override
 	public void onPause() {
 		stopInput();
-		AutomotiveNavigationController.get().unregister(phoneNavigator);
+		// Preserve the playback host lease while Maps covers us; unregister only on destroy.
+		AutomotiveNavigationController.get().suspend(phoneNavigator);
 		AutomotiveConnectionState.get().appVisibilityChanged(controlVisibilityOwner, false);
 		super.onPause();
 		DiagnosticsObserver.activity(DiagnosticsObserver.ActivityEvent.PAUSED, diagnosticsActivityId);

@@ -17,6 +17,55 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.fermata.auto.AutomotiveNavigationController.OpenResult;
 
 public class AutomotiveNavigationControllerTest {
+	@Test
+	public void mapRoundTripPreservesPlaybackLeaseButCancelsPendingNavigation() {
+		var connection = new AutomotiveConnectionState();
+		var controller = new AutomotiveNavigationController(connection);
+		connection.connectionChanged(true);
+		var pending = new Promise<OpenResult>();
+		AtomicReference<BooleanSupplier> guard = new AtomicReference<>();
+		AutomotiveNavigationController.Navigator host = (id, current) -> {
+			guard.set(current);
+			return pending;
+		};
+		controller.register(host);
+		var lease = controller.captureSourceToken(0);
+		var admission = new OpenOnCarMediaRouting.Admission(
+				me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION, () -> true,
+				() -> controller.captureSourceToken(0));
+		assertTrue(admission.commit());
+		var result = controller.open(42);
+
+		controller.suspend(host);
+		assertFalse(controller.getOpenOnCarMode().isAvailable());
+		assertEquals(OpenResult.NOT_READY, controller.open(43).peek());
+		assertFalse(guard.get().getAsBoolean());
+		assertTrue(admission.isCurrent());
+
+		controller.register(host);
+		assertTrue(controller.getOpenOnCarMode().isAvailable());
+		assertEquals(lease.registrationGeneration(),
+				controller.captureSourceToken(0).registrationGeneration());
+		assertTrue(admission.isCurrent());
+		pending.complete(OpenResult.OPENED);
+		assertEquals(OpenResult.CANCELLED, result.peek());
+		controller.unregister(host);
+		assertFalse(admission.isCurrent());
+	}
+
+	@Test
+	public void staleHostCannotSuspendItsReplacement() {
+		var connection = new AutomotiveConnectionState();
+		var controller = new AutomotiveNavigationController(connection);
+		connection.connectionChanged(true);
+		AutomotiveNavigationController.Navigator stale = (id, guard) -> completed(OpenResult.FAILED);
+		controller.register(stale);
+		controller.register((id, guard) -> completed(OpenResult.OPENED));
+		controller.suspend(stale);
+		assertTrue(controller.getOpenOnCarMode().isAvailable());
+		assertEquals(OpenResult.OPENED, controller.open(42).peek());
+	}
+
 	@Test public void typedQueuedRequestRetainsSourceLifetimeGuard() {
 		AutomotiveConnectionState connection = new AutomotiveConnectionState();
 		AutomotiveNavigationController controller = new AutomotiveNavigationController(connection);

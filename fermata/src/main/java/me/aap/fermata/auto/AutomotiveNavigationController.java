@@ -17,6 +17,7 @@ public final class AutomotiveNavigationController {
 	private final OpenOnCarMode openOnCarMode = new OpenOnCarMode();
 	private final Set<ReadinessListener> readinessListeners = new LinkedHashSet<>();
 	private Navigator navigator;
+	private boolean navigatorPaused;
 	private long registrationGeneration;
 	private long requestGeneration;
 	private boolean readinessAvailable;
@@ -39,8 +40,19 @@ public final class AutomotiveNavigationController {
 
 	public void register(Navigator navigator) {
 		synchronized (this) {
+			if (this.navigator != navigator) registrationGeneration++;
 			this.navigator = navigator;
-			registrationGeneration++;
+			navigatorPaused = false;
+			requestGeneration++;
+		}
+		updateReadiness();
+	}
+
+	/** Temporarily hides a host without revoking the running decoder's host lease. */
+	public void suspend(Navigator navigator) {
+		synchronized (this) {
+			if (this.navigator != navigator) return;
+			navigatorPaused = true;
 			requestGeneration++;
 		}
 		updateReadiness();
@@ -87,7 +99,7 @@ public final class AutomotiveNavigationController {
 		long connectionEpoch;
 		synchronized (this) {
 			captured = navigator;
-			if ((captured == null) || !connection.isProjectionConnected()) {
+			if ((captured == null) || navigatorPaused || !connection.isProjectionConnected()) {
 				return completed(OpenResult.NOT_READY);
 			}
 			registration = registrationGeneration;
@@ -117,7 +129,7 @@ public final class AutomotiveNavigationController {
 		long modeRevision;
 		synchronized (this) {
 			captured = navigator;
-			if ((captured == null) || !connection.isProjectionConnected()) {
+			if ((captured == null) || navigatorPaused || !connection.isProjectionConnected()) {
 				return completed(OpenResult.NOT_READY);
 			}
 			modeRevision = openOnCarMode.revision();
@@ -153,7 +165,7 @@ public final class AutomotiveNavigationController {
 
 	private synchronized boolean isCurrent(Navigator captured, long registration, long request,
 			long connectionEpoch) {
-		return (navigator == captured) && (registrationGeneration == registration) &&
+		return !navigatorPaused && (navigator == captured) && (registrationGeneration == registration) &&
 				(requestGeneration == request) && connection.isProjectionConnected() &&
 				(connection.connectionEpoch() == connectionEpoch);
 	}
@@ -163,7 +175,7 @@ public final class AutomotiveNavigationController {
 		boolean available;
 		long epoch;
 		synchronized (this) {
-			available = (navigator != null) && connection.isProjectionConnected();
+			available = (navigator != null) && !navigatorPaused && connection.isProjectionConnected();
 			epoch = connection.connectionEpoch();
 			if ((available == readinessAvailable) && (epoch == readinessEpoch)) return;
 			readinessAvailable = available;
