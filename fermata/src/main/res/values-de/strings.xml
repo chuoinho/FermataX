@@ -514,7 +514,7 @@
     <string name="support_kofi_sub">Unterstützen Sie die Entwicklung auf ko-fi.com/fermatax</string>
     <string name="support_banner_text">Gefällt Ihnen FermataX? Unterstützen Sie mit einem Kaffee ☕</string>
     <string name="initial_setup_permissions_title">Berechtigungen</string>
-    <string name="initial_setup_privacy">Datenschutz: FermataX erfasst und sendet keine persönlichen Daten an den Entwickler. Ihre Daten verbleiben auf Ihrem Telefon. Einige Funktionen (Wetter, Karten, Add-ons, Sprache) verbinden sich bei Nutzung direkt mit Drittanbieter-Diensten.</string>
+    <string name="initial_setup_privacy">Datenschutz: FermataX sammelt keine persönlichen Daten und sendet sie nicht an den Entwickler. Einige Funktionen (Wetter, Karten, Erweiterungen, Sprache, Standort) verbinden sich direkt mit Drittanbietern. Auf Telefonen mit Google Play Services kann Google den Standort gemäß den Einstellungen für die Google Standortgenauigkeit des Geräts verarbeiten. FermataX sendet keine Standorte an eigene Server.</string>
     <string name="initial_setup_required">Für Hauptfunktionen erforderlich</string>
     <string name="initial_setup_optional">Optional</string>
     <string name="initial_setup_allow">Zulassen</string>

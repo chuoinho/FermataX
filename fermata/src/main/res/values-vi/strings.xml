@@ -595,7 +595,7 @@
 
     <!-- Initial Setup Permissions -->
     <string name="initial_setup_permissions_title">Quyền truy cập</string>
-    <string name="initial_setup_privacy">Quyền riêng tư: FermataX không thu thập và không gửi dữ liệu cá nhân của bạn về nhà phát triển. Dữ liệu chỉ lưu trên điện thoại. Một số chức năng (thời tiết, bản đồ, addon, giọng nói) kết nối trực tiếp tới dịch vụ bên thứ ba khi bạn dùng.</string>
+    <string name="initial_setup_privacy">Quyền riêng tư: FermataX không thu thập hoặc gửi dữ liệu cá nhân về nhà phát triển. Một số tính năng (thời tiết, bản đồ, tiện ích, giọng nói, vị trí) kết nối trực tiếp dịch vụ bên ngoài. Trên máy có Google Play Services, Google có thể xử lý vị trí theo cài đặt Độ chính xác vị trí của Google trên máy. FermataX không gửi vị trí về máy chủ riêng.</string>
     <string name="initial_setup_required">Cần cho chức năng chính</string>
     <string name="initial_setup_optional">Tuỳ chọn</string>
     <string name="initial_setup_allow">Cho phép</string>

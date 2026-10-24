@@ -27,7 +27,7 @@
 	<string name="readiness_screen_capture_info">Android sẽ yêu cầu xác nhận khi bắt đầu chia sẻ màn hình.</string>
 	<string name="readiness_battery">Tối ưu pin</string>
 	<string name="readiness_battery_exempt">Đã được miễn tối ưu pin.</string>
-	<string name="readiness_battery_managed">Android đang quản lý pin; riêng trạng thái này không cho thấy có lỗi.</string>
+	<string name="readiness_battery_managed">Trên một số máy, Android có thể dừng FermataX chạy nền. Miễn tối ưu pin để thẻ tốc độ và chuyến đi luôn chính xác.</string>
 	<string name="readiness_unknown">Chưa xác minh</string>
 	<string name="readiness_not_applicable">Không áp dụng</string>
 	<string name="readiness_connection_disconnected">Android Auto chưa kết nối.</string>

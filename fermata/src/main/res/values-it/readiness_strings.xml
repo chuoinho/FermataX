@@ -28,7 +28,7 @@
     <string name="readiness_screen_capture_info">Android chiederà conferma all\'avvio della condivisione dello schermo.</string>
     <string name="readiness_battery">Ottimizzazione batteria</string>
     <string name="readiness_battery_exempt">Escluso dall\'ottimizzazione della batteria.</string>
-    <string name="readiness_battery_managed">Android gestisce l\'uso della batteria; questo di per sé non indica un problema.</string>
+    <string name="readiness_battery_managed">Su alcuni telefoni Android può arrestare FermataX in background. Escludilo dalle ottimizzazioni della batteria per mantenere precisi velocità e dati del viaggio.</string>
     <string name="readiness_unknown">Non verificato</string>
     <string name="readiness_not_applicable">Non applicabile</string>
     <string name="readiness_connection_disconnected">Android Auto non è connesso.</string>

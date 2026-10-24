@@ -514,7 +514,7 @@
     <string name="support_kofi_sub">Supporta lo sviluppo su ko-fi.com/fermatax</string>
     <string name="support_banner_text">Ti piace FermataX? Supportalo con un caffè ☕</string>
     <string name="initial_setup_permissions_title">Autorizzazioni</string>
-    <string name="initial_setup_privacy">Privacy: FermataX non raccoglie né invia i tuoi dati personali allo sviluppatore. I tuoi dati rimangono sul telefono. Alcune funzionalità (meteo, mappe, componenti aggiuntivi, voce) si collegano direttamente a servizi di terze parti quando le utilizzi.</string>
+    <string name="initial_setup_privacy">Privacy: FermataX non raccoglie né invia dati personali allo sviluppatore. Alcune funzioni (meteo, mappe, componenti aggiuntivi, voce, posizione) si collegano direttamente a servizi esterni. Sui telefoni con Google Play Services, Google può elaborare la posizione secondo le impostazioni di Precisione della geolocalizzazione Google del dispositivo. FermataX non invia posizioni ai propri server.</string>
     <string name="initial_setup_required">Necessario per le funzioni principali</string>
     <string name="initial_setup_optional">Opzionale</string>
     <string name="initial_setup_allow">Consenti</string>

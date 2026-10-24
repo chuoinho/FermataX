@@ -28,7 +28,7 @@
     <string name="readiness_screen_capture_info">Android bittet um Bestätigung, sobald die Bildschirmfreigabe startet.</string>
     <string name="readiness_battery">Akku-Optimierung</string>
     <string name="readiness_battery_exempt">Von der Akku-Optimierung ausgenommen.</string>
-    <string name="readiness_battery_managed">Android verwaltet die Akkunutzung; dies weist für sich allein nicht auf ein Problem hin.</string>
+    <string name="readiness_battery_managed">Auf manchen Telefonen kann Android FermataX im Hintergrund beenden. Von der Akkuoptimierung ausnehmen, damit Geschwindigkeitsanzeige und Fahrtstatistiken genau bleiben.</string>
     <string name="readiness_unknown">Nicht überprüft</string>
     <string name="readiness_not_applicable">Nicht zutreffend</string>
     <string name="readiness_connection_disconnected">Android Auto ist nicht verbunden.</string>

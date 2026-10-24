@@ -27,7 +27,7 @@
 	<string name="readiness_screen_capture_info">Android will ask for confirmation when screen sharing starts.</string>
 	<string name="readiness_battery">Battery optimization</string>
 	<string name="readiness_battery_exempt">Excluded from battery optimization.</string>
-	<string name="readiness_battery_managed">Android is managing battery use; this does not by itself indicate a problem.</string>
+	<string name="readiness_battery_managed">部分手機的 Android 可能停止背景執行的 FermataX。請將它排除於電池最佳化之外，以保持速度卡片和行程資料準確。</string>
 	<string name="readiness_unknown">Not verified</string>
 	<string name="readiness_not_applicable">Not applicable</string>
 	<string name="readiness_connection_disconnected">Android Auto is not connected.</string>

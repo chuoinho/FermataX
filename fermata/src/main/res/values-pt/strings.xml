@@ -599,7 +599,7 @@
 
     <!-- Initial Setup Permissions -->
     <string name="initial_setup_permissions_title">Permissões</string>
-    <string name="initial_setup_privacy">Privacidade: o FermataX não recolhe nem envia os seus dados pessoais ao programador. Os seus dados ficam no telefone. Algumas funções (clima, mapas, extras, voz) ligam-se diretamente a serviços de terceiros quando as usa.</string>
+    <string name="initial_setup_privacy">Privacidade: O FermataX não recolhe nem envia dados pessoais ao programador. Algumas funcionalidades (meteorologia, mapas, complementos, voz, localização) ligam-se diretamente a serviços externos. Em telemóveis com Google Play Services, a Google pode processar a localização de acordo com as definições de Precisão da localização Google do dispositivo. O FermataX não envia localizações para servidores próprios.</string>
     <string name="initial_setup_required">Necessárias para as funções principais</string>
     <string name="initial_setup_optional">Opcionais</string>
     <string name="initial_setup_allow">Permitir</string>

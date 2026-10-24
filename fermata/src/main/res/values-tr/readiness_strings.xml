@@ -28,7 +28,7 @@
     <string name="readiness_screen_capture_info">Ekran paylaşımı başladığında Android onay isteyecektir.</string>
     <string name="readiness_battery">Pil optimizasyonu</string>
     <string name="readiness_battery_exempt">Pil optimizasyonundan muaf tutuldu.</string>
-    <string name="readiness_battery_managed">Android pil kullanımını yönetiyor; bu durum tek başına bir sorun olduğu anlamına gelmez.</string>
+    <string name="readiness_battery_managed">Bazı telefonlarda Android arka plandaki FermataX uygulamasını durdurabilir. Hız kartı ve yolculuk bilgilerinin doğru kalması için pil optimizasyonundan hariç tutun.</string>
     <string name="readiness_unknown">Doğrulanmadı</string>
     <string name="readiness_not_applicable">Geçerli değil</string>
     <string name="readiness_connection_disconnected">Android Auto bağlı değil.</string>

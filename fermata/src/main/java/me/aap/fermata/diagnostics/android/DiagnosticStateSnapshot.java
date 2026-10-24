@@ -108,7 +108,11 @@ public final class DiagnosticStateSnapshot {
 	@SuppressWarnings("MissingPermission")
 	private static JSONObject location(Context context) throws Exception {
 		JSONObject json = new JSONObject();
-		LocationManager lm = context.getSystemService(LocationManager.class);
+		try {
+            int status = com.google.android.gms.common.GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
+            json.put("google_play_services", status == com.google.android.gms.common.ConnectionResult.SUCCESS ? "available" : "missing");
+        } catch (Throwable failure) { json.put("google_play_services", "error"); }
+        LocationManager lm = context.getSystemService(LocationManager.class);
 		if (lm == null) {
 			json.put("service", "missing");
 			return json;

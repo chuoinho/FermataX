@@ -514,7 +514,7 @@
     <string name="support_kofi_sub">Geliştirmeyi ko-fi.com/fermatax adresinden destekleyin</string>
     <string name="support_banner_text">FermataX\'ten memnun musunuz? Bir kahveyle destekleyin ☕</string>
     <string name="initial_setup_permissions_title">İzinler</string>
-    <string name="initial_setup_privacy">Gizlilik: FermataX kişisel verilerinizi toplamaz ve geliştiriciye göndermez. Verileriniz telefonunuzda kalır. Bazı özellikler (hava durumu, haritalar, eklentiler, ses) kullandığınızda doğrudan üçüncü taraf hizmetlere bağlanır.</string>
+    <string name="initial_setup_privacy">Gizlilik: FermataX kişisel verilerinizi toplamaz veya geliştiriciye göndermez. Bazı özellikler (hava durumu, haritalar, eklentiler, ses, konum) doğrudan üçüncü taraf hizmetlerine bağlanır. Google Play Services bulunan telefonlarda Google, cihazın Google Konum Doğruluğu ayarlarına göre konumu işleyebilir. FermataX kendi sunucularına konum göndermez.</string>
     <string name="initial_setup_required">Temel özellikler için gerekli</string>
     <string name="initial_setup_optional">İsteğe bağlı</string>
     <string name="initial_setup_allow">İzin ver</string>

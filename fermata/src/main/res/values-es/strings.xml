@@ -602,7 +602,7 @@ Por favor, reinicie la aplicación.</string>
 
     <!-- Initial Setup Permissions -->
     <string name="initial_setup_permissions_title">Permisos</string>
-    <string name="initial_setup_privacy">Privacidad: FermataX no recopila ni envía tus datos personales al desarrollador. Tus datos se quedan en tu teléfono. Algunas funciones (tiempo, mapas, complementos, voz) se conectan directamente a servicios de terceros cuando las usas.</string>
+    <string name="initial_setup_privacy">Privacidad: FermataX no recopila ni envía datos personales al desarrollador. Algunas funciones (tiempo, mapas, complementos, voz, ubicación) se conectan directamente a servicios externos. En teléfonos con Google Play Services, Google puede procesar la ubicación según los ajustes de Precisión de la ubicación de Google del dispositivo. FermataX no envía ubicaciones a sus propios servidores.</string>
     <string name="initial_setup_required">Necesarios para las funciones principales</string>
     <string name="initial_setup_optional">Opcionales</string>
     <string name="initial_setup_allow">Permitir</string>

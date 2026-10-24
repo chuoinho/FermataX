@@ -88,6 +88,35 @@ export function speedoVerdict(events, tripRows) {
   return { verdict: stale || gaps ? 'no_delivery' : 'unknown', evidence };
 }
 
+/** Observed source intervals end at unregister or the last event of that process/session. */
+export function sourceSummary(events) {
+  const fixes = {gps:0, google_fused:0, platform_fused:0};
+  const durationMs = {...fixes};
+  let changes = 0;
+  const streams = new Map();
+  for (const e of events) {
+    if (e.event === 'speedo_fix_summary') for (const source of Object.keys(fixes))
+      fixes[source] += Number(e.data?.['src_' + source]) || 0;
+    const key = JSON.stringify([e.session_id, e.process, e.pid]);
+    if (!streams.has(key)) streams.set(key, []);
+    streams.get(key).push(e);
+  }
+  for (const stream of streams.values()) {
+    stream.sort((a,b) => a.elapsed_ms - b.elapsed_ms);
+    let source, previous;
+    for (const e of stream) {
+      if (source && Number.isFinite(e.elapsed_ms) && Number.isFinite(previous))
+        durationMs[source] += Math.max(0, e.elapsed_ms - previous);
+      previous = e.elapsed_ms;
+      if (e.event === 'location_source_changed') {
+        changes++;
+        source = Object.hasOwn(fixes, e.data?.to) ? e.data.to : undefined;
+      } else if (e.event === 'location_unregistered') source = undefined;
+    }
+  }
+  return {changes, fixes, durationMs};
+}
+
 /** Summary of one trip log (rows split on commas, header lines removed). */
 export function tripSummary(rows) {
   const fixes = rows.filter((r) => r[0] === 'L');
@@ -137,6 +166,7 @@ function analyze(zipPath, { area, aroundErrorsS = 30, json = false }) {
     manifest,
     state,
     speedo: speedoVerdict(events, allRows),
+    sources: sourceSummary(events),
     trips: trips.map((t) => ({ name: t.name, ...tripSummary(t.rows) })),
     events: area ? events.filter((e) => e.category === area) : events,
   };
@@ -151,6 +181,10 @@ function analyze(zipPath, { area, aroundErrorsS = 30, json = false }) {
   out.push('== Speedo');
   out.push(`verdict: ${result.speedo.verdict}`);
   for (const ev of result.speedo.evidence) out.push(`  - ${ev}`);
+  out.push('== Location sources');
+  out.push('source changes: ' + result.sources.changes);
+  for (const source of Object.keys(result.sources.fixes))
+    out.push(source + ': ' + result.sources.fixes[source] + ' fixes, ' + result.sources.durationMs[source] + ' ms observed');
   out.push('== Trip logs');
   if (!result.trips.length) out.push('(none)');
   for (const t of result.trips) {

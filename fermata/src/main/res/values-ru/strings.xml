@@ -594,7 +594,7 @@
 
     <!-- Initial Setup Permissions -->
     <string name="initial_setup_permissions_title">Разрешения</string>
-    <string name="initial_setup_privacy">Конфиденциальность: FermataX не собирает и не отправляет ваши персональные данные разработчику. Данные хранятся только на телефоне. Некоторые функции (погода, карты, дополнения, голос) при использовании напрямую обращаются к сторонним сервисам.</string>
+    <string name="initial_setup_privacy">Конфиденциальность: FermataX не собирает и не отправляет личные данные разработчику. Некоторые функции (погода, карты, дополнения, голос, местоположение) подключаются напрямую к сторонним сервисам. На телефонах с Google Play Services Google может обрабатывать местоположение согласно настройкам точности геолокации Google на устройстве. FermataX не отправляет местоположение на свои серверы.</string>
     <string name="initial_setup_required">Нужны для основных функций</string>
     <string name="initial_setup_optional">Необязательные</string>
     <string name="initial_setup_allow">Разрешить</string>

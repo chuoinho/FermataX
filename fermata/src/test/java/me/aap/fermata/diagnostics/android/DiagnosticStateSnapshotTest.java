@@ -30,6 +30,7 @@ public class DiagnosticStateSnapshotTest {
 				.getJSONObject("android.permission.ACCESS_FINE_LOCATION").get("granted");
 		assertTrue(fine instanceof Boolean);
 		assertEquals("not_installed", json.getJSONObject("auto").getString("gearhead_version"));
+        assertEquals("missing", json.getJSONObject("location").getString("google_play_services"));
 		assertFalse(text.contains("latitude"));
 		assertFalse(text.contains("longitude"));
 	}

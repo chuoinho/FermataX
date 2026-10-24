@@ -599,7 +599,7 @@
 
     <!-- Initial Setup Permissions -->
     <string name="initial_setup_permissions_title">權限</string>
-    <string name="initial_setup_privacy">隱私權：FermataX 不會收集或傳送您的個人資料給開發者。您的資料只儲存在手機上。部分功能（天氣、地圖、外掛、語音）使用時會直接連線到第三方服務。</string>
+    <string name="initial_setup_privacy">隱私權：FermataX 不會收集個人資料或將資料傳送給開發者。部分功能（天氣、地圖、外掛、語音、位置）會直接連線至第三方服務。在有 Google Play Services 的手機上，Google 可能依據裝置的「Google 位置資訊精確度」設定處理位置。FermataX 不會將位置傳送至自己的伺服器。</string>
     <string name="initial_setup_required">主要功能所需</string>
     <string name="initial_setup_optional">選用</string>
     <string name="initial_setup_allow">允許</string>

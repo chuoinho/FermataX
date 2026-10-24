@@ -8,7 +8,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { readZip, parseJournal, speedoVerdict, tripSummary } from './analyze.mjs';
+import { readZip, parseJournal, speedoVerdict, tripSummary, sourceSummary } from './analyze.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.join(here, '..', '..', 'fermata', 'src', 'test', 'resources', 'diagnostics');
@@ -128,4 +128,23 @@ test('CLI prints the speedo verdict for a report', () => {
   assert.match(out, /no_delivery/);
   assert.match(out, /PPG-AN00/);
   assert.match(out, /600000/);
+});
+
+
+test('sourceSummary counts fixes, changes and observed source durations', () => {
+  const events = [
+    { session_id:'a', process:'main', elapsed_ms:0, event:'location_source_changed', data:{from:'none',to:'platform_fused'} },
+    { session_id:'a', process:'main', elapsed_ms:1000, event:'speedo_fix_summary', data:{src_gps:2,src_google_fused:1,src_platform_fused:5} },
+    { session_id:'a', process:'main', elapsed_ms:2000, event:'location_source_changed', data:{from:'platform_fused',to:'gps'} },
+    { session_id:'a', process:'main', elapsed_ms:5000, event:'speedo_fix_summary', data:{src_gps:3,src_google_fused:0,src_platform_fused:1} },
+  ];
+  assert.deepEqual(sourceSummary(events), {changes:2, fixes:{gps:5,google_fused:1,platform_fused:6}, durationMs:{gps:3000,google_fused:0,platform_fused:2000}});
+});
+test('sourceSummary never spans registrations or processes', () => {
+  assert.deepEqual(sourceSummary([
+    {session_id:'a',process:'main',elapsed_ms:0,event:'location_source_changed',data:{to:'gps'}},
+    {session_id:'a',process:'main',elapsed_ms:1000,event:'location_unregistered'},
+    {session_id:'a',process:'main',elapsed_ms:9000,event:'speedo_fix_summary',data:{}},
+    {session_id:'b',process:'main',elapsed_ms:20000,event:'speedo_fix_summary',data:{}}
+  ]).durationMs, {gps:1000,google_fused:0,platform_fused:0});
 });

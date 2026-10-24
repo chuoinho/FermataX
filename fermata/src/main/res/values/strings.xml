@@ -588,7 +588,7 @@
 
     <!-- Initial Setup Permissions -->
     <string name="initial_setup_permissions_title">Permissions</string>
-    <string name="initial_setup_privacy">Privacy: FermataX does not collect or send your personal data to the developer. Your data stays on your phone. Some features (weather, maps, addons, voice) connect directly to third-party services when you use them.</string>
+    <string name="initial_setup_privacy">Privacy: FermataX does not collect or send your personal data to the developer. Some features (weather, maps, addons, voice, location) connect directly to third-party services. On phones with Google Play Services, Google may process location according to the device’s Google Location Accuracy settings. FermataX sends no location to its own servers.</string>
     <string name="initial_setup_required">Needed for core features</string>
     <string name="initial_setup_optional">Optional</string>
     <string name="initial_setup_allow">Allow</string>
