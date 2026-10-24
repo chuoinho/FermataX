@@ -136,6 +136,11 @@ public class FermataApplication extends NetSplitCompatApp {
 	}
 
 	@Override
+	public boolean isLogFailureCallerEnabled() {
+		return getDiagnostics().isDetailedEnabled();
+	}
+
+	@Override
 	public void onLogFailure(Log.Level level, @Nullable Throwable error,
 			@Nullable StackTraceElement caller) {
 		AndroidDiagnosticsRuntime runtime = getDiagnostics();

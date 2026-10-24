@@ -56,28 +56,32 @@ public class AndroidLogger extends Logger {
 
 	@Override
 	public void logWarn(StringBuilder msg) {
-		App.get().onLogFailure(Log.Level.WARN, null, callerFrame(1));
+		App.get().onLogFailure(Log.Level.WARN, null,
+				App.get().isLogFailureCallerEnabled() ? callerFrame(1) : null);
 		String text = fileLog(msg, null);
 		if (BuildConfig.D) android.util.Log.w(tag, text);
 	}
 
 	@Override
 	public void logWarn(StringBuilder msg, Throwable ex) {
-		App.get().onLogFailure(Log.Level.WARN, ex, callerFrame(1));
+		App.get().onLogFailure(Log.Level.WARN, ex,
+				App.get().isLogFailureCallerEnabled() ? callerFrame(1) : null);
 		String text = fileLog(msg, ex);
 		if (BuildConfig.D) android.util.Log.w(tag, text, ex);
 	}
 
 	@Override
 	public void logError(StringBuilder msg) {
-		App.get().onLogFailure(Log.Level.ERROR, null, callerFrame(1));
+		App.get().onLogFailure(Log.Level.ERROR, null,
+				App.get().isLogFailureCallerEnabled() ? callerFrame(1) : null);
 		String text = fileLog(msg, null);
 		if (BuildConfig.D) android.util.Log.e(tag, text);
 	}
 
 	@Override
 	public void logError(StringBuilder msg, Throwable ex) {
-		App.get().onLogFailure(Log.Level.ERROR, ex, callerFrame(1));
+		App.get().onLogFailure(Log.Level.ERROR, ex,
+				App.get().isLogFailureCallerEnabled() ? callerFrame(1) : null);
 		String text = fileLog(msg, ex);
 		if (BuildConfig.D) android.util.Log.e(tag, text, ex);
 	}

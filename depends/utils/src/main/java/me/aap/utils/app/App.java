@@ -80,6 +80,11 @@ public class App extends android.app.Application {
 		return 64 * 1024;
 	}
 
+	/** Whether the log observer needs the caller frame for detailed diagnostics. */
+	public boolean isLogFailureCallerEnabled() {
+		return false;
+	}
+
 	/** Receives only severity and throwable; raw formatted log messages are intentionally omitted. */
 	public void onLogFailure(Log.Level level, @Nullable Throwable error) {
 	}
