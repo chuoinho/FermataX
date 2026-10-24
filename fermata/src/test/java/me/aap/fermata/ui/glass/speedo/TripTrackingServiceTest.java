@@ -336,6 +336,22 @@ public class TripTrackingServiceTest {
         assertEquals(TripTrackingService.ACTION_START_DASHBOARD, Shadows.shadowOf((Application) context).getNextStartedService().getAction());
         assertEquals(java.util.List.of("dashboard"), reasons);
     }
+    /** Android refuses the service when only the car screen shows the app, and the projection keeps location anyway. */
+    @Test public void carDashboardDoesNotTryTheService() {
+        whileInUseOnly();
+        while (Shadows.shadowOf((Application) context).getNextStartedService() != null) {}
+        java.util.List<Object> reasons = new java.util.ArrayList<>();
+        GlassSpeedoTripController.diagnosticsSink = (n,a) -> { if(n.equals("trip_service_start")) reasons.add(a.get("reason")); };
+        TripTrackingService.startForDashboard(context, true);
+        TripTrackingService.resumeDashboard(context);
+        assertNull(Shadows.shadowOf((Application) context).getNextStartedService());
+        assertEquals(java.util.List.of(), reasons);
+        TripTrackingService.dashboardClosed(context, true);
+        TripTrackingService.startForDashboard(context, false);
+        assertEquals(TripTrackingService.ACTION_START_DASHBOARD,
+                Shadows.shadowOf((Application) context).getNextStartedService().getAction());
+        GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
+    }
     @Test public void dashboardServiceStopsWhenClosedWithoutCar() {
         whileInUseOnly(); TripTrackingService.startForDashboard(context);
         TripTrackingService.dashboardClosed(context);

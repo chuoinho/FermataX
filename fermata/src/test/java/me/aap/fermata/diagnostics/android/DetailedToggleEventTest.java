@@ -60,13 +60,21 @@ public class DetailedToggleEventTest {
 		String on = "\"event\":\"detailed_changed\",\"data\":{\"enabled\":true}";
 		String off = "\"event\":\"detailed_changed\",\"data\":{\"enabled\":false}";
 		prefs.edit().putBoolean("DETAILED_ENABLED", true).commit();
-		runtime.syncPreferencesForTesting();
+		settle();
 		assertTrue(runtime.flush(3000L));
 		assertTrue(journal(app).contains(on));
 		prefs.edit().putBoolean("DETAILED_ENABLED", false).commit();
-		runtime.syncPreferencesForTesting();
+		settle();
 		assertTrue(runtime.flush(3000L));
 		assertTrue(journal(app).contains(off));
+	}
+
+	/** Runs the real path: the preference listener queues a sync, whose own write queues another. */
+	private void settle() throws Exception {
+		for (int i = 0; i < 3; i++) {
+			org.robolectric.shadows.ShadowLooper.idleMainLooper();
+			runtime.awaitIdleForTesting();
+		}
 	}
 
 	@Test

@@ -169,10 +169,10 @@ public final class AndroidDiagnosticsRuntime {
 		}
 	}
 
-	/** Runs the preference sync the Settings switch triggers, on the calling thread. */
+	/** Waits until the single diagnostics thread has run everything queued before this call. */
 	@androidx.annotation.VisibleForTesting
-	void syncPreferencesForTesting() {
-		syncRequestedDetailedState();
+	void awaitIdleForTesting() throws Exception {
+		executor.submit(() -> { }).get(5, TimeUnit.SECONDS);
 	}
 
 	/** Lets each Robolectric test install its own runtime. */

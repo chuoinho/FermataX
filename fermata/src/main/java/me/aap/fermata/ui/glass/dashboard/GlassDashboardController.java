@@ -327,7 +327,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         tripRegistry.addListener(tripListener);
         // The visible dashboard always records; the service only keeps recording when it is allowed to.
         tripRegistry.getController().start();
-        TripTrackingService.startForDashboard(activity.getContext());
+        TripTrackingService.startForDashboard(activity.getContext(), activity.isCarActivity());
         AutomotiveNavNotificationService.registerListener(this);
         speedoView.setTripMode(TripModePolicy.current(activity.getContext()));
 
@@ -356,7 +356,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         weatherClient.shutdown();
         tripRegistry.removeListener(tripListener);
         tripRegistry.getController().stop();
-        TripTrackingService.dashboardClosed(activity.getContext());
+        TripTrackingService.dashboardClosed(activity.getContext(), activity.isCarActivity());
         AutomotiveNavNotificationService.unregisterListener(this);
         mediaController.unbind();
     }

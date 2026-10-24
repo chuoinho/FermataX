@@ -132,6 +132,16 @@ public class TripTrackingService extends Service {
     }
 
     public static void startForDashboard(@NonNull Context context) {
+        startForDashboard(context, false);
+    }
+
+    /**
+     * Only a dashboard on the phone screen counts. Android refuses a while-in-use location service
+     * started while only the car screen shows the app, and the Android Auto binding keeps location
+     * available there even while another app covers the car screen.
+     */
+    public static void startForDashboard(@NonNull Context context, boolean onCar) {
+        if (onCar) return;
         dashboards++;
         resumeDashboard(context);
     }
@@ -152,6 +162,11 @@ public class TripTrackingService extends Service {
     }
 
     public static void dashboardClosed(@NonNull Context context) {
+        dashboardClosed(context, false);
+    }
+
+    public static void dashboardClosed(@NonNull Context context, boolean onCar) {
+        if (onCar) return;
         if (dashboards > 0) dashboards--;
         if (dashboards == 0 && !me.aap.fermata.auto.AutomotiveConnectionState.get().isProjectionConnected()
                 && TripModePolicy.current(context) != TripModePolicy.Mode.ON) stop(context);
