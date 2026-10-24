@@ -54,19 +54,21 @@ public class LocationHubAcceptanceTest {
     @Test public void twoConsumersShareOneRequest() {
         Object hub = Api.hub(ctx);
         Api.acquire(hub, "a", l -> {});
+        int initialRequests = requests();
         Api.acquire(hub, "b", l -> {});
         Api.idleAll();
-        assertEquals("one LocationManager request for two consumers", 1, requests());
+        assertEquals("one LocationManager request per source for two consumers", initialRequests, requests());
     }
 
     @Test public void releasingTheLastConsumerRemovesTheRequest() {
         Object hub = Api.hub(ctx);
         Api.acquire(hub, "a", l -> {});
+        int initialRequests = requests();
         Api.acquire(hub, "b", l -> {});
         Api.idleAll();
         Api.release(hub, "a");
         Api.idleAll();
-        assertEquals("still one request while a consumer remains", 1, requests());
+        assertEquals("same requests while a consumer remains", initialRequests, requests());
         Api.release(hub, "b");
         Api.idleAll();
         assertEquals("no request once every consumer released", 0, requests());

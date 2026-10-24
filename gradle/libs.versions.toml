@@ -41,6 +41,7 @@ googlePlayFeatureDelivery = "2.1.0"
 googlePlayAppUpdate = "2.1.0"
 googlePlayServicesAuth = "21.6.0"
 googlePlayServicesBase = "18.10.0"
+googlePlayServicesLocation = "21.3.0"
 
 # Google APIs
 googleHttpClientGson = "2.1.0"
@@ -82,6 +83,7 @@ androidxTestEspresso = "3.7.0"
 
 
 [libraries]
+googlePlayServicesLocation = { group = "com.google.android.gms", name = "play-services-location", version.ref = "googlePlayServicesLocation" }
 # AndroidX
 androidxAnnotation                = { group = "androidx.annotation",               name = "annotation",                    version.ref = "androidxAnnotation" }
 androidxAppcompat                 = { group = "androidx.appcompat",                 name = "appcompat",                     version.ref = "androidxAppcompat" }
@@ -161,3 +163,4 @@ android-application  = { id = "com.android.application",         version.ref = "
 android-library      = { id = "com.android.library",             version.ref = "agp" }
 android-dynamic      = { id = "com.android.dynamic-feature",     version.ref = "agp" }
 google-services      = { id = "com.google.gms.google-services",  version.ref = "googleServices" }
+

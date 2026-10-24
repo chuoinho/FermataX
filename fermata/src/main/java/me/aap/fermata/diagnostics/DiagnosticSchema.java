@@ -17,7 +17,7 @@ final class DiagnosticSchema {
 			"activity_destroyed", "activity_paused", "activity_resumed",
 			"application_initialized", "application_initializing", "auto_state_changed", "detailed_changed",
 			"location_gap_ended", "location_gap_started", "location_registered", "location_unregistered",
-			"location_watchdog", "log_dropped", "log_error", "log_warning", "speedo_fix_summary",
+			"location_source_changed", "location_watchdog", "log_dropped", "log_error", "log_warning", "speedo_fix_summary",
 			"speedo_signal_changed", "trip_service_start",
 			"addon_activity_create", "addon_activity_destroy", "addon_activity_pause",
 			"addon_activity_resume", "addon_callback_failed", "addon_install_cancelled",

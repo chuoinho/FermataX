@@ -34,6 +34,7 @@ import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 public final class LocationHub {
     public interface Listener {
         void onLocation(@NonNull Location location);
+        default void onLocation(@NonNull Location location, @NonNull LocationSource source) { onLocation(location); }
     }
 
     private static final String TAG = "LocationHub";
@@ -55,7 +56,11 @@ public final class LocationHub {
     private final HandlerThread thread;
     private final Handler handler;
     private final Map<String, Listener> consumers = new LinkedHashMap<>();
-    private final LocationListener locationListener;
+    @VisibleForTesting static volatile GoogleFusedSource.Factory googleFactory = GoogleFusedSource.DEFAULT;
+    private final Map<LocationSource, LocationListener> sourceListeners = new LinkedHashMap<>();
+    private GoogleFusedSource googleSource;
+    private final LocationSourceSelector selector = new LocationSourceSelector((from, to, reason) ->
+            record("location_source_changed", "from", from == null ? "none" : from.id(), "to", to.id(), "reason", reason));
 
     private volatile Location latestLocation;
     private boolean registered;
@@ -83,38 +88,29 @@ public final class LocationHub {
         this.thread = new HandlerThread("LocationHub");
         this.thread.start();
         this.handler = new Handler(this.thread.getLooper());
-        this.locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(@NonNull Location location) {
-                latestLocation = location;
-                List<Listener> targets;
-                synchronized (LocationHub.this) {
-                    lastDeliveryAt = SystemClock.elapsedRealtime();
-                    watchdogMs = WATCHDOG_FIRST_MS;
-                    if (inGap) {
-                        inGap = false;
-                        record("location_gap_ended", "duration_ms", lastDeliveryAt - gapStartedAt);
-                    }
-                    targets = new ArrayList<>(consumers.values());
-                }
-                for (Listener l : targets) {
-                    try {
-                        l.onLocation(location);
-                    } catch (Throwable t) {
-                        Log.w(TAG, "Consumer threw exception in onLocation", t);
-                    }
-                }
+    }
+
+    private void accept(Location location, LocationSource source) {
+        List<Listener> targets;
+        synchronized (this) {
+            if (consumers.isEmpty() || (source == LocationSource.GPS && !location.hasAccuracy())) return;
+            long now = SystemClock.elapsedRealtime();
+            long fixTime = location.getElapsedRealtimeNanos() / 1_000_000L;
+            if (fixTime > now || now - fixTime > 2000) return;
+            if (!selector.offer(source, fixTime)) return;
+            latestLocation = location;
+            lastDeliveryAt = now;
+            watchdogMs = WATCHDOG_FIRST_MS;
+            if (inGap) {
+                inGap = false;
+                record("location_gap_ended", "duration_ms", now - gapStartedAt);
             }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-            @Override
-            public void onProviderEnabled(@NonNull String provider) {}
-
-            @Override
-            public void onProviderDisabled(@NonNull String provider) {}
-        };
+            targets = new ArrayList<>(consumers.values());
+        }
+        for (Listener listener : targets) {
+            try { listener.onLocation(location, source); }
+            catch (Throwable t) { Log.w(TAG, "Consumer threw exception in onLocation", t); }
+        }
     }
 
     public synchronized void acquire(@NonNull String tag, @NonNull Listener l) {
@@ -255,54 +251,60 @@ public final class LocationHub {
             record("location_registered", "reason", "location_off");
             return;
         }
-        String provider = null;
-        Throwable failure = null;
-
-        boolean success = false;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            try {
-                if (locationManager.getProvider(LocationManager.FUSED_PROVIDER) != null) {
-                    locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER,
-                            highAccuracyRequest(), handler::post, locationListener);
-                    success = true;
-                    provider = LocationManager.FUSED_PROVIDER;
-                }
-            } catch (Throwable t) {
-                failure = t;
-                Log.d(TAG, "FUSED_PROVIDER registration failed, fallback to GPS", t);
+        registerPlatform(LocationSource.GPS, LocationManager.GPS_PROVIDER);
+        try {
+            googleSource = googleFactory.create(context, thread.getLooper(), l -> accept(l, LocationSource.GOOGLE_FUSED));
+            if (googleSource == null) record("location_registered", "provider", "google_fused", "reason", "no_google_services");
+            else {
+                googleSource.start();
+                registered = true;
+                record("location_registered", "provider", "google_fused", "reason", "ok");
             }
-        }
-
-        if (!success) {
-            try {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                        INTERVAL_MS, 0f, locationListener, thread.getLooper());
-                success = true;
-                provider = LocationManager.GPS_PROVIDER;
-            } catch (Throwable t) {
-                failure = t;
-                Log.w(TAG, "GPS_PROVIDER registration failed", t);
-            }
-        }
-        registered = success;
-        if (success) record("location_registered", "reason", "ok", "provider", provider);
-        else record("location_registered", "reason", "failed", "error_class",
-                (failure == null) ? "unknown" : failure.getClass().getSimpleName());
-        if (success) {
+        } catch (Throwable t) { googleRegistrationFailed(t); }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) registerPlatform(LocationSource.PLATFORM_FUSED, LocationManager.FUSED_PROVIDER);
+        else record("location_registered", "provider", "platform_fused", "reason", "unavailable");
+        if (registered) {
             lastDeliveryAt = SystemClock.elapsedRealtime();
             handler.removeCallbacks(watchdog);
             handler.postDelayed(watchdog, WATCHDOG_CHECK_MS);
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private void registerPlatform(LocationSource source, String provider) {
+        try {
+            if (locationManager.getProvider(provider) == null) {
+                record("location_registered", "provider", source.id(), "reason", "unavailable");
+                return;
+            }
+            LocationListener listener = location -> accept(location, source);
+            sourceListeners.put(source, listener);
+            if (source == LocationSource.PLATFORM_FUSED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                locationManager.requestLocationUpdates(provider, highAccuracyRequest(), handler::post, listener);
+            else locationManager.requestLocationUpdates(provider, INTERVAL_MS, 0f, listener, thread.getLooper());
+            registered = true;
+            record("location_registered", "provider", source.id(), "reason", "ok");
+        } catch (Throwable t) {
+            record("location_registered", "provider", source.id(), "reason", "failed", "error_class", t.getClass().getSimpleName());
+        }
+    }
+
+    static void googleRegistrationFailed(Throwable t) {
+        record("location_registered", "provider", "google_fused", "reason", "failed", "error_class", t.getClass().getSimpleName());
+    }
+
     private void unregister() {
         handler.removeCallbacks(watchdog);
         if (registered) record("location_unregistered");
-        if (locationManager != null && registered) {
-            try {
-                locationManager.removeUpdates(locationListener);
-            } catch (Throwable ignored) {}
+        if (locationManager != null) for (LocationListener listener : sourceListeners.values()) {
+            try { locationManager.removeUpdates(listener); } catch (Throwable ignored) {}
         }
+        sourceListeners.clear();
+        if (googleSource != null) {
+            try { googleSource.stop(); } catch (Throwable ignored) {}
+            googleSource = null;
+        }
+        selector.reset();
         registered = false;
     }
 
