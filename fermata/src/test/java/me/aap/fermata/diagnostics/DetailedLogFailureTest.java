@@ -1,5 +1,6 @@
 package me.aap.fermata.diagnostics;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -58,6 +59,24 @@ public class DetailedLogFailureTest {
 		String journal = journal();
 		assertTrue(journal, journal.contains("\"event\":\"log_dropped\""));
 		assertTrue(journal.contains("\"count\":1"));
+	}
+
+	@Test
+	public void loopingWarningWritesOneDroppedCountPerWindow() throws Exception {
+		recorder.setDetailedEnabled(true);
+		LogFailureLimiter limiter = new LogFailureLimiter(5, 50, 10_000);
+		for (int i = 0; i < 1_000; i++) limiter.record(recorder, false, null, FRAME, 0);
+		limiter.record(recorder, false, null, FRAME, 10_000);
+		String journal = journal();
+		assertEquals(journal, 1, count(journal, "\"event\":\"log_dropped\""));
+		assertTrue(journal.contains("\"count\":995"));
+		assertEquals(6, count(journal, "\"event\":\"log_warning\""));
+	}
+
+	private static int count(String text, String part) {
+		int n = 0;
+		for (int i = text.indexOf(part); i >= 0; i = text.indexOf(part, i + 1)) n++;
+		return n;
 	}
 
 	@Test

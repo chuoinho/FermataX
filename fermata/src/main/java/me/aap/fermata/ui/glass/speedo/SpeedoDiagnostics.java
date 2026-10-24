@@ -12,6 +12,7 @@ import java.util.Map;
  */
 final class SpeedoDiagnostics {
     static final long SUMMARY_MS = 30_000;
+    static final long FLAG_HOLD_MS = 3_000;
 
     interface Sink {
         void event(String name, Map<String, Object> attributes);
@@ -25,6 +26,7 @@ final class SpeedoDiagnostics {
     private long windowStart = -1;
     private TripEngine.Signal signal;
     private boolean speedUnknown;
+    private long flagSince = -1, lastFlagAt = -1;
 
     SpeedoDiagnostics(Sink sink) {
         this.sink = sink;
@@ -37,10 +39,31 @@ final class SpeedoDiagnostics {
         qualities.merge(quality, 1, Integer::sum);
     }
 
+    /**
+     * A signal change is recorded at once. A change of only the "no speed to show" flag, which
+     * flaps when Doppler comes and goes, is recorded once it has held for {@link #FLAG_HOLD_MS}
+     * and at most once per {@link #SUMMARY_MS}.
+     */
     void onState(TripEngine.Signal signal, boolean speedUnknown, long nowMs) {
-        if (signal == this.signal && speedUnknown == this.speedUnknown) return;
+        if (signal != this.signal) {
+            emitState(signal, speedUnknown);
+            return;
+        }
+        if (speedUnknown == this.speedUnknown) {
+            flagSince = -1;
+            return;
+        }
+        if (flagSince < 0) flagSince = nowMs;
+        if (nowMs - flagSince >= FLAG_HOLD_MS && (lastFlagAt < 0 || nowMs - lastFlagAt >= SUMMARY_MS)) {
+            lastFlagAt = nowMs;
+            emitState(signal, speedUnknown);
+        }
+    }
+
+    private void emitState(TripEngine.Signal signal, boolean speedUnknown) {
         this.signal = signal;
         this.speedUnknown = speedUnknown;
+        flagSince = -1;
         Map<String, Object> a = new LinkedHashMap<>();
         a.put("signal", signal.name());
         a.put("speed_unknown", speedUnknown);

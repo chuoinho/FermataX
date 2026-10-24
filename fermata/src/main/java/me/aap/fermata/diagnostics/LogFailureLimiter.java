@@ -46,12 +46,13 @@ public final class LogFailureLimiter {
 	 */
 	public boolean record(DiagnosticRecorder recorder, boolean error, Throwable failure,
 			StackTraceElement caller, long nowMs) {
+		String site = callSite(caller);
+		if (!tryAcquire(site, nowMs)) return false;
+		// Only an accepted record reports the drops, so a loop yields one count per window.
 		for (Map.Entry<String, Integer> e : drainDropped().entrySet()) {
 			recorder.recordDetailed("log", "log_dropped", null,
 					Map.of("call_site", e.getKey(), "count", e.getValue()));
 		}
-		String site = callSite(caller);
-		if (!tryAcquire(site, nowMs)) return false;
 		DiagnosticEvent.Builder event = DiagnosticEvent.builder("log", error ? "log_error" : "log_warning")
 				.scope(DiagnosticScope.DETAILED)
 				.priority(error ? DiagnosticPriority.ERROR : DiagnosticPriority.WARN)

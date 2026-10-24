@@ -82,6 +82,8 @@ final class TripLogRecorder {
         write(String.format(Locale.ROOT, "L,%d,%s,%s,%s,%s,%s,%d", t, l.getProvider(), step,
                 l.hasAccuracy() ? l.getAccuracy() : "", l.hasSpeed() ? l.getSpeed() : "",
                 speedAcc ? l.getSpeedAccuracyMetersPerSecond() : "", mock ? 1 : 0));
+        // About one small write a second, so an export during the trip sees the latest fixes.
+        flush();
     }
 
     void imu(long elapsedMs, boolean quiet) {

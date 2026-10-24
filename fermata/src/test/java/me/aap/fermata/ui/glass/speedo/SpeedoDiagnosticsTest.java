@@ -64,6 +64,19 @@ public class SpeedoDiagnosticsTest {
 
 	/** The fixtures are also the input of tools/diagnostics/analyze.test.mjs. */
 	@Test
+	public void flappingSpeedUnknownIsRateLimited() {
+		for (long period : new long[]{2_000, 4_000, 8_000}) {
+			names.clear();
+			SpeedoDiagnostics d = new SpeedoDiagnostics(sink);
+			for (long t = 0; t < 3_600_000; t += 1_000) {
+				d.onState(TripEngine.Signal.TRACKING, (t / period) % 2 == 1, t);
+			}
+			// One per 30 s at most for a flip of the speed flag (the first change is immediate).
+			assertTrue(period + ": " + names.size(), names.size() <= 121);
+		}
+	}
+
+	@Test
 	public void goldenFixtures() throws Exception {
 		golden("speedo-no-delivery.jsonl", record(this::noDelivery));
 		golden("speedo-no-doppler.jsonl", record(this::noDoppler));

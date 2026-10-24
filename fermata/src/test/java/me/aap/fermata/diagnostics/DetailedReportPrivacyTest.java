@@ -36,6 +36,11 @@ public class DetailedReportPrivacyTest {
 			"21.0281", "105.8342", "token=abc123", "/storage/emulated/0/Music", "My Song",
 			"user@example.com", "hunter2"};
 
+	@org.junit.Before
+	public void setUp() {
+		DiagnosticsRuntimeTestAccess.reset();
+	}
+
 	@After
 	public void tearDown() {
 		DiagnosticsRuntimeTestAccess.reset();

@@ -74,6 +74,15 @@ public class TripLogRecorderTest {
 		assertFalse(String.join("\n", onlyFileLines()).contains("L,5000"));
 	}
 
+	/** An export taken while the trip is still running must see the latest fixes. */
+	@Test
+	public void latestFixIsOnDiskBeforeTheTripEnds() throws Exception {
+		TripLogRecorder r = new TripLogRecorder(dir, () -> true);
+		r.event("start", 1_000);
+		r.location(fix(21.0281, 105.8342, 2_000));
+		assertTrue(onlyFileLines().toString(), onlyFileLines().contains("L,2000,gps,,5.0,10.0,,0"));
+	}
+
 	@Test
 	public void keepsNewestFiveFiles() throws Exception {
 		for (int i = 0; i < 7; i++) {

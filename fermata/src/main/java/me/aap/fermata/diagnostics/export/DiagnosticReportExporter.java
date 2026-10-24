@@ -262,10 +262,20 @@ public final class DiagnosticReportExporter {
 
 	/** Deletes every trip log, whatever its format. */
 	public static void clearTripLogs(Context context) {
+		deleteTripLogs(context, false);
+	}
+
+	/** Deletes trip logs in the old format, which holds coordinates. */
+	public static void clearLegacyTripLogs(Context context) {
+		deleteTripLogs(context, true);
+	}
+
+	private static void deleteTripLogs(Context context, boolean legacyOnly) {
 		File dir = context.getExternalFilesDir(TRIP_LOG_DIR);
 		File[] files = (dir == null) ? null : dir.listFiles((d, n) -> n.endsWith(".csv"));
 		if (files == null) return;
 		for (File f : files) {
+			if (legacyOnly && isTripLog(f)) continue;
 			if (!f.delete()) me.aap.utils.log.Log.w("Unable to delete trip log");
 		}
 	}

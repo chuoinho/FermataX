@@ -169,6 +169,12 @@ public final class AndroidDiagnosticsRuntime {
 		}
 	}
 
+	/** Runs the preference sync the Settings switch triggers, on the calling thread. */
+	@androidx.annotation.VisibleForTesting
+	void syncPreferencesForTesting() {
+		syncRequestedDetailedState();
+	}
+
 	/** Lets each Robolectric test install its own runtime. */
 	@androidx.annotation.VisibleForTesting
 	static void resetForTesting() {
@@ -224,12 +230,18 @@ public final class AndroidDiagnosticsRuntime {
 				(attributes == null) ? Collections.emptyMap() : attributes);
 	}
 
-	/** A switch of detailed diagnostics starts or ends a recording: trips from before it go. */
-	private void clearTripLogs() {
+	/**
+	 * Marks where detailed recording starts and stops. Essential, because the Settings switch turns
+	 * the preference off before the runtime sees it, so a detailed "off" event would be dropped.
+	 * Old trip logs with coordinates go; distance-only trips stay for export.
+	 */
+	private void detailedSwitched(boolean enabled) {
+		recordEssential("diagnostics", "detailed_changed", DiagnosticPriority.STATE, null,
+				Map.of("enabled", enabled));
 		Application app = application;
 		if (app == null) return;
 		try {
-			DiagnosticReportExporter.clearTripLogs(app);
+			DiagnosticReportExporter.clearLegacyTripLogs(app);
 		} catch (RuntimeException ignored) {
 			// Missing external storage must not block the switch.
 		}
@@ -256,12 +268,9 @@ public final class AndroidDiagnosticsRuntime {
 
 	public void setDetailedEnabled(boolean enabled) {
 		if ((preferences == null) || stopped.get()) return;
-		// Marks where detailed events start and stop: written while detailed is still/already on.
-		if (!enabled) recordDetailed("diagnostics", "detailed_changed", Map.of("enabled", false));
-		if (enabled != lastRequestedDetailedEnabled) clearTripLogs();
+		if (enabled != lastRequestedDetailedEnabled) detailedSwitched(enabled);
 		lastRequestedDetailedEnabled = enabled;
 		preferences.setDetailedEnabled(enabled, System.currentTimeMillis());
-		if (enabled) recordDetailed("diagnostics", "detailed_changed", Map.of("enabled", true));
 		executeSafely(this::syncDetailedState);
 	}
 
@@ -350,7 +359,7 @@ public final class AndroidDiagnosticsRuntime {
 		boolean requested = raw.getBoolean(
 				DiagnosticsPreferences.DETAILED_ENABLED.getName(), false);
 		if (requested != lastRequestedDetailedEnabled) {
-			clearTripLogs();
+			detailedSwitched(requested);
 			lastRequestedDetailedEnabled = requested;
 			preferences.setDetailedEnabled(requested, now);
 		} else if (requested && !preferences.isDetailedEnabled(now)) {
