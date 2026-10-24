@@ -35,7 +35,7 @@ public class GlassShortcutPickerDialog {
                 if (addons != null) {
                     for (AddonInfo info : addons) {
                         if (info != null && info.addonName != 0) {
-                            if (info.className.contains("cast") || "cast".equalsIgnoreCase(info.moduleName) || info.addonId == R.id.cast_addon) {
+                            if (info.className.contains("cast") || "cast".equalsIgnoreCase(info.moduleName)) {
                                 continue;
                             }
                             String title = context.getString(info.addonName);

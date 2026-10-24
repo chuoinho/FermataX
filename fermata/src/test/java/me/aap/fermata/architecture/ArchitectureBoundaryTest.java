@@ -25,7 +25,6 @@ public class ArchitectureBoundaryTest {
 			"project\\s*\\(\\s*(?:path\\s*:\\s*)?['\"]:([^'\"]+)['\"]");
 	private static final Map<String, String> ADDON_PACKAGES = Map.ofEntries(
 			Map.entry("audiobook", "me.aap.fermata.addon.audiobook."),
-			Map.entry("cast", "me.aap.fermata.addon.cast."),
 			Map.entry("exoplayer", "me.aap.fermata.engine.exoplayer."),
 			Map.entry("podcast", "me.aap.fermata.addon.podcast."),
 			Map.entry("radio", "me.aap.fermata.addon.radio."),

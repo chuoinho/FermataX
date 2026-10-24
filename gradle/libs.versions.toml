@@ -41,7 +41,6 @@ googlePlayFeatureDelivery = "2.1.0"
 googlePlayAppUpdate = "2.1.0"
 googlePlayServicesAuth = "21.6.0"
 googlePlayServicesBase = "18.10.0"
-googlePlayServicesCast = "22.3.1"
 
 # Google APIs
 googleHttpClientGson = "2.1.0"
@@ -113,7 +112,6 @@ googlePlayFeatureDelivery         = { group = "com.google.android.play",        
 googlePlayAppUpdate               = { group = "com.google.android.play",            name = "app-update",                    version.ref = "googlePlayAppUpdate" }
 googlePlayServicesAuth            = { group = "com.google.android.gms",             name = "play-services-auth",            version.ref = "googlePlayServicesAuth" }
 googlePlayServicesBase            = { group = "com.google.android.gms",             name = "play-services-base",            version.ref = "googlePlayServicesBase" }
-googlePlayServicesCast            = { group = "com.google.android.gms",             name = "play-services-cast-framework",  version.ref = "googlePlayServicesCast" }
 
 # Google APIs
 googleHttpClientGson              = { group = "com.google.http-client",             name = "google-http-client-gson",       version.ref = "googleHttpClientGson" }

@@ -59,7 +59,6 @@
 	<item name="tiktok_fragment" type="id" />
 	<item name="youtube_fragment" type="id" />
     <item name="web_browser_fragment" type="id" />
-    <item name="cast_addon" type="id" />
     <item name="chat_addon" type="id" />
     <item name="glass_addons_catalog_fragment" type="id" />
     <item name="catalog_addons_edit" type="id" />
