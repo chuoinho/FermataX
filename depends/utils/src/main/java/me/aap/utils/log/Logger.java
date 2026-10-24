@@ -33,9 +33,7 @@ public abstract class Logger {
 		StackTraceElement ste;
 
 		if (callerName || callerLocation) {
-			StackTraceElement[] st = Thread.currentThread().getStackTrace();
-			int off = getStackTraceOffset();
-			ste = (st.length > off) ? st[off] : null;
+			ste = callerFrame(1);
 		} else {
 			ste = null;
 		}
@@ -75,6 +73,16 @@ public abstract class Logger {
 
 	protected int getStackTraceOffset() {
 		return 3;
+	}
+
+	/**
+	 * The frame of the code that called {@link Log}, seen from a logger method that is
+	 * {@code extraDepth} frames below the {@link Log} method.
+	 */
+	protected StackTraceElement callerFrame(int extraDepth) {
+		StackTraceElement[] st = Thread.currentThread().getStackTrace();
+		int off = getStackTraceOffset() + extraDepth;
+		return (st.length > off) ? st[off] : null;
 	}
 
 	protected boolean addTimeStamp() {

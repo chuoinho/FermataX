@@ -20,6 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticRecorder;
+import me.aap.fermata.diagnostics.LogFailureLimiter;
 import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.media.engine.BitmapCache;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -47,6 +49,7 @@ public class FermataApplication extends NetSplitCompatApp {
 	private AndroidDiagnosticsRuntime diagnostics;
 	private final AtomicLong legacyDiagnosticWindow = new AtomicLong();
 	private final AtomicInteger legacyDiagnosticCount = new AtomicInteger();
+	private final LogFailureLimiter logFailures = new LogFailureLimiter(5, 50, 10_000L);
 
 	public static FermataApplication get() {
 		return App.get();
@@ -130,6 +133,19 @@ public class FermataApplication extends NetSplitCompatApp {
 		AndroidDiagnosticsRuntime runtime = AndroidDiagnosticsRuntime.get();
 		diagnostics = runtime;
 		return runtime;
+	}
+
+	@Override
+	public void onLogFailure(Log.Level level, @Nullable Throwable error,
+			@Nullable StackTraceElement caller) {
+		AndroidDiagnosticsRuntime runtime = getDiagnostics();
+		DiagnosticRecorder recorder = runtime.getRecorder();
+		if ((recorder != null) && runtime.isDetailedEnabled()) {
+			logFailures.record(recorder, level == Log.Level.ERROR, error, caller,
+					SystemClock.elapsedRealtime());
+		} else {
+			onLogFailure(level, error);
+		}
 	}
 
 	@Override

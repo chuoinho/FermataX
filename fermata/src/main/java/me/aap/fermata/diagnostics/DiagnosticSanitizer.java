@@ -55,7 +55,7 @@ public final class DiagnosticSanitizer {
 			Pattern.compile("^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$");
 	private static final Set<String> EVENT_ATTRIBUTE_KEYS = Collections.unmodifiableSet(
 			new HashSet<>(Arrays.asList(
-					"accepted", "activity_id", "adaptive_allowed", "addon_id", "allowed", "app_fullscreen",
+					"accepted", "activity_id", "adaptive_allowed", "addon_id", "allowed", "app_fullscreen", "call_site",
 					"attached", "attempt", "auto", "automotive", "bound", "browser_fullscreen", "byte_count",
 					"command_type", "count", "current_engine_class", "current_engine_id",
 					"duration_ms", "endpoint", "engine_class", "engine_fingerprint", "engine_id", "epoch",

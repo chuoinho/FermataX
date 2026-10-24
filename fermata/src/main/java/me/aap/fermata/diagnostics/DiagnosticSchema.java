@@ -5,7 +5,7 @@ import java.util.Set;
 /** Registry for non-user-authored identifiers allowed in exported diagnostic envelopes. */
 final class DiagnosticSchema {
 	private static final Set<String> CATEGORIES = Set.of(
-			"aa_startup", "addon", "application", "audiobook_source", "content",
+			"aa_startup", "addon", "application", "audiobook_source", "auto", "content", "location", "log", "speedo",
 			"database", "diagnostics", "engine", "engine_exoplayer", "engine_vlc", "legacy_log",
 			"hardware_input", "lifecycle", "navigation", "network", "performance", "playback",
 			"podcast_source", "process", "radio_source", "service", "service_connection",
@@ -15,7 +15,10 @@ final class DiagnosticSchema {
 	private static final Set<String> EVENTS = Set.of(
 			"aa_activity_destroyed", "aa_startup_started", "activity_created",
 			"activity_destroyed", "activity_paused", "activity_resumed",
-			"application_initialized", "application_initializing",
+			"application_initialized", "application_initializing", "auto_state_changed", "detailed_changed",
+			"location_gap_ended", "location_gap_started", "location_registered", "location_unregistered",
+			"location_watchdog", "log_dropped", "log_error", "log_warning", "speedo_fix_summary",
+			"speedo_signal_changed", "trip_service_start",
 			"addon_activity_create", "addon_activity_destroy", "addon_activity_pause",
 			"addon_activity_resume", "addon_callback_failed", "addon_install_cancelled",
 			"addon_install_completed",

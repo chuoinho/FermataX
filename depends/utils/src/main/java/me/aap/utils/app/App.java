@@ -84,6 +84,12 @@ public class App extends android.app.Application {
 	public void onLogFailure(Log.Level level, @Nullable Throwable error) {
 	}
 
+	/** Same as {@link #onLogFailure(Log.Level, Throwable)} plus the frame of the code that logged. */
+	public void onLogFailure(Log.Level level, @Nullable Throwable error,
+			@Nullable StackTraceElement caller) {
+		onLogFailure(level, error);
+	}
+
 	/** Structured observer hook for reusable utility boundaries; values must exclude user data. */
 	public void onDiagnosticEvent(String category, String event, Map<String, ?> attributes,
 			@Nullable Throwable error) {
