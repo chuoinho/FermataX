@@ -52,7 +52,8 @@ export function parseJournal(text) {
 
 /**
  * Why the speed card showed no speed: 'no_delivery' (the system gave no fixes), 'no_usable_speed'
- * (fixes arrived without a usable Doppler speed), 'ok', or 'unknown' (no speedo data).
+ * (fixes arrived without a usable Doppler speed), 'intermittent_delivery' (fixes arrive but stop
+ * for longer than 8 s at times), 'ok', or 'unknown' (no speedo data).
  */
 export function speedoVerdict(events, tripRows) {
   const evidence = [];
@@ -79,6 +80,10 @@ export function speedoVerdict(events, tripRows) {
   if (fixes === 0 && tripFixes === 0 && (stale || gaps)) return { verdict: 'no_delivery', evidence };
   if (fixes > 0 && usable / fixes < 0.2) return { verdict: 'no_usable_speed', evidence };
   if (fixes === 0 && unknownTracking) return { verdict: 'no_usable_speed', evidence };
+  const tripGaps = tripSummary(tripRows).gaps.length;
+  if (tripGaps) evidence.push(`${tripGaps} gap(s) longer than 8 s in the trip logs`);
+  // Fixes do arrive but stop for longer than the card waits: it shows "GPS signal lost" in between.
+  if ((fixes > 0 || tripFixes > 0) && (gaps || tripGaps)) return { verdict: 'intermittent_delivery', evidence };
   if (fixes > 0) return { verdict: 'ok', evidence };
   return { verdict: stale || gaps ? 'no_delivery' : 'unknown', evidence };
 }

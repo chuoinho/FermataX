@@ -81,6 +81,19 @@ test('fixes without Doppler are classified as no_usable_speed', () => {
   assert.equal(v.verdict, 'no_usable_speed');
 });
 
+// Seen on a real device: good Doppler, but fixes stop for ~11 s every ~20 s, so the card goes STALE.
+test('fixes with delivery gaps are classified as intermittent_delivery', () => {
+  const events = [
+    { category: 'location', event: 'location_gap_started', data: { stalled_for_ms: 9000 } },
+    { category: 'speedo', event: 'speedo_signal_changed', data: { signal: 'STALE', speed_unknown: false } },
+    { category: 'speedo', event: 'speedo_fix_summary', data: { fixes: 85, speed_ok: 85 } },
+  ];
+  assert.equal(speedoVerdict(events, []).verdict, 'intermittent_delivery');
+  const rows = [['L', '0', 'gps', '', '9', '0.0', '0.1', '0'], ['L', '11000', 'gps', '0', '9', '0.0', '0.1', '0']];
+  const summaryOnly = [{ category: 'speedo', event: 'speedo_fix_summary', data: { fixes: 2, speed_ok: 2 } }];
+  assert.equal(speedoVerdict(summaryOnly, rows).verdict, 'intermittent_delivery');
+});
+
 test('an empty journal gives unknown', () => {
   assert.equal(speedoVerdict([], []).verdict, 'unknown');
 });
