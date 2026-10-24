@@ -11,4 +11,8 @@
     <string name="trip_background_denied">未獲得「一律允許」位置權限</string>
     <string name="speedo_trip_hint_off">請在手機的設定中開啟行程記錄</string>
     <string name="speedo_trip_hint_background">請在手機上將位置權限設為「一律允許」以記錄行程</string>
+    <string name="trip_background_sub_off_still_allowed">已關閉。Android 中的位置權限仍為「一律允許」。如要調低，請開啟 Android 設定 → 應用程式 → FermataX → 權限 → 位置。</string>
+    <string name="trip_background_disabled_still_allowed">已關閉背景記錄，但 Android 仍允許 FermataX 以「一律允許」使用位置。要開啟權限頁面改為「僅在使用該應用程式時允許」嗎？</string>
+    <string name="trip_background_open_settings">開啟設定</string>
+    <string name="trip_background_keep">保留</string>
 </resources>

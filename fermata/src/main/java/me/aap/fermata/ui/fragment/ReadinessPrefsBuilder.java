@@ -124,11 +124,7 @@ final class ReadinessPrefsBuilder {
 		if (BuildConfig.TRIP_BACKGROUND_SUPPORTED) target.addButton(o -> {
 			TripModePolicy.Mode mode = TripModePolicy.current(context);
 			o.title = R.string.trip_background_title;
-			o.subtitle = switch (mode) {
-				case ON -> R.string.trip_background_sub_on;
-				case OFF -> R.string.trip_background_sub_off;
-				default -> R.string.trip_background_sub_needs_permission;
-			};
+			o.subtitle = InterfacePrefsBuilder.tripBackgroundSubtitle(mode, TripModePolicy.hasBackgroundLocation(context));
 			o.valueDrawable = createStatusDotDrawable(mode == TripModePolicy.Mode.ON);
 			o.onClick = () -> InterfacePrefsBuilder.toggleTripBackground(activity, this::scheduleRefresh);
 		});

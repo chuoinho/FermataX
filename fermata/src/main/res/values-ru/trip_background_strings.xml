@@ -11,4 +11,8 @@
     <string name="trip_background_denied">Разрешение на геоданные “Разрешить всегда” не предоставлено</string>
     <string name="speedo_trip_hint_off">Включите запись поездок в Настройках на телефоне</string>
     <string name="speedo_trip_hint_background">Разрешите геоданные “Всегда” на телефоне для записи поездок</string>
+    <string name="trip_background_sub_off_still_allowed">Выключено. В Android для доступа к местоположению всё ещё выбрано «Разрешать всегда». Чтобы изменить, откройте Настройки Android → Приложения → FermataX → Разрешения → Местоположение.</string>
+    <string name="trip_background_disabled_still_allowed">Фоновая запись выключена, но Android по-прежнему разрешает FermataX доступ к местоположению «Разрешать всегда». Открыть страницу разрешений, чтобы выбрать «Разрешать только во время использования приложения»?</string>
+    <string name="trip_background_open_settings">Открыть настройки</string>
+    <string name="trip_background_keep">Оставить</string>
 </resources>

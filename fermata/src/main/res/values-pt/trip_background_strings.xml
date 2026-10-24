@@ -11,4 +11,8 @@
     <string name="trip_background_denied">A permissão de localização “Permitir o tempo todo” não foi concedida</string>
     <string name="speedo_trip_hint_off">Ative o registro de viagens nas Definições do telefone</string>
     <string name="speedo_trip_hint_background">Permita a localização “O tempo todo” no telefone para registrar viagens</string>
+    <string name="trip_background_sub_off_still_allowed">Desativado. A localização continua em «Permitir sempre» no Android. Para reduzir, abra Definições do Android → Aplicações → FermataX → Permissões → Localização.</string>
+    <string name="trip_background_disabled_still_allowed">A gravação em segundo plano está desativada, mas o Android continua a permitir que o FermataX use a localização «Permitir sempre». Abrir a página de permissões para mudar para «Permitir apenas durante a utilização da aplicação»?</string>
+    <string name="trip_background_open_settings">Abrir definições</string>
+    <string name="trip_background_keep">Manter</string>
 </resources>

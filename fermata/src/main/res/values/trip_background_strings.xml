@@ -11,4 +11,8 @@
     <string name="trip_background_denied">Location permission “Allow all the time” was not granted</string>
     <string name="speedo_trip_hint_off">Turn on trip recording in Settings on the phone</string>
     <string name="speedo_trip_hint_background">Allow location “All the time” on the phone to record trips</string>
+    <string name="trip_background_sub_off_still_allowed">Off. Location is still set to “Allow all the time” in Android. To lower it, open Android Settings → Apps → FermataX → Permissions → Location.</string>
+    <string name="trip_background_disabled_still_allowed">Background recording is off, but Android still lets FermataX use location “Allow all the time”. Open the permission page to change it to “Allow only while using the app”?</string>
+    <string name="trip_background_open_settings">Open settings</string>
+    <string name="trip_background_keep">Keep</string>
 </resources>

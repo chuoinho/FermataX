@@ -11,4 +11,8 @@
     <string name="trip_background_denied">Chưa được cấp quyền vị trí “Luôn cho phép”</string>
     <string name="speedo_trip_hint_off">Bật ghi chuyến đi trong Cài đặt trên điện thoại</string>
     <string name="speedo_trip_hint_background">Cho phép vị trí “Luôn cho phép” trên điện thoại để ghi chuyến đi</string>
+    <string name="trip_background_sub_off_still_allowed">Đang tắt. Quyền vị trí trong Android vẫn là “Luôn cho phép”. Để hạ xuống, mở Cài đặt Android → Ứng dụng → FermataX → Quyền → Vị trí.</string>
+    <string name="trip_background_disabled_still_allowed">Đã tắt ghi nền, nhưng Android vẫn cho FermataX dùng vị trí “Luôn cho phép”. Mở trang quyền để đổi sang “Chỉ cho phép khi dùng ứng dụng”?</string>
+    <string name="trip_background_open_settings">Mở cài đặt</string>
+    <string name="trip_background_keep">Giữ nguyên</string>
 </resources>

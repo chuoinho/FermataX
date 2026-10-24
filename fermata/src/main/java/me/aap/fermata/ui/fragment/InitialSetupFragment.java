@@ -197,7 +197,9 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 				me.aap.fermata.ui.control.PhoneReadiness.hasNotificationListenerCheck(ctx),
 				() -> startSafely(activity, me.aap.fermata.ui.control.PhoneReadiness.createNotificationListenerSettingsIntent()));
 		if (BuildConfig.TRIP_BACKGROUND_SUPPORTED) {
-			addRow(activity, R.string.trip_background_title, R.string.initial_setup_perm_background_sub,
+			addRow(activity, R.string.trip_background_title, InterfacePrefsBuilder.tripBackgroundPurpose(
+					me.aap.fermata.ui.glass.speedo.TripModePolicy.current(ctx),
+					me.aap.fermata.ui.glass.speedo.TripModePolicy.hasBackgroundLocation(ctx)),
 					me.aap.fermata.ui.glass.speedo.TripModePolicy.current(ctx) == me.aap.fermata.ui.glass.speedo.TripModePolicy.Mode.ON,
 					() -> InterfacePrefsBuilder.toggleTripBackground(activity, this::updatePermissions));
 		}

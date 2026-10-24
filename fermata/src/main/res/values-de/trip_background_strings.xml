@@ -11,4 +11,8 @@
     <string name="trip_background_denied">Standortberechtigung „Immer zulassen“ wurde nicht erteilt</string>
     <string name="speedo_trip_hint_off">Fahrtaufzeichnung in den Einstellungen auf dem Telefon aktivieren</string>
     <string name="speedo_trip_hint_background">Standortberechtigung „Immer zulassen“ auf dem Telefon aktivieren, um Fahrten aufzuzeichnen</string>
+    <string name="trip_background_sub_off_still_allowed">Aus. Der Standortzugriff steht in Android weiterhin auf „Immer zulassen“. Zum Ändern Android-Einstellungen → Apps → FermataX → Berechtigungen → Standort öffnen.</string>
+    <string name="trip_background_disabled_still_allowed">Die Hintergrundaufzeichnung ist aus, aber Android erlaubt FermataX den Standortzugriff weiterhin mit „Immer zulassen“. Berechtigungsseite öffnen, um auf „Nur während der Nutzung der App zulassen“ zu wechseln?</string>
+    <string name="trip_background_open_settings">Einstellungen öffnen</string>
+    <string name="trip_background_keep">Beibehalten</string>
 </resources>

@@ -11,4 +11,8 @@
     <string name="trip_background_denied">“Her zaman izin ver” konum izni verilmedi</string>
     <string name="speedo_trip_hint_off">Telefonda Ayarlar\'dan seyahat kaydını açın</string>
     <string name="speedo_trip_hint_background">Seyahatleri kaydetmek için telefonda “Her zaman” konum izni verin</string>
+    <string name="trip_background_sub_off_still_allowed">Kapalı. Android’de konum izni hâlâ “Her zaman izin ver” olarak ayarlı. Düşürmek için Android Ayarlar → Uygulamalar → FermataX → İzinler → Konum’u açın.</string>
+    <string name="trip_background_disabled_still_allowed">Arka planda kayıt kapalı, ancak Android FermataX’in konumu “Her zaman izin ver” ile kullanmasına hâlâ izin veriyor. “Yalnızca uygulamayı kullanırken izin ver” olarak değiştirmek için izin sayfası açılsın mı?</string>
+    <string name="trip_background_open_settings">Ayarları aç</string>
+    <string name="trip_background_keep">Böyle kalsın</string>
 </resources>

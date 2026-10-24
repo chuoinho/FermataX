@@ -11,4 +11,8 @@
     <string name="trip_background_denied">Il permesso di geolocalizzazione “Consenti sempre” non è stato concesso</string>
     <string name="speedo_trip_hint_off">Attiva la registrazione del viaggio nelle Impostazioni del telefono</string>
     <string name="speedo_trip_hint_background">Consenti la posizione “Sempre” sul telefono per registrare i viaggi</string>
+    <string name="trip_background_sub_off_still_allowed">Disattivato. In Android la posizione è ancora impostata su “Consenti sempre”. Per ridurla apri Impostazioni Android → App → FermataX → Autorizzazioni → Posizione.</string>
+    <string name="trip_background_disabled_still_allowed">La registrazione in background è disattivata, ma Android consente ancora a FermataX di usare la posizione con “Consenti sempre”. Aprire la pagina delle autorizzazioni per passare a “Consenti solo mentre l’app è in uso”?</string>
+    <string name="trip_background_open_settings">Apri impostazioni</string>
+    <string name="trip_background_keep">Mantieni</string>
 </resources>

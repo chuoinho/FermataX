@@ -2,16 +2,20 @@ package me.aap.fermata.ui.fragment;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.control.PhoneReadiness;
 import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.glass.speedo.TripTrackingService;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.IntSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
@@ -111,7 +115,23 @@ final class InterfacePrefsBuilder {
 			TripModePolicy.setEnabled(ctx, false);
 			TripTrackingService.backgroundDisabled(ctx);
 			onChanged.run();
-			UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_disabled));
+			if (!offersPermissionDowngrade(ctx)) {
+				UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_disabled));
+				return;
+			}
+			// An app cannot revoke its own permission: only the user can lower it in Android settings.
+			DialogBuilder d = activity.createDialogBuilder(ctx);
+			d.setTitle(R.string.trip_background_title);
+			d.setMessage(R.string.trip_background_disabled_still_allowed);
+			d.setPositiveButton(R.string.trip_background_open_settings, (dlg, which) -> {
+				try {
+					ctx.startActivity(permissionSettingsIntent(ctx).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+				} catch (RuntimeException e) {
+					Log.e(e, "Unable to open app permission settings");
+				}
+			});
+			d.setNegativeButton(R.string.trip_background_keep, null);
+			d.show();
 			return;
 		}
 		// Store policy: a prominent disclosure must precede the background location request.
@@ -121,6 +141,32 @@ final class InterfacePrefsBuilder {
 		d.setPositiveButton(R.string.trip_background_continue, (dlg, which) -> requestTripBackground(activity, onChanged));
 		d.setNegativeButton(android.R.string.cancel, null);
 		d.show();
+	}
+
+	/** True while Android still allows location "all the time", which only the user can lower. */
+	static boolean offersPermissionDowngrade(Context ctx) {
+		return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) && TripModePolicy.hasBackgroundLocation(ctx);
+	}
+
+	static Intent permissionSettingsIntent(Context ctx) {
+		return ReadinessPrefsBuilder.settingsIntent(PhoneReadiness.Action.APP_DETAILS, ctx.getPackageName(),
+				Build.VERSION.SDK_INT);
+	}
+
+	/** Status line for the background recording row; says when Android still allows it all the time. */
+	static int tripBackgroundSubtitle(TripModePolicy.Mode mode, boolean backgroundGranted) {
+		return switch (mode) {
+			case ON -> R.string.trip_background_sub_on;
+			case OFF -> backgroundGranted ? R.string.trip_background_sub_off_still_allowed
+					: R.string.trip_background_sub_off;
+			default -> R.string.trip_background_sub_needs_permission;
+		};
+	}
+
+	/** Purpose line of the same row in the initial setup. */
+	static int tripBackgroundPurpose(TripModePolicy.Mode mode, boolean backgroundGranted) {
+		return ((mode == TripModePolicy.Mode.OFF) && backgroundGranted)
+				? R.string.trip_background_sub_off_still_allowed : R.string.initial_setup_perm_background_sub;
 	}
 
 	private static void requestTripBackground(MainActivityDelegate activity, Runnable onChanged) {
