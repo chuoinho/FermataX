@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phone_header_nothing_playing">Keine Wiedergabe</string>
+    <string name="phone_header_aa_disconnect">AA getrennt</string>
+    <string name="phone_header_aa_connected">AA verbunden</string>
+    <string name="phone_open_on_car_strip_title">Im Auto öffnen</string>
+</resources>

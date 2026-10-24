@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="move_left">Nach links verschieben</string>
+	<string name="move_right">Nach rechts verschieben</string>
+	<string name="move_up">Nach oben verschieben</string>
+	<string name="move_down">Nach unten verschieben</string>
+	<string name="download_failed">%1$s konnte nicht heruntergeladen werden</string>
+</resources>

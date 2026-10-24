@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trip_background_title">Standort aufzeichnen, während andere Apps auf dem Autobildschirm laufen</string>
+    <string name="trip_background_sub_on">Ein. Fahrtstrecke, Fahrzeit, Durchschnittsgeschwindigkeit und Parkplatz bleiben genau, selbst wenn Maps oder eine andere App auf dem Autobildschirm angezeigt wird.</string>
+    <string name="trip_background_sub_off">Aus. Wenn eine andere App auf dem Autobildschirm angezeigt wird, pausieren die Fahrtstatistiken und der Parkplatz ist möglicherweise ungenauer. Tippen zum Einschalten.</string>
+    <string name="trip_background_sub_needs_permission">Standortberechtigung ist nicht auf „Immer zulassen“ gesetzt, daher stoppt die Aufzeichnung, während eine andere App auf dem Autobildschirm läuft. Tippen zum Beheben.</string>
+    <string name="trip_background_disclosure">Um Fahrtstrecke, Zeit und Durchschnittsgeschwindigkeit beizubehalten und den Parkplatz zu speichern, selbst wenn eine andere App (wie Maps) auf dem Autobildschirm angezeigt wird, erfasst FermataX Ihren Standort im Hintergrund nur während Android Auto-Sitzungen. Der Standort verlässt niemals Ihr Telefon. Sie können dies jederzeit in den Einstellungen deaktivieren.\n\nWählen Sie auf dem nächsten Bildschirm „Immer zulassen“.</string>
+    <string name="trip_background_continue">Weiter</string>
+    <string name="trip_background_enabled">Hintergrundaufzeichnung ist aktiviert</string>
+    <string name="trip_background_disabled">Hintergrundaufzeichnung ist deaktiviert</string>
+    <string name="trip_background_denied">Standortberechtigung „Immer zulassen“ wurde nicht erteilt</string>
+    <string name="speedo_trip_hint_off">Fahrtaufzeichnung in den Einstellungen auf dem Telefon aktivieren</string>
+    <string name="speedo_trip_hint_background">Standortberechtigung „Immer zulassen“ auf dem Telefon aktivieren, um Fahrten aufzuzeichnen</string>
+</resources>

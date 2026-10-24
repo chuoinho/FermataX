@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trip_background_title">Registra la posizione mentre altre app sono sullo schermo dell\'auto</string>
+    <string name="trip_background_sub_on">Attivo. Distanza del viaggio, tempo, velocità media e luogo di parcheggio rimangono precisi anche quando Maps o un\'altra app è sullo schermo dell\'auto.</string>
+    <string name="trip_background_sub_off">Disattivo. Quando un\'altra app è sullo schermo dell\'auto, le statistiche del viaggio vengono messe in pausa e il parcheggio potrebbe essere meno preciso. Tocca per attivare.</string>
+    <string name="trip_background_sub_needs_permission">La posizione non è impostata su “Consenti sempre”, quindi la registrazione si interrompe mentre un\'altra app è sullo schermo dell\'auto. Tocca per correggere.</string>
+    <string name="trip_background_disclosure">Per conservare la distanza, il tempo e la velocità media del viaggio e salvare la posizione di parcheggio anche mentre un\'altra app (come Maps) è sullo schermo dell\'auto, FermataX rileva la tua posizione in background solo durante le sessioni di Android Auto. La posizione non lascia mai il tuo telefono. Puoi disattivare questa funzione in qualsiasi momento nelle Impostazioni.\n\nNella schermata successiva scegli “Consenti sempre”.</string>
+    <string name="trip_background_continue">Continua</string>
+    <string name="trip_background_enabled">Registrazione in background attivata</string>
+    <string name="trip_background_disabled">Registrazione in background disattivata</string>
+    <string name="trip_background_denied">Il permesso di geolocalizzazione “Consenti sempre” non è stato concesso</string>
+    <string name="speedo_trip_hint_off">Attiva la registrazione del viaggio nelle Impostazioni del telefono</string>
+    <string name="speedo_trip_hint_background">Consenti la posizione “Sempre” sul telefono per registrare i viaggi</string>
+</resources>

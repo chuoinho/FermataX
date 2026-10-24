@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Yedekleme ve geri yükleme</string>
+	<string name="backup_restore_sub">Taşınabilir ayarları ve hesapları cihazlar arasında aktarın</string>
+	<string name="backup_all_data">Tüm verileri yedekle</string>
+	<string name="backup_all_data_sub">Tek bir şifreli FermataX dosyası oluşturun</string>
+	<string name="restore_backup">Yedeği geri yükle</string>
+	<string name="restore_backup_sub">Bir .fxbackup dosyasını veya eski ZIP’i geri yükleyin</string>
+	<string name="backup_password_title">Yedeği koru</string>
+	<string name="backup_password">Yedek parolası</string>
+	<string name="backup_password_confirm">Parolayı doğrula</string>
+	<string name="backup_all_data_ok">Tüm taşınabilir veriler %1$s dosyasına kaydedildi.</string>
+	<string name="backup_all_data_failed">Yedek oluşturulamadı.</string>
+	<string name="restore_backup_ok">Yedek geri yüklendi.\nUygulamayı yeniden başlatın.</string>
+	<string name="restore_legacy_secure_skipped">Eski ayarlar geri yüklendi. Kuruluma bağlı kimlik bilgileri yeniden girilmelidir.\nUygulamayı yeniden başlatın.</string>
+	<string name="restore_backup_auth_failed">Yanlış parola veya bozuk yedek.</string>
+	<string name="restore_backup_unsupported">Yedek, desteklenmeyen daha yeni bir biçim kullanıyor.</string>
+	<string name="restore_backup_secure_unavailable">Güvenli depolama kullanılamıyor. Hiçbir veri geri yüklenmedi.</string>
+	<string name="restore_backup_failed">Yedek geri yüklenemedi. Mevcut veriler korundu.</string>
+</resources>

@@ -368,7 +368,7 @@ public interface MainActivityPrefs
     ;
 
 		private static final List<Lang> values = List.of(values());
-		private static final List<Lang> SUPPORTED_VALUES = List.of(EN, VI, RU, ES, PT, ZH_TW);
+		private static final List<Lang> SUPPORTED_VALUES = List.of(EN, VI, RU, ES, PT, ZH_TW, TR, DE, IT);
 		private static final Map<String, Lang> nameToValue = new HashMap<>();
 		public final Locale locale;
 

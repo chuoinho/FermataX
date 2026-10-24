@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="readiness_title">Verbindungs- und Berechtigungsprüfung</string>
+    <string name="readiness_subtitle">Android Auto-Verbindungsstatus und optionale Systemeinstellungen anzeigen.</string>
+    <string name="readiness_refresh">Erneut prüfen</string>
+    <string name="readiness_refresh_subtitle">Status aktualisieren, ohne Einstellungen zu ändern.</string>
+    <string name="readiness_connection">Android Auto-Verbindung</string>
+    <string name="readiness_control_session">Steuerungssitzung</string>
+    <string name="readiness_storage">Speicher- und Dateizugriff</string>
+    <string name="readiness_storage_granted">Erlaubt. FermataX kann Ihre lokalen Mediendateien, Ordner und Wiedergabelisten lesen.</string>
+    <string name="readiness_storage_not_granted">Nicht erlaubt. Tippen, um die Berechtigung für lokale Mediendateien zu erteilen.</string>
+    <string name="readiness_location">Standortzugriff</string>
+    <string name="readiness_location_granted">Erlaubt. Wird für Geschwindigkeitskarte, Wetter und Car Finder verwendet.</string>
+    <string name="readiness_location_not_granted">Nicht erlaubt. Tippen, um den Standort für Geschwindigkeitskarte, Wetter und Car Finder zuzulassen.</string>
+    <string name="readiness_accessibility">Bedienungshilfen (Spiegelung)</string>
+    <string name="readiness_accessibility_granted">Aktiviert. Ermöglicht Touch-Bedienung über den Autobildschirm während der Spiegelung.</string>
+    <string name="readiness_accessibility_not_granted">Deaktiviert. Erforderlich, wenn Sie Ihr Telefon über den Autobildschirm steuern möchten.</string>
+    <string name="readiness_microphone">Mikrofonzugriff</string>
+    <string name="readiness_microphone_granted">Erlaubt. Wird für Sprachsteuerung und Suche verwendet.</string>
+    <string name="readiness_microphone_not_granted">Nicht erlaubt. Tippen, um das Mikrofon für die Sprachsteuerung freizugeben.</string>
+    <string name="readiness_notifications">Benachrichtigungen</string>
+    <string name="readiness_notifications_enabled">Benachrichtigungen sind aktiviert.</string>
+    <string name="readiness_notifications_disabled">Benachrichtigungen sind deaktiviert. Sie können sie hier verwalten.</string>
+    <string name="readiness_overlay">Über anderen Apps anzeigen</string>
+    <string name="readiness_overlay_granted">Erlaubt. Nur erforderlich für Funktionen mit Overlay-Anzeige.</string>
+    <string name="readiness_overlay_not_granted">Nicht erlaubt. Nur erforderlich für Funktionen mit Overlay-Anzeige.</string>
+    <string name="readiness_screen_capture">Bildschirmaufnahme</string>
+    <string name="readiness_screen_capture_info">Android bittet um Bestätigung, sobald die Bildschirmfreigabe startet.</string>
+    <string name="readiness_battery">Akku-Optimierung</string>
+    <string name="readiness_battery_exempt">Von der Akku-Optimierung ausgenommen.</string>
+    <string name="readiness_battery_managed">Android verwaltet die Akkunutzung; dies weist für sich allein nicht auf ein Problem hin.</string>
+    <string name="readiness_unknown">Nicht überprüft</string>
+    <string name="readiness_not_applicable">Nicht zutreffend</string>
+    <string name="readiness_connection_disconnected">Android Auto ist nicht verbunden.</string>
+    <string name="readiness_connection_connected">Android Auto ist verbunden; FermataX ist auf dem Autobildschirm nicht geöffnet.</string>
+    <string name="readiness_connection_visible">FermataX ist auf dem Autobildschirm sichtbar.</string>
+    <string name="readiness_control_available">Der Steuerungskanal ist bereit.</string>
+    <string name="readiness_control_unavailable">Der Steuerungskanal ist nicht bereit.</string>
+    <string name="readiness_settings_unavailable">Diese Einstellungsseite ist auf diesem Gerät nicht verfügbar.</string>
+    <string name="readiness_nav_notification_access">Navigationsbenachrichtigungs-Zugriff</string>
+    <string name="readiness_nav_notification_access_granted">Aktiviert. Ermöglicht die Anzeige von Abbiegehinweisen auf dem Glass-Dashboard.</string>
+    <string name="readiness_nav_notification_access_not_granted">Deaktiviert. Tippen, um den Benachrichtigungszugriff für Abbiegehinweise zu erlauben.</string>
+</resources>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="readiness_title">Bağlantı ve izin kontrolü</string>
+    <string name="readiness_subtitle">Android Auto bağlantısını ve isteğe bağlı sistem ayarlarını görüntüleyin.</string>
+    <string name="readiness_refresh">Yeniden kontrol et</string>
+    <string name="readiness_refresh_subtitle">Ayarları değiştirmeden durumu yenileyin.</string>
+    <string name="readiness_connection">Android Auto bağlantısı</string>
+    <string name="readiness_control_session">Kontrol oturumu</string>
+    <string name="readiness_storage">Depolama ve dosya erişimi</string>
+    <string name="readiness_storage_granted">İzin verildi. FermataX yerel medya dosyalarınızı, klasörlerinizi ve çalma listelerinizi okuyabilir.</string>
+    <string name="readiness_storage_not_granted">İzin verilmedi. Yerel medya dosyalarına erişim izni vermek için dokunun.</string>
+    <string name="readiness_location">Konum erişimi</string>
+    <string name="readiness_location_granted">İzin verildi. Hız kartı, hava durumu ve Araç Bulucu için kullanılır.</string>
+    <string name="readiness_location_not_granted">İzin verilmedi. Hız kartı, hava durumu ve Araç Bulucu için konuma izin vermek üzere dokunun.</string>
+    <string name="readiness_accessibility">Erişilebilirlik hizmeti (Yansıtma)</string>
+    <string name="readiness_accessibility_granted">Etkin. Yansıtma sırasında araç ekranından dokunmatik kontrole izin verir.</string>
+    <string name="readiness_accessibility_not_granted">Devre dışı. Telefonunuzu araç ekranından kontrol etmek istiyorsanız gereklidir.</string>
+    <string name="readiness_microphone">Mikrofon erişimi</string>
+    <string name="readiness_microphone_granted">İzin verildi. Sesli kontrol ve arama için kullanılır.</string>
+    <string name="readiness_microphone_not_granted">İzin verilmedi. Sesli kontrol için mikrofona izin vermek üzere dokunun.</string>
+    <string name="readiness_notifications">Bildirimler</string>
+    <string name="readiness_notifications_enabled">Bildirimler etkin.</string>
+    <string name="readiness_notifications_disabled">Bildirimler devre dışı. Bunları buradan yönetebilirsiniz.</string>
+    <string name="readiness_overlay">Diğer uygulamaların üzerinde göster</string>
+    <string name="readiness_overlay_granted">İzin verildi. Yalnızca yer paylaşımı kullanan özellikler için gereklidir.</string>
+    <string name="readiness_overlay_not_granted">İzin verilmedi. Yalnızca yer paylaşımı kullanan özellikler için gereklidir.</string>
+    <string name="readiness_screen_capture">Ekran yakalama</string>
+    <string name="readiness_screen_capture_info">Ekran paylaşımı başladığında Android onay isteyecektir.</string>
+    <string name="readiness_battery">Pil optimizasyonu</string>
+    <string name="readiness_battery_exempt">Pil optimizasyonundan muaf tutuldu.</string>
+    <string name="readiness_battery_managed">Android pil kullanımını yönetiyor; bu durum tek başına bir sorun olduğu anlamına gelmez.</string>
+    <string name="readiness_unknown">Doğrulanmadı</string>
+    <string name="readiness_not_applicable">Geçerli değil</string>
+    <string name="readiness_connection_disconnected">Android Auto bağlı değil.</string>
+    <string name="readiness_connection_connected">Android Auto bağlı; FermataX araç ekranında açık değil.</string>
+    <string name="readiness_connection_visible">FermataX araç ekranında görünür durumda.</string>
+    <string name="readiness_control_available">Kontrol kanalı hazır.</string>
+    <string name="readiness_control_unavailable">Kontrol kanalı hazır değil.</string>
+    <string name="readiness_settings_unavailable">Bu ayarlar sayfası bu cihazda kullanılamıyor.</string>
+    <string name="readiness_nav_notification_access">Navigasyon bildirim dinleyicisi</string>
+    <string name="readiness_nav_notification_access_granted">Etkin. Glass panosunda adım adım navigasyon yansıtmasına izin verir.</string>
+    <string name="readiness_nav_notification_access_not_granted">Devre dışı. Adım adım navigasyon için bildirim erişimine izin vermek üzere dokunun.</string>
+</resources>

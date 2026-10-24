@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trip_background_title">Diğer uygulamalar araç ekranındayken konumu kaydet</string>
+    <string name="trip_background_sub_on">Açık. Haritalar veya başka bir uygulama araç ekranındayken bile seyahat mesafesi, süresi, ortalama hız ve park yeri doğru kalır.</string>
+    <string name="trip_background_sub_off">Kapalı. Başka bir uygulama araç ekranındayken seyahat istatistikleri duraklatılır ve park konumu daha az hassas olabilir. Açmak için dokunun.</string>
+    <string name="trip_background_sub_needs_permission">Konum “Her zaman izin ver” olarak ayarlanmamış, bu nedenle araç ekranında başka bir uygulama varken kayıt durur. Düzeltmek için dokunun.</string>
+    <string name="trip_background_disclosure">Seyahat mesafesini, süresini ve ortalama hızı korumak ve başka bir uygulama (örneğin Haritalar) araç ekranındayken bile nereye park ettiğinizi kaydetmek için FermataX, yalnızca Android Auto oturumları sırasında arka planda konumunuzu toplar. Konumunuz asla telefonunuzdan dışarı çıkmaz. Bunu Ayarlar\'dan istediğiniz zaman kapatabilirsiniz.\n\nSonraki ekranda “Her zaman izin ver” seçeneğini belirleyin.</string>
+    <string name="trip_background_continue">Devam</string>
+    <string name="trip_background_enabled">Arka planda kayıt açık</string>
+    <string name="trip_background_disabled">Arka planda kayıt kapalı</string>
+    <string name="trip_background_denied">“Her zaman izin ver” konum izni verilmedi</string>
+    <string name="speedo_trip_hint_off">Telefonda Ayarlar\'dan seyahat kaydını açın</string>
+    <string name="speedo_trip_hint_background">Seyahatleri kaydetmek için telefonda “Her zaman” konum izni verin</string>
+</resources>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE resources [
+    <!ENTITY action_find "bul|ara">
+    <!ENTITY action_open "aç">
+    <!ENTITY action_pause "duraklat">
+    <!ENTITY action_stop "durdur">
+    <!ENTITY action_play "oynat|başlat">
+    <!ENTITY location_folders "klasör(ler)?">
+    <!ENTITY location_favorites "favori(ler)?">
+    <!ENTITY location_playlists "çalma listeleri?">
+    <!ENTITY location_tv "tv">
+    <!ENTITY location_youtube "youtube">
+    <!ENTITY location_browser "tarayıcı">
+    <!ENTITY time_unit_second "saniye">
+    <!ENTITY time_unit_minute "dakika">
+    <!ENTITY time_unit_hour "saat">
+    ]>
+
+<resources>
+    <string name="vcmd_action_find">&action_find;</string>
+    <string name="vcmd_action_open">&action_open;</string>
+    <string name="vcmd_action_pause">&action_pause;</string>
+    <string name="vcmd_action_stop">&action_stop;</string>
+    <string name="vcmd_action_play">(&action_play;)|başlat</string>
+    <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
+    <string name="vcmd_action_sub_on">(((aç)|göster) )?altyazı(lar)?</string>
+    <string name="vcmd_action_sub_off">(((kapat)|gizle) )?altyazı(lar)?</string>
+    <string name="vcmd_action_sub_change">altyazı(ları)? değiştir</string>
+    <string name="vcmd_action_audio_change">ses akışını? değiştir</string>
+    <string name="vcmd_location_folders">&location_folders;</string>
+    <string name="vcmd_location_favorites">&location_favorites;</string>
+    <string name="vcmd_location_playlists">&location_playlists;</string>
+    <string name="vcmd_location_tv">&location_tv;</string>
+    <string name="vcmd_location_youtube">&location_youtube;</string>
+    <string name="vcmd_location_browser">&location_browser;</string>
+    <string name="vcmd_time_unit_second">&time_unit_second;</string>
+    <string name="vcmd_time_unit_minute">&time_unit_minute;</string>
+    <string name="vcmd_time_unit_hour">&time_unit_hour;</string>
+    <string name="vcmd_nums">sıfır bir iki üç dört beş altı yedi sekiz dokuz</string>
+
+    <string name="vcmd_cur_track">(göster )?geçerli parça</string>
+    <string name="vcmd_ff">(ileri|atla) (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_rw">(geri|geri sar) (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_find_play_open">(?&lt;A&gt;\\b(&action_find;)|(&action_play;)|(&action_open;)\\b)? ?((şurada: )?(?&lt;L&gt;\\b(&location_folders;)|(&location_favorites;)|(&location_playlists;)|(&location_tv;)|(&location_youtube;)|(&location_browser;)\\b))? ?(?&lt;Q&gt;.+)</string>
+    <string name="vcmd_chat">(chat( ?gpt)?)(?&lt;Q&gt;.*)</string>
+</resources>

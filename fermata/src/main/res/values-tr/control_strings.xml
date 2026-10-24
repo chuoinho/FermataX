@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phone_header_nothing_playing">Oynatılan içerik yok</string>
+    <string name="phone_header_aa_disconnect">AA bağlantısı kesildi</string>
+    <string name="phone_header_aa_connected">AA bağlandı</string>
+    <string name="phone_open_on_car_strip_title">Araçta aç</string>
+</resources>

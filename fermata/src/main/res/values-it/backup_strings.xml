@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="backup_restore">Backup e ripristino</string>
+	<string name="backup_restore_sub">Trasferisci impostazioni e account portabili tra dispositivi</string>
+	<string name="backup_all_data">Backup di tutti i dati</string>
+	<string name="backup_all_data_sub">Crea un unico file FermataX crittografato</string>
+	<string name="restore_backup">Ripristina backup</string>
+	<string name="restore_backup_sub">Ripristina un file .fxbackup o un vecchio ZIP</string>
+	<string name="backup_password_title">Proteggi backup</string>
+	<string name="backup_password">Password del backup</string>
+	<string name="backup_password_confirm">Conferma password</string>
+	<string name="backup_all_data_ok">Tutti i dati portabili sono stati salvati in %1$s.</string>
+	<string name="backup_all_data_failed">Impossibile creare il backup.</string>
+	<string name="restore_backup_ok">Backup ripristinato.\nRiavvia l’applicazione.</string>
+	<string name="restore_legacy_secure_skipped">Le vecchie impostazioni sono state ripristinate. Le credenziali legate all’installazione devono essere reinserite.\nRiavvia l’applicazione.</string>
+	<string name="restore_backup_auth_failed">Password errata o backup danneggiato.</string>
+	<string name="restore_backup_unsupported">Il backup usa un formato più recente non supportato.</string>
+	<string name="restore_backup_secure_unavailable">Archivio sicuro non disponibile. Nessun dato è stato ripristinato.</string>
+	<string name="restore_backup_failed">Impossibile ripristinare il backup. I dati esistenti sono stati conservati.</string>
+</resources>

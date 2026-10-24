@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="force_dark">Forza modalità scura, se supportata</string>
+    <string name="force_dark_sub">%1$s. Scegli "\"Automatico"\" per seguire il tema del dispositivo.</string>
+    <string name="force_dark_auto">Automatico</string>
+    <string name="force_dark_enabled">Attivato</string>
+    <string name="force_dark_disabled">Disattivato</string>
+    <string name="user_agent">Agente utente</string>
+    <string name="user_agent_desktop">User-Agent - Versione desktop</string>
+    <string name="desktop_version">Versione desktop</string>
+    <string name="full_screen">Schermo intero</string>
+    <string name="full_screen_exit">Esci da schermo intero</string>
+    <string name="retry">Riprova</string>
+    <string name="web_page_load_failed">Impossibile caricare la pagina</string>
+    <string name="web_page_load_failed_msg">Impossibile caricare:\n%1$s\n\nMotivo: %2$s\n\nWebView: %3$s</string>
+    <string name="video_scaling_fill_proportional">Estendi</string>
+    <string name="video_quality">Qualità video</string>
+    <string name="open_on_start">Apri all\'avvio</string>
+    <string name="auto_highest_video_quality">Seleziona automaticamente la qualità video più alta</string>
+    <string name="yt_auto_fullscreen">Schermo intero automatico</string>
+    <string name="try_to_skip_ad">Prova a saltare gli annunci</string>
+    <string name="sponsorblock_sub">Salta i segmenti di crowdsourcing mentre guardi YouTube.</string>
+    <string name="sponsorblock_enable">Abilita SponsorBlock</string>
+    <string name="sponsorblock_enable_sub">Recupera i dati del segmento da sponsor.ajay.app per il video corrente.</string>
+    <string name="sponsorblock_cat_sponsor">Segmenti di sponsor</string>
+    <string name="sponsorblock_cat_selfpromo">Autopromozione</string>
+    <string name="sponsorblock_cat_interaction">Promemoria di interazione</string>
+    <string name="sponsorblock_cat_intro">Intro e intervalli</string>
+    <string name="sponsorblock_cat_outro">Cartoline di chiusura e crediti</string>
+    <string name="sponsorblock_cat_preview">Anteprima e riepilogo</string>
+    <string name="sponsorblock_cat_hook">Hook</string>
+    <string name="sponsorblock_cat_music_offtopic">Sezioni non musicali</string>
+    <string name="sponsorblock_cat_filler">Riempitivo</string>
+    <string name="sponsorblock_cat_filler_sub">Categoria aggressiva; disabilitato per impostazione predefinita.</string>
+</resources>

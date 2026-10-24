@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="readiness_title">Controllo connessione e autorizzazioni</string>
+    <string name="readiness_subtitle">Visualizza lo stato della connessione Android Auto e le impostazioni di sistema opzionali.</string>
+    <string name="readiness_refresh">Controlla di nuovo</string>
+    <string name="readiness_refresh_subtitle">Aggiorna lo stato senza modificare le impostazioni.</string>
+    <string name="readiness_connection">Connessione Android Auto</string>
+    <string name="readiness_control_session">Sessione di controllo</string>
+    <string name="readiness_storage">Accesso a memoria e file</string>
+    <string name="readiness_storage_granted">Consentito. FermataX può leggere i file multimediali locali, le cartelle e le playlist.</string>
+    <string name="readiness_storage_not_granted">Non consentito. Tocca per concedere l\'autorizzazione per accedere ai file multimediali locali.</string>
+    <string name="readiness_location">Accesso alla posizione</string>
+    <string name="readiness_location_granted">Consentito. Utilizzato per scheda velocità, meteo e Car Finder.</string>
+    <string name="readiness_location_not_granted">Non consentito. Tocca per consentire la posizione per scheda velocità, meteo e Car Finder.</string>
+    <string name="readiness_accessibility">Accessibilità (Mirroring)</string>
+    <string name="readiness_accessibility_granted">Abilitato. Consente il controllo touch dallo schermo dell\'auto durante il mirroring.</string>
+    <string name="readiness_accessibility_not_granted">Disabilitato. Richiesto per controllare il telefono dallo schermo dell\'auto.</string>
+    <string name="readiness_microphone">Accesso al microfono</string>
+    <string name="readiness_microphone_granted">Consentito. Utilizzato per il controllo vocale e la ricerca.</string>
+    <string name="readiness_microphone_not_granted">Non consentito. Tocca per consentire il microfono per il controllo vocale.</string>
+    <string name="readiness_notifications">Notifiche</string>
+    <string name="readiness_notifications_enabled">Le notifiche sono abilitate.</string>
+    <string name="readiness_notifications_disabled">Le notifiche sono disabilitate. Puoi gestirle qui.</string>
+    <string name="readiness_overlay">Mostra sopra altre app</string>
+    <string name="readiness_overlay_granted">Consentito. Necessario solo per le funzioni che utilizzano un overlay.</string>
+    <string name="readiness_overlay_not_granted">Non consentito. Necessario solo per le funzioni che utilizzano un overlay.</string>
+    <string name="readiness_screen_capture">Cattura schermo</string>
+    <string name="readiness_screen_capture_info">Android chiederà conferma all\'avvio della condivisione dello schermo.</string>
+    <string name="readiness_battery">Ottimizzazione batteria</string>
+    <string name="readiness_battery_exempt">Escluso dall\'ottimizzazione della batteria.</string>
+    <string name="readiness_battery_managed">Android gestisce l\'uso della batteria; questo di per sé non indica un problema.</string>
+    <string name="readiness_unknown">Non verificato</string>
+    <string name="readiness_not_applicable">Non applicabile</string>
+    <string name="readiness_connection_disconnected">Android Auto non è connesso.</string>
+    <string name="readiness_connection_connected">Android Auto è connesso; FermataX non è aperto sullo schermo dell\'auto.</string>
+    <string name="readiness_connection_visible">FermataX è visibile sullo schermo dell\'auto.</string>
+    <string name="readiness_control_available">Il canale di controllo è pronto.</string>
+    <string name="readiness_control_unavailable">Il canale di controllo non è pronto.</string>
+    <string name="readiness_settings_unavailable">Questa pagina delle impostazioni non è disponibile su questo dispositivo.</string>
+    <string name="readiness_nav_notification_access">Rilevatore notifiche di navigazione</string>
+    <string name="readiness_nav_notification_access_granted">Abilitato. Consente il mirroring della navigazione passo-passo sulla dashboard Glass.</string>
+    <string name="readiness_nav_notification_access_not_granted">Disabilitato. Tocca per consentire l\'accesso alle notifiche per la navigazione passo-passo.</string>
+</resources>
