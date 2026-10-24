@@ -295,6 +295,8 @@ public final class LocationHub {
 
     private void unregister() {
         handler.removeCallbacks(watchdog);
+        inGap = false;
+        gapStartedAt = 0;
         if (registered) record("location_unregistered");
         if (locationManager != null) for (LocationListener listener : sourceListeners.values()) {
             try { locationManager.removeUpdates(listener); } catch (Throwable ignored) {}

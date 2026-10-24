@@ -67,6 +67,26 @@ public class LocationHubDiagnosticsTest {
 	}
 
 	@Test
+	public void closingAndReopeningDoesNotEndThePreviousDeliveryGap() {
+		shadowOf((Application) ctx).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION);
+		LocationHub hub = LocationHub.get(ctx);
+		hub.acquire("t", l -> { });
+		hub.checkWatchdogForTesting(SystemClock.elapsedRealtime() + 9_000);
+		assertTrue(names.contains("location_gap_started"));
+		hub.release("t");
+		ShadowSystemClock.advanceBy(Duration.ofMinutes(5));
+		hub.acquire("t", l -> { });
+		Location fix = new Location(LocationManager.GPS_PROVIDER);
+		fix.setAccuracy(5);
+		fix.setTime(System.currentTimeMillis());
+		fix.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+		shadowOf(lm).simulateLocation(fix);
+		ShadowLooper.idleMainLooper();
+		shadowOf(hub.getLooperForTesting()).idle();
+		assertTrue(names.toString(), !names.contains("location_gap_ended"));
+	}
+
+	@Test
 	public void deliveryGapStartsAndEnds() {
 		shadowOf((Application) ctx).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION);
 		LocationHub hub = LocationHub.get(ctx);
