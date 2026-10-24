@@ -10,6 +10,12 @@ import java.util.Map;
  * logged in a loop cannot push other failures out of the journal. Counts what it drops.
  */
 public final class LogFailureLimiter {
+	private static final java.util.concurrent.ScheduledExecutorService DROP_FLUSHER =
+			java.util.concurrent.Executors.newSingleThreadScheduledExecutor(task -> {
+				Thread thread = new Thread(task, "FermataX-LogDrops");
+				thread.setDaemon(true);
+				return thread;
+			});
 	private final int perSite;
 	private final int total;
 	private final long windowMs;
@@ -17,6 +23,7 @@ public final class LogFailureLimiter {
 	private final Map<String, Integer> dropped = new LinkedHashMap<>();
 	private long windowStart = Long.MIN_VALUE;
 	private int windowTotal;
+	private boolean dropFlushScheduled;
 
 	public LogFailureLimiter(int perSite, int total, long windowMs) {
 		this.perSite = perSite;
@@ -44,21 +51,37 @@ public final class LogFailureLimiter {
 	 * Records a logged warning or error as a detailed event identified by its call site. The log
 	 * message is never recorded: free text may carry titles, accounts or coordinates.
 	 */
-	public boolean record(DiagnosticRecorder recorder, boolean error, Throwable failure,
+	public synchronized boolean record(DiagnosticRecorder recorder, boolean error, Throwable failure,
 			StackTraceElement caller, long nowMs) {
 		String site = callSite(caller);
-		if (!tryAcquire(site, nowMs)) return false;
-		// Only an accepted record reports the drops, so a loop yields one count per window.
-		for (Map.Entry<String, Integer> e : drainDropped().entrySet()) {
-			recorder.recordDetailed("log", "log_dropped", null,
-					Map.of("call_site", e.getKey(), "count", e.getValue()));
+		if (!tryAcquire(site, nowMs)) {
+			if (!dropFlushScheduled) {
+				dropFlushScheduled = true;
+				DROP_FLUSHER.schedule(() -> flushDropped(recorder),
+						Math.max(0, windowMs - (nowMs - windowStart)),
+						java.util.concurrent.TimeUnit.MILLISECONDS);
+			}
+			return false;
 		}
+		writeDropped(recorder);
 		DiagnosticEvent.Builder event = DiagnosticEvent.builder("log", error ? "log_error" : "log_warning")
 				.scope(DiagnosticScope.DETAILED)
 				.priority(error ? DiagnosticPriority.ERROR : DiagnosticPriority.WARN)
 				.put("call_site", site);
 		if (failure != null) event.error(failure);
 		return recorder.record(event.build());
+	}
+
+	private synchronized void flushDropped(DiagnosticRecorder recorder) {
+		dropFlushScheduled = false;
+		writeDropped(recorder);
+	}
+
+	private void writeDropped(DiagnosticRecorder recorder) {
+		for (Map.Entry<String, Integer> e : drainDropped().entrySet()) {
+			recorder.recordDetailed("log", "log_dropped", null,
+					Map.of("call_site", e.getKey(), "count", e.getValue()));
+		}
 	}
 
 	static String callSite(StackTraceElement caller) {

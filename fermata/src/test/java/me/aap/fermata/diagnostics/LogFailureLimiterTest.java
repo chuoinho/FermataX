@@ -11,6 +11,34 @@ import org.junit.Test;
 
 public class LogFailureLimiterTest {
 
+	@Test public void stoppedWarningLoopStillReportsItsDropsAfterTheWindow() throws Exception {
+		java.io.File dir = java.nio.file.Files.createTempDirectory("log-drops").toFile();
+		DiagnosticRecorder recorder = DiagnosticRecorder.builder(dir)
+				.config(DiagnosticConfig.builder().flushIntervalMillis(10).build()).build();
+		try {
+			recorder.setDetailedEnabled(true);
+			LogFailureLimiter limiter = new LogFailureLimiter(1, 10, 50);
+			StackTraceElement caller = new StackTraceElement("Example", "loop", "Example.java", 1);
+			assertTrue(limiter.record(recorder, false, null, caller, 0));
+			assertFalse(limiter.record(recorder, false, null, caller, 1));
+			assertFalse(limiter.record(recorder, false, null, caller, 2));
+			long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
+			String journal = "";
+			do {
+				recorder.flush(1000);
+				StringBuilder text = new StringBuilder();
+				for (java.io.File f : dir.listFiles((d, n) -> n.endsWith(".jsonl"))) {
+					text.append(new String(java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8));
+				}
+				journal = text.toString();
+				if (journal.contains("\"event\":\"log_dropped\"")) break;
+				Thread.sleep(10);
+			} while (System.nanoTime() < deadline);
+			assertTrue(journal, journal.contains("\"event\":\"log_dropped\""));
+			assertTrue(journal, journal.contains("\"count\":2"));
+		} finally { recorder.close(); }
+	}
+
 	@Test
 	public void limitsEachCallSiteAndReportsDropped() {
 		LogFailureLimiter limiter = new LogFailureLimiter(5, 50, 10_000);
