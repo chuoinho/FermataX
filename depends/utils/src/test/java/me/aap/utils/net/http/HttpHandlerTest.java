@@ -39,6 +39,7 @@ import me.aap.utils.misc.TestUtils;
 import me.aap.utils.net.NetChannel;
 import me.aap.utils.net.NetHandler;
 import me.aap.utils.net.NetServer;
+import me.aap.utils.net.TlsTrustPolicy;
 import me.aap.utils.security.SecurityUtils;
 import me.aap.utils.vfs.VfsHttpHandler;
 import me.aap.utils.vfs.VfsManager;
@@ -120,6 +121,7 @@ public class HttpHandlerTest extends Assertions {
 		int nclients = 100;
 		Map<NetChannel, Integer> requests = new ConcurrentHashMap<>(nreq);
 		AtomicBoolean failed = new AtomicBoolean();
+		AtomicReference<Throwable> firstError = new AtomicReference<>();
 		HttpConnectionHandler http = new HttpConnectionHandler();
 		HttpRequestHandler reqHandler = (req) -> {
 			NetChannel ch = req.getChannel();
@@ -163,6 +165,7 @@ public class HttpHandlerTest extends Assertions {
 			tasks[i] = handler.connect(o -> {
 				o.address = addr;
 				o.ssl = useSsl;
+				if (useSsl) o.tlsTrustPolicy = TlsTrustPolicy.TRUST_ALL_USER_SOURCE;
 				o.opt.put(StandardSocketOptions.TCP_NODELAY, Boolean.TRUE);
 			}).then(ch -> {
 				for (int off = 0, len = 10; off < REQ.length; off += len) {
@@ -170,7 +173,9 @@ public class HttpHandlerTest extends Assertions {
 					int l = ((off + len) < REQ.length) ? len : (REQ.length - off);
 					ch.write(() -> ByteBuffer.wrap(REQ, o, l)).onFailure(err -> {
 						err.printStackTrace(System.out);
-						System.exit(1);
+						firstError.compareAndSet(null, err);
+						failed.set(true);
+						ch.close();
 					});
 				}
 
@@ -180,6 +185,12 @@ public class HttpHandlerTest extends Assertions {
 					if (!resp.hasRemaining()) return null;
 
 					return ch.read((bb, err) -> {
+						if (err != null) {
+							firstError.compareAndSet(null, err);
+							failed.set(true);
+							ch.close();
+							return;
+						}
 						resp.put(bb);
 
 						if (!resp.hasRemaining()) {
@@ -191,16 +202,28 @@ public class HttpHandlerTest extends Assertions {
 				});
 			}).onFailure(fail -> {
 				fail.printStackTrace(System.out);
-				System.exit(1);
+				firstError.compareAndSet(null, fail);
+				failed.set(true);
 			});
 		}
 
-		for (FutureSupplier<?> t : tasks) {
-			t.get();
+		try {
+			for (FutureSupplier<?> t : tasks) {
+				try {
+					t.get();
+				} catch (Throwable ex) {
+					firstError.compareAndSet(null, ex);
+					failed.set(true);
+				}
+			}
+		} finally {
+			server.close();
 		}
 
+		if (firstError.get() != null) {
+			fail(firstError.get());
+		}
 		assertFalse(failed.get());
-		server.close();
 	}
 
 	//	@RepeatedTest(10)
@@ -211,6 +234,7 @@ public class HttpHandlerTest extends Assertions {
 		int nclients = 100;
 		Map<NetChannel, Integer> requests = new ConcurrentHashMap<>(nreq);
 		AtomicBoolean failed = new AtomicBoolean();
+		AtomicReference<Throwable> firstError = new AtomicReference<>();
 		HttpConnectionHandler http = new HttpConnectionHandler();
 		HttpRequestHandler reqHandler = (req) -> {
 			NetChannel ch = req.getChannel();
@@ -249,6 +273,7 @@ public class HttpHandlerTest extends Assertions {
 			tasks[i] = handler.connect(o -> {
 				o.address = addr;
 				o.ssl = useSsl;
+				if (useSsl) o.tlsTrustPolicy = TlsTrustPolicy.TRUST_ALL_USER_SOURCE;
 			}).then(ch -> {
 				ch.write(() -> ByteBuffer.wrap(REQ));
 				ByteBuffer resp = ByteBuffer.allocate(RESP.length);
@@ -268,15 +293,27 @@ public class HttpHandlerTest extends Assertions {
 				});
 			}).onFailure(fail -> {
 				fail.printStackTrace();
+				firstError.compareAndSet(null, fail);
 				failed.set(true);
 			});
 		}
 
-		for (FutureSupplier<?> t : tasks) {
-			t.get();
+		try {
+			for (FutureSupplier<?> t : tasks) {
+				try {
+					t.get();
+				} catch (Throwable ex) {
+					firstError.compareAndSet(null, ex);
+					failed.set(true);
+				}
+			}
+		} finally {
+			server.close();
 		}
 
-		server.close();
+		if (firstError.get() != null) {
+			fail(firstError.get());
+		}
 		assertFalse(failed.get());
 	}
 
@@ -315,7 +352,8 @@ public class HttpHandlerTest extends Assertions {
 			return req.getPayload((payload, fail) -> {
 				if (fail != null) {
 					fail.printStackTrace();
-					System.exit(1);
+					done.completeExceptionally(fail);
+					return done;
 				}
 
 				assertEquals(len, payload.remaining());
@@ -362,6 +400,7 @@ public class HttpHandlerTest extends Assertions {
 			handler.connect(o -> {
 				o.address = addr;
 				o.ssl = useSsl;
+				if (useSsl) o.tlsTrustPolicy = TlsTrustPolicy.TRUST_ALL_USER_SOURCE;
 				o.opt.put(StandardSocketOptions.TCP_NODELAY, Boolean.TRUE);
 			}).onCompletion((ch, connectFail) -> {
 				if (connectFail != null) {
@@ -449,8 +488,11 @@ public class HttpHandlerTest extends Assertions {
 			});
 		}
 
-		done.get();
-		server.close();
+		try {
+			done.get();
+		} finally {
+			server.close();
+		}
 	}
 
 	@Test
@@ -744,7 +786,8 @@ public class HttpHandlerTest extends Assertions {
 			return req.getPayload((payload, fail) -> {
 				if (fail != null) {
 					fail.printStackTrace(System.out);
-					System.exit(1);
+					fail(fail);
+					return noOp();
 				}
 
 				assertEquals(len, payload.remaining());
@@ -769,7 +812,7 @@ public class HttpHandlerTest extends Assertions {
 					}
 				} catch (Exception ex) {
 					ex.printStackTrace(System.out);
-					System.exit(1);
+					fail(ex);
 					return noOp();
 				}
 			});
