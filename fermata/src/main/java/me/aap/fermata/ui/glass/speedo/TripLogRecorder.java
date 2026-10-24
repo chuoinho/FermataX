@@ -79,7 +79,7 @@ final class TripLogRecorder {
     void location(Location l, LocationSource source) {
         if (!active()) return;
         long t = l.getElapsedRealtimeNanos() / 1_000_000;
-        boolean speedAcc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && l.hasSpeedAccuracy();
+        boolean speedAcc = l.hasSpeedAccuracy();
         boolean mock = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? l.isMock() : l.isFromMockProvider();
         String step = (prev == null || (prevSource != null && source != null && prevSource != source)) ? "" : String.valueOf(Math.round(prev.distanceTo(l)));
         prev = l;

@@ -127,7 +127,7 @@ public class ProjectionActivity extends ActivityBase {
 	}
 
 	private FutureSupplier<?> checkAccessibilityPermission() {
-		if ((Build.VERSION.SDK_INT < Build.VERSION_CODES.O) || isAccessibilityEnabled())
+		if (isAccessibilityEnabled())
 			return completedVoid();
 		Log.i("Requesting ACTION_ACCESSIBILITY_SETTINGS permission");
 		return startActivityForResult(() -> {
@@ -189,14 +189,12 @@ public class ProjectionActivity extends ActivityBase {
 			var nmgr = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
 			if (nmgr == null) return;
 			var chid = "FermataProjectionPermission";
-			if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				nmgr.createNotificationChannel(new NotificationChannel(chid,
-						ctx.getString(R.string.app_name), NotificationManager.IMPORTANCE_HIGH));
-			}
+			nmgr.createNotificationChannel(new NotificationChannel(chid,
+					ctx.getString(R.string.app_name), NotificationManager.IMPORTANCE_HIGH));
 			var intent = new Intent(ctx, ProjectionActivity.class);
 			intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
 			var flags = PendingIntent.FLAG_UPDATE_CURRENT |
-					(VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
+					PendingIntent.FLAG_IMMUTABLE;
 			var pending = PendingIntent.getActivity(ctx, 0, intent, flags);
 			var notif = new NotificationCompat.Builder(ctx, chid)
 					.setSmallIcon(R.drawable.notification)

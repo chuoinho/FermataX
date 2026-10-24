@@ -30,7 +30,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(application = FermataApplication.class)
+@Config(sdk = 28, application = FermataApplication.class)
 public class PodcastDownloadCoordinatorTest {
 	private File directory;
 	private PodcastDownloadCoordinator coordinator;

@@ -54,7 +54,7 @@ final class NativeSessionAudioEffectsBackend
 		equalizer = create(() -> new Equalizer(EFFECT_PRIORITY, audioSessionId));
 		if (equalizer != null) capabilities.add(AudioEffectCapability.EQUALIZER);
 		equalizerTopology = readTopology(equalizer);
-		initialOnlyDynamicsEqualizer = (equalizer == null) && (SDK_INT >= P);
+		initialOnlyDynamicsEqualizer = (equalizer == null);
 
 		bassBoost = create(() -> new BassBoost(EFFECT_PRIORITY, audioSessionId));
 		if ((bassBoost != null) && strengthSupported(bassBoost)) capabilities.add(AudioEffectCapability.BASS_BOOST);
@@ -72,7 +72,7 @@ final class NativeSessionAudioEffectsBackend
 			}
 		}
 
-		if ((SDK_INT >= P) && !initialOnlyDynamicsEqualizer) {
+		if (!initialOnlyDynamicsEqualizer) {
 			dynamicsProcessing = create(() -> Api28.createDynamicsProcessing(audioSessionId));
 			if (dynamicsProcessing != null) capabilities.add(AudioEffectCapability.PREAMP);
 		}
@@ -379,7 +379,6 @@ final class NativeSessionAudioEffectsBackend
 		T create();
 	}
 
-	@RequiresApi(P)
 	private static final class Api28 {
 		static AudioEffect createDynamicsProcessing(int audioSessionId) {
 			return new android.media.audiofx.DynamicsProcessing(audioSessionId);

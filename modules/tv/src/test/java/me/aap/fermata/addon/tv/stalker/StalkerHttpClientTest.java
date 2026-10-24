@@ -45,7 +45,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(application = FermataApplication.class)
+@Config(sdk = 28, application = FermataApplication.class)
 public class StalkerHttpClientTest {
 	private static final String MAC = "00:1A:79:01:02:03";
 

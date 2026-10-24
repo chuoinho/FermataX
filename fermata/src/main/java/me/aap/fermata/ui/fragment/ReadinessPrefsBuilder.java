@@ -229,7 +229,6 @@ final class ReadinessPrefsBuilder {
 
 	@Nullable
 	private Boolean queryOverlay() {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return null;
 		try {
 			return Settings.canDrawOverlays(context);
 		} catch (RuntimeException ignored) {
@@ -239,7 +238,6 @@ final class ReadinessPrefsBuilder {
 
 	@Nullable
 	private Boolean queryBatteryExemption() {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return null;
 		try {
 			PowerManager power = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
 			return (power == null) ? null : power.isIgnoringBatteryOptimizations(context.getPackageName());

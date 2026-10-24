@@ -418,8 +418,8 @@
 	<string name="dashboard_back_to_list">Voltar à lista</string>
 	<string name="addon_name_audiobook">Audiolivros</string>
 	<string name="recent">Recente</string>
-	<string name="p2p_resolving">Resolvendo torrent...</string>
-	<string name="p2p_finding_peers">Encontrando pares...</string>
+	<string name="p2p_resolving">Resolvendo torrent…</string>
+	<string name="p2p_finding_peers">Encontrando pares…</string>
 	<string name="p2p_buffering_status">%1$d pares | %2$s/s | %3$d%%</string>
 	<string name="p2p_starting_player_status">%1$d pares | %2$s/s | Jogador inicial</string>
 	<string name="p2p_streaming_status">%1$d pares | %2$s/s | Jogando</string>
@@ -447,7 +447,7 @@
 	<string name="initial_setup_voice_auto">Detecção automática de inglês/vietnamita</string>
 	<string name="initial_setup_test_microphone">Microfone de teste</string>
 	<string name="initial_setup_test_disabled">O controle de voz está desativado.</string>
-	<string name="initial_setup_test_running">Audição...</string>
+	<string name="initial_setup_test_running">Audição…</string>
 	<string name="initial_setup_test_success">Teste de microfone: %1$s</string>
 	<string name="initial_setup_test_failed">O teste do microfone falhou. Você pode continuar e ativá-lo mais tarde.</string>
 	<string name="initial_setup_continue">Continuar para o painel</string>
@@ -506,7 +506,7 @@
     <string name="equalizer_apply_next_session">As alterações do equalizador foram guardadas. Serão aplicadas na próxima sessão de reprodução.</string>
     <string name="audio_effects_apply">Aplicar</string>
     <string name="audio_effects_draft">Alterações de EQ não salvas</string>
-    <string name="audio_effects_applying">Aplicando alterações de EQ...</string>
+    <string name="audio_effects_applying">Aplicando alterações de EQ…</string>
     <string name="audio_effects_applied">Alterações de EQ aplicadas</string>
     <string name="audio_effects_apply_failed">Alterações salvas, mas não puderam ser aplicadas</string>
     <string name="audio_effects_flat">Plano</string>
@@ -543,8 +543,8 @@
     <string name="car_finder_no_location">Nenhum local de estacionamento salvo ainda.\nEle será salvo automaticamente ao desconectar do Android Auto.</string>
     <string name="car_finder_pin_here">Fixar localização atual aqui</string>
     <string name="car_finder_pinned_success">Localização atual salva</string>
-    <string name="car_finder_waiting_gps">Aguardando sinal GPS...</string>
-    <string name="car_finder_measuring_gps">Medindo localização...</string>
+    <string name="car_finder_waiting_gps">Aguardando sinal GPS…</string>
+    <string name="car_finder_measuring_gps">Medindo localização…</string>
     <string name="car_finder_precise_find">Radar de precisão</string>
     <string name="car_finder_directions">Como chegar</string>
     <string name="car_finder_found_car">Encontrei meu carro</string>
@@ -560,7 +560,7 @@
     <string name="car_finder_saved_title">Estacionamento salvo</string>
     <string name="car_finder_notif_desc">Notificações quando o local de estacionamento é salvo ao sair do carro</string>
     <string name="car_finder_parked_auto">Local de estacionamento salvo ao desconectar do Android Auto.</string>
-    <string name="car_finder_address_resolving">Obtendo endereço...</string>
+    <string name="car_finder_address_resolving">Obtendo endereço…</string>
     <string name="car_finder_parked_ago_minutes">Estacionado há %1$d min</string>
     <string name="car_finder_parked_ago_hours">Estacionado há %1$d h</string>
     <string name="car_finder_walk_minutes">· %1$d min a pé</string>
@@ -584,7 +584,7 @@
     <string name="car_finder_delete_photo">Excluir</string>
     <string name="car_finder_photo_title">Foto do estacionamento</string>
     <string name="car_finder_add_note">Adicionar nota (ex: Coluna B2 #15)</string>
-    <string name="car_finder_note_hint">Coluna, andar, número da vaga...</string>
+    <string name="car_finder_note_hint">Coluna, andar, número da vaga…</string>
     <string name="car_finder_near_car_hint">Você está perto do seu carro (~%1$d m). Você também pode usar o modo Radar para direção precisa.</string>
     <string name="car_finder_conf_high">Preciso (±%1$d m)</string>
     <string name="car_finder_conf_med">Aproximado (±%1$d m)</string>
@@ -646,12 +646,12 @@
     <string name="speedo_reset_trip_confirm">Redefinir distância, velocidade média e tempo de condução?</string>
 
     <!-- Glass Weather & Speedo UI -->
-    <string name="glass_weather_waiting_gps">Aguardando sinal de satélite GPS...</string>
+    <string name="glass_weather_waiting_gps">Aguardando sinal de satélite GPS…</string>
     <string name="glass_weather_perm_phone_hint">Conceda a permissão de localização no telefone.</string>
     <string name="glass_weather_perm_car_hint">Conceda permissão de localização no celular para ver a previsão.</string>
     <string name="glass_weather_perm_needed">Permissão necessária</string>
     <string name="glass_weather_grant_btn">Conceder permissão</string>
-    <string name="glass_weather_locating">Localizando GPS...</string>
+    <string name="glass_weather_locating">Localizando GPS…</string>
     <string name="glass_speedo_trip_dist">DISTÂNCIA</string>
     <string name="glass_speedo_trip_avg">VEL. MÉDIA</string>
     <string name="glass_speedo_trip_time">TEMPO</string>
@@ -686,7 +686,7 @@
     <string name="glass_addon_desc_folders">Armazenamento local e externo</string>
     <string name="glass_addon_desc_favorites">Acesso rápido a faixas favoritas</string>
     <string name="glass_addon_desc_recent">Histórico de reprodução recente</string>
-    <string name="glass_media_buffering">CARREGANDO BUFFER...</string>
+    <string name="glass_media_buffering">CARREGANDO BUFFER…</string>
     <string name="glass_media_unknown_title">Título desconhecido</string>
 
     <!-- Units -->
@@ -704,7 +704,7 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Módulo de extensão</string>
     <string name="glass_weather_header">CLIMA E PREVISÃO</string>
-    <string name="glass_weather_updating">Atualizando...</string>
+    <string name="glass_weather_updating">Atualizando…</string>
     <string name="glass_speedo_card_title">VELOCIDADE E TRAJETO</string>
 
     <!-- Glass Quick Dock Actions -->

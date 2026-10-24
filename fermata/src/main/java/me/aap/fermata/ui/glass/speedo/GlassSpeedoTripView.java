@@ -212,10 +212,8 @@ public class GlassSpeedoTripView extends FrameLayout {
             confirmResetTrip(context);
             return true;
         });
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            String resetTip = safeGetString(context, R.string.speedo_reset_trip, "Reset Trip");
-            tripStatsRow.setTooltipText(resetTip);
-        }
+        String resetTip = safeGetString(context, R.string.speedo_reset_trip, "Reset Trip");
+        tripStatsRow.setTooltipText(resetTip);
 
         contentLayout.addView(tripStatsRow);
 

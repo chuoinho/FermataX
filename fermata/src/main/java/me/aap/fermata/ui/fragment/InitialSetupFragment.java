@@ -413,9 +413,7 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	private static Locale systemLocale() {
 		android.content.res.Configuration config =
 				android.content.res.Resources.getSystem().getConfiguration();
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N)
-			return config.getLocales().get(0);
-		return config.locale;
+		return config.getLocales().get(0);
 	}
 
 	private Locale selectedAppLocale() {

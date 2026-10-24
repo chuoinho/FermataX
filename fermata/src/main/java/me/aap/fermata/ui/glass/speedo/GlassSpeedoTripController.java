@@ -230,7 +230,7 @@ public final class GlassSpeedoTripController {
         long nowTime = now();
         long fixTime = location.getElapsedRealtimeNanos() > 0
                 ? location.getElapsedRealtimeNanos() / 1_000_000 : nowTime;
-        boolean speedAcc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && location.hasSpeedAccuracy();
+        boolean speedAcc = location.hasSpeedAccuracy();
         TripEngine.Fix fix = FixNormalizer.of(fixTime, location.getLatitude(), location.getLongitude(),
                 location.hasAccuracy(), location.getAccuracy(), location.hasSpeed(), location.getSpeed(),
                 speedAcc, speedAcc ? location.getSpeedAccuracyMetersPerSecond() : 0f, source);
@@ -352,9 +352,7 @@ public final class GlassSpeedoTripController {
     private boolean isLocationEnabled() {
         if (locationManager == null) return false;
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                if (!locationManager.isLocationEnabled()) return false;
-            }
+            if (!locationManager.isLocationEnabled()) return false;
             return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
                     || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
         } catch (Throwable e) {

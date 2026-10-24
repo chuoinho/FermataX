@@ -22,7 +22,7 @@ import java.util.Map;
 import me.aap.fermata.FermataApplication;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(application = FermataApplication.class)
+@Config(sdk = 28, application = FermataApplication.class)
 public class XmlTvCharacterizationTest {
 	private SQLiteDatabase database;
 

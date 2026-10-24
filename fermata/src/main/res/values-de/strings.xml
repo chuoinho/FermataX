@@ -176,7 +176,7 @@
     <string name="equalizer_apply_next_session">EQ-Änderungen wurden gespeichert. Sie werden in der nächsten Wiedergabesitzung angewendet.</string>
     <string name="audio_effects_apply">Anwenden</string>
     <string name="audio_effects_draft">Nicht gespeicherte EQ-Änderungen</string>
-    <string name="audio_effects_applying">EQ-Änderungen werden angewendet...</string>
+    <string name="audio_effects_applying">EQ-Änderungen werden angewendet…</string>
     <string name="audio_effects_applied">EQ-Änderungen angewendet</string>
     <string name="audio_effects_apply_failed">EQ-Änderungen gespeichert, konnten aber nicht angewendet werden</string>
     <string name="audio_effects_flat">Linear</string>
@@ -443,7 +443,7 @@
     <string name="initial_setup_voice_auto">Automatische Erkennung von Englisch/Vietnamesisch</string>
     <string name="initial_setup_test_microphone">Mikrofon testen</string>
     <string name="initial_setup_test_disabled">Die Sprachsteuerung ist deaktiviert.</string>
-    <string name="initial_setup_test_running">Hören...</string>
+    <string name="initial_setup_test_running">Hören…</string>
     <string name="initial_setup_test_success">Mikrofontest: %1$s</string>
     <string name="initial_setup_test_failed">Der Mikrofontest ist fehlgeschlagen. Sie können fortfahren und es später aktivieren.</string>
     <string name="initial_setup_continue">Weiter zum Dashboard</string>
@@ -460,8 +460,8 @@
     <string name="car_finder_no_location">Noch kein Parkplatz gespeichert.\nIhr Fahrzeugstandort wird automatisch gespeichert, wenn Sie die Verbindung zu Android Auto trennen.</string>
     <string name="car_finder_pin_here">Aktuellen Standort hier anheften</string>
     <string name="car_finder_pinned_success">Aktueller Standort gespeichert</string>
-    <string name="car_finder_waiting_gps">Warten auf GPS-Position...</string>
-    <string name="car_finder_measuring_gps">Standort wird ermittelt...</string>
+    <string name="car_finder_waiting_gps">Warten auf GPS-Position…</string>
+    <string name="car_finder_measuring_gps">Standort wird ermittelt…</string>
     <string name="car_finder_precise_find">Präzisionsradar</string>
     <string name="car_finder_directions">Route</string>
     <string name="car_finder_found_car">Auto gefunden</string>
@@ -477,7 +477,7 @@
     <string name="car_finder_saved_title">Fahrzeugparkplatz gespeichert</string>
     <string name="car_finder_notif_desc">Benachrichtigungen, wenn der Parkplatz nach Verlassen des Fahrzeugs gespeichert wird</string>
     <string name="car_finder_parked_auto">Parkplatz beim Trennen von Android Auto gespeichert.</string>
-    <string name="car_finder_address_resolving">Adresse wird aufgelöst...</string>
+    <string name="car_finder_address_resolving">Adresse wird aufgelöst…</string>
     <string name="car_finder_parked_ago_minutes">Vor %1$d Min. geparkt</string>
     <string name="car_finder_parked_ago_hours">Vor %1$d Std. geparkt</string>
     <string name="car_finder_walk_minutes">· %1$d Min. Fußweg</string>
@@ -501,7 +501,7 @@
     <string name="car_finder_delete_photo">Löschen</string>
     <string name="car_finder_photo_title">Parkplatzfoto</string>
     <string name="car_finder_add_note">Notiz hinzufügen (z. B. Säule B2 #15)</string>
-    <string name="car_finder_note_hint">Säule, Etage, Parkplatznummer...</string>
+    <string name="car_finder_note_hint">Säule, Etage, Parkplatznummer…</string>
     <string name="car_finder_near_car_hint">Sie sind in der Nähe Ihres Autos (~%1$d m). Sie können auch den Radarmodus für genaue Peilung nutzen.</string>
     <string name="car_finder_conf_high">Genau (±%1$d m)</string>
     <string name="car_finder_conf_med">Ungefähr (±%1$d m)</string>
@@ -553,12 +553,12 @@
     <string name="glass_rail_desc_collapsed">Navigationsleiste, eingeklappt</string>
     <string name="speedo_reset_trip">Fahrt zurücksetzen</string>
     <string name="speedo_reset_trip_confirm">Fahrtstrecke, Durchschnittsgeschwindigkeit und Fahrzeit zurücksetzen?</string>
-    <string name="glass_weather_waiting_gps">Warten auf GPS-Satellitensignal...</string>
+    <string name="glass_weather_waiting_gps">Warten auf GPS-Satellitensignal…</string>
     <string name="glass_weather_perm_phone_hint">Bitte Standortberechtigung auf dem Telefon erteilen.</string>
     <string name="glass_weather_perm_car_hint">Standortberechtigung auf dem Telefon erteilen, um Wetter anzuzeigen.</string>
     <string name="glass_weather_perm_needed">Berechtigung erforderlich</string>
     <string name="glass_weather_grant_btn">Berechtigung erteilen</string>
-    <string name="glass_weather_locating">GPS wird geortet...</string>
+    <string name="glass_weather_locating">GPS wird geortet…</string>
     <string name="glass_speedo_trip_dist">STRECKE</string>
     <string name="glass_speedo_trip_avg">DURCHSCHNITT</string>
     <string name="speedo_total_average">Durchschnitt einschließlich Stopps</string>
@@ -602,7 +602,7 @@
     <string name="glass_addon_desc_folders">Lokaler und externer Speicher</string>
     <string name="glass_addon_desc_favorites">Schnellzugriff auf markierte Titel</string>
     <string name="glass_addon_desc_recent">Zuletzt abgespielte Titel</string>
-    <string name="glass_media_buffering">PUFFERN...</string>
+    <string name="glass_media_buffering">PUFFERN…</string>
     <string name="glass_media_unknown_title">Unbekannter Titel</string>
     <string name="unit_m">m</string>
     <string name="unit_km">km</string>
@@ -614,7 +614,7 @@
     <string name="car_finder_camera_error">Kamerafehler: %1$s</string>
     <string name="glass_addon_module_desc">Zusatzmodul</string>
     <string name="glass_weather_header">WETTER &amp; VORHERSAGE</string>
-    <string name="glass_weather_updating">Aktualisierung...</string>
+    <string name="glass_weather_updating">Aktualisierung…</string>
     <string name="glass_speedo_card_title">GESCHWINDIGKEIT &amp; FAHRT</string>
     <string name="glass_shortcut_open">Öffnen</string>
     <string name="glass_shortcut_replace">Ersetzen</string>

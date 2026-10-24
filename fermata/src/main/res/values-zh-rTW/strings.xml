@@ -418,7 +418,7 @@
 	<string name="dashboard_back_to_list">返回列表</string>
 	<string name="addon_name_audiobook">有聲書</string>
 	<string name="recent">最近的</string>
-	<string name="p2p_resolving">解決 torrent...</string>
+	<string name="p2p_resolving">解決 torrent…</string>
 	<string name="p2p_finding_peers">尋找同行…</string>
 	<string name="p2p_buffering_status">%1$d 同行 | %2$s/秒 | %3$d%%</string>
 	<string name="p2p_starting_player_status">%1$d 同行 | %2$s/秒 |先發球員</string>
@@ -447,7 +447,7 @@
 	<string name="initial_setup_voice_auto">自動檢測英語/越南語</string>
 	<string name="initial_setup_test_microphone">測試麥克風</string>
 	<string name="initial_setup_test_disabled">語音控制已停用。</string>
-	<string name="initial_setup_test_running">聽...</string>
+	<string name="initial_setup_test_running">聽…</string>
 	<string name="initial_setup_test_success">麥克風測試：%1$s</string>
 	<string name="initial_setup_test_failed">麥克風測試失敗。您可以繼續並稍後啟用它。</string>
 	<string name="initial_setup_continue">繼續儀表板</string>
@@ -506,7 +506,7 @@
     <string name="equalizer_apply_next_session">等化器變更已儲存。將在下一個播放工作階段套用。</string>
     <string name="audio_effects_apply">套用</string>
     <string name="audio_effects_draft">未儲存的等化器變更</string>
-    <string name="audio_effects_applying">正在套用等化器變更...</string>
+    <string name="audio_effects_applying">正在套用等化器變更…</string>
     <string name="audio_effects_applied">等化器變更已套用</string>
     <string name="audio_effects_apply_failed">變更已儲存，但無法套用</string>
     <string name="audio_effects_flat">標準</string>
@@ -543,8 +543,8 @@
     <string name="car_finder_no_location">尚未儲存停放位置。\n當您中斷與 Android Auto 的連線時，系統將自動記錄車輛位置。</string>
     <string name="car_finder_pin_here">在此標記目前位置</string>
     <string name="car_finder_pinned_success">已儲存目前位置</string>
-    <string name="car_finder_waiting_gps">正在等待 GPS 定位...</string>
-    <string name="car_finder_measuring_gps">正在測量精確位置...</string>
+    <string name="car_finder_waiting_gps">正在等待 GPS 定位…</string>
+    <string name="car_finder_measuring_gps">正在測量精確位置…</string>
     <string name="car_finder_precise_find">精確雷達導引</string>
     <string name="car_finder_directions">路線導航</string>
     <string name="car_finder_found_car">已找到車輛</string>
@@ -560,7 +560,7 @@
     <string name="car_finder_saved_title">已儲存停車位置</string>
     <string name="car_finder_notif_desc">離車並儲存停放位置時發送通知</string>
     <string name="car_finder_parked_auto">已於中斷 Android Auto 連線時記錄停放位置。</string>
-    <string name="car_finder_address_resolving">正在解析地址...</string>
+    <string name="car_finder_address_resolving">正在解析地址…</string>
     <string name="car_finder_parked_ago_minutes">已停放 %1$d 分鐘</string>
     <string name="car_finder_parked_ago_hours">已停放 %1$d 小時</string>
     <string name="car_finder_walk_minutes">· 步行約 %1$d 分鐘</string>
@@ -584,7 +584,7 @@
     <string name="car_finder_delete_photo">刪除照片</string>
     <string name="car_finder_photo_title">停車位置照片</string>
     <string name="car_finder_add_note">新增備註（例如：B2 柱 15 號）</string>
-    <string name="car_finder_note_hint">柱號、樓層、車位號碼...</string>
+    <string name="car_finder_note_hint">柱號、樓層、車位號碼…</string>
     <string name="car_finder_near_car_hint">您已接近車輛（約 %1$d 公尺）。您可以使用雷達模式進行精確指引。</string>
     <string name="car_finder_conf_high">高精度（±%1$d 公尺）</string>
     <string name="car_finder_conf_med">中精度（±%1$d 公尺）</string>
@@ -646,12 +646,12 @@
     <string name="speedo_reset_trip_confirm">重設里程、平均速度及駕駛時間？</string>
 
     <!-- Glass Weather & Speedo UI -->
-    <string name="glass_weather_waiting_gps">正在等待 GPS 衛星定位...</string>
+    <string name="glass_weather_waiting_gps">正在等待 GPS 衛星定位…</string>
     <string name="glass_weather_perm_phone_hint">請在手機上授予位置權限。</string>
     <string name="glass_weather_perm_car_hint">請在手機上授予位置權限以查看天氣。</string>
     <string name="glass_weather_perm_needed">需要權限</string>
     <string name="glass_weather_grant_btn">授予權限</string>
-    <string name="glass_weather_locating">正在定位 GPS...</string>
+    <string name="glass_weather_locating">正在定位 GPS…</string>
     <string name="glass_speedo_trip_dist">里程</string>
     <string name="glass_speedo_trip_avg">平均時速</string>
     <string name="glass_speedo_trip_time">時間</string>
@@ -686,7 +686,7 @@
     <string name="glass_addon_desc_folders">本機與外部儲存裝置</string>
     <string name="glass_addon_desc_favorites">快速存取收藏的曲目</string>
     <string name="glass_addon_desc_recent">最近播放記錄</string>
-    <string name="glass_media_buffering">正在緩衝...</string>
+    <string name="glass_media_buffering">正在緩衝…</string>
     <string name="glass_media_unknown_title">未知標題</string>
 
     <!-- Units -->
@@ -704,7 +704,7 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">外掛模組</string>
     <string name="glass_weather_header">天氣與預報</string>
-    <string name="glass_weather_updating">更新中...</string>
+    <string name="glass_weather_updating">更新中…</string>
     <string name="glass_speedo_card_title">速度與旅程</string>
 
     <!-- Glass Quick Dock Actions -->

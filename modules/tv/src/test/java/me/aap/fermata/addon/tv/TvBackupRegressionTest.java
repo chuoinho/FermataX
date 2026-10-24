@@ -30,7 +30,7 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(application = FermataApplication.class)
+@Config(sdk = 28, application = FermataApplication.class)
 public class TvBackupRegressionTest {
 	private final Map<String, String> credentials = new LinkedHashMap<>();
 	private final Map<String, String> stalkerIdentity = new LinkedHashMap<>();

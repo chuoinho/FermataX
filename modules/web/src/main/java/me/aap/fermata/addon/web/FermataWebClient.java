@@ -796,7 +796,6 @@ public class FermataWebClient extends WebViewClientCompat {
 		return ((path == null) || path.isEmpty()) ? "/" : path;
 	}
 
-	@TargetApi(Build.VERSION_CODES.O)
 	@Override
 	public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
 		Log.e("WebView renderer gone, crashed: ", detail.didCrash());
@@ -916,10 +915,8 @@ public class FermataWebClient extends WebViewClientCompat {
 	}
 
 	private static String getWebViewPackage() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			PackageInfo info = WebView.getCurrentWebViewPackage();
-			if (info != null) return info.packageName + " " + info.versionName;
-		}
+		PackageInfo info = WebView.getCurrentWebViewPackage();
+		if (info != null) return info.packageName + " " + info.versionName;
 
 		return "unknown";
 	}

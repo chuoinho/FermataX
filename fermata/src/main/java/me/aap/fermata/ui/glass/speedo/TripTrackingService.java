@@ -334,18 +334,16 @@ public class TripTrackingService extends Service {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (nm != null && nm.getNotificationChannel(NOTIF_CHANNEL_ID) == null) {
-                NotificationChannel channel = new NotificationChannel(
-                        NOTIF_CHANNEL_ID,
-                        getString(R.string.speedo_recording_title),
-                        NotificationManager.IMPORTANCE_LOW
-                );
-                channel.setDescription(getString(R.string.speedo_recording_text));
-                channel.setShowBadge(false);
-                nm.createNotificationChannel(channel);
-            }
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null && nm.getNotificationChannel(NOTIF_CHANNEL_ID) == null) {
+            NotificationChannel channel = new NotificationChannel(
+                    NOTIF_CHANNEL_ID,
+                    getString(R.string.speedo_recording_title),
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            channel.setDescription(getString(R.string.speedo_recording_text));
+            channel.setShowBadge(false);
+            nm.createNotificationChannel(channel);
         }
     }
 

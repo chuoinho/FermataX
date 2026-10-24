@@ -412,7 +412,7 @@
 	<string name="action_prev_folder">Воспроизвести предыдущую папку</string>
 	<string name="action_next_folder">Воспроизвести следующую папку</string>
 	<string name="recent">Недавний</string>
-	<string name="p2p_resolving">Разрешение торрента...</string>
+	<string name="p2p_resolving">Разрешение торрента…</string>
 	<string name="p2p_finding_peers">Поиск сверстников…</string>
 	<string name="p2p_buffering_status">%1$d сверстники | %2$s/с | %3$d%%</string>
 	<string name="p2p_starting_player_status">%1$d сверстники | %2$s/с | Первый игрок</string>
@@ -442,7 +442,7 @@
 	<string name="initial_setup_voice_auto">Автоматическое определение английского/вьетнамского языка</string>
 	<string name="initial_setup_test_microphone">Тестовый микрофон</string>
 	<string name="initial_setup_test_disabled">Голосовое управление отключено.</string>
-	<string name="initial_setup_test_running">Слушаю...</string>
+	<string name="initial_setup_test_running">Слушаю…</string>
 	<string name="initial_setup_test_success">Проверка микрофона: %1$s</string>
 	<string name="initial_setup_test_failed">Проверка микрофона не удалась. Вы можете продолжить и включить его позже.</string>
 	<string name="initial_setup_continue">Перейти к панели управления</string>
@@ -501,7 +501,7 @@
     <string name="equalizer_apply_next_session">Изменения эквалайзера сохранены. Они будут применены в следующем сеансе воспроизведения.</string>
     <string name="audio_effects_apply">Применить</string>
     <string name="audio_effects_draft">Несохранённые изменения EQ</string>
-    <string name="audio_effects_applying">Применение изменений EQ...</string>
+    <string name="audio_effects_applying">Применение изменений EQ…</string>
     <string name="audio_effects_applied">Изменения EQ применены</string>
     <string name="audio_effects_apply_failed">Изменения сохранены, но не применены</string>
     <string name="audio_effects_flat">Плоский</string>
@@ -538,8 +538,8 @@
     <string name="car_finder_no_location">Место парковки ещё не сохранено.\nОно сохранится автоматически при отключении от Android Auto.</string>
     <string name="car_finder_pin_here">Отметить текущее место</string>
     <string name="car_finder_pinned_success">Текущее место сохранено</string>
-    <string name="car_finder_waiting_gps">Ожидание сигнала GPS...</string>
-    <string name="car_finder_measuring_gps">Определение координат...</string>
+    <string name="car_finder_waiting_gps">Ожидание сигнала GPS…</string>
+    <string name="car_finder_measuring_gps">Определение координат…</string>
     <string name="car_finder_precise_find">Точный радар</string>
     <string name="car_finder_directions">Маршрут</string>
     <string name="car_finder_found_car">Машина найдена</string>
@@ -555,7 +555,7 @@
     <string name="car_finder_saved_title">Парковка сохранена</string>
     <string name="car_finder_notif_desc">Уведомления о сохранении места парковки после выхода из машины</string>
     <string name="car_finder_parked_auto">Место парковки сохранено при отключении от Android Auto.</string>
-    <string name="car_finder_address_resolving">Определение адреса...</string>
+    <string name="car_finder_address_resolving">Определение адреса…</string>
     <string name="car_finder_parked_ago_minutes">Припарковано %1$d мин назад</string>
     <string name="car_finder_parked_ago_hours">Припарковано %1$d ч назад</string>
     <string name="car_finder_walk_minutes">· %1$d мин пешком</string>
@@ -579,7 +579,7 @@
     <string name="car_finder_delete_photo">Удалить</string>
     <string name="car_finder_photo_title">Фото парковочного места</string>
     <string name="car_finder_add_note">Добавить заметку (напр., Колонна B2 №15)</string>
-    <string name="car_finder_note_hint">Колонна, этаж, номер места...</string>
+    <string name="car_finder_note_hint">Колонна, этаж, номер места…</string>
     <string name="car_finder_near_car_hint">Вы рядом с машиной (~%1$d м). Используйте радар для точного направления.</string>
     <string name="car_finder_conf_high">Точно (±%1$d м)</string>
     <string name="car_finder_conf_med">Примерно (±%1$d м)</string>
@@ -641,12 +641,12 @@
     <string name="speedo_reset_trip_confirm">Сбросить расстояние, среднюю скорость и время в пути?</string>
 
     <!-- Glass Weather & Speedo UI -->
-    <string name="glass_weather_waiting_gps">Поиск сигнала GPS...</string>
+    <string name="glass_weather_waiting_gps">Поиск сигнала GPS…</string>
     <string name="glass_weather_perm_phone_hint">Предоставьте разрешение на геолокацию на телефоне.</string>
     <string name="glass_weather_perm_car_hint">Предоставьте доступ к геолокации на телефоне для погоды.</string>
     <string name="glass_weather_perm_needed">Требуется разрешение</string>
     <string name="glass_weather_grant_btn">Предоставить доступ</string>
-    <string name="glass_weather_locating">Определение GPS...</string>
+    <string name="glass_weather_locating">Определение GPS…</string>
     <string name="glass_speedo_trip_dist">ДИСТАНЦИЯ</string>
     <string name="glass_speedo_trip_avg">СРЕД. СКОРОСТЬ</string>
     <string name="glass_speedo_trip_time">ВРЕМЯ</string>
@@ -681,7 +681,7 @@
     <string name="glass_addon_desc_folders">Локальное и внешнее хранилище</string>
     <string name="glass_addon_desc_favorites">Быстрый доступ к избранным трекам</string>
     <string name="glass_addon_desc_recent">История недавнего воспроизведения</string>
-    <string name="glass_media_buffering">БУФЕРИЗАЦИЯ...</string>
+    <string name="glass_media_buffering">БУФЕРИЗАЦИЯ…</string>
     <string name="glass_media_unknown_title">Неизвестное название</string>
 
     <!-- Units -->
@@ -699,7 +699,7 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Модуль дополнения</string>
     <string name="glass_weather_header">ПОГОДА И ПРОГНОЗ</string>
-    <string name="glass_weather_updating">Обновление...</string>
+    <string name="glass_weather_updating">Обновление…</string>
     <string name="glass_speedo_card_title">СКОРОСТЬ И МАРШРУТ</string>
 
     <!-- Glass Quick Dock Actions -->

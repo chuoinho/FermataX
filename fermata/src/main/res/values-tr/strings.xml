@@ -176,7 +176,7 @@
     <string name="equalizer_apply_next_session">Ekolayzır değişiklikleri kaydedildi. Bir sonraki oynatma oturumunda uygulanacak.</string>
     <string name="audio_effects_apply">Uygula</string>
     <string name="audio_effects_draft">Kaydedilmemiş EQ değişiklikleri</string>
-    <string name="audio_effects_applying">EQ değişiklikleri uygulanıyor...</string>
+    <string name="audio_effects_applying">EQ değişiklikleri uygulanıyor…</string>
     <string name="audio_effects_applied">EQ değişiklikleri uygulandı</string>
     <string name="audio_effects_apply_failed">EQ değişiklikleri kaydedildi ancak uygulanamadı</string>
     <string name="audio_effects_flat">Düz</string>
@@ -300,7 +300,7 @@
     <string name="delete_file_question">Dosyayı silinsin mi?</string>
     <string name="delete_file_failed">%1$s dosyası silinemedi</string>
     <string name="loading">Yükleniyor…</string>
-    <string name="p2p_resolving">Torrent çözümleniyor...</string>
+    <string name="p2p_resolving">Torrent çözümleniyor…</string>
     <string name="p2p_finding_peers">Eşler aranıyor…</string>
     <string name="p2p_buffering_status">%1$d eş | %2$s/s | %3$d%%</string>
     <string name="p2p_starting_player_status">%1$d eş | %2$s/s | Oynatıcı başlatılıyor</string>
@@ -443,7 +443,7 @@
     <string name="initial_setup_voice_auto">İngilizce/Vietnamca\'yı otomatik algıla</string>
     <string name="initial_setup_test_microphone">Mikrofonu test edin</string>
     <string name="initial_setup_test_disabled">Ses kontrolü devre dışı.</string>
-    <string name="initial_setup_test_running">Dinleme...</string>
+    <string name="initial_setup_test_running">Dinleme…</string>
     <string name="initial_setup_test_success">Mikrofon testi: %1$s</string>
     <string name="initial_setup_test_failed">Mikrofon testi başarısız oldu. Daha sonra devam edip etkinleştirebilirsiniz.</string>
     <string name="initial_setup_continue">Panoya devam et</string>
@@ -460,8 +460,8 @@
     <string name="car_finder_no_location">Henüz kaydedilmiş park konumu yok.\nAndroid Auto bağlantısını kestiğinizde aracınızın konumu otomatik olarak kaydedilecektir.</string>
     <string name="car_finder_pin_here">Geçerli konumu buraya iğnele</string>
     <string name="car_finder_pinned_success">Geçerli konum kaydedildi</string>
-    <string name="car_finder_waiting_gps">GPS konumu bekleniyor...</string>
-    <string name="car_finder_measuring_gps">Konum ölçülüyor...</string>
+    <string name="car_finder_waiting_gps">GPS konumu bekleniyor…</string>
+    <string name="car_finder_measuring_gps">Konum ölçülüyor…</string>
     <string name="car_finder_precise_find">Hassas Radar</string>
     <string name="car_finder_directions">Yol Tarifi</string>
     <string name="car_finder_found_car">Aracımı Buldum</string>
@@ -477,7 +477,7 @@
     <string name="car_finder_saved_title">Araç Park Yeri Kaydedildi</string>
     <string name="car_finder_notif_desc">Araçtan ayrıldıktan sonra park konumu kaydedildiğinde bildirimler</string>
     <string name="car_finder_parked_auto">Android Auto bağlantısı kesildiğinde park konumu kaydedildi.</string>
-    <string name="car_finder_address_resolving">Adres çözümleniyor...</string>
+    <string name="car_finder_address_resolving">Adres çözümleniyor…</string>
     <string name="car_finder_parked_ago_minutes">%1$d dk. önce park edildi</string>
     <string name="car_finder_parked_ago_hours">%1$d saat önce park edildi</string>
     <string name="car_finder_walk_minutes">· %1$d dk. yürüme</string>
@@ -501,7 +501,7 @@
     <string name="car_finder_delete_photo">Sil</string>
     <string name="car_finder_photo_title">Park Yeri Fotoğrafı</string>
     <string name="car_finder_add_note">Not ekle (örn. Sütun B2 #15)</string>
-    <string name="car_finder_note_hint">Sütun, kat, park yeri numarası...</string>
+    <string name="car_finder_note_hint">Sütun, kat, park yeri numarası…</string>
     <string name="car_finder_near_car_hint">Aracınızın yakınındasınız (~%1$d m). Hassas yön için Radar modunu da kullanabilirsiniz.</string>
     <string name="car_finder_conf_high">Hassas (±%1$d m)</string>
     <string name="car_finder_conf_med">Yaklaşık (±%1$d m)</string>
@@ -553,12 +553,12 @@
     <string name="glass_rail_desc_collapsed">Gezinme çubuğu, daraltılmış</string>
     <string name="speedo_reset_trip">Seyahati Sıfırla</string>
     <string name="speedo_reset_trip_confirm">Seyahat mesafesi, ortalama hız ve sürüş süresi sıfırlansın mı?</string>
-    <string name="glass_weather_waiting_gps">GPS uydu bağlantısı bekleniyor...</string>
+    <string name="glass_weather_waiting_gps">GPS uydu bağlantısı bekleniyor…</string>
     <string name="glass_weather_perm_phone_hint">Lütfen telefonda konum izni verin.</string>
     <string name="glass_weather_perm_car_hint">Hava durumunu görüntülemek için telefonda konum izni verin.</string>
     <string name="glass_weather_perm_needed">İzin Gerekli</string>
     <string name="glass_weather_grant_btn">İzin Ver</string>
-    <string name="glass_weather_locating">GPS konumu belirleniyor...</string>
+    <string name="glass_weather_locating">GPS konumu belirleniyor…</string>
     <string name="glass_speedo_trip_dist">MESAFE</string>
     <string name="glass_speedo_trip_avg">ORTALAMA</string>
     <string name="speedo_total_average">Duraklamalar dahil ortalama</string>
@@ -602,7 +602,7 @@
     <string name="glass_addon_desc_folders">Yerel ve harici depolama</string>
     <string name="glass_addon_desc_favorites">Yıldızlı parçalara hızlı erişim</string>
     <string name="glass_addon_desc_recent">Son çalınanlar geçmişi</string>
-    <string name="glass_media_buffering">ARABELLEĞE ALINIYOR...</string>
+    <string name="glass_media_buffering">ARABELLEĞE ALINIYOR…</string>
     <string name="glass_media_unknown_title">Bilinmeyen Başlık</string>
     <string name="unit_m">m</string>
     <string name="unit_km">km</string>
@@ -614,7 +614,7 @@
     <string name="car_finder_camera_error">Kamera hatası: %1$s</string>
     <string name="glass_addon_module_desc">Eklenti Modülü</string>
     <string name="glass_weather_header">HAVA DURUMU VE TAHMİN</string>
-    <string name="glass_weather_updating">Güncelleniyor...</string>
+    <string name="glass_weather_updating">Güncelleniyor…</string>
     <string name="glass_speedo_card_title">HIZ VE SEYAHAT</string>
     <string name="glass_shortcut_open">Aç</string>
     <string name="glass_shortcut_replace">Değiştir</string>

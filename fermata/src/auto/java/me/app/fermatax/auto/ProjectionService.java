@@ -51,8 +51,7 @@ public class ProjectionService extends Service {
 					var extras = new Bundle();
 					extras.putParcelable(CAPTURE_INTENT, i);
 					intent.putExtras(extras);
-					if (SDK_INT >= VERSION_CODES.O) ctx.startForegroundService(intent);
-					else ctx.startService(intent);
+					ctx.startForegroundService(intent);
 				} catch (Exception startErr) {
 					Log.e(startErr, "Failed to start ProjectionService");
 					promise = null;
@@ -85,12 +84,10 @@ public class ProjectionService extends Service {
 		try {
 			var chid = "FermataMirror";
 			var name = getString(R.string.mirror_service_name);
-			if (VERSION.SDK_INT >= VERSION_CODES.O) {
-				var nmgr = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-				if (nmgr != null) {
-					nmgr.createNotificationChannel(
-							new NotificationChannel(chid, name, NotificationManager.IMPORTANCE_LOW));
-				}
+			var nmgr = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			if (nmgr != null) {
+				nmgr.createNotificationChannel(
+						new NotificationChannel(chid, name, NotificationManager.IMPORTANCE_LOW));
 			}
 			var notif = new NotificationCompat.Builder(this, chid).setVisibility(
 							NotificationCompat.VISIBILITY_PUBLIC).setSmallIcon(R.drawable.notification)

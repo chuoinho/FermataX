@@ -175,8 +175,7 @@ abstract class EventDispatcher {
 		private AppCompatActivity getActiveInstance() {
 			AppCompatActivity a = LauncherActivity.getActiveInstance();
 			if (a == null) a = MainActivity.getActiveInstance();
-			return (a == null) || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) &&
-					(a.isInMultiWindowMode() || a.isInPictureInPictureMode())) ? null : a;
+			return (a == null) || a.isInMultiWindowMode() || a.isInPictureInPictureMode() ? null : a;
 		}
 	}
 

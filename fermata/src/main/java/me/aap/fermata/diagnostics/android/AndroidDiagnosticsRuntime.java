@@ -591,26 +591,7 @@ public final class AndroidDiagnosticsRuntime {
 	}
 
 	private static String resolveProcessName(Application application) {
-		String name = null;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-			name = Application.getProcessName();
-		} else {
-			try {
-				ActivityManager manager =
-						(ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
-				if ((manager != null) && (manager.getRunningAppProcesses() != null)) {
-					for (ActivityManager.RunningAppProcessInfo process :
-							manager.getRunningAppProcesses()) {
-						if (process.pid == Process.myPid()) {
-							name = process.processName;
-							break;
-						}
-					}
-				}
-			} catch (RuntimeException ignored) {
-				// Package name remains a stable fallback on older Android releases.
-			}
-		}
+		String name = Application.getProcessName();
 		return ((name == null) || name.isEmpty()) ? application.getPackageName() : name;
 	}
 

@@ -52,6 +52,8 @@
         android:name="android.hardware.wifi"
         android:required="false" />
 
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
     <queries>
         <package android:name="com.google.android.projection.gearhead" />
         <intent>

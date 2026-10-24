@@ -421,8 +421,8 @@ Por favor, reinicie la aplicación.</string>
 	<string name="dashboard_back_to_list">volver a la lista</string>
 	<string name="addon_name_audiobook">Audiolibros</string>
 	<string name="recent">Reciente</string>
-	<string name="p2p_resolving">Resolviendo torrent...</string>
-	<string name="p2p_finding_peers">Encontrar compañeros...</string>
+	<string name="p2p_resolving">Resolviendo torrent…</string>
+	<string name="p2p_finding_peers">Encontrar compañeros…</string>
 	<string name="p2p_buffering_status">%1$d compañeros | %2$s/s | %3$d%%</string>
 	<string name="p2p_starting_player_status">%1$d compañeros | %2$s/s | Jugador inicial</string>
 	<string name="p2p_streaming_status">%1$d compañeros | %2$s/s | Jugando</string>
@@ -450,7 +450,7 @@ Por favor, reinicie la aplicación.</string>
 	<string name="initial_setup_voice_auto">Detección automática de inglés/vietnamita</string>
 	<string name="initial_setup_test_microphone">Micrófono de prueba</string>
 	<string name="initial_setup_test_disabled">El control por voz está desactivado.</string>
-	<string name="initial_setup_test_running">Escuchando...</string>
+	<string name="initial_setup_test_running">Escuchando…</string>
 	<string name="initial_setup_test_success">Prueba de micrófono: %1$s</string>
 	<string name="initial_setup_test_failed">La prueba del micrófono falló. Puedes continuar y habilitarlo más tarde.</string>
 	<string name="initial_setup_continue">Continuar al panel</string>
@@ -509,7 +509,7 @@ Por favor, reinicie la aplicación.</string>
     <string name="equalizer_apply_next_session">Los cambios de EQ se han guardado. Se aplicarán en la próxima sesión de reproducción.</string>
     <string name="audio_effects_apply">Aplicar</string>
     <string name="audio_effects_draft">Cambios de EQ sin guardar</string>
-    <string name="audio_effects_applying">Aplicando cambios de EQ...</string>
+    <string name="audio_effects_applying">Aplicando cambios de EQ…</string>
     <string name="audio_effects_applied">Cambios de EQ aplicados</string>
     <string name="audio_effects_apply_failed">Cambios guardados, pero no se pudieron aplicar</string>
     <string name="audio_effects_flat">Plano</string>
@@ -546,8 +546,8 @@ Por favor, reinicie la aplicación.</string>
     <string name="car_finder_no_location">Aún no hay ubicación de aparcamiento guardada.\nSe guardará automáticamente al desconectarse de Android Auto.</string>
     <string name="car_finder_pin_here">Fijar ubicación actual aquí</string>
     <string name="car_finder_pinned_success">Ubicación actual guardada</string>
-    <string name="car_finder_waiting_gps">Esperando señal GPS...</string>
-    <string name="car_finder_measuring_gps">Calculando ubicación...</string>
+    <string name="car_finder_waiting_gps">Esperando señal GPS…</string>
+    <string name="car_finder_measuring_gps">Calculando ubicación…</string>
     <string name="car_finder_precise_find">Radar preciso</string>
     <string name="car_finder_directions">Cómo llegar</string>
     <string name="car_finder_found_car">Encontré mi vehículo</string>
@@ -563,7 +563,7 @@ Por favor, reinicie la aplicación.</string>
     <string name="car_finder_saved_title">Aparcamiento guardado</string>
     <string name="car_finder_notif_desc">Notificaciones cuando se guarda la ubicación al salir del coche</string>
     <string name="car_finder_parked_auto">Ubicación guardada al desconectar de Android Auto.</string>
-    <string name="car_finder_address_resolving">Obteniendo dirección...</string>
+    <string name="car_finder_address_resolving">Obteniendo dirección…</string>
     <string name="car_finder_parked_ago_minutes">Aparcado hace %1$d min</string>
     <string name="car_finder_parked_ago_hours">Aparcado hace %1$d h</string>
     <string name="car_finder_walk_minutes">· %1$d min a pie</string>
@@ -587,7 +587,7 @@ Por favor, reinicie la aplicación.</string>
     <string name="car_finder_delete_photo">Eliminar</string>
     <string name="car_finder_photo_title">Foto del aparcamiento</string>
     <string name="car_finder_add_note">Añadir nota (ej. Columna B2 #15)</string>
-    <string name="car_finder_note_hint">Columna, planta, número de plaza...</string>
+    <string name="car_finder_note_hint">Columna, planta, número de plaza…</string>
     <string name="car_finder_near_car_hint">Estás cerca de tu vehículo (~%1$d m). Puedes usar el radar para mayor precisión.</string>
     <string name="car_finder_conf_high">Preciso (±%1$d m)</string>
     <string name="car_finder_conf_med">Aproximado (±%1$d m)</string>
@@ -649,12 +649,12 @@ Por favor, reinicie la aplicación.</string>
     <string name="speedo_reset_trip_confirm">¿Restablecer distancia, velocidad media y tiempo de conducción?</string>
 
     <!-- Glass Weather & Speedo UI -->
-    <string name="glass_weather_waiting_gps">Buscando señal GPS...</string>
+    <string name="glass_weather_waiting_gps">Buscando señal GPS…</string>
     <string name="glass_weather_perm_phone_hint">Conceda permiso de ubicación en el teléfono.</string>
     <string name="glass_weather_perm_car_hint">Conceda permiso de ubicación en el teléfono para ver el tiempo.</string>
     <string name="glass_weather_perm_needed">Permiso requerido</string>
     <string name="glass_weather_grant_btn">Conceder permiso</string>
-    <string name="glass_weather_locating">Buscando GPS...</string>
+    <string name="glass_weather_locating">Buscando GPS…</string>
     <string name="glass_speedo_trip_dist">DISTANCIA</string>
     <string name="glass_speedo_trip_avg">VELOCIDAD MEDIA</string>
     <string name="glass_speedo_trip_time">TIEMPO</string>
@@ -689,7 +689,7 @@ Por favor, reinicie la aplicación.</string>
     <string name="glass_addon_desc_folders">Almacenamiento local y externo</string>
     <string name="glass_addon_desc_favorites">Acceso rápido a pistas favoritas</string>
     <string name="glass_addon_desc_recent">Historial de reproducción reciente</string>
-    <string name="glass_media_buffering">ALMACENANDO EN BÚFER...</string>
+    <string name="glass_media_buffering">ALMACENANDO EN BÚFER…</string>
     <string name="glass_media_unknown_title">Título desconocido</string>
 
     <!-- Units -->
@@ -707,7 +707,7 @@ Por favor, reinicie la aplicación.</string>
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Módulo de extensión</string>
     <string name="glass_weather_header">CLIMA Y PRONÓSTICO</string>
-    <string name="glass_weather_updating">Actualizando...</string>
+    <string name="glass_weather_updating">Actualizando…</string>
     <string name="glass_speedo_card_title">VELOCIDAD Y TRAYECTO</string>
 
     <!-- Glass Quick Dock Actions -->

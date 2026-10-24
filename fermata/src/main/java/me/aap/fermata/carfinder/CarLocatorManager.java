@@ -444,15 +444,13 @@ public final class CarLocatorManager {
 			NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 			if (nm == null) return;
 
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				NotificationChannel channel = new NotificationChannel(
-						CHANNEL_ID,
-						context.getString(R.string.car_finder_title),
-						NotificationManager.IMPORTANCE_HIGH);
-				channel.setDescription(context.getString(R.string.car_finder_notif_desc));
-				channel.enableLights(true);
-				nm.createNotificationChannel(channel);
-			}
+			NotificationChannel channel = new NotificationChannel(
+					CHANNEL_ID,
+					context.getString(R.string.car_finder_title),
+					NotificationManager.IMPORTANCE_HIGH);
+			channel.setDescription(context.getString(R.string.car_finder_notif_desc));
+			channel.enableLights(true);
+			nm.createNotificationChannel(channel);
 
 			Intent intent = new Intent(context, MainActivity.class);
 			intent.putExtra("NAV_TO_CAR_FINDER", true);

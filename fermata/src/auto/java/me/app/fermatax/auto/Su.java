@@ -47,13 +47,8 @@ public class Su {
 					var p = pb.start();
 					int ec;
 
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-						if (p.waitFor(timeout, TimeUnit.MILLISECONDS)) ec = p.exitValue();
-						else ec = 1;
-					} else {
-						FermataApplication.get().getHandler().postDelayed(p::destroy, timeout);
-						ec = p.waitFor();
-					}
+					if (p.waitFor(timeout, TimeUnit.MILLISECONDS)) ec = p.exitValue();
+					else ec = 1;
 					if (ec == 0) {
 						var rootProc = new ProcessBuilder("su").start();
 						var pw = new PrintWriter(rootProc.getOutputStream(), true);

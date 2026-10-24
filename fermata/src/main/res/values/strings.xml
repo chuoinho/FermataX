@@ -214,7 +214,7 @@
 	<string name="equalizer_apply_next_session">EQ changes saved. They will apply to the next playback session.</string>
 	<string name="audio_effects_apply">Apply</string>
 	<string name="audio_effects_draft">Unsaved EQ changes</string>
-	<string name="audio_effects_applying">Applying EQ changes...</string>
+	<string name="audio_effects_applying">Applying EQ changes…</string>
 	<string name="audio_effects_applied">EQ changes applied</string>
 	<string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
 	<string name="audio_effects_flat">Flat</string>
@@ -511,7 +511,7 @@
     <string name="initial_setup_voice_auto">Auto detect English/Vietnamese</string>
     <string name="initial_setup_test_microphone">Test microphone</string>
     <string name="initial_setup_test_disabled">Voice control is disabled.</string>
-    <string name="initial_setup_test_running">Listening...</string>
+    <string name="initial_setup_test_running">Listening…</string>
     <string name="initial_setup_test_success">Microphone test: %1$s</string>
     <string name="initial_setup_test_failed">Microphone test failed. You can continue and enable it later.</string>
     <string name="initial_setup_continue">Continue to dashboard</string>
@@ -530,8 +530,8 @@
     <string name="car_finder_no_location">No parked location saved yet.\nYour car location will be saved automatically when you disconnect from Android Auto.</string>
     <string name="car_finder_pin_here">Pin current location here</string>
     <string name="car_finder_pinned_success">Saved current location</string>
-    <string name="car_finder_waiting_gps">Waiting for GPS position...</string>
-    <string name="car_finder_measuring_gps">Measuring location...</string>
+    <string name="car_finder_waiting_gps">Waiting for GPS position…</string>
+    <string name="car_finder_measuring_gps">Measuring location…</string>
     <string name="car_finder_precise_find">Precise Radar</string>
     <string name="car_finder_directions">Directions</string>
     <string name="car_finder_found_car">Found My Car</string>
@@ -547,7 +547,7 @@
     <string name="car_finder_saved_title">Vehicle Parking Saved</string>
     <string name="car_finder_notif_desc">Notifications when parking location is saved after leaving car</string>
     <string name="car_finder_parked_auto">Parked location saved upon Android Auto disconnect.</string>
-    <string name="car_finder_address_resolving">Resolving address...</string>
+    <string name="car_finder_address_resolving">Resolving address…</string>
     <string name="car_finder_parked_ago_minutes">Parked %1$d min ago</string>
     <string name="car_finder_parked_ago_hours">Parked %1$d hr ago</string>
     <string name="car_finder_walk_minutes">· %1$d min walk</string>
@@ -571,7 +571,7 @@
     <string name="car_finder_delete_photo">Delete</string>
     <string name="car_finder_photo_title">Parking Spot Photo</string>
     <string name="car_finder_add_note">Add note (e.g. Pillar B2 #15)</string>
-    <string name="car_finder_note_hint">Pillar, floor, parking spot number...</string>
+    <string name="car_finder_note_hint">Pillar, floor, parking spot number…</string>
     <string name="car_finder_near_car_hint">You are near your car (~%1$d m). You can also use Radar mode for precise direction.</string>
     <string name="car_finder_conf_high">Accurate (±%1$d m)</string>
     <string name="car_finder_conf_med">Approximate (±%1$d m)</string>
@@ -634,12 +634,12 @@
     <string name="speedo_reset_trip_confirm">Reset trip distance, average speed, and driving time?</string>
 
     <!-- Glass Weather & Speedo UI -->
-    <string name="glass_weather_waiting_gps">Waiting for GPS satellite fix...</string>
+    <string name="glass_weather_waiting_gps">Waiting for GPS satellite fix…</string>
     <string name="glass_weather_perm_phone_hint">Please grant location permission on phone.</string>
     <string name="glass_weather_perm_car_hint">Grant location permission on phone to view weather.</string>
     <string name="glass_weather_perm_needed">Permission Needed</string>
     <string name="glass_weather_grant_btn">Grant Permission</string>
-    <string name="glass_weather_locating">Locating GPS...</string>
+    <string name="glass_weather_locating">Locating GPS…</string>
     <string name="glass_speedo_trip_dist">DISTANCE</string>
     <string name="glass_speedo_trip_avg">TRIP AVG</string>
     <string name="speedo_total_average">Average including stops</string>
@@ -690,7 +690,7 @@
     <string name="glass_addon_desc_folders">Local &amp; external storage</string>
     <string name="glass_addon_desc_favorites">Quick access starred tracks</string>
     <string name="glass_addon_desc_recent">Recently played history</string>
-    <string name="glass_media_buffering">BUFFERING...</string>
+    <string name="glass_media_buffering">BUFFERING…</string>
     <string name="glass_media_unknown_title">Unknown Title</string>
 
     <!-- Units -->
@@ -708,7 +708,7 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Addon Module</string>
     <string name="glass_weather_header">WEATHER &amp; FORECAST</string>
-    <string name="glass_weather_updating">Updating...</string>
+    <string name="glass_weather_updating">Updating…</string>
     <string name="glass_speedo_card_title">SPEED &amp; TRIP</string>
 
     <!-- Glass Quick Dock Actions -->

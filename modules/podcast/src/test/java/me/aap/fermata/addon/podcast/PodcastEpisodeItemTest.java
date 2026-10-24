@@ -23,7 +23,7 @@ import me.aap.fermata.addon.podcast.model.PodcastSubscription;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(application = FermataApplication.class)
+@Config(sdk = 28, application = FermataApplication.class)
 public class PodcastEpisodeItemTest {
 	@Test
 	public void stableEpisodeIsInternalSeekableAndCarriesPrivateHeaders() {

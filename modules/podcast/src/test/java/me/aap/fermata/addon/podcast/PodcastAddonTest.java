@@ -23,7 +23,7 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ExtRoot;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(application = FermataApplication.class)
+@Config(sdk = 28, application = FermataApplication.class)
 public class PodcastAddonTest {
 	@Test
 	public void generatedRegistrationExposesOnlyPodcastContracts() {

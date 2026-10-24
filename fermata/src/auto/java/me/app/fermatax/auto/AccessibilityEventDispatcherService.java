@@ -73,7 +73,7 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 
 	static boolean dispatchTap(float x, float y) {
 		var ds = instance;
-		if ((VERSION.SDK_INT < VERSION_CODES.N) || (ds == null)) return false;
+		if (ds == null) return false;
 		if ((x < 0f) || (y < 0f)) return true;
 		ds.path.reset();
 		ds.path.moveTo(x, y);
@@ -83,7 +83,7 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 
 	static boolean dispatchScale(float x, float y, float diff) {
 		var ds = instance;
-		if ((VERSION.SDK_INT < VERSION_CODES.O) || (ds == null)) return false;
+		if (ds == null) return false;
 		if ((x < 0f) || (y < 0f)) return true;
 		var path = ds.path;
 		var dur = 100L;
@@ -111,7 +111,7 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 
 	static boolean dispatchMotionEvent(MotionEvent e) {
 		var ds = instance;
-		if ((VERSION.SDK_INT < VERSION_CODES.O) || (ds == null)) return false;
+		if (ds == null) return false;
 		var pointers = ds.pointers;
 		var cnt = e.getPointerCount();
 		var action = e.getActionMasked();
@@ -160,13 +160,12 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 
 	static boolean dispatchMotionEvent(long downTime, long eventTime, int action, float x, float y) {
 		var ds = instance;
-		if ((VERSION.SDK_INT < VERSION_CODES.O) || (ds == null)) return false;
+		if (ds == null) return false;
 		if ((x < 0f) || (y < 0f)) return true;
 		var p = instance.pointers[0];
 		return ds.buildGesture(p, downTime, eventTime, action, x, y, false) && ds.dispatch();
 	}
 
-	@RequiresApi(api = VERSION_CODES.O)
 	private boolean buildGesture(Pointer p, long downTime, long eventTime, int action, float x,
 															 float y, boolean completePrev) {
 		switch (action) {
@@ -216,13 +215,11 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 		return true;
 	}
 
-	@RequiresApi(api = VERSION_CODES.N)
 	private void addStroke(StrokeDescription sd) {
 		if (gb == null) gb = new GestureDescription.Builder();
 		gb.addStroke(sd);
 	}
 
-	@RequiresApi(api = VERSION_CODES.N)
 	private boolean dispatch() {
 		var g = gb.build();
 		gb = null;

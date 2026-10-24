@@ -176,7 +176,7 @@
     <string name="equalizer_apply_next_session">Le modifiche dell\'equalizzatore sono state salvate. Verranno applicate nella prossima sessione di riproduzione.</string>
     <string name="audio_effects_apply">Applica</string>
     <string name="audio_effects_draft">Modifiche EQ non salvate</string>
-    <string name="audio_effects_applying">Applicazione modifiche EQ...</string>
+    <string name="audio_effects_applying">Applicazione modifiche EQ…</string>
     <string name="audio_effects_applied">Modifiche EQ applicate</string>
     <string name="audio_effects_apply_failed">Modifiche EQ salvate, ma non è stato possibile applicarle</string>
     <string name="audio_effects_flat">Lineare</string>
@@ -443,7 +443,7 @@
     <string name="initial_setup_voice_auto">Rilevamento automatico inglese/vietnamita</string>
     <string name="initial_setup_test_microphone">Prova il microfono</string>
     <string name="initial_setup_test_disabled">Il controllo vocale è disabilitato.</string>
-    <string name="initial_setup_test_running">Ascolto...</string>
+    <string name="initial_setup_test_running">Ascolto…</string>
     <string name="initial_setup_test_success">Prova del microfono: %1$s</string>
     <string name="initial_setup_test_failed">Il test del microfono è fallito. Puoi continuare e abilitarlo più tardi.</string>
     <string name="initial_setup_continue">Continua alla dashboard</string>
@@ -460,8 +460,8 @@
     <string name="car_finder_no_location">Nessuna posizione di parcheggio ancora salvata.\nLa posizione della tua auto verrà salvata automaticamente quando ti disconnetti da Android Auto.</string>
     <string name="car_finder_pin_here">Segna qui la posizione corrente</string>
     <string name="car_finder_pinned_success">Posizione corrente salvata</string>
-    <string name="car_finder_waiting_gps">In attesa della posizione GPS...</string>
-    <string name="car_finder_measuring_gps">Rilevamento posizione...</string>
+    <string name="car_finder_waiting_gps">In attesa della posizione GPS…</string>
+    <string name="car_finder_measuring_gps">Rilevamento posizione…</string>
     <string name="car_finder_precise_find">Radar di precisione</string>
     <string name="car_finder_directions">Indicazioni</string>
     <string name="car_finder_found_car">Ho trovato l\'auto</string>
@@ -477,7 +477,7 @@
     <string name="car_finder_saved_title">Parcheggio veicolo salvato</string>
     <string name="car_finder_notif_desc">Notifiche quando la posizione di parcheggio viene salvata dopo aver lasciato l\'auto</string>
     <string name="car_finder_parked_auto">Posizione di parcheggio salvata alla disconnessione da Android Auto.</string>
-    <string name="car_finder_address_resolving">Risoluzione indirizzo...</string>
+    <string name="car_finder_address_resolving">Risoluzione indirizzo…</string>
     <string name="car_finder_parked_ago_minutes">Parcheggiata %1$d min fa</string>
     <string name="car_finder_parked_ago_hours">Parcheggiata %1$d ore fa</string>
     <string name="car_finder_walk_minutes">· %1$d min a piedi</string>
@@ -501,7 +501,7 @@
     <string name="car_finder_delete_photo">Elimina</string>
     <string name="car_finder_photo_title">Foto del posto auto</string>
     <string name="car_finder_add_note">Aggiungi nota (es. Pilastro B2 #15)</string>
-    <string name="car_finder_note_hint">Pilastro, piano, numero del posto...</string>
+    <string name="car_finder_note_hint">Pilastro, piano, numero del posto…</string>
     <string name="car_finder_near_car_hint">Sei vicino alla tua auto (~%1$d m). Puoi anche usare la modalità Radar per la direzione precisa.</string>
     <string name="car_finder_conf_high">Preciso (±%1$d m)</string>
     <string name="car_finder_conf_med">Approssimativo (±%1$d m)</string>
@@ -553,12 +553,12 @@
     <string name="glass_rail_desc_collapsed">Barra di navigazione, compressa</string>
     <string name="speedo_reset_trip">Reimposta viaggio</string>
     <string name="speedo_reset_trip_confirm">Reimpostare distanza del viaggio, velocità media e tempo di guida?</string>
-    <string name="glass_weather_waiting_gps">In attesa del segnale satellitare GPS...</string>
+    <string name="glass_weather_waiting_gps">In attesa del segnale satellitare GPS…</string>
     <string name="glass_weather_perm_phone_hint">Concedi l\'autorizzazione alla posizione sul telefono.</string>
     <string name="glass_weather_perm_car_hint">Concedi l\'autorizzazione alla posizione sul telefono per visualizzare il meteo.</string>
     <string name="glass_weather_perm_needed">Autorizzazione richiesta</string>
     <string name="glass_weather_grant_btn">Concedi autorizzazione</string>
-    <string name="glass_weather_locating">Rilevamento GPS...</string>
+    <string name="glass_weather_locating">Rilevamento GPS…</string>
     <string name="glass_speedo_trip_dist">DISTANZA</string>
     <string name="glass_speedo_trip_avg">MEDIA VIAGGIO</string>
     <string name="speedo_total_average">Media comprese le soste</string>
@@ -602,7 +602,7 @@
     <string name="glass_addon_desc_folders">Memoria locale ed esterna</string>
     <string name="glass_addon_desc_favorites">Accesso rapido ai brani preferiti</string>
     <string name="glass_addon_desc_recent">Cronologia dei brani recenti</string>
-    <string name="glass_media_buffering">BUFFERING...</string>
+    <string name="glass_media_buffering">BUFFERING…</string>
     <string name="glass_media_unknown_title">Titolo sconosciuto</string>
     <string name="unit_m">m</string>
     <string name="unit_km">km</string>
@@ -614,7 +614,7 @@
     <string name="car_finder_camera_error">Errore fotocamera: %1$s</string>
     <string name="glass_addon_module_desc">Modulo aggiuntivo</string>
     <string name="glass_weather_header">METEO E PREVISIONI</string>
-    <string name="glass_weather_updating">Aggiornamento in corso...</string>
+    <string name="glass_weather_updating">Aggiornamento in corso…</string>
     <string name="glass_speedo_card_title">VELOCITÀ E VIAGGIO</string>
     <string name="glass_shortcut_open">Apri</string>
     <string name="glass_shortcut_replace">Sostituisci</string>

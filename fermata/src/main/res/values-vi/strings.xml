@@ -444,7 +444,7 @@
     <string name="initial_setup_voice_auto">Tự nhận diện tiếng Anh/Việt</string>
     <string name="initial_setup_test_microphone">Kiểm tra micro</string>
     <string name="initial_setup_test_disabled">Điều khiển bằng giọng nói đang tắt.</string>
-    <string name="initial_setup_test_running">Đang lắng nghe...</string>
+    <string name="initial_setup_test_running">Đang lắng nghe…</string>
     <string name="initial_setup_test_success">Kiểm tra micro: %1$s</string>
     <string name="initial_setup_test_failed">Kiểm tra micro thất bại. Bạn vẫn có thể tiếp tục và bật lại sau.</string>
     <string name="initial_setup_continue">Tiếp tục đến dashboard</string>
@@ -512,7 +512,7 @@
 	<string name="equalizer_apply_next_session">Các thay đổi EQ đã được lưu. Chúng sẽ được áp dụng trong phiên phát tiếp theo.</string>
 	<string name="audio_effects_apply">Áp dụng</string>
 	<string name="audio_effects_draft">Thay đổi EQ chưa lưu</string>
-	<string name="audio_effects_applying">Đang áp dụng thay đổi EQ...</string>
+	<string name="audio_effects_applying">Đang áp dụng thay đổi EQ…</string>
 	<string name="audio_effects_applied">Đã áp dụng thay đổi EQ</string>
 	<string name="audio_effects_apply_failed">Đã lưu thay đổi EQ nhưng không thể áp dụng</string>
 	<string name="audio_effects_flat">Phẳng</string>
@@ -537,8 +537,8 @@
     <string name="car_finder_no_location">Chưa lưu chỗ đỗ nào.\nChỗ đỗ sẽ được ghi nhớ tự động mỗi lần bạn rời Android Auto.</string>
     <string name="car_finder_pin_here">Ghim vị trí tại đây</string>
     <string name="car_finder_pinned_success">Đã lưu vị trí hiện tại</string>
-    <string name="car_finder_waiting_gps">Đang đợi định vị GPS...</string>
-    <string name="car_finder_measuring_gps">Đang đo vị trí...</string>
+    <string name="car_finder_waiting_gps">Đang đợi định vị GPS…</string>
+    <string name="car_finder_measuring_gps">Đang đo vị trí…</string>
     <string name="car_finder_precise_find">Tìm chính xác</string>
     <string name="car_finder_directions">Chỉ đường</string>
     <string name="car_finder_found_car">Đã tìm thấy xe</string>
@@ -554,7 +554,7 @@
     <string name="car_finder_saved_title">Đã lưu vị trí đỗ xe</string>
     <string name="car_finder_notif_desc">Thông báo khi vị trí xe được lưu sau khi rời xe</string>
     <string name="car_finder_parked_auto">Đã ghi nhận vị trí khi rời Android Auto.</string>
-    <string name="car_finder_address_resolving">Đang tìm địa chỉ...</string>
+    <string name="car_finder_address_resolving">Đang tìm địa chỉ…</string>
     <string name="car_finder_parked_ago_minutes">Đỗ %1$d phút trước</string>
     <string name="car_finder_parked_ago_hours">Đỗ %1$d giờ trước</string>
     <string name="car_finder_walk_minutes">· %1$d phút đi bộ</string>
@@ -578,7 +578,7 @@
     <string name="car_finder_delete_photo">Xoá ảnh</string>
     <string name="car_finder_photo_title">Ảnh điểm đỗ xe</string>
     <string name="car_finder_add_note">Thêm ghi chú (vd: Cột B2 #15)</string>
-    <string name="car_finder_note_hint">Số cột, tầng hầm, vị trí đỗ...</string>
+    <string name="car_finder_note_hint">Số cột, tầng hầm, vị trí đỗ…</string>
     <string name="car_finder_near_car_hint">Bạn đang ở rất gần xe (~%1$d m). Hãy dùng Radar để xác định hướng chính xác!</string>
     <string name="car_finder_conf_high">Chính xác (±%1$d m)</string>
     <string name="car_finder_conf_med">Gần đúng (±%1$d m)</string>
@@ -642,12 +642,12 @@
     <string name="speedo_reset_trip_confirm">Đặt lại quãng đường, tốc độ trung bình và thời gian lái xe?</string>
 
     <!-- Glass Weather & Speedo UI -->
-    <string name="glass_weather_waiting_gps">Đang tìm tín hiệu vệ tinh GPS...</string>
+    <string name="glass_weather_waiting_gps">Đang tìm tín hiệu vệ tinh GPS…</string>
     <string name="glass_weather_perm_phone_hint">Vui lòng cấp quyền vị trí trên điện thoại.</string>
     <string name="glass_weather_perm_car_hint">Cấp quyền vị trí trên điện thoại để xem thời tiết.</string>
     <string name="glass_weather_perm_needed">Cần cấp quyền</string>
     <string name="glass_weather_grant_btn">Cấp quyền</string>
-    <string name="glass_weather_locating">Đang định vị GPS...</string>
+    <string name="glass_weather_locating">Đang định vị GPS…</string>
     <string name="glass_speedo_trip_dist">QUÃNG ĐƯỜNG</string>
     <string name="glass_speedo_trip_avg">TB CHUYẾN</string>
     <string name="speedo_total_average">Trung bình gồm thời gian dừng</string>
@@ -698,7 +698,7 @@
     <string name="glass_addon_desc_folders">Bộ nhớ trong &amp; thẻ nhớ ngoài</string>
     <string name="glass_addon_desc_favorites">Truy cập nhanh các mục yêu thích</string>
     <string name="glass_addon_desc_recent">Lịch sử phát gần đây</string>
-    <string name="glass_media_buffering">ĐANG TẢI ĐỆM...</string>
+    <string name="glass_media_buffering">ĐANG TẢI ĐỆM…</string>
     <string name="glass_media_unknown_title">Tiêu đề không xác định</string>
 
     <!-- Units -->
@@ -716,7 +716,7 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Tiện ích mở rộng</string>
     <string name="glass_weather_header">THỜI TIẾT &amp; DỰ BÁO</string>
-    <string name="glass_weather_updating">Đang cập nhật...</string>
+    <string name="glass_weather_updating">Đang cập nhật…</string>
     <string name="glass_speedo_card_title">TỐC ĐỘ &amp; HÀNH TRÌNH</string>
 
     <!-- Glass Quick Dock Actions -->

@@ -243,9 +243,7 @@ public class GlassSlider extends View {
 	public void onInitializeAccessibilityNodeInfo(android.view.accessibility.AccessibilityNodeInfo info) {
 		super.onInitializeAccessibilityNodeInfo(info);
 		info.setClassName(android.widget.SeekBar.class.getName());
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-			info.setRangeInfo(android.view.accessibility.AccessibilityNodeInfo.RangeInfo.obtain(
-					android.view.accessibility.AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_FLOAT, min, 1.0f, progress));
-		}
+		info.setRangeInfo(android.view.accessibility.AccessibilityNodeInfo.RangeInfo.obtain(
+				android.view.accessibility.AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_FLOAT, min, 1.0f, progress));
 	}
 }

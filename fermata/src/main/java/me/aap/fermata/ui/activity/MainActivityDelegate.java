@@ -217,8 +217,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private static void setConfigLocale(Configuration cfg, Locale loc) {
-		if (VERSION.SDK_INT >= VERSION_CODES.N) cfg.setLocales(new LocaleList(loc));
-		else cfg.setLocale(loc);
+		cfg.setLocales(new LocaleList(loc));
 	}
 
 	public static Uri toIntentUri(String action, String itemId) {

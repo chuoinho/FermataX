@@ -376,8 +376,7 @@ public class Xposed implements IXposedHookLoadPackage {
 		}
 
 		private boolean isWindowMode() {
-			return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) &&
-					(activity.isInMultiWindowMode() || activity.isInPictureInPictureMode());
+			return activity.isInMultiWindowMode() || activity.isInPictureInPictureMode();
 		}
 	}
 }

@@ -326,9 +326,7 @@ public final class LocationHub {
     private boolean isLocationEnabled() {
         if (locationManager == null) return false;
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                if (!locationManager.isLocationEnabled()) return false;
-            }
+            if (!locationManager.isLocationEnabled()) return false;
             return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
                     || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
         } catch (Throwable e) {

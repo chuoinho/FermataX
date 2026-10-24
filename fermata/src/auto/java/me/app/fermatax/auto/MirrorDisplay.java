@@ -327,7 +327,7 @@ public class MirrorDisplay {
 			disableAccelRotation(app);
 		}
 
-		if ((overlay == null) && (SDK_INT >= VERSION_CODES.O)) {
+		if (overlay == null) {
 			try {
 				var wm = (WindowManager) app.getSystemService(WINDOW_SERVICE);
 				var lp =
