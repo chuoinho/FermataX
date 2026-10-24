@@ -22,7 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 35, application = Application.class)
+@Config(sdk = 35, application = me.aap.utils.app.App.class)
 public class TripLogRecorderTest {
 	private File dir;
 
@@ -37,6 +37,44 @@ public class TripLogRecorderTest {
 		File[] files = dir.listFiles();
 		if (files != null) for (File f : files) f.delete();
 		dir.delete();
+	}
+
+	@Test
+	public void openFailureDisablesRecordingUntilTheNextTrip() throws Exception {
+		File blocked = new File(dir, "blocked");
+		Files.write(blocked.toPath(), new byte[]{1});
+		TripLogRecorder r = new TripLogRecorder(blocked, () -> true);
+		r.event("start", 1_000);
+		assertTrue(blocked.delete());
+		assertTrue(blocked.mkdir());
+		r.location(fix(21, 105, 2_000));
+		r.event("pause", 3_000);
+		assertEquals("no retry after a failed open", 0, blocked.listFiles().length);
+		r.event("start", 4_000);
+		r.event("stop", 5_000);
+		assertEquals(1, blocked.listFiles().length);
+		for (File f : blocked.listFiles()) assertTrue(f.delete());
+		assertTrue(blocked.delete());
+	}
+
+	@Test
+	public void flushFailureDoesNotReopenOrPruneDuringTheTrip() throws Exception {
+		TripLogRecorder r = new TripLogRecorder(dir, () -> true);
+		r.event("start", 1_000);
+		java.lang.reflect.Field field = TripLogRecorder.class.getDeclaredField("out");
+		field.setAccessible(true);
+		r.close();
+		field.set(r, new java.io.BufferedWriter(new java.io.Writer() {
+			@Override public void write(char[] c, int o, int n) throws java.io.IOException {
+				throw new java.io.IOException("disk full");
+			}
+			@Override public void flush() throws java.io.IOException { throw new java.io.IOException("disk full"); }
+			@Override public void close() { }
+		}));
+		r.location(fix(21, 105, 2_000));
+		assertEquals("failed writer is closed", null, field.get(r));
+		r.location(fix(21, 105, 3_000));
+		assertEquals("failed trip never reopens", null, field.get(r));
 	}
 
 	@Test

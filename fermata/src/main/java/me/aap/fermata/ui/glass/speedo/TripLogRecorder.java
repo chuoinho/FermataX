@@ -42,6 +42,7 @@ final class TripLogRecorder {
     @Nullable private Location prev;
     private LocationSource prevSource;
     private boolean started;
+    private boolean failed;
     private int unflushed;
 
     TripLogRecorder(File dir, BooleanSupplier enabled) {
@@ -62,6 +63,7 @@ final class TripLogRecorder {
     void event(String name, long elapsedMs) {
         if ("start".equals(name)) {
             close();
+            failed = false;
             started = true;
         }
         if (active()) {
@@ -97,7 +99,7 @@ final class TripLogRecorder {
 
     /** Opens a file when logging was switched on during a trip, closes it when switched off. */
     private boolean active() {
-        boolean on = started && enabled.getAsBoolean();
+        boolean on = started && !failed && enabled.getAsBoolean();
         if (on && out == null) open();
         else if (!on && out != null) close();
         return out != null;
@@ -113,8 +115,9 @@ final class TripLogRecorder {
             out.write(HEADER + "\n");
             out.write("type,elapsedMs,provider,stepM,acc,speed,speedAcc,mock,source\n");
         } catch (IOException e) {
+            failed = true;
+            close();
             Log.w(e, "Unable to open trip log");
-            out = null;
         }
         prev = null;
         prevSource = null;
@@ -138,8 +141,9 @@ final class TripLogRecorder {
             w.write('\n');
             if (++unflushed >= 30) flush();
         } catch (IOException e) {
-            Log.w(e, "Trip log write failed");
+            failed = true;
             close();
+            Log.w(e, "Trip log write failed");
         }
     }
 
@@ -149,7 +153,10 @@ final class TripLogRecorder {
         try {
             w.flush();
             unflushed = 0;
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            failed = true;
+            close();
+            Log.w(e, "Trip log flush failed");
         }
     }
 
