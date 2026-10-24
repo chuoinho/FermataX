@@ -149,7 +149,9 @@ public class SpeedoDiagnosticsTest {
 
 	private static String fixture(String name) throws Exception {
 		try (InputStream in = SpeedoDiagnosticsTest.class.getResourceAsStream("/diagnostics/" + name)) {
-			return (in == null) ? "<missing " + name + ">" : new String(in.readAllBytes(), StandardCharsets.UTF_8);
+			// Checkouts may turn the fixture into CRLF (text=auto).
+			return (in == null) ? "<missing " + name + ">"
+					: new String(in.readAllBytes(), StandardCharsets.UTF_8).replace("\r\n", "\n");
 		}
 	}
 }
