@@ -28,8 +28,6 @@ It brings local media, IPTV, Xtream and Stalker Portal, Internet Radio, Podcasts
 
 Every pull request targeting `main` and every push to `main` runs the repository's verification pipeline. CI executes the Mobile and Auto unit suites, Web/TV UI-shell guards, UI single-writer and architecture boundary guards, Android Lint, and a three-dot `git diff --check` against the pull-request base (or push base). After every successful run, the workflow packages and uploads exactly one unsigned universal debug APK for phone and Android Auto/DHU device testing. Release signing and publishing remain separate maintainer actions.
 
-Maintainers and coding agents should also read [MASTER_CONTEXT.md](MASTER_CONTEXT.md), the tracked canonical product and architecture context. README remains the concise onboarding and build-status entry point.
-
 ## Highlights
 
 - **Dashboard-first interface** designed for quick access on Android Auto screens.
