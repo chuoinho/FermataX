@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.glass.speedo;
 
 import android.content.Context;
+import me.aap.fermata.location.LocationSource;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Build;
@@ -39,6 +40,7 @@ final class TripLogRecorder {
     private final BooleanSupplier enabled;
     @Nullable private BufferedWriter out;
     @Nullable private Location prev;
+    private LocationSource prevSource;
     private boolean started;
     private int unflushed;
 
@@ -72,16 +74,19 @@ final class TripLogRecorder {
         }
     }
 
-    void location(Location l) {
+    void location(Location l) { location(l, null); }
+
+    void location(Location l, LocationSource source) {
         if (!active()) return;
         long t = l.getElapsedRealtimeNanos() / 1_000_000;
         boolean speedAcc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && l.hasSpeedAccuracy();
         boolean mock = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? l.isMock() : l.isFromMockProvider();
-        String step = (prev == null) ? "" : String.valueOf(Math.round(prev.distanceTo(l)));
+        String step = (prev == null || (prevSource != null && source != null && prevSource != source)) ? "" : String.valueOf(Math.round(prev.distanceTo(l)));
         prev = l;
-        write(String.format(Locale.ROOT, "L,%d,%s,%s,%s,%s,%s,%d", t, l.getProvider(), step,
+        prevSource = source;
+        write(String.format(Locale.ROOT, "L,%d,%s,%s,%s,%s,%s,%d,%s", t, l.getProvider(), step,
                 l.hasAccuracy() ? l.getAccuracy() : "", l.hasSpeed() ? l.getSpeed() : "",
-                speedAcc ? l.getSpeedAccuracyMetersPerSecond() : "", mock ? 1 : 0));
+                speedAcc ? l.getSpeedAccuracyMetersPerSecond() : "", mock ? 1 : 0, source == null ? "" : source.id()));
         // About one small write a second, so an export during the trip sees the latest fixes.
         flush();
     }
@@ -106,12 +111,13 @@ final class TripLogRecorder {
             out = new BufferedWriter(new OutputStreamWriter(
                     new FileOutputStream(new File(dir, name)), StandardCharsets.UTF_8));
             out.write(HEADER + "\n");
-            out.write("type,elapsedMs,provider,stepM,acc,speed,speedAcc,mock\n");
+            out.write("type,elapsedMs,provider,stepM,acc,speed,speedAcc,mock,source\n");
         } catch (IOException e) {
             Log.w(e, "Unable to open trip log");
             out = null;
         }
         prev = null;
+        prevSource = null;
     }
 
     /** Keeps room for one new file within {@link #MAX_FILES}. */

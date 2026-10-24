@@ -48,9 +48,9 @@ public class TripLogRecorderTest {
 		r.event("stop", 4_000);
 		List<String> lines = onlyFileLines();
 		assertEquals(TripLogRecorder.HEADER, lines.get(0));
-		assertEquals("type,elapsedMs,provider,stepM,acc,speed,speedAcc,mock", lines.get(1));
-		assertTrue(lines.toString(), lines.contains("L,2000,gps,,5.0,10.0,,0"));
-		assertTrue(lines.toString(), lines.contains("L,3000,gps,111,5.0,10.0,,0"));
+		assertEquals("type,elapsedMs,provider,stepM,acc,speed,speedAcc,mock,source", lines.get(1));
+		assertTrue(lines.toString(), lines.contains("L,2000,gps,,5.0,10.0,,0,"));
+		assertTrue(lines.toString(), lines.contains("L,3000,gps,111,5.0,10.0,,0,"));
 		String all = String.join("\n", lines);
 		assertFalse(all.contains("21.02"));
 		assertFalse(all.contains("105.83"));
@@ -80,7 +80,7 @@ public class TripLogRecorderTest {
 		TripLogRecorder r = new TripLogRecorder(dir, () -> true);
 		r.event("start", 1_000);
 		r.location(fix(21.0281, 105.8342, 2_000));
-		assertTrue(onlyFileLines().toString(), onlyFileLines().contains("L,2000,gps,,5.0,10.0,,0"));
+		assertTrue(onlyFileLines().toString(), onlyFileLines().contains("L,2000,gps,,5.0,10.0,,0,"));
 	}
 
 	@Test
@@ -119,4 +119,15 @@ public class TripLogRecorderTest {
 		assertEquals(1, files.length);
 		return Files.readAllLines(files[0].toPath(), StandardCharsets.UTF_8);
 	}
+
+    @Test public void writesSourceColumn() throws Exception {
+        TripLogRecorder r = new TripLogRecorder(dir, () -> true); r.event("start", 1000);
+        r.location(fix(0,0,2000), me.aap.fermata.location.LocationSource.PLATFORM_FUSED);
+        r.location(fix(0,0.0003,3000), me.aap.fermata.location.LocationSource.GPS);
+        r.event("stop",4000);
+        assertTrue(onlyFileLines().get(1).endsWith(",source"));
+        assertTrue(onlyFileLines().contains("L,2000,gps,,5.0,10.0,,0,platform_fused"));
+        assertTrue(onlyFileLines().contains("L,3000,gps,,5.0,10.0,,0,gps"));
+    }
+
 }

@@ -1,5 +1,7 @@
 package me.aap.fermata.ui.glass.speedo;
 
+import me.aap.fermata.location.LocationSource;
+
 /** Pure rules that decide how much a single location fix can be trusted. */
 final class FixNormalizer {
     static final double MAX_MPS = 70;
@@ -15,9 +17,15 @@ final class FixNormalizer {
     static TripEngine.Fix of(long timeMs, double latitude, double longitude, boolean hasAccuracy,
                              float accuracy, boolean hasSpeed, float speed, boolean hasSpeedAccuracy,
                              float speedAccuracy) {
+        return of(timeMs, latitude, longitude, hasAccuracy, accuracy, hasSpeed, speed, hasSpeedAccuracy, speedAccuracy, null);
+    }
+
+    static TripEngine.Fix of(long timeMs, double latitude, double longitude, boolean hasAccuracy,
+                             float accuracy, boolean hasSpeed, float speed, boolean hasSpeedAccuracy,
+                             float speedAccuracy, LocationSource source) {
         return new TripEngine.Fix(timeMs, latitude, longitude,
                 hasAccuracy ? accuracy : Double.NaN, hasSpeed ? speed : Double.NaN,
-                hasSpeedAccuracy ? speedAccuracy : Double.NaN);
+                hasSpeedAccuracy ? speedAccuracy : Double.NaN, source);
     }
 
     enum SpeedQuality { OK, STOP, MISSING, OUT_OF_RANGE, LOW_CONFIDENCE }

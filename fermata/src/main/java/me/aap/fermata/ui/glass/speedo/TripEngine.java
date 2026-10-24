@@ -1,6 +1,8 @@
 package me.aap.fermata.ui.glass.speedo;
 
 import java.util.Locale;
+import me.aap.fermata.location.LocationSource;
+import androidx.annotation.Nullable;
 
 /**
  * Single-threaded trip computer facade. All times are milliseconds since boot, never wall time.
@@ -24,7 +26,10 @@ public final class TripEngine {
     }
 
     public record Fix(long timeMs, double latitude, double longitude, double accuracy,
-                      double speedMps, double speedAccuracy) {
+                      double speedMps, double speedAccuracy, @Nullable LocationSource source) {
+        public Fix(long timeMs, double latitude, double longitude, double accuracy, double speedMps, double speedAccuracy) {
+            this(timeMs, latitude, longitude, accuracy, speedMps, speedAccuracy, null);
+        }
         public boolean positionTrusted() {
             return accuracy > 0 && accuracy <= FixNormalizer.TRUSTED_ACCURACY;
         }

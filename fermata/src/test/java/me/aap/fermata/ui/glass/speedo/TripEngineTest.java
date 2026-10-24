@@ -584,4 +584,39 @@ public class TripEngineTest {
         stopped.accept(new TripEngine.Fix(10_000, 10, 106, 5, 10, 1), 10_000);
         assertEquals(TripEngine.Outcome.NOT_RUNNING, stopped.lastOutcome());
     }
+
+    @org.junit.Test public void sourceSwitchAddsNoFakeDistance() {
+        TripEngine e = switchedTrip(true);
+        org.junit.Assert.assertEquals(390, e.state().distanceMeters(), 15);
+    }
+    @org.junit.Test public void sourceSwitchWithoutDopplerDoesNotChord() {
+        TripEngine e = new TripEngine(); e.start(0);
+        for (int i=0;i<20;i++) e.accept(sourceFix(i, false, false, 10), i*1000L);
+        double before = e.state().distanceMeters();
+        e.accept(sourceFix(20, true, false, 10), 20000);
+        org.junit.Assert.assertEquals(before, e.state().distanceMeters(), 0.001);
+        for (int i=21;i<40;i++) e.accept(sourceFix(i, true, false, 10), i*1000L);
+        org.junit.Assert.assertEquals(360, e.state().distanceMeters(), 15);
+    }
+    private TripEngine switchedTrip(boolean doppler) {
+        TripEngine e = new TripEngine(); e.start(0);
+        for (int i=0;i<40;i++) e.accept(sourceFix(i, i>=20, doppler, 10), i*1000L);
+        return e;
+    }
+    private TripEngine.Fix sourceFix(int i, boolean gps, boolean doppler, double speed) {
+        return new TripEngine.Fix(i*1000L, i*10/111194.9266, gps ? 30/111194.9266 : 0,
+          5, doppler ? speed : Double.NaN, 0.5,
+          gps ? me.aap.fermata.location.LocationSource.GPS : me.aap.fermata.location.LocationSource.PLATFORM_FUSED);
+    }
+    @org.junit.Test public void displayEasesAcrossSourceSwitch() {
+        TripEngine e = new TripEngine(); e.start(0);
+        for (int i=0;i<10;i++) e.accept(sourceFix(i, false, true, 20), i*1000L);
+        float before = e.state().speedKmh();
+        e.accept(sourceFix(10, true, true, 10), 10000);
+        org.junit.Assert.assertTrue(e.state().speedKmh() >= (before+36)/2-1);
+        e.accept(sourceFix(11, true, true, 10), 11000);
+        e.accept(sourceFix(12, true, true, 10), 12000);
+        org.junit.Assert.assertTrue(Math.abs(e.state().speedKmh()-36) <= (before-36)*0.25+1);
+    }
+
 }

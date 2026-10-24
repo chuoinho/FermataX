@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.glass.speedo;
 
 import java.util.EnumMap;
+import me.aap.fermata.location.LocationSource;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -22,6 +23,7 @@ final class SpeedoDiagnostics {
     private final EnumMap<TripEngine.Outcome, Integer> outcomes = new EnumMap<>(TripEngine.Outcome.class);
     private final EnumMap<FixNormalizer.SpeedQuality, Integer> qualities =
             new EnumMap<>(FixNormalizer.SpeedQuality.class);
+    private final EnumMap<LocationSource, Integer> sources = new EnumMap<>(LocationSource.class);
     private int fixes, mock;
     private long windowStart = -1;
     private TripEngine.Signal signal;
@@ -33,6 +35,11 @@ final class SpeedoDiagnostics {
     }
 
     void onFix(TripEngine.Outcome outcome, FixNormalizer.SpeedQuality quality, boolean mock) {
+        onFix(outcome, quality, mock, null);
+    }
+
+    void onFix(TripEngine.Outcome outcome, FixNormalizer.SpeedQuality quality, boolean mock, LocationSource source) {
+        if (source != null) sources.merge(source, 1, Integer::sum);
         fixes++;
         if (mock) this.mock++;
         outcomes.merge(outcome, 1, Integer::sum);
@@ -84,11 +91,13 @@ final class SpeedoDiagnostics {
             for (FixNormalizer.SpeedQuality q : FixNormalizer.SpeedQuality.values()) {
                 a.put("speed_" + q.name().toLowerCase(Locale.ROOT), qualities.getOrDefault(q, 0));
             }
+            for (LocationSource source : LocationSource.values()) a.put("src_" + source.id(), sources.getOrDefault(source, 0));
             sink.event("speedo_fix_summary", a);
         }
         fixes = mock = 0;
         outcomes.clear();
         qualities.clear();
+        sources.clear();
         windowStart = nowMs;
     }
 }

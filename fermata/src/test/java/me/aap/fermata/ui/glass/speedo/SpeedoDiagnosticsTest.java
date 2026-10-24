@@ -167,4 +167,20 @@ public class SpeedoDiagnosticsTest {
 					: new String(in.readAllBytes(), StandardCharsets.UTF_8).replace("\r\n", "\n");
 		}
 	}
+
+    @Test public void countsSelectedSourcesAndResetsWindow() {
+        SpeedoDiagnostics d = new SpeedoDiagnostics(sink); d.flush(0);
+        d.onFix(TripEngine.Outcome.ACCEPTED, FixNormalizer.SpeedQuality.OK, false, me.aap.fermata.location.LocationSource.GPS);
+        d.onFix(TripEngine.Outcome.ACCEPTED, FixNormalizer.SpeedQuality.OK, false, me.aap.fermata.location.LocationSource.GPS);
+        d.onFix(TripEngine.Outcome.ACCEPTED, FixNormalizer.SpeedQuality.OK, false, me.aap.fermata.location.LocationSource.GOOGLE_FUSED);
+        d.flush(30000);
+        assertEquals(2, attrs.get(0).get("src_gps"));
+        assertEquals(1, attrs.get(0).get("src_google_fused"));
+        assertEquals(0, attrs.get(0).get("src_platform_fused"));
+        d.onFix(TripEngine.Outcome.ACCEPTED, FixNormalizer.SpeedQuality.OK, false, me.aap.fermata.location.LocationSource.PLATFORM_FUSED);
+        d.flush(60000);
+        assertEquals(0, attrs.get(1).get("src_gps"));
+        assertEquals(1, attrs.get(1).get("src_platform_fused"));
+    }
+
 }

@@ -13,6 +13,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.location.LocationHub;
+import me.aap.fermata.location.LocationSource;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -85,7 +86,12 @@ public final class GlassSpeedoTripController {
         this.thread = new HandlerThread("GlassSpeedo");
         this.thread.start();
         this.worker = new Handler(this.thread.getLooper());
-        this.hubListener = loc -> worker.post(() -> handleLocation(loc));
+        this.hubListener = new LocationHub.Listener() {
+            public void onLocation(Location loc) { worker.post(() -> handleLocation(loc)); }
+            public void onLocation(Location loc, LocationSource source) {
+                worker.post(() -> handleLocation(loc, source));
+            }
+        };
         this.tripLog = TripLogRecorder.create(this.context);
         engine.restore(store.load(), store.suspendedForMs());
         snapshot = engine.state();
@@ -212,7 +218,9 @@ public final class GlassSpeedoTripController {
     /** True while location is actually being recorded, whoever started it. */
     public boolean isTracking() { return running; }
 
-    private void handleLocation(Location location) {
+    private void handleLocation(Location location) { handleLocation(location, null); }
+
+    private void handleLocation(Location location, LocationSource source) {
         lastHandleLocationThread = Thread.currentThread();
         if (!running || location == null) return;
         boolean mock = isMock(location);
@@ -222,16 +230,16 @@ public final class GlassSpeedoTripController {
         boolean speedAcc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && location.hasSpeedAccuracy();
         TripEngine.Fix fix = FixNormalizer.of(fixTime, location.getLatitude(), location.getLongitude(),
                 location.hasAccuracy(), location.getAccuracy(), location.hasSpeed(), location.getSpeed(),
-                speedAcc, speedAcc ? location.getSpeedAccuracyMetersPerSecond() : 0f);
+                speedAcc, speedAcc ? location.getSpeedAccuracyMetersPerSecond() : 0f, source);
         // Logged before the mock filter so a report shows fixes that were dropped as mock.
-        if (tripLog != null) tripLog.location(location);
+        if (tripLog != null) tripLog.location(location, source);
         if (mock && !store.isAllowMock()) {
-            diagnostics.onFix(TripEngine.Outcome.REJECTED, FixNormalizer.speedQuality(fix), true);
+            diagnostics.onFix(TripEngine.Outcome.REJECTED, FixNormalizer.speedQuality(fix), true, source);
             return;
         }
         lastCallback = nowTime;
         boolean accepted = engine.accept(fix, nowTime);
-        diagnostics.onFix(engine.lastOutcome(), FixNormalizer.speedQuality(fix), mock);
+        diagnostics.onFix(engine.lastOutcome(), FixNormalizer.speedQuality(fix), mock, source);
         if (accepted) {
             lastProgress = nowTime;
             retryDelay = 5_000;

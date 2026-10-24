@@ -53,7 +53,8 @@ final class TripReplay {
                 case "L" -> {
                     if (!row[3].isEmpty()) lat += d(row[3]) / METERS_PER_DEGREE;
                     e.accept(FixNormalizer.of(t, lat, 0, !row[4].isEmpty(), (float) d(row[4]),
-                            !row[5].isEmpty(), (float) d(row[5]), !row[6].isEmpty(), (float) d(row[6])), t);                }
+                            !row[5].isEmpty(), (float) d(row[5]), !row[6].isEmpty(), (float) d(row[6]), row.length > 8 && !row[8].isEmpty()
+                              ? me.aap.fermata.location.LocationSource.valueOf(row[8].toUpperCase(java.util.Locale.ROOT)) : null), t);                }
                 case "I" -> quiet = "1".equals(row[2]);
                 case "E" -> {
                     switch (row[2]) {

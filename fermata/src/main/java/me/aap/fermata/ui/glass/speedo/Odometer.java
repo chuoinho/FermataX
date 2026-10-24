@@ -109,6 +109,15 @@ final class Odometer {
         }
         if (fix.timeMs() <= last.timeMs()) return Result.REJECTED;
         long dt = fix.timeMs() - last.timeMs();
+        if (last.source() != null && fix.source() != null && last.source() != fix.source()) {
+            // Independent providers have different position offsets: only Doppler can span a switch.
+            if (dt <= INTERP_MS && Double.isFinite(lastSpeed) && Double.isFinite(v))
+                accountMotion((lastSpeed + v) * 0.5 * dt / 1000.0, dt, v);
+            clearAnchors();
+            last = seg = fix;
+            lastSpeed = segSpeed = observed = v;
+            return Result.ACCEPTED;
+        }
         if (gap && dt <= FRESH_MS) clearGap();
         if (gap || dt > FRESH_MS) return recover(fix, v);
         if (!plausible(last, fix)) return Result.REJECTED;
