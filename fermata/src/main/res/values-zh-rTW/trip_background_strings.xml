@@ -2,9 +2,9 @@
 <resources>
     <string name="trip_background_title">其他 App 顯示於車機螢幕時仍記錄位置</string>
     <string name="trip_background_sub_on">已開啟。即使地圖或其他 App 佔用車機螢幕，行程距離、時間、平均速度與停車位置仍保持準確。</string>
-    <string name="trip_background_sub_off">已關閉。其他 App 佔用車機螢幕時，行程統計會暫停，停車位置也可能較不準確。輕觸即可開啟。</string>
-    <string name="trip_background_sub_needs_permission">位置權限不是「一律允許」，因此其他 App 佔用車機螢幕時會停止記錄。輕觸以修正。</string>
-    <string name="trip_background_disclosure">為了在其他 App（例如地圖）佔用車機螢幕時，仍能保留行程距離、時間、平均速度並儲存停車位置，FermataX 僅在 Android Auto 連線期間於背景收集您的位置。位置資料絕不會離開您的手機。您隨時可以在設定中關閉此功能。\n\n在下一個畫面請選擇「一律允許」。</string>
+    <string name="trip_background_sub_off">已關閉。開啟儀表板後，即使被其他應用程式遮住，仍會記錄位置。啟用後可在連接車輛時、開啟儀表板前開始記錄。</string>
+    <string name="trip_background_sub_needs_permission">選擇「一律允許」，即可在連接車輛時、開啟儀表板前開始記錄。從儀表板啟動的記錄在被其他應用程式遮住時仍會繼續。</string>
+    <string name="trip_background_disclosure">開啟儀表板後，即使被其他應用程式遮住，仍會記錄位置。此選項讓 FermataX 在 Android Auto 連線期間，從連接車輛時、開啟儀表板前就在背景收集位置，用於行程統計和停車位置。FermataX 不會將位置傳送至自己的伺服器。您可隨時在設定中關閉。\n\n在下一個畫面選擇「一律允許」。</string>
     <string name="trip_background_continue">繼續</string>
     <string name="trip_background_enabled">已開啟背景記錄</string>
     <string name="trip_background_disabled">已關閉背景記錄</string>

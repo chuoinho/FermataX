@@ -2,9 +2,9 @@
 <resources>
     <string name="trip_background_title">Registrar localização com outros apps na tela do carro</string>
     <string name="trip_background_sub_on">Ativado. Distância, tempo, velocidade média e local de estacionamento continuam precisos mesmo com o Maps ou outro app na tela do carro.</string>
-    <string name="trip_background_sub_off">Desativado. Enquanto outro app ocupa a tela do carro, as estatísticas da viagem pausam e o estacionamento pode ficar menos preciso. Toque para ativar.</string>
-    <string name="trip_background_sub_needs_permission">A localização não está em “Permitir o tempo todo”, então o registro para quando outro app ocupa a tela do carro. Toque para corrigir.</string>
-    <string name="trip_background_disclosure">Para manter a distância, o tempo e a velocidade média da viagem e salvar onde você estacionou mesmo quando outro app (como o Maps) ocupa a tela do carro, o FermataX coleta sua localização em segundo plano, apenas durante as sessões do Android Auto. A localização nunca sai do seu telefone. Você pode desativar isso a qualquer momento nas Definições.\n\nNa próxima tela, escolha “Permitir o tempo todo”.</string>
+    <string name="trip_background_sub_off">Desativado. Ao abrir o painel, a localização continua a ser registada quando outra aplicação o cobre. Ative para registar desde a ligação ao carro, antes de abrir o painel.</string>
+    <string name="trip_background_sub_needs_permission">Escolha «Permitir sempre» para registar desde a ligação ao carro, antes de abrir o painel. A gravação iniciada no painel continua quando outra aplicação o cobre.</string>
+    <string name="trip_background_disclosure">Ao abrir o painel, a localização continua a ser registada quando outra aplicação o cobre. Esta opção permite ao FermataX recolher a localização em segundo plano durante sessões Android Auto desde a ligação ao carro, antes de abrir o painel, para estatísticas e estacionamento. O FermataX não envia localizações para servidores próprios. Pode desativar nas Definições.\n\nNo próximo ecrã, escolha «Permitir sempre».</string>
     <string name="trip_background_continue">Continuar</string>
     <string name="trip_background_enabled">Registro em segundo plano ativado</string>
     <string name="trip_background_disabled">Registro em segundo plano desativado</string>

@@ -122,6 +122,7 @@ public final class GlassSpeedoTripController {
             return;
         }
         store.setUserPaused(false);
+        if (!running) TripTrackingService.resumeDashboard(context);
         worker.post(() -> {
             running = true;
             Location seed = LocationHub.get(context).freshSystemLocation(60_000L);
@@ -191,6 +192,7 @@ public final class GlassSpeedoTripController {
 
     public synchronized void pauseTrip() {
         store.setUserPaused(true);
+        TripTrackingService.userPaused(context);
         worker.post(() -> {
             running = false;
             worker.removeCallbacks(heartbeat);

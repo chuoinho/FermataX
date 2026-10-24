@@ -2,9 +2,9 @@
 <resources>
     <string name="trip_background_title">Registrar ubicación con otras apps en la pantalla del coche</string>
     <string name="trip_background_sub_on">Activado. La distancia, el tiempo, la velocidad media y el lugar de aparcamiento siguen siendo precisos aunque Maps u otra app ocupe la pantalla del coche.</string>
-    <string name="trip_background_sub_off">Desactivado. Mientras otra app ocupa la pantalla del coche, las estadísticas del viaje se pausan y el aparcamiento puede ser menos preciso. Toca para activar.</string>
-    <string name="trip_background_sub_needs_permission">La ubicación no está en “Permitir todo el tiempo”, así que el registro se detiene cuando otra app ocupa la pantalla del coche. Toca para corregir.</string>
-    <string name="trip_background_disclosure">Para conservar la distancia, el tiempo y la velocidad media del viaje y guardar dónde aparcaste incluso cuando otra app (como Maps) ocupa la pantalla del coche, FermataX recoge tu ubicación en segundo plano, solo durante las sesiones de Android Auto. La ubicación nunca sale de tu teléfono. Puedes desactivarlo en cualquier momento en Configuración.\n\nEn la siguiente pantalla elige “Permitir todo el tiempo”.</string>
+    <string name="trip_background_sub_off">Desactivado. Al abrir el panel, la ubicación se sigue registrando aunque otra aplicación lo cubra. Actívelo para registrar desde la conexión del coche, antes de abrir el panel.</string>
+    <string name="trip_background_sub_needs_permission">Elija «Permitir siempre» para registrar desde la conexión del coche, antes de abrir el panel. La grabación iniciada en el panel continúa aunque otra aplicación lo cubra.</string>
+    <string name="trip_background_disclosure">Al abrir el panel, la ubicación se sigue registrando aunque otra aplicación lo cubra. Esta opción permite a FermataX recopilar la ubicación en segundo plano durante las sesiones de Android Auto desde la conexión del coche, antes de abrir el panel, para las estadísticas y el aparcamiento. FermataX no envía ubicaciones a sus propios servidores. Puede desactivarlo en Ajustes.\n\nEn la siguiente pantalla elija «Permitir siempre».</string>
     <string name="trip_background_continue">Continuar</string>
     <string name="trip_background_enabled">Registro en segundo plano activado</string>
     <string name="trip_background_disabled">Registro en segundo plano desactivado</string>

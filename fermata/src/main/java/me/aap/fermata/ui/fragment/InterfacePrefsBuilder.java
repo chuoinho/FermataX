@@ -109,7 +109,7 @@ final class InterfacePrefsBuilder {
 		Context ctx = activity.getContext();
 		if (TripModePolicy.isEnabled(ctx)) {
 			TripModePolicy.setEnabled(ctx, false);
-			TripTrackingService.stop(ctx);
+			TripTrackingService.backgroundDisabled(ctx);
 			onChanged.run();
 			UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_disabled));
 			return;

@@ -2,9 +2,9 @@
 <resources>
     <string name="trip_background_title">Ghi vị trí khi dùng app khác trên xe</string>
     <string name="trip_background_sub_on">Đang bật. Quãng đường, thời gian, tốc độ trung bình và vị trí đỗ xe vẫn chính xác cả khi Maps hoặc app khác đang chiếm màn hình xe.</string>
-    <string name="trip_background_sub_off">Đang tắt. Khi app khác chiếm màn hình xe, thống kê chuyến đi tạm dừng và vị trí đỗ xe có thể kém chính xác. Chạm để bật.</string>
-    <string name="trip_background_sub_needs_permission">Vị trí chưa đặt “Luôn cho phép”, nên việc ghi sẽ dừng khi app khác chiếm màn hình xe. Chạm để sửa.</string>
-    <string name="trip_background_disclosure">Để giữ quãng đường, thời gian, tốc độ trung bình của chuyến đi và lưu vị trí đỗ xe ngay cả khi app khác (như Maps) đang chiếm màn hình xe, FermataX thu thập vị trí ở chế độ nền, chỉ trong các phiên Android Auto. Vị trí không bao giờ rời khỏi điện thoại. Bạn có thể tắt bất cứ lúc nào trong Cài đặt.\n\nỞ màn hình tiếp theo, hãy chọn “Luôn cho phép”.</string>
+    <string name="trip_background_sub_off">Tắt. Khi đã mở dashboard, vị trí vẫn được ghi khi ứng dụng khác che màn hình. Bật để ghi ngay từ lúc kết nối xe, trước khi mở dashboard.</string>
+    <string name="trip_background_sub_needs_permission">Chọn “Luôn cho phép” để ghi ngay từ lúc kết nối xe, trước khi mở dashboard. Việc ghi đã bắt đầu từ dashboard vẫn tiếp tục khi ứng dụng khác che màn hình.</string>
+    <string name="trip_background_disclosure">Khi đã mở dashboard, vị trí vẫn được ghi khi ứng dụng khác che màn hình. Tuỳ chọn này cho FermataX thu thập vị trí nền trong phiên Android Auto ngay từ lúc kết nối xe, trước khi mở dashboard, để tính chuyến đi và lưu chỗ đỗ xe. FermataX không gửi vị trí về máy chủ riêng. Bạn có thể tắt trong Cài đặt.\n\nỞ màn hình tiếp theo, chọn “Luôn cho phép”.</string>
     <string name="trip_background_continue">Tiếp tục</string>
     <string name="trip_background_enabled">Đã bật ghi vị trí ở chế độ nền</string>
     <string name="trip_background_disabled">Đã tắt ghi vị trí ở chế độ nền</string>

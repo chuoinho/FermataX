@@ -301,6 +301,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             refreshWeather(ctx, true);
         }
     };
+    private boolean dashboardStarted;
     private volatile boolean isStopped = false;
     private boolean weatherAcquired = false;
     // True from the start of a refresh until its forecast or error arrives.
@@ -320,10 +321,13 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     }
 
     public void start() {
+        if (dashboardStarted) return;
+        dashboardStarted = true;
         isStopped = false;
         tripRegistry.addListener(tripListener);
         // The visible dashboard always records; the service only keeps recording when it is allowed to.
         tripRegistry.getController().start();
+        TripTrackingService.startForDashboard(activity.getContext());
         AutomotiveNavNotificationService.registerListener(this);
         speedoView.setTripMode(TripModePolicy.current(activity.getContext()));
 
@@ -333,6 +337,8 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     }
 
     public void stop() {
+        if (!dashboardStarted) return;
+        dashboardStarted = false;
         isStopped = true;
         weatherHandler.removeCallbacks(scheduledWeatherRefresh);
         weatherHandler.removeCallbacks(permissionWatch);
@@ -350,6 +356,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         weatherClient.shutdown();
         tripRegistry.removeListener(tripListener);
         tripRegistry.getController().stop();
+        TripTrackingService.dashboardClosed(activity.getContext());
         AutomotiveNavNotificationService.unregisterListener(this);
         mediaController.unbind();
     }

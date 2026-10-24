@@ -38,6 +38,10 @@ import me.aap.utils.log.Log;
 public class TripTrackingService extends Service {
     private static final String TAG = "FermataTripService";
 
+    public static final String ACTION_START_DASHBOARD = "me.aap.fermata.action.TRIP_START_DASHBOARD";
+    private static int dashboards;
+    private static boolean backgroundMode;
+
     public static final String ACTION_START = "me.aap.fermata.action.TRIP_START";
     public static final String ACTION_STOP = "me.aap.fermata.action.TRIP_STOP";
     public static final String ACTION_TOGGLE = "me.aap.fermata.action.TRIP_TOGGLE";
@@ -64,6 +68,8 @@ public class TripTrackingService extends Service {
 
     @androidx.annotation.VisibleForTesting
     public static void resetForTests() {
+        dashboards = 0;
+        backgroundMode = false;
         synchronized (REGISTRY_LOCK) {
             if (registryInstance != null) {
                 registryInstance.destroyForTesting();
@@ -109,12 +115,46 @@ public class TripTrackingService extends Service {
         try {
             Intent intent = new Intent(context, TripTrackingService.class).setAction(ACTION_START);
             ContextCompat.startForegroundService(context, intent);
+            backgroundMode = true;
             recordStart("started");
         } catch (SecurityException | IllegalStateException e) {
             Log.w(TAG, "Failed to start TripTrackingService", e);
             recordStart("blocked");
             reportBlocked();
         }
+    }
+
+    public static void startForDashboard(@NonNull Context context) {
+        dashboards++;
+        resumeDashboard(context);
+    }
+
+    static void resumeDashboard(Context context) {
+        if (dashboards == 0 || new TripStore(context).isUserPaused() || !hasLocationPermission(context)) return;
+        init(context);
+        try {
+            ContextCompat.startForegroundService(context,
+                    new Intent(context, TripTrackingService.class).setAction(ACTION_START_DASHBOARD));
+            recordStart("dashboard");
+        } catch (SecurityException | IllegalStateException e) {
+            recordStart("blocked");
+            reportBlocked();
+        }
+    }
+
+    public static void dashboardClosed(@NonNull Context context) {
+        if (dashboards > 0) dashboards--;
+        if (dashboards == 0 && !me.aap.fermata.auto.AutomotiveConnectionState.get().isProjectionConnected()
+                && TripModePolicy.current(context) != TripModePolicy.Mode.ON) stop(context);
+    }
+
+    public static void backgroundDisabled(@NonNull Context context) {
+        backgroundMode = false;
+        if (dashboards == 0) stop(context);
+    }
+
+    static void userPaused(Context context) {
+        if (!backgroundMode) stop(context);
     }
 
     private static void recordStart(String reason) {
@@ -133,6 +173,7 @@ public class TripTrackingService extends Service {
     }
 
     public static void stop(@NonNull Context context) {
+        backgroundMode = false;
         try {
             Intent intent = new Intent(context, TripTrackingService.class).setAction(ACTION_STOP);
             context.stopService(intent);
@@ -151,6 +192,7 @@ public class TripTrackingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent != null ? intent.getAction() : null;
+        if (ACTION_START.equals(action)) backgroundMode = true;
 
         if (ACTION_STOP.equals(action)) {
             stopSelf();
@@ -207,6 +249,7 @@ public class TripTrackingService extends Service {
 
             if (tripListener == null) {
                 tripListener = (speedKmh, state) -> {
+                    if (state.isPaused() && !backgroundMode) { stopSelf(); return; }
                     long now = SystemClock.elapsedRealtime();
                     if (now - lastNotificationUpdate >= 10_000L) {
                         updateNotification(state);
@@ -221,6 +264,7 @@ public class TripTrackingService extends Service {
 
     @Override
     public void onDestroy() {
+        backgroundMode = false;
         registry().setServiceRunning(false);
         if (tripListener != null) {
             registry().removeListener(tripListener);

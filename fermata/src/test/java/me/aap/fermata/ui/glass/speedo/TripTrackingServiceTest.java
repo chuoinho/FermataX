@@ -35,6 +35,9 @@ public class TripTrackingServiceTest {
 
     @Before
     public void setUp() {
+        TripTrackingService.resetForTests();
+
+        AutomotiveConnectionState.get().connectionChanged(false);
         context = RuntimeEnvironment.getApplication();
         context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit().clear().commit();
         Shadows.shadowOf((Application) context).grantPermissions(
@@ -315,4 +318,71 @@ public class TripTrackingServiceTest {
             TripTrackingAutoBinder.diagnostics = TripTrackingAutoBinder.DEFAULT_DIAGNOSTICS;
         }
     }
+    @org.junit.After public void cleanupDashboardTests() {
+        TripTrackingService.resetForTests();
+        AutomotiveConnectionState.get().connectionChanged(false);
+        GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
+
+    }
+    private void whileInUseOnly() {
+        TripModePolicy.setEnabled(context, false);
+        Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+    }
+    @Test public void dashboardStartsServiceWithWhileInUsePermission() {
+        whileInUseOnly();
+        java.util.List<Object> reasons = new java.util.ArrayList<>();
+        GlassSpeedoTripController.diagnosticsSink = (n,a) -> { if(n.equals("trip_service_start")) reasons.add(a.get("reason")); };
+        TripTrackingService.startForDashboard(context);
+        assertEquals(TripTrackingService.ACTION_START_DASHBOARD, Shadows.shadowOf((Application) context).getNextStartedService().getAction());
+        assertEquals(java.util.List.of("dashboard"), reasons);
+    }
+    @Test public void dashboardServiceStopsWhenClosedWithoutCar() {
+        whileInUseOnly(); TripTrackingService.startForDashboard(context);
+        TripTrackingService.dashboardClosed(context);
+        assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+    }
+    @Test public void twoDashboardsKeepServiceUntilBothClose() {
+        whileInUseOnly();
+        TripTrackingService.startForDashboard(context); TripTrackingService.startForDashboard(context);
+        TripTrackingService.dashboardClosed(context);
+        assertNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+        TripTrackingService.dashboardClosed(context);
+        assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+        TripTrackingService.startForDashboard(context); TripTrackingService.dashboardClosed(context);
+        assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+    }
+    @Test public void dashboardServiceKeepsRunningWithCar() {
+        whileInUseOnly(); AutomotiveConnectionState.get().connectionChanged(true);
+        TripTrackingService.startForDashboard(context); TripTrackingService.dashboardClosed(context);
+        assertNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+        TripTrackingService.registry().setServiceRunning(true);
+        new TripTrackingAutoBinder(context).onStateChanged(AutomotiveConnectionState.State.DISCONNECTED);
+        assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+    }
+    @Test public void optInOffDoesNotStopDashboardService() {
+        TripTrackingService.startForDashboard(context); TripTrackingService.start(context);
+        TripModePolicy.setEnabled(context, false); TripTrackingService.backgroundDisabled(context);
+        assertNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+        TripTrackingService.dashboardClosed(context);
+        assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+    }
+    @Test public void noPermissionDoesNotStartDashboardService() {
+        Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION);
+        TripTrackingService.startForDashboard(context);
+        assertNull(Shadows.shadowOf((Application) context).getNextStartedService());
+    }
+    @Test public void blockedDashboardServiceDoesNotCrash() {
+        whileInUseOnly(); java.util.List<Object> reasons = new java.util.ArrayList<>();
+        GlassSpeedoTripController.diagnosticsSink = (n,a) -> { if(n.equals("trip_service_start")) reasons.add(a.get("reason")); };
+        TripTrackingService.startForDashboard(new android.content.ContextWrapper(context) {
+            @Override public android.content.ComponentName startForegroundService(Intent intent) { throw new IllegalStateException("blocked"); }
+        });
+        assertEquals(java.util.List.of("blocked"), reasons);
+    }
+    @Test public void userPauseStopsDashboardService() {
+        whileInUseOnly(); TripTrackingService.startForDashboard(context);
+        TripTrackingService.registry().getController().pauseTrip();
+        assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+    }
 }
+

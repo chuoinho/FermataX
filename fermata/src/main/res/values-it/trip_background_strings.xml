@@ -2,9 +2,9 @@
 <resources>
     <string name="trip_background_title">Registra la posizione mentre altre app sono sullo schermo dell\'auto</string>
     <string name="trip_background_sub_on">Attivo. Distanza del viaggio, tempo, velocità media e luogo di parcheggio rimangono precisi anche quando Maps o un\'altra app è sullo schermo dell\'auto.</string>
-    <string name="trip_background_sub_off">Disattivo. Quando un\'altra app è sullo schermo dell\'auto, le statistiche del viaggio vengono messe in pausa e il parcheggio potrebbe essere meno preciso. Tocca per attivare.</string>
-    <string name="trip_background_sub_needs_permission">La posizione non è impostata su “Consenti sempre”, quindi la registrazione si interrompe mentre un\'altra app è sullo schermo dell\'auto. Tocca per correggere.</string>
-    <string name="trip_background_disclosure">Per conservare la distanza, il tempo e la velocità media del viaggio e salvare la posizione di parcheggio anche mentre un\'altra app (come Maps) è sullo schermo dell\'auto, FermataX rileva la tua posizione in background solo durante le sessioni di Android Auto. La posizione non lascia mai il tuo telefono. Puoi disattivare questa funzione in qualsiasi momento nelle Impostazioni.\n\nNella schermata successiva scegli “Consenti sempre”.</string>
+    <string name="trip_background_sub_off">Disattivato. Dopo aver aperto il pannello, la registrazione della posizione continua anche se altre app lo coprono. Attiva per registrare dalla connessione con l’auto, prima di aprire il pannello.</string>
+    <string name="trip_background_sub_needs_permission">Scegli “Consenti sempre” per registrare dalla connessione con l’auto, prima di aprire il pannello. La registrazione avviata dal pannello continua anche se altre app lo coprono.</string>
+    <string name="trip_background_disclosure">Dopo aver aperto il pannello, la registrazione della posizione continua anche se altre app lo coprono. Questa opzione consente a FermataX di raccogliere la posizione in background durante le sessioni Android Auto dalla connessione con l’auto, prima di aprire il pannello, per le statistiche e il parcheggio. FermataX non invia posizioni ai propri server. Puoi disattivare nelle Impostazioni.\n\nNella schermata successiva scegli “Consenti sempre”.</string>
     <string name="trip_background_continue">Continua</string>
     <string name="trip_background_enabled">Registrazione in background attivata</string>
     <string name="trip_background_disabled">Registrazione in background disattivata</string>

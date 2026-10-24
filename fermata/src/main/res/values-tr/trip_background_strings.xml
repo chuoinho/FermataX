@@ -2,9 +2,9 @@
 <resources>
     <string name="trip_background_title">Diğer uygulamalar araç ekranındayken konumu kaydet</string>
     <string name="trip_background_sub_on">Açık. Haritalar veya başka bir uygulama araç ekranındayken bile seyahat mesafesi, süresi, ortalama hız ve park yeri doğru kalır.</string>
-    <string name="trip_background_sub_off">Kapalı. Başka bir uygulama araç ekranındayken seyahat istatistikleri duraklatılır ve park konumu daha az hassas olabilir. Açmak için dokunun.</string>
-    <string name="trip_background_sub_needs_permission">Konum “Her zaman izin ver” olarak ayarlanmamış, bu nedenle araç ekranında başka bir uygulama varken kayıt durur. Düzeltmek için dokunun.</string>
-    <string name="trip_background_disclosure">Seyahat mesafesini, süresini ve ortalama hızı korumak ve başka bir uygulama (örneğin Haritalar) araç ekranındayken bile nereye park ettiğinizi kaydetmek için FermataX, yalnızca Android Auto oturumları sırasında arka planda konumunuzu toplar. Konumunuz asla telefonunuzdan dışarı çıkmaz. Bunu Ayarlar\'dan istediğiniz zaman kapatabilirsiniz.\n\nSonraki ekranda “Her zaman izin ver” seçeneğini belirleyin.</string>
+    <string name="trip_background_sub_off">Kapalı. Gösterge paneli açıldıktan sonra başka uygulamalar üzerini kapatsa da konum kaydı sürer. Panel açılmadan, araca bağlanır bağlanmaz kaydetmek için etkinleştirin.</string>
+    <string name="trip_background_sub_needs_permission">Panel açılmadan, araca bağlanır bağlanmaz kaydetmek için “Her zaman izin ver” seçeneğini seçin. Panelden başlatılan kayıt başka uygulamalar üzerini kapatsa da sürer.</string>
+    <string name="trip_background_disclosure">Gösterge paneli açıldıktan sonra başka uygulamalar üzerini kapatsa da konum kaydı sürer. Bu seçenek, yolculuk istatistikleri ve park yeri için FermataX uygulamasının Android Auto oturumlarında araca bağlanır bağlanmaz, panel açılmadan arka planda konum toplamasını sağlar. FermataX kendi sunucularına konum göndermez. Ayarlardan kapatabilirsiniz.\n\nSonraki ekranda “Her zaman izin ver” seçeneğini seçin.</string>
     <string name="trip_background_continue">Devam</string>
     <string name="trip_background_enabled">Arka planda kayıt açık</string>
     <string name="trip_background_disabled">Arka planda kayıt kapalı</string>
