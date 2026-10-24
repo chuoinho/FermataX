@@ -239,7 +239,7 @@ public final class GlassSpeedoTripController {
         // Logged before the mock filter so a report shows fixes that were dropped as mock.
         if (tripLog != null) tripLog.location(location, source);
         if (mock && !store.isAllowMock()) {
-            diagnostics.onFix(TripEngine.Outcome.REJECTED, FixNormalizer.speedQuality(fix), true, source);
+            diagnostics.onFix(TripEngine.Outcome.MOCK, FixNormalizer.speedQuality(fix), true, source);
             return;
         }
         lastCallback = nowTime;

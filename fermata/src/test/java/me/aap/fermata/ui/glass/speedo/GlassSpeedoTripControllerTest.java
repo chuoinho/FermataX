@@ -563,7 +563,8 @@ public class GlassSpeedoTripControllerTest {
             c.flushDiagnosticsForTesting();
             assertEquals(1, summaries.size());
             assertEquals(1, summaries.get(0).get("mock"));
-            assertEquals(1, summaries.get(0).get("rejected"));
+            assertEquals(0, summaries.get(0).get("rejected"));
+            assertEquals(1, summaries.get(0).get("mock_rejected"));
             assertEquals(1, summaries.get(0).get("speed_ok"));
         } finally {
             GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;

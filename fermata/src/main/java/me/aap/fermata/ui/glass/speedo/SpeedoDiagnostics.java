@@ -94,7 +94,8 @@ final class SpeedoDiagnostics {
             a.put("mock", mock);
             a.put("duration_ms", nowMs - windowStart);
             for (TripEngine.Outcome o : TripEngine.Outcome.values()) {
-                a.put(o.name().toLowerCase(Locale.ROOT), outcomes.getOrDefault(o, 0));
+                a.put(o == TripEngine.Outcome.MOCK ? "mock_rejected" : o.name().toLowerCase(Locale.ROOT),
+                        outcomes.getOrDefault(o, 0));
             }
             for (FixNormalizer.SpeedQuality q : FixNormalizer.SpeedQuality.values()) {
                 a.put("speed_" + q.name().toLowerCase(Locale.ROOT), qualities.getOrDefault(q, 0));

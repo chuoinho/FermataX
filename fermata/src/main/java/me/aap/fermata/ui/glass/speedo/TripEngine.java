@@ -22,7 +22,7 @@ public final class TripEngine {
     /** What happened to a fix passed to {@link #accept}; diagnostics only. */
     public enum Outcome {
         ACCEPTED, NOT_RUNNING, INVALID_TIME, INVALID_ACCURACY, INVALID_POSITION, DUPLICATE, REJECTED,
-        SIGNAL_ONLY, RECOVERING
+        SIGNAL_ONLY, RECOVERING, MOCK
     }
 
     public record Fix(long timeMs, double latitude, double longitude, double accuracy,

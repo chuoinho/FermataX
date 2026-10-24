@@ -72,7 +72,7 @@ export function speedoVerdict(events, tripRows) {
   if (gaps) evidence.push(`${gaps} location delivery gap(s) longer than 8 s`);
   if (summaries.length) evidence.push(`${fixes} fixes in summaries, ${usable} with a usable speed`);
   if (unknownTracking) evidence.push('tracking with fixes but no speed to show');
-  for (const key of ['mock', 'invalid_time', 'invalid_accuracy', 'rejected', 'signal_only', 'recovering',
+  for (const key of ['mock', 'mock_rejected', 'invalid_time', 'invalid_accuracy', 'rejected', 'signal_only', 'recovering',
     'speed_missing', 'speed_low_confidence', 'speed_out_of_range']) {
     const n = sum(key);
     if (n) evidence.push(`${key}: ${n}`);
