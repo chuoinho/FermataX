@@ -102,7 +102,13 @@ public final class DiagnosticReportExporter {
 				}
 				for (File trip : tripLogs(context.getExternalFilesDir(TRIP_LOG_DIR),
 						MAX_TRIP_LOGS, MAX_TRIP_LOG_BYTES)) {
-					byte[] bytes = Files.readAllBytes(trip.toPath());
+					byte[] bytes;
+					try {
+						bytes = Files.readAllBytes(trip.toPath());
+					} catch (IOException ignored) {
+						// Trip retention can remove a selected file while an export is running.
+						continue;
+					}
 					if (FORBIDDEN_PAYLOAD.matcher(new String(bytes, UTF_8)).find()) continue;
 					zip.putNextEntry(new ZipEntry("trip/" + trip.getName()));
 					zip.write(bytes);
