@@ -17,6 +17,25 @@ import org.junit.Test;
 
 public class DiagnosticReportExporterTest {
 	@Test
+	public void tripLogsAreNewestDistanceOnlyFilesWithinBudget() throws Exception {
+		Path dir = Files.createTempDirectory("trip-logs");
+		long now = System.currentTimeMillis();
+		for (int i = 0; i < 5; i++) {
+			Path p = writeText(dir.resolve("trip-v2-" + i + ".csv"), "#fermatax-trip-v2\nE,1,start\n");
+			Files.setLastModifiedTime(p, FileTime.fromMillis(now - (5 - i) * 1_000L));
+		}
+		Path legacy = writeText(dir.resolve("trip-v1.csv"), "type,elapsedMs,provider,lat,lon\n");
+		Files.setLastModifiedTime(legacy, FileTime.fromMillis(now));
+		java.util.List<java.io.File> picked = DiagnosticReportExporter.tripLogs(dir.toFile(), 3, 1_000_000L);
+		assertEquals(java.util.List.of("trip-v2-4.csv", "trip-v2-3.csv", "trip-v2-2.csv"),
+				picked.stream().map(java.io.File::getName).toList());
+		long one = Files.size(dir.resolve("trip-v2-0.csv"));
+		assertEquals(2, DiagnosticReportExporter.tripLogs(dir.toFile(), 3, 2 * one).size());
+		assertTrue(DiagnosticReportExporter.tripLogs(null, 3, 1_000_000L).isEmpty());
+		assertTrue(DiagnosticReportExporter.tripLogs(dir.resolve("missing").toFile(), 3, 1_000_000L).isEmpty());
+	}
+
+	@Test
 	public void productionCacheLimitsAreThreeReportsAndTwentyFourMiB() {
 		assertEquals(3, DiagnosticReportExporter.MAX_CACHED_REPORTS);
 		assertEquals(24L * 1024L * 1024L,

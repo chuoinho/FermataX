@@ -63,6 +63,7 @@ final class SettingsDiagnosticsManager {
 					App.get().execute(() -> {
 						boolean cleared = runtime.clear(3000L);
 						DiagnosticReportExporter.clearCachedReports(FermataApplication.get());
+						DiagnosticReportExporter.clearTripLogs(FermataApplication.get());
 						return cleared;
 					}).main(activity.getHandler())
 							.onCompletion((cleared, error) -> {

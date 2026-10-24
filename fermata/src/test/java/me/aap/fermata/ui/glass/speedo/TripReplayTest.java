@@ -51,4 +51,23 @@ public class TripReplayTest {
         }
         assertTrue(failures.toString(), failures.length() == 0);
     }
+
+    @Test public void oldCoordinateLogsAreRejected() {
+        String v1 = "type,elapsedMs,provider,lat,lon,acc,speed,speedAcc,mock\nE,1000,start\n";
+        org.junit.Assert.assertThrows(IllegalArgumentException.class,
+                () -> TripReplay.replay(new java.io.StringReader(v1)));
+    }
+
+    @Test public void distanceOnlyLogReplays() throws Exception {
+        // 60 s at 10 m/s with 10 m between fixes: 600 m of road.
+        StringBuilder v2 = new StringBuilder(TripLogRecorder.HEADER)
+                .append("\ntype,elapsedMs,provider,stepM,acc,speed,speedAcc,mock\nE,1000,start\n");
+        for (int i = 0; i <= 60; i++) {
+            v2.append("L,").append(2000 + i * 1000).append(",gps,").append(i == 0 ? "" : "10")
+                    .append(",5,10,0.5,0\n");
+        }
+        v2.append("E,63000,stop\n");
+        TripEngine.State s = TripReplay.replay(new java.io.StringReader(v2.toString())).state();
+        org.junit.Assert.assertEquals(600, s.distanceMeters(), 12);
+    }
 }

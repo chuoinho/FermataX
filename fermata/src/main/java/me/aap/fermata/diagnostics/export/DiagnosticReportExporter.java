@@ -47,6 +47,11 @@ import me.aap.fermata.diagnostics.DiagnosticRecorder;
 
 /** Creates a local, explicitly user-exported support bundle without legacy logs or raw traces. */
 public final class DiagnosticReportExporter {
+	/** First line of a distance-only trip log; same value as TripLogRecorder.HEADER. */
+	static final String TRIP_LOG_HEADER = "#fermatax-trip-v2";
+	static final String TRIP_LOG_DIR = "trip_logs";
+	private static final int MAX_TRIP_LOGS = 3;
+	private static final long MAX_TRIP_LOG_BYTES = 2L * 1024L * 1024L;
 	static final int MAX_CACHED_REPORTS = 3;
 	static final long MAX_CACHED_REPORT_BYTES = 24L * 1024L * 1024L;
 	private static final long REPORT_MAX_AGE_MILLIS = 24L * 60L * 60L * 1000L;
@@ -94,6 +99,14 @@ public final class DiagnosticReportExporter {
 					validateSafePayload(source);
 					String parent = source.getParentFile().getName();
 					copy(zip, source, parent + '/' + source.getName());
+				}
+				for (File trip : tripLogs(context.getExternalFilesDir(TRIP_LOG_DIR),
+						MAX_TRIP_LOGS, MAX_TRIP_LOG_BYTES)) {
+					byte[] bytes = Files.readAllBytes(trip.toPath());
+					if (FORBIDDEN_PAYLOAD.matcher(new String(bytes, UTF_8)).find()) continue;
+					zip.putNextEntry(new ZipEntry("trip/" + trip.getName()));
+					zip.write(bytes);
+					zip.closeEntry();
 				}
 			}
 			long reportBytes = stagedReport.length();
@@ -216,6 +229,45 @@ public final class DiagnosticReportExporter {
 		File canonicalFile = file.getCanonicalFile();
 		return isWithin(canonicalDirectory, canonicalRoot) &&
 				canonicalFile.getParentFile().equals(canonicalDirectory);
+	}
+
+	/**
+	 * The newest distance-only trip logs in {@code dir}, newest first, within {@code maxBytes}.
+	 * Files in any other format (older logs with coordinates) are never picked.
+	 */
+	static List<File> tripLogs(File dir, int maxFiles, long maxBytes) {
+		List<File> picked = new ArrayList<>();
+		File[] files = (dir == null) ? null : dir.listFiles((d, n) -> n.endsWith(".csv"));
+		if (files == null) return picked;
+		java.util.Arrays.sort(files, Comparator.comparingLong(File::lastModified).reversed());
+		long total = 0;
+		for (File f : files) {
+			if (picked.size() >= maxFiles) break;
+			if (!f.isFile() || Files.isSymbolicLink(f.toPath()) || !isTripLog(f)) continue;
+			if (total + f.length() > maxBytes) continue;
+			total += f.length();
+			picked.add(f);
+		}
+		return picked;
+	}
+
+	private static boolean isTripLog(File f) {
+		byte[] head = new byte[TRIP_LOG_HEADER.length()];
+		try (FileInputStream in = new FileInputStream(f)) {
+			return (in.read(head) == head.length) && TRIP_LOG_HEADER.equals(new String(head, UTF_8));
+		} catch (IOException e) {
+			return false;
+		}
+	}
+
+	/** Deletes every trip log, whatever its format. */
+	public static void clearTripLogs(Context context) {
+		File dir = context.getExternalFilesDir(TRIP_LOG_DIR);
+		File[] files = (dir == null) ? null : dir.listFiles((d, n) -> n.endsWith(".csv"));
+		if (files == null) return;
+		for (File f : files) {
+			if (!f.delete()) me.aap.utils.log.Log.w("Unable to delete trip log");
+		}
 	}
 
 	private static void validateSafePayload(File source) throws IOException {

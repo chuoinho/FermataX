@@ -550,4 +550,26 @@ public class GlassSpeedoTripControllerTest {
             GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
         }
     }
+
+    @Test public void droppedMockFixIsStillWrittenToTheTripLog() throws Exception {
+        java.io.File dir = context.getExternalFilesDir("trip_logs");
+        java.io.File[] old = dir.listFiles();
+        if (old != null) for (java.io.File f : old) f.delete();
+        GlassSpeedoTripController c = new GlassSpeedoTripController(context, null);
+        c.setRunningForTesting(true);
+        c.tripLogEventForTesting("start");
+        android.location.Location mock = new android.location.Location("gps");
+        mock.setLatitude(21.0);
+        mock.setLongitude(105.8);
+        mock.setAccuracy(5);
+        mock.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+        mock.setMock(true);
+        c.handleLocationForTesting(mock);
+        c.tripLogEventForTesting("stop");
+        java.io.File[] logs = dir.listFiles((d, n) -> n.endsWith(".csv"));
+        assertEquals(1, logs.length);
+        String text = new String(java.nio.file.Files.readAllBytes(logs[0].toPath()),
+                java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(text, text.contains(",gps,,5.0,,,1"));
+    }
 }

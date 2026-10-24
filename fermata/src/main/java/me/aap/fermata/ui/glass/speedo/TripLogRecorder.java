@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.glass.speedo;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Build;
 
@@ -13,67 +14,111 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
+import java.util.function.BooleanSupplier;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.utils.log.Log;
 
 /**
- * Debug-only raw trip log for replay tests (see TripReplay in the unit tests). Files stay in the
- * app's external files dir ({@code trip_logs/}) and are only retrieved manually with adb pull.
+ * Raw trip log for replay tests (see TripReplay in the unit tests) and diagnostic reports. Written
+ * while detailed diagnostics are on (always in debug builds or with the hidden {@code log_trips}
+ * preference). Holds no coordinates: a fix row carries only the distance to the previous fix, so a
+ * route cannot be rebuilt from it. Files stay in {@code trip_logs/}; the newest five are kept.
  * Must be used from a single thread (the tracking worker).
  */
 final class TripLogRecorder {
     static final String PREF_ENABLED = "log_trips";
+    static final String HEADER = "#fermatax-trip-v2";
+    private static final int MAX_FILES = 5;
     private final File dir;
+    private final BooleanSupplier enabled;
     @Nullable private BufferedWriter out;
+    @Nullable private Location prev;
+    private boolean started;
     private int unflushed;
 
-    private TripLogRecorder(File dir) {
+    TripLogRecorder(File dir, BooleanSupplier enabled) {
         this.dir = dir;
+        this.enabled = enabled;
     }
 
-    /** Null unless this is a debug build or the hidden {@code log_trips} preference is set. */
+    /** Null when there is no external files dir. */
     @Nullable
     static TripLogRecorder create(Context context) {
-        boolean enabled = BuildConfig.DEBUG || context.getSharedPreferences("speedo_trip_v2",
-                Context.MODE_PRIVATE).getBoolean(PREF_ENABLED, false);
-        File base = enabled ? context.getExternalFilesDir("trip_logs") : null;
-        return base == null ? null : new TripLogRecorder(base);
+        File base = context.getExternalFilesDir("trip_logs");
+        if (base == null) return null;
+        SharedPreferences prefs = context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE);
+        return new TripLogRecorder(base, () -> BuildConfig.DEBUG || prefs.getBoolean(PREF_ENABLED, false)
+                || AndroidDiagnosticsRuntime.get().isDetailedEnabled());
     }
 
     void event(String name, long elapsedMs) {
-        if ("start".equals(name)) open();
-        write("E," + elapsedMs + "," + name);
-        if (!"start".equals(name)) flush();
-        if ("stop".equals(name)) close();
+        if ("start".equals(name)) {
+            close();
+            started = true;
+        }
+        if (active()) {
+            write("E," + elapsedMs + "," + name);
+            if (!"start".equals(name)) flush();
+        }
+        if ("stop".equals(name)) {
+            close();
+            started = false;
+        }
     }
 
     void location(Location l) {
+        if (!active()) return;
         long t = l.getElapsedRealtimeNanos() / 1_000_000;
         boolean speedAcc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && l.hasSpeedAccuracy();
         boolean mock = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? l.isMock() : l.isFromMockProvider();
-        write(String.format(Locale.ROOT, "L,%d,%s,%.7f,%.7f,%s,%s,%s,%d", t, l.getProvider(),
-                l.getLatitude(), l.getLongitude(), l.hasAccuracy() ? l.getAccuracy() : "",
-                l.hasSpeed() ? l.getSpeed() : "", speedAcc ? l.getSpeedAccuracyMetersPerSecond() : "",
-                mock ? 1 : 0));
+        String step = (prev == null) ? "" : String.valueOf(Math.round(prev.distanceTo(l)));
+        prev = l;
+        write(String.format(Locale.ROOT, "L,%d,%s,%s,%s,%s,%s,%d", t, l.getProvider(), step,
+                l.hasAccuracy() ? l.getAccuracy() : "", l.hasSpeed() ? l.getSpeed() : "",
+                speedAcc ? l.getSpeedAccuracyMetersPerSecond() : "", mock ? 1 : 0));
     }
 
     void imu(long elapsedMs, boolean quiet) {
-        write("I," + elapsedMs + "," + (quiet ? 1 : 0));
+        if (active()) write("I," + elapsedMs + "," + (quiet ? 1 : 0));
+    }
+
+    /** Opens a file when logging was switched on during a trip, closes it when switched off. */
+    private boolean active() {
+        boolean on = started && enabled.getAsBoolean();
+        if (on && out == null) open();
+        else if (!on && out != null) close();
+        return out != null;
     }
 
     private void open() {
         close();
-        String name = "trip-" + new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(new Date()) + ".csv";
+        prune();
+        String name = "trip-" + new SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.ROOT).format(new Date()) + ".csv";
         try {
             out = new BufferedWriter(new OutputStreamWriter(
                     new FileOutputStream(new File(dir, name)), StandardCharsets.UTF_8));
-            out.write("type,elapsedMs,provider,lat,lon,acc,speed,speedAcc,mock\n");
+            out.write(HEADER + "\n");
+            out.write("type,elapsedMs,provider,stepM,acc,speed,speedAcc,mock\n");
         } catch (IOException e) {
             Log.w(e, "Unable to open trip log");
             out = null;
+        }
+        prev = null;
+    }
+
+    /** Keeps room for one new file within {@link #MAX_FILES}. */
+    private void prune() {
+        File[] files = dir.listFiles((d, n) -> n.endsWith(".csv"));
+        if (files == null || files.length < MAX_FILES) return;
+        Arrays.sort(files, Comparator.comparingLong(File::lastModified));
+        for (int i = 0; i <= files.length - MAX_FILES; i++) {
+            if (!files[i].delete()) Log.w("Unable to delete old trip log");
         }
     }
 

@@ -223,12 +223,13 @@ public final class GlassSpeedoTripController {
         TripEngine.Fix fix = FixNormalizer.of(fixTime, location.getLatitude(), location.getLongitude(),
                 location.hasAccuracy(), location.getAccuracy(), location.hasSpeed(), location.getSpeed(),
                 speedAcc, speedAcc ? location.getSpeedAccuracyMetersPerSecond() : 0f);
+        // Logged before the mock filter so a report shows fixes that were dropped as mock.
+        if (tripLog != null) tripLog.location(location);
         if (mock && !store.isAllowMock()) {
             diagnostics.onFix(TripEngine.Outcome.REJECTED, FixNormalizer.speedQuality(fix), true);
             return;
         }
         lastCallback = nowTime;
-        if (tripLog != null) tripLog.location(location);
         boolean accepted = engine.accept(fix, nowTime);
         diagnostics.onFix(engine.lastOutcome(), FixNormalizer.speedQuality(fix), mock);
         if (accepted) {
@@ -436,6 +437,7 @@ public final class GlassSpeedoTripController {
     void setLastProgressForTesting(long lastProgress) { this.lastProgress = lastProgress; }
     void triggerHeartbeatForTesting() { heartbeat.run(); }
     void flushDiagnosticsForTesting() { diagnostics.flush(now()); }
+    void tripLogEventForTesting(String name) { if (tripLog != null) tripLog.event(name, now()); }
     void setImuRegisteredForTesting(boolean registered) { this.imuRegistered = registered; }
     StationaryDetector getStationaryDetectorForTesting() { return this.stationaryDetector; }
     TripEngine getEngineForTesting() { return this.engine; }

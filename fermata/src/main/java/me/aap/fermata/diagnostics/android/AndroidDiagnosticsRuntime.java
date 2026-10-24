@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import me.aap.fermata.diagnostics.export.DiagnosticReportExporter;
 import me.aap.fermata.diagnostics.DiagnosticEvent;
 import me.aap.fermata.diagnostics.DiagnosticConfig;
 import me.aap.fermata.diagnostics.DiagnosticOperation;
@@ -168,6 +169,16 @@ public final class AndroidDiagnosticsRuntime {
 		}
 	}
 
+	/** Lets each Robolectric test install its own runtime. */
+	@androidx.annotation.VisibleForTesting
+	static void resetForTesting() {
+		synchronized (INSTALL_LOCK) {
+			if (instance != NO_OP) instance.shutdown();
+			instance = NO_OP;
+			installationAttempted = false;
+		}
+	}
+
 	/** Installs one runtime for the current process. Initialization failures become a safe no-op. */
 	public static AndroidDiagnosticsRuntime install(Application application) {
 		if (application == null) throw new NullPointerException("application");
@@ -213,6 +224,17 @@ public final class AndroidDiagnosticsRuntime {
 				(attributes == null) ? Collections.emptyMap() : attributes);
 	}
 
+	/** A switch of detailed diagnostics starts or ends a recording: trips from before it go. */
+	private void clearTripLogs() {
+		Application app = application;
+		if (app == null) return;
+		try {
+			DiagnosticReportExporter.clearTripLogs(app);
+		} catch (RuntimeException ignored) {
+			// Missing external storage must not block the switch.
+		}
+	}
+
 	/** Records a detailed event; dropped by the recorder while detailed diagnostics are off. */
 	public boolean recordDetailed(String category, String name, @Nullable Map<String, ?> attributes) {
 		if ((recorder == null) || stopped.get()) return false;
@@ -236,6 +258,7 @@ public final class AndroidDiagnosticsRuntime {
 		if ((preferences == null) || stopped.get()) return;
 		// Marks where detailed events start and stop: written while detailed is still/already on.
 		if (!enabled) recordDetailed("diagnostics", "detailed_changed", Map.of("enabled", false));
+		if (enabled != lastRequestedDetailedEnabled) clearTripLogs();
 		lastRequestedDetailedEnabled = enabled;
 		preferences.setDetailedEnabled(enabled, System.currentTimeMillis());
 		if (enabled) recordDetailed("diagnostics", "detailed_changed", Map.of("enabled", true));
@@ -327,6 +350,7 @@ public final class AndroidDiagnosticsRuntime {
 		boolean requested = raw.getBoolean(
 				DiagnosticsPreferences.DETAILED_ENABLED.getName(), false);
 		if (requested != lastRequestedDetailedEnabled) {
+			clearTripLogs();
 			lastRequestedDetailedEnabled = requested;
 			preferences.setDetailedEnabled(requested, now);
 		} else if (requested && !preferences.isDetailedEnabled(now)) {

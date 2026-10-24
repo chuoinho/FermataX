@@ -24,7 +24,7 @@ public class DetailedToggleEventTest {
 
 	@After
 	public void tearDown() {
-		if (runtime != null) runtime.shutdown();
+		AndroidDiagnosticsRuntime.resetForTesting();
 	}
 
 	@Test
@@ -43,6 +43,20 @@ public class DetailedToggleEventTest {
 		assertTrue(journal, off > on);
 		assertTrue(journal.contains("speedo_signal_changed"));
 		assertTrue(journal, !journal.contains("speedo_fix_summary"));
+	}
+
+	@Test
+	public void togglingDetailedDeletesTripLogs() throws Exception {
+		Application app = RuntimeEnvironment.getApplication();
+		runtime = AndroidDiagnosticsRuntime.install(app);
+		File dir = app.getExternalFilesDir("trip_logs");
+		File log = new File(dir, "trip-old.csv");
+		Files.write(log.toPath(), "type,elapsedMs,provider,lat,lon\n".getBytes(StandardCharsets.UTF_8));
+		runtime.setDetailedEnabled(true);
+		assertTrue("enabling starts from no trip logs", !log.exists());
+		Files.write(log.toPath(), "#fermatax-trip-v2\n".getBytes(StandardCharsets.UTF_8));
+		runtime.setDetailedEnabled(false);
+		assertTrue("disabling removes the recorded trips", !log.exists());
 	}
 
 	private static String journal(Application app) throws Exception {

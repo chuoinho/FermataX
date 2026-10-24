@@ -57,7 +57,8 @@ public final class RotatingDiagnosticStore implements AutoCloseable {
 			rotate(wallTimeMillis);
 		}
 		writer.write(jsonLine);
-		writer.newLine();
+		// JSONL is '\n'-separated on every platform; newLine() would write CRLF on a Windows JVM.
+		writer.write('\n');
 		activeBytes += encoded.length;
 		retainedBytes += encoded.length;
 		if (retainedBytes > config.getMaxTotalBytes()) {
