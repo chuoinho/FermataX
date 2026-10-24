@@ -288,6 +288,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return lib;
 	}
 
+	/** The media session owns this listener until close(), independently of the activity. */
+	public boolean ownsActiveAudioEffectsListener(Object broadcaster, Object listener) {
+		return !terminal && listener == audioEffectsController &&
+				broadcaster == FermataApplication.get().getPreferenceStore();
+	}
+
 	public MediaEngineManager getEngineManager() {
 		return lib.getMediaEngineManager();
 	}

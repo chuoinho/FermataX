@@ -522,19 +522,22 @@ public class MainActivityDelegate extends ActivityDelegate
 		AddonManager.get().onActivityDestroy(this);
 
 		if (me.aap.utils.BuildConfig.D) {
-			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
-				if (l instanceof ExportedItem.ListenerWrapper)
-					l = ((ExportedItem.ListenerWrapper) l).getListener();
-				if (l instanceof Key.PrefsListener) return false;
-				if (l instanceof FermataAddon) return false;
-				if (l instanceof AtvInterface) return false;
-				if ((l instanceof DefaultMediaLib) && (b instanceof DefaultMediaLib)) return false;
-				if ((l instanceof MediaEngineManager) && (b instanceof DefaultMediaLib)) return false;
-				return (!(l instanceof AddonManager)) ||
-						(b != FermataApplication.get().getPreferenceStore());
-			});
+			boolean leaks = ListenerLeakDetector.hasLeaks(this::isListenerLeak);
 			if (leaks) Log.e(new IllegalStateException("Listener leaks detected!"));
 		}
+	}
+
+	boolean isListenerLeak(Object b, Object l) {
+		if (l instanceof ExportedItem.ListenerWrapper)
+			l = ((ExportedItem.ListenerWrapper) l).getListener();
+		if (getMediaServiceBinder().getMediaSessionCallback().ownsActiveAudioEffectsListener(b, l)) return false;
+		if (l instanceof Key.PrefsListener) return false;
+		if (l instanceof FermataAddon) return false;
+		if (l instanceof AtvInterface) return false;
+		if ((l instanceof DefaultMediaLib) && (b instanceof DefaultMediaLib)) return false;
+		if ((l instanceof MediaEngineManager) && (b instanceof DefaultMediaLib)) return false;
+		return (!(l instanceof AddonManager)) ||
+				(b != FermataApplication.get().getPreferenceStore());
 	}
 
 	public void onActivityFinish() {
