@@ -24,8 +24,10 @@ public class DetailedToggleEventTest {
 
 	@org.junit.Before
 	public void setUp() {
-		// Another test class in the same JVM may have installed the once-per-process runtime.
+		// Another test class in the same JVM may have installed the once-per-process runtime and
+		// left detailed diagnostics enabled in the cached preferences.
 		AndroidDiagnosticsRuntime.resetForTesting();
+		RuntimeEnvironment.getApplication().getSharedPreferences("diagnostics", 0).edit().clear().commit();
 	}
 
 	@After
@@ -59,19 +61,29 @@ public class DetailedToggleEventTest {
 		android.content.SharedPreferences prefs = app.getSharedPreferences("diagnostics", 0);
 		String on = "\"event\":\"detailed_changed\",\"data\":{\"enabled\":true}";
 		String off = "\"event\":\"detailed_changed\",\"data\":{\"enabled\":false}";
+		// The startup task runs disableIfExpired(); a switch written before it finishes, still
+		// without an expiry, would be undone. A user can only toggle after startup.
+		runtime.awaitIdleForTesting();
 		prefs.edit().putBoolean("DETAILED_ENABLED", true).commit();
 		settle();
 		assertTrue(runtime.flush(3000L));
-		assertTrue(journal(app).contains(on));
+		assertTrue(journal(app), journal(app).contains(on));
 		prefs.edit().putBoolean("DETAILED_ENABLED", false).commit();
 		settle();
 		assertTrue(runtime.flush(3000L));
 		assertTrue(journal(app).contains(off));
 	}
 
-	/** Runs the real path: the preference listener queues a sync, whose own write queues another. */
+	/**
+	 * Lets the preference listener's sync run, then runs the same sync once more on this thread:
+	 * whether or not the listener was delivered, the switch is processed exactly once (the sync is
+	 * a no-op when the state already matches) and no queued sync can overwrite a later change.
+	 */
 	private void settle() throws Exception {
-		for (int i = 0; i < 3; i++) {
+		org.robolectric.shadows.ShadowLooper.idleMainLooper();
+		runtime.awaitIdleForTesting();
+		runtime.syncPreferencesForTesting();
+		for (int i = 0; i < 2; i++) {
 			org.robolectric.shadows.ShadowLooper.idleMainLooper();
 			runtime.awaitIdleForTesting();
 		}

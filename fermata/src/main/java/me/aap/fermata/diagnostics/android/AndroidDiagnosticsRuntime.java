@@ -169,6 +169,12 @@ public final class AndroidDiagnosticsRuntime {
 		}
 	}
 
+	/** Runs the preference sync the Settings switch triggers, on the calling thread. */
+	@androidx.annotation.VisibleForTesting
+	void syncPreferencesForTesting() {
+		syncRequestedDetailedState();
+	}
+
 	/** Waits until the single diagnostics thread has run everything queued before this call. */
 	@androidx.annotation.VisibleForTesting
 	void awaitIdleForTesting() throws Exception {
@@ -179,7 +185,19 @@ public final class AndroidDiagnosticsRuntime {
 	@androidx.annotation.VisibleForTesting
 	static void resetForTesting() {
 		synchronized (INSTALL_LOCK) {
-			if (instance != NO_OP) instance.shutdown();
+			AndroidDiagnosticsRuntime old = instance;
+			if (old != NO_OP) {
+				old.shutdown();
+				// A sync still running on the old thread could otherwise write the shared preferences
+				// after the next test has reset them.
+				if (old.executor != null) {
+					try {
+						old.executor.awaitTermination(5, TimeUnit.SECONDS);
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+				}
+			}
 			instance = NO_OP;
 			installationAttempted = false;
 		}
