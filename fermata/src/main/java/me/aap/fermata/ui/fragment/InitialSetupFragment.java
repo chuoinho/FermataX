@@ -78,6 +78,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	private Button microphoneTest;
 	private TextView microphoneStatus;
 	private LinearLayout permissions;
+	private LinearLayout navigationPermissions;
+	private View voiceDetails;
 	private Cancellable speech;
 
 	@Override
@@ -123,6 +125,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		microphoneTest = view.findViewById(R.id.initial_setup_microphone_test);
 		microphoneStatus = view.findViewById(R.id.initial_setup_microphone_status);
 		permissions = view.findViewById(R.id.initial_setup_permissions);
+		navigationPermissions = view.findViewById(R.id.initial_setup_navigation_permissions);
+		voiceDetails = view.findViewById(R.id.initial_setup_voice_details);
 
 		setupAppLanguage(activity);
 		setupVoiceLanguage(activity);
@@ -132,6 +136,9 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		voiceEnabled.setOnCheckedChangeListener((button, checked) -> {
 			updateVoiceControls(checked);
 			updatePermissions();
+			if (checked && !isGranted(activity.getContext(), android.Manifest.permission.RECORD_AUDIO)) {
+				requestVoiceMicrophone(activity);
+			}
 		});
 		microphoneTest.setOnClickListener(v -> testMicrophone());
 		view.findViewById(R.id.initial_setup_continue).setOnClickListener(v -> applyAndContinue());
@@ -175,25 +182,22 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		android.content.Context ctx = getContext();
 		if ((permissions == null) || (ctx == null)) return;
 		MainActivityDelegate activity = getActivityDelegate();
+		updateVoiceControls(voiceEnabled.isChecked());
 		permissions.removeAllViews();
+		navigationPermissions.removeAllViews();
 		addHeader(ctx, R.string.initial_setup_required);
 		addRow(activity, R.string.initial_setup_perm_storage, R.string.initial_setup_perm_storage_sub,
 				isStorageGranted(ctx), () -> requestStorage(activity));
 		addRow(activity, R.string.initial_setup_perm_notifications, R.string.initial_setup_perm_notifications_sub,
 				androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled(),
 				() -> requestNotifications(activity));
-		if (voiceEnabled.isChecked()) {
-			addRow(activity, R.string.initial_setup_perm_microphone, R.string.initial_setup_perm_microphone_sub,
-					isGranted(ctx, android.Manifest.permission.RECORD_AUDIO),
-					() -> request(activity, android.Manifest.permission.RECORD_AUDIO));
-		}
 		addHeader(ctx, R.string.initial_setup_optional);
 		// Android 12+ ignores FINE without COARSE.
 		addRow(activity, R.string.initial_setup_perm_location, R.string.initial_setup_perm_location_sub,
 				me.aap.fermata.ui.glass.speedo.TripModePolicy.hasForegroundLocation(ctx),
 				() -> request(activity, android.Manifest.permission.ACCESS_FINE_LOCATION,
 						android.Manifest.permission.ACCESS_COARSE_LOCATION));
-		addRow(activity, R.string.initial_setup_perm_nav, R.string.initial_setup_perm_nav_sub,
+		addRow(activity, navigationPermissions, R.string.initial_setup_perm_nav, R.string.initial_setup_perm_nav_sub,
 				me.aap.fermata.ui.control.PhoneReadiness.hasNotificationListenerCheck(ctx),
 				() -> startSafely(activity, me.aap.fermata.ui.control.PhoneReadiness.createNotificationListenerSettingsIntent()));
 		if (BuildConfig.TRIP_BACKGROUND_SUPPORTED) {
@@ -231,7 +235,12 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	}
 
 	private void addRow(MainActivityDelegate activity, int title, int purpose, boolean granted, Runnable request) {
-		android.content.Context ctx = permissions.getContext();
+		addRow(activity, permissions, title, purpose, granted, request);
+	}
+
+	private void addRow(MainActivityDelegate activity, LinearLayout destination, int title, int purpose,
+						boolean granted, Runnable request) {
+		android.content.Context ctx = destination.getContext();
 		LinearLayout row = new LinearLayout(ctx);
 		row.setGravity(android.view.Gravity.CENTER_VERTICAL);
 		row.setMinimumHeight(dp(ctx, 56));
@@ -276,7 +285,7 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 			}
 			row.addView(allow);
 		}
-		permissions.addView(row);
+		destination.addView(row);
 	}
 
 	private static int dp(android.content.Context ctx, int v) {
@@ -297,6 +306,15 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 
 	private void request(MainActivityDelegate activity, String... perms) {
 		activity.getAppActivity().checkPermissions(perms).thenRun(this::updatePermissions);
+	}
+
+	private void requestVoiceMicrophone(MainActivityDelegate activity) {
+		activity.getAppActivity().checkPermissions(android.Manifest.permission.RECORD_AUDIO).thenRun(() -> {
+			if (!isGranted(activity.getContext(), android.Manifest.permission.RECORD_AUDIO)) {
+				voiceEnabled.setChecked(false);
+			}
+			updatePermissions();
+		});
 	}
 
 	private void requestStorage(MainActivityDelegate activity) {
@@ -377,9 +395,11 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	}
 
 	private void updateVoiceControls(boolean enabled) {
-		voiceLanguage.setEnabled(enabled);
-		microphoneTest.setEnabled(enabled);
-		if (!enabled) microphoneStatus.setText(R.string.initial_setup_test_disabled);
+		boolean hasMicrophone = isGranted(requireContext(), android.Manifest.permission.RECORD_AUDIO);
+		voiceDetails.setVisibility(enabled && hasMicrophone ? VISIBLE : GONE);
+		voiceLanguage.setEnabled(enabled && hasMicrophone);
+		microphoneTest.setEnabled(enabled && hasMicrophone);
+		if (!enabled || !hasMicrophone) microphoneStatus.setText(R.string.initial_setup_test_disabled);
 		else if (microphoneStatus.getText().equals(getString(R.string.initial_setup_test_disabled)))
 			microphoneStatus.setText("");
 	}

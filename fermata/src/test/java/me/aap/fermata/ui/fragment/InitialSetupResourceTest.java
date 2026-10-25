@@ -38,6 +38,32 @@ public class InitialSetupResourceTest {
 		}
 	}
 
+	@Test
+	public void voiceControlsAreGroupedUnderPermissionsAndDetailsStartHidden() throws Exception {
+		Document layout = document("initial_setup.xml");
+		Element permissionSection = elementById(layout, "@+id/initial_setup_permission_section");
+		Element voiceToggle = elementById(layout, "@+id/initial_setup_voice_enabled");
+		Element voiceDetails = elementById(layout, "@+id/initial_setup_voice_details");
+		Element voiceLanguage = elementById(layout, "@+id/initial_setup_voice_language");
+		Element microphoneTest = elementById(layout, "@+id/initial_setup_microphone_test");
+		Element navigationPermissionRows = elementById(layout, "@+id/initial_setup_navigation_permissions");
+
+		assertTrue("voice toggle belongs to the permissions section", isDescendantOf(voiceToggle, permissionSection));
+		assertEquals("gone", voiceDetails.getAttributeNS(ANDROID_NS, "visibility"));
+		assertTrue(isDescendantOf(voiceLanguage, voiceDetails));
+		assertTrue(isDescendantOf(microphoneTest, voiceDetails));
+		assertTrue("voice controls appear before navigation access",
+				(voiceDetails.compareDocumentPosition(navigationPermissionRows)
+						& org.w3c.dom.Node.DOCUMENT_POSITION_FOLLOWING) != 0);
+	}
+
+	private static boolean isDescendantOf(org.w3c.dom.Node node, org.w3c.dom.Node ancestor) {
+		for (org.w3c.dom.Node parent = node.getParentNode(); parent != null; parent = parent.getParentNode()) {
+			if (parent == ancestor) return true;
+		}
+		return false;
+	}
+
 	private static Element elementById(Document document, String id) {
 		NodeList elements = document.getElementsByTagName("*");
 		for (int i = 0; i < elements.getLength(); i++) {

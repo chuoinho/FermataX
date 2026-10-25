@@ -66,41 +66,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/initial_setup_voice_enabled"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/initial_setup_voice_enabled"
-            android:textColor="?android:attr/textColorPrimary" />
-
-        <TextView
-            android:id="@+id/initial_setup_voice_language_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/initial_setup_voice_language"
-            android:textStyle="bold" />
-
-        <Spinner
-            android:id="@+id/initial_setup_voice_language"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <Button
-            android:id="@+id/initial_setup_microphone_test"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/initial_setup_test_microphone" />
-
-        <TextView
-            android:id="@+id/initial_setup_microphone_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -108,20 +73,77 @@
             android:text="@string/initial_setup_permissions_title"
             android:textStyle="bold" />
 
+        <LinearLayout
+            android:id="@+id/initial_setup_permission_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/initial_setup_permissions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/initial_setup_voice_enabled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/initial_setup_voice_enabled"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <LinearLayout
+                android:id="@+id/initial_setup_voice_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/initial_setup_voice_language_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/initial_setup_voice_language"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/initial_setup_voice_language"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <Button
+                    android:id="@+id/initial_setup_microphone_test"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/initial_setup_test_microphone" />
+
+                <TextView
+                    android:id="@+id/initial_setup_microphone_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/initial_setup_navigation_permissions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+
         <TextView
             android:id="@+id/initial_setup_privacy"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
             android:padding="12dp"
             android:text="@string/initial_setup_privacy"
             android:textAppearance="?android:attr/textAppearanceSmall" />
-
-        <LinearLayout
-            android:id="@+id/initial_setup_permissions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
 
         <TextView
             android:layout_width="match_parent"

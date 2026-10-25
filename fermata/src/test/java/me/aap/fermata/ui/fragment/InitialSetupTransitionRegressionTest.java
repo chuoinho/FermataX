@@ -32,6 +32,15 @@ public class InitialSetupTransitionRegressionTest {
 		assertTrue(activity.contains("prefs.contains(LOCALE)"));
 	}
 
+	@Test
+	public void voiceEnableRequestsMicrophoneAndDenialTurnsVoiceOff() throws Exception {
+		String setup = source("ui/fragment/InitialSetupFragment.java");
+		assertTrue(setup.contains("if (checked && !isGranted(activity.getContext(), android.Manifest.permission.RECORD_AUDIO))"));
+		assertTrue(setup.contains("requestVoiceMicrophone(activity)"));
+		assertTrue(setup.contains("voiceEnabled.setChecked(false)"));
+		assertTrue(setup.contains("voiceDetails.setVisibility(enabled && hasMicrophone ? VISIBLE : GONE)"));
+	}
+
 	private static String source(String relativePath) throws Exception {
 		return new String(Files.readAllBytes(repositoryRoot().resolve(
 				"fermata/src/main/java/me/aap/fermata").resolve(relativePath)), UTF_8);
