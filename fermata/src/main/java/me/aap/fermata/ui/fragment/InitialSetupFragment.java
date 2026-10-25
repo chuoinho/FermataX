@@ -240,7 +240,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		if (access == me.aap.fermata.ui.glass.speedo.TripModePolicy.Access.NOT_GRANTED) {
 			Button allow = new Button(ctx);
 			allow.setText(R.string.initial_setup_allow);
-			allow.setOnClickListener(v -> InterfacePrefsBuilder.manageLocationAccess(activity, this::updatePermissions));
+			allow.setOnClickListener(v -> InterfacePrefsBuilder.manageLocationAccessFromInitialSetup(activity,
+					this::updatePermissions));
 			if (activity.isGlassTheme()) {
 				allow.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(
 						ctx, 12f, activity.isGlassNightMode()));
@@ -253,7 +254,8 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 				|| InterfacePrefsBuilder.offersPermissionDowngrade(ctx));
 		row.setFocusable(access == me.aap.fermata.ui.glass.speedo.TripModePolicy.Access.NOT_GRANTED || canManageBackground);
 		if (row.isFocusable()) {
-			row.setOnClickListener(v -> InterfacePrefsBuilder.manageLocationAccess(activity, this::updatePermissions));
+			row.setOnClickListener(v -> InterfacePrefsBuilder.manageLocationAccessFromInitialSetup(activity,
+					this::updatePermissions));
 		}
 		permissions.addView(row);
 	}

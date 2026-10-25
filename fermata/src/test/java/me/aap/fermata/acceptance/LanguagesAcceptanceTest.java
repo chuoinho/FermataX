@@ -77,10 +77,18 @@ public class LanguagesAcceptanceTest {
 	@Test public void staleBackgroundLocationMessageIsTranslatedAndTapActionCopyIsRemoved() throws Exception {
 		String[] locales = {"values", "values-vi", "values-ru", "values-es", "values-pt",
 				"values-zh-rTW", "values-tr", "values-de", "values-it"};
+		Map<String, Entry> english = load(new File(root(), "fermata/src/main/res/values"));
 		for (String locale : locales) {
 			Map<String, Entry> strings = load(new File(root(), "fermata/src/main/res/" + locale));
 			assertTrue(locale + " missing stale background location explanation",
 					strings.containsKey("speedo_location_lost_background"));
+			assertTrue(locale + " missing stale battery restriction explanation",
+					strings.containsKey("speedo_background_restricted"));
+			if (!locale.equals("values")) {
+				assertTrue(locale + " leaves stale battery restriction explanation in English",
+						!strings.get("speedo_background_restricted").texts()
+								.equals(english.get("speedo_background_restricted").texts()));
+			}
 			assertTrue(locale + " still exposes a tap-to-enable prompt",
 					!strings.containsKey("speedo_tap_to_enable"));
 		}
@@ -90,11 +98,17 @@ public class LanguagesAcceptanceTest {
 		String[] locales = {"values", "values-vi", "values-ru", "values-es", "values-pt",
 				"values-zh-rTW", "values-tr", "values-de", "values-it"};
 		String[] required = {"readiness_title", "readiness_subtitle", "readiness_accessibility",
+				"readiness_battery", "readiness_battery_exempt", "readiness_battery_managed",
 				"readiness_connection_disconnected", "readiness_connection_connected",
 				"readiness_connection_visible", "readiness_control_available",
 				"readiness_control_unavailable", "readiness_nav_notification_access",
 				"readiness_group_required", "readiness_group_stability", "readiness_group_optional",
-				"readiness_all_ready", "readiness_android_auto_status", "readiness_connection_unknown"};
+				"readiness_all_ready", "readiness_android_auto_status", "readiness_connection_unknown",
+				"readiness_background_prompt_title", "readiness_background_prompt_message",
+				"readiness_background_open_settings", "readiness_background_skip",
+				"readiness_background_oem_title", "readiness_background_oem_guide",
+				"readiness_background_oem_done", "readiness_background_oem_open_vendor",
+				"readiness_background_oem_open_android", "readiness_background_oem_later"};
 		Map<String, Entry> english = load(new File(root(), "fermata/src/main/res/values"));
 		for (String locale : locales) {
 			Map<String, Entry> strings = load(new File(root(), "fermata/src/main/res/" + locale));

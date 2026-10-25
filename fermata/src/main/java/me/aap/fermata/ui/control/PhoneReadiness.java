@@ -16,8 +16,8 @@ public final class PhoneReadiness {
 		rows.add(new Row(Check.NOTIFICATIONS, input.notificationsEnabled() ? Status.OK :
 				Status.ACTION_AVAILABLE, Action.NOTIFICATION_SETTINGS));
 		rows.add(location(input));
-		rows.add(new Row(Check.BATTERY, input.batteryExempt() ? Status.OK :
-				Status.ACTION_AVAILABLE, Action.BATTERY_SETTINGS));
+		rows.add(new Row(Check.BATTERY, input.backgroundUnrestricted() ? Status.OK :
+				Status.INFO, Action.BATTERY_SETTINGS));
 		rows.add(microphone(input));
 		rows.add(new Row(Check.NAVIGATION, input.navigationNotificationsGranted() ? Status.OK :
 				Status.ACTION_AVAILABLE, Action.NAVIGATION_SETTINGS));
@@ -114,15 +114,15 @@ public final class PhoneReadiness {
 			AutomotiveConnectionState.State connectionState, boolean controlAvailable,
 			boolean storageGranted, boolean locationGranted, boolean accessibilityGranted,
 			boolean microphoneGranted, boolean notificationsEnabled, boolean overlayGranted,
-			boolean batteryExempt, boolean navigationNotificationsGranted) {
+			boolean backgroundUnrestricted, boolean navigationNotificationsGranted) {
 		public Input(boolean autoBuild, boolean connectionObserved,
 				AutomotiveConnectionState.State connectionState, boolean controlAvailable,
 				boolean storageGranted, boolean locationGranted, boolean accessibilityGranted,
 				boolean microphoneGranted, boolean notificationsEnabled, boolean overlayGranted,
-				boolean batteryExempt) {
+					boolean backgroundUnrestricted) {
 			this(autoBuild, connectionObserved, connectionState, controlAvailable, storageGranted,
 					locationGranted, accessibilityGranted, microphoneGranted, notificationsEnabled,
-					overlayGranted, batteryExempt, false);
+					overlayGranted, backgroundUnrestricted, false);
 		}
 	}
 

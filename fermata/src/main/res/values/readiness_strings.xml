@@ -22,9 +22,9 @@
 	<string name="readiness_overlay_not_granted">Not allowed. Only needed by features that use an overlay.</string>
 	<string name="readiness_screen_capture">Screen capture</string>
 	<string name="readiness_screen_capture_info">Android will ask for confirmation when screen sharing starts.</string>
-	<string name="readiness_battery">Battery optimization</string>
-	<string name="readiness_battery_exempt">Excluded from battery optimization.</string>
-	<string name="readiness_battery_managed">Android may stop FermataX in the background on some phones. Exclude it from battery optimization to keep the speed card and trip accurate.</string>
+	<string name="readiness_battery">Run unrestricted in background</string>
+	<string name="readiness_battery_exempt">Unrestricted</string>
+	<string name="readiness_battery_managed">Restricted. Tap to review settings.</string>
 	<string name="readiness_unknown">Not verified</string>
 	<string name="readiness_not_applicable">Not applicable</string>
 	<string name="readiness_connection_disconnected">Not connected</string>
@@ -43,4 +43,14 @@
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
 	<string name="readiness_connection_unknown">Status unavailable</string>
+	<string name="readiness_background_prompt_title">Background restrictions</string>
+	<string name="readiness_background_prompt_message">This phone may stop FermataX in the background. Remove battery restrictions to keep speed and trip tracking from being interrupted.</string>
+	<string name="readiness_background_open_settings">Open settings</string>
+	<string name="readiness_background_skip">Skip</string>
+	<string name="readiness_background_oem_title">Background settings for %1$s</string>
+	<string name="readiness_background_oem_guide">%1$s may stop apps in the background. Find FermataX in startup or battery settings and allow it to start and run in the background.</string>
+	<string name="readiness_background_oem_done">I\'ve done this</string>
+	<string name="readiness_background_oem_open_vendor">Open %1$s settings</string>
+	<string name="readiness_background_oem_open_android">Android battery settings</string>
+	<string name="readiness_background_oem_later">Later</string>
 </resources>

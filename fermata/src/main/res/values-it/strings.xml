@@ -618,4 +618,5 @@
     <string name="glass_shortcut_replace">Sostituisci</string>
     <string name="glass_shortcut_remove">Rimuovi</string>
     <string name="speedo_location_lost_background">Posizione persa mentre FermataX è in background. Apri FermataX sul telefono e consenti “Sempre”.</string>
+    <string name="speedo_background_restricted">Il sistema ha arrestato FermataX in background. Apri FermataX sul telefono per rimuovere le limitazioni della batteria.</string>
 </resources>

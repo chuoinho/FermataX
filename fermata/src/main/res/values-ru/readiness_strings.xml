@@ -22,9 +22,9 @@
 	<string name="readiness_overlay_not_granted">Not allowed. Only needed by features that use an overlay.</string>
 	<string name="readiness_screen_capture">Screen capture</string>
 	<string name="readiness_screen_capture_info">Android will ask for confirmation when screen sharing starts.</string>
-	<string name="readiness_battery">Battery optimization</string>
-	<string name="readiness_battery_exempt">Excluded from battery optimization.</string>
-	<string name="readiness_battery_managed">На некоторых телефонах Android может остановить FermataX в фоне. Исключите приложение из оптимизации батареи для точной скорости и статистики поездки.</string>
+	<string name="readiness_battery">Работа в фоне без ограничений</string>
+	<string name="readiness_battery_exempt">Без ограничений</string>
+	<string name="readiness_battery_managed">Есть ограничения. Нажмите, чтобы открыть настройки.</string>
 	<string name="readiness_unknown">Not verified</string>
 	<string name="readiness_not_applicable">Not applicable</string>
 	<string name="readiness_connection_disconnected">Не подключено</string>
@@ -43,4 +43,14 @@
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
 	<string name="readiness_connection_unknown">Статус недоступен</string>
+	<string name="readiness_background_prompt_title">Ограничения фоновой работы</string>
+	<string name="readiness_background_prompt_message">Этот телефон может останавливать FermataX в фоне. Снимите ограничения батареи, чтобы скорость и поездка не прерывались.</string>
+	<string name="readiness_background_open_settings">Открыть настройки</string>
+	<string name="readiness_background_skip">Пропустить</string>
+	<string name="readiness_background_oem_title">Настройки фоновой работы: %1$s</string>
+	<string name="readiness_background_oem_guide">%1$s может останавливать приложения в фоне. Найдите FermataX в настройках автозапуска или батареи и разрешите запуск и работу в фоне.</string>
+	<string name="readiness_background_oem_done">Готово</string>
+	<string name="readiness_background_oem_open_vendor">Открыть настройки %1$s</string>
+	<string name="readiness_background_oem_open_android">Настройки батареи Android</string>
+	<string name="readiness_background_oem_later">Позже</string>
 </resources>

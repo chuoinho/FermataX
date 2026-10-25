@@ -54,4 +54,11 @@ public class TripBackgroundStatusTest {
 		assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, i.getAction());
 		assertEquals("package:" + app.getPackageName(), i.getDataString());
 	}
+
+	@Test
+	public void backgroundReadinessUsesTheStandardBatteryOptimizationSettingsPage() {
+		Intent i = ReadinessPrefsBuilder.settingsIntent(me.aap.fermata.ui.control.PhoneReadiness.Action.BATTERY_SETTINGS,
+				RuntimeEnvironment.getApplication().getPackageName(), 35);
+		assertEquals(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, i.getAction());
+	}
 }

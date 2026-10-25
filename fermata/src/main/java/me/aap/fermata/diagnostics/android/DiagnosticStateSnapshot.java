@@ -26,6 +26,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.pref.DiagnosticsPreferences;
+import me.aap.fermata.ui.policy.BackgroundRunState;
 
 /**
  * Device, permission and app state written to {@code state.json} when a report is exported. Holds
@@ -147,6 +148,8 @@ public final class DiagnosticStateSnapshot {
 
 	private static JSONObject background(Context context) throws Exception {
 		JSONObject json = new JSONObject();
+		json.put("manufacturer", Build.MANUFACTURER);
+		json.put("vendor_guide_done", BackgroundRunState.isVendorGuideDone(context));
 		ActivityManager am = context.getSystemService(ActivityManager.class);
 		if (am != null) json.put("background_restricted", am.isBackgroundRestricted());
 		PowerManager pm = context.getSystemService(PowerManager.class);

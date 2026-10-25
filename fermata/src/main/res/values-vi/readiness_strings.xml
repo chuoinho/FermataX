@@ -22,9 +22,9 @@
 	<string name="readiness_overlay_not_granted">Chưa cho phép. Chỉ cần cho các chức năng dùng lớp phủ.</string>
 	<string name="readiness_screen_capture">Chia sẻ màn hình</string>
 	<string name="readiness_screen_capture_info">Android sẽ yêu cầu xác nhận khi bắt đầu chia sẻ màn hình.</string>
-	<string name="readiness_battery">Tối ưu pin</string>
-	<string name="readiness_battery_exempt">Đã được miễn tối ưu pin.</string>
-	<string name="readiness_battery_managed">Trên một số máy, Android có thể dừng FermataX chạy nền. Miễn tối ưu pin để thẻ tốc độ và chuyến đi luôn chính xác.</string>
+	<string name="readiness_battery">Chạy nền không bị giới hạn</string>
+	<string name="readiness_battery_exempt">Không bị giới hạn</string>
+	<string name="readiness_battery_managed">Đang bị giới hạn. Chạm để xem cài đặt.</string>
 	<string name="readiness_unknown">Chưa xác minh</string>
 	<string name="readiness_not_applicable">Không áp dụng</string>
 	<string name="readiness_connection_disconnected">Chưa kết nối</string>
@@ -43,4 +43,14 @@
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
 	<string name="readiness_connection_unknown">Chưa xác định trạng thái</string>
+	<string name="readiness_background_prompt_title">Giới hạn chạy nền</string>
+	<string name="readiness_background_prompt_message">Máy này có thể dừng FermataX khi chạy nền. Bỏ giới hạn pin để tốc độ và quãng đường không bị gián đoạn.</string>
+	<string name="readiness_background_open_settings">Mở cài đặt</string>
+	<string name="readiness_background_skip">Bỏ qua</string>
+	<string name="readiness_background_oem_title">Cài đặt chạy nền của %1$s</string>
+	<string name="readiness_background_oem_guide">%1$s có thể dừng ứng dụng chạy nền. Tìm FermataX trong mục tự khởi chạy hoặc pin rồi cho phép ứng dụng khởi động và chạy nền.</string>
+	<string name="readiness_background_oem_done">Đã làm xong</string>
+	<string name="readiness_background_oem_open_vendor">Mở cài đặt %1$s</string>
+	<string name="readiness_background_oem_open_android">Cài đặt pin Android</string>
+	<string name="readiness_background_oem_later">Để sau</string>
 </resources>

@@ -201,7 +201,7 @@ public class GlassSpeedoTripControllerTest {
         assertFalse(view.hasOnClickListeners());
     }
 
-    @Test public void staleLocationWithBackgroundPermissionKeepsGenericSignalMessage() {
+    @Test public void staleLocationWithBackgroundPermissionAndBatteryRestrictionExplainsRestriction() {
         Shadows.shadowOf((Application) context).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION);
         GlassSpeedoTripView view = new GlassSpeedoTripView(context);
@@ -210,7 +210,8 @@ public class GlassSpeedoTripControllerTest {
 
         view.updateSpeed(-1, stale, true);
 
-        assertTrue(text(view).contains("GPS signal lost"));
+        assertTrue(text(view).contains("System stopped FermataX in the background. Open FermataX on your phone to remove battery restrictions."));
+        assertFalse(text(view).contains("GPS signal lost"));
     }
 
     @Test public void viewDisplaysCleanSpeedAndDistanceDuringGapMotion() {

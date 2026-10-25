@@ -22,9 +22,9 @@
 	<string name="readiness_overlay_not_granted">Not allowed. Only needed by features that use an overlay.</string>
 	<string name="readiness_screen_capture">Screen capture</string>
 	<string name="readiness_screen_capture_info">Android will ask for confirmation when screen sharing starts.</string>
-	<string name="readiness_battery">Battery optimization</string>
-	<string name="readiness_battery_exempt">Excluded from battery optimization.</string>
-	<string name="readiness_battery_managed">部分手機的 Android 可能停止背景執行的 FermataX。請將它排除於電池最佳化之外，以保持速度卡片和行程資料準確。</string>
+	<string name="readiness_battery">背景執行不受限制</string>
+	<string name="readiness_battery_exempt">不受限制</string>
+	<string name="readiness_battery_managed">受到限制。點按以查看設定。</string>
 	<string name="readiness_unknown">Not verified</string>
 	<string name="readiness_not_applicable">Not applicable</string>
 	<string name="readiness_connection_disconnected">未連線</string>
@@ -43,4 +43,14 @@
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s：%2$s · %3$s</string>
 	<string name="readiness_connection_unknown">狀態無法取得</string>
+	<string name="readiness_background_prompt_title">背景執行限制</string>
+	<string name="readiness_background_prompt_message">這部手機可能會在背景停止 FermataX。請解除電池限制，避免速度和行程追蹤中斷。</string>
+	<string name="readiness_background_open_settings">開啟設定</string>
+	<string name="readiness_background_skip">略過</string>
+	<string name="readiness_background_oem_title">%1$s 的背景設定</string>
+	<string name="readiness_background_oem_guide">%1$s 可能會停止背景執行的應用程式。請在自動啟動或電池設定中找到 FermataX，並允許它自動啟動及在背景執行。</string>
+	<string name="readiness_background_oem_done">已完成</string>
+	<string name="readiness_background_oem_open_vendor">開啟 %1$s 設定</string>
+	<string name="readiness_background_oem_open_android">Android 電池設定</string>
+	<string name="readiness_background_oem_later">稍後</string>
 </resources>

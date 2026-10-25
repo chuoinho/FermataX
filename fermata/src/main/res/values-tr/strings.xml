@@ -618,4 +618,5 @@
     <string name="glass_shortcut_replace">Değiştir</string>
     <string name="glass_shortcut_remove">Kaldır</string>
     <string name="speedo_location_lost_background">FermataX arka planda çalışırken konum kayboldu. Telefonunuzda FermataX\'i açıp konuma “Her zaman izin ver” iznini verin.</string>
+    <string name="speedo_background_restricted">Sistem FermataX\'i arka planda durdurdu. Pil kısıtlamalarını kaldırmak için FermataX\'i telefonunuzda açın.</string>
 </resources>

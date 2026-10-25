@@ -56,6 +56,14 @@
 
     <queries>
         <package android:name="com.google.android.projection.gearhead" />
+        <package android:name="com.huawei.systemmanager" />
+        <package android:name="com.hihonor.systemmanager" />
+        <package android:name="com.miui.securitycenter" />
+        <package android:name="com.coloros.safecenter" />
+        <package android:name="com.oplus.safecenter" />
+        <package android:name="com.oneplus.security" />
+        <package android:name="com.iqoo.secure" />
+        <package android:name="com.vivo.permissionmanager" />
         <intent>
             <action android:name="android.intent.action.OPEN_DOCUMENT_TREE" />
         </intent>

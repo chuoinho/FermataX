@@ -23,9 +23,9 @@
     <string name="readiness_overlay_not_granted">Non consentito. Necessario solo per le funzioni che utilizzano un overlay.</string>
     <string name="readiness_screen_capture">Cattura schermo</string>
     <string name="readiness_screen_capture_info">Android chiederà conferma all\'avvio della condivisione dello schermo.</string>
-    <string name="readiness_battery">Ottimizzazione batteria</string>
-    <string name="readiness_battery_exempt">Escluso dall\'ottimizzazione della batteria.</string>
-    <string name="readiness_battery_managed">Su alcuni telefoni Android può arrestare FermataX in background. Escludilo dalle ottimizzazioni della batteria per mantenere precisi velocità e dati del viaggio.</string>
+    <string name="readiness_battery">Esecuzione in background senza limiti</string>
+    <string name="readiness_battery_exempt">Senza limitazioni</string>
+    <string name="readiness_battery_managed">Con limitazioni. Tocca per controllare le impostazioni.</string>
     <string name="readiness_unknown">Non verificato</string>
     <string name="readiness_not_applicable">Non applicabile</string>
 	<string name="readiness_connection_disconnected">Non connesso</string>
@@ -44,4 +44,14 @@
     <string name="readiness_android_auto">Android Auto</string>
     <string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
     <string name="readiness_connection_unknown">Stato non disponibile</string>
+    <string name="readiness_background_prompt_title">Limitazioni in background</string>
+    <string name="readiness_background_prompt_message">Questo telefono potrebbe arrestare FermataX in background. Rimuovi le limitazioni della batteria per non interrompere velocità e viaggio.</string>
+    <string name="readiness_background_open_settings">Apri impostazioni</string>
+    <string name="readiness_background_skip">Ignora</string>
+    <string name="readiness_background_oem_title">Impostazioni in background di %1$s</string>
+    <string name="readiness_background_oem_guide">%1$s potrebbe arrestare le app in background. Trova FermataX nelle impostazioni di avvio automatico o batteria e consenti l\'avvio e l\'esecuzione in background.</string>
+    <string name="readiness_background_oem_done">Fatto</string>
+    <string name="readiness_background_oem_open_vendor">Apri impostazioni %1$s</string>
+    <string name="readiness_background_oem_open_android">Impostazioni batteria Android</string>
+    <string name="readiness_background_oem_later">Più tardi</string>
 </resources>

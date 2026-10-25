@@ -722,4 +722,5 @@
     <string name="glass_shortcut_replace">Thay thế</string>
     <string name="glass_shortcut_remove">Xóa</string>
     <string name="speedo_location_lost_background">Mất vị trí khi FermataX chạy nền. Mở FermataX trên điện thoại để cấp \'Luôn cho phép\'.</string>
+    <string name="speedo_background_restricted">Hệ thống đã dừng FermataX khi chạy nền. Mở FermataX trên điện thoại để bỏ giới hạn pin.</string>
 </resources>

@@ -28,6 +28,8 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
+import me.aap.fermata.ui.policy.BackgroundRunPolicy;
+import me.aap.fermata.ui.policy.BackgroundRunState;
 
 /**
  * Automotive frosted glass card displaying GPS speedometer and Trip Computer statistics.
@@ -398,10 +400,15 @@ public class GlassSpeedoTripView extends FrameLayout {
                 case TRACKING -> weakSignal ? "◌ " + getContext().getString(R.string.speedo_signal_lost)
                         : "● " + getContext().getString(R.string.speedo_gps_ready);
                 case WAITING -> "◌ " + getContext().getString(R.string.speedo_waiting);
-                case STALE -> "◌ " + getContext().getString(
-                        TripModePolicy.hasForegroundLocation(getContext())
-                                && !TripModePolicy.hasBackgroundLocation(getContext())
-                                ? R.string.speedo_location_lost_background : R.string.speedo_signal_lost);
+                case STALE -> {
+                    boolean alwaysLocation = TripModePolicy.hasBackgroundLocation(getContext());
+                    boolean restricted = BackgroundRunPolicy.shouldExplainBackgroundRestriction(true,
+                            alwaysLocation, BackgroundRunState.isUnrestricted(getContext()));
+                    int reason = restricted ? R.string.speedo_background_restricted
+                            : TripModePolicy.hasForegroundLocation(getContext()) && !alwaysLocation
+                            ? R.string.speedo_location_lost_background : R.string.speedo_signal_lost;
+                    yield "◌ " + getContext().getString(reason);
+                }
                 case GPS_OFF -> getContext().getString(R.string.speedo_gps_off);
                 case PERMISSION -> getContext().getString(R.string.speedo_permission);
                 case PAUSED -> getContext().getString(R.string.speedo_paused);

@@ -15,4 +15,5 @@
     <string name="speedo_estimated">估計 %1$s</string>
     <string name="speedo_incomplete">資料不完整</string>
     <string name="speedo_location_lost_background">FermataX 在背景執行時已失去位置資訊。請在手機上開啟 FermataX，並允許位置「一律允許」。</string>
+    <string name="speedo_background_restricted">系統已在背景停止 FermataX。請在手機上開啟 FermataX 並解除電池限制。</string>
 </resources>

@@ -22,9 +22,9 @@
 	<string name="readiness_overlay_not_granted">Not allowed. Only needed by features that use an overlay.</string>
 	<string name="readiness_screen_capture">Screen capture</string>
 	<string name="readiness_screen_capture_info">Android will ask for confirmation when screen sharing starts.</string>
-	<string name="readiness_battery">Battery optimization</string>
-	<string name="readiness_battery_exempt">Excluded from battery optimization.</string>
-	<string name="readiness_battery_managed">Em alguns telemóveis, o Android pode parar o FermataX em segundo plano. Exclua-o da otimização da bateria para manter a velocidade e a viagem precisas.</string>
+	<string name="readiness_battery">Execução em segundo plano sem limites</string>
+	<string name="readiness_battery_exempt">Sem restrições</string>
+	<string name="readiness_battery_managed">Com restrições. Toque para rever as configurações.</string>
 	<string name="readiness_unknown">Not verified</string>
 	<string name="readiness_not_applicable">Not applicable</string>
 	<string name="readiness_connection_disconnected">Desconectado</string>
@@ -43,4 +43,14 @@
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
 	<string name="readiness_connection_unknown">Estado indisponível</string>
+	<string name="readiness_background_prompt_title">Restrições em segundo plano</string>
+	<string name="readiness_background_prompt_message">Este telefone pode encerrar o FermataX em segundo plano. Remova as restrições de bateria para evitar interrupções na velocidade e na viagem.</string>
+	<string name="readiness_background_open_settings">Abrir configurações</string>
+	<string name="readiness_background_skip">Ignorar</string>
+	<string name="readiness_background_oem_title">Configurações de segundo plano da %1$s</string>
+	<string name="readiness_background_oem_guide">A %1$s pode encerrar apps em segundo plano. Encontre o FermataX nas configurações de inicialização automática ou bateria e permita que ele inicie e funcione em segundo plano.</string>
+	<string name="readiness_background_oem_done">Já fiz isso</string>
+	<string name="readiness_background_oem_open_vendor">Abrir configurações da %1$s</string>
+	<string name="readiness_background_oem_open_android">Configurações de bateria do Android</string>
+	<string name="readiness_background_oem_later">Mais tarde</string>
 </resources>

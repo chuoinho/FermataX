@@ -21,7 +21,7 @@ public class PhoneReadinessTest {
 				new PhoneReadiness.Row(PhoneReadiness.Check.LOCATION,
 						PhoneReadiness.Status.OK, PhoneReadiness.Action.LOCATION_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.BATTERY,
-						PhoneReadiness.Status.ACTION_AVAILABLE, PhoneReadiness.Action.BATTERY_SETTINGS),
+							PhoneReadiness.Status.INFO, PhoneReadiness.Action.BATTERY_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.MICROPHONE,
 						PhoneReadiness.Status.OK, PhoneReadiness.Action.MICROPHONE_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.NAVIGATION,
@@ -52,7 +52,7 @@ public class PhoneReadinessTest {
 				new PhoneReadiness.Row(PhoneReadiness.Check.LOCATION,
 						PhoneReadiness.Status.ACTION_AVAILABLE, PhoneReadiness.Action.LOCATION_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.BATTERY,
-						PhoneReadiness.Status.ACTION_AVAILABLE, PhoneReadiness.Action.BATTERY_SETTINGS),
+							PhoneReadiness.Status.INFO, PhoneReadiness.Action.BATTERY_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.MICROPHONE,
 						PhoneReadiness.Status.ACTION_AVAILABLE, PhoneReadiness.Action.MICROPHONE_SETTINGS),
 				new PhoneReadiness.Row(PhoneReadiness.Check.NAVIGATION,
@@ -131,6 +131,19 @@ public class PhoneReadinessTest {
 		assertTrue(PhoneReadiness.isSectionReady(ready));
 		assertFalse(PhoneReadiness.isSectionReady(incomplete));
 		assertFalse(PhoneReadiness.isSectionReady(List.of()));
+	}
+
+	@Test
+	public void backgroundRestrictionUsesWarningStatusUntilBothChecksPass() {
+		List<PhoneReadiness.Row> restricted = PhoneReadiness.evaluate(new PhoneReadiness.Input(false,
+				false, State.DISCONNECTED, false, true, true, false, true, true, false, false));
+		List<PhoneReadiness.Row> unrestricted = PhoneReadiness.evaluate(new PhoneReadiness.Input(false,
+				false, State.DISCONNECTED, false, true, true, false, true, true, false, true));
+
+		assertEquals(PhoneReadiness.Status.INFO,
+				row(restricted, PhoneReadiness.Check.BATTERY).status());
+		assertEquals(PhoneReadiness.Status.OK,
+				row(unrestricted, PhoneReadiness.Check.BATTERY).status());
 	}
 
 	private static PhoneReadiness.Row row(List<PhoneReadiness.Row> rows,

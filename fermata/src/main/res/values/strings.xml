@@ -714,5 +714,6 @@
     <string name="glass_shortcut_replace">Replace</string>
     <string name="glass_shortcut_remove">Remove</string>
     <string name="speedo_location_lost_background">Location lost while FermataX runs in the background. Open FermataX on your phone to allow “Allow all the time”.</string>
+    <string name="speedo_background_restricted">System stopped FermataX in the background. Open FermataX on your phone to remove battery restrictions.</string>
 </resources>
 

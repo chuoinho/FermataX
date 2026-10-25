@@ -23,9 +23,9 @@
     <string name="readiness_overlay_not_granted">İzin verilmedi. Yalnızca yer paylaşımı kullanan özellikler için gereklidir.</string>
     <string name="readiness_screen_capture">Ekran yakalama</string>
     <string name="readiness_screen_capture_info">Ekran paylaşımı başladığında Android onay isteyecektir.</string>
-    <string name="readiness_battery">Pil optimizasyonu</string>
-    <string name="readiness_battery_exempt">Pil optimizasyonundan muaf tutuldu.</string>
-    <string name="readiness_battery_managed">Bazı telefonlarda Android arka plandaki FermataX uygulamasını durdurabilir. Hız kartı ve yolculuk bilgilerinin doğru kalması için pil optimizasyonundan hariç tutun.</string>
+    <string name="readiness_battery">Arka planda sınırsız çalıştırma</string>
+    <string name="readiness_battery_exempt">Kısıtlama yok</string>
+    <string name="readiness_battery_managed">Kısıtlı. Ayarları incelemek için dokunun.</string>
     <string name="readiness_unknown">Doğrulanmadı</string>
     <string name="readiness_not_applicable">Geçerli değil</string>
 	<string name="readiness_connection_disconnected">Bağlı değil</string>
@@ -43,5 +43,15 @@
 	<string name="readiness_all_ready">Her şey hazır</string>
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
-	<string name="readiness_connection_unknown">Durum alınamıyor</string>
+    <string name="readiness_connection_unknown">Durum alınamıyor</string>
+    <string name="readiness_background_prompt_title">Arka plan kısıtlamaları</string>
+    <string name="readiness_background_prompt_message">Bu telefon FermataX\'i arka planda durdurabilir. Hız ve yolculuk takibinin kesilmemesi için pil kısıtlamalarını kaldırın.</string>
+    <string name="readiness_background_open_settings">Ayarları aç</string>
+    <string name="readiness_background_skip">Atla</string>
+    <string name="readiness_background_oem_title">%1$s arka plan ayarları</string>
+    <string name="readiness_background_oem_guide">%1$s arka plandaki uygulamaları durdurabilir. FermataX\'i otomatik başlatma veya pil ayarlarında bulun ve otomatik başlatma ile arka plan çalışmasına izin verin.</string>
+    <string name="readiness_background_oem_done">Tamamlandı</string>
+    <string name="readiness_background_oem_open_vendor">%1$s ayarlarını aç</string>
+    <string name="readiness_background_oem_open_android">Android pil ayarları</string>
+    <string name="readiness_background_oem_later">Daha sonra</string>
 </resources>

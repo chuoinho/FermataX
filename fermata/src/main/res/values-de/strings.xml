@@ -618,4 +618,5 @@
     <string name="glass_shortcut_replace">Ersetzen</string>
     <string name="glass_shortcut_remove">Entfernen</string>
     <string name="speedo_location_lost_background">Standort verloren, während FermataX im Hintergrund läuft. Öffne FermataX auf dem Telefon und erlaube „Immer zulassen“.</string>
+    <string name="speedo_background_restricted">Das System hat FermataX im Hintergrund beendet. Öffne FermataX auf dem Telefon, um die Akku-Beschränkungen aufzuheben.</string>
 </resources>

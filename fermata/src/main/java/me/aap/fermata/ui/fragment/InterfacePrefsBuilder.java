@@ -1,9 +1,12 @@
 package me.aap.fermata.ui.fragment;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.util.TypedValue;
+import android.widget.CheckBox;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
@@ -13,6 +16,8 @@ import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.control.PhoneReadiness;
 import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.glass.speedo.TripTrackingService;
+import me.aap.fermata.ui.policy.BackgroundRunPolicy;
+import me.aap.fermata.ui.policy.BackgroundRunState;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.log.Log;
@@ -110,15 +115,37 @@ final class InterfacePrefsBuilder {
 	}
 
 	static void manageLocationAccess(MainActivityDelegate activity, Runnable onChanged) {
+		manageLocationAccess(activity, onChanged, false);
+	}
+
+	static void manageLocationAccessFromInitialSetup(MainActivityDelegate activity, Runnable onChanged) {
+		manageLocationAccess(activity, onChanged, true);
+	}
+
+	private static void manageLocationAccess(MainActivityDelegate activity, Runnable onChanged,
+			boolean checkBackgroundRestrictions) {
 		Context ctx = activity.getContext();
 		TripModePolicy.Access access = currentLocationAccess(ctx);
 		if (access == TripModePolicy.Access.ALWAYS && offersPermissionDowngrade(ctx)) {
 			showLocationDowngradeDialog(activity);
 		} else if (access == TripModePolicy.Access.WHILE_USING && BuildConfig.TRIP_BACKGROUND_SUPPORTED) {
-			showBackgroundPermissionPrompt(activity, onChanged);
+			showBackgroundPermissionPrompt(activity, onChanged, checkBackgroundRestrictions);
 		} else if (access == TripModePolicy.Access.NOT_GRANTED) {
-			requestForegroundLocation(activity, onChanged);
+			requestForegroundLocation(activity, onChanged, checkBackgroundRestrictions);
 		}
+	}
+
+	static void manageBackgroundAccess(MainActivityDelegate activity) {
+		Context ctx = activity.getContext();
+		BackgroundRunPolicy.Vendor vendor = BackgroundRunPolicy.vendorFor(Build.MANUFACTURER);
+		if ((vendor == null) || BackgroundRunState.isVendorGuideDone(ctx)) {
+			openAndroidBatterySettings(activity);
+			return;
+		}
+		BackgroundRunPolicy.ManagerTarget target = BackgroundRunPolicy.selectVendorTarget(
+				Build.MANUFACTURER, candidate -> !candidate.appDetailsFallback()
+						&& canResolve(ctx, vendorIntent(candidate)));
+		showVendorBackgroundGuide(activity, vendor, target);
 	}
 
 	static int locationAccessState(TripModePolicy.Access access) {
@@ -152,12 +179,13 @@ final class InterfacePrefsBuilder {
 				TripModePolicy.hasBackgroundLocation(ctx));
 	}
 
-	static void maybeOfferBackgroundPermissionPrompt(MainActivityDelegate activity, Runnable onChanged) {
+	private static void maybeOfferBackgroundPermissionPrompt(MainActivityDelegate activity, Runnable onChanged,
+			boolean checkBackgroundRestrictions) {
 		Context ctx = activity.getContext();
 		if (!TripModePolicy.shouldOfferBackgroundPrompt(TripModePolicy.hasForegroundLocation(ctx),
 				TripModePolicy.hasBackgroundLocation(ctx), wasBackgroundPromptAsked(ctx),
 				BuildConfig.TRIP_BACKGROUND_SUPPORTED)) return;
-		showBackgroundPermissionPrompt(activity, onChanged);
+		showBackgroundPermissionPrompt(activity, onChanged, checkBackgroundRestrictions);
 	}
 
 	private static boolean wasBackgroundPromptAsked(Context ctx) {
@@ -170,41 +198,158 @@ final class InterfacePrefsBuilder {
 				.putBoolean("background_prompt_asked", true).apply();
 	}
 
-	private static void requestForegroundLocation(MainActivityDelegate activity, Runnable onChanged) {
+	private static void requestForegroundLocation(MainActivityDelegate activity, Runnable onChanged,
+			boolean checkBackgroundRestrictions) {
 		AppActivity app = activity.getAppActivity();
 		if (app == null) return;
 		Context ctx = activity.getContext();
 		app.checkPermissions(Manifest.permission.ACCESS_FINE_LOCATION,
 				Manifest.permission.ACCESS_COARSE_LOCATION).onCompletion((r, e) -> {
 			onChanged.run();
-			if (TripModePolicy.hasForegroundLocation(ctx)) maybeOfferBackgroundPermissionPrompt(activity, onChanged);
+			if (TripModePolicy.hasForegroundLocation(ctx)) {
+				maybeOfferBackgroundPermissionPrompt(activity, onChanged, checkBackgroundRestrictions);
+			}
 		});
 	}
 
-	private static void showBackgroundPermissionPrompt(MainActivityDelegate activity, Runnable onChanged) {
+	private static void showBackgroundPermissionPrompt(MainActivityDelegate activity, Runnable onChanged,
+			boolean checkBackgroundRestrictions) {
 		Context ctx = activity.getContext();
 		DialogBuilder d = activity.createDialogBuilder(ctx);
 		d.setTitle(R.string.location_always_title);
 		d.setMessage(R.string.location_background_disclosure);
-		d.setPositiveButton(R.string.location_allow_now, (dlg, which) -> requestBackgroundLocation(activity, onChanged));
-		d.setNegativeButton(R.string.location_skip, (dlg, which) -> markBackgroundPromptAsked(ctx));
+		d.setPositiveButton(R.string.location_allow_now,
+				(dlg, which) -> requestBackgroundLocation(activity, onChanged, checkBackgroundRestrictions));
+		d.setNegativeButton(R.string.location_skip, (dlg, which) -> {
+			markBackgroundPromptAsked(ctx);
+			onChanged.run();
+			if (checkBackgroundRestrictions) maybeShowInitialBackgroundPrompt(activity);
+		});
 		d.show();
 	}
 
-	private static void requestBackgroundLocation(MainActivityDelegate activity, Runnable onChanged) {
+	private static void requestBackgroundLocation(MainActivityDelegate activity, Runnable onChanged,
+			boolean checkBackgroundRestrictions) {
 		Context ctx = activity.getContext();
 		markBackgroundPromptAsked(ctx);
 		AppActivity app = activity.getAppActivity();
-		if (app == null) return;
+		if (app == null) {
+			if (checkBackgroundRestrictions) maybeShowInitialBackgroundPrompt(activity);
+			return;
+		}
 		app.checkPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION).onCompletion((r, e) -> {
 			onChanged.run();
+			boolean showWarning = checkBackgroundRestrictions && shouldOfferInitialBackgroundPrompt(ctx);
 			if (TripModePolicy.hasBackgroundLocation(ctx)) {
 				if (AutomotiveConnectionState.get().isProjectionConnected()) TripTrackingService.start(ctx);
-				UiUtils.showAlert(ctx, ctx.getString(R.string.location_background_enabled));
-			} else {
+				if (!showWarning) UiUtils.showAlert(ctx, ctx.getString(R.string.location_background_enabled));
+			} else if (!showWarning) {
 				UiUtils.showAlert(ctx, ctx.getString(R.string.location_background_denied));
 			}
+			if (showWarning) showInitialBackgroundPrompt(activity, ctx);
 		});
+	}
+
+	private static boolean shouldOfferInitialBackgroundPrompt(Context ctx) {
+		return BackgroundRunPolicy.shouldOfferInitialWarning(BackgroundRunState.isUnrestricted(ctx),
+				BackgroundRunState.wasInitialWarningAsked(ctx));
+	}
+
+	private static void maybeShowInitialBackgroundPrompt(MainActivityDelegate activity) {
+		Context ctx = activity.getContext();
+		if (shouldOfferInitialBackgroundPrompt(ctx)) showInitialBackgroundPrompt(activity, ctx);
+	}
+
+	private static void showInitialBackgroundPrompt(MainActivityDelegate activity, Context ctx) {
+		BackgroundRunState.markInitialWarningAsked(ctx);
+		DialogBuilder d = activity.createDialogBuilder(ctx);
+		d.setTitle(R.string.readiness_background_prompt_title);
+		d.setMessage(R.string.readiness_background_prompt_message);
+		d.setPositiveButton(R.string.readiness_background_open_settings,
+				(dlg, which) -> openAndroidBatterySettings(activity));
+		d.setNegativeButton(R.string.readiness_background_skip, null);
+		d.show();
+	}
+
+	private static void showVendorBackgroundGuide(MainActivityDelegate activity,
+			BackgroundRunPolicy.Vendor vendor, BackgroundRunPolicy.ManagerTarget target) {
+		Context ctx = activity.getContext();
+		String vendorName = vendorDisplayName(vendor);
+		CheckBox done = new CheckBox(ctx);
+		done.setText(R.string.readiness_background_oem_done);
+		if (activity.isGlassTheme()) {
+			done.setTextColor(activity.getGlassTextPrimary());
+		} else {
+			TypedValue textColor = new TypedValue();
+			if (ctx.getTheme().resolveAttribute(android.R.attr.textColorPrimary, textColor, true)) {
+				done.setTextColor(textColor.resourceId != 0
+						? ctx.getColorStateList(textColor.resourceId).getDefaultColor() : textColor.data);
+			}
+		}
+		float density = ctx.getResources().getDisplayMetrics().density;
+		done.setPadding(Math.round(20 * density), Math.round(8 * density),
+				Math.round(20 * density), Math.round(8 * density));
+		done.setOnCheckedChangeListener((button, checked) ->
+				BackgroundRunState.setVendorGuideDone(ctx, checked));
+		DialogBuilder d = activity.createDialogBuilder(ctx);
+		d.setTitle(ctx.getString(R.string.readiness_background_oem_title, vendorName));
+		d.setMessage(ctx.getString(R.string.readiness_background_oem_guide, vendorName));
+		d.setView(done);
+		d.setPositiveButton(ctx.getString(R.string.readiness_background_oem_open_vendor, vendorName),
+				(dlg, which) -> openVendorSettings(activity, target));
+		d.setNegativeButton(R.string.readiness_background_oem_open_android,
+				(dlg, which) -> openAndroidBatterySettings(activity));
+		d.setNeutralButton(R.string.readiness_background_oem_later, null);
+		d.show();
+	}
+
+	private static String vendorDisplayName(BackgroundRunPolicy.Vendor vendor) {
+		return switch (vendor) {
+			case HUAWEI_HONOR -> "Huawei / Honor";
+			case XIAOMI -> "Xiaomi / Redmi / POCO";
+			case OPPO_REALME_ONEPLUS -> "OPPO / Realme / OnePlus";
+			case VIVO -> "Vivo";
+		};
+	}
+
+	private static Intent vendorIntent(BackgroundRunPolicy.ManagerTarget target) {
+		return new Intent().setComponent(new ComponentName(target.packageName(), target.className()));
+	}
+
+	private static void openVendorSettings(MainActivityDelegate activity,
+			BackgroundRunPolicy.ManagerTarget target) {
+		Context ctx = activity.getContext();
+		Intent intent = (target == null || target.appDetailsFallback()) ? appDetailsIntent(ctx) : vendorIntent(target);
+		if (!startExternalSettings(activity, intent)) startExternalSettings(activity, appDetailsIntent(ctx));
+	}
+
+	private static void openAndroidBatterySettings(MainActivityDelegate activity) {
+		Context ctx = activity.getContext();
+		Intent intent = new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+		if (!startExternalSettings(activity, intent)) startExternalSettings(activity, appDetailsIntent(ctx));
+	}
+
+	private static Intent appDetailsIntent(Context ctx) {
+		return new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+				android.net.Uri.parse("package:" + ctx.getPackageName()));
+	}
+
+	private static boolean canResolve(Context ctx, Intent intent) {
+		try {
+			return intent.resolveActivity(ctx.getPackageManager()) != null;
+		} catch (RuntimeException ignored) {
+			return false;
+		}
+	}
+
+	private static boolean startExternalSettings(MainActivityDelegate activity, Intent intent) {
+		if (!canResolve(activity.getContext(), intent)) return false;
+		try {
+			activity.startActivity(intent);
+			return true;
+		} catch (RuntimeException ignored) {
+			return false;
+		}
 	}
 
 	private static void showLocationDowngradeDialog(MainActivityDelegate activity) {

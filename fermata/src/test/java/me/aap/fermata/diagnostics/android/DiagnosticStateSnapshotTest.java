@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
 import android.content.Context;
+import android.os.Build;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -31,6 +32,9 @@ public class DiagnosticStateSnapshotTest {
 		assertTrue(fine instanceof Boolean);
 		assertEquals("not_installed", json.getJSONObject("auto").getString("gearhead_version"));
         assertEquals("missing", json.getJSONObject("location").getString("google_play_services"));
+		JSONObject background = json.getJSONObject("background");
+		assertEquals(Build.MANUFACTURER, background.getString("manufacturer"));
+		assertTrue(background.get("vendor_guide_done") instanceof Boolean);
 		assertFalse(text.contains("latitude"));
 		assertFalse(text.contains("longitude"));
 	}

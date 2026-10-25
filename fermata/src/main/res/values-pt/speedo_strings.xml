@@ -15,4 +15,5 @@
     <string name="speedo_estimated">%1$s estimados</string>
     <string name="speedo_incomplete">Dados ausentes</string>
     <string name="speedo_location_lost_background">A localização foi perdida em segundo plano. Abra o FermataX no telemóvel e permita “Permitir sempre”.</string>
+    <string name="speedo_background_restricted">O sistema parou o FermataX em segundo plano. Abra o FermataX no telefone para remover as restrições da bateria.</string>
 </resources>

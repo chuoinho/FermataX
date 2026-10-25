@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
-import android.os.PowerManager;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -37,6 +36,7 @@ import me.aap.fermata.ui.control.PhoneReadiness.Input;
 import me.aap.fermata.ui.control.PhoneReadiness.Row;
 import me.aap.fermata.ui.control.PhoneReadiness.Status;
 import me.aap.fermata.ui.glass.speedo.TripModePolicy;
+import me.aap.fermata.ui.policy.BackgroundRunState;
 import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.ui.UiUtils;
@@ -217,13 +217,13 @@ final class ReadinessPrefsBuilder {
 		Boolean microphone = queryMicrophone();
 		Boolean notifications = queryNotifications();
 		Boolean overlay = queryOverlay();
-		Boolean battery = queryBatteryExemption();
+		boolean backgroundUnrestricted = BackgroundRunState.isUnrestricted(context);
 		boolean navigation = PhoneReadiness.hasNotificationListenerCheck(context);
 		Input input = new Input(BuildConfig.AUTO, connection.hasConnectionObservation(),
 				connection.state(), binder.isControlAvailable(), Boolean.TRUE.equals(storage),
 				Boolean.TRUE.equals(location), Boolean.TRUE.equals(accessibility),
 				Boolean.TRUE.equals(microphone), Boolean.TRUE.equals(notifications),
-				Boolean.TRUE.equals(overlay), Boolean.TRUE.equals(battery), navigation);
+				Boolean.TRUE.equals(overlay), backgroundUnrestricted, navigation);
 		List<Row> rows = new ArrayList<>(PhoneReadiness.evaluate(input));
 		if (storage == null) markUnknown(rows, Check.STORAGE);
 		if (location == null) markUnknown(rows, Check.LOCATION);
@@ -231,7 +231,6 @@ final class ReadinessPrefsBuilder {
 		if (microphone == null) markUnknown(rows, Check.MICROPHONE);
 		if (notifications == null) markUnknown(rows, Check.NOTIFICATIONS);
 		if (overlay == null) markUnknown(rows, Check.OVERLAY);
-		if (battery == null) markUnknown(rows, Check.BATTERY);
 		if (locationAccess() == TripModePolicy.Access.WHILE_USING) {
 			for (int i = 0; i < rows.size(); i++) {
 				if (rows.get(i).check() == Check.LOCATION) {
@@ -315,16 +314,6 @@ final class ReadinessPrefsBuilder {
 		}
 	}
 
-	@Nullable
-	private Boolean queryBatteryExemption() {
-		try {
-			PowerManager power = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-			return (power == null) ? null : power.isIgnoringBatteryOptimizations(context.getPackageName());
-		} catch (RuntimeException ignored) {
-			return null;
-		}
-	}
-
 	private static void markUnknown(List<Row> rows, Check check) {
 		for (int i = 0; i < rows.size(); i++) {
 			if (rows.get(i).check() == check) {
@@ -371,7 +360,7 @@ final class ReadinessPrefsBuilder {
 					R.string.readiness_overlay_granted : R.string.readiness_overlay_not_granted);
 			case SCREEN_CAPTURE -> activity.getString(row.status() == Status.NOT_APPLICABLE ?
 					R.string.readiness_not_applicable : R.string.readiness_screen_capture_info);
-			case BATTERY -> activity.getString(input.batteryExempt() ?
+			case BATTERY -> activity.getString(input.backgroundUnrestricted() ?
 					R.string.readiness_battery_exempt : R.string.readiness_battery_managed);
 			case NAVIGATION -> activity.getString(input.navigationNotificationsGranted() ?
 					R.string.readiness_nav_notification_access_granted :
@@ -394,6 +383,9 @@ final class ReadinessPrefsBuilder {
 		if (!isRefreshAllowed(uiActive, closed)) return;
 		if (action == Action.LOCATION_SETTINGS) {
 			InterfacePrefsBuilder.manageLocationAccess(activity, this::scheduleRefresh);
+			return;
+		} else if (action == Action.BATTERY_SETTINGS) {
+			InterfacePrefsBuilder.manageBackgroundAccess(activity);
 			return;
 		} else if (action == Action.NAVIGATION_SETTINGS) {
 			startSettings(PhoneReadiness.createNotificationListenerSettingsIntent());
