@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 
 set "SDK=%LOCALAPPDATA%\Android\Sdk"
 set "ADB=%SDK%\platform-tools\adb.exe"
@@ -47,21 +47,71 @@ if not exist "%CONFIG%" (
   exit /b 1
 )
 
-"%ADB%" get-state 1>nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] No authorized ADB device is connected.
-  echo Connect the phone, enable USB debugging, and start Android Auto Head Unit Server.
+set "SERIAL=%~1"
+if defined SERIAL goto validate_device
+
+set /a DEVICE_COUNT=0
+for /f "skip=1 tokens=1,2" %%A in ('""%ADB%" devices"') do (
+  if "%%B"=="device" (
+    set /a DEVICE_COUNT+=1
+    set "DEVICE_!DEVICE_COUNT!=%%A"
+  )
+)
+
+if %DEVICE_COUNT%==0 goto no_device
+if %DEVICE_COUNT%==1 (
+  set "SERIAL=!DEVICE_1!"
+  goto validate_device
+)
+
+echo.
+echo Multiple ADB connections found ^(USB, wireless or mDNS^):
+for /l %%N in (1,1,%DEVICE_COUNT%) do echo %%N. !DEVICE_%%N!
+if %DEVICE_COUNT% GTR 9 (
+  echo Run open-dhu.bat with the desired serial or IP:port as its argument.
   pause
   exit /b 1
 )
+
+:choose_device
+choice /c 123456789 /n /m "Select device number: "
+set "DEVICE_INDEX=%errorlevel%"
+if %DEVICE_INDEX% GTR %DEVICE_COUNT% goto choose_device
+for /l %%N in (1,1,%DEVICE_COUNT%) do (
+  if "%%N"=="%DEVICE_INDEX%" set "SERIAL=!DEVICE_%%N!"
+)
+
+:validate_device
+"%ADB%" -s "%SERIAL%" get-state 1>nul 2>nul
+if errorlevel 1 (
+  if not "%SERIAL::=%"=="%SERIAL%" (
+    echo Connecting to %SERIAL%...
+    "%ADB%" connect "%SERIAL%"
+  )
+  "%ADB%" -s "%SERIAL%" get-state 1>nul 2>nul
+  if errorlevel 1 goto no_device
+)
+goto device_ready
+
+:no_device
+echo [ERROR] No authorized ADB device is connected, or the selected device is unavailable.
+echo Enable USB debugging or pair the phone using Wireless debugging.
+echo For wireless, you can run: open-dhu.bat IP:port
+echo Start Android Auto Head Unit Server on the selected phone.
+pause
+exit /b 1
+
+:device_ready
+echo.
+echo Using ADB device: %SERIAL%
 
 echo.
 echo Closing old DHU session...
 taskkill /f /im desktop-head-unit.exe 1>nul 2>nul
 
 echo Resetting ADB forward on port 5277...
-"%ADB%" forward --remove tcp:5277 1>nul 2>nul
-"%ADB%" forward tcp:5277 tcp:5277 1>nul
+"%ADB%" -s "%SERIAL%" forward --remove tcp:5277 1>nul 2>nul
+"%ADB%" -s "%SERIAL%" forward tcp:5277 tcp:5277 1>nul
 if errorlevel 1 (
   echo [ERROR] Failed to forward ADB port 5277.
   pause
