@@ -1,17 +1,14 @@
 <resources>
-	<string name="readiness_title">Kiểm tra kết nối và quyền</string>
-	<string name="readiness_subtitle">Xem trạng thái Android Auto và các cài đặt hệ thống tùy chọn.</string>
+	<string name="readiness_title">Kiểm tra sẵn sàng</string>
+	<string name="readiness_subtitle">Kiểm tra Android Auto và cài đặt hệ thống.</string>
 	<string name="readiness_refresh">Kiểm tra lại</string>
 	<string name="readiness_refresh_subtitle">Cập nhật trạng thái mà không thay đổi cài đặt.</string>
-	<string name="readiness_connection">Kết nối Android Auto</string>
 	<string name="readiness_control_session">Phiên Điều khiển</string>
 	<string name="readiness_storage">Quyền truy cập bộ nhớ &amp; tệp tin</string>
 	<string name="readiness_storage_granted">Đã cho phép. FermataX có thể quét và đọc nhạc, video, tệp cục bộ.</string>
 	<string name="readiness_storage_not_granted">Chưa cho phép. Chạm để cấp quyền quản lý tất cả tệp hoặc bộ nhớ.</string>
 	<string name="readiness_location">Quyền vị trí (Tìm xe)</string>
-	<string name="readiness_location_granted">Đã cho phép. Dùng cho thẻ tốc độ, thời tiết và Tìm xe.</string>
-	<string name="readiness_location_not_granted">Chưa cho phép. Chạm để cấp quyền vị trí cho thẻ tốc độ, thời tiết và Tìm xe.</string>
-	<string name="readiness_accessibility">Hỗ trợ tiếp cận (Cảm ứng phản chiếu)</string>
+	<string name="readiness_accessibility">Phím vô lăng / bàn phím (Trợ năng)</string>
 	<string name="readiness_accessibility_granted">Đang bật. Cho phép chạm và điều khiển điện thoại từ màn hình xe khi phản chiếu.</string>
 	<string name="readiness_accessibility_not_granted">Đang tắt. Chạm để bật nếu muốn điều khiển điện thoại từ màn hình xe.</string>
 	<string name="readiness_microphone">Quyền micro (Giọng nói)</string>
@@ -30,13 +27,20 @@
 	<string name="readiness_battery_managed">Trên một số máy, Android có thể dừng FermataX chạy nền. Miễn tối ưu pin để thẻ tốc độ và chuyến đi luôn chính xác.</string>
 	<string name="readiness_unknown">Chưa xác minh</string>
 	<string name="readiness_not_applicable">Không áp dụng</string>
-	<string name="readiness_connection_disconnected">Android Auto chưa kết nối.</string>
-	<string name="readiness_connection_connected">Android Auto đã kết nối; FermataX chưa mở trên màn hình xe.</string>
-	<string name="readiness_connection_visible">FermataX đang hiện trên màn hình xe.</string>
-	<string name="readiness_control_available">Kênh Điều khiển đã sẵn sàng.</string>
-	<string name="readiness_control_unavailable">Kênh Điều khiển chưa sẵn sàng.</string>
+	<string name="readiness_connection_disconnected">Chưa kết nối</string>
+	<string name="readiness_connection_connected">Đã kết nối</string>
+	<string name="readiness_connection_visible">Đã kết nối</string>
+	<string name="readiness_control_available">Điều khiển sẵn sàng</string>
+	<string name="readiness_control_unavailable">Điều khiển không khả dụng</string>
 	<string name="readiness_settings_unavailable">Trang Cài đặt này không có trên thiết bị.</string>
-	<string name="readiness_nav_notification_access">Quyền đọc thông báo dẫn đường</string>
+	<string name="readiness_nav_notification_access">Chỉ đường từ Maps/Waze</string>
 	<string name="readiness_nav_notification_access_granted">Đang bật. Cho phép phản chiếu dẫn đường từng bước trên bảng điều khiển Kính.</string>
 	<string name="readiness_nav_notification_access_not_granted">Đang tắt. Chạm để cấp quyền truy cập thông báo cho dẫn đường.</string>
+	<string name="readiness_group_required">CẦN THIẾT</string>
+	<string name="readiness_group_stability">ĐỂ CHẠY ỔN ĐỊNH TRÊN XE</string>
+	<string name="readiness_group_optional">TUỲ CHỌN</string>
+	<string name="readiness_all_ready">Tất cả đã sẵn sàng</string>
+	<string name="readiness_android_auto">Android Auto</string>
+	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
+	<string name="readiness_connection_unknown">Chưa xác định trạng thái</string>
 </resources>

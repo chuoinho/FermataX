@@ -10,19 +10,26 @@ public final class PhoneReadiness {
 	}
 
 	public static List<Row> evaluate(Input input) {
-		return List.of(connection(input),
-				new Row(Check.CONTROL_SESSION, input.controlAvailable() ? Status.OK : Status.INFO,
-						Action.NONE),
-				storage(input),
-				location(input),
-				accessibility(input),
-				microphone(input),
-				new Row(Check.NOTIFICATIONS, input.notificationsEnabled() ? Status.OK :
-						Status.ACTION_AVAILABLE, Action.NOTIFICATION_SETTINGS),
-				overlay(input),
-				new Row(Check.SCREEN_CAPTURE, input.autoBuild() ? Status.INFO :
-						Status.NOT_APPLICABLE, Action.NONE),
-				new Row(Check.BATTERY, Status.INFO, Action.BATTERY_SETTINGS));
+		java.util.ArrayList<Row> rows = new java.util.ArrayList<>();
+		if (input.autoBuild()) rows.add(connection(input));
+		rows.add(storage(input));
+		rows.add(new Row(Check.NOTIFICATIONS, input.notificationsEnabled() ? Status.OK :
+				Status.ACTION_AVAILABLE, Action.NOTIFICATION_SETTINGS));
+		rows.add(location(input));
+		rows.add(new Row(Check.BATTERY, input.batteryExempt() ? Status.OK :
+				Status.ACTION_AVAILABLE, Action.BATTERY_SETTINGS));
+		rows.add(microphone(input));
+		rows.add(new Row(Check.NAVIGATION, input.navigationNotificationsGranted() ? Status.OK :
+				Status.ACTION_AVAILABLE, Action.NAVIGATION_SETTINGS));
+		if (input.autoBuild()) {
+			rows.add(accessibility(input));
+			rows.add(overlay(input));
+		}
+		return List.copyOf(rows);
+	}
+
+	public static boolean isSectionReady(List<Row> rows) {
+		return !rows.isEmpty() && rows.stream().allMatch(row -> row.status() == Status.OK);
 	}
 
 	private static Row connection(Input input) {
@@ -33,8 +40,8 @@ public final class PhoneReadiness {
 			return new Row(Check.CONNECTION, Status.UNKNOWN, Action.NONE);
 		}
 		return new Row(Check.CONNECTION,
-				input.connectionState() == AutomotiveConnectionState.State.DISCONNECTED ?
-						Status.INFO : Status.OK, Action.NONE);
+				(input.connectionState() == AutomotiveConnectionState.State.DISCONNECTED ||
+						!input.controlAvailable()) ? Status.INFO : Status.OK, Action.NONE);
 	}
 
 	private static Row storage(Input input) {
@@ -61,10 +68,7 @@ public final class PhoneReadiness {
 	}
 
 	private static Row overlay(Input input) {
-		if (!input.autoBuild()) {
-			return new Row(Check.OVERLAY, Status.NOT_APPLICABLE, Action.NONE);
-		}
-		return new Row(Check.OVERLAY, input.overlayGranted() ? Status.OK : Status.INFO,
+		return new Row(Check.OVERLAY, input.overlayGranted() ? Status.OK : Status.ACTION_AVAILABLE,
 				Action.OVERLAY_SETTINGS);
 	}
 
@@ -78,7 +82,8 @@ public final class PhoneReadiness {
 		NOTIFICATIONS,
 		OVERLAY,
 		SCREEN_CAPTURE,
-		BATTERY
+		BATTERY,
+		NAVIGATION
 	}
 
 	public enum Status {
@@ -98,7 +103,8 @@ public final class PhoneReadiness {
 		MICROPHONE_SETTINGS,
 		NOTIFICATION_SETTINGS,
 		OVERLAY_SETTINGS,
-		BATTERY_SETTINGS
+		BATTERY_SETTINGS,
+		NAVIGATION_SETTINGS
 	}
 
 	public record Row(Check check, Status status, Action action) {
@@ -108,7 +114,16 @@ public final class PhoneReadiness {
 			AutomotiveConnectionState.State connectionState, boolean controlAvailable,
 			boolean storageGranted, boolean locationGranted, boolean accessibilityGranted,
 			boolean microphoneGranted, boolean notificationsEnabled, boolean overlayGranted,
-			boolean batteryExempt) {
+			boolean batteryExempt, boolean navigationNotificationsGranted) {
+		public Input(boolean autoBuild, boolean connectionObserved,
+				AutomotiveConnectionState.State connectionState, boolean controlAvailable,
+				boolean storageGranted, boolean locationGranted, boolean accessibilityGranted,
+				boolean microphoneGranted, boolean notificationsEnabled, boolean overlayGranted,
+				boolean batteryExempt) {
+			this(autoBuild, connectionObserved, connectionState, controlAvailable, storageGranted,
+					locationGranted, accessibilityGranted, microphoneGranted, notificationsEnabled,
+					overlayGranted, batteryExempt, false);
+		}
 	}
 
 	public static boolean hasNotificationListenerCheck(android.content.Context ctx) {

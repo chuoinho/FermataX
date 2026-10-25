@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="readiness_title">Bağlantı ve izin kontrolü</string>
-    <string name="readiness_subtitle">Android Auto bağlantısını ve isteğe bağlı sistem ayarlarını görüntüleyin.</string>
+	<string name="readiness_title">Hazırlık kontrolü</string>
+	<string name="readiness_subtitle">Android Auto ve sistem ayarlarını kontrol edin.</string>
     <string name="readiness_refresh">Yeniden kontrol et</string>
     <string name="readiness_refresh_subtitle">Ayarları değiştirmeden durumu yenileyin.</string>
-    <string name="readiness_connection">Android Auto bağlantısı</string>
     <string name="readiness_control_session">Kontrol oturumu</string>
     <string name="readiness_storage">Depolama ve dosya erişimi</string>
     <string name="readiness_storage_granted">İzin verildi. FermataX yerel medya dosyalarınızı, klasörlerinizi ve çalma listelerinizi okuyabilir.</string>
     <string name="readiness_storage_not_granted">İzin verilmedi. Yerel medya dosyalarına erişim izni vermek için dokunun.</string>
     <string name="readiness_location">Konum erişimi</string>
-    <string name="readiness_location_granted">İzin verildi. Hız kartı, hava durumu ve Araç Bulucu için kullanılır.</string>
-    <string name="readiness_location_not_granted">İzin verilmedi. Hız kartı, hava durumu ve Araç Bulucu için konuma izin vermek üzere dokunun.</string>
-    <string name="readiness_accessibility">Erişilebilirlik hizmeti (Yansıtma)</string>
+	<string name="readiness_accessibility">Direksiyon / klavye tuşları (Erişilebilirlik)</string>
     <string name="readiness_accessibility_granted">Etkin. Yansıtma sırasında araç ekranından dokunmatik kontrole izin verir.</string>
     <string name="readiness_accessibility_not_granted">Devre dışı. Telefonunuzu araç ekranından kontrol etmek istiyorsanız gereklidir.</string>
     <string name="readiness_microphone">Mikrofon erişimi</string>
@@ -31,13 +28,20 @@
     <string name="readiness_battery_managed">Bazı telefonlarda Android arka plandaki FermataX uygulamasını durdurabilir. Hız kartı ve yolculuk bilgilerinin doğru kalması için pil optimizasyonundan hariç tutun.</string>
     <string name="readiness_unknown">Doğrulanmadı</string>
     <string name="readiness_not_applicable">Geçerli değil</string>
-    <string name="readiness_connection_disconnected">Android Auto bağlı değil.</string>
-    <string name="readiness_connection_connected">Android Auto bağlı; FermataX araç ekranında açık değil.</string>
-    <string name="readiness_connection_visible">FermataX araç ekranında görünür durumda.</string>
-    <string name="readiness_control_available">Kontrol kanalı hazır.</string>
-    <string name="readiness_control_unavailable">Kontrol kanalı hazır değil.</string>
+	<string name="readiness_connection_disconnected">Bağlı değil</string>
+	<string name="readiness_connection_connected">Bağlı</string>
+	<string name="readiness_connection_visible">Bağlı</string>
+	<string name="readiness_control_available">Kontrol hazır</string>
+	<string name="readiness_control_unavailable">Kontrol kullanılamıyor</string>
     <string name="readiness_settings_unavailable">Bu ayarlar sayfası bu cihazda kullanılamıyor.</string>
-    <string name="readiness_nav_notification_access">Navigasyon bildirim dinleyicisi</string>
-    <string name="readiness_nav_notification_access_granted">Etkin. Glass panosunda adım adım navigasyon yansıtmasına izin verir.</string>
-    <string name="readiness_nav_notification_access_not_granted">Devre dışı. Adım adım navigasyon için bildirim erişimine izin vermek üzere dokunun.</string>
+	<string name="readiness_nav_notification_access">Maps/Waze navigasyonu</string>
+    <string name="readiness_nav_notification_access_granted">Etkin. Glass panosunda navigasyon yönergelerini yansıtır.</string>
+	<string name="readiness_nav_notification_access_not_granted">Devre dışı. Adım adım navigasyon için bildirim erişimine izin vermek üzere dokunun.</string>
+	<string name="readiness_group_required">GEREKLİ</string>
+	<string name="readiness_group_stability">ARAÇTA KARARLI ÇALIŞMASI İÇİN</string>
+	<string name="readiness_group_optional">İSTEĞE BAĞLI</string>
+	<string name="readiness_all_ready">Her şey hazır</string>
+	<string name="readiness_android_auto">Android Auto</string>
+	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
+	<string name="readiness_connection_unknown">Durum alınamıyor</string>
 </resources>

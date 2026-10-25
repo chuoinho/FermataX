@@ -1,17 +1,14 @@
 <resources>
-	<string name="readiness_title">連線與權限檢查</string>
-	<string name="readiness_subtitle">View Android Auto connection and optional system settings.</string>
+	<string name="readiness_title">就緒檢查</string>
+	<string name="readiness_subtitle">檢查 Android Auto 和系統設定。</string>
 	<string name="readiness_refresh">Check again</string>
 	<string name="readiness_refresh_subtitle">Refresh status without changing any settings.</string>
-	<string name="readiness_connection">Android Auto connection</string>
 	<string name="readiness_control_session">Control session</string>
 	<string name="readiness_storage">Storage and files access</string>
 	<string name="readiness_storage_granted">Allowed. FermataX can read your local media files, folders, and playlists.</string>
 	<string name="readiness_storage_not_granted">Not allowed. Tap to grant permission to access local media files.</string>
 	<string name="readiness_location">Location access</string>
-	<string name="readiness_location_granted">已允許。用於速度卡、天氣與尋車。</string>
-	<string name="readiness_location_not_granted">未允許。輕觸以允許速度卡、天氣與尋車使用位置。</string>
-	<string name="readiness_accessibility">Accessibility service (Mirroring)</string>
+	<string name="readiness_accessibility">方向盤／鍵盤按鍵（無障礙）</string>
 	<string name="readiness_accessibility_granted">Enabled. Allows touch control from the car screen during mirroring.</string>
 	<string name="readiness_accessibility_not_granted">Disabled. Required if you want to control your phone from the car screen.</string>
 	<string name="readiness_microphone">Microphone access</string>
@@ -30,13 +27,20 @@
 	<string name="readiness_battery_managed">部分手機的 Android 可能停止背景執行的 FermataX。請將它排除於電池最佳化之外，以保持速度卡片和行程資料準確。</string>
 	<string name="readiness_unknown">Not verified</string>
 	<string name="readiness_not_applicable">Not applicable</string>
-	<string name="readiness_connection_disconnected">Android Auto is not connected.</string>
-	<string name="readiness_connection_connected">Android Auto is connected; FermataX is not open on the car screen.</string>
-	<string name="readiness_connection_visible">FermataX is visible on the car screen.</string>
-	<string name="readiness_control_available">The Control channel is ready.</string>
-	<string name="readiness_control_unavailable">The Control channel is not ready.</string>
+	<string name="readiness_connection_disconnected">未連線</string>
+	<string name="readiness_connection_connected">已連線</string>
+	<string name="readiness_connection_visible">已連線</string>
+	<string name="readiness_control_available">控制功能就緒</string>
+	<string name="readiness_control_unavailable">控制功能無法使用</string>
 	<string name="readiness_settings_unavailable">This settings page is not available on this device.</string>
-	<string name="readiness_nav_notification_access">導航通知監聽器</string>
+	<string name="readiness_nav_notification_access">Maps/Waze 導航</string>
 	<string name="readiness_nav_notification_access_granted">已啟用。允許在 Glass 儀表板上鏡像逐向導航。</string>
 	<string name="readiness_nav_notification_access_not_granted">已停用。輕觸以允許逐向導航的通知存取權限。</string>
+	<string name="readiness_group_required">必要</string>
+	<string name="readiness_group_stability">讓車上使用更穩定</string>
+	<string name="readiness_group_optional">選用</string>
+	<string name="readiness_all_ready">一切就緒</string>
+	<string name="readiness_android_auto">Android Auto</string>
+	<string name="readiness_android_auto_status">%1$s：%2$s · %3$s</string>
+	<string name="readiness_connection_unknown">狀態無法取得</string>
 </resources>

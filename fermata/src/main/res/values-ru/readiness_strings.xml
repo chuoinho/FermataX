@@ -1,17 +1,14 @@
 <resources>
-	<string name="readiness_title">Проверка подключения и разрешений</string>
-	<string name="readiness_subtitle">View Android Auto connection and optional system settings.</string>
+	<string name="readiness_title">Проверка готовности</string>
+	<string name="readiness_subtitle">Проверьте Android Auto и системные настройки.</string>
 	<string name="readiness_refresh">Check again</string>
 	<string name="readiness_refresh_subtitle">Refresh status without changing any settings.</string>
-	<string name="readiness_connection">Android Auto connection</string>
 	<string name="readiness_control_session">Control session</string>
 	<string name="readiness_storage">Storage and files access</string>
 	<string name="readiness_storage_granted">Allowed. FermataX can read your local media files, folders, and playlists.</string>
 	<string name="readiness_storage_not_granted">Not allowed. Tap to grant permission to access local media files.</string>
 	<string name="readiness_location">Location access</string>
-	<string name="readiness_location_granted">Разрешено. Используется для карточки скорости, погоды и Car Finder.</string>
-	<string name="readiness_location_not_granted">Не разрешено. Нажмите, чтобы разрешить геоданные для карточки скорости, погоды и Car Finder.</string>
-	<string name="readiness_accessibility">Accessibility service (Mirroring)</string>
+	<string name="readiness_accessibility">Кнопки руля / клавиатуры (Спец. возможности)</string>
 	<string name="readiness_accessibility_granted">Enabled. Allows touch control from the car screen during mirroring.</string>
 	<string name="readiness_accessibility_not_granted">Disabled. Required if you want to control your phone from the car screen.</string>
 	<string name="readiness_microphone">Microphone access</string>
@@ -30,13 +27,20 @@
 	<string name="readiness_battery_managed">На некоторых телефонах Android может остановить FermataX в фоне. Исключите приложение из оптимизации батареи для точной скорости и статистики поездки.</string>
 	<string name="readiness_unknown">Not verified</string>
 	<string name="readiness_not_applicable">Not applicable</string>
-	<string name="readiness_connection_disconnected">Android Auto is not connected.</string>
-	<string name="readiness_connection_connected">Android Auto is connected; FermataX is not open on the car screen.</string>
-	<string name="readiness_connection_visible">FermataX is visible on the car screen.</string>
-	<string name="readiness_control_available">The Control channel is ready.</string>
-	<string name="readiness_control_unavailable">The Control channel is not ready.</string>
+	<string name="readiness_connection_disconnected">Не подключено</string>
+	<string name="readiness_connection_connected">Подключено</string>
+	<string name="readiness_connection_visible">Подключено</string>
+	<string name="readiness_control_available">Управление готово</string>
+	<string name="readiness_control_unavailable">Управление недоступно</string>
 	<string name="readiness_settings_unavailable">This settings page is not available on this device.</string>
-	<string name="readiness_nav_notification_access">Служба уведомлений навигации</string>
+	<string name="readiness_nav_notification_access">Навигация из Maps/Waze</string>
 	<string name="readiness_nav_notification_access_granted">Включено. Позволяет отображать пошаговую навигацию на панели Glass.</string>
 	<string name="readiness_nav_notification_access_not_granted">Отключено. Нажмите, чтобы разрешить доступ к уведомлениям для пошаговой навигации.</string>
+	<string name="readiness_group_required">ОБЯЗАТЕЛЬНО</string>
+	<string name="readiness_group_stability">ДЛЯ СТАБИЛЬНОЙ РАБОТЫ В АВТОМОБИЛЕ</string>
+	<string name="readiness_group_optional">ДОПОЛНИТЕЛЬНО</string>
+	<string name="readiness_all_ready">Всё готово</string>
+	<string name="readiness_android_auto">Android Auto</string>
+	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
+	<string name="readiness_connection_unknown">Статус недоступен</string>
 </resources>

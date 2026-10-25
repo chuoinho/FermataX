@@ -86,6 +86,28 @@ public class LanguagesAcceptanceTest {
 		}
 	}
 
+	@Test public void readinessLabelsAreTranslatedForEverySupportedLanguage() throws Exception {
+		String[] locales = {"values", "values-vi", "values-ru", "values-es", "values-pt",
+				"values-zh-rTW", "values-tr", "values-de", "values-it"};
+		String[] required = {"readiness_title", "readiness_subtitle", "readiness_accessibility",
+				"readiness_connection_disconnected", "readiness_connection_connected",
+				"readiness_connection_visible", "readiness_control_available",
+				"readiness_control_unavailable", "readiness_nav_notification_access",
+				"readiness_group_required", "readiness_group_stability", "readiness_group_optional",
+				"readiness_all_ready", "readiness_android_auto_status", "readiness_connection_unknown"};
+		Map<String, Entry> english = load(new File(root(), "fermata/src/main/res/values"));
+		for (String locale : locales) {
+			Map<String, Entry> strings = load(new File(root(), "fermata/src/main/res/" + locale));
+			for (String key : required) {
+				assertTrue(locale + " missing " + key, strings.containsKey(key));
+				if (!locale.equals("values") && !key.equals("readiness_android_auto_status")) {
+					assertTrue(locale + " leaves " + key + " in English",
+							!strings.get(key).texts().equals(english.get(key).texts()));
+				}
+			}
+		}
+	}
+
 	private static void keyParity(String locale) throws Exception {
 		for (String res : RES_DIRS) {
 			Map<String, Entry> en = load(new File(root(), res + "/values"));

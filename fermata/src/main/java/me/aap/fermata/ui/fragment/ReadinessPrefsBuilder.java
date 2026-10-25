@@ -7,12 +7,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Environment;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.graphics.Typeface;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationManagerCompat;
@@ -99,51 +102,112 @@ final class ReadinessPrefsBuilder {
 		});
 
 		Snapshot current = snapshot;
-		for (Row row : current.rows()) {
-			target.addButton(o -> {
-				o.title = title(row.check());
-				o.csubtitle = subtitle(row, current.input());
-				boolean granted = (row.status() == Status.OK);
-				o.valueDrawable = createStatusDotDrawable(granted);
-				o.onClick = (row.action() == Action.NONE) ? () -> {
-				} : () -> performAction(row.action());
-			});
-		}
+		Row connectionRow = current.rows().stream()
+				.filter(row -> row.check() == Check.CONNECTION).findFirst().orElse(null);
+		if (connectionRow != null) addConnectionRow(target, connectionRow, current.input());
 
+		addSection(target, R.string.readiness_group_required, current,
+				Check.STORAGE, Check.NOTIFICATIONS, Check.LOCATION);
+		addSection(target, R.string.readiness_group_stability, current, Check.BATTERY);
+		addSection(target, R.string.readiness_group_optional, current,
+				Check.MICROPHONE, Check.NAVIGATION, Check.ACCESSIBILITY, Check.OVERLAY);
+	}
+
+	private void addConnectionRow(PreferenceSet target, Row row, Input input) {
+		String text = activity.getString(R.string.readiness_android_auto_status,
+				activity.getString(R.string.readiness_android_auto), connectionSubtitle(input),
+				activity.getString(input.controlAvailable() ? R.string.readiness_control_available :
+						R.string.readiness_control_unavailable));
 		target.addButton(o -> {
-			boolean granted = PhoneReadiness.hasNotificationListenerCheck(context);
-			o.title = R.string.readiness_nav_notification_access;
-			o.subtitle = granted ? R.string.readiness_nav_notification_access_granted :
-					R.string.readiness_nav_notification_access_not_granted;
-			o.valueDrawable = createStatusDotDrawable(granted);
-			o.onClick = () -> {
-				startSettings(PhoneReadiness.createNotificationListenerSettingsIntent());
-			};
-		});
-
-		if (BuildConfig.TRIP_BACKGROUND_SUPPORTED) target.addButton(o -> {
-			TripModePolicy.Access access = TripModePolicy.access(TripModePolicy.hasForegroundLocation(context),
-					TripModePolicy.hasBackgroundLocation(context));
-			o.title = R.string.location_always_title;
-			o.csubtitle = context.getString(R.string.location_always_sub) + "\n"
-					+ context.getString(InterfacePrefsBuilder.locationAccessState(access));
-			o.valueDrawable = createStatusDotDrawable(InterfacePrefsBuilder.locationAccessColor(access));
-			o.onClick = () -> InterfacePrefsBuilder.manageLocationAccess(activity, this::scheduleRefresh);
+			o.ctitle = statusTitle(text, statusColor(row.status()));
+			o.hideChevron = true;
 		});
 	}
 
-	private Drawable createStatusDotDrawable(boolean granted) {
-		return createStatusDotDrawable(granted ? 0xFF22C55E : 0xFFEF4444);
+	private void addSection(PreferenceSet target, int title, Snapshot current, Check... checks) {
+		List<Row> rows = current.rows().stream().filter(row -> contains(checks, row.check())).toList();
+		if (rows.isEmpty()) return;
+		addSectionHeader(target, title);
+		if (PhoneReadiness.isSectionReady(rows)) {
+			target.addButton(o -> {
+				o.ctitle = statusTitle(activity.getString(R.string.readiness_all_ready), 0xFF22C55E,
+						"✓ ");
+				o.hideChevron = true;
+			});
+			return;
+		}
+		for (Row row : rows) addReadinessRow(target, row, current.input());
 	}
 
-	private Drawable createStatusDotDrawable(int color) {
-		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
-		int size = Math.round(12 * density);
-		GradientDrawable dot = new GradientDrawable();
-		dot.setShape(GradientDrawable.OVAL);
-		dot.setSize(size, size);
-		dot.setColor(color);
-		return dot;
+	private static boolean contains(Check[] checks, Check check) {
+		for (Check candidate : checks) if (candidate == check) return true;
+		return false;
+	}
+
+	private void addSectionHeader(PreferenceSet target, int title) {
+		target.addView(o -> o.view = () -> {
+			Context themeContext = activity.getContext();
+			TextView label = new TextView(themeContext);
+			label.setText(title);
+			label.setTextAppearance(android.R.style.TextAppearance_Small);
+			label.setTypeface(Typeface.DEFAULT_BOLD);
+			label.setAllCaps(true);
+			label.setPaddingRelative(dp(14), dp(18), dp(14), dp(6));
+			if (activity.isGlassTheme()) {
+				label.setTextColor(activity.getGlassTextPrimary());
+			} else {
+				android.util.TypedValue value = new android.util.TypedValue();
+				if (themeContext.getTheme().resolveAttribute(android.R.attr.textColorPrimary, value, true)) {
+					if (value.resourceId != 0) label.setTextColor(themeContext.getColorStateList(value.resourceId));
+					else label.setTextColor(value.data);
+				}
+			}
+			return label;
+		});
+	}
+
+	private int dp(int value) {
+		return Math.round(value * context.getResources().getDisplayMetrics().density);
+	}
+
+	private void addReadinessRow(PreferenceSet target, Row row, Input input) {
+		int color = row.check() == Check.LOCATION ? locationColor() : statusColor(row.status());
+		target.addButton(o -> {
+			o.ctitle = statusTitle(activity.getString(title(row.check())), color);
+			o.csubtitle = subtitle(row, input);
+			o.hideChevron = (row.status() == Status.OK) || (row.action() == Action.NONE);
+			o.onClick = (o.hideChevron || row.action() == Action.NONE) ? null :
+					() -> performAction(row.action());
+		});
+	}
+
+	private int locationColor() {
+		TripModePolicy.Access access = locationAccess();
+		return InterfacePrefsBuilder.locationAccessColor(access);
+	}
+
+	private TripModePolicy.Access locationAccess() {
+		return TripModePolicy.access(TripModePolicy.hasForegroundLocation(context),
+				TripModePolicy.hasBackgroundLocation(context));
+	}
+
+	private static int statusColor(Status status) {
+		return switch (status) {
+			case OK -> 0xFF22C55E;
+			case ACTION_AVAILABLE -> 0xFFEF4444;
+			case INFO -> 0xFFF59E0B;
+			case UNKNOWN, NOT_APPLICABLE -> 0xFF94A3B8;
+		};
+	}
+
+	private static SpannableString statusTitle(CharSequence text, int color) {
+		return statusTitle(text, color, "● ");
+	}
+
+	private static SpannableString statusTitle(CharSequence text, int color, String prefix) {
+		SpannableString title = new SpannableString(prefix + text);
+		title.setSpan(new ForegroundColorSpan(color), 0, prefix.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+		return title;
 	}
 
 	private Snapshot collect() {
@@ -154,11 +218,12 @@ final class ReadinessPrefsBuilder {
 		Boolean notifications = queryNotifications();
 		Boolean overlay = queryOverlay();
 		Boolean battery = queryBatteryExemption();
+		boolean navigation = PhoneReadiness.hasNotificationListenerCheck(context);
 		Input input = new Input(BuildConfig.AUTO, connection.hasConnectionObservation(),
 				connection.state(), binder.isControlAvailable(), Boolean.TRUE.equals(storage),
 				Boolean.TRUE.equals(location), Boolean.TRUE.equals(accessibility),
 				Boolean.TRUE.equals(microphone), Boolean.TRUE.equals(notifications),
-				Boolean.TRUE.equals(overlay), Boolean.TRUE.equals(battery));
+				Boolean.TRUE.equals(overlay), Boolean.TRUE.equals(battery), navigation);
 		List<Row> rows = new ArrayList<>(PhoneReadiness.evaluate(input));
 		if (storage == null) markUnknown(rows, Check.STORAGE);
 		if (location == null) markUnknown(rows, Check.LOCATION);
@@ -167,6 +232,14 @@ final class ReadinessPrefsBuilder {
 		if (notifications == null) markUnknown(rows, Check.NOTIFICATIONS);
 		if (overlay == null) markUnknown(rows, Check.OVERLAY);
 		if (battery == null) markUnknown(rows, Check.BATTERY);
+		if (locationAccess() == TripModePolicy.Access.WHILE_USING) {
+			for (int i = 0; i < rows.size(); i++) {
+				if (rows.get(i).check() == Check.LOCATION) {
+					rows.set(i, new Row(Check.LOCATION, Status.INFO, Action.LOCATION_SETTINGS));
+					break;
+				}
+			}
+		}
 		return new Snapshot(input, List.copyOf(rows));
 	}
 
@@ -263,7 +336,7 @@ final class ReadinessPrefsBuilder {
 
 	private int title(Check check) {
 		return switch (check) {
-			case CONNECTION -> R.string.readiness_connection;
+			case CONNECTION -> R.string.readiness_android_auto;
 			case CONTROL_SESSION -> R.string.readiness_control_session;
 			case STORAGE -> R.string.readiness_storage;
 			case LOCATION -> R.string.readiness_location;
@@ -273,6 +346,7 @@ final class ReadinessPrefsBuilder {
 			case OVERLAY -> R.string.readiness_overlay;
 			case SCREEN_CAPTURE -> R.string.readiness_screen_capture;
 			case BATTERY -> R.string.readiness_battery;
+			case NAVIGATION -> R.string.readiness_nav_notification_access;
 		};
 	}
 
@@ -284,8 +358,7 @@ final class ReadinessPrefsBuilder {
 					R.string.readiness_control_available : R.string.readiness_control_unavailable);
 			case STORAGE -> activity.getString(input.storageGranted() ?
 					R.string.readiness_storage_granted : R.string.readiness_storage_not_granted);
-			case LOCATION -> activity.getString(input.locationGranted() ?
-					R.string.readiness_location_granted : R.string.readiness_location_not_granted);
+			case LOCATION -> activity.getString(InterfacePrefsBuilder.locationAccessState(locationAccess()));
 			case ACCESSIBILITY -> activity.getString(row.status() == Status.NOT_APPLICABLE ?
 					R.string.readiness_not_applicable : input.accessibilityGranted() ?
 					R.string.readiness_accessibility_granted : R.string.readiness_accessibility_not_granted);
@@ -300,11 +373,16 @@ final class ReadinessPrefsBuilder {
 					R.string.readiness_not_applicable : R.string.readiness_screen_capture_info);
 			case BATTERY -> activity.getString(input.batteryExempt() ?
 					R.string.readiness_battery_exempt : R.string.readiness_battery_managed);
+			case NAVIGATION -> activity.getString(input.navigationNotificationsGranted() ?
+					R.string.readiness_nav_notification_access_granted :
+					R.string.readiness_nav_notification_access_not_granted);
 		};
 	}
 
 	private String connectionSubtitle(Input input) {
-		if (!input.autoBuild()) return activity.getString(R.string.readiness_not_applicable);
+		if (!input.autoBuild() || !input.connectionObserved() || (input.connectionState() == null)) {
+			return activity.getString(R.string.readiness_connection_unknown);
+		}
 		return switch (input.connectionState()) {
 			case DISCONNECTED -> activity.getString(R.string.readiness_connection_disconnected);
 			case CONNECTED -> activity.getString(R.string.readiness_connection_connected);
@@ -315,13 +393,11 @@ final class ReadinessPrefsBuilder {
 	private void performAction(Action action) {
 		if (!isRefreshAllowed(uiActive, closed)) return;
 		if (action == Action.LOCATION_SETTINGS) {
-			if (activity.getAppActivity() != null) {
-				activity.getAppActivity().checkPermissions(
-						Manifest.permission.ACCESS_FINE_LOCATION,
-						Manifest.permission.ACCESS_COARSE_LOCATION
-				).onCompletion((res, err) -> scheduleRefresh());
-				return;
-			}
+			InterfacePrefsBuilder.manageLocationAccess(activity, this::scheduleRefresh);
+			return;
+		} else if (action == Action.NAVIGATION_SETTINGS) {
+			startSettings(PhoneReadiness.createNotificationListenerSettingsIntent());
+			return;
 		} else if (action == Action.MICROPHONE_SETTINGS) {
 			if (activity.getAppActivity() != null) {
 				activity.getAppActivity().checkPermissions(
@@ -396,6 +472,7 @@ final class ReadinessPrefsBuilder {
 					new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri);
 			case BATTERY_SETTINGS -> new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
 			case ACCESSIBILITY_SETTINGS -> new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+			case NAVIGATION_SETTINGS -> new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
 		};
 	}
 
