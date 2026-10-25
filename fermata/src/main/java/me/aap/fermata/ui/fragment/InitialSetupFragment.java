@@ -275,6 +275,7 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		TextView tv = new TextView(ctx);
 		tv.setText(text);
 		tv.setTextAppearance(android.R.style.TextAppearance_Small);
+		tv.setTypeface(null, android.graphics.Typeface.BOLD);
 		tv.setAllCaps(true);
 		tv.setPadding(0, dp(ctx, 16), 0, dp(ctx, 4));
 		permissions.addView(tv);

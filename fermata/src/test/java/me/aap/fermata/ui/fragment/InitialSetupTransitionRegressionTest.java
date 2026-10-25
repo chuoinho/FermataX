@@ -41,6 +41,13 @@ public class InitialSetupTransitionRegressionTest {
 		assertTrue(setup.contains("voiceDetails.setVisibility(enabled && hasMicrophone ? VISIBLE : GONE)"));
 	}
 
+	@Test
+	public void setupSectionHeadersAreMarkedAsPrimaryGlassText() throws Exception {
+		String setup = source("ui/fragment/InitialSetupFragment.java");
+		assertTrue(setup.contains("tv.setTypeface(null, android.graphics.Typeface.BOLD);"));
+		assertTrue(setup.contains("applyGlassText(getView(), me.aap.fermata.ui.glass.theme.GlassThemeColors.get"));
+	}
+
 	private static String source(String relativePath) throws Exception {
 		return new String(Files.readAllBytes(repositoryRoot().resolve(
 				"fermata/src/main/java/me/aap/fermata").resolve(relativePath)), UTF_8);
