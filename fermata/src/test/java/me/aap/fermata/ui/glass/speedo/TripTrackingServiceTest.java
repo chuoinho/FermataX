@@ -51,8 +51,6 @@ public class TripTrackingServiceTest {
     @Test
     public void backgroundPermissionStartsTrackingWithoutLegacyTripOptIn() {
         while (Shadows.shadowOf((Application) context).getNextStartedService() != null) {}
-        context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit()
-                .putBoolean("trip_stats_enabled", false).commit();
         TripTrackingService.start(context);
         assertNotNull("legacy trip preference is ignored", Shadows.shadowOf((Application) context).getNextStartedService());
 
@@ -296,8 +294,6 @@ public class TripTrackingServiceTest {
             if (name.equals("trip_service_start")) reasons.add(a.get("reason"));
         };
         try {
-            context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit()
-                    .putBoolean("trip_stats_enabled", false).commit();
             TripTrackingService.start(context);
             Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
             TripTrackingService.start(context);
@@ -384,8 +380,6 @@ public class TripTrackingServiceTest {
     @Test public void tripStatsPreferenceDoesNotControlDashboardService() {
         whileInUseOnly();
         TripTrackingService.startForDashboard(context);
-        context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit()
-                .putBoolean("trip_stats_enabled", false).commit();
         assertNull(Shadows.shadowOf((Application) context).getNextStoppedService());
         TripTrackingService.dashboardClosed(context);
         assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
