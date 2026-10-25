@@ -1,0 +1,16 @@
+<resources>
+    <string name="location_always_title">Location: Allow all the time</string>
+    <string name="location_always_sub">Keeps speed, trip and weather while another app covers the car screen or the phone is locked.</string>
+    <string name="location_background_disclosure">Some phones (especially China-market models and makers that restrict background apps) cut off location while FermataX runs on the car screen. For a stable speed card, trip and weather, also allow location “Allow all the time”. Your location stays on your phone. You can allow it now or later in Settings.</string>
+    <string name="location_allow_now">Allow now</string>
+    <string name="location_skip">Skip</string>
+    <string name="location_state_missing">Not granted</string>
+    <string name="location_state_while_using">While using app</string>
+    <string name="location_state_always">Allow all the time</string>
+    <string name="location_background_lower_message">Android still allows FermataX to use location all the time. Open app permission settings to change it to “Allow only while using the app”?</string>
+    <string name="location_open_settings">Open settings</string>
+    <string name="location_keep">Keep</string>
+    <string name="location_background_denied">Location permission “Allow all the time” was not granted.</string>
+    <string name="location_background_enabled">Location is allowed all the time.</string>
+    <string name="location_speed_hint">Allow location “Allow all the time” to keep the speed card and trip active.</string>
+</resources>

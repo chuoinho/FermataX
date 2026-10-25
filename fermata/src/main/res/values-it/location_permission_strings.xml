@@ -1,0 +1,16 @@
+<resources>
+    <string name="location_always_title">Posizione: consenti sempre</string>
+    <string name="location_always_sub">Mantiene aggiornati velocità, viaggio e meteo quando un\'altra app copre lo schermo dell\'auto o il telefono è bloccato.</string>
+    <string name="location_background_disclosure">Alcuni telefoni (soprattutto i modelli per il mercato cinese e quelli dei produttori che limitano le app in background) interrompono la posizione quando FermataX è sullo schermo dell\'auto. Per mantenere stabili velocità, viaggio e meteo, consenti anche la posizione “Sempre”. La posizione resta sul telefono. Puoi consentirlo ora o più tardi nelle Impostazioni.</string>
+    <string name="location_allow_now">Consenti ora</string>
+    <string name="location_skip">Ignora</string>
+    <string name="location_state_missing">Non concessa</string>
+    <string name="location_state_while_using">Durante l\'uso dell\'app</string>
+    <string name="location_state_always">Sempre</string>
+    <string name="location_background_lower_message">Android consente ancora a FermataX di usare la posizione sempre. Aprire le autorizzazioni dell\'app per passare a “Consenti solo mentre l\'app è in uso”?</string>
+    <string name="location_open_settings">Apri impostazioni</string>
+    <string name="location_keep">Mantieni</string>
+    <string name="location_background_denied">Il permesso di posizione “Sempre” non è stato concesso.</string>
+    <string name="location_background_enabled">La posizione è sempre consentita.</string>
+    <string name="location_speed_hint">Consenti la posizione “Sempre” per mantenere aggiornati velocità e viaggio.</string>
+</resources>

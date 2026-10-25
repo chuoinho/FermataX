@@ -1,0 +1,16 @@
+<resources>
+    <string name="location_always_title">Местоположение: разрешать всегда</string>
+    <string name="location_always_sub">Сохраняет скорость, данные поездки и погоду, когда другое приложение закрывает экран автомобиля или телефон заблокирован.</string>
+    <string name="location_background_disclosure">Некоторые телефоны (особенно модели для Китая и устройства производителей, ограничивающих фоновые приложения) прекращают передачу местоположения, когда FermataX работает на экране автомобиля. Чтобы скорость, поездка и погода отображались стабильно, разрешите доступ к местоположению «Всегда». Данные о местоположении остаются на телефоне. Разрешить можно сейчас или позже в настройках.</string>
+    <string name="location_allow_now">Разрешить</string>
+    <string name="location_skip">Пропустить</string>
+    <string name="location_state_missing">Не разрешено</string>
+    <string name="location_state_while_using">Только при использовании</string>
+    <string name="location_state_always">Всегда</string>
+    <string name="location_background_lower_message">Android по-прежнему разрешает FermataX доступ к местоположению всегда. Открыть настройки разрешений приложения и изменить доступ на «Только при использовании приложения»?</string>
+    <string name="location_open_settings">Открыть настройки</string>
+    <string name="location_keep">Оставить</string>
+    <string name="location_background_denied">Разрешение на местоположение «Всегда» не предоставлено.</string>
+    <string name="location_background_enabled">Доступ к местоположению всегда разрешён.</string>
+    <string name="location_speed_hint">Разрешите доступ к местоположению «Всегда», чтобы скорость и данные поездки обновлялись.</string>
+</resources>

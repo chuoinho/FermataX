@@ -1,0 +1,16 @@
+<resources>
+    <string name="location_always_title">Vị trí: Luôn cho phép</string>
+    <string name="location_always_sub">Giữ tốc độ, chuyến đi và thời tiết khi ứng dụng khác che màn hình xe hoặc điện thoại bị khóa.</string>
+    <string name="location_background_disclosure">Một số điện thoại (đặc biệt là máy dành cho thị trường Trung Quốc và các hãng hạn chế ứng dụng chạy nền) có thể ngắt vị trí khi FermataX chạy trên màn hình xe. Để thẻ tốc độ, chuyến đi và thời tiết ổn định, hãy cho phép vị trí “Luôn cho phép”. Vị trí vẫn ở trên điện thoại của bạn. Bạn có thể cho phép ngay hoặc sau trong Cài đặt.</string>
+    <string name="location_allow_now">Cho phép ngay</string>
+    <string name="location_skip">Bỏ qua</string>
+    <string name="location_state_missing">Chưa cấp</string>
+    <string name="location_state_while_using">Khi dùng ứng dụng</string>
+    <string name="location_state_always">Luôn cho phép</string>
+    <string name="location_background_lower_message">Android vẫn cho phép FermataX dùng vị trí mọi lúc. Mở cài đặt quyền của ứng dụng để đổi thành “Chỉ cho phép khi dùng ứng dụng”?</string>
+    <string name="location_open_settings">Mở cài đặt</string>
+    <string name="location_keep">Giữ nguyên</string>
+    <string name="location_background_denied">Chưa được cấp quyền vị trí “Luôn cho phép”.</string>
+    <string name="location_background_enabled">Đã cho phép vị trí mọi lúc.</string>
+    <string name="location_speed_hint">Cho phép vị trí “Luôn cho phép” để thẻ tốc độ và chuyến đi tiếp tục hoạt động.</string>
+</resources>

@@ -529,7 +529,6 @@
     <string name="initial_setup_perm_location_sub">Geschwindigkeitskarte, Wetter und Parkplatzspeicherung.</string>
     <string name="initial_setup_perm_nav">Navigationsbenachrichtigungen</string>
     <string name="initial_setup_perm_nav_sub">Abbiegehinweise von Google Maps oder Waze auf der Wetterkarte anzeigen. Es werden nur Navigationsbenachrichtigungen verwendet.</string>
-    <string name="initial_setup_perm_background_sub">Fahrtstatistiken und genauen Parkplatz beibehalten, während Google Maps auf dem Autobildschirm läuft. Benötigt Standortberechtigung „Immer zulassen“.</string>
     <string name="initial_setup_advanced_note">Erweiterte Berechtigungen (Spiegelung, Über anderen Apps anzeigen, Akku) finden Sie unter Einstellungen → Verbindungs- und Berechtigungsprüfung.</string>
     <string name="weather_clear">Klar</string>
     <string name="weather_mainly_clear">Überwiegend klar</string>

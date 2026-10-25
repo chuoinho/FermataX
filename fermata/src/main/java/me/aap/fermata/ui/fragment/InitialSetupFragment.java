@@ -192,24 +192,70 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 				androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled(),
 				() -> requestNotifications(activity));
 		addHeader(ctx, R.string.initial_setup_optional);
-		// Android 12+ ignores FINE without COARSE.
-		addRow(activity, R.string.initial_setup_perm_location, R.string.initial_setup_perm_location_sub,
-				me.aap.fermata.ui.glass.speedo.TripModePolicy.hasForegroundLocation(ctx),
-				() -> request(activity, android.Manifest.permission.ACCESS_FINE_LOCATION,
-						android.Manifest.permission.ACCESS_COARSE_LOCATION));
+		addLocationRow(activity);
 		addRow(activity, navigationPermissions, R.string.initial_setup_perm_nav, R.string.initial_setup_perm_nav_sub,
 				me.aap.fermata.ui.control.PhoneReadiness.hasNotificationListenerCheck(ctx),
 				() -> startSafely(activity, me.aap.fermata.ui.control.PhoneReadiness.createNotificationListenerSettingsIntent()));
-		if (BuildConfig.TRIP_BACKGROUND_SUPPORTED) {
-			addRow(activity, R.string.trip_background_title, InterfacePrefsBuilder.tripBackgroundPurpose(
-					me.aap.fermata.ui.glass.speedo.TripModePolicy.current(ctx),
-					me.aap.fermata.ui.glass.speedo.TripModePolicy.hasBackgroundLocation(ctx)),
-					me.aap.fermata.ui.glass.speedo.TripModePolicy.current(ctx) == me.aap.fermata.ui.glass.speedo.TripModePolicy.Mode.ON,
-					() -> InterfacePrefsBuilder.toggleTripBackground(activity, this::updatePermissions));
-		}
 		if (activity.isGlassTheme() && (getView() != null)) {
 			applyGlassText(getView(), me.aap.fermata.ui.glass.theme.GlassThemeColors.get(ctx, activity.isGlassNightMode()));
 		}
+	}
+
+	private void addLocationRow(MainActivityDelegate activity) {
+		android.content.Context ctx = activity.getContext();
+		var access = me.aap.fermata.ui.glass.speedo.TripModePolicy.access(
+				me.aap.fermata.ui.glass.speedo.TripModePolicy.hasForegroundLocation(ctx),
+				me.aap.fermata.ui.glass.speedo.TripModePolicy.hasBackgroundLocation(ctx));
+		LinearLayout row = new LinearLayout(ctx);
+		row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+		row.setMinimumHeight(dp(ctx, 56));
+		row.setPadding(0, dp(ctx, 6), 0, dp(ctx, 6));
+		android.graphics.drawable.GradientDrawable shape = new android.graphics.drawable.GradientDrawable();
+		shape.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+		shape.setColor(InterfacePrefsBuilder.locationAccessColor(access));
+		View dot = new View(ctx);
+		dot.setBackground(shape);
+		LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(dp(ctx, 10), dp(ctx, 10));
+		dotLp.setMarginEnd(dp(ctx, 12));
+		row.addView(dot, dotLp);
+
+		LinearLayout texts = new LinearLayout(ctx);
+		texts.setOrientation(LinearLayout.VERTICAL);
+		TextView title = new TextView(ctx);
+		title.setText(R.string.initial_setup_perm_location);
+		title.setTypeface(null, android.graphics.Typeface.BOLD);
+		TextView purpose = new TextView(ctx);
+		purpose.setText(R.string.initial_setup_perm_location_sub);
+		purpose.setTextAppearance(android.R.style.TextAppearance_Small);
+		texts.addView(title);
+		texts.addView(purpose);
+		row.addView(texts, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+		TextView status = new TextView(ctx);
+		status.setText(InterfacePrefsBuilder.locationAccessState(access));
+		status.setTextColor(InterfacePrefsBuilder.locationAccessColor(access));
+		status.setTag(STATE_TAG);
+		status.setPadding(dp(ctx, 10), 0, 0, 0);
+		row.addView(status);
+		if (access == me.aap.fermata.ui.glass.speedo.TripModePolicy.Access.NOT_GRANTED) {
+			Button allow = new Button(ctx);
+			allow.setText(R.string.initial_setup_allow);
+			allow.setOnClickListener(v -> InterfacePrefsBuilder.manageLocationAccess(activity, this::updatePermissions));
+			if (activity.isGlassTheme()) {
+				allow.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassPillDrawable(
+						ctx, 12f, activity.isGlassNightMode()));
+				allow.setTextColor(activity.getGlassActionColor());
+			}
+			row.addView(allow);
+		}
+		boolean canManageBackground = BuildConfig.TRIP_BACKGROUND_SUPPORTED
+				&& (access == me.aap.fermata.ui.glass.speedo.TripModePolicy.Access.WHILE_USING
+				|| InterfacePrefsBuilder.offersPermissionDowngrade(ctx));
+		row.setFocusable(access == me.aap.fermata.ui.glass.speedo.TripModePolicy.Access.NOT_GRANTED || canManageBackground);
+		if (row.isFocusable()) {
+			row.setOnClickListener(v -> InterfacePrefsBuilder.manageLocationAccess(activity, this::updatePermissions));
+		}
+		permissions.addView(row);
 	}
 
 	/** Headings use the theme's primary text colour, everything else its secondary colour. */

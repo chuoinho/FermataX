@@ -32,7 +32,7 @@ import me.aap.fermata.R;
 import me.aap.utils.log.Log;
 
 /**
- * Dedicated location foreground service for trip recording and speedometer telemetry.
+ * Dedicated location foreground service for trip and speedometer location updates.
  * Operates during vehicular / Android Auto sessions independently from media playback.
  */
 public class TripTrackingService extends Service {
@@ -110,7 +110,7 @@ public class TripTrackingService extends Service {
             registry().reportSignal(TripEngine.Signal.PERMISSION);
             return;
         }
-        // Opt-in only: without "Allow all the time" Android refuses a location service started here.
+        // Vehicle-connected tracking needs background location; dashboard tracking has its own path.
         switch (TripModePolicy.current(context)) {
             case ON -> { }
             case OFF -> { recordStart("off"); return; }
@@ -147,7 +147,13 @@ public class TripTrackingService extends Service {
     }
 
     static void resumeDashboard(Context context) {
-        if (dashboards == 0 || new TripStore(context).isUserPaused() || !hasLocationPermission(context)) return;
+        if (new TripStore(context).isUserPaused() || !hasLocationPermission(context)) return;
+        if (me.aap.fermata.auto.AutomotiveConnectionState.get().isProjectionConnected()
+                && TripModePolicy.current(context) == TripModePolicy.Mode.ON) {
+            start(context);
+            return;
+        }
+        if (dashboards == 0) return;
         init(context);
         try {
             ContextCompat.startForegroundService(context,
@@ -172,13 +178,8 @@ public class TripTrackingService extends Service {
                 && TripModePolicy.current(context) != TripModePolicy.Mode.ON) stop(context);
     }
 
-    public static void backgroundDisabled(@NonNull Context context) {
-        backgroundMode = false;
-        if (dashboards == 0) stop(context);
-    }
-
     static void userPaused(Context context) {
-        if (!backgroundMode) stop(context);
+        stop(context);
     }
 
     static boolean hasPendingStart() { return startPending; }

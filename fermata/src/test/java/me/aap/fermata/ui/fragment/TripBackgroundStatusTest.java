@@ -17,33 +17,24 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 import me.aap.fermata.R;
-import me.aap.fermata.ui.glass.speedo.TripModePolicy.Mode;
+import me.aap.fermata.ui.glass.speedo.TripModePolicy.Access;
 
-/** Turning background recording off cannot revoke "Allow all the time"; the UI must say so. */
+/** Location permission presentation remains explicit and color-blind accessible. */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35, application = Application.class)
 public class TripBackgroundStatusTest {
 
 	@Test
-	public void subtitleSaysThePermissionIsStillAllowedWhenOff() {
-		assertEquals(R.string.trip_background_sub_on, InterfacePrefsBuilder.tripBackgroundSubtitle(Mode.ON, true));
-		assertEquals(R.string.trip_background_sub_off, InterfacePrefsBuilder.tripBackgroundSubtitle(Mode.OFF, false));
-		assertEquals(R.string.trip_background_sub_off_still_allowed,
-				InterfacePrefsBuilder.tripBackgroundSubtitle(Mode.OFF, true));
-		assertEquals(R.string.trip_background_sub_needs_permission,
-				InterfacePrefsBuilder.tripBackgroundSubtitle(Mode.NEEDS_BACKGROUND_PERMISSION, false));
-		assertEquals(R.string.trip_background_sub_needs_permission,
-				InterfacePrefsBuilder.tripBackgroundSubtitle(Mode.NEEDS_LOCATION_PERMISSION, false));
+	public void locationRowUsesTextForEachPermissionLevel() {
+		assertEquals(R.string.location_state_missing, InterfacePrefsBuilder.locationAccessState(Access.NOT_GRANTED));
+		assertEquals(R.string.location_state_while_using, InterfacePrefsBuilder.locationAccessState(Access.WHILE_USING));
+		assertEquals(R.string.location_state_always, InterfacePrefsBuilder.locationAccessState(Access.ALWAYS));
 	}
 
-	@Test
-	public void initialSetupRowUsesTheSameWarning() {
-		assertEquals(R.string.initial_setup_perm_background_sub,
-				InterfacePrefsBuilder.tripBackgroundPurpose(Mode.ON, true));
-		assertEquals(R.string.initial_setup_perm_background_sub,
-				InterfacePrefsBuilder.tripBackgroundPurpose(Mode.OFF, false));
-		assertEquals(R.string.trip_background_sub_off_still_allowed,
-				InterfacePrefsBuilder.tripBackgroundPurpose(Mode.OFF, true));
+	@Test public void locationStateColorsDistinguishAllThreeStates() {
+		assertEquals(0xFFEF4444, InterfacePrefsBuilder.locationAccessColor(Access.NOT_GRANTED));
+		assertEquals(0xFFF59E0B, InterfacePrefsBuilder.locationAccessColor(Access.WHILE_USING));
+		assertEquals(0xFF22C55E, InterfacePrefsBuilder.locationAccessColor(Access.ALWAYS));
 	}
 
 	@Test

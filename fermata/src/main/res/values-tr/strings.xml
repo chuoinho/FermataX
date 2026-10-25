@@ -529,7 +529,6 @@
     <string name="initial_setup_perm_location_sub">Hız kartı, hava durumu ve park yerini kaydetme.</string>
     <string name="initial_setup_perm_nav">Navigasyon bildirimleri</string>
     <string name="initial_setup_perm_nav_sub">Hava durumu kartında Haritalar veya Waze\'den adım adım yol tariflerini gösterin. Yalnızca navigasyon bildirimleri kullanılır.</string>
-    <string name="initial_setup_perm_background_sub">Haritalar araç ekranındayken seyahat istatistiklerini ve doğru park yerini koruyun. “Her zaman izin ver” konum izni gerektirir.</string>
     <string name="initial_setup_advanced_note">Gelişmiş izinler (yansıtma, diğer uygulamaların üzerinde gösterme, pil) Ayarlar → Bağlantı ve izin kontrolü bölümündedir.</string>
     <string name="weather_clear">Açık</string>
     <string name="weather_mainly_clear">Çoğunlukla açık</string>

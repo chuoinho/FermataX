@@ -56,6 +56,24 @@ public class LanguagesAcceptanceTest {
 	@Test public void germanIsActuallyTranslated() throws Exception { translated("de"); }
 	@Test public void italianIsActuallyTranslated() throws Exception { translated("it"); }
 
+	@Test public void locationPermissionCopyReplacesTheBackgroundRecordingToggleInEveryLanguage() throws Exception {
+		String[] locales = {"values", "values-vi", "values-ru", "values-es", "values-pt",
+				"values-zh-rTW", "values-tr", "values-de", "values-it"};
+		String[] required = {"location_always_title", "location_always_sub", "location_background_disclosure",
+				"location_allow_now", "location_skip", "location_state_missing", "location_state_while_using",
+				"location_state_always", "location_background_lower_message", "location_open_settings", "location_keep"};
+		for (String locale : locales) {
+			Map<String, Entry> strings = load(new File(root(), "fermata/src/main/res/" + locale));
+			for (String key : required) assertTrue(locale + " missing " + key, strings.containsKey(key));
+			for (String key : strings.keySet()) {
+				assertTrue(locale + " keeps obsolete background setting " + key,
+						!key.startsWith("trip_background_"));
+			}
+			assertTrue(locale + " keeps obsolete setup description",
+					!strings.containsKey("initial_setup_perm_background_sub"));
+		}
+	}
+
 	private static void keyParity(String locale) throws Exception {
 		for (String res : RES_DIRS) {
 			Map<String, Entry> en = load(new File(root(), res + "/values"));

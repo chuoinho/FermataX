@@ -1,0 +1,16 @@
+<resources>
+    <string name="location_always_title">Standort: Immer zulassen</string>
+    <string name="location_always_sub">Hält Geschwindigkeit, Fahrt und Wetter aktuell, wenn eine andere App den Autobildschirm verdeckt oder das Telefon gesperrt ist.</string>
+    <string name="location_background_disclosure">Einige Telefone (besonders Modelle für den chinesischen Markt und Geräte von Herstellern mit Einschränkungen für Hintergrund-Apps) unterbrechen den Standortzugriff, wenn FermataX auf dem Autobildschirm läuft. Damit Geschwindigkeit, Fahrt und Wetter zuverlässig bleiben, erlaube den Standortzugriff auch mit „Immer zulassen“. Dein Standort bleibt auf deinem Telefon. Du kannst das jetzt oder später in den Einstellungen erlauben.</string>
+    <string name="location_allow_now">Jetzt erlauben</string>
+    <string name="location_skip">Überspringen</string>
+    <string name="location_state_missing">Nicht erlaubt</string>
+    <string name="location_state_while_using">Während der App-Nutzung</string>
+    <string name="location_state_always">Immer zulassen</string>
+    <string name="location_background_lower_message">Android erlaubt FermataX weiterhin jederzeit den Standortzugriff. App-Berechtigungen öffnen, um zu „Nur während der Nutzung der App zulassen“ zu wechseln?</string>
+    <string name="location_open_settings">Einstellungen öffnen</string>
+    <string name="location_keep">Beibehalten</string>
+    <string name="location_background_denied">Die Standortberechtigung „Immer zulassen“ wurde nicht erteilt.</string>
+    <string name="location_background_enabled">Der Standortzugriff ist immer erlaubt.</string>
+    <string name="location_speed_hint">Erlaube den Standortzugriff mit „Immer zulassen“, damit Geschwindigkeit und Fahrt aktuell bleiben.</string>
+</resources>

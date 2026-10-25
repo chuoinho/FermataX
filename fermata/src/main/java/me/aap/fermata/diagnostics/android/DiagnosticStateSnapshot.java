@@ -187,7 +187,6 @@ public final class DiagnosticStateSnapshot {
 		json.put("detailed_enabled", prefs.isDetailedEnabled(System.currentTimeMillis()));
 		json.put("detailed_expires_at_ms", prefs.getDetailedExpiresAt());
 		SharedPreferences trip = context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE);
-		json.put("trip_stats_enabled", trip.getBoolean("trip_stats_enabled", false));
 		json.put("trip_user_paused", trip.getBoolean("user_paused", false));
 		json.put("trip_allow_mock", trip.getBoolean("allow_mock", false));
 		json.put("addons", section(() -> addons()));

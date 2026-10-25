@@ -1,0 +1,16 @@
+<resources>
+    <string name="location_always_title">位置：一律允許</string>
+    <string name="location_always_sub">其他 App 遮住車機畫面或手機鎖定時，仍可維持速度、行程與天氣資訊。</string>
+    <string name="location_background_disclosure">部分手機（尤其是中國市場機型，以及會限制背景 App 的廠牌）可能在 FermataX 顯示於車機畫面時中斷位置資訊。若要讓速度卡片、行程與天氣穩定更新，也請允許位置「一律允許」。您的位置資訊會保留在手機上。您可以現在允許，也可以稍後到設定中調整。</string>
+    <string name="location_allow_now">現在允許</string>
+    <string name="location_skip">略過</string>
+    <string name="location_state_missing">尚未授權</string>
+    <string name="location_state_while_using">僅在使用 App 時</string>
+    <string name="location_state_always">一律允許</string>
+    <string name="location_background_lower_message">Android 仍允許 FermataX 隨時使用位置資訊。要開啟 App 權限設定，改為「僅在使用 App 時允許」嗎？</string>
+    <string name="location_open_settings">開啟設定</string>
+    <string name="location_keep">保留</string>
+    <string name="location_background_denied">尚未授予「一律允許」的位置權限。</string>
+    <string name="location_background_enabled">已允許隨時存取位置。</string>
+    <string name="location_speed_hint">允許位置「一律允許」，即可持續更新速度卡片與行程資訊。</string>
+</resources>

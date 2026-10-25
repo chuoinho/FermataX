@@ -10,34 +10,32 @@ import androidx.core.content.ContextCompat;
 
 import me.aap.fermata.BuildConfig;
 
-/**
- * Background recording is opt-in: only with "Allow all the time" may the location service run while
- * another app covers the car screen. It feeds both the trip statistics and CarFinder's parking fix.
- */
+/** The location service follows location permission and app support, not the legacy trip toggle. */
 public final class TripModePolicy {
     public enum Mode { OFF, ON, NEEDS_LOCATION_PERMISSION, NEEDS_BACKGROUND_PERMISSION }
+    public enum Access { NOT_GRANTED, WHILE_USING, ALWAYS }
 
     private TripModePolicy() {}
 
-    static Mode evaluate(boolean userEnabled, boolean hasForeground, boolean hasBackground,
-                         boolean supportedInBuild) {
-        if (!supportedInBuild || !userEnabled) return Mode.OFF;
+    static Mode evaluate(boolean hasForeground, boolean hasBackground, boolean supportedInBuild) {
+        if (!supportedInBuild) return Mode.OFF;
         if (!hasForeground) return Mode.NEEDS_LOCATION_PERMISSION;
         return hasBackground ? Mode.ON : Mode.NEEDS_BACKGROUND_PERMISSION;
     }
 
+    public static Access access(boolean hasForeground, boolean hasBackground) {
+        return !hasForeground ? Access.NOT_GRANTED : hasBackground ? Access.ALWAYS : Access.WHILE_USING;
+    }
+
+    public static boolean shouldOfferBackgroundPrompt(boolean hasForeground, boolean hasBackground,
+                                               boolean alreadyAsked, boolean supportedInBuild) {
+        return supportedInBuild && hasForeground && !hasBackground && !alreadyAsked;
+    }
+
     @NonNull
     public static Mode current(@NonNull Context context) {
-        return evaluate(isEnabled(context), hasForegroundLocation(context),
+        return evaluate(hasForegroundLocation(context),
                 hasBackgroundLocation(context), BuildConfig.TRIP_BACKGROUND_SUPPORTED);
-    }
-
-    public static boolean isEnabled(@NonNull Context context) {
-        return new TripStore(context).isTripStatsEnabled();
-    }
-
-    public static void setEnabled(@NonNull Context context, boolean enabled) {
-        new TripStore(context).setTripStatsEnabled(enabled);
     }
 
     public static boolean hasForegroundLocation(@NonNull Context context) {

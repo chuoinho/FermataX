@@ -45,18 +45,25 @@ public class TripTrackingServiceTest {
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
         );
-        TripModePolicy.setEnabled(context, true);
         TripTrackingService.init(context);
     }
 
     @Test
-    public void startDoesNothingUnlessBackgroundRecordingIsOn() {
+    public void backgroundPermissionStartsTrackingWithoutLegacyTripOptIn() {
         while (Shadows.shadowOf((Application) context).getNextStartedService() != null) {}
-        TripModePolicy.setEnabled(context, false);
+        context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit()
+                .putBoolean("trip_stats_enabled", false).commit();
         TripTrackingService.start(context);
-        assertNull("opt-in is off", Shadows.shadowOf((Application) context).getNextStartedService());
+        assertNotNull("legacy trip preference is ignored", Shadows.shadowOf((Application) context).getNextStartedService());
 
-        TripModePolicy.setEnabled(context, true);
+        TripTrackingService.stop(context);
+        while (Shadows.shadowOf((Application) context).getNextStartedService() != null) {}
+        new TripTrackingAutoBinder(context).onStateChanged(AutomotiveConnectionState.State.CONNECTED);
+        assertNotNull("vehicle connection starts when background location is allowed",
+                Shadows.shadowOf((Application) context).getNextStartedService());
+
+        TripTrackingService.stop(context);
+        while (Shadows.shadowOf((Application) context).getNextStartedService() != null) {}
         Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
         TripTrackingService.start(context);
         assertNull("no 'Allow all the time'", Shadows.shadowOf((Application) context).getNextStartedService());
@@ -289,14 +296,14 @@ public class TripTrackingServiceTest {
             if (name.equals("trip_service_start")) reasons.add(a.get("reason"));
         };
         try {
-            TripModePolicy.setEnabled(context, false);
+            context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit()
+                    .putBoolean("trip_stats_enabled", false).commit();
             TripTrackingService.start(context);
-            TripModePolicy.setEnabled(context, true);
             Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
             TripTrackingService.start(context);
             Shadows.shadowOf((Application) context).grantPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
             TripTrackingService.start(context);
-            assertEquals(java.util.List.of("off", "needs_background", "started"), reasons);
+            assertEquals(java.util.List.of("started", "needs_background", "started"), reasons);
         } finally {
             GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
         }
@@ -325,7 +332,6 @@ public class TripTrackingServiceTest {
 
     }
     private void whileInUseOnly() {
-        TripModePolicy.setEnabled(context, false);
         Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
     }
     @Test public void dashboardStartsServiceWithWhileInUsePermission() {
@@ -375,9 +381,11 @@ public class TripTrackingServiceTest {
         new TripTrackingAutoBinder(context).onStateChanged(AutomotiveConnectionState.State.DISCONNECTED);
         assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
     }
-    @Test public void optInOffDoesNotStopDashboardService() {
-        TripTrackingService.startForDashboard(context); TripTrackingService.start(context);
-        TripModePolicy.setEnabled(context, false); TripTrackingService.backgroundDisabled(context);
+    @Test public void tripStatsPreferenceDoesNotControlDashboardService() {
+        whileInUseOnly();
+        TripTrackingService.startForDashboard(context);
+        context.getSharedPreferences("speedo_trip_v2", Context.MODE_PRIVATE).edit()
+                .putBoolean("trip_stats_enabled", false).commit();
         assertNull(Shadows.shadowOf((Application) context).getNextStoppedService());
         TripTrackingService.dashboardClosed(context);
         assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
@@ -399,6 +407,24 @@ public class TripTrackingServiceTest {
         whileInUseOnly(); TripTrackingService.startForDashboard(context);
         TripTrackingService.registry().getController().pauseTrip();
         assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+    }
+
+    @Test public void userPauseStopsVehicleTrackingService() {
+        TripTrackingService.start(context);
+        while (Shadows.shadowOf((Application) context).getNextStoppedService() != null) {}
+        TripTrackingService.userPaused(context);
+        assertNotNull(Shadows.shadowOf((Application) context).getNextStoppedService());
+    }
+
+    @Test public void resumingPausedTripRestartsVehicleServiceWhenStillConnected() {
+        TripStore store = new TripStore(context);
+        store.setUserPaused(true);
+        TripTrackingService.userPaused(context);
+        while (Shadows.shadowOf((Application) context).getNextStoppedService() != null) {}
+        store.setUserPaused(false);
+        AutomotiveConnectionState.get().connectionChanged(true);
+        TripTrackingService.resumeDashboard(context);
+        assertNotNull(Shadows.shadowOf((Application) context).getNextStartedService());
     }
 
     @Test @org.robolectric.annotation.LooperMode(org.robolectric.annotation.LooperMode.Mode.PAUSED)
@@ -436,16 +462,16 @@ public class TripTrackingServiceTest {
         } finally { sc.destroy(); }
     }
     @Test @org.robolectric.annotation.LooperMode(org.robolectric.annotation.LooperMode.Mode.PAUSED)
-    public void pendingBackgroundStartCannotUndoOptInOff() {
+    public void pendingBackgroundStartUsesCurrentPermissionDemand() {
         TripTrackingService.start(context);
         Intent pending=Shadows.shadowOf((Application)context).getNextStartedService();
         TripTrackingService.startForDashboard(context); startControllerWorker();
-        TripModePolicy.setEnabled(context,false); TripTrackingService.backgroundDisabled(context);
+        Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
         ServiceController<TripTrackingService> sc=Robolectric.buildService(TripTrackingService.class).create();
         try {
             sc.get().onStartCommand(pending,0,1);
             TripTrackingService.registry().getController().pauseTrip();
-            assertNotNull("late opt-in start must be downgraded to dashboard", Shadows.shadowOf((Application)context).getNextStoppedService());
+            assertNotNull("late background start must be downgraded without location access", Shadows.shadowOf((Application)context).getNextStoppedService());
         } finally { sc.destroy(); }
     }
 

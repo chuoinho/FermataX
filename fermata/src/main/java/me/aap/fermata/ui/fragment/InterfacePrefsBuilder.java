@@ -109,38 +109,32 @@ final class InterfacePrefsBuilder {
 		}
 	}
 
-	static void toggleTripBackground(MainActivityDelegate activity, Runnable onChanged) {
+	static void manageLocationAccess(MainActivityDelegate activity, Runnable onChanged) {
 		Context ctx = activity.getContext();
-		if (TripModePolicy.isEnabled(ctx)) {
-			TripModePolicy.setEnabled(ctx, false);
-			TripTrackingService.backgroundDisabled(ctx);
-			onChanged.run();
-			if (!offersPermissionDowngrade(ctx)) {
-				UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_disabled));
-				return;
-			}
-			// An app cannot revoke its own permission: only the user can lower it in Android settings.
-			DialogBuilder d = activity.createDialogBuilder(ctx);
-			d.setTitle(R.string.trip_background_title);
-			d.setMessage(R.string.trip_background_disabled_still_allowed);
-			d.setPositiveButton(R.string.trip_background_open_settings, (dlg, which) -> {
-				try {
-					ctx.startActivity(permissionSettingsIntent(ctx).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-				} catch (RuntimeException e) {
-					Log.e(e, "Unable to open app permission settings");
-				}
-			});
-			d.setNegativeButton(R.string.trip_background_keep, null);
-			d.show();
-			return;
+		TripModePolicy.Access access = currentLocationAccess(ctx);
+		if (access == TripModePolicy.Access.ALWAYS && offersPermissionDowngrade(ctx)) {
+			showLocationDowngradeDialog(activity);
+		} else if (access == TripModePolicy.Access.WHILE_USING && BuildConfig.TRIP_BACKGROUND_SUPPORTED) {
+			showBackgroundPermissionPrompt(activity, onChanged);
+		} else if (access == TripModePolicy.Access.NOT_GRANTED) {
+			requestForegroundLocation(activity, onChanged);
 		}
-		// Store policy: a prominent disclosure must precede the background location request.
-		DialogBuilder d = activity.createDialogBuilder(ctx);
-		d.setTitle(R.string.trip_background_title);
-		d.setMessage(R.string.trip_background_disclosure);
-		d.setPositiveButton(R.string.trip_background_continue, (dlg, which) -> requestTripBackground(activity, onChanged));
-		d.setNegativeButton(android.R.string.cancel, null);
-		d.show();
+	}
+
+	static int locationAccessState(TripModePolicy.Access access) {
+		return switch (access) {
+			case NOT_GRANTED -> R.string.location_state_missing;
+			case WHILE_USING -> R.string.location_state_while_using;
+			case ALWAYS -> R.string.location_state_always;
+		};
+	}
+
+	static int locationAccessColor(TripModePolicy.Access access) {
+		return switch (access) {
+			case NOT_GRANTED -> 0xFFEF4444;
+			case WHILE_USING -> 0xFFF59E0B;
+			case ALWAYS -> 0xFF22C55E;
+		};
 	}
 
 	/** True while Android still allows location "all the time", which only the user can lower. */
@@ -153,47 +147,80 @@ final class InterfacePrefsBuilder {
 				Build.VERSION.SDK_INT);
 	}
 
-	/** Status line for the background recording row; says when Android still allows it all the time. */
-	static int tripBackgroundSubtitle(TripModePolicy.Mode mode, boolean backgroundGranted) {
-		return switch (mode) {
-			case ON -> R.string.trip_background_sub_on;
-			case OFF -> backgroundGranted ? R.string.trip_background_sub_off_still_allowed
-					: R.string.trip_background_sub_off;
-			default -> R.string.trip_background_sub_needs_permission;
-		};
+	private static TripModePolicy.Access currentLocationAccess(Context ctx) {
+		return TripModePolicy.access(TripModePolicy.hasForegroundLocation(ctx),
+				TripModePolicy.hasBackgroundLocation(ctx));
 	}
 
-	/** Purpose line of the same row in the initial setup. */
-	static int tripBackgroundPurpose(TripModePolicy.Mode mode, boolean backgroundGranted) {
-		return ((mode == TripModePolicy.Mode.OFF) && backgroundGranted)
-				? R.string.trip_background_sub_off_still_allowed : R.string.initial_setup_perm_background_sub;
+	static void maybeOfferBackgroundPermissionPrompt(MainActivityDelegate activity, Runnable onChanged) {
+		Context ctx = activity.getContext();
+		if (!TripModePolicy.shouldOfferBackgroundPrompt(TripModePolicy.hasForegroundLocation(ctx),
+				TripModePolicy.hasBackgroundLocation(ctx), wasBackgroundPromptAsked(ctx),
+				BuildConfig.TRIP_BACKGROUND_SUPPORTED)) return;
+		showBackgroundPermissionPrompt(activity, onChanged);
 	}
 
-	private static void requestTripBackground(MainActivityDelegate activity, Runnable onChanged) {
+	private static boolean wasBackgroundPromptAsked(Context ctx) {
+		return ctx.getSharedPreferences("location_access", Context.MODE_PRIVATE)
+				.getBoolean("background_prompt_asked", false);
+	}
+
+	private static void markBackgroundPromptAsked(Context ctx) {
+		ctx.getSharedPreferences("location_access", Context.MODE_PRIVATE).edit()
+				.putBoolean("background_prompt_asked", true).apply();
+	}
+
+	private static void requestForegroundLocation(MainActivityDelegate activity, Runnable onChanged) {
 		AppActivity app = activity.getAppActivity();
 		if (app == null) return;
 		Context ctx = activity.getContext();
 		app.checkPermissions(Manifest.permission.ACCESS_FINE_LOCATION,
 				Manifest.permission.ACCESS_COARSE_LOCATION).onCompletion((r, e) -> {
-			if (!TripModePolicy.hasForegroundLocation(ctx)) {
-				UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_denied));
-			} else if (TripModePolicy.hasBackgroundLocation(ctx)) {
-				enableTripBackground(ctx, onChanged);
+			onChanged.run();
+			if (TripModePolicy.hasForegroundLocation(ctx)) maybeOfferBackgroundPermissionPrompt(activity, onChanged);
+		});
+	}
+
+	private static void showBackgroundPermissionPrompt(MainActivityDelegate activity, Runnable onChanged) {
+		Context ctx = activity.getContext();
+		DialogBuilder d = activity.createDialogBuilder(ctx);
+		d.setTitle(R.string.location_always_title);
+		d.setMessage(R.string.location_background_disclosure);
+		d.setPositiveButton(R.string.location_allow_now, (dlg, which) -> requestBackgroundLocation(activity, onChanged));
+		d.setNegativeButton(R.string.location_skip, (dlg, which) -> markBackgroundPromptAsked(ctx));
+		d.show();
+	}
+
+	private static void requestBackgroundLocation(MainActivityDelegate activity, Runnable onChanged) {
+		Context ctx = activity.getContext();
+		markBackgroundPromptAsked(ctx);
+		AppActivity app = activity.getAppActivity();
+		if (app == null) return;
+		app.checkPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION).onCompletion((r, e) -> {
+			onChanged.run();
+			if (TripModePolicy.hasBackgroundLocation(ctx)) {
+				if (AutomotiveConnectionState.get().isProjectionConnected()) TripTrackingService.start(ctx);
+				UiUtils.showAlert(ctx, ctx.getString(R.string.location_background_enabled));
 			} else {
-				// Android 11+ opens the system page with "Allow all the time".
-				app.checkPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION).onCompletion((r2, e2) -> {
-					if (TripModePolicy.hasBackgroundLocation(ctx)) enableTripBackground(ctx, onChanged);
-					else UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_denied));
-				});
+				UiUtils.showAlert(ctx, ctx.getString(R.string.location_background_denied));
 			}
 		});
 	}
 
-	private static void enableTripBackground(Context ctx, Runnable onChanged) {
-		TripModePolicy.setEnabled(ctx, true);
-		onChanged.run();
-		if (AutomotiveConnectionState.get().isProjectionConnected()) TripTrackingService.start(ctx);
-		UiUtils.showAlert(ctx, ctx.getString(R.string.trip_background_enabled));
+	private static void showLocationDowngradeDialog(MainActivityDelegate activity) {
+		Context ctx = activity.getContext();
+		DialogBuilder d = activity.createDialogBuilder(ctx);
+		d.setTitle(R.string.location_always_title);
+		d.setMessage(R.string.location_background_lower_message);
+		d.setPositiveButton(R.string.location_open_settings, (dlg, which) -> {
+			try {
+				ctx.startActivity(permissionSettingsIntent(ctx).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+			} catch (RuntimeException e) {
+				Log.e(e, "Unable to open app permission settings");
+			}
+		});
+		d.setNegativeButton(R.string.location_keep, null);
+		d.show();
 	}
 
 	private static void normalizeTheme(PreferenceStore store) {

@@ -603,7 +603,6 @@
     <string name="initial_setup_perm_location_sub">Speed card, weather and saving where you parked.</string>
     <string name="initial_setup_perm_nav">Navigation notifications</string>
     <string name="initial_setup_perm_nav_sub">Show turn-by-turn directions from Maps or Waze on the weather card. Only navigation notifications are used.</string>
-    <string name="initial_setup_perm_background_sub">Keep trip statistics and an accurate parking spot while Maps is on the car screen. Needs location “Allow all the time”.</string>
     <string name="initial_setup_advanced_note">Advanced permissions (mirroring, display over other apps, battery) are in Settings → Connection and permissions check.</string>
 
     <!-- Glass Weather Conditions -->

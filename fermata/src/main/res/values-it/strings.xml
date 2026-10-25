@@ -529,7 +529,6 @@
     <string name="initial_setup_perm_location_sub">Scheda velocità, meteo e salvataggio del parcheggio.</string>
     <string name="initial_setup_perm_nav">Notifiche di navigazione</string>
     <string name="initial_setup_perm_nav_sub">Mostra indicazioni passo-passo da Maps o Waze sulla scheda meteo. Vengono utilizzate solo le notifiche di navigazione.</string>
-    <string name="initial_setup_perm_background_sub">Mantieni le statistiche del viaggio e la posizione esatta di parcheggio mentre Maps è sullo schermo dell\'auto. Richiede la posizione “Consenti sempre”.</string>
     <string name="initial_setup_advanced_note">Le autorizzazioni avanzate (mirroring, visualizzazione sopra altre app, batteria) si trovano in Impostazioni → Controllo connessione e autorizzazioni.</string>
     <string name="weather_clear">Sereno</string>
     <string name="weather_mainly_clear">Prevalentemente sereno</string>

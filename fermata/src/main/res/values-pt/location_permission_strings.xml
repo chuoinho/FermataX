@@ -1,0 +1,16 @@
+<resources>
+    <string name="location_always_title">Localização: permitir sempre</string>
+    <string name="location_always_sub">Mantém a velocidade, a viagem e o tempo quando outra app cobre o ecrã do automóvel ou o telemóvel está bloqueado.</string>
+    <string name="location_background_disclosure">Alguns telemóveis (sobretudo modelos para o mercado chinês e marcas que restringem apps em segundo plano) interrompem a localização quando o FermataX aparece no ecrã do automóvel. Para manter a velocidade, a viagem e o tempo estáveis, permita também a localização “Permitir sempre”. A sua localização fica no telemóvel. Pode permitir agora ou mais tarde nas Definições.</string>
+    <string name="location_allow_now">Permitir agora</string>
+    <string name="location_skip">Ignorar</string>
+    <string name="location_state_missing">Não concedida</string>
+    <string name="location_state_while_using">Durante a utilização da app</string>
+    <string name="location_state_always">Permitir sempre</string>
+    <string name="location_background_lower_message">O Android ainda permite que o FermataX use a localização sempre. Abrir as permissões da app para alterar para “Permitir apenas durante a utilização da app”?</string>
+    <string name="location_open_settings">Abrir definições</string>
+    <string name="location_keep">Manter</string>
+    <string name="location_background_denied">A permissão de localização “Permitir sempre” não foi concedida.</string>
+    <string name="location_background_enabled">A localização está sempre permitida.</string>
+    <string name="location_speed_hint">Permita a localização “Permitir sempre” para manter a velocidade e a viagem ativas.</string>
+</resources>

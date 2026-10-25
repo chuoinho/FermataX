@@ -217,7 +217,7 @@ public class GlassSpeedoTripView extends FrameLayout {
 
         contentLayout.addView(tripStatsRow);
 
-        // Replaces the trip row while background recording is off (TripModePolicy).
+        // Replaces trip totals while background location is not available.
         tvTripHint = new TextView(context);
         tvTripHint.setTextSize(11f);
         tvTripHint.setTextColor(colors.getTextSecondary());
@@ -227,18 +227,14 @@ public class GlassSpeedoTripView extends FrameLayout {
         contentLayout.addView(tvTripHint);
     }
 
-    /** Trip statistics only make sense with background recording; otherwise the card shows speed only. */
+    /** Trip statistics need background location; otherwise the card shows speed only. */
     public void setTripMode(@NonNull TripModePolicy.Mode mode) {
         boolean on = mode == TripModePolicy.Mode.ON;
         tripStatsRow.setVisibility(on ? View.VISIBLE : View.GONE);
         btnToggleTrip.setVisibility(on ? View.VISIBLE : View.GONE);
-        // Without any location the speed status already asks for it; a second hint would only compete.
-        boolean hint = !on && TripModePolicy.hasForegroundLocation(getContext());
+        boolean hint = mode == TripModePolicy.Mode.NEEDS_BACKGROUND_PERMISSION;
         tvTripHint.setVisibility(hint ? View.VISIBLE : View.GONE);
-        if (hint) {
-            tvTripHint.setText(mode == TripModePolicy.Mode.NEEDS_BACKGROUND_PERMISSION
-                    ? R.string.speedo_trip_hint_background : R.string.speedo_trip_hint_off);
-        }
+        if (hint) tvTripHint.setText(R.string.location_speed_hint);
     }
 
     @Override

@@ -614,7 +614,6 @@
     <string name="initial_setup_perm_location_sub">速度卡、天氣與記錄停車位置。</string>
     <string name="initial_setup_perm_nav">導航通知</string>
     <string name="initial_setup_perm_nav_sub">在天氣卡上顯示地圖或 Waze 的轉向指示。只會使用導航通知。</string>
-    <string name="initial_setup_perm_background_sub">在地圖佔用車機螢幕時，保留行程統計與準確的停車位置。需要「一律允許」位置權限。</string>
     <string name="initial_setup_advanced_note">進階權限（鏡像、顯示在其他應用程式上層、電池）位於「設定」→「連線與權限檢查」。</string>
 
     <!-- Glass Addon Card Hints -->

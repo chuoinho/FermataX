@@ -614,7 +614,6 @@
     <string name="initial_setup_perm_location_sub">Cartão de velocidade, clima e guardar onde estacionou.</string>
     <string name="initial_setup_perm_nav">Notificações de navegação</string>
     <string name="initial_setup_perm_nav_sub">Mostrar as indicações do Maps ou Waze no cartão do clima. Só são usadas notificações de navegação.</string>
-    <string name="initial_setup_perm_background_sub">Manter as estatísticas da viagem e um estacionamento preciso enquanto o Maps ocupa o ecrã do carro. Requer a localização “Permitir o tempo todo”.</string>
     <string name="initial_setup_advanced_note">As permissões avançadas (mirroring, sobrepor a outras apps, bateria) estão em Definições → Verificação de conexão e permissões.</string>
 
     <!-- Glass Addon Card Hints -->

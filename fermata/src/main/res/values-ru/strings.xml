@@ -609,7 +609,6 @@
     <string name="initial_setup_perm_location_sub">Карточка скорости, погода и сохранение места парковки.</string>
     <string name="initial_setup_perm_nav">Уведомления навигации</string>
     <string name="initial_setup_perm_nav_sub">Показ подсказок поворотов из Карт или Waze на карточке погоды. Используются только уведомления навигации.</string>
-    <string name="initial_setup_perm_background_sub">Сохранять статистику поездки и точное место парковки, пока экран авто занят Картами. Нужно разрешение «Разрешить всегда».</string>
     <string name="initial_setup_advanced_note">Расширенные разрешения (зеркалирование, поверх других приложений, батарея) — в Настройках → Проверка подключения и разрешений.</string>
 
     <!-- Glass Addon Card Hints -->

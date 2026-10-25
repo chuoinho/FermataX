@@ -122,21 +122,27 @@ final class ReadinessPrefsBuilder {
 		});
 
 		if (BuildConfig.TRIP_BACKGROUND_SUPPORTED) target.addButton(o -> {
-			TripModePolicy.Mode mode = TripModePolicy.current(context);
-			o.title = R.string.trip_background_title;
-			o.subtitle = InterfacePrefsBuilder.tripBackgroundSubtitle(mode, TripModePolicy.hasBackgroundLocation(context));
-			o.valueDrawable = createStatusDotDrawable(mode == TripModePolicy.Mode.ON);
-			o.onClick = () -> InterfacePrefsBuilder.toggleTripBackground(activity, this::scheduleRefresh);
+			TripModePolicy.Access access = TripModePolicy.access(TripModePolicy.hasForegroundLocation(context),
+					TripModePolicy.hasBackgroundLocation(context));
+			o.title = R.string.location_always_title;
+			o.csubtitle = context.getString(R.string.location_always_sub) + "\n"
+					+ context.getString(InterfacePrefsBuilder.locationAccessState(access));
+			o.valueDrawable = createStatusDotDrawable(InterfacePrefsBuilder.locationAccessColor(access));
+			o.onClick = () -> InterfacePrefsBuilder.manageLocationAccess(activity, this::scheduleRefresh);
 		});
 	}
 
 	private Drawable createStatusDotDrawable(boolean granted) {
+		return createStatusDotDrawable(granted ? 0xFF22C55E : 0xFFEF4444);
+	}
+
+	private Drawable createStatusDotDrawable(int color) {
 		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
 		int size = Math.round(12 * density);
 		GradientDrawable dot = new GradientDrawable();
 		dot.setShape(GradientDrawable.OVAL);
 		dot.setSize(size, size);
-		dot.setColor(granted ? 0xFF22C55E : 0xFFEF4444);
+		dot.setColor(color);
 		return dot;
 	}
 

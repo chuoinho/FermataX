@@ -610,7 +610,6 @@
     <string name="initial_setup_perm_location_sub">Thẻ tốc độ, thời tiết và lưu vị trí đỗ xe.</string>
     <string name="initial_setup_perm_nav">Thông báo dẫn đường</string>
     <string name="initial_setup_perm_nav_sub">Hiện chỉ dẫn rẽ của Maps hoặc Waze trên thẻ thời tiết. Chỉ dùng thông báo dẫn đường.</string>
-    <string name="initial_setup_perm_background_sub">Giữ thống kê chuyến đi và vị trí đỗ xe chính xác khi Maps chiếm màn hình xe. Cần quyền vị trí “Luôn cho phép”.</string>
     <string name="initial_setup_advanced_note">Quyền nâng cao (mirroring, hiển thị trên app khác, pin) nằm trong Cài đặt → Kiểm tra kết nối và quyền.</string>
 
     <!-- Glass Addon Card Hints -->

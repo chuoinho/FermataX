@@ -1,0 +1,16 @@
+<resources>
+    <string name="location_always_title">Konum: Her zaman izin ver</string>
+    <string name="location_always_sub">Başka bir uygulama araç ekranını kapattığında veya telefon kilitlendiğinde hızın, yolculuğun ve hava durumunun güncel kalmasını sağlar.</string>
+    <string name="location_background_disclosure">Bazı telefonlar (özellikle Çin pazarı modelleri ve arka plan uygulamalarını kısıtlayan üreticilerin cihazları), FermataX araç ekranında çalışırken konumu kesebilir. Hız kartı, yolculuk ve hava durumu için konum erişimine “Her zaman izin ver” seçeneğini de açın. Konumunuz telefonunuzda kalır. Şimdi veya daha sonra Ayarlar\'dan izin verebilirsiniz.</string>
+    <string name="location_allow_now">Şimdi izin ver</string>
+    <string name="location_skip">Atla</string>
+    <string name="location_state_missing">İzin verilmedi</string>
+    <string name="location_state_while_using">Uygulama kullanılırken</string>
+    <string name="location_state_always">Her zaman izin ver</string>
+    <string name="location_background_lower_message">Android, FermataX\'in konumu her zaman kullanmasına hâlâ izin veriyor. Bunu “Yalnızca uygulama kullanılırken izin ver” olarak değiştirmek için uygulama izinleri açılsın mı?</string>
+    <string name="location_open_settings">Ayarları aç</string>
+    <string name="location_keep">Koru</string>
+    <string name="location_background_denied">“Her zaman izin ver” konum izni verilmedi.</string>
+    <string name="location_background_enabled">Konuma her zaman izin veriliyor.</string>
+    <string name="location_speed_hint">Hız kartının ve yolculuğun güncel kalması için konuma “Her zaman izin ver” izni verin.</string>
+</resources>

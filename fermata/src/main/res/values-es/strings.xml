@@ -617,7 +617,6 @@ Por favor, reinicie la aplicación.</string>
     <string name="initial_setup_perm_location_sub">Tarjeta de velocidad, tiempo y guardar dónde aparcaste.</string>
     <string name="initial_setup_perm_nav">Notificaciones de navegación</string>
     <string name="initial_setup_perm_nav_sub">Mostrar las indicaciones de Maps o Waze en la tarjeta del tiempo. Solo se usan las notificaciones de navegación.</string>
-    <string name="initial_setup_perm_background_sub">Conservar las estadísticas del viaje y un aparcamiento preciso mientras Maps ocupa la pantalla del coche. Requiere la ubicación “Permitir todo el tiempo”.</string>
     <string name="initial_setup_advanced_note">Los permisos avanzados (mirroring, mostrar sobre otras apps, batería) están en Configuración → Comprobación de conexión y permisos.</string>
 
     <!-- Glass Addon Card Hints -->
