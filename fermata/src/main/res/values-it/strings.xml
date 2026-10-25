@@ -575,7 +575,6 @@
     <string name="speedo_start_error">Impossibile registrare. Tocca riprendi per riprovare.</string>
     <string name="speedo_estimated">%1$s stimato</string>
     <string name="speedo_incomplete">Dati mancanti</string>
-    <string name="speedo_tap_to_enable">Tocca per abilitare il GPS</string>
     <string name="glass_speedo_trip_time">TEMPO</string>
     <string name="glass_media_now_playing">IN RIPRODUZIONE</string>
     <string name="glass_media_library">LIBRERIA MULTIMEDIALE</string>
@@ -618,4 +617,5 @@
     <string name="glass_shortcut_open">Apri</string>
     <string name="glass_shortcut_replace">Sostituisci</string>
     <string name="glass_shortcut_remove">Rimuovi</string>
+    <string name="speedo_location_lost_background">Posizione persa mentre FermataX è in background. Apri FermataX sul telefono e consenti “Sempre”.</string>
 </resources>

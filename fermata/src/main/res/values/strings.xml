@@ -656,7 +656,6 @@
     <string name="speedo_start_error">Unable to record. Tap resume to retry.</string>
     <string name="speedo_estimated">%1$s estimated</string>
     <string name="speedo_incomplete">Missing data</string>
-    <string name="speedo_tap_to_enable">Tap to enable GPS</string>
     <string name="glass_speedo_trip_time">TIME</string>
     <!-- Glass Media Player UI -->
     <string name="glass_media_now_playing">NOW PLAYING</string>
@@ -714,5 +713,6 @@
     <string name="glass_shortcut_open">Open</string>
     <string name="glass_shortcut_replace">Replace</string>
     <string name="glass_shortcut_remove">Remove</string>
+    <string name="speedo_location_lost_background">Location lost while FermataX runs in the background. Open FermataX on your phone to allow “Allow all the time”.</string>
 </resources>
 

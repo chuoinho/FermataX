@@ -15,11 +15,12 @@ public class SpeedDisplayTest {
     }
 
     @Test
-    public void keepsTheLastNumberWhenTheEngineLosesSpeed() {
+    public void keepsTheLastNumberForBriefGapsButClearsItWhenStale() {
         SpeedDisplay d = new SpeedDisplay();
         assertEquals(54f, d.show(54, Signal.TRACKING), 0);
         assertEquals("fixes without speed", 54f, d.show(-1, Signal.TRACKING), 0);
-        assertEquals("stale after 8 s", 54f, d.show(-1, Signal.STALE), 0);
+        assertEquals("stale after 8 s", -1f, d.show(-1, Signal.STALE), 0);
+        assertEquals("stale value stays hidden", -1f, d.show(54, Signal.STALE), 0);
         assertEquals(60f, d.show(60, Signal.TRACKING), 0);
     }
 

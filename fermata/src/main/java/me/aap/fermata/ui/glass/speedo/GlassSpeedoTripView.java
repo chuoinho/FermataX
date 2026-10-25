@@ -398,31 +398,24 @@ public class GlassSpeedoTripView extends FrameLayout {
                 case TRACKING -> weakSignal ? "◌ " + getContext().getString(R.string.speedo_signal_lost)
                         : "● " + getContext().getString(R.string.speedo_gps_ready);
                 case WAITING -> "◌ " + getContext().getString(R.string.speedo_waiting);
-                case STALE -> "◌ " + getContext().getString(R.string.speedo_signal_lost);
+                case STALE -> "◌ " + getContext().getString(
+                        TripModePolicy.hasForegroundLocation(getContext())
+                                && !TripModePolicy.hasBackgroundLocation(getContext())
+                                ? R.string.speedo_location_lost_background : R.string.speedo_signal_lost);
                 case GPS_OFF -> getContext().getString(R.string.speedo_gps_off);
                 case PERMISSION -> getContext().getString(R.string.speedo_permission);
                 case PAUSED -> getContext().getString(R.string.speedo_paused);
                 case ERROR -> getContext().getString(R.string.speedo_start_error);
-                case BACKGROUND_BLOCKED -> "⚠ " + getContext().getString(R.string.speedo_tap_to_enable);
+                case BACKGROUND_BLOCKED -> "◌ " + getContext().getString(R.string.speedo_signal_lost);
             };
-            if (tripState.signal() == TripEngine.Signal.BACKGROUND_BLOCKED) {
-                tvSignal.setText(description);
-                tvSignal.setTextColor(colors.getActionText());
-                tvSignal.setClickable(true);
-                tvSignal.setFocusable(true);
-                tvSignal.setOnClickListener(v -> TripTrackingService.start(getContext()));
-                setClickable(true);
-                setFocusable(true);
-                setOnClickListener(v -> TripTrackingService.start(getContext()));
-            } else {
-                tvSignal.setText(description);
-                tvSignal.setTextColor(colors.getTextSecondary());
-                tvSignal.setClickable(false);
-                tvSignal.setFocusable(false);
-                tvSignal.setOnClickListener(null);
-                setOnClickListener(null);
-                setClickable(false);
-            }
+            tvSignal.setText(description);
+            tvSignal.setTextColor(colors.getTextSecondary());
+            tvSignal.setClickable(false);
+            tvSignal.setFocusable(false);
+            tvSignal.setOnClickListener(null);
+            setClickable(false);
+            setFocusable(false);
+            setOnClickListener(null);
             String distanceText = tvTripDistance.getText().toString();
             if (tripState.isMostlyEstimated()) {
                 distanceText = getContext().getString(R.string.speedo_estimated, distanceText);

@@ -575,7 +575,6 @@
     <string name="speedo_start_error">Kayıt yapılamıyor. Tekrar denemek için sürdüre dokunun.</string>
     <string name="speedo_estimated">%1$s tahmini</string>
     <string name="speedo_incomplete">Eksik veri</string>
-    <string name="speedo_tap_to_enable">GPS\'i etkinleştirmek için dokunun</string>
     <string name="glass_speedo_trip_time">SÜRE</string>
     <string name="glass_media_now_playing">ŞU AN ÇALINIYOR</string>
     <string name="glass_media_library">MEDYA KÜTÜPHANESİ</string>
@@ -618,4 +617,5 @@
     <string name="glass_shortcut_open">Aç</string>
     <string name="glass_shortcut_replace">Değiştir</string>
     <string name="glass_shortcut_remove">Kaldır</string>
+    <string name="speedo_location_lost_background">FermataX arka planda çalışırken konum kayboldu. Telefonunuzda FermataX\'i açıp konuma “Her zaman izin ver” iznini verin.</string>
 </resources>

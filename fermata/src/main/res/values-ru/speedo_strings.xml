@@ -14,5 +14,5 @@
     <string name="speedo_start_error">Не удалось начать запись. Нажмите продолжение для повтора.</string>
     <string name="speedo_estimated">%1$s приблизительно</string>
     <string name="speedo_incomplete">Неполные данные</string>
-    <string name="speedo_tap_to_enable">Нажмите для включения GPS</string>
+    <string name="speedo_location_lost_background">Местоположение потеряно в фоновом режиме. Откройте FermataX на телефоне и разрешите доступ «Всегда».</string>
 </resources>

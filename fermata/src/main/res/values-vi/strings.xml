@@ -664,7 +664,6 @@
     <string name="speedo_start_error">Chưa đo được. Nhấn tiếp tục để thử lại.</string>
     <string name="speedo_estimated">%1$s ước tính</string>
     <string name="speedo_incomplete">Thiếu dữ liệu</string>
-    <string name="speedo_tap_to_enable">Chạm để bật GPS</string>
     <string name="glass_speedo_trip_time">THỜI GIAN</string>
     <!-- Glass Media Player UI -->
     <string name="glass_media_now_playing">ĐANG PHÁT</string>
@@ -722,4 +721,5 @@
     <string name="glass_shortcut_open">Mở</string>
     <string name="glass_shortcut_replace">Thay thế</string>
     <string name="glass_shortcut_remove">Xóa</string>
+    <string name="speedo_location_lost_background">Mất vị trí khi FermataX chạy nền. Mở FermataX trên điện thoại để cấp \'Luôn cho phép\'.</string>
 </resources>

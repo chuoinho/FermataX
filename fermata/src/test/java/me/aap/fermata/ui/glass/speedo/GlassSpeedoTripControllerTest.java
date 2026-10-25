@@ -167,13 +167,13 @@ public class GlassSpeedoTripControllerTest {
         assertEquals(10_000, new TripStore(context).load().totalTimeMs());
     }
 
-    @Test public void viewKeepsANumberAndReportsTheLostSignal() {
+    @Test public void staleLocationShowsDashAndReportsTheLostSignal() {
         GlassSpeedoTripView view = new GlassSpeedoTripView(context);
         TripEngine.State state = new TripEngine.State(12_000, 800, 720_000, 600_000,
                 70, -1, TripEngine.Signal.STALE, true, true);
         view.updateSpeed(-1, state, true);
         String text = text(view);
-        assertFalse("no dash while tracking", text.contains("—"));
+        assertTrue("stale speed is hidden", text.contains("—"));
         assertTrue(text.contains("12.0 km"));
         assertFalse(text.contains("≈"));
         assertFalse(text.contains("Missing data"));
@@ -183,6 +183,34 @@ public class GlassSpeedoTripControllerTest {
         assertTrue(text(view).contains("7.5 mi"));
         assertFalse(text(view).contains("≈"));
         view.refreshAppearance();
+    }
+
+    @Test public void staleLocationWithWhileUsingPermissionExplainsHowToRestoreIt() {
+        Shadows.shadowOf((Application) context).grantPermissions(
+                Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION);
+        Shadows.shadowOf((Application) context).denyPermissions(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+        GlassSpeedoTripView view = new GlassSpeedoTripView(context);
+        TripEngine.State stale = new TripEngine.State(0, 0, 0, 0, 9_000, -1,
+                TripEngine.Signal.STALE, false, true);
+
+        view.updateSpeed(-1, stale, true);
+
+        String text = text(view);
+        assertTrue(text.contains("Location lost while FermataX runs in the background. Open FermataX on your phone to allow “Allow all the time”."));
+        assertFalse(text.contains("GPS signal lost"));
+        assertFalse(view.hasOnClickListeners());
+    }
+
+    @Test public void staleLocationWithBackgroundPermissionKeepsGenericSignalMessage() {
+        Shadows.shadowOf((Application) context).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+        GlassSpeedoTripView view = new GlassSpeedoTripView(context);
+        TripEngine.State stale = new TripEngine.State(0, 0, 0, 0, 9_000, -1,
+                TripEngine.Signal.STALE, false, true);
+
+        view.updateSpeed(-1, stale, true);
+
+        assertTrue(text(view).contains("GPS signal lost"));
     }
 
     @Test public void viewDisplaysCleanSpeedAndDistanceDuringGapMotion() {
@@ -250,13 +278,14 @@ public class GlassSpeedoTripControllerTest {
         assertTrue("Toggle listener should be called when toggle button clicked", toggleCalled.get());
     }
 
-    @Test public void backgroundBlockedSignalEnablesTapToEnable() {
+    @Test public void backgroundBlockedSignalDoesNotOfferATapAction() {
         GlassSpeedoTripView view = new GlassSpeedoTripView(context);
         TripEngine.State blockedState = new TripEngine.State(0, 0, 0, 0, 0, -1,
                 TripEngine.Signal.BACKGROUND_BLOCKED, false, true);
         view.updateSpeed(-1, blockedState, true);
         String text = text(view);
-        assertTrue("Should display tap to enable GPS", text.contains("Tap to enable GPS"));
+        assertFalse("no unavailable tap action on the speed card", text.contains("Tap to enable GPS"));
+        assertFalse(view.hasOnClickListeners());
     }
 
     @Test
@@ -428,7 +457,7 @@ public class GlassSpeedoTripControllerTest {
                 TripEngine.Signal.STALE, false, true, true, false);
         view.updateSpeed(54, estimated, true);
         assertFalse(text(view).contains("~"));
-        assertTrue(text(view).contains("54"));
+        assertTrue("stale speed is hidden", text(view).contains("—"));
         TripEngine.State gpsOff = new TripEngine.State(1_000, 0, 60_000, 50_000, 50, -1,
                 TripEngine.Signal.GPS_OFF, false, true);
         view.updateSpeed(-1, gpsOff, true);

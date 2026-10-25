@@ -575,7 +575,6 @@
     <string name="speedo_start_error">Aufzeichnung nicht möglich. Zum Wiederholen auf Fortsetzen tippen.</string>
     <string name="speedo_estimated">%1$s geschätzt</string>
     <string name="speedo_incomplete">Fehlende Daten</string>
-    <string name="speedo_tap_to_enable">Tippen, um GPS zu aktivieren</string>
     <string name="glass_speedo_trip_time">ZEIT</string>
     <string name="glass_media_now_playing">AKTUELLE WIEDERGABE</string>
     <string name="glass_media_library">MEDIENBIBLIOTHEK</string>
@@ -618,4 +617,5 @@
     <string name="glass_shortcut_open">Öffnen</string>
     <string name="glass_shortcut_replace">Ersetzen</string>
     <string name="glass_shortcut_remove">Entfernen</string>
+    <string name="speedo_location_lost_background">Standort verloren, während FermataX im Hintergrund läuft. Öffne FermataX auf dem Telefon und erlaube „Immer zulassen“.</string>
 </resources>

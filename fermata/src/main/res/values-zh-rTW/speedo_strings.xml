@@ -14,5 +14,5 @@
     <string name="speedo_start_error">無法記錄。請點選繼續以重試。</string>
     <string name="speedo_estimated">估計 %1$s</string>
     <string name="speedo_incomplete">資料不完整</string>
-    <string name="speedo_tap_to_enable">輕觸以啟用 GPS</string>
+    <string name="speedo_location_lost_background">FermataX 在背景執行時已失去位置資訊。請在手機上開啟 FermataX，並允許位置「一律允許」。</string>
 </resources>

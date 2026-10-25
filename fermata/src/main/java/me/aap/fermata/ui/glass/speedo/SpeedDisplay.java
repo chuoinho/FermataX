@@ -15,7 +15,7 @@ final class SpeedDisplay {
     /** Speed to show in km/h, or -1 when there is nothing to measure with (GPS off, no permission, paused). */
     float show(float engineKmh, TripEngine.Signal signal) {
         switch (signal) {
-            case GPS_OFF, PERMISSION, ERROR, PAUSED, BACKGROUND_BLOCKED -> {
+            case STALE, GPS_OFF, PERMISSION, ERROR, PAUSED, BACKGROUND_BLOCKED -> {
                 last = -1;
                 atZero = true;
                 return -1;

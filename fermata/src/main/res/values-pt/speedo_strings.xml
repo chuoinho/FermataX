@@ -14,5 +14,5 @@
     <string name="speedo_start_error">Não foi possível registrar. Toque em retomar para tentar novamente.</string>
     <string name="speedo_estimated">%1$s estimados</string>
     <string name="speedo_incomplete">Dados ausentes</string>
-    <string name="speedo_tap_to_enable">Toque para ativar o GPS</string>
+    <string name="speedo_location_lost_background">A localização foi perdida em segundo plano. Abra o FermataX no telemóvel e permita “Permitir sempre”.</string>
 </resources>
