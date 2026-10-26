@@ -338,7 +338,7 @@ public class PreferenceView extends ConstraintLayout {
 		t.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				if (!storeOnSubmit) storeValue.run();
+				if (shouldStoreOnChange(storeOnSubmit, before, count)) storeValue.run();
 			}
 
 			@Override
@@ -365,6 +365,12 @@ public class PreferenceView extends ConstraintLayout {
 				ignoreChange[0] = false;
 			}
 		});
+	}
+
+	// A paste (or full replacement) is a complete value, so listeners such as URL
+	// auto-fill can react without waiting for submit; typed characters still wait.
+	static boolean shouldStoreOnChange(boolean storeOnSubmit, int before, int count) {
+		return !storeOnSubmit || (count > 1);
 	}
 
 	private boolean clickDialogOkIfVisible() {
