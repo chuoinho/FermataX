@@ -188,11 +188,11 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 		addHeader(ctx, R.string.initial_setup_required);
 		addRow(activity, R.string.initial_setup_perm_storage, R.string.initial_setup_perm_storage_sub,
 				isStorageGranted(ctx), () -> requestStorage(activity));
+		addHeader(ctx, R.string.initial_setup_optional);
+		addLocationRow(activity);
 		addRow(activity, R.string.initial_setup_perm_notifications, R.string.initial_setup_perm_notifications_sub,
 				androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled(),
 				() -> requestNotifications(activity));
-		addHeader(ctx, R.string.initial_setup_optional);
-		addLocationRow(activity);
 		addRow(activity, navigationPermissions, R.string.initial_setup_perm_nav, R.string.initial_setup_perm_nav_sub,
 				me.aap.fermata.ui.control.PhoneReadiness.hasNotificationListenerCheck(ctx),
 				() -> startSafely(activity, me.aap.fermata.ui.control.PhoneReadiness.createNotificationListenerSettingsIntent()));

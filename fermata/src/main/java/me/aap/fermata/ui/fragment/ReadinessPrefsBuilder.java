@@ -43,6 +43,10 @@ import me.aap.utils.ui.UiUtils;
 
 /** Phone-settings collector for connection and system-permission readiness. */
 final class ReadinessPrefsBuilder {
+	static final Check[] REQUIRED_CHECKS = {Check.STORAGE, Check.LOCATION};
+	// Playback and Android Auto work without the notification permission.
+	static final Check[] OPTIONAL_CHECKS = {Check.NOTIFICATIONS, Check.MICROPHONE,
+			Check.NAVIGATION, Check.ACCESSIBILITY, Check.OVERLAY};
 	private final MainActivityDelegate activity;
 	private final Context context;
 	private final BooleanSupplier uiActive;
@@ -106,11 +110,9 @@ final class ReadinessPrefsBuilder {
 				.filter(row -> row.check() == Check.CONNECTION).findFirst().orElse(null);
 		if (connectionRow != null) addConnectionRow(target, connectionRow, current.input());
 
-		addSection(target, R.string.readiness_group_required, current,
-				Check.STORAGE, Check.NOTIFICATIONS, Check.LOCATION);
+		addSection(target, R.string.readiness_group_required, current, REQUIRED_CHECKS);
 		addSection(target, R.string.readiness_group_stability, current, Check.BATTERY);
-		addSection(target, R.string.readiness_group_optional, current,
-				Check.MICROPHONE, Check.NAVIGATION, Check.ACCESSIBILITY, Check.OVERLAY);
+		addSection(target, R.string.readiness_group_optional, current, OPTIONAL_CHECKS);
 	}
 
 	private void addConnectionRow(PreferenceSet target, Row row, Input input) {

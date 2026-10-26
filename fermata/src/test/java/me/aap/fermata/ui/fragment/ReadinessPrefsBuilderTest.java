@@ -18,6 +18,19 @@ public class ReadinessPrefsBuilderTest {
 		assertFalse(ReadinessPrefsBuilder.shouldAdd(RuntimeHostMode.MIRROR));
 	}
 
+	/** Playback and Android Auto work without notification permission, so it is optional. */
+	@Test
+	public void notificationsAreOptional() {
+		java.util.List<me.aap.fermata.ui.control.PhoneReadiness.Check> required =
+				java.util.List.of(ReadinessPrefsBuilder.REQUIRED_CHECKS);
+		java.util.List<me.aap.fermata.ui.control.PhoneReadiness.Check> optional =
+				java.util.List.of(ReadinessPrefsBuilder.OPTIONAL_CHECKS);
+		assertFalse(required.contains(me.aap.fermata.ui.control.PhoneReadiness.Check.NOTIFICATIONS));
+		assertTrue(optional.contains(me.aap.fermata.ui.control.PhoneReadiness.Check.NOTIFICATIONS));
+		assertTrue(required.contains(me.aap.fermata.ui.control.PhoneReadiness.Check.STORAGE));
+		assertTrue(required.contains(me.aap.fermata.ui.control.PhoneReadiness.Check.LOCATION));
+	}
+
 	@Test
 	public void closedOrInactiveViewsRejectRefreshCallbacks() {
 		assertTrue(ReadinessPrefsBuilder.isRefreshAllowed(() -> true, false));
