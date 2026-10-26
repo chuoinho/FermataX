@@ -122,17 +122,19 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment implements 
     }
 
     @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        MainActivityDelegate a = getActivityDelegate();
-        if (a != null) a.addBroadcastListener(this);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        getActivityDelegate().addBroadcastListener(this);
     }
 
     @Override
-    public void onDetach() {
-        MainActivityDelegate a = getActivityDelegate();
-        if (a != null) a.removeBroadcastListener(this);
-        super.onDetach();
+    public void onDestroyView() {
+        Context context = getContext();
+        if (context != null) {
+            MainActivityDelegate a = MainActivityDelegate.getActivityDelegate(context).peek();
+            if (a != null) a.removeBroadcastListener(this);
+        }
+        super.onDestroyView();
     }
 
     @Nullable

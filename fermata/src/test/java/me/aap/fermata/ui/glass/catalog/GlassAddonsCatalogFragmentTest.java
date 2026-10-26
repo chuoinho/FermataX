@@ -1,14 +1,93 @@
 package me.aap.fermata.ui.glass.catalog;
 
 import static org.junit.Assert.*;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 import me.aap.fermata.R;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.ui.activity.ActivityBase;
+import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.activity.ActivityDestroyedException;
+import me.aap.utils.ui.activity.AppActivity;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.utils.ui.activity.ActivityListener;
 
 @RunWith(RobolectricTestRunner.class)
 public class GlassAddonsCatalogFragmentTest {
+
+    @Test
+    public void recreatedViewRegistersOneListenerAfterDelegateIsReady() {
+        TestHostActivity host = org.robolectric.Robolectric.buildActivity(TestHostActivity.class)
+                .setup().get();
+        host.testDelegate = new MainActivityDelegate(host, null);
+        TestCatalogFragment fragment = new TestCatalogFragment();
+
+        host.getSupportFragmentManager().beginTransaction()
+                .add(fragment, "catalog")
+                .commitNow();
+        assertEquals(1, host.listenerCount(fragment));
+
+        host.getSupportFragmentManager().beginTransaction().detach(fragment).commitNow();
+        assertEquals(0, host.listenerCount(fragment));
+        host.getSupportFragmentManager().beginTransaction().attach(fragment).commitNow();
+        assertEquals(1, host.listenerCount(fragment));
+
+        host.testDelegate.fireBroadcastEvent(ActivityListener.FRAGMENT_CONTENT_CHANGED);
+        assertEquals(1, fragment.broadcastCount);
+    }
+
+    public static class TestHostActivity extends ActivityBase {
+        private boolean delegateReady;
+        private MainActivityDelegate testDelegate;
+
+        @Override
+        protected FutureSupplier<? extends ActivityDelegate> createDelegate(AppActivity activity) {
+            return me.aap.utils.async.Completed.failed(new ActivityDestroyedException());
+        }
+
+        @Override
+        public FutureSupplier<? extends ActivityDelegate> getActivityDelegate() {
+            return delegateReady ? me.aap.utils.async.Completed.completed(testDelegate) :
+                    me.aap.utils.async.Completed.failed(new ActivityDestroyedException());
+        }
+
+        private int listenerCount(MainActivityListener listener) {
+            int count = 0;
+            for (ActivityDelegate.ListenerRef<?> ref : getTestListeners()) {
+                if (ref.get() == listener) count++;
+            }
+            return count;
+        }
+
+        private java.util.Collection<? extends ActivityDelegate.ListenerRef<?>> getTestListeners() {
+            return testDelegate.getBroadcastEventListeners();
+        }
+    }
+
+    public static class TestCatalogFragment extends GlassAddonsCatalogFragment {
+        int broadcastCount;
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 android.os.Bundle savedInstanceState) {
+            ((TestHostActivity) requireActivity()).delegateReady = true;
+            return new View(requireContext());
+        }
+
+        @Override
+        public void onActivityEvent(MainActivityDelegate activity, long event) {
+            broadcastCount++;
+            super.onActivityEvent(activity, event);
+        }
+    }
 
     @Test
     public void testColumnCountComputation() {
