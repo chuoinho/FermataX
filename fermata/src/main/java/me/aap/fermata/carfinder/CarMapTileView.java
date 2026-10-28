@@ -485,7 +485,7 @@ public final class CarMapTileView extends View {
 			HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
 			conn.setConnectTimeout(3500);
 			conn.setReadTimeout(4000);
-			conn.setRequestProperty("User-Agent", "FermataX/2.0.1 (Android)");
+			conn.setRequestProperty("User-Agent", "FermataX/" + me.aap.fermata.BuildConfig.VERSION_NAME + " (Android)");
 			conn.setRequestProperty("Connection", "Keep-Alive");
 			if (conn.getResponseCode() == 200) {
 				try (InputStream in = conn.getInputStream();
