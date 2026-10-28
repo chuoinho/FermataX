@@ -3,10 +3,14 @@ package me.aap.fermata.addon.web.stremio;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 
+import android.content.res.ColorStateList;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 
 import androidx.annotation.NonNull;
 
@@ -22,6 +26,7 @@ import me.aap.fermata.auto.OpenOnCarKind;
 import me.aap.fermata.auto.OpenOnCarMode;
 import me.aap.fermata.auto.OpenOnCarRequest;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.utils.ui.UiUtils;
 
 /** Stremio-specific configuration of the reusable hosted WebView shell. */
@@ -44,6 +49,36 @@ public final class StremioWebFragment extends WebBrowserFragment {
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
 			@Nullable Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.stremio_browser, container, false);
+	}
+
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		ImageButton back = view.findViewById(R.id.stremioCarBackButton);
+		back.setImageResource(me.aap.utils.R.drawable.back);
+		back.setContentDescription(view.getContext().getString(me.aap.fermata.R.string.car_finder_back));
+		back.setOnClickListener(v -> MainActivityDelegate.get(v.getContext()).onBackPressed());
+		MainActivityDelegate.getActivityDelegate(view.getContext()).onSuccess(this::updateCarBackButton);
+	}
+
+	/** Android Auto has no system Back, and Stremio Home/board routes show only a logo there. */
+	private void updateCarBackButton(MainActivityDelegate activity) {
+		View root = getView();
+		ImageButton back = (root == null) ? null : root.findViewById(R.id.stremioCarBackButton);
+		if (back == null) return;
+		if (!activity.isCarActivity()) {
+			back.setVisibility(View.GONE);
+			return;
+		}
+		boolean glass = activity.getPrefs().isGlassTheme(true);
+		boolean night = activity.isGlassNightMode();
+		GradientDrawable classic = new GradientDrawable();
+		classic.setShape(GradientDrawable.OVAL);
+		classic.setColor(0xCC1A2438);
+		back.setImageTintList(ColorStateList.valueOf((glass && !night) ? 0xFF15181A : 0xFFFFFFFF));
+		back.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), glass ?
+				GlassDrawables.createGlassPillDrawable(back.getContext(), 24f, night) : classic, null));
+		back.setVisibility(View.VISIBLE);
 	}
 
 	@Override
@@ -73,6 +108,8 @@ public final class StremioWebFragment extends WebBrowserFragment {
 		super.onActivityEvent(activity, event);
 		if (event == FRAGMENT_CHANGED) {
 			updateOpenOnCarCapture();
+			// Re-style after returning from Settings (Glass day/night does not recreate the activity).
+			if (activity.getActiveFragment() == this) updateCarBackButton(activity);
 		}
 	}
 
