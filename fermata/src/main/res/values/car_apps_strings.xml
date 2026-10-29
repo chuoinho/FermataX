@@ -10,4 +10,10 @@
     <string name="car_apps_nav_drawer">App drawer</string>
     <string name="car_apps_nav_close">Close app</string>
     <string name="car_apps_panel_off">Turn off phone screen</string>
+    <string name="car_apps_readiness_title">Independent car display</string>
+    <string name="car_apps_readiness_status_ready">Ready</string>
+    <string name="car_apps_readiness_status_need_root">Root access required</string>
+    <string name="car_apps_readiness_action_grant">Grant root</string>
+    <string name="car_apps_readiness_warn_panel_power">Cannot turn off phone display on this device</string>
+    <string name="car_apps_readiness_warn_xiaomi_inject">Requires USB debugging (Security settings)</string>
 </resources>

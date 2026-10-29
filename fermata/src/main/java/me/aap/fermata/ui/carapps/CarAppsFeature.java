@@ -20,6 +20,10 @@ public final class CarAppsFeature {
 		FutureSupplier<Boolean> requestRoot();
 
 		ActivityFragment createFragment();
+
+		default int capabilities() {
+			return CarAppsReadinessModel.CAP_INJECT | CarAppsReadinessModel.CAP_PANEL_POWER;
+		}
 	}
 
 	private static volatile RootState state = RootState.ABSENT;
@@ -77,5 +81,13 @@ public final class CarAppsFeature {
 	@Nullable
 	public static Backend backend() {
 		return backend;
+	}
+
+	public static int capabilities() {
+		Backend b = backend;
+		if (b != null) {
+			return b.capabilities();
+		}
+		return CarAppsReadinessModel.CAP_INJECT | CarAppsReadinessModel.CAP_PANEL_POWER;
 	}
 }

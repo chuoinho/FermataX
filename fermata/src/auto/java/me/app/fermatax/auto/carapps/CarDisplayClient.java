@@ -210,6 +210,14 @@ public class CarDisplayClient {
 		setState(State.READY);
 		Log.i("CarDisplayServer connected successfully (version " + version + ")");
 		recordDiagnostic("server_connected", Map.of("version", version, "capabilities", caps));
+		try {
+			Context ctx = (lastContext != null) ? lastContext : FermataApplication.get();
+			if (ctx != null) {
+				ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE)
+						.edit().putInt("CAR_APPS_CAPABILITIES", caps).apply();
+			}
+		} catch (Throwable ignored) {
+		}
 	}
 
 	private synchronized void onServerDied() {

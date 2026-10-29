@@ -29,6 +29,8 @@ import me.aap.fermata.R;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.carapps.CarAppsFeature;
+import me.aap.fermata.ui.carapps.CarAppsReadinessModel;
 import me.aap.fermata.ui.control.PhoneReadiness;
 import me.aap.fermata.ui.control.PhoneReadiness.Action;
 import me.aap.fermata.ui.control.PhoneReadiness.Check;
@@ -54,6 +56,7 @@ final class ReadinessPrefsBuilder {
 	private final FermataServiceUiBinder binder;
 	private final AutomotiveConnectionState.Listener connectionListener = state -> scheduleRefresh();
 	private final FermataServiceUiBinder.Listener binderListener = (oldItem, newItem) -> scheduleRefresh();
+	private final Runnable rootListener = this::scheduleRefresh;
 	private Snapshot snapshot;
 	@Nullable
 	private PreferenceSet set;
@@ -67,6 +70,7 @@ final class ReadinessPrefsBuilder {
 		this.snapshot = collect();
 		connection.addListener(connectionListener);
 		binder.addBroadcastListener(binderListener);
+		CarAppsFeature.addListener(rootListener);
 	}
 
 	void addTo(PreferenceSet parent) {
@@ -90,6 +94,7 @@ final class ReadinessPrefsBuilder {
 		closed = true;
 		connection.removeListener(connectionListener);
 		binder.removeBroadcastListener(binderListener);
+		CarAppsFeature.removeListener(rootListener);
 		set = null;
 	}
 
@@ -113,6 +118,42 @@ final class ReadinessPrefsBuilder {
 		addSection(target, R.string.readiness_group_required, current, REQUIRED_CHECKS);
 		addSection(target, R.string.readiness_group_stability, current, Check.BATTERY);
 		addSection(target, R.string.readiness_group_optional, current, OPTIONAL_CHECKS);
+		addCarAppsRow(target);
+	}
+
+	private void addCarAppsRow(PreferenceSet target) {
+		CarAppsReadinessModel model = CarAppsReadinessModel.from(CarAppsFeature.state(), CarAppsFeature.capabilities());
+		if (!model.rowVisible) return;
+
+		int color = (model.actionStringRes != 0) ? 0xFFEF4444 :
+				(model.warningStringRes != 0) ? 0xFFF59E0B : 0xFF22C55E;
+		String titleText = activity.getString(R.string.car_apps_readiness_title);
+		target.addButton(o -> {
+			o.ctitle = statusTitle(titleText, color);
+			o.csubtitle = carAppsSubtitle(model);
+			o.hideChevron = (model.actionStringRes == 0);
+			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
+		});
+	}
+
+	private CharSequence carAppsSubtitle(CarAppsReadinessModel model) {
+		if (model.statusStringRes == 0) return "";
+		String status = activity.getString(model.statusStringRes);
+		if (model.warningStringRes != 0) {
+			return status + " · " + activity.getString(model.warningStringRes);
+		}
+		if (model.actionStringRes != 0) {
+			return status + " · " + activity.getString(model.actionStringRes);
+		}
+		return status;
+	}
+
+	private void performCarAppsAction() {
+		if (!isRefreshAllowed(uiActive, closed)) return;
+		CarAppsFeature.Backend b = CarAppsFeature.backend();
+		if (b != null) {
+			b.requestRoot().onCompletion((granted, err) -> scheduleRefresh());
+		}
 	}
 
 	private void addConnectionRow(PreferenceSet target, Row row, Input input) {
