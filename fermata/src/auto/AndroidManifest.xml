@@ -176,5 +176,11 @@
                 tools:replace="android:resource" />
         </provider>
 
+        <provider
+            android:name="me.app.fermatax.auto.carapps.ServerBinderProvider"
+            android:authorities="${applicationId}.cardisplay"
+            android:exported="true"
+            tools:ignore="ExportedContentProvider" />
+
     </application>
 </manifest>

@@ -134,6 +134,16 @@ public class AutoManifestPolicyTest {
 		assertTrue(hasNamed(queries, "package", "me.bmax.apatch"));
 	}
 
+	@Test
+	public void autoManifestDeclaresServerBinderProviderExported() throws Exception {
+		Document manifest = parse("src/auto/AndroidManifest.xml");
+		Element provider = findNamed(manifest, "provider",
+				"me.app.fermatax.auto.carapps.ServerBinderProvider");
+		assertNotNull(provider);
+		assertEquals("true", provider.getAttributeNS(ANDROID_NS, "exported"));
+		assertEquals("${applicationId}.cardisplay", provider.getAttributeNS(ANDROID_NS, "authorities"));
+	}
+
 	private static Document parse(String path) throws Exception {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setNamespaceAware(true);
