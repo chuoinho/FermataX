@@ -17,6 +17,7 @@ import static me.aap.utils.ui.activity.ActivityDelegate.FULLSCREEN_FLAGS;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -24,8 +25,10 @@ import android.content.res.Configuration;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -92,7 +95,7 @@ public class LauncherActivity extends AppCompatActivity {
 
 		MainActivityDelegate.setTheme(this, true);
 		setRequestedOrientation();
-		var v = new AppListView(this);
+		var v = new AppListView(this, isVirtualDisplay());
 		setContentView(v);
 		var w = getWindow();
 		w.addFlags(
@@ -134,8 +137,24 @@ public class LauncherActivity extends AppCompatActivity {
 						SCREEN_ORIENTATION_SENSOR_PORTRAIT);
 	}
 
-	private static final class AppListView extends RecyclerView {
-		private final List<AppInfo> apps;
+	public boolean isVirtualDisplay() {
+		try {
+			Display display;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+				display = getDisplay();
+			} else {
+				var wm = getWindowManager();
+				display = (wm != null) ? wm.getDefaultDisplay() : null;
+			}
+			return (display != null && display.getDisplayId() != Display.DEFAULT_DISPLAY);
+		} catch (Throwable ignored) {
+			return false;
+		}
+	}
+
+	static final class AppListView extends RecyclerView {
+		private final boolean isVirtual;
+		final List<AppInfo> apps;
 		private SelectAppInfo[] selectApps;
 		private final Animation animation;
 		private final Drawable addIcon;
@@ -149,7 +168,12 @@ public class LauncherActivity extends AppCompatActivity {
 		private final int textMargin;
 
 		public AppListView(@NonNull Context ctx) {
+			this(ctx, isVirtualContext(ctx));
+		}
+
+		public AppListView(@NonNull Context ctx, boolean isVirtual) {
 			super(ctx);
+			this.isVirtual = isVirtual;
 			apps = loadAppList();
 			animation = AnimationUtils.loadAnimation(ctx, me.aap.utils.R.anim.button_press);
 			addIcon = loadIcon(R.drawable.add_circle);
@@ -161,6 +185,29 @@ public class LauncherActivity extends AppCompatActivity {
 			ItemTouchHelper h = new ItemTouchHelper(adapter.getItemTouchCallback());
 			setAdapter(adapter);
 			h.attachToRecyclerView(this);
+		}
+
+		private static boolean isVirtualContext(Context ctx) {
+			Context current = ctx;
+			while (current instanceof ContextWrapper cw) {
+				if (current instanceof LauncherActivity la) {
+					return la.isVirtualDisplay();
+				}
+				if (current instanceof Activity) break;
+				current = cw.getBaseContext();
+			}
+			if (current instanceof LauncherActivity la) {
+				return la.isVirtualDisplay();
+			}
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+				try {
+					var display = ctx.getDisplay();
+					if (display != null && display.getDisplayId() != Display.DEFAULT_DISPLAY) {
+						return true;
+					}
+				} catch (Throwable ignored) {}
+			}
+			return false;
 		}
 
 		@Override
@@ -197,7 +244,9 @@ public class LauncherActivity extends AppCompatActivity {
 						break;
 					}
 					if (app.equals(exitApp)) {
-						apps.add(AppInfo.EXIT);
+						if (!isVirtual) {
+							apps.add(AppInfo.EXIT);
+						}
 						break;
 					}
 					if (app.startsWith(pkg) && (app.equals(pkg) ||
@@ -256,12 +305,12 @@ public class LauncherActivity extends AppCompatActivity {
 			setLayoutManager(new GridLayoutManager(ctx, span));
 		}
 
-		private static class AppInfo {
-			private static final AppInfo ADD =
+		static class AppInfo {
+			static final AppInfo ADD =
 					new AppInfo(FermataApplication.get().getPackageName(), "add", null, null);
-			private static final AppInfo BACK =
+			static final AppInfo BACK =
 					new AppInfo(FermataApplication.get().getPackageName(), "back", null, null);
-			private static final AppInfo EXIT =
+			static final AppInfo EXIT =
 					new AppInfo(FermataApplication.get().getPackageName(), "exit", null, null);
 			final String pkg;
 			final String name;
@@ -420,14 +469,22 @@ public class LauncherActivity extends AppCompatActivity {
 				} else if (appInfo.equals(AppInfo.ADD)) {
 					var pm = getContext().getPackageManager();
 					var allApps = loadAllAppList(pm);
-					if (exitIcon == null) exitIcon = loadIcon(R.drawable.shutdown);
-					selectApps = new SelectAppInfo[allApps.size() + 1];
-					selectApps[0] = new SelectAppInfo(null, null, AppInfo.EXIT.pkg, AppInfo.EXIT.name,
-							getContext().getString(R.string.exit), exitIcon);
-					for (int i = 1; i < selectApps.length; i++) {
-						selectApps[i] = new SelectAppInfo(pm, allApps.get(i - 1));
+					if (isVirtual) {
+						selectApps = new SelectAppInfo[allApps.size()];
+						for (int i = 0; i < selectApps.length; i++) {
+							selectApps[i] = new SelectAppInfo(pm, allApps.get(i));
+						}
+						Arrays.sort(selectApps);
+					} else {
+						if (exitIcon == null) exitIcon = loadIcon(R.drawable.shutdown);
+						selectApps = new SelectAppInfo[allApps.size() + 1];
+						selectApps[0] = new SelectAppInfo(null, null, AppInfo.EXIT.pkg, AppInfo.EXIT.name,
+								getContext().getString(R.string.exit), exitIcon);
+						for (int i = 1; i < selectApps.length; i++) {
+							selectApps[i] = new SelectAppInfo(pm, allApps.get(i - 1));
+						}
+						Arrays.sort(selectApps, 1, selectApps.length);
 					}
-					Arrays.sort(selectApps, 1, selectApps.length);
 					for (var app : selectApps) app.selected = AppListView.this.apps.contains(app);
 					Objects.requireNonNull(getAdapter()).notifyDataSetChanged();
 				} else if (appInfo.equals(AppInfo.BACK)) {
@@ -438,9 +495,13 @@ public class LauncherActivity extends AppCompatActivity {
 						intent.addCategory(Intent.CATEGORY_LAUNCHER);
 						intent.setClassName(appInfo.pkg, appInfo.name);
 						intent.setFlags(FLAG_ACTIVITY_NEW_TASK);
-						intent.putExtra(INTENT_EXTRA_MODE, FermataApplication.get().getMirroringMode());
+						if (!isVirtual) {
+							intent.putExtra(INTENT_EXTRA_MODE, FermataApplication.get().getMirroringMode());
+						}
 						getContext().startActivity(intent);
-						MirrorDisplay.disableAccelRotation();
+						if (!isVirtual) {
+							MirrorDisplay.disableAccelRotation();
+						}
 					} catch (Exception err) {
 						Toast.makeText(getContext(), err.getLocalizedMessage(), Toast.LENGTH_LONG).show();
 					}
