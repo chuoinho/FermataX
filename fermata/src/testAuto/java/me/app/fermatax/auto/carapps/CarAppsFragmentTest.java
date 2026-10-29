@@ -16,6 +16,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.widget.ImageButton;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
@@ -218,6 +219,39 @@ public class CarAppsFragmentTest {
 		assertTrue(serverBinder.lastForceClose.get());
 	}
 
+	@Test
+	public void panelPowerButtonVisibleWhenCapabilityPresent() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		View btn = fragment.getPanelPowerButton();
+		assertEquals("Panel power button must be visible when CAP_PANEL_POWER is available",
+				View.VISIBLE, btn.getVisibility());
+	}
+
+	@Test
+	public void panelPowerButtonClickTogglesPreferenceAndClient() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		ImageButton btn = fragment.getPanelPowerButton();
+
+		assertFalse(client.isPanelOff());
+
+		btn.performClick();
+		assertTrue("Panel state in client must be off after click", client.isPanelOff());
+		assertTrue("Panel power button must be selected when off", btn.isSelected());
+
+		btn.performClick();
+		assertFalse("Panel state in client must be on after second click", client.isPanelOff());
+		assertFalse("Panel power button must not be selected when on", btn.isSelected());
+	}
+
+	@Test
+	public void panelPowerButtonHiddenWhenCapabilityMissing() {
+		serverBinder.caps = 0x17; // missing CAP_PANEL_POWER (8)
+		CarAppsFragment fragment = createAndAttachFragment();
+		View btn = fragment.getPanelPowerButton();
+		assertEquals("Panel power button must be GONE when CAP_PANEL_POWER is missing",
+				View.GONE, btn.getVisibility());
+	}
+
 	private static class FakeSurfaceHolder implements SurfaceHolder {
 		private final Surface surface;
 		private final Rect frame;
@@ -275,13 +309,15 @@ public class CarAppsFragmentTest {
 		int lastWidth;
 		int lastHeight;
 		ComponentName lastLaunchedComponent;
+		int caps = 0x1f;
+		final AtomicBoolean lastPanelPower = new AtomicBoolean(true);
 
 		TestServerBinder() {
 			attachInterface(this, ICarDisplayServer.DESCRIPTOR);
 		}
 
 		@Override
-		public int capabilities() { return 0x1f; }
+		public int capabilities() { return caps; }
 
 		@Override
 		public int attach(Surface s, int w, int h, int dpi, IBinder client) {
@@ -320,7 +356,9 @@ public class CarAppsFragmentTest {
 		}
 
 		@Override
-		public void setPanelPower(boolean on) {}
+		public void setPanelPower(boolean on) {
+			lastPanelPower.set(on);
+		}
 
 		@Override
 		public void release() {}

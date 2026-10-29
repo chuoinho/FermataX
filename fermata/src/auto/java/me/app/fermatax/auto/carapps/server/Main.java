@@ -35,6 +35,7 @@ public class Main {
 			return;
 		}
 
+		CarDisplayServerImpl server = null;
 		try {
 			int appUid = Integer.parseInt(args[0]);
 			int versionCode = Integer.parseInt(args[1]);
@@ -45,7 +46,15 @@ public class Main {
 			}
 
 			Hidden.init();
-			CarDisplayServerImpl server = new CarDisplayServerImpl(appUid, versionCode, appPackage);
+
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				try {
+					Hidden.setPhysicalDisplayPowerMode(2);
+				} catch (Throwable ignored) {
+				}
+			}));
+
+			server = new CarDisplayServerImpl(appUid, versionCode, appPackage);
 			System.out.println("SERVER_READY uid=" + appUid + " version=" + versionCode + " pkg=" + appPackage);
 
 			handoffBinderToApp(appPackage, appUid, server);
@@ -53,6 +62,17 @@ public class Main {
 			Looper.loop();
 		} catch (Throwable t) {
 			t.printStackTrace();
+			if (server != null) {
+				try {
+					server.releaseInternal();
+				} catch (Throwable ignored) {
+				}
+			} else {
+				try {
+					Hidden.setPhysicalDisplayPowerMode(2);
+				} catch (Throwable ignored) {
+				}
+			}
 			System.exit(2);
 		}
 	}
@@ -240,6 +260,10 @@ public class Main {
 			System.exit(0);
 		} catch (Throwable t) {
 			t.printStackTrace();
+			try {
+				Hidden.setPhysicalDisplayPowerMode(2);
+			} catch (Throwable ignored) {
+			}
 			System.exit(1);
 		}
 	}

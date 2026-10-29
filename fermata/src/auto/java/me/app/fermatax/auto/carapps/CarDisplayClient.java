@@ -1,12 +1,16 @@
 package me.app.fermatax.auto.carapps;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.RemoteException;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -37,10 +41,16 @@ public class CarDisplayClient {
 		FAILED
 	}
 
+	public static final String PREF_PANEL_OFF = PanelPowerPolicy.PREF_PANEL_OFF;
+
 	private static final CarDisplayClient INSTANCE = new CarDisplayClient();
 
 	private volatile State state = State.IDLE;
 	private final List<Consumer<State>> stateListeners = new CopyOnWriteArrayList<>();
+	private final List<Consumer<Boolean>> panelListeners = new CopyOnWriteArrayList<>();
+
+	private volatile boolean panelOff = false;
+	private BroadcastReceiver screenOffReceiver;
 
 	private volatile ICarDisplayServer server;
 	private volatile IBinder serverBinder;
@@ -79,6 +89,32 @@ public class CarDisplayClient {
 	public void removeStateListener(Consumer<State> listener) {
 		if (listener != null) {
 			stateListeners.remove(listener);
+		}
+	}
+
+	public boolean isPanelOff() {
+		return panelOff;
+	}
+
+	public void addPanelListener(Consumer<Boolean> listener) {
+		if (listener != null) {
+			panelListeners.add(listener);
+		}
+	}
+
+	public void removePanelListener(Consumer<Boolean> listener) {
+		if (listener != null) {
+			panelListeners.remove(listener);
+		}
+	}
+
+	private void notifyPanelListeners(boolean off) {
+		for (Consumer<Boolean> listener : panelListeners) {
+			try {
+				listener.accept(off);
+			} catch (Throwable t) {
+				Log.e(t, "Error in CarDisplayClient panel listener");
+			}
 		}
 	}
 
@@ -147,6 +183,14 @@ public class CarDisplayClient {
 
 	private synchronized void onServerDied() {
 		unlinkServerBinder();
+		if (panelOff) {
+			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.SERVER_DIED);
+			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
+				restorePanelAndWake();
+			}
+		} else {
+			unregisterScreenOffReceiver();
+		}
 		this.server = null;
 		this.serverBinder = null;
 		setState(State.RETRYING);
@@ -299,6 +343,21 @@ public class CarDisplayClient {
 		}
 	}
 
+	public int capabilities() {
+		ICarDisplayServer srv = this.server;
+		if (srv == null) return 0;
+		try {
+			return srv.capabilities();
+		} catch (RemoteException e) {
+			Log.e(e, "CarDisplayServer.capabilities failed");
+			return 0;
+		}
+	}
+
+	public boolean hasCapability(int cap) {
+		return (capabilities() & cap) == cap;
+	}
+
 	public void setPanelPower(boolean on) {
 		ICarDisplayServer srv = this.server;
 		if (srv == null) return;
@@ -309,8 +368,104 @@ public class CarDisplayClient {
 		}
 	}
 
+	public synchronized void setPanelOff(boolean off) {
+		if (off) {
+			if (!hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
+				PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.CAPABILITY_MISSING);
+				return;
+			}
+			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.USER_OFF);
+			if (action == PanelPowerPolicy.PanelAction.PANEL_OFF_AND_HOLD) {
+				panelOff = true;
+				setPanelPower(false);
+				registerScreenOffReceiver();
+				notifyPanelListeners(true);
+			}
+		} else {
+			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.USER_ON);
+			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
+				restorePanelAndWake();
+			}
+		}
+	}
+
+	private synchronized void registerScreenOffReceiver() {
+		if (screenOffReceiver != null) return;
+		if (lastContext == null) return;
+		screenOffReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				if (intent != null && Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+					Log.i("CarDisplayClient received ACTION_SCREEN_OFF, restoring phone panel");
+					onScreenOffReceived();
+				}
+			}
+		};
+		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+		lastContext.registerReceiver(screenOffReceiver, filter);
+	}
+
+	private synchronized void unregisterScreenOffReceiver() {
+		if (screenOffReceiver != null && lastContext != null) {
+			try {
+				lastContext.unregisterReceiver(screenOffReceiver);
+			} catch (Throwable ignored) {
+			}
+			screenOffReceiver = null;
+		}
+	}
+
+	private synchronized void onScreenOffReceived() {
+		PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.SCREEN_OFF_BROADCAST);
+		if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
+			restorePanelAndWake();
+		}
+	}
+
+	private synchronized void restorePanelAndWake() {
+		unregisterScreenOffReceiver();
+		panelOff = false;
+		setPanelPower(true);
+		wakeScreen();
+		notifyPanelListeners(false);
+	}
+
+	private void wakeScreen() {
+		if (lastContext == null) return;
+		try {
+			PowerManager pm = (PowerManager) lastContext.getSystemService(Context.POWER_SERVICE);
+			if (pm != null) {
+				@SuppressWarnings("deprecation")
+				PowerManager.WakeLock wl = pm.newWakeLock(
+						PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE,
+						"fermatax:panelwake");
+				wl.acquire(1000);
+			}
+		} catch (Throwable ignored) {
+		}
+	}
+
+	public synchronized void onCarSessionStopped() {
+		if (panelOff) {
+			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.CAR_DISCONNECTED);
+			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
+				restorePanelAndWake();
+			}
+		} else {
+			unregisterScreenOffReceiver();
+		}
+	}
+
 	public synchronized void release() {
 		unlinkServerBinder();
+		if (panelOff) {
+			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.RELEASED);
+			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
+				restorePanelAndWake();
+			}
+		} else {
+			unregisterScreenOffReceiver();
+		}
 		ICarDisplayServer srv = this.server;
 		this.server = null;
 		this.serverBinder = null;
@@ -349,6 +504,8 @@ public class CarDisplayClient {
 	}
 
 	void resetForTesting() {
+		unregisterScreenOffReceiver();
+		panelOff = false;
 		unlinkServerBinder();
 		this.server = null;
 		this.serverBinder = null;
@@ -356,6 +513,7 @@ public class CarDisplayClient {
 		this.retryAttempt = 0;
 		this.testCommandRunner = null;
 		this.stateListeners.clear();
+		this.panelListeners.clear();
 		this.lastContext = null;
 	}
 }
