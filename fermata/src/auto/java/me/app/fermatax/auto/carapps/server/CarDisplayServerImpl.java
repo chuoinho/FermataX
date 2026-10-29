@@ -38,14 +38,14 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	private final String appPackage;
 	private final PowerManager.WakeLock wakeLock;
 
-	private VirtualDisplay virtualDisplay;
-	private int displayId = -1;
+	private volatile VirtualDisplay virtualDisplay;
+	private volatile int displayId = -1;
 	private IBinder clientBinder;
 
 	private final IBinder.DeathRecipient deathRecipient = new IBinder.DeathRecipient() {
 		@Override
 		public void binderDied() {
-			release();
+			releaseInternal();
 		}
 	};
 
@@ -68,7 +68,7 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		}
 
 		if (virtualDisplay != null && virtualDisplay.getDisplay() != null && virtualDisplay.getDisplay().isValid()) {
-			setSurface(s, w, h, dpi);
+			setSurfaceInternal(s, w, h, dpi);
 			bindClient(client);
 			return displayId;
 		}
@@ -134,11 +134,14 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	}
 
 	@Override
-	public synchronized void setSurface(@Nullable Surface s, int w, int h, int dpi) {
+	public void setSurface(@Nullable Surface s, int w, int h, int dpi) {
 		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid)) {
 			return;
 		}
+		setSurfaceInternal(s, w, h, dpi);
+	}
 
+	public synchronized void setSurfaceInternal(@Nullable Surface s, int w, int h, int dpi) {
 		if (virtualDisplay != null) {
 			try {
 				virtualDisplay.setSurface(s);
@@ -245,11 +248,14 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	}
 
 	@Override
-	public synchronized void setPanelPower(boolean on) {
+	public void setPanelPower(boolean on) {
 		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid)) {
 			return;
 		}
+		setPanelPowerInternal(on);
+	}
 
+	public synchronized void setPanelPowerInternal(boolean on) {
 		if (!on) {
 			Hidden.setPhysicalDisplayPowerMode(0); // 0 = OFF
 			if (wakeLock != null && !wakeLock.isHeld()) {
@@ -270,8 +276,16 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	}
 
 	@Override
-	public synchronized void release() {
-		setPanelPower(true);
+	public void release() {
+		int callingUid = Binder.getCallingUid();
+		if (callingUid != android.os.Process.myUid() && !CallerPolicy.serverAccepts(callingUid, appUid)) {
+			return;
+		}
+		releaseInternal();
+	}
+
+	public synchronized void releaseInternal() {
+		setPanelPowerInternal(true);
 		if (wakeLock != null && wakeLock.isHeld()) {
 			try {
 				wakeLock.release();
