@@ -41,6 +41,7 @@ public final class DashboardItems {
 	public static final String FAVORITES = "favorites";
 	public static final String RECENT = "recent";
 	public static final String PLAYLISTS = "playlists";
+	public static final String CAR_APPS = "car_apps";
 	public static final String MENU = "menu";
 
 	private DashboardItems() {
@@ -157,10 +158,14 @@ public final class DashboardItems {
 		if (id == R.id.favorites_fragment) return FAVORITES;
 		if (id == R.id.recent_fragment) return RECENT;
 		if (id == R.id.playlists_fragment) return PLAYLISTS;
+		if (id == R.id.car_apps_fragment) return CAR_APPS;
 		if (id == R.id.menu) return MENU;
 
-		for (AddonInfo ai : AddonManager.get().getAddonInfos()) {
-			if (AddonUiMetadata.isNavigationItem(ai) && (ai.addonId == id)) return ai.className;
+		AddonManager manager = AddonManager.get();
+		if (manager != null) {
+			for (AddonInfo ai : manager.getAddonInfos()) {
+				if (AddonUiMetadata.isNavigationItem(ai) && (ai.addonId == id)) return ai.className;
+			}
 		}
 
 		Log.e("Unknown DashboardItem id: ", id);
@@ -168,7 +173,7 @@ public final class DashboardItems {
 	}
 
 	@Nullable
-	private static NavItem getNavItem(String name) {
+	static NavItem getNavItem(String name) {
 		switch (name) {
 			case DASHBOARD:
 				return new NavItem(name, R.id.dashboard_fragment, R.drawable.home, R.string.home);
@@ -183,6 +188,9 @@ public final class DashboardItems {
 			case PLAYLISTS:
 				return new NavItem(name, R.id.playlists_fragment, R.drawable.playlist,
 						R.string.playlists);
+			case CAR_APPS:
+				return new NavItem(name, R.id.car_apps_fragment, R.drawable.ic_car_apps,
+						R.string.car_apps_title);
 			case MENU:
 				return new NavItem(name, R.id.menu, me.aap.utils.R.drawable.menu, R.string.menu);
 		}
@@ -220,10 +228,16 @@ public final class DashboardItems {
 		addMissingItem(names, FAVORITES, FOLDERS);
 		addMissingItem(names, RECENT, FAVORITES);
 		addMissingItem(names, PLAYLISTS, RECENT);
+		if (isAllowed(CAR_APPS, includeDashboard, includeMenu, includeDisabled, navigationLayout)) {
+			addMissingItem(names, CAR_APPS, PLAYLISTS);
+		}
 
-		for (AddonInfo ai : AddonManager.get().getAddonInfos()) {
-			if ((navigationLayout ? isNavigationAddon(ai, includeDisabled) :
-					isFragmentAddon(ai, includeDisabled))) names.add(ai.className);
+		AddonManager manager = AddonManager.get();
+		if (manager != null) {
+			for (AddonInfo ai : manager.getAddonInfos()) {
+				if ((navigationLayout ? isNavigationAddon(ai, includeDisabled) :
+						isFragmentAddon(ai, includeDisabled))) names.add(ai.className);
+			}
 		}
 
 		if (includeMenu) names.add(MENU);
@@ -238,8 +252,12 @@ public final class DashboardItems {
 		defaults.add(FAVORITES);
 		defaults.add(RECENT);
 		defaults.add(PLAYLISTS);
-		for (AddonInfo info : AddonManager.get().getAddonInfos()) {
-			if (AddonUiMetadata.isDashboardItem(info)) defaults.add(info.className);
+		defaults.add(CAR_APPS);
+		AddonManager manager = AddonManager.get();
+		if (manager != null) {
+			for (AddonInfo info : manager.getAddonInfos()) {
+				if (AddonUiMetadata.isDashboardItem(info)) defaults.add(info.className);
+			}
 		}
 		defaults.sort((left, right) -> Integer.compare(uiRefreshPriority(left), uiRefreshPriority(right)));
 
@@ -265,11 +283,12 @@ public final class DashboardItems {
 		if (FOLDERS.equals(name)) return 4;
 		if (FAVORITES.equals(name)) return 5;
 		if (PLAYLISTS.equals(name)) return 6;
-		if (RECENT.equals(name)) return 7;
+		if (CAR_APPS.equals(name)) return 7;
+		if (RECENT.equals(name)) return 8;
 		if (MENU.equals(name)) return 100;
 		AddonInfo info = findAddonInfo(name);
 		if (info != null) return AddonUiMetadata.priority(info);
-		return 8;
+		return 9;
 	}
 
 	private static void addMissingItem(LinkedHashSet<String> names, String name,
@@ -290,10 +309,13 @@ public final class DashboardItems {
 																	boolean includeDisabled, boolean navigationLayout) {
 		if (DASHBOARD.equals(name)) return includeDashboard;
 		if (MENU.equals(name)) return includeMenu;
+		if (CAR_APPS.equals(name)) return includeDisabled || me.aap.fermata.ui.carapps.CarAppsFeature.isVisible();
 		if (FOLDERS.equals(name) || FAVORITES.equals(name) || RECENT.equals(name) ||
 				PLAYLISTS.equals(name)) return true;
 
-		for (AddonInfo ai : AddonManager.get().getAddonInfos()) {
+		AddonManager manager = AddonManager.get();
+		if (manager == null) return false;
+		for (AddonInfo ai : manager.getAddonInfos()) {
 			if (ai.className.equals(name)) return navigationLayout ?
 					isNavigationAddon(ai, includeDisabled) : isFragmentAddon(ai, includeDisabled);
 		}
@@ -303,18 +325,20 @@ public final class DashboardItems {
 	private static boolean isFragmentAddon(AddonInfo ai, boolean includeDisabled) {
 		if (ai == null) return false;
 		if (!AddonUiMetadata.isDashboardItem(ai)) return false;
-		AddonState state = AddonManager.get().getAddonState(ai);
+		AddonManager manager = AddonManager.get();
+		AddonState state = (manager != null) ? manager.getAddonState(ai) : AddonState.DISABLED;
 		return includeDisabled || (state != AddonState.DISABLED);
 	}
 
 	private static boolean isNavigationAddon(AddonInfo info, boolean includeDisabled) {
 		if ((info == null) || !AddonUiMetadata.isNavigationItem(info)) return false;
-		AddonState state = AddonManager.get().getAddonState(info);
+		AddonManager manager = AddonManager.get();
+		AddonState state = (manager != null) ? manager.getAddonState(info) : AddonState.DISABLED;
 		return includeDisabled || (state != AddonState.DISABLED);
 	}
 
 	@Nullable
-	private static Item getItem(Context ctx, String name, boolean includeDisabled) {
+	static Item getItem(Context ctx, String name, boolean includeDisabled) {
 		switch (name) {
 			case DASHBOARD:
 				return new Item(name, R.id.dashboard_fragment, R.drawable.home,
@@ -331,6 +355,10 @@ public final class DashboardItems {
 			case PLAYLISTS:
 				return new Item(name, R.id.playlists_fragment, R.drawable.playlist,
 						ctx.getString(R.string.playlists), ctx.getString(R.string.dashboard_playlists_sub), null);
+			case CAR_APPS:
+				if (!includeDisabled && !me.aap.fermata.ui.carapps.CarAppsFeature.isVisible()) return null;
+				return new Item(name, R.id.car_apps_fragment, R.drawable.ic_car_apps,
+						ctx.getString(R.string.car_apps_title), ctx.getString(R.string.car_apps_dashboard_sub), null);
 			case MENU:
 				return new Item(name, R.id.menu, me.aap.utils.R.drawable.menu,
 						ctx.getString(R.string.menu), ctx.getString(R.string.dashboard_menu_sub), null);
@@ -339,7 +367,8 @@ public final class DashboardItems {
 		AddonInfo info = findAddonInfo(name);
 		if (info == null) return null;
 
-		AddonState state = AddonManager.get().getAddonState(info);
+		AddonManager manager = AddonManager.get();
+		AddonState state = (manager != null) ? manager.getAddonState(info) : AddonState.DISABLED;
 		if (isFragmentAddon(info, false)) {
 			String subtitle = ((state == AddonState.LOADING) || (state == AddonState.ENABLED_PENDING)) ?
 					ctx.getString(R.string.loading) : getAddonSubtitle(ctx, info);
@@ -352,7 +381,7 @@ public final class DashboardItems {
 					ctx.getString(R.string.dashboard_addon_disabled_sub), info);
 		}
 
-		FermataAddon addon = AddonManager.get().getAddon(name);
+		FermataAddon addon = (manager != null) ? manager.getAddon(name) : null;
 		if ((addon != null) && includeDisabled) {
 			return new Item(name, addon.getAddonId(), info.icon, getAddonTitle(ctx, info),
 					getAddonSubtitle(ctx, info), info);
@@ -363,7 +392,8 @@ public final class DashboardItems {
 
 	@Nullable
 	private static AddonInfo findAddonInfo(String name) {
-		return AddonManager.get().getAddonInfo(name);
+		AddonManager manager = AddonManager.get();
+		return (manager != null) ? manager.getAddonInfo(name) : null;
 	}
 
 	private static String getAddonSubtitle(Context ctx, AddonInfo info) {

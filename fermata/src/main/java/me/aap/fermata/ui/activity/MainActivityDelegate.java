@@ -966,7 +966,10 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	protected ActivityFragment createFragment(int id) {
-		if (id == R.id.dashboard_fragment) {
+		if (id == R.id.car_apps_fragment) {
+			me.aap.fermata.ui.carapps.CarAppsFeature.Backend backend = me.aap.fermata.ui.carapps.CarAppsFeature.backend();
+			return (backend != null) ? backend.createFragment() : null;
+		} else if (id == R.id.dashboard_fragment) {
 			return new DashboardFragment();
 		} else if (id == R.id.folders_fragment) {
 			return new FoldersFragment();
