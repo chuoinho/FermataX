@@ -65,6 +65,19 @@ public final class StremioWebView extends FermataWebView {
 		audioBridge.install();
 		openOnCarBridge = new StremioOpenOnCarBridge(this);
 		openOnCarBridge.install();
+		installDocumentStartCleanScript();
+	}
+
+	private void installDocumentStartCleanScript() {
+		if (androidx.webkit.WebViewFeature.isFeatureSupported(
+				androidx.webkit.WebViewFeature.DOCUMENT_START_SCRIPT)) {
+			try {
+				androidx.webkit.WebViewCompat.addDocumentStartJavaScript(this,
+						StremioScripts.injectSource(), java.util.Set.of("https://web.stremio.com"));
+			} catch (RuntimeException error) {
+				me.aap.utils.log.Log.w(error, "Stremio clean script document start registration failed");
+			}
+		}
 	}
 
 	@Override
@@ -133,6 +146,9 @@ public final class StremioWebView extends FermataWebView {
 			clearHistory();
 		}
 		super.pageLoaded(url);
+		if (StremioWebSessionPolicy.isHostedRoute(url)) {
+			evaluateJavascript(StremioScripts.injectSource(), null);
+		}
 		WebBrowserAddon addon = getAddon();
 		if (addon instanceof StremioWebAddon stremio) stremio.onPageCommitted(url);
 	}

@@ -373,7 +373,7 @@ final class InterfacePrefsBuilder {
 		if (theme != MainActivityPrefs.THEME_CLASSIC &&
 				theme != MainActivityPrefs.THEME_MATERIAL_YOU &&
 				theme != MainActivityPrefs.THEME_GLASS) {
-			store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_CLASSIC);
+			store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_GLASS);
 		}
 	}
 
@@ -382,7 +382,7 @@ final class InterfacePrefsBuilder {
 		if (theme != MainActivityPrefs.THEME_CLASSIC &&
 				theme != MainActivityPrefs.THEME_MATERIAL_YOU &&
 				theme != MainActivityPrefs.THEME_GLASS) {
-			store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_CLASSIC);
+			store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_GLASS);
 		}
 	}
 

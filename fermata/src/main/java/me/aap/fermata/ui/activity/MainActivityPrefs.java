@@ -42,7 +42,7 @@ public interface MainActivityPrefs
 
 	Pref<Supplier<String>> PREF_GLASS_QUICK_SHORTCUTS = Pref.s("GLASS_QUICK_SHORTCUTS", "[]");
 	Pref<IntSupplier> GLASS_SPEED_UNIT = Pref.i("GLASS_SPEED_UNIT", 0);
-	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_CLASSIC);
+	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_GLASS);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN = Pref.b("SHOW_PG_UP_DOWN", true);
@@ -91,7 +91,7 @@ public interface MainActivityPrefs
 	Pref<IntSupplier> GLASS_APPEARANCE = Pref.i("GLASS_APPEARANCE", GLASS_APPEARANCE_NIGHT);
 	Pref<DoubleSupplier> GLASS_RAIL_Y_RATIO = Pref.f("GLASS_RAIL_Y_RATIO", 0.5f);
 
-	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_CLASSIC);
+	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_GLASS);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
 	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
@@ -118,10 +118,10 @@ public interface MainActivityPrefs
 			if (aaTheme == THEME_CLASSIC || aaTheme == THEME_MATERIAL_YOU || aaTheme == THEME_GLASS) {
 				return aaTheme;
 			}
-			return THEME_CLASSIC;
+			return THEME_GLASS;
 		}
 		int theme = getIntPref(THEME_MAIN);
-		if (theme != THEME_CLASSIC && theme != THEME_MATERIAL_YOU && theme != THEME_GLASS) return THEME_CLASSIC;
+		if (theme != THEME_CLASSIC && theme != THEME_MATERIAL_YOU && theme != THEME_GLASS) return THEME_GLASS;
 		return theme;
 	}
 

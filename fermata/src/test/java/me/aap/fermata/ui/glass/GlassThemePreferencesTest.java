@@ -22,8 +22,18 @@ public class GlassThemePreferencesTest {
 		BasicPreferenceStore store = new BasicPreferenceStore();
 		TestMainActivityPrefs prefs = new TestMainActivityPrefs(store);
 
-		// Default phone theme is Classic
+		// Default phone theme on first use is Glass
+		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(false));
+		assertTrue(prefs.isGlassTheme(false));
+
+		// If user chose Classic theme, returns Classic without auto-switching
+		store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_CLASSIC);
 		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(false));
+		assertFalse(prefs.isGlassTheme(false));
+
+		// If user chose Material You theme, returns Material You without auto-switching
+		store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_MATERIAL_YOU);
+		assertEquals(MainActivityPrefs.THEME_MATERIAL_YOU, prefs.getThemePref(false));
 		assertFalse(prefs.isGlassTheme(false));
 
 		// When phone selects Glass theme, returns Glass
@@ -31,19 +41,29 @@ public class GlassThemePreferencesTest {
 		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(false));
 		assertTrue(prefs.isGlassTheme(false));
 
-		// Invalid theme falls back to Classic
+		// Invalid theme falls back to Glass
 		store.applyIntPref(MainActivityPrefs.THEME_MAIN, 999);
-		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(false));
-		assertFalse(prefs.isGlassTheme(false));
+		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(false));
+		assertTrue(prefs.isGlassTheme(false));
 	}
 
 	@Test
-	public void testAutomotiveDefaultsToClassicAndSupportsGlassOptIn() {
+	public void testAutomotiveDefaultsToGlassAndSupportsExplicitChoice() {
 		BasicPreferenceStore store = new BasicPreferenceStore();
 		TestMainActivityPrefs prefs = new TestMainActivityPrefs(store);
 
-		// Fresh install AA theme defaults to Classic (no silent Glass force)
+		// Fresh install AA theme defaults to Glass
+		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(true));
+		assertTrue(prefs.isGlassTheme(true));
+
+		// Can explicitly select Classic on AA
+		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_CLASSIC);
 		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(true));
+		assertFalse(prefs.isGlassTheme(true));
+
+		// Can explicitly select Material You on AA
+		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_MATERIAL_YOU);
+		assertEquals(MainActivityPrefs.THEME_MATERIAL_YOU, prefs.getThemePref(true));
 		assertFalse(prefs.isGlassTheme(true));
 
 		// Can opt in to Glass on AA
@@ -51,10 +71,10 @@ public class GlassThemePreferencesTest {
 		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(true));
 		assertTrue(prefs.isGlassTheme(true));
 
-		// Invalid AA theme falls back to Classic
+		// Invalid AA theme falls back to Glass
 		store.applyIntPref(MainActivityPrefs.THEME_AA, 999);
-		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(true));
-		assertFalse(prefs.isGlassTheme(true));
+		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(true));
+		assertTrue(prefs.isGlassTheme(true));
 	}
 
 	@Test
