@@ -50,6 +50,11 @@ class RadioBrowserStation {
 		return lower.startsWith("http://") || lower.startsWith("https://");
 	}
 
+	boolean hasFavicon() {
+		String lower = favicon.toLowerCase();
+		return lower.startsWith("http://") || lower.startsWith("https://");
+	}
+
 	String getStreamUrl() {
 		return !urlResolved.isEmpty() ? urlResolved : url;
 	}

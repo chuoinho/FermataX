@@ -106,10 +106,19 @@ public class SearchFolder extends BrowsableItemBase {
 					return recursiveSearch(id, q, parent, parentSupplier);
 				}
 			});
+		} else if (parent.getRoot() instanceof SearchProvider sp) {
+			return recursiveSearch(id, q, parent, parentSupplier).then(localSearch ->
+					sp.search(q, localSearch.getItemsFound()).map(mergedItems ->
+							SearchFolder.create(id, parent, (List<Item>) (List<?>) mergedItems, parentSupplier))
+			);
 		} else {
 			return App.get().execute(() -> recursiveSearch(id, q, parent, parentSupplier))
 					.map(FutureSupplier::peek);
 		}
+	}
+
+	public interface SearchProvider {
+		FutureSupplier<List<? extends Item>> search(String query, List<? extends Item> localResults);
 	}
 
 	/** Invalidates voice-search results for one media root without flushing unrelated addons. */

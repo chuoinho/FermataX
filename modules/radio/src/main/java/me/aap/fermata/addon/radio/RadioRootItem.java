@@ -16,7 +16,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.utils.async.FutureSupplier;
 
-public class RadioRootItem extends ExtRoot implements RadioItem {
+public class RadioRootItem extends ExtRoot implements RadioItem, SearchFolder.SearchProvider {
 	public static final String ID = "Radio";
 	static final String SCHEME = "radio";
 	private final RadioBrowserApi api;
@@ -73,13 +73,31 @@ public class RadioRootItem extends ExtRoot implements RadioItem {
 	@Override
 	protected FutureSupplier<List<Item>> listChildren() {
 		List<RadioSource> sources = sourceStore.list();
-		List<Item> items = new ArrayList<>(sources.size() + 4);
+		List<Item> items = new ArrayList<>(sources.size() + 6);
 		for (RadioSource source : sources) items.add(new RadioSourceItem(this, source));
+		String countryCode = RadioCountryDetector.detectCountryCode(getLib().getContext());
+		if (countryCode != null) {
+			items.add(RadioStationFolder.nearYou(this, countryCode));
+		}
 		items.add(RadioStationFolder.popular(this));
 		items.add(RadioStationFolder.topVoted(this));
 		items.add(RadioDirectoryFolder.countries(this));
+		items.add(RadioDirectoryFolder.languages(this));
 		items.add(RadioDirectoryFolder.tags(this));
 		return completed(items);
+	}
+
+	@Override
+	public FutureSupplier<List<? extends Item>> search(String query, List<? extends Item> localResults) {
+		return api.searchByName(query).map(remoteStations -> {
+			List<Item> remoteItems = new ArrayList<>(remoteStations.size());
+			for (RadioBrowserStation station : remoteStations) {
+				if (station.hasStreamUrl()) {
+					remoteItems.add(new RadioStationItem(this, station));
+				}
+			}
+			return RadioSearchResultMerger.merge(localResults, remoteItems);
+		});
 	}
 
 	void saveSource(RadioSource source) {
@@ -125,12 +143,29 @@ public class RadioRootItem extends ExtRoot implements RadioItem {
 		if (RadioStationFolder.ID_POPULAR.equals(id)) return RadioStationFolder.popular(this);
 		if (RadioStationFolder.ID_TOP_VOTED.equals(id)) return RadioStationFolder.topVoted(this);
 		if (RadioDirectoryFolder.ID_COUNTRIES.equals(id)) return RadioDirectoryFolder.countries(this);
+		if (RadioDirectoryFolder.ID_LANGUAGES.equals(id)) return RadioDirectoryFolder.languages(this);
 		if (RadioDirectoryFolder.ID_TAGS.equals(id)) return RadioDirectoryFolder.tags(this);
+		if (id.startsWith(RadioStationFolder.ID_NEARBY_PREFIX)) {
+			String countryCode = RadioStationFolder.decodeNearby(id);
+			int offset = RadioStationFolder.decodeNearbyOffset(id);
+			String name = getLib().getContext().getString(R.string.radio_near_you);
+			return new RadioStationFolder(id, this, name, RadioStationFolder.Type.NEARBY,
+					countryCode, null, offset);
+		}
 		if (id.startsWith(RadioStationFolder.ID_COUNTRY_PREFIX)) {
-			return RadioStationFolder.country(this, RadioStationFolder.decodeCountry(id));
+			RadioBrowserApi.DirectoryEntry entry = RadioStationFolder.decodeCountry(id);
+			return new RadioStationFolder(id, this, entry.name, RadioStationFolder.Type.COUNTRY,
+					entry.code, null, entry.stationCount);
+		}
+		if (id.startsWith(RadioStationFolder.ID_LANGUAGE_PREFIX)) {
+			RadioBrowserApi.DirectoryEntry entry = RadioStationFolder.decodeLanguage(id);
+			return new RadioStationFolder(id, this, entry.name, RadioStationFolder.Type.LANGUAGE,
+					entry.code, null, entry.stationCount);
 		}
 		if (id.startsWith(RadioStationFolder.ID_TAG_PREFIX)) {
-			return RadioStationFolder.tag(this, RadioStationFolder.decodeTag(id));
+			RadioBrowserApi.DirectoryEntry entry = RadioStationFolder.decodeTag(id);
+			return new RadioStationFolder(id, this, entry.name, RadioStationFolder.Type.TAG,
+					entry.code, null, entry.stationCount);
 		}
 		return null;
 	}

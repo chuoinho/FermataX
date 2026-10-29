@@ -3,6 +3,7 @@
 ## [2.1] - 2026-10-29
 
 ### What's New & Noteworthy
+- **Radio-Browser Coverage**: Expanded station & country coverage, pagination with "Load more", new Languages directory, Near you folder, search by name, and station favicon display.
 - **Glass theme (New)**: A frosted-glass look for Android Auto and phones, with a GPS speedometer, trip computer, hourly weather, custom shortcuts and its own Day/Night switch. Features translucent acrylic cards, responsive Bento dashboard layouts, and seamless theme switching.
 - **Use your phone as a remote ("Open on Car")**: Skip tracks, Play/Pause, or pick content on your phone and send it to the car screen. Essential when the car display has no touch screen.
 - **Car Finder**: A map, compass radar and a photo of your parking spot help you find your car in big parking lots, with full Day and Night mode support.
