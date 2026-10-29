@@ -1,0 +1,110 @@
+package me.aap.fermata.ui.carapps;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+
+import androidx.annotation.Nullable;
+
+import java.io.File;
+import java.util.function.Predicate;
+
+/**
+ * Passive root detector for the Car Apps feature.
+ * <p>
+ * NEVER executes su or any process; detection is purely passive via file
+ * checks, package manager queries, and recorded preferences.
+ */
+public final class RootProbe {
+
+	public static final String PREF_ROOT_GRANTED = "CAR_APPS_ROOT_GRANTED";
+
+	public static final String[] SU_PATHS = {
+			"/system/bin/su",
+			"/system/xbin/su",
+			"/sbin/su",
+			"/product/bin/su",
+			"/vendor/bin/su"
+	};
+
+	public static final String[] MANAGER_PACKAGES = {
+			"com.topjohnwu.magisk",
+			"me.weishu.kernelsu",
+			"me.bmax.apatch"
+	};
+
+	private RootProbe() {
+	}
+
+	public static RootState detect(@Nullable Predicate<String> fileExists,
+	                               @Nullable Predicate<String> packageInstalled,
+	                               boolean grantedBefore) {
+		boolean rootDetected = false;
+		if (fileExists != null) {
+			for (String path : SU_PATHS) {
+				if (fileExists.test(path)) {
+					rootDetected = true;
+					break;
+				}
+			}
+		}
+		if (!rootDetected && packageInstalled != null) {
+			for (String pkg : MANAGER_PACKAGES) {
+				if (packageInstalled.test(pkg)) {
+					rootDetected = true;
+					break;
+				}
+			}
+		}
+		if (!rootDetected) {
+			return RootState.ABSENT;
+		}
+		return grantedBefore ? RootState.GRANTED : RootState.AVAILABLE;
+	}
+
+	public static void refresh(@Nullable Context ctx) {
+		if (ctx == null) {
+			CarAppsFeature.setState(RootState.ABSENT);
+			return;
+		}
+		SharedPreferences prefs = ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE);
+		boolean grantedBefore = (prefs != null) && prefs.getBoolean(PREF_ROOT_GRANTED, false);
+
+		PackageManager pm = ctx.getPackageManager();
+		Predicate<String> packageInstalled = pkg -> {
+			if (pm == null) {
+				return false;
+			}
+			try {
+				pm.getPackageInfo(pkg, 0);
+				return true;
+			} catch (PackageManager.NameNotFoundException ignored) {
+				return false;
+			} catch (Throwable ignored) {
+				return false;
+			}
+		};
+
+		Predicate<String> fileExists = path -> {
+			try {
+				return new File(path).exists();
+			} catch (Throwable ignored) {
+				return false;
+			}
+		};
+
+		RootState state = detect(fileExists, packageInstalled, grantedBefore);
+		CarAppsFeature.setState(state);
+	}
+
+	public static void recordGranted(@Nullable Context ctx, boolean granted) {
+		if (ctx == null) {
+			return;
+		}
+		SharedPreferences prefs = ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE);
+		if (prefs != null) {
+			prefs.edit().putBoolean(PREF_ROOT_GRANTED, granted).apply();
+		}
+		refresh(ctx);
+	}
+}

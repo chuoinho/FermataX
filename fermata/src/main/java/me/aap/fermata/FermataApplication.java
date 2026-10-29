@@ -64,6 +64,15 @@ public class FermataApplication extends NetSplitCompatApp {
 		vfsManager = new FermataVfsManager();
 		bitmapCache = new BitmapCache();
 		me.aap.fermata.ui.glass.speedo.TripTrackingAutoBinder.install(this);
+		if (me.aap.fermata.BuildConfig.AUTO) {
+			me.aap.fermata.ui.carapps.RootProbe.refresh(this);
+			try {
+				Class<?> cls = Class.forName("me.app.fermatax.auto.carapps.AutoCarAppsBackend");
+				cls.getMethod("install", Context.class).invoke(null, this);
+			} catch (Throwable ignored) {
+				// AutoCarAppsBackend will be implemented in Task 6; safe reflection fallback
+			}
+		}
 		diagnostics.recordEssential("application", "application_initialized",
 				DiagnosticPriority.STATE, null, null);
 	}

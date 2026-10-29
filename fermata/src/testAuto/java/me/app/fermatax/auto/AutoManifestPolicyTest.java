@@ -124,6 +124,16 @@ public class AutoManifestPolicyTest {
 		assertEquals("remove", removal.getAttributeNS(TOOLS_NS, "node"));
 	}
 
+	@Test
+	public void autoManifestDeclaresRootManagersInQueries() throws Exception {
+		Document manifest = parse("src/auto/AndroidManifest.xml");
+		Element queries = (Element) manifest.getElementsByTagName("queries").item(0);
+		assertNotNull(queries);
+		assertTrue(hasNamed(queries, "package", "com.topjohnwu.magisk"));
+		assertTrue(hasNamed(queries, "package", "me.weishu.kernelsu"));
+		assertTrue(hasNamed(queries, "package", "me.bmax.apatch"));
+	}
+
 	private static Document parse(String path) throws Exception {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		factory.setNamespaceAware(true);
