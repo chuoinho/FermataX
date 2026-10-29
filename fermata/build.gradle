@@ -16,6 +16,9 @@ def noBackgroundLocation = project.getProperties()
 
 android {
     testOptions.unitTests.includeAndroidResources = true
+    buildFeatures {
+        aidl = true
+    }
     defaultConfig {
         namespace = 'me.aap.fermata'
         applicationId configuredApplicationId

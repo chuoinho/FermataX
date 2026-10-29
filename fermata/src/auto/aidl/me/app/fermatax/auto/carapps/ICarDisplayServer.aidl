@@ -1,0 +1,24 @@
+package me.app.fermatax.auto.carapps;
+
+import android.content.ComponentName;
+import android.view.MotionEvent;
+import android.view.Surface;
+
+interface ICarDisplayServer {
+    const int CAP_VD = 1;
+    const int CAP_TRUSTED = 2;
+    const int CAP_INJECT = 4;
+    const int CAP_PANEL_POWER = 8;
+    const int CAP_IME = 16;
+
+    int capabilities();
+    int attach(in Surface s, int w, int h, int dpi, IBinder client);
+    void setSurface(in @nullable Surface s, int w, int h, int dpi);
+    oneway void inject(in MotionEvent e);
+    oneway void injectKey(int keyCode);
+    int launch(in ComponentName c, int intentFlags);
+    String closeTopApp(boolean force);
+    void setPanelPower(boolean on);
+    void release();
+    int serverVersion();
+}
