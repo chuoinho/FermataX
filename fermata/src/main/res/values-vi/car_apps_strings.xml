@@ -2,4 +2,11 @@
 <resources>
     <string name="car_apps_title">Ứng dụng xe</string>
     <string name="car_apps_dashboard_sub">Màn hình xe độc lập</string>
+    <string name="car_apps_loading">Đang khởi động màn hình xe…</string>
+    <string name="car_apps_needs_root">Cần quyền root để chạy ứng dụng xe độc lập</string>
+    <string name="car_apps_grant_root">Cấp quyền root</string>
+    <string name="car_apps_server_error">Không thể khởi động máy chủ hiển thị xe</string>
+    <string name="car_apps_nav_back">Quay lại</string>
+    <string name="car_apps_nav_drawer">Ngăn ứng dụng</string>
+    <string name="car_apps_nav_close">Đóng ứng dụng</string>
 </resources>

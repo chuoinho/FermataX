@@ -1,0 +1,336 @@
+package me.app.fermatax.auto.carapps;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import android.app.Application;
+import android.content.ComponentName;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.os.Binder;
+import android.os.IBinder;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import me.aap.fermata.BuildConfig;
+import me.aap.fermata.ui.carapps.CarAppsFeature;
+import me.aap.fermata.ui.carapps.RootState;
+import me.app.fermatax.auto.CarService;
+import me.app.fermatax.auto.LauncherActivity;
+
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = 35, application = Application.class)
+public class CarAppsFragmentTest {
+
+	private Context context;
+	private CarDisplayClient client;
+	private TestServerBinder serverBinder;
+	private final List<Surface> testSurfaces = new ArrayList<>();
+
+	@Before
+	public void setUp() {
+		context = RuntimeEnvironment.getApplication();
+		client = CarDisplayClient.get();
+		client.resetForTesting();
+		serverBinder = new TestServerBinder();
+		client.onServerBinderReceived(serverBinder);
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		for (Surface s : testSurfaces) {
+			try {
+				s.release();
+			} catch (Throwable ignored) {
+			}
+		}
+		testSurfaces.clear();
+		client.resetForTesting();
+		CarAppsFeature.setState(RootState.ABSENT);
+		setCarServiceActive(false);
+	}
+
+	private static void setCarServiceActive(boolean active) {
+		try {
+			java.lang.reflect.Field f = CarService.class.getDeclaredField("active");
+			f.setAccessible(true);
+			f.setBoolean(null, active);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private CarAppsFragment createAndAttachFragment() {
+		FragmentActivity activity = Robolectric.buildActivity(FragmentActivity.class).setup().get();
+		CarAppsFragment fragment = new CarAppsFragment(client);
+		activity.getSupportFragmentManager().beginTransaction()
+				.add(fragment, "car_apps")
+				.commitNow();
+		return fragment;
+	}
+
+	private Surface createTestSurface() {
+		Surface s = new Surface(new android.graphics.SurfaceTexture(0));
+		testSurfaces.add(s);
+		return s;
+	}
+
+	@Test
+	public void nullSurfaceDoesNotRecreateDisplay() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		SurfaceHolder.Callback callback = fragment.getSurfaceHolderCallback();
+
+		Surface surface1 = createTestSurface();
+		FakeSurfaceHolder holder1 = new FakeSurfaceHolder(surface1, 1024, 600);
+
+		// 1. Initial surface creation: calls attach
+		callback.surfaceCreated(holder1);
+		assertEquals(1, serverBinder.attachCount.get());
+		assertEquals(surface1, serverBinder.lastSurface);
+
+		// 2. Surface destruction: calls setSurface(null, 0, 0, 0)
+		callback.surfaceDestroyed(holder1);
+		assertEquals(1, serverBinder.attachCount.get());
+		assertEquals(null, serverBinder.lastSurface);
+
+		// 3. Subsequent surface creation: calls setSurface instead of attach
+		Surface surface2 = createTestSurface();
+		FakeSurfaceHolder holder2 = new FakeSurfaceHolder(surface2, 1024, 600);
+		callback.surfaceCreated(holder2);
+		assertEquals("VirtualDisplay must not be recreated (attach count stays 1)",
+				1, serverBinder.attachCount.get());
+		assertEquals(surface2, serverBinder.lastSurface);
+	}
+
+	@Test
+	public void surfaceResizeCallsSetSurfaceNotAttach() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		SurfaceHolder.Callback callback = fragment.getSurfaceHolderCallback();
+
+		Surface surface = createTestSurface();
+		FakeSurfaceHolder holder = new FakeSurfaceHolder(surface, 1024, 600);
+
+		callback.surfaceCreated(holder);
+		assertEquals(1, serverBinder.attachCount.get());
+
+		// Resize event calls setSurface
+		callback.surfaceChanged(holder, 0, 1280, 720);
+		assertEquals("Surface resize must call setSurface without re-attaching",
+				1, serverBinder.attachCount.get());
+		assertEquals(1280, serverBinder.lastWidth);
+		assertEquals(720, serverBinder.lastHeight);
+	}
+
+	@Test
+	public void backPressedOnDrawerReturnsFalse() {
+		CarAppsFragment fragment = createAndAttachFragment();
+
+		// Screen defaults to DRAWER
+		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
+		assertFalse("onBackPressed on DRAWER screen must return false", fragment.onBackPressed());
+		assertEquals(-1, serverBinder.lastKeyCode.get());
+
+		// Switch to APP
+		fragment.setScreen(CarAppsNavModel.Screen.APP);
+		assertEquals(CarAppsNavModel.Screen.APP, fragment.getScreen());
+		assertTrue("onBackPressed on APP screen must return true", fragment.onBackPressed());
+		assertEquals(KeyEvent.KEYCODE_BACK, serverBinder.lastKeyCode.get());
+	}
+
+	@Test
+	public void barHiddenWhenBarsHidden() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		View bottomBar = fragment.getBottomBar();
+		assertEquals(View.VISIBLE, bottomBar.getVisibility());
+
+		fragment.setBarsHidden(true);
+		assertTrue(fragment.isBarsHidden());
+		assertEquals(View.GONE, bottomBar.getVisibility());
+
+		fragment.setBarsHidden(false);
+		assertFalse(fragment.isBarsHidden());
+		assertEquals(View.VISIBLE, bottomBar.getVisibility());
+	}
+
+	@Test
+	public void rootButtonHiddenWhenCarServiceActive() {
+		CarAppsFeature.setState(RootState.AVAILABLE);
+		setCarServiceActive(true);
+
+		CarAppsFragment fragment = createAndAttachFragment();
+		assertEquals(CarAppsUiState.State.NEEDS_ROOT, fragment.getUiState());
+		assertEquals("Root request button must be hidden when CarService is active",
+				View.GONE, fragment.getGrantRootButton().getVisibility());
+
+		setCarServiceActive(false);
+		fragment.updateUiState();
+		assertEquals("Root request button must be visible when CarService is not active",
+				View.VISIBLE, fragment.getGrantRootButton().getVisibility());
+	}
+
+	@Test
+	public void drawerButtonLaunchesLauncherActivity() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.setScreen(CarAppsNavModel.Screen.APP);
+
+		fragment.getDrawerButton().performClick();
+
+		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
+		assertEquals(LauncherActivity.class.getName(), serverBinder.lastLaunchedComponent.getClassName());
+	}
+
+	@Test
+	public void closeButtonClosesTopApp() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.setScreen(CarAppsNavModel.Screen.APP);
+
+		// Click calls closeTopApp(false)
+		fragment.getCloseButton().performClick();
+		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
+		assertFalse(serverBinder.lastForceClose.get());
+
+		fragment.setScreen(CarAppsNavModel.Screen.APP);
+		// Long click calls closeTopApp(true)
+		fragment.getCloseButton().performLongClick();
+		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
+		assertTrue(serverBinder.lastForceClose.get());
+	}
+
+	private static class FakeSurfaceHolder implements SurfaceHolder {
+		private final Surface surface;
+		private final Rect frame;
+
+		FakeSurfaceHolder(Surface surface, int width, int height) {
+			this.surface = surface;
+			this.frame = new Rect(0, 0, width, height);
+		}
+
+		@Override
+		public void addCallback(Callback callback) {}
+
+		@Override
+		public void removeCallback(Callback callback) {}
+
+		@Override
+		public boolean isCreating() { return false; }
+
+		@Override
+		public void setType(int type) {}
+
+		@Override
+		public void setFixedSize(int width, int height) {}
+
+		@Override
+		public void setSizeFromLayout() {}
+
+		@Override
+		public void setFormat(int format) {}
+
+		@Override
+		public void setKeepScreenOn(boolean screenOn) {}
+
+		@Override
+		public Canvas lockCanvas() { return null; }
+
+		@Override
+		public Canvas lockCanvas(Rect dirty) { return null; }
+
+		@Override
+		public void unlockCanvasAndPost(Canvas canvas) {}
+
+		@Override
+		public Rect getSurfaceFrame() { return frame; }
+
+		@Override
+		public Surface getSurface() { return surface; }
+	}
+
+	private static class TestServerBinder extends Binder implements ICarDisplayServer {
+		final AtomicInteger attachCount = new AtomicInteger(0);
+		final AtomicInteger lastKeyCode = new AtomicInteger(-1);
+		final AtomicBoolean lastForceClose = new AtomicBoolean(false);
+		Surface lastSurface;
+		int lastWidth;
+		int lastHeight;
+		ComponentName lastLaunchedComponent;
+
+		TestServerBinder() {
+			attachInterface(this, ICarDisplayServer.DESCRIPTOR);
+		}
+
+		@Override
+		public int capabilities() { return 0x1f; }
+
+		@Override
+		public int attach(Surface s, int w, int h, int dpi, IBinder client) {
+			attachCount.incrementAndGet();
+			lastSurface = s;
+			lastWidth = w;
+			lastHeight = h;
+			return 100;
+		}
+
+		@Override
+		public void setSurface(Surface s, int w, int h, int dpi) {
+			lastSurface = s;
+			lastWidth = w;
+			lastHeight = h;
+		}
+
+		@Override
+		public void inject(MotionEvent e) {}
+
+		@Override
+		public void injectKey(int keyCode) {
+			lastKeyCode.set(keyCode);
+		}
+
+		@Override
+		public int launch(ComponentName c, int intentFlags) {
+			lastLaunchedComponent = c;
+			return 0;
+		}
+
+		@Override
+		public String closeTopApp(boolean force) {
+			lastForceClose.set(force);
+			return "closed";
+		}
+
+		@Override
+		public void setPanelPower(boolean on) {}
+
+		@Override
+		public void release() {}
+
+		@Override
+		public int serverVersion() {
+			return BuildConfig.VERSION_CODE;
+		}
+
+		@Override
+		public IBinder asBinder() { return this; }
+	}
+}

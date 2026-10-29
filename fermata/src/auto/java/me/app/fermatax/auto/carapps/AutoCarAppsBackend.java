@@ -23,7 +23,7 @@ public final class AutoCarAppsBackend {
 
 			@Override
 			public ActivityFragment createFragment() {
-				return null;
+				return new CarAppsFragment();
 			}
 		});
 	}
