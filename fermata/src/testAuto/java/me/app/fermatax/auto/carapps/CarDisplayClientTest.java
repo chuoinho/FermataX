@@ -204,6 +204,61 @@ public class CarDisplayClientTest {
 		assertEquals(0, server.panelPowerCalls.size());
 	}
 
+	@Test
+	public void diagnosticsRecordedOnServerLifecycleEvents() {
+		List<String> recordedEvents = new ArrayList<>();
+		java.util.Map<String, java.util.Map<String, ?>> recordedAttrs = new java.util.HashMap<>();
+		client.setDiagnosticsConsumerForTest((event, attrs) -> {
+			recordedEvents.add(event);
+			recordedAttrs.put(event, attrs);
+		});
+
+		// 1. server_starting
+		client.setCommandRunnerForTest(cmd -> {});
+		client.ensureRunning(context);
+		assertTrue(recordedEvents.contains("server_starting"));
+		assertEquals(context.getPackageCodePath(), recordedAttrs.get("server_starting").get("apkPath"));
+
+		// 2. server_connected
+		AtomicBoolean released = new AtomicBoolean(false);
+		int currentVersion = client.getExpectedVersion();
+		FakeServerBinder server = new FakeServerBinder(currentVersion, released);
+		server.caps = 0x1f;
+		client.onServerBinderReceived(server);
+
+		assertTrue(recordedEvents.contains("server_connected"));
+		assertEquals(currentVersion, recordedAttrs.get("server_connected").get("version"));
+		assertEquals(0x1f, recordedAttrs.get("server_connected").get("capabilities"));
+
+		// 3. server_retry & server_failed
+		server.triggerDeath();
+		client.retryConnectionForTesting();
+		assertTrue(recordedEvents.contains("server_retry"));
+		assertEquals(0, recordedAttrs.get("server_retry").get("attempt"));
+
+		client.retryConnectionForTesting();
+		client.retryConnectionForTesting();
+		assertTrue(recordedEvents.contains("server_failed"));
+		assertEquals("max_retries_exceeded", recordedAttrs.get("server_failed").get("reason"));
+	}
+
+	@Test
+	public void diagnosticsRecordedOnVersionMismatch() {
+		List<String> recordedEvents = new ArrayList<>();
+		java.util.Map<String, java.util.Map<String, ?>> recordedAttrs = new java.util.HashMap<>();
+		client.setDiagnosticsConsumerForTest((event, attrs) -> {
+			recordedEvents.add(event);
+			recordedAttrs.put(event, attrs);
+		});
+
+		AtomicBoolean released = new AtomicBoolean(false);
+		FakeServerBinder oldServer = new FakeServerBinder(client.getExpectedVersion() - 1, released);
+		client.onServerBinderReceived(oldServer);
+
+		assertTrue(recordedEvents.contains("server_failed"));
+		assertEquals("version_mismatch", recordedAttrs.get("server_failed").get("reason"));
+	}
+
 	private static class FakeServerBinder extends Binder implements ICarDisplayServer {
 		private final int version;
 		private final AtomicBoolean released;

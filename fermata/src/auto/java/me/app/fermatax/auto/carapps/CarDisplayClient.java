@@ -18,10 +18,14 @@ import android.view.Surface;
 import androidx.annotation.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
+import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootState;
 import me.aap.utils.log.Log;
@@ -59,6 +63,7 @@ public class CarDisplayClient {
 	private Context lastContext;
 	private int retryAttempt = 0;
 	private Consumer<String> testCommandRunner;
+	private BiConsumer<String, Map<String, ?>> diagnosticsConsumerForTest;
 	private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
 	private final IBinder.DeathRecipient deathRecipient = new IBinder.DeathRecipient() {
@@ -132,16 +137,32 @@ public class CarDisplayClient {
 		}
 	}
 
+	private void recordDiagnostic(String event, Map<String, ?> attributes) {
+		if (diagnosticsConsumerForTest != null) {
+			diagnosticsConsumerForTest.accept(event, attributes);
+		}
+		try {
+			AndroidDiagnosticsRuntime.get().recordDetailed("carapps", event, attributes);
+		} catch (Throwable ignored) {
+		}
+	}
+
+	public void setDiagnosticsConsumerForTest(BiConsumer<String, Map<String, ?>> consumer) {
+		this.diagnosticsConsumerForTest = consumer;
+	}
+
 	public int getExpectedVersion() {
 		return BuildConfig.VERSION_CODE;
 	}
 
 	public synchronized void onServerBinderReceived(IBinder binder) {
 		if (binder == null) {
+			recordDiagnostic("server_failed", Map.of("reason", "null_binder"));
 			return;
 		}
 		ICarDisplayServer s = ICarDisplayServer.Stub.asInterface(binder);
 		if (s == null) {
+			recordDiagnostic("server_failed", Map.of("reason", "null_interface"));
 			return;
 		}
 
@@ -154,6 +175,7 @@ public class CarDisplayClient {
 
 		if (version != getExpectedVersion()) {
 			Log.w("Server version mismatch: expected " + getExpectedVersion() + ", got " + version + "; releasing");
+			recordDiagnostic("server_failed", Map.of("reason", "version_mismatch"));
 			try {
 				s.release();
 			} catch (Throwable ignored) {
@@ -170,8 +192,16 @@ public class CarDisplayClient {
 			binder.linkToDeath(deathRecipient, 0);
 		} catch (RemoteException e) {
 			Log.e(e, "Failed to link to server binder death");
+			recordDiagnostic("server_failed", Map.of("reason", "link_to_death_failed"));
 			onServerDied();
 			return;
+		}
+
+		int caps = 0;
+		try {
+			caps = s.capabilities();
+		} catch (RemoteException e) {
+			Log.e(e, "Failed to query server capabilities");
 		}
 
 		this.server = s;
@@ -179,6 +209,7 @@ public class CarDisplayClient {
 		this.retryAttempt = 0;
 		setState(State.READY);
 		Log.i("CarDisplayServer connected successfully (version " + version + ")");
+		recordDiagnostic("server_connected", Map.of("version", version, "capabilities", caps));
 	}
 
 	private synchronized void onServerDied() {
@@ -210,10 +241,12 @@ public class CarDisplayClient {
 		long delay = RetryPolicy.delayMs(retryAttempt);
 		if (delay < 0) {
 			Log.e("CarDisplayServer reconnection failed after max attempts");
+			recordDiagnostic("server_failed", Map.of("reason", "max_retries_exceeded"));
 			setState(State.FAILED);
 			return;
 		}
 
+		recordDiagnostic("server_retry", Map.of("attempt", retryAttempt, "delayMs", delay));
 		Log.i("Scheduling server reconnect attempt " + retryAttempt + " in " + delay + " ms");
 		mainHandler.postDelayed(() -> {
 			if (state == State.RETRYING && lastContext != null) {
@@ -241,6 +274,7 @@ public class CarDisplayClient {
 	private void startServer(@Nullable Context ctx) {
 		if (ctx == null) {
 			Log.w("Cannot start CarDisplayServer without context");
+			recordDiagnostic("server_failed", Map.of("reason", "null_context"));
 			return;
 		}
 
@@ -250,18 +284,30 @@ public class CarDisplayClient {
 		String pkg = ctx.getPackageName();
 		String cmd = ServerCommand.build(apkPath, appUid, versionCode, pkg);
 
+		recordDiagnostic("server_starting", Map.of("apkPath", apkPath != null ? apkPath : ""));
+
 		if (testCommandRunner != null) {
 			testCommandRunner.accept(cmd);
 			return;
 		}
 
 		Su.get().onSuccess(su -> {
+			recordDiagnostic("root_grant", Map.of("result", "granted"));
 			Log.i("Starting CarDisplayServer via su: " + cmd);
 			su.exec(cmd);
 		}).onFailure(err -> {
+			recordDiagnostic("root_grant", Map.of("result", "failed"));
+			recordDiagnostic("server_failed", Map.of("reason", "root_failed"));
 			Log.e(err, "Failed to obtain root shell to launch CarDisplayServer");
 			setState(State.FAILED);
 		});
+	}
+
+	public void onCarSessionStarted() {
+		Context ctx = (lastContext != null) ? lastContext : FermataApplication.get();
+		if (ctx != null) {
+			onCarSessionStarted(ctx);
+		}
 	}
 
 	public void onCarSessionStarted(Context ctx) {
@@ -481,17 +527,20 @@ public class CarDisplayClient {
 
 	// Test hooks
 
-	void setCommandRunnerForTest(Consumer<String> runner) {
+	public void setCommandRunnerForTest(Consumer<String> runner) {
 		this.testCommandRunner = runner;
 	}
 
 	void retryConnectionForTesting() {
 		long delay = RetryPolicy.delayMs(retryAttempt);
 		if (delay < 0) {
+			recordDiagnostic("server_failed", Map.of("reason", "max_retries_exceeded"));
 			setState(State.FAILED);
 		} else {
+			recordDiagnostic("server_retry", Map.of("attempt", retryAttempt, "delayMs", delay));
 			retryAttempt++;
 			if (RetryPolicy.delayMs(retryAttempt) < 0) {
+				recordDiagnostic("server_failed", Map.of("reason", "max_retries_exceeded"));
 				setState(State.FAILED);
 			} else {
 				startServer(lastContext);
@@ -503,7 +552,7 @@ public class CarDisplayClient {
 		return retryAttempt;
 	}
 
-	void resetForTesting() {
+	public void resetForTesting() {
 		unregisterScreenOffReceiver();
 		panelOff = false;
 		unlinkServerBinder();
@@ -512,6 +561,7 @@ public class CarDisplayClient {
 		this.state = State.IDLE;
 		this.retryAttempt = 0;
 		this.testCommandRunner = null;
+		this.diagnosticsConsumerForTest = null;
 		this.stateListeners.clear();
 		this.panelListeners.clear();
 		this.lastContext = null;
