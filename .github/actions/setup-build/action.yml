@@ -1,0 +1,25 @@
+name: Set up FermataX build
+description: JDK 17, Android SDK and Gradle cache shared by every CI build job.
+
+runs:
+  using: composite
+  steps:
+    - name: Set up JDK 17
+      uses: actions/setup-java@v5
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    # Test and lint jobs need no NDK; the package job installs it.
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v4
+      with:
+        packages: >-
+          platform-tools
+          platforms;android-36
+          build-tools;36.0.0
+
+    - name: Set up Gradle cache
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: ${{ github.ref != 'refs/heads/main' }}

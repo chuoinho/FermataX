@@ -56,34 +56,36 @@ public class AndroidLogger extends Logger {
 
 	@Override
 	public void logWarn(StringBuilder msg) {
-		App.get().onLogFailure(Log.Level.WARN, null,
-				App.get().isLogFailureCallerEnabled() ? callerFrame(1) : null);
+		onLogFailure(Log.Level.WARN, null);
 		String text = fileLog(msg, null);
 		if (BuildConfig.D) android.util.Log.w(tag, text);
 	}
 
 	@Override
 	public void logWarn(StringBuilder msg, Throwable ex) {
-		App.get().onLogFailure(Log.Level.WARN, ex,
-				App.get().isLogFailureCallerEnabled() ? callerFrame(1) : null);
+		onLogFailure(Log.Level.WARN, ex);
 		String text = fileLog(msg, ex);
 		if (BuildConfig.D) android.util.Log.w(tag, text, ex);
 	}
 
 	@Override
 	public void logError(StringBuilder msg) {
-		App.get().onLogFailure(Log.Level.ERROR, null,
-				App.get().isLogFailureCallerEnabled() ? callerFrame(1) : null);
+		onLogFailure(Log.Level.ERROR, null);
 		String text = fileLog(msg, null);
 		if (BuildConfig.D) android.util.Log.e(tag, text);
 	}
 
 	@Override
 	public void logError(StringBuilder msg, Throwable ex) {
-		App.get().onLogFailure(Log.Level.ERROR, ex,
-				App.get().isLogFailureCallerEnabled() ? callerFrame(1) : null);
+		onLogFailure(Log.Level.ERROR, ex);
 		String text = fileLog(msg, ex);
 		if (BuildConfig.D) android.util.Log.e(tag, text, ex);
+	}
+
+	// The logger is a JVM-wide static, so it can outlive the App (e.g. across Robolectric tests).
+	private void onLogFailure(Log.Level level, Throwable ex) {
+		App app = App.get();
+		if (app != null) app.onLogFailure(level, ex, app.isLogFailureCallerEnabled() ? callerFrame(2) : null);
 	}
 
 	@Override

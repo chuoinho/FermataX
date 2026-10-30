@@ -124,4 +124,3 @@ public class TvRootItemTest extends Assert {
 		assertEquals(failure, item2.getFailure());
 	}
 }
-

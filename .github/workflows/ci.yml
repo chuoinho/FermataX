@@ -5,109 +5,35 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Keep the module graph identical to build.sh, which always builds without
+  # optional Google-services features.
+  NO_GS: true
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
 
 jobs:
-  verify:
-    name: Verify FermataX source, lint, architecture, and universal package
-    runs-on: ubuntu-latest
-    timeout-minutes: 75
-    env:
-      # Keep the module graph identical to build.sh, which always builds without
-      # optional Google-services features.
-      NO_GS: true
-
+  hygiene:
+    name: Source hygiene
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - name: Check out source and PR base history
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: >-
-            platform-tools
-            platforms;android-36
-            build-tools;36.0.0
-            ndk;29.0.14206865
-
-      - name: Set up Gradle cache
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-
-      - name: Verify Java and Gradle toolchain
-        run: |
-          java -version
-          ./gradlew --version
-
-      - name: Validate universal build entry point
+      - name: Validate build.sh syntax
         run: sh -n build.sh
 
-      - name: Verify Web-only production graph
-        run: ./gradlew verifyWebOnlyProductionGraph --no-daemon --no-parallel --stacktrace
-
-      - name: Mobile unit suite
-        run: >-
-          ./gradlew testMobileDebugUnitTest :whisper:testMobileDebugUnitTest
-          --no-daemon --no-parallel --stacktrace
-
-      - name: Auto unit suite
-        if: ${{ !cancelled() }}
-        run: ./gradlew testAutoDebugUnitTest --no-daemon --no-parallel --stacktrace
-
-      - name: Web addon UI shell guard
-        if: ${{ !cancelled() }}
-        run: >-
-          ./gradlew :fermata:testMobileDebugUnitTest
-          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.webAddonUsesCommonUiShellAuthorities
-          --no-daemon --no-parallel --stacktrace
-
-      - name: TV addon UI shell guard
-        if: ${{ !cancelled() }}
-        run: >-
-          ./gradlew :fermata:testMobileDebugUnitTest
-          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.tvAddonUsesCommonUiShellAuthorities
-          --no-daemon --no-parallel --stacktrace
-
-      - name: UI shell single-writer guard
-        if: ${{ !cancelled() }}
-        run: >-
-          ./gradlew :fermata:testMobileDebugUnitTest
-          --tests me.aap.fermata.architecture.UiShellArchitectureGuardTest
-          --no-daemon --no-parallel --stacktrace
-
-      - name: Architecture boundary guards
-        if: ${{ !cancelled() }}
-        run: >-
-          ./gradlew :fermata:testMobileDebugUnitTest
-          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.hotspotClassesCannotGrowPastTheRecordedBaseline
-          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.coreDoesNotImportConcreteAddonImplementations
-          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.coreUiDoesNotReferenceConcreteAddonFragmentTypes
-          --tests me.aap.fermata.architecture.ArchitectureBoundaryTest.addonModulesDoNotImportSiblingImplementations
-          --no-daemon --no-parallel --stacktrace
-
-      - name: Lint
-        if: ${{ !cancelled() }}
-        run: >-
-          ./gradlew :fermata:lintMobileDebug :fermata:lintAutoDebug
-          --no-daemon --no-parallel --stacktrace
-
       - name: Check whitespace in the PR/push diff
-        if: ${{ !cancelled() }}
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -117,20 +43,82 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ]; then
             base_sha="$PR_BASE_SHA"
           else
-            base_sha="$PUSH_BASE_SHA"
-            if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            base_sha="${PUSH_BASE_SHA:-}"
+            if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ] \
+                || ! git cat-file -e "$base_sha^{commit}" 2>/dev/null; then
               base_sha="$(git rev-parse HEAD^)"
             fi
           fi
-          git cat-file -e "$base_sha^{commit}"
           git diff --check "$base_sha...HEAD"
 
-      # NON-NEGOTIABLE DISTRIBUTION CONTRACT:
-      # FermataX ships exactly ONE universal APK used on both phone and Android Auto/DHU.
-      # Mobile/Auto are internal source sets/test targets only and must never become separate
-      # user-facing APKs, releases, or CI artifacts.
-      - name: Package single FermataX universal APK
-        if: ${{ success() }}
+  unit-tests:
+    name: Unit tests (${{ matrix.variant }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [Mobile, Auto]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-build
+
+      - name: Verify Web-only production graph
+        if: ${{ matrix.variant == 'Mobile' }}
+        run: ./gradlew verifyWebOnlyProductionGraph --stacktrace
+
+      # Includes the architecture/UI-shell guard tests in :fermata.
+      - name: Run unit tests
+        run: ./gradlew test${{ matrix.variant }}DebugUnitTest --continue --stacktrace
+
+      - name: Upload test reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.variant }}
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 7
+
+  lint:
+    name: Android lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-build
+
+      - name: Lint
+        run: ./gradlew :fermata:lintMobileDebug :fermata:lintAutoDebug --continue --stacktrace
+
+      - name: Upload lint reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: '**/build/reports/lint-results-*.*'
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # NON-NEGOTIABLE DISTRIBUTION CONTRACT:
+  # FermataX ships exactly ONE universal APK used on both phone and Android Auto/DHU.
+  # Mobile/Auto are internal source sets/test targets only and must never become separate
+  # user-facing APKs, releases, or CI artifacts.
+  package:
+    name: Package universal APK
+    needs: [hygiene, unit-tests, lint]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-build
+
+      # AGP uses the pinned NDK to strip prebuilt native libraries (e.g. VLC) when packaging.
+      - name: Install NDK
+        run: sdkmanager "ndk;$(sed -n 's/^ndkVersion = "\(.*\)"/\1/p' gradle/libs.versions.toml)"
+
+      - name: Build single FermataX universal APK
         shell: bash
         run: |
           set -euo pipefail
@@ -143,7 +131,6 @@ jobs:
           cp "${apks[0]}" dist/FermataX-debug-universal.apk
 
       - name: Upload single FermataX universal APK
-        if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
           name: FermataX-device-test-${{ github.sha }}

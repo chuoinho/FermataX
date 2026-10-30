@@ -115,7 +115,7 @@ public class FermataToolBarView extends ToolBarView {
 	@Override
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 		super.onLayout(changed, left, top, right, bottom);
-		applyGlassThemeIfNeeded();
+		// No theme styling here: setBackground() requests layout again, looping every frame.
 		if (!(getParent() instanceof ViewGroup parent)) return;
 		View[] buttons = new View[getChildCount()];
 		int count = 0;

@@ -93,6 +93,8 @@ subprojects {
 
         testOptions {
             unitTests.returnDefaultValues = true
+            // Gradle's 512m default test heap runs out late in the Robolectric suites.
+            unitTests.all { maxHeapSize = '2g' }
         }
 
         // AGP 9.2.1's inferred-thread dataflow can enter a non-terminating

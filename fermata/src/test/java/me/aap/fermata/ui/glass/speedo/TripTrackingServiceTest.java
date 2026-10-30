@@ -322,8 +322,9 @@ public class TripTrackingServiceTest {
         }
     }
     @org.junit.After public void cleanupDashboardTests() {
-        TripTrackingService.resetForTests();
+        // Disconnect first: the Auto binder listener reads the registry that reset clears.
         AutomotiveConnectionState.get().connectionChanged(false);
+        TripTrackingService.resetForTests();
         GlassSpeedoTripController.diagnosticsSink = GlassSpeedoTripController.DEFAULT_DIAGNOSTICS;
 
     }
