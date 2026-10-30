@@ -88,10 +88,16 @@ public class AutomotiveNavNotificationService extends NotificationListenerServic
         }
 
         NavTurnInfo info = NavTurnInfo.fromNotification(pkg, n.extras, n);
-        if (info.isActive()) {
+        // Nav apps keep other notifications (background service, sharing, trip summary) that are not turns.
+        boolean ongoing = (n.flags & Notification.FLAG_ONGOING_EVENT) != 0;
+        boolean isTurn = info.isActive() && ongoing && (isNavCategory || !info.getDistanceText().isEmpty());
+        if (isTurn) {
             activeNavKey = sbn.getKey();
             currentInfo = info;
             dispatchUpdate(info);
+        } else if (sbn.getKey().equals(activeNavKey)) {
+            // The turn notification was updated in place when navigation ended.
+            clear();
         }
     }
 
