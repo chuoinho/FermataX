@@ -381,12 +381,13 @@ public class GlassNavWeatherView extends FrameLayout {
         TextView btn = new TextView(context);
         btn.setText(safeGetString(context, labelRes, labelFallback));
         btn.setContentDescription(safeGetString(context, descRes, descFallback));
-        btn.setAllCaps(true);
         btn.setTextSize(11f);
         btn.setTypeface(Typeface.DEFAULT_BOLD);
         btn.setTextColor(colors.getTextPrimary());
         btn.setGravity(Gravity.CENTER);
         btn.setSingleLine(true);
+        // After setSingleLine, which replaces the transformation method that applies all caps.
+        btn.setAllCaps(true);
         int padH = GlassDimensions.dpToPx(context, 14);
         int padV = GlassDimensions.dpToPx(context, 6);
         btn.setPadding(padH, padV, padH, padV);
