@@ -160,6 +160,7 @@ public class CarDisplayClient {
 			if (state == State.STARTING) {
 				Log.w("CarDisplayServer startup timed out after 8000ms");
 				recordDiagnostic("server_failed", Map.of("reason", "startup_timeout"));
+				setState(State.RETRYING);
 				scheduleRetry();
 			}
 		}
@@ -286,6 +287,7 @@ public class CarDisplayClient {
 			return;
 		}
 
+		this.retryAttempt = 0;
 		setState(State.STARTING);
 		startServer(ctx != null ? ctx : lastContext);
 	}

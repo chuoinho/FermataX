@@ -238,6 +238,12 @@ public class CarAppsFragment extends MainActivityFragment {
 		tvServerError.setTextSize(18f);
 		tvServerError.setGravity(Gravity.CENTER);
 		serverErrorOverlay.addView(tvServerError);
+		serverErrorOverlay.setOnClickListener(v -> {
+			Context c = getContext();
+			if (c != null) {
+				client.ensureRunning(c);
+			}
+		});
 		viewportContainer.addView(serverErrorOverlay);
 	}
 
