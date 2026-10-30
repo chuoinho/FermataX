@@ -26,8 +26,8 @@ public class ServerCommandTest {
 		String pkg = "me.app.fermataX.auto.debug";
 
 		String cmd = ServerCommand.build(apkPath, appUid, versionCode, pkg);
-		assertTrue(cmd.startsWith("nohup "));
-		assertTrue(cmd.contains("app_process / me.app.fermatax.auto.carapps.server.Main " + appUid + " " + versionCode + " " + pkg));
+		assertTrue(cmd.startsWith("CLASSPATH="));
+		assertTrue(cmd.contains("nohup app_process / me.app.fermatax.auto.carapps.server.Main " + appUid + " " + versionCode + " " + pkg));
 		assertTrue(cmd.endsWith(">/dev/null 2>&1 &"));
 	}
 }

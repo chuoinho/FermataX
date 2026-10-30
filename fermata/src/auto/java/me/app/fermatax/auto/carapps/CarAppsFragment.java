@@ -85,6 +85,7 @@ public class CarAppsFragment extends MainActivityFragment {
 				int res = client.attach(surface, w, h, dpi);
 				if (res >= 0) {
 					attached = true;
+					onDisplayAttached();
 					updateUiState();
 				}
 			} else {
@@ -99,6 +100,7 @@ public class CarAppsFragment extends MainActivityFragment {
 				int res = client.attach(holder.getSurface(), width, height, dpi);
 				if (res >= 0) {
 					attached = true;
+					onDisplayAttached();
 					updateUiState();
 				}
 			} else {
@@ -438,6 +440,9 @@ public class CarAppsFragment extends MainActivityFragment {
 				loadingOverlay.setVisibility(View.GONE);
 				needsRootOverlay.setVisibility(View.GONE);
 				serverErrorOverlay.setVisibility(View.GONE);
+				if (!attached) {
+					checkAttachSurface();
+				}
 				break;
 		}
 
@@ -467,6 +472,34 @@ public class CarAppsFragment extends MainActivityFragment {
 		boolean off = client.isPanelOff();
 		btnPanelPower.setSelected(off);
 		btnPanelPower.setAlpha(off ? 1.0f : 0.45f);
+	}
+
+	private void checkAttachSurface() {
+		if (surfaceView == null || attached) return;
+		SurfaceHolder holder = surfaceView.getHolder();
+		if (holder == null) return;
+		Surface surface = holder.getSurface();
+		if (surface == null || !surface.isValid()) return;
+		Rect frame = holder.getSurfaceFrame();
+		int w = (frame != null && frame.width() > 0) ? frame.width() :
+				(surfaceView.getWidth() > 0 ? surfaceView.getWidth() : 1280);
+		int h = (frame != null && frame.height() > 0) ? frame.height() :
+				(surfaceView.getHeight() > 0 ? surfaceView.getHeight() : 720);
+		int dpi = getDensityDpi();
+		int res = client.attach(surface, w, h, dpi);
+		if (res >= 0) {
+			attached = true;
+			onDisplayAttached();
+		}
+	}
+
+	private void onDisplayAttached() {
+		Context c = getContext();
+		if (c != null) {
+			ComponentName comp = new ComponentName(c, LauncherActivity.class);
+			client.launch(comp, Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		}
+		setScreen(CarAppsNavModel.Screen.DRAWER);
 	}
 
 	private int getDensityDpi() {

@@ -12,7 +12,7 @@ public final class ServerCommand {
 
 	public static String build(String apkPath, int appUid, int versionCode, String pkg) {
 		String escapedPath = apkPath.replace("'", "'\\''");
-		return "nohup CLASSPATH='" + escapedPath + "' app_process / "
+		return "CLASSPATH='" + escapedPath + "' nohup app_process / "
 				+ MAIN_CLASS + " " + appUid + " " + versionCode + " " + pkg
 				+ " >/dev/null 2>&1 &";
 	}

@@ -155,7 +155,18 @@ public class CarDisplayClient {
 		return BuildConfig.VERSION_CODE;
 	}
 
+	private final Runnable startTimeoutRunnable = () -> {
+		synchronized (CarDisplayClient.this) {
+			if (state == State.STARTING) {
+				Log.w("CarDisplayServer startup timed out after 8000ms");
+				recordDiagnostic("server_failed", Map.of("reason", "startup_timeout"));
+				scheduleRetry();
+			}
+		}
+	};
+
 	public synchronized void onServerBinderReceived(IBinder binder) {
+		mainHandler.removeCallbacks(startTimeoutRunnable);
 		if (binder == null) {
 			recordDiagnostic("server_failed", Map.of("reason", "null_binder"));
 			return;
@@ -293,6 +304,8 @@ public class CarDisplayClient {
 		String cmd = ServerCommand.build(apkPath, appUid, versionCode, pkg);
 
 		recordDiagnostic("server_starting", Map.of("apkPath", apkPath != null ? apkPath : ""));
+		mainHandler.removeCallbacks(startTimeoutRunnable);
+		mainHandler.postDelayed(startTimeoutRunnable, 8000L);
 
 		if (testCommandRunner != null) {
 			testCommandRunner.accept(cmd);
@@ -511,6 +524,7 @@ public class CarDisplayClient {
 	}
 
 	public synchronized void release() {
+		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
 		if (panelOff) {
 			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.RELEASED);
