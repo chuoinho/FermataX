@@ -70,6 +70,20 @@ public class NavNotificationParserTest {
     }
 
     @Test
+    public void mapsFreeDriveAfterExitReturnsToWeather() {
+        // Observed on Google Maps: after Exit the same notification stays ongoing with category
+        // navigation, but only carries the current street as title (no ETA, no actions).
+        StatusBarNotification nav = sbn(MAPS, 1, "Hướng về Ng. 9 P. Ô Cách", null,
+                Notification.CATEGORY_NAVIGATION, true);
+        nav.getNotification().extras.putString("android.subText", "Đến nơi lúc 1:06");
+        AutomotiveNavNotificationService.handlePosted(nav);
+        assertTrue(navActive());
+        AutomotiveNavNotificationService.handlePosted(sbn(MAPS, 1, "P. Trường Lâm", null,
+                Notification.CATEGORY_NAVIGATION, true));
+        assertFalse(navActive());
+    }
+
+    @Test
     public void nonNavNotificationDoesNotTakeOverTheTurn() {
         StatusBarNotification nav = sbn(MAPS, 1, "In 300m Turn Right onto Broadway", "4.2 km · 12 min",
                 Notification.CATEGORY_NAVIGATION, true);
