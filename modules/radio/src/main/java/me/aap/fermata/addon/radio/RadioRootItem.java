@@ -111,11 +111,6 @@ public class RadioRootItem extends ExtRoot implements RadioItem, SearchFolder.Se
 		});
 	}
 
-	@Override
-	public FutureSupplier<List<? extends Item>> search(String query, List<? extends Item> localResults) {
-		return search(query);
-	}
-
 	private List<Item> matchLocal(String query) {
 		String q = (query == null) ? "" : query.trim().toLowerCase(Locale.ROOT);
 		if (q.isEmpty()) return Collections.emptyList();

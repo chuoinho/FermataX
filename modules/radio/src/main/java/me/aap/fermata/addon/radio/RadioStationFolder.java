@@ -122,11 +122,6 @@ class RadioStationFolder extends RadioFolder {
 		return new FolderSpec("", Uri.decode(tail), offset);
 	}
 
-	static int decodeNearbyOffset(String id) {
-		String tail = id.substring(ID_NEARBY_PREFIX.length());
-		return parseOffset(tail);
-	}
-
 	static int parseOffset(String s) {
 		int idx = s.lastIndexOf(":offset=");
 		if (idx != -1) {

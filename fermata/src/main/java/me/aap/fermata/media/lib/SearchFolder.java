@@ -121,10 +121,6 @@ public class SearchFolder extends BrowsableItemBase {
 
 	public interface SearchProvider {
 		FutureSupplier<List<? extends Item>> search(String query);
-
-		default FutureSupplier<List<? extends Item>> search(String query, List<? extends Item> localResults) {
-			return search(query);
-		}
 	}
 
 	/** Invalidates voice-search results for one media root without flushing unrelated addons. */
