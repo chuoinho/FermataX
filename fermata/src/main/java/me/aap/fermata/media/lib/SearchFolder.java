@@ -56,9 +56,11 @@ public class SearchFolder extends BrowsableItemBase {
 	private SearchFolder(String id, @NonNull BrowsableItem parent, List<Item> items) {
 		super(id, parent, null);
 		searchRootId = parent.getRoot().getId();
-		itemsFound = new ArrayList<>(items.size());
-		for (Item i : items) {
-			if (i instanceof PlayableItem) itemsFound.add((PlayableItem) i);
+		itemsFound = new ArrayList<>(items != null ? items.size() : 0);
+		if (items != null) {
+			for (Item i : items) {
+				if (i instanceof PlayableItem) itemsFound.add((PlayableItem) i);
+			}
 		}
 		Collections.sort(itemsFound, (i1, i2) -> {
 			MediaDescriptionCompat d1 = i1.getMediaDescription().peek();
@@ -107,10 +109,10 @@ public class SearchFolder extends BrowsableItemBase {
 				}
 			});
 		} else if (parent.getRoot() instanceof SearchProvider sp) {
-			return recursiveSearch(id, q, parent, parentSupplier).then(localSearch ->
-					sp.search(q, localSearch.getItemsFound()).map(mergedItems ->
-							SearchFolder.create(id, parent, (List<Item>) (List<?>) mergedItems, parentSupplier))
-			);
+			return sp.search(q).map(mergedItems -> {
+				List<Item> items = (mergedItems == null) ? emptyList() : (List<Item>) (List<?>) mergedItems;
+				return SearchFolder.create(id, parent, items, parentSupplier);
+			});
 		} else {
 			return App.get().execute(() -> recursiveSearch(id, q, parent, parentSupplier))
 					.map(FutureSupplier::peek);
@@ -118,7 +120,11 @@ public class SearchFolder extends BrowsableItemBase {
 	}
 
 	public interface SearchProvider {
-		FutureSupplier<List<? extends Item>> search(String query, List<? extends Item> localResults);
+		FutureSupplier<List<? extends Item>> search(String query);
+
+		default FutureSupplier<List<? extends Item>> search(String query, List<? extends Item> localResults) {
+			return search(query);
+		}
 	}
 
 	/** Invalidates voice-search results for one media root without flushing unrelated addons. */

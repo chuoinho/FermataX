@@ -2,6 +2,7 @@ package me.aap.fermata.addon.radio;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Locale;
 
 class RadioBrowserStation {
 	final String uuid;
@@ -46,12 +47,12 @@ class RadioBrowserStation {
 
 	boolean hasStreamUrl() {
 		String stream = getStreamUrl();
-		String lower = stream.toLowerCase();
+		String lower = stream.toLowerCase(Locale.ROOT);
 		return lower.startsWith("http://") || lower.startsWith("https://");
 	}
 
 	boolean hasFavicon() {
-		String lower = favicon.toLowerCase();
+		String lower = favicon.toLowerCase(Locale.ROOT);
 		return lower.startsWith("http://") || lower.startsWith("https://");
 	}
 

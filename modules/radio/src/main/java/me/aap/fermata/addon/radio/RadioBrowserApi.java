@@ -48,13 +48,10 @@ class RadioBrowserApi {
 				offset + "&limit=" + limit + "&language=" + enc(language);
 	}
 
-	static String searchByNamePath(String query) {
-		return "stations/search?hidebroken=true&order=clickcount&reverse=true&name=" + enc(query);
-	}
-
 	static String searchByNamePath(String query, int offset, int limit) {
+		int actualLimit = (limit > 0) ? limit : 50;
 		return "stations/search?hidebroken=true&order=clickcount&reverse=true&offset=" +
-				offset + "&limit=" + limit + "&name=" + enc(query);
+				offset + "&limit=" + actualLimit + "&name=" + enc(query);
 	}
 
 	static String languagesPath() {
@@ -95,10 +92,6 @@ class RadioBrowserApi {
 
 	FutureSupplier<List<RadioBrowserStation>> getLanguageStations(String language, int offset, int limit) {
 		return getStations(languageStationsPath(language, offset, limit));
-	}
-
-	FutureSupplier<List<RadioBrowserStation>> searchByName(String query) {
-		return getStations(searchByNamePath(query));
 	}
 
 	FutureSupplier<List<RadioBrowserStation>> searchByName(String query, int offset, int limit) {

@@ -49,9 +49,10 @@ public class RadioBrowserApiTest {
 	}
 
 	@Test
-	public void searchByNameUrlEncodesQuery() {
-		String path = RadioBrowserApi.searchByNamePath("Hà Nội Radio & 100%");
-		assertTrue(path.startsWith("stations/search?hidebroken=true&order=clickcount&reverse=true&name="));
+	public void searchByNamePathAlwaysHasLimit50() {
+		String path = RadioBrowserApi.searchByNamePath("Hà Nội Radio & 100%", 0, 50);
+		assertTrue(path.startsWith("stations/search?hidebroken=true&order=clickcount&reverse=true&offset=0&limit=50&name="));
+		assertTrue(path.contains("limit=50"));
 		assertTrue(!path.contains(" "));
 		assertTrue(path.contains("%26"));
 	}

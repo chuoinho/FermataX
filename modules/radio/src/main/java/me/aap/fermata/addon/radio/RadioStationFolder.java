@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.radio;
 
+import static me.aap.utils.async.Completed.completed;
+
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
@@ -9,6 +11,7 @@ import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.utils.async.FutureSupplier;
 
 class RadioStationFolder extends RadioFolder {
@@ -21,31 +24,46 @@ class RadioStationFolder extends RadioFolder {
 	static final String ID_LANGUAGE_PREFIX = RadioRootItem.SCHEME + ":language:";
 	static final int PAGE_SIZE = 100;
 
+	private final String folderName;
 	private final Type type;
 	private final String value;
 	private final int offset;
 
-	RadioStationFolder(String id, BrowsableItem parent, String name, Type type, String value,
-										 String subtitle, int offset) {
+	RadioStationFolder(String id, BrowsableItem parent, String name, String folderName, Type type,
+										 String value, String subtitle, int offset) {
 		super(id, parent, name, me.aap.fermata.R.drawable.radio, subtitle);
+		this.folderName = folderName;
 		this.type = type;
 		this.value = value;
 		this.offset = offset;
 	}
 
+	RadioStationFolder(String id, BrowsableItem parent, String name, Type type, String value,
+										 String subtitle, int offset) {
+		this(id, parent, name, name, type, value, subtitle, offset);
+	}
+
+	int getOffset() {
+		return offset;
+	}
+
+	String getFolderName() {
+		return folderName;
+	}
+
 	static RadioStationFolder popular(RadioRootItem root) {
-		return new RadioStationFolder(ID_POPULAR, root,
-				root.getLib().getContext().getString(R.string.radio_popular), Type.POPULAR, "", null, 0);
+		String name = root.getLib().getContext().getString(R.string.radio_popular);
+		return new RadioStationFolder(ID_POPULAR, root, name, Type.POPULAR, "", null, 0);
 	}
 
 	static RadioStationFolder topVoted(RadioRootItem root) {
-		return new RadioStationFolder(ID_TOP_VOTED, root,
-				root.getLib().getContext().getString(R.string.radio_top_voted), Type.TOP_VOTED, "", null, 0);
+		String name = root.getLib().getContext().getString(R.string.radio_top_voted);
+		return new RadioStationFolder(ID_TOP_VOTED, root, name, Type.TOP_VOTED, "", null, 0);
 	}
 
 	static RadioStationFolder nearYou(RadioRootItem root, String countryCode) {
-		return new RadioStationFolder(nearYouId(countryCode, 0), root,
-				root.getLib().getContext().getString(R.string.radio_near_you), Type.NEARBY,
+		String name = root.getLib().getContext().getString(R.string.radio_near_you);
+		return new RadioStationFolder(nearYouId(countryCode, 0), root, name, Type.NEARBY,
 				countryCode, null, 0);
 	}
 
@@ -67,40 +85,41 @@ class RadioStationFolder extends RadioFolder {
 				entry.name, subtitle(root, entry.stationCount), 0);
 	}
 
-	static RadioBrowserApi.DirectoryEntry decodeCountry(String id) {
+	static FolderSpec decodeCountry(String id) {
 		String tail = id.substring(ID_COUNTRY_PREFIX.length());
 		int offset = parseOffset(tail);
 		tail = stripOffset(tail);
 		int sep = tail.indexOf(':');
-		if (sep == -1) return new RadioBrowserApi.DirectoryEntry(Uri.decode(tail), Uri.decode(tail), offset);
+		if (sep == -1) return new FolderSpec(Uri.decode(tail), Uri.decode(tail), offset);
 		String code = Uri.decode(tail.substring(0, sep));
 		String name = Uri.decode(tail.substring(sep + 1));
-		return new RadioBrowserApi.DirectoryEntry(name, code, offset);
+		return new FolderSpec(name, code, offset);
 	}
 
-	static RadioBrowserApi.DirectoryEntry decodeLanguage(String id) {
+	static FolderSpec decodeLanguage(String id) {
 		String tail = id.substring(ID_LANGUAGE_PREFIX.length());
 		int offset = parseOffset(tail);
 		tail = stripOffset(tail);
 		int sep = tail.indexOf(':');
-		if (sep == -1) return new RadioBrowserApi.DirectoryEntry(Uri.decode(tail), Uri.decode(tail), offset);
+		if (sep == -1) return new FolderSpec(Uri.decode(tail), Uri.decode(tail), offset);
 		String code = Uri.decode(tail.substring(0, sep));
 		String name = Uri.decode(tail.substring(sep + 1));
-		return new RadioBrowserApi.DirectoryEntry(name, code, offset);
+		return new FolderSpec(name, code, offset);
 	}
 
-	static RadioBrowserApi.DirectoryEntry decodeTag(String id) {
+	static FolderSpec decodeTag(String id) {
 		String tail = id.substring(ID_TAG_PREFIX.length());
 		int offset = parseOffset(tail);
 		tail = stripOffset(tail);
 		String tag = Uri.decode(tail);
-		return new RadioBrowserApi.DirectoryEntry(tag, tag, offset);
+		return new FolderSpec(tag, tag, offset);
 	}
 
-	static String decodeNearby(String id) {
+	static FolderSpec decodeNearby(String id) {
 		String tail = id.substring(ID_NEARBY_PREFIX.length());
+		int offset = parseOffset(tail);
 		tail = stripOffset(tail);
-		return Uri.decode(tail);
+		return new FolderSpec("", Uri.decode(tail), offset);
 	}
 
 	static int decodeNearbyOffset(String id) {
@@ -140,7 +159,9 @@ class RadioStationFolder extends RadioFolder {
 			for (RadioBrowserStation station : list) {
 				if (station.hasStreamUrl()) items.add(new RadioStationItem(this, station));
 			}
-			if (list.size() >= PAGE_SIZE) {
+			boolean hasMore = (type == Type.COUNTRY || type == Type.LANGUAGE || type == Type.TAG || type == Type.NEARBY)
+					&& list.size() >= PAGE_SIZE;
+			if (hasMore) {
 				items.add(createNextPageItem(offset + PAGE_SIZE));
 			}
 			return items;
@@ -149,29 +170,43 @@ class RadioStationFolder extends RadioFolder {
 
 	private Item createNextPageItem(int nextOffset) {
 		String nextId = switch (type) {
-			case COUNTRY -> countryId(new RadioBrowserApi.DirectoryEntry(getName(), value, 0), nextOffset);
-			case LANGUAGE -> languageId(new RadioBrowserApi.DirectoryEntry(getName(), value, 0), nextOffset);
-			case TAG -> tagId(value, nextOffset);
+			case COUNTRY -> countryId(folderName, value, nextOffset);
+			case LANGUAGE -> languageId(folderName, value, nextOffset);
+			case TAG -> tagId(folderName, nextOffset);
 			case NEARBY -> nearYouId(value, nextOffset);
 			default -> getId() + ":offset=" + nextOffset;
 		};
 		String moreText = getRoot().getLib().getContext().getString(R.string.radio_load_more);
-		return new RadioStationFolder(nextId, this, moreText, type, value, null, nextOffset) {
+		return new RadioStationFolder(nextId, this, folderName, folderName, type, value, null, nextOffset) {
 			@Override
 			public int getIcon() {
 				return me.aap.fermata.R.drawable.more;
 			}
+
+			@NonNull
+			@Override
+			protected FutureSupplier<String> buildTitle(int seqNum, BrowsableItemPrefs parentPrefs) {
+				return completed(moreText);
+			}
 		};
 	}
 
+	static String countryId(String name, String code, int offset) {
+		String base = ID_COUNTRY_PREFIX + Uri.encode(code) + ':' + Uri.encode(name);
+		return offset > 0 ? base + ":offset=" + offset : base;
+	}
+
 	static String countryId(RadioBrowserApi.DirectoryEntry entry, int offset) {
-		String base = ID_COUNTRY_PREFIX + Uri.encode(entry.code) + ':' + Uri.encode(entry.name);
+		return countryId(entry.name, entry.code, offset);
+	}
+
+	static String languageId(String name, String code, int offset) {
+		String base = ID_LANGUAGE_PREFIX + Uri.encode(code) + ':' + Uri.encode(name);
 		return offset > 0 ? base + ":offset=" + offset : base;
 	}
 
 	static String languageId(RadioBrowserApi.DirectoryEntry entry, int offset) {
-		String base = ID_LANGUAGE_PREFIX + Uri.encode(entry.code) + ':' + Uri.encode(entry.name);
-		return offset > 0 ? base + ":offset=" + offset : base;
+		return languageId(entry.name, entry.code, offset);
 	}
 
 	static String tagId(String tag, int offset) {
@@ -187,6 +222,18 @@ class RadioStationFolder extends RadioFolder {
 	private static String subtitle(RadioRootItem root, int stationCount) {
 		return stationCount > 0 ? root.getLib().getContext().getString(R.string.radio_station_count,
 				stationCount) : null;
+	}
+
+	static final class FolderSpec {
+		final String name;
+		final String value;
+		final int offset;
+
+		FolderSpec(String name, String value, int offset) {
+			this.name = name;
+			this.value = value;
+			this.offset = offset;
+		}
 	}
 
 	enum Type {
