@@ -1,5 +1,6 @@
 package me.app.fermatax.auto.carapps;
 
+import static me.aap.utils.async.Completed.failed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -22,7 +23,7 @@ import me.aap.fermata.ui.carapps.RootState;
 import me.app.fermatax.auto.CarService;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 35, application = Application.class)
+@Config(sdk = 35, application = me.aap.fermata.FermataApplication.class)
 public class RootGrantTest {
 
 	private Context context;
@@ -51,7 +52,7 @@ public class RootGrantTest {
 	@Test
 	public void denyLeavesStateAvailableAndRecordsNothing() {
 		CarAppsFeature.setState(RootState.AVAILABLE);
-		boolean granted = RootGrant.request(context).get(() -> false);
+		boolean granted = RootGrant.request(context, () -> failed(new SecurityException("root denied"))).get(() -> false);
 		assertFalse(granted);
 		assertEquals(RootState.AVAILABLE, CarAppsFeature.state());
 		assertFalse(context.getSharedPreferences("fermata", Context.MODE_PRIVATE)

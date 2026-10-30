@@ -44,7 +44,7 @@ import me.app.fermatax.auto.CarService;
 import me.app.fermatax.auto.LauncherActivity;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 35, application = Application.class)
+@Config(sdk = 35, application = me.aap.fermata.FermataApplication.class)
 public class CarAppsFragmentTest {
 
 	private Context context;

@@ -34,7 +34,7 @@ import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootState;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 35, application = Application.class)
+@Config(sdk = 35, application = me.aap.fermata.FermataApplication.class)
 public class CarDisplayClientTest {
 
 	private Context context;
