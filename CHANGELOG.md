@@ -3,6 +3,7 @@
 ## [2.1] - 2026-10-29
 
 ### What's New & Noteworthy
+- **Road hazard alerts**: The Glass weather card warns about ice risk, fog, heavy rain or snow and strong gusts for the next 3 hours, and refreshes every 25 km on long drives.
 - **Radio-Browser Coverage**: Expanded station & country coverage, pagination with "Load more", new Languages directory, Near you folder, search by name, and station favicon display.
 - **Glass theme (New)**: A frosted-glass look for Android Auto and phones, with a GPS speedometer, trip computer, hourly weather, custom shortcuts and its own Day/Night switch. Features translucent acrylic cards, responsive Bento dashboard layouts, and seamless theme switching.
 - **Use your phone as a remote ("Open on Car")**: Skip tracks, Play/Pause, or pick content on your phone and send it to the car screen. Essential when the car display has no touch screen.

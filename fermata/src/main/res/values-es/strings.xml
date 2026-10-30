@@ -706,6 +706,10 @@ Por favor, reinicie la aplicación.</string>
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Módulo de extensión</string>
     <string name="glass_weather_header">CLIMA Y PRONÓSTICO</string>
+    <string name="glass_weather_hazard_ice">Riesgo de hielo · reduce la velocidad</string>
+    <string name="glass_weather_hazard_fog">Niebla · poca visibilidad</string>
+    <string name="glass_weather_hazard_heavy">Lluvia o nieve intensa</string>
+    <string name="glass_weather_hazard_wind">Rachas fuertes · %1$s</string>
     <string name="glass_weather_updating">Actualizando…</string>
     <string name="glass_speedo_card_title">VELOCIDAD Y TRAYECTO</string>
 

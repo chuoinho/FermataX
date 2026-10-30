@@ -703,6 +703,10 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">外掛模組</string>
     <string name="glass_weather_header">天氣與預報</string>
+    <string name="glass_weather_hazard_ice">結冰風險 · 請減速</string>
+    <string name="glass_weather_hazard_fog">起霧 · 能見度低</string>
+    <string name="glass_weather_hazard_heavy">大雨或大雪</string>
+    <string name="glass_weather_hazard_wind">強陣風 · %1$s</string>
     <string name="glass_weather_updating">更新中…</string>
     <string name="glass_speedo_card_title">速度與旅程</string>
 

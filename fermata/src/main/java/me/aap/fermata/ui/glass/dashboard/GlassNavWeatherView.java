@@ -27,6 +27,7 @@ import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
 import me.aap.fermata.ui.glass.weather.GlassOpenMeteoClient;
+import me.aap.fermata.ui.glass.weather.RoadHazardPolicy;
 
 /**
  * Automotive frosted glass card that seamlessly switches between turn-by-turn navigation
@@ -54,6 +55,7 @@ public class GlassNavWeatherView extends FrameLayout {
     private TextView tvWeatherHeader;
     private TextView tvWeatherTemp;
     private TextView tvWeatherCondition;
+    private TextView tvWeatherHazard;
     private TextView tvWeatherHighLow;
     private TextView tvWeatherLocation;
     private TextView btnWeatherAction;
@@ -230,6 +232,23 @@ public class GlassNavWeatherView extends FrameLayout {
         tvWeatherHeader.setLetterSpacing(0.08f);
         weatherContainer.addView(tvWeatherHeader);
 
+        // Road hazard chip, hidden unless the forecast reports one
+        tvWeatherHazard = new TextView(context);
+        tvWeatherHazard.setTextSize(13f);
+        tvWeatherHazard.setTypeface(Typeface.DEFAULT_BOLD);
+        tvWeatherHazard.setGravity(Gravity.CENTER);
+        tvWeatherHazard.setSingleLine(true);
+        tvWeatherHazard.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        int chipH = GlassDimensions.dpToPx(context, 10);
+        int chipV = GlassDimensions.dpToPx(context, 4);
+        tvWeatherHazard.setPadding(chipH, chipV, chipH, chipV);
+        LinearLayout.LayoutParams hazardLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        hazardLp.topMargin = GlassDimensions.dpToPx(context, 6);
+        tvWeatherHazard.setLayoutParams(hazardLp);
+        tvWeatherHazard.setVisibility(View.GONE);
+        weatherContainer.addView(tvWeatherHazard);
+
         // Center Current Weather
         LinearLayout centerWeather = new LinearLayout(context);
         centerWeather.setOrientation(LinearLayout.VERTICAL);
@@ -348,6 +367,7 @@ public class GlassNavWeatherView extends FrameLayout {
             condition += safeGetString(getContext(), me.aap.fermata.R.string.weather_cached_suffix, " (Cached)");
         }
         tvWeatherCondition.setText(condition);
+        bindHazard(forecast.getHazard(), isMetric);
         String highLow = String.format(Locale.US, "H: %.0f°  L: %.0f°",
                 forecast.getHighTemp(), forecast.getLowTemp());
         if (forecast.getTimestamp() > 0) {
@@ -397,8 +417,41 @@ public class GlassNavWeatherView extends FrameLayout {
         }
     }
 
+    private void bindHazard(@NonNull RoadHazardPolicy.Hazard hazard, boolean isMetric) {
+        Context ctx = getContext();
+        String text;
+        switch (hazard.getType()) {
+            case ICE:
+                text = safeGetString(ctx, R.string.glass_weather_hazard_ice, "Ice risk · slow down");
+                break;
+            case FOG:
+                text = safeGetString(ctx, R.string.glass_weather_hazard_fog, "Fog · low visibility");
+                break;
+            case HEAVY_PRECIP:
+                text = safeGetString(ctx, R.string.glass_weather_hazard_heavy, "Heavy rain or snow");
+                break;
+            case WIND:
+                String gust = isMetric
+                        ? String.format(Locale.US, "%.0f km/h", hazard.getGustKmh())
+                        : String.format(Locale.US, "%.0f mph", hazard.getGustKmh() / 1.609344f);
+                text = ctx.getString(R.string.glass_weather_hazard_wind, gust);
+                break;
+            default:
+                tvWeatherHazard.setVisibility(View.GONE);
+                return;
+        }
+        // Ice is the one hazard that calls for immediate action; the others use the accent color.
+        int color = hazard.getType() == RoadHazardPolicy.Type.ICE ? colors.getErrorText() : colors.getActionText();
+        tvWeatherHazard.setText("⚠ " + text);
+        tvWeatherHazard.setContentDescription(text);
+        tvWeatherHazard.setTextColor(color);
+        tvWeatherHazard.setBackground(GlassDrawables.createGlassPillDrawable(ctx, 12f, isNight));
+        tvWeatherHazard.setVisibility(View.VISIBLE);
+    }
+
     public void showPermissionNeeded(String message, Runnable onAction) {
         Context ctx = getContext();
+        tvWeatherHazard.setVisibility(View.GONE);
         tvWeatherTemp.setText("--°");
         tvWeatherCondition.setText(safeGetString(ctx, R.string.glass_weather_perm_needed, "Permission Needed"));
         tvWeatherHighLow.setText(message);

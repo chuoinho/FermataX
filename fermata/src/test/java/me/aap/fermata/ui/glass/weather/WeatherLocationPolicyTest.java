@@ -80,4 +80,15 @@ public class WeatherLocationPolicyTest {
         assertFalse(WeatherLocationPolicy.shouldRefresh(false, false, false, now, now - 59 * 60_000L, true));
         assertTrue(WeatherLocationPolicy.shouldRefresh(false, false, false, now, now - HOUR_MS, true));
     }
+
+    @Test
+    public void distanceRefreshNeedsTwentyFiveKmAndTenMinutes() {
+        long now = 10 * 60 * 60_000L;
+        long tenMinAgo = now - 10 * 60_000L;
+        assertTrue(WeatherLocationPolicy.shouldRefreshForDistance(25_000f, now, tenMinAgo));
+        assertFalse(WeatherLocationPolicy.shouldRefreshForDistance(24_999f, now, tenMinAgo));
+        assertFalse(WeatherLocationPolicy.shouldRefreshForDistance(80_000f, now, tenMinAgo + 1));
+        assertFalse("no fetch yet is handled by the normal schedule",
+                WeatherLocationPolicy.shouldRefreshForDistance(80_000f, now, 0L));
+    }
 }

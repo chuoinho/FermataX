@@ -706,6 +706,10 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Addon Module</string>
     <string name="glass_weather_header">WEATHER &amp; FORECAST</string>
+    <string name="glass_weather_hazard_ice">Ice risk · slow down</string>
+    <string name="glass_weather_hazard_fog">Fog · low visibility</string>
+    <string name="glass_weather_hazard_heavy">Heavy rain or snow</string>
+    <string name="glass_weather_hazard_wind">Strong gusts · %1$s</string>
     <string name="glass_weather_updating">Updating…</string>
     <string name="glass_speedo_card_title">SPEED &amp; TRIP</string>
 

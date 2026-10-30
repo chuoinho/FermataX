@@ -714,6 +714,10 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Tiện ích mở rộng</string>
     <string name="glass_weather_header">THỜI TIẾT &amp; DỰ BÁO</string>
+    <string name="glass_weather_hazard_ice">Nguy cơ đóng băng · giảm tốc</string>
+    <string name="glass_weather_hazard_fog">Sương mù · tầm nhìn kém</string>
+    <string name="glass_weather_hazard_heavy">Mưa hoặc tuyết lớn</string>
+    <string name="glass_weather_hazard_wind">Gió giật mạnh · %1$s</string>
     <string name="glass_weather_updating">Đang cập nhật…</string>
     <string name="glass_speedo_card_title">TỐC ĐỘ &amp; HÀNH TRÌNH</string>
 

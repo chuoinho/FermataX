@@ -50,4 +50,57 @@ public class GlassOpenMeteoClientTest {
         assertEquals("Rain", GlassOpenMeteoClient.getWeatherConditionDescription(61));
         assertEquals("Thunderstorm", GlassOpenMeteoClient.getWeatherConditionDescription(95));
     }
+
+    private static String hazardJson(String units, String current, String hourlyGusts, String hourlyVis,
+                                     String hourlyCodes, String hourlyTemps) {
+        return "{\"current_units\":" + units + ",\"hourly_units\":" + units + "," +
+                "\"current\":{\"time\":\"2026-10-13T01:00\"," + current + "}," +
+                "\"hourly\":{\"time\":[\"2026-10-13T01:00\",\"2026-10-13T02:00\",\"2026-10-13T03:00\"," +
+                "\"2026-10-13T04:00\",\"2026-10-13T05:00\"]," +
+                "\"temperature_2m\":" + hourlyTemps + ",\"weather_code\":" + hourlyCodes +
+                (hourlyGusts == null ? "" : ",\"wind_gusts_10m\":" + hourlyGusts) +
+                (hourlyVis == null ? "" : ",\"visibility\":" + hourlyVis) + "}}";
+    }
+
+    @Test
+    public void urlRequestsGustsAndVisibility() {
+        String url = GlassOpenMeteoClient.buildUrl(52.52, 13.41, true);
+        assertTrue(url.contains("current=temperature_2m,weather_code,is_day,wind_gusts_10m,visibility"));
+        assertTrue(url.contains("hourly=temperature_2m,weather_code,is_day,wind_gusts_10m,visibility"));
+    }
+
+    @Test
+    public void parsesWithoutHazardFieldsAsNoHazard() throws Exception {
+        GlassOpenMeteoClient.HourlyForecast f = GlassOpenMeteoClient.parseForecastJson(hazardJson(
+                "{}", "\"temperature_2m\":0.5,\"weather_code\":61", null, null,
+                "[1,1,1,1,1]", "[10,10,10,10,10]"));
+        // Current sample alone is near freezing with rain.
+        assertEquals(RoadHazardPolicy.Type.ICE, f.getHazard().getType());
+
+        f = GlassOpenMeteoClient.parseForecastJson("{\"current\":{\"temperature_2m\":20}}");
+        assertEquals(RoadHazardPolicy.Type.NONE, f.getHazard().getType());
+    }
+
+    @Test
+    public void hazardLooksAtNextThreeHoursInReportedUnits() throws Exception {
+        String imperial = "{\"temperature_2m\":\"°F\",\"wind_gusts_10m\":\"mp/h\",\"visibility\":\"ft\"}";
+        // 45 mp/h gusts at 03:00 -> ~72 km/h.
+        GlassOpenMeteoClient.HourlyForecast f = GlassOpenMeteoClient.parseForecastJson(hazardJson(imperial,
+                "\"temperature_2m\":60,\"weather_code\":1,\"wind_gusts_10m\":10,\"visibility\":30000",
+                "[10,10,45,10,10]", "[30000,30000,30000,30000,30000]", "[1,1,1,1,1]", "[60,60,60,60,60]"));
+        assertEquals(RoadHazardPolicy.Type.WIND, f.getHazard().getType());
+        assertEquals(72.4f, f.getHazard().getGustKmh(), 0.1f);
+
+        // 34°F with rain is ice risk; 1000 ft visibility (305 m) is fog, ice still wins.
+        f = GlassOpenMeteoClient.parseForecastJson(hazardJson(imperial,
+                "\"temperature_2m\":40,\"weather_code\":1",
+                null, "[30000,1000,30000,30000,30000]", "[1,1,61,1,1]", "[40,40,34,40,40]"));
+        assertEquals(RoadHazardPolicy.Type.ICE, f.getHazard().getType());
+
+        // Fog only at 05:00 is beyond the 3 hour window.
+        f = GlassOpenMeteoClient.parseForecastJson(hazardJson("{}",
+                "\"temperature_2m\":15,\"weather_code\":1",
+                null, null, "[1,1,1,1,45]", "[15,15,15,15,15]"));
+        assertEquals(RoadHazardPolicy.Type.NONE, f.getHazard().getType());
+    }
 }

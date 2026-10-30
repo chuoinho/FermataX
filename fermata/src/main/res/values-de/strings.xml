@@ -612,6 +612,10 @@
     <string name="car_finder_camera_error">Kamerafehler: %1$s</string>
     <string name="glass_addon_module_desc">Zusatzmodul</string>
     <string name="glass_weather_header">WETTER &amp; VORHERSAGE</string>
+    <string name="glass_weather_hazard_ice">Glättegefahr · langsam fahren</string>
+    <string name="glass_weather_hazard_fog">Nebel · schlechte Sicht</string>
+    <string name="glass_weather_hazard_heavy">Starkregen oder Schnee</string>
+    <string name="glass_weather_hazard_wind">Starke Böen · %1$s</string>
     <string name="glass_weather_updating">Aktualisierung…</string>
     <string name="glass_speedo_card_title">GESCHWINDIGKEIT &amp; FAHRT</string>
     <string name="glass_shortcut_open">Öffnen</string>
