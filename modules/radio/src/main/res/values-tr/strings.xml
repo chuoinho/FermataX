@@ -10,4 +10,7 @@
 	<string name="radio_source_name">İstasyon adı</string>
 	<string name="radio_source_url">Akış URL\&apos;si</string>
 	<string name="radio_source_add_failed">Radyo kaynağı kaydedilemedi: %1$s</string>
+	<string name="radio_languages">Diller</string>
+	<string name="radio_near_you">Yakınınızda</string>
+	<string name="radio_load_more">Daha fazla yükle</string>
 </resources>

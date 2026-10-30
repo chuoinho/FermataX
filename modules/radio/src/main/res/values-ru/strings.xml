@@ -10,4 +10,7 @@
 	<string name="radio_source_name">Название станции</string>
 	<string name="radio_source_url">URL-адрес потока</string>
 	<string name="radio_source_add_failed">Не удалось сохранить радиоисточник: %1$s</string>
+	<string name="radio_languages">Языки</string>
+	<string name="radio_near_you">Рядом с вами</string>
+	<string name="radio_load_more">Загрузить еще</string>
 </resources>

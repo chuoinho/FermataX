@@ -2,6 +2,7 @@ package me.aap.fermata.addon.radio;
 
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
 
 import android.net.Uri;
@@ -25,7 +26,11 @@ class RadioStationItem extends RadioPlayableItem {
 	RadioStationItem(@NonNull BrowsableItem parent, @NonNull RadioBrowserStation station) {
 		super(toId(station), parent, GenericFileSystem.getInstance().create(station.getStreamUrl()));
 		this.station = station;
-		this.api = ((RadioRootItem) parent.getRoot()).getApi();
+		this.api = (parent.getRoot() instanceof RadioRootItem root) ? root.getApi() : null;
+	}
+
+	RadioBrowserStation getStation() {
+		return station;
 	}
 
 	static FutureSupplier<RadioStationItem> create(RadioRootItem root, String id) {
@@ -57,7 +62,9 @@ class RadioStationItem extends RadioPlayableItem {
 	@NonNull
 	@Override
 	public Uri getLocation() {
-		api.click(station.uuid).onFailure(err -> Log.d(err, "Failed to register radio click: ", station.uuid));
+		if (api != null) {
+			api.click(station.uuid).onFailure(err -> Log.d(err, "Failed to register radio click: ", station.uuid));
+		}
 		return Uri.parse(station.getStreamUrl());
 	}
 
@@ -74,6 +81,10 @@ class RadioStationItem extends RadioPlayableItem {
 		meta.putString(METADATA_KEY_TITLE, station.getName());
 		if (!station.getArtist().isEmpty()) meta.putString(METADATA_KEY_ARTIST, station.getArtist());
 		meta.putString(METADATA_KEY_ALBUM, "Internet Radio");
+		if (station.hasFavicon()) {
+			meta.putString(METADATA_KEY_DISPLAY_ICON_URI, station.favicon);
+			meta.setImageUri(station.favicon);
+		}
 		return buildMeta(meta);
 	}
 
