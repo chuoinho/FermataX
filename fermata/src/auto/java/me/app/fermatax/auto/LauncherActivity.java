@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -72,10 +73,51 @@ public class LauncherActivity extends AppCompatActivity {
 	private static final Pref<Supplier<String[]>> AA_LAUNCHER_APPS = Pref.sa("AA_LAUNCHER_APPS",
 			() -> new String[]{FermataApplication.get().getPackageName(), "com.android.chrome",
 					"com.google.android.gm", "com.google.android.apps.maps", "com.google.android.youtube"});
-	private static LauncherActivity activeInstance;
+	public interface VisibilityListener {
+		void onLauncherVisibilityChanged(boolean visible);
+	}
 
-	static LauncherActivity getActiveInstance() {
+	private static final List<VisibilityListener> visibilityListeners = new CopyOnWriteArrayList<>();
+	private static LauncherActivity activeInstance;
+	private AppListView appListView;
+
+	public static void addVisibilityListener(VisibilityListener l) {
+		if (l != null && !visibilityListeners.contains(l)) {
+			visibilityListeners.add(l);
+		}
+	}
+
+	public static void removeVisibilityListener(VisibilityListener l) {
+		if (l != null) {
+			visibilityListeners.remove(l);
+		}
+	}
+
+	public static void notifyVisibility(boolean visible) {
+		for (VisibilityListener l : visibilityListeners) {
+			try {
+				l.onLauncherVisibilityChanged(visible);
+			} catch (Throwable ignored) {
+			}
+		}
+	}
+
+	public static LauncherActivity getActiveInstance() {
 		return activeInstance;
+	}
+
+	public AppListView getAppListView() {
+		return appListView;
+	}
+
+	public static boolean isSelectionMode() {
+		return activeInstance != null && activeInstance.appListView != null && activeInstance.appListView.isSelectModeActive();
+	}
+
+	public static void exitSelectionMode() {
+		if (activeInstance != null && activeInstance.appListView != null) {
+			activeInstance.appListView.exitSelectMode();
+		}
 	}
 
 	@Override
@@ -96,6 +138,7 @@ public class LauncherActivity extends AppCompatActivity {
 		MainActivityDelegate.setTheme(this, true);
 		setRequestedOrientation();
 		var v = new AppListView(this, isVirtualDisplay());
+		this.appListView = v;
 		setContentView(v);
 		var w = getWindow();
 		w.addFlags(
@@ -122,12 +165,14 @@ public class LauncherActivity extends AppCompatActivity {
 		super.onResume();
 		activeInstance = this;
 		setRequestedOrientation();
+		notifyVisibility(true);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		activeInstance = null;
+		notifyVisibility(false);
 	}
 
 	private void setRequestedOrientation() {
@@ -286,6 +331,14 @@ public class LauncherActivity extends AppCompatActivity {
 			saveApps();
 			selectApps = null;
 			Objects.requireNonNull(getAdapter()).notifyDataSetChanged();
+		}
+
+		boolean isSelectModeActive() {
+			return selectApps != null;
+		}
+
+		void exitSelectMode() {
+			if (selectApps != null) selectApps();
 		}
 
 		private void saveApps() {
@@ -499,6 +552,7 @@ public class LauncherActivity extends AppCompatActivity {
 							intent.putExtra(INTENT_EXTRA_MODE, FermataApplication.get().getMirroringMode());
 						}
 						getContext().startActivity(intent);
+						notifyVisibility(false);
 						if (!isVirtual) {
 							MirrorDisplay.disableAccelRotation();
 						}

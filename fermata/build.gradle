@@ -15,7 +15,12 @@ def noBackgroundLocation = project.getProperties()
         .getOrDefault('NO_BACKGROUND_LOCATION', 'false').toString().toBoolean()
 
 android {
-    testOptions.unitTests.includeAndroidResources = true
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            maxHeapSize = "2048m"
+        }
+    }
     buildFeatures {
         aidl = true
     }

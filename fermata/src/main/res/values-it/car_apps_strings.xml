@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="car_apps_title">App auto</string>
+    <string name="car_apps_dashboard_sub">Launcher display virtuale indipendente</string>
+    <string name="car_apps_loading">Avvio display auto…</string>
+    <string name="car_apps_needs_root">L\'accesso root è richiesto per eseguire app auto indipendenti</string>
+    <string name="car_apps_grant_root">Concedi root</string>
+    <string name="car_apps_server_error">Impossibile avviare il server display</string>
+    <string name="car_apps_nav_back">Indietro</string>
+    <string name="car_apps_nav_drawer">Elenco app</string>
+    <string name="car_apps_nav_close">Chiudi app</string>
+    <string name="car_apps_panel_off">Spegni schermo telefono</string>
+    <string name="car_apps_readiness_title">Display auto indipendente</string>
+    <string name="car_apps_readiness_status_ready">Pronto</string>
+    <string name="car_apps_readiness_status_need_root">Accesso root richiesto</string>
+    <string name="car_apps_readiness_action_grant">Concedi root</string>
+    <string name="car_apps_readiness_warn_panel_power">Impossibile spegnere lo schermo del telefono su questo dispositivo</string>
+    <string name="car_apps_readiness_warn_xiaomi_inject">Richiede debug USB (Impostazioni di sicurezza)</string>
+</resources>

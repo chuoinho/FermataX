@@ -58,7 +58,6 @@ public class CarAppsFragment extends MainActivityFragment {
 	private LinearLayout bottomBar;
 	private ImageButton btnBack;
 	private ImageButton btnDrawer;
-	private ImageButton btnPanelPower;
 	private ImageButton btnClose;
 
 	private LinearLayout loadingOverlay;
@@ -69,6 +68,12 @@ public class CarAppsFragment extends MainActivityFragment {
 	private final Runnable rootListener = this::updateUiState;
 	private final Consumer<CarDisplayClient.State> clientListener = s -> updateUiState();
 	private final Consumer<Boolean> panelListener = off -> updateUiState();
+	private final Handler mainHandler = new Handler(Looper.getMainLooper());
+	private final LauncherActivity.VisibilityListener launcherVisibilityListener = visible -> {
+		mainHandler.post(() -> {
+			setScreen(visible ? CarAppsNavModel.Screen.DRAWER : CarAppsNavModel.Screen.APP);
+		});
+	};
 
 	private final SurfaceHolder.Callback surfaceCallback = new SurfaceHolder.Callback() {
 		@Override
@@ -157,7 +162,16 @@ public class CarAppsFragment extends MainActivityFragment {
 		surfaceView.setLayoutParams(surfaceLp);
 		surfaceView.getHolder().addCallback(surfaceCallback);
 		surfaceView.setOnTouchListener((v, event) -> {
-			client.inject(event);
+			MotionEvent clean = MotionEvent.obtain(
+					event.getDownTime(),
+					event.getEventTime(),
+					event.getAction(),
+					event.getX(),
+					event.getY(),
+					event.getMetaState()
+			);
+			client.inject(clean);
+			clean.recycle();
 			return true;
 		});
 		viewportContainer.addView(surfaceView);
@@ -262,7 +276,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		btnBack = new ImageButton(ctx);
 		btnBack.setImageResource(R.drawable.ic_arrow_back);
 		btnBack.setContentDescription(ctx.getString(R.string.car_apps_nav_back));
-		btnBack.setBackgroundColor(Color.TRANSPARENT);
+		btnBack.setBackground(GlassDrawables.createGlassItemHighlightDrawable(ctx, true));
 		btnBack.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 		LinearLayout.LayoutParams btnBackLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
 		btnBack.setLayoutParams(btnBackLp);
@@ -273,7 +287,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		btnDrawer = new ImageButton(ctx);
 		btnDrawer.setImageResource(R.drawable.view_grid);
 		btnDrawer.setContentDescription(ctx.getString(R.string.car_apps_nav_drawer));
-		btnDrawer.setBackgroundColor(Color.TRANSPARENT);
+		btnDrawer.setBackground(GlassDrawables.createGlassItemHighlightDrawable(ctx, true));
 		btnDrawer.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 		LinearLayout.LayoutParams btnDrawerLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
 		btnDrawer.setLayoutParams(btnDrawerLp);
@@ -287,31 +301,11 @@ public class CarAppsFragment extends MainActivityFragment {
 		});
 		bottomBar.addView(btnDrawer);
 
-		// 3. Panel power button ("Tắt màn hình điện thoại")
-		btnPanelPower = new ImageButton(ctx);
-		btnPanelPower.setImageResource(R.drawable.ic_phone_panel_off);
-		btnPanelPower.setContentDescription(ctx.getString(R.string.car_apps_panel_off));
-		btnPanelPower.setBackgroundColor(Color.TRANSPARENT);
-		btnPanelPower.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-		LinearLayout.LayoutParams btnPanelPowerLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
-		btnPanelPower.setLayoutParams(btnPanelPowerLp);
-		btnPanelPower.setOnClickListener(v -> {
-			Context c = getContext();
-			boolean newState = !client.isPanelOff();
-			if (c != null) {
-				SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
-				prefs.edit().putBoolean(PanelPowerPolicy.PREF_PANEL_OFF, newState).apply();
-			}
-			client.setPanelOff(newState);
-			updatePanelPowerUi();
-		});
-		bottomBar.addView(btnPanelPower);
-
-		// 4. Close app button
+		// 3. Close app button
 		btnClose = new ImageButton(ctx);
 		btnClose.setImageResource(R.drawable.keyboard_close);
 		btnClose.setContentDescription(ctx.getString(R.string.car_apps_nav_close));
-		btnClose.setBackgroundColor(Color.TRANSPARENT);
+		btnClose.setBackground(GlassDrawables.createGlassItemHighlightDrawable(ctx, true));
 		btnClose.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 		LinearLayout.LayoutParams btnCloseLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
 		btnClose.setLayoutParams(btnCloseLp);
@@ -330,6 +324,7 @@ public class CarAppsFragment extends MainActivityFragment {
 	@Override
 	public void onStart() {
 		super.onStart();
+		LauncherActivity.addVisibilityListener(launcherVisibilityListener);
 		CarAppsFeature.addListener(rootListener);
 		client.addStateListener(clientListener);
 		client.addPanelListener(panelListener);
@@ -339,11 +334,15 @@ public class CarAppsFragment extends MainActivityFragment {
 				client.ensureRunning(ctx);
 			}
 		}
+		if (LauncherActivity.getActiveInstance() != null) {
+			setScreen(CarAppsNavModel.Screen.DRAWER);
+		}
 		updateUiState();
 	}
 
 	@Override
 	public void onStop() {
+		LauncherActivity.removeVisibilityListener(launcherVisibilityListener);
 		CarAppsFeature.removeListener(rootListener);
 		client.removeStateListener(clientListener);
 		client.removePanelListener(panelListener);
@@ -452,8 +451,6 @@ public class CarAppsFragment extends MainActivityFragment {
 				break;
 		}
 
-		updatePanelPowerUi();
-
 		if (uiState == CarAppsUiState.State.READY && attached) {
 			Context c = getContext();
 			if (c != null && client.hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
@@ -461,23 +458,9 @@ public class CarAppsFragment extends MainActivityFragment {
 				boolean prefOff = prefs.getBoolean(PanelPowerPolicy.PREF_PANEL_OFF, true);
 				if (prefOff && !client.isPanelOff()) {
 					client.setPanelOff(true);
-					updatePanelPowerUi();
 				}
 			}
 		}
-	}
-
-	private void updatePanelPowerUi() {
-		if (btnPanelPower == null) return;
-		boolean capAvailable = client.hasCapability(ICarDisplayServer.CAP_PANEL_POWER);
-		if (!capAvailable) {
-			btnPanelPower.setVisibility(View.GONE);
-			return;
-		}
-		btnPanelPower.setVisibility(View.VISIBLE);
-		boolean off = client.isPanelOff();
-		btnPanelPower.setSelected(off);
-		btnPanelPower.setAlpha(off ? 1.0f : 0.45f);
 	}
 
 	private void checkAttachSurface() {
@@ -536,10 +519,6 @@ public class CarAppsFragment extends MainActivityFragment {
 
 	public ImageButton getCloseButton() {
 		return btnClose;
-	}
-
-	public ImageButton getPanelPowerButton() {
-		return btnPanelPower;
 	}
 
 	public Button getGrantRootButton() {

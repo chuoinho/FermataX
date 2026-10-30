@@ -159,7 +159,15 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 
 		if (displayId >= 0 && e != null) {
 			Hidden.setDisplayId(e, displayId);
-			Hidden.injectInputEvent(e, 0);
+			boolean ok = Hidden.injectInputEvent(e, 0);
+			if (!ok && e.getAction() == MotionEvent.ACTION_UP) {
+				try {
+					int x = Math.round(e.getX());
+					int y = Math.round(e.getY());
+					Runtime.getRuntime().exec(new String[]{"input", "-d", String.valueOf(displayId), "tap", String.valueOf(x), String.valueOf(y)}).waitFor();
+				} catch (Throwable ignored) {
+				}
+			}
 		}
 	}
 
@@ -170,14 +178,26 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		}
 
 		if (displayId >= 0) {
-			long now = SystemClock.uptimeMillis();
-			KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0);
-			Hidden.setDisplayId(down, displayId);
-			Hidden.injectInputEvent(down, 0);
+			boolean ok = false;
+			try {
+				long now = SystemClock.uptimeMillis();
+				KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0);
+				Hidden.setDisplayId(down, displayId);
+				boolean downOk = Hidden.injectInputEvent(down, 0);
 
-			KeyEvent up = new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0);
-			Hidden.setDisplayId(up, displayId);
-			Hidden.injectInputEvent(up, 0);
+				KeyEvent up = new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0);
+				Hidden.setDisplayId(up, displayId);
+				boolean upOk = Hidden.injectInputEvent(up, 0);
+				ok = downOk && upOk;
+			} catch (Throwable ignored) {
+			}
+
+			if (!ok) {
+				try {
+					Runtime.getRuntime().exec(new String[]{"input", "-d", String.valueOf(displayId), "keyevent", String.valueOf(keyCode)}).waitFor();
+				} catch (Throwable ignored) {
+				}
+			}
 		}
 	}
 
@@ -199,7 +219,10 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 			cmd.add(String.valueOf(displayId));
 			cmd.add("-n");
 			cmd.add(c.flattenToShortString());
-			cmd.add("--activity-multiple-task");
+			boolean isLauncher = c.getClassName() != null && c.getClassName().contains("LauncherActivity");
+			if (!isLauncher) {
+				cmd.add("--activity-multiple-task");
+			}
 			if (intentFlags != 0) {
 				cmd.add("-f");
 				cmd.add(String.valueOf(intentFlags));
@@ -226,13 +249,24 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 			return "";
 		}
 
+		if (topTask.topActivity.getClassName() != null &&
+				topTask.topActivity.getClassName().contains("LauncherActivity")) {
+			return "";
+		}
+
 		String pkg = topTask.topActivity.getPackageName();
+		if (appPackage != null && appPackage.equals(pkg)) {
+			return "";
+		}
+
 		if (!force) {
 			boolean removed = Hidden.removeTask(topTask.taskId);
 			if (!removed) {
-				try {
-					Runtime.getRuntime().exec(new String[]{"am", "stack", "remove", String.valueOf(topTask.taskId)}).waitFor();
-				} catch (Throwable ignored) {
+				if (pkg != null && !pkg.isEmpty()) {
+					try {
+						Runtime.getRuntime().exec(new String[]{"am", "force-stop", pkg}).waitFor();
+					} catch (Throwable ignored) {
+					}
 				}
 			}
 		} else {

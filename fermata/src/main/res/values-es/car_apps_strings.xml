@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="car_apps_title">Apps del coche</string>
+    <string name="car_apps_dashboard_sub">Lanzador de pantalla virtual independiente</string>
+    <string name="car_apps_loading">Iniciando pantalla del coche…</string>
+    <string name="car_apps_needs_root">Se requiere acceso root para ejecutar aplicaciones de coche independientes</string>
+    <string name="car_apps_grant_root">Conceder root</string>
+    <string name="car_apps_server_error">Error al iniciar el servidor de pantalla</string>
+    <string name="car_apps_nav_back">Atrás</string>
+    <string name="car_apps_nav_drawer">Cajón de aplicaciones</string>
+    <string name="car_apps_nav_close">Cerrar aplicación</string>
+    <string name="car_apps_panel_off">Apagar pantalla del teléfono</string>
+    <string name="car_apps_readiness_title">Pantalla de coche independiente</string>
+    <string name="car_apps_readiness_status_ready">Listo</string>
+    <string name="car_apps_readiness_status_need_root">Se requiere acceso root</string>
+    <string name="car_apps_readiness_action_grant">Conceder root</string>
+    <string name="car_apps_readiness_warn_panel_power">No se puede apagar la pantalla del teléfono en este dispositivo</string>
+    <string name="car_apps_readiness_warn_xiaomi_inject">Requiere depuración USB (Ajustes de seguridad)</string>
+</resources>

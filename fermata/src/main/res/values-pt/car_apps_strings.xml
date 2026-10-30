@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="car_apps_title">Apps do carro</string>
+    <string name="car_apps_dashboard_sub">Iniciador de tela virtual independente</string>
+    <string name="car_apps_loading">Iniciando tela do carro…</string>
+    <string name="car_apps_needs_root">O acesso root é necessário para executar aplicativos de carro independentes</string>
+    <string name="car_apps_grant_root">Conceder root</string>
+    <string name="car_apps_server_error">Falha ao iniciar o servidor de tela</string>
+    <string name="car_apps_nav_back">Voltar</string>
+    <string name="car_apps_nav_drawer">Gaveta de aplicativos</string>
+    <string name="car_apps_nav_close">Fechar aplicativo</string>
+    <string name="car_apps_panel_off">Desligar tela do celular</string>
+    <string name="car_apps_readiness_title">Tela de carro independente</string>
+    <string name="car_apps_readiness_status_ready">Pronto</string>
+    <string name="car_apps_readiness_status_need_root">Acesso root necessário</string>
+    <string name="car_apps_readiness_action_grant">Conceder root</string>
+    <string name="car_apps_readiness_warn_panel_power">Não é possível desligar a tela do celular neste dispositivo</string>
+    <string name="car_apps_readiness_warn_xiaomi_inject">Requer depuração USB (Configurações de segurança)</string>
+</resources>

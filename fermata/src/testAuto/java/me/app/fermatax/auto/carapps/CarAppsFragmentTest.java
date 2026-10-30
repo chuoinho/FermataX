@@ -2,6 +2,7 @@ package me.app.fermatax.auto.carapps;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
@@ -16,6 +17,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
 
 import androidx.annotation.NonNull;
@@ -192,6 +194,30 @@ public class CarAppsFragmentTest {
 	}
 
 	@Test
+	public void launcherVisibilityChangesScreenState() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
+
+		// Launcher becomes invisible (app opened)
+		LauncherActivity.notifyVisibility(false);
+		org.robolectric.shadows.ShadowLooper.idleMainLooper();
+		assertEquals(CarAppsNavModel.Screen.APP, fragment.getScreen());
+		assertTrue("Back button must be enabled in APP screen", fragment.getBackButton().isEnabled());
+		assertTrue("Close button must be enabled in APP screen", fragment.getCloseButton().isEnabled());
+
+		// Back button click in APP screen injects KEYCODE_BACK
+		fragment.getBackButton().performClick();
+		assertEquals(KeyEvent.KEYCODE_BACK, serverBinder.lastKeyCode.get());
+
+		// Launcher becomes visible again (returned to drawer)
+		LauncherActivity.notifyVisibility(true);
+		org.robolectric.shadows.ShadowLooper.idleMainLooper();
+		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
+		assertFalse("Back button must be disabled in DRAWER screen", fragment.getBackButton().isEnabled());
+		assertFalse("Close button must be disabled in DRAWER screen", fragment.getCloseButton().isEnabled());
+	}
+
+	@Test
 	public void drawerButtonLaunchesLauncherActivity() {
 		CarAppsFragment fragment = createAndAttachFragment();
 		fragment.setScreen(CarAppsNavModel.Screen.APP);
@@ -220,36 +246,34 @@ public class CarAppsFragmentTest {
 	}
 
 	@Test
-	public void panelPowerButtonVisibleWhenCapabilityPresent() {
+	public void bottomBarHasExactlyThreeButtons() {
 		CarAppsFragment fragment = createAndAttachFragment();
-		View btn = fragment.getPanelPowerButton();
-		assertEquals("Panel power button must be visible when CAP_PANEL_POWER is available",
-				View.VISIBLE, btn.getVisibility());
+		View bottomBar = fragment.getBottomBar();
+		assertTrue(bottomBar instanceof ViewGroup);
+		ViewGroup bar = (ViewGroup) bottomBar;
+		assertEquals("Bottom bar must have exactly 3 buttons per approved design", 3, bar.getChildCount());
+		assertSame(fragment.getBackButton(), bar.getChildAt(0));
+		assertSame(fragment.getDrawerButton(), bar.getChildAt(1));
+		assertSame(fragment.getCloseButton(), bar.getChildAt(2));
 	}
 
 	@Test
-	public void panelPowerButtonClickTogglesPreferenceAndClient() {
+	public void panelPowerAutomaticallyEngagedOnAttach() {
+		CarAppsFeature.setState(RootState.GRANTED);
 		CarAppsFragment fragment = createAndAttachFragment();
-		ImageButton btn = fragment.getPanelPowerButton();
-
-		assertFalse(client.isPanelOff());
-
-		btn.performClick();
-		assertTrue("Panel state in client must be off after click", client.isPanelOff());
-		assertTrue("Panel power button must be selected when off", btn.isSelected());
-
-		btn.performClick();
-		assertFalse("Panel state in client must be on after second click", client.isPanelOff());
-		assertFalse("Panel power button must not be selected when on", btn.isSelected());
+		SurfaceHolder.Callback callback = fragment.getSurfaceHolderCallback();
+		Surface surface = createTestSurface();
+		FakeSurfaceHolder holder = new FakeSurfaceHolder(surface, 1024, 600);
+		callback.surfaceCreated(holder);
+		assertTrue("Panel should be turned off automatically when attached if pref is true", client.isPanelOff());
 	}
 
 	@Test
-	public void panelPowerButtonHiddenWhenCapabilityMissing() {
-		serverBinder.caps = 0x17; // missing CAP_PANEL_POWER (8)
+	public void panelPowerRestoredOnStop() {
 		CarAppsFragment fragment = createAndAttachFragment();
-		View btn = fragment.getPanelPowerButton();
-		assertEquals("Panel power button must be GONE when CAP_PANEL_POWER is missing",
-				View.GONE, btn.getVisibility());
+		client.setPanelOff(true);
+		fragment.onStop();
+		assertFalse("Panel state must be restored to on when fragment stops", client.isPanelOff());
 	}
 
 	private static class FakeSurfaceHolder implements SurfaceHolder {

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="car_apps_title">Araç Uygulamaları</string>
+    <string name="car_apps_dashboard_sub">Bağımsız sanal ekran başlatıcı</string>
+    <string name="car_apps_loading">Araç ekranı başlatılıyor…</string>
+    <string name="car_apps_needs_root">Bağımsız araç uygulamalarını çalıştırmak için root erişimi gereklidir</string>
+    <string name="car_apps_grant_root">Root izni ver</string>
+    <string name="car_apps_server_error">Ekran sunucusu başlatılamadı</string>
+    <string name="car_apps_nav_back">Geri</string>
+    <string name="car_apps_nav_drawer">Uygulama çekmecesi</string>
+    <string name="car_apps_nav_close">Uygulamayı kapat</string>
+    <string name="car_apps_panel_off">Telefon ekranını kapat</string>
+    <string name="car_apps_readiness_title">Bağımsız araç ekranı</string>
+    <string name="car_apps_readiness_status_ready">Hazır</string>
+    <string name="car_apps_readiness_status_need_root">Root erişimi gerekli</string>
+    <string name="car_apps_readiness_action_grant">Root izni ver</string>
+    <string name="car_apps_readiness_warn_panel_power">Bu cihazda telefon ekranı kapatılamıyor</string>
+    <string name="car_apps_readiness_warn_xiaomi_inject">USB hata ayıklama (Güvenlik ayarları) gereklidir</string>
+</resources>
