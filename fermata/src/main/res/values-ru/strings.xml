@@ -1,14 +1,10 @@
 <resources>
     <string name="home">Главная</string>
     <string name="dashboard">Панель</string>
-    <string name="open_dashboard">Открыть панель</string>
-    <string name="dashboard_order">Порядок панели</string>
     <string name="reset_dashboard_order">Сбросить порядок панели</string>
     <string name="dashboard_order_sub">Также управляет порядком навигации</string>
     <string name="dashboard_now_playing">Сейчас играет</string>
     <string name="dashboard_continue">Продолжить просмотр</string>
-    <string name="dashboard_continue_sub">%1$s - %2$s</string>
-    <string name="dashboard_smart_recommended">Рекомендовано для вас</string>
     <string name="dashboard_smart_discover">Обзор</string>
     <string name="dashboard_smart_empty_title">Выберите дополнение</string>
     <string name="dashboard_smart_empty_subtitle">Начните смотреть или слушать</string>
@@ -68,10 +64,7 @@
     
 
     <string name="interface_prefs">Интерфейс</string>
-    <string name="interface_prefs_aa">Андроид Авто</string>
     <string name="playback_settings">Настройки воспроизведения</string>
-    <string name="playback_control">Управление воспроизведением</string>
-    <string name="engine_prefs">Медиа движок</string>
 
     <string name="theme">Тема приложения</string>
     <string name="theme_sub">Текущая тема: %1$s</string>
@@ -88,11 +81,8 @@
     <string name="nav_bar_pos_left">Слева</string>
     <string name="nav_bar_pos_right">Справа</string>
 
-    <string name="show_track_icons">Показывать иконки треков</string>
     <string name="lang">Язык</string>
-    <string name="trans_lang">Язык перевода</string>
     <string name="hide_bars">Скрывать панели</string>
-    <string name="hide_bars_sub">Скрывать панели приложения, когда появляется панель управления</string>
     <string name="show_pg_up_down">Показывать кнопки вверх/вниз</string>
     <string name="use_dpad_cursor">Использовать курсор для D-pad навигации</string>
     <string name="fullscreen_mode">Полноэкранный режим</string>
@@ -122,39 +112,18 @@
     <string name="action_cp_menu">Панель управления</string>
     <string name="action_back_or_exit">Назад или выход</string>
     <string name="action_exit">Выход</string>
-    <string name="action_default">По умолчанию</string>
     <string name="action_none">Ничего</string>
 
     <string name="play_next_on_completion">Воспроизводить следующий трек</string>
 
-    <string name="rw_ff_click">Назад/Вперед - нажатие</string>
-    <string name="rw_ff_long_click">Назад/Вперед - долгое нажатие</string>
-    <string name="prev_next_long_click">Предыдущий/Следующий - долгое нажатие</string>
-    <string name="play_pause_stop">Стоп при долгом нажати на Воспроизведение/Пауза</string>
 
     <string name="time">Время</string>
-    <string name="time_unit">Единица времени</string>
-    <string name="time_unit_sub">Текущее знаение: %1$s</string>
-    <string name="time_unit_second">Секунда</string>
-    <string name="time_unit_minute">Минута</string>
-    <string name="time_unit_percent">Процент</string>
 
-    <string name="video_control">Управление видео</string>
-    <string name="video_control_start_delay">Показывать при старте</string>
-    <string name="video_control_touch_delay">Показывать при касании</string>
-    <string name="video_control_seek_delay">Показывать при перемотке</string>
-    <string name="video_aa_show_status">Показывать статус бар в Android Auto</string>
 
-    <string name="enable_exoplayer">Включить ExoPlayer</string>
-    <string name="enable_vlcplayer">Включить VLC</string>
     <string name="preferred_audio_engine">Предпочтительный аудио движок</string>
     <string name="preferred_video_engine">Предпочтительный видео движок</string>
-    <string name="engine_installed">Медиа движок установлен: %1$s</string>
     <string name="engine_uninstalled">Медиа движок удален: %1$s</string>
 
-    <string name="preferred_media_scanner">Предпочтительный медиа сканнер</string>
-    <string name="preferred_media_scanner_default">По умолчанию</string>
-    <string name="preferred_media_scanner_system">Системный</string>
 
     <string name="voice_search">Голосовой поиск</string>
     <string name="voice_control">Голосовое управление</string>
@@ -181,11 +150,8 @@
     <string name="transaural">Трансауральный</string>
     <string name="bass_boost">Усиление басов</string>
     <string name="vol_boost">Усиление громкости</string>
-    <string name="strength">Уровень</string>
-    <string name="apply_to">Применить к</string>
 
     <string name="video">Видео</string>
-    <string name="video_settings">Настройки видео</string>
     <string name="video_scaling">Масштабирование видео</string>
     <string name="hw_accel">Аппаратное ускорение</string>
     <string name="hw_accel_auto">Автоматически</string>
@@ -206,7 +172,6 @@
     <string name="select_audio_stream">Выбрать аудио дорожку</string>
 
     <string name="subtitles">Субтитры</string>
-    <string name="subtitles_auto">Автоматически сгенерированные</string>
     <string name="subtitle_delay">Задержка субтитров</string>
     <string name="display_subtitles">Показывать субтитры</string>
     <string name="preferred_sub_lang">Предпочитаемые языки субтитров</string>
@@ -214,8 +179,6 @@
     <string name="select_subtitles">Выбрать субтитры</string>
 
     
-    <string name="eq_hz">%1$s Гц</string>
-    <string name="eq_khz">%1$s кГц</string>
 
     <string name="current_track">Текущий трек</string>
     <string name="current_folder">Текущая папка</string>
@@ -224,14 +187,11 @@
     <string name="favorites">Избранное</string>
     <string name="playlists">Плейлисты</string>
     <string name="search">Поиск</string>
-    <string name="filter">Фильтр</string>
     <string name="settings">Настройки</string>
     <string name="menu">Меню</string>
     <string name="exit">Выход</string>
     <string name="cancel">Отменить</string>
-    <string name="got_to_current">Текущий трек</string>
 
-    <string name="view">Вид</string>
     <string name="title">Заголовок</string>
     <string name="subtitle">Подзаголовок</string>
     <string name="seq_num">Порядковый номер</string>
@@ -244,7 +204,6 @@
     <string name="artist">Исполнитель</string>
     <string name="duration">Длительность</string>
 
-    <string name="sort_by">Сортировать по</string>
     <string name="do_not_sort">Не сортировать</string>
 
     <string name="play">Играть</string>
@@ -313,15 +272,9 @@
     
     <string name="m3u_playlist_video">Видео плейлист</string>
 
-    <string name="eq_manual">Ручные</string>
-    <string name="eq_normal">Нормальные</string>
     <string name="eq_classical">Классика</string>
     <string name="eq_dance">Танцевальная</string>
     <string name="eq_flat">Бемоль</string>
-    <string name="eq_folk">Фолк</string>
-    <string name="eq_heavy_metal">Тяжелый металл</string>
-    <string name="eq_hip_hop">Хип-хоп</string>
-    <string name="eq_jazz">Джаз</string>
     <string name="eq_pop">Поп</string>
     <string name="eq_rock">Рок</string>
 
@@ -349,37 +302,15 @@
     <string name="move_up">Сдвинуть вверх</string>
     <string name="move_down">Сдвинуть вниз</string>
 
-    <string name="sys_bars_on_video_touch">Показывать системные панели, при касании видео</string>
-    <string name="play_video_landscape">Воспроизводить видео в альбомной ориентации</string>
-    <string name="clock_pos">Расположение часов</string>
-    <string name="clock_pos_none">Нет</string>
-    <string name="clock_pos_left">Слева</string>
-    <string name="clock_pos_right">Справа</string>
-    <string name="clock_pos_center">Посередине</string>
-    <string name="change_brightness">Менять яркость, при проигрывании видео</string>
-    <string name="video_brightness">Яркость видео</string>
-    <string name="change_brightness_sub">Яркость, так же, можно изменять скроллом двумя пальцами</string>
     <string name="watched_threshold">Граница просмотренного</string>
     <string name="watched_threshold_sub">Помечать видео, как просмотренное, если процент просмотреного больше указанного</string>
 
     <string name="other">Другое</string>
-    <string name="check_updates">Проверять наличие обновлений при старте</string>
     <string name="update">Обновление</string>
-    <string name="update_question">Доступна новая версия %1$s.\nХотите обновить приложение?</string>
-    <string name="export_prefs">Экспортировать настройки в файл</string>
-    <string name="export_prefs_sub">Экспортировать настройки, папки, плейлисты и т.д. в файл</string>
-    <string name="export_prefs_ok">Настройки сохранены в файле %1$s.</string>
-    <string name="export_prefs_failed">Не удалось экспортировать настройки: %1$s</string>
-    <string name="import_prefs">Импортировать настройки из файла</string>
-    <string name="import_prefs_sub">Импортировать, ранее экспортированные, настройки из файла</string>
-    <string name="import_prefs_ok">Настройки успешно импортированы.\nПожалуйста, перезапустите приложение.</string>
-    <string name="import_prefs_failed">Не удалось импортировать настройки: %1$s</string>
-    <string name="prefs_not_found">Настройки не найдены</string>
     <string name="open_log">Открыть лог файл</string>
     <string name="unlock_phone_and_grant">Разблокируйте телефон и предоставьте запрошенные разрешения.</string>
     <string name="screen_capture_rejected">Запрос на трянсляцию экрана отклонен.</string>
     <string name="accessibility_dsc">Эта служба используется Fermata Mirror для взаимодействия с экраном телефона.</string>
-    <string name="media_projection_action_text">Начать</string>
 
     <string name="about">О приложении</string>
     <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
@@ -420,7 +351,6 @@
 	<string name="p2p_rebuffering_status">Перебуферизация | %1$d сверстники | %2$s/с</string>
 	<string name="edit_dashboard">Редактировать панель мониторинга</string>
 	<string name="done">Сделанный</string>
-	<string name="err_failed_start_service">Не удалось запустить службу: %s</string>
 	<string name="err_p2p_metadata_unavailable">Метаданные торрента недоступны. Попробуйте другой поток.</string>
 	<string name="err_p2p_no_peers">Нет активных пиров P2P. Попробуйте другой поток.</string>
 	<string name="err_p2p_data_timeout">Одноранговые узлы P2P не доставили данные вовремя. Попробуйте другой поток.</string>
@@ -462,13 +392,11 @@
 	<string name="car_keyboard_paste">Вставить</string>
 	<string name="car_keyboard_delete">Удалить</string>
 	<string name="car_keyboard_clear">Прозрачный</string>
-	<string name="car_keyboard_ok">ХОРОШО</string>
 	<string name="car_keyboard_go">Перейти</string>
 	<string name="car_keyboard_send">Отправить</string>
 	<string name="car_keyboard_enter">Ввод</string>
 	<string name="m3u_playlist_timeout">Тайм-аут ответа</string>
 	<string name="diagnostics">Диагностика</string>
-	<string name="diagnostics_sub">Локальные отчёты о сбоях, зависаниях и неожиданных состояниях приложения</string>
 	<string name="detailed_diagnostics">Подробная диагностика</string>
 	<string name="detailed_diagnostics_sub">Записывать подробные события до 48 часов. Можно отключить в любое время.</string>
 	<string name="export_diagnostic_report">Экспорт отчёта диагностики</string>
@@ -504,16 +432,11 @@
     <string name="audio_effects_applying">Применение изменений EQ…</string>
     <string name="audio_effects_applied">Изменения EQ применены</string>
     <string name="audio_effects_apply_failed">Изменения сохранены, но не применены</string>
-    <string name="audio_effects_flat">Плоский</string>
     <string name="audio_effects_custom">Пользовательский</string>
-    <string name="audio_effects_set_flat">Сбросить EQ на 0</string>
     <string name="audio_effects_scale">дБ усиления, от -15 до +15 (0 дБ центр)</string>
     <string name="audio_effects_mode">Режим</string>
     <string name="audio_effects_band_scroll">Полосы эквалайзера</string>
     <string name="audio_effects_band_format">%1$s Гц, %2$s дБ</string>
-    <string name="audio_effects_additional">Дополнительные эффекты</string>
-    <string name="audio_effects_expand">Показать дополнительные эффекты</string>
-    <string name="audio_effects_collapse">Скрыть дополнительные эффекты</string>
     <string name="audio_effects_disabled">Отключено</string>
     <string name="audio_effects_range_error">Введите значение от %1$d до %2$d.</string>
 
@@ -521,8 +444,6 @@
 
     <string name="theme_material_you">Material You / Bento</string>
     <string name="theme_glass">Стеклянная тема (Glassmorphism)</string>
-    <string name="theme_aa">Тема Android Auto</string>
-    <string name="theme_aa_sub">Тема экрана автомобиля: %1$s</string>
     <string name="glass_appearance">Режим стеклянной темы</string>
     <string name="glass_appearance_sub">Применяется к стеклянной теме на телефоне и Android Auto: %1$s</string>
     <string name="glass_appearance_day">День</string>
@@ -545,7 +466,6 @@
     <string name="car_finder_waiting_gps">Ожидание сигнала GPS…</string>
     <string name="car_finder_measuring_gps">Определение координат…</string>
     <string name="car_finder_precise_find">Точный радар</string>
-    <string name="car_finder_directions">Маршрут</string>
     <string name="car_finder_found_car">Машина найдена</string>
     <string name="car_finder_found_confirm_title">Подтверждение</string>
     <string name="car_finder_found_confirm_msg">Вы нашли свою машину? Сохранённое место парковки будет очищено.</string>
@@ -572,16 +492,12 @@
     <string name="car_finder_rear_left">Сзади левее</string>
     <string name="car_finder_behind">Позади вас</string>
     <string name="car_finder_right_here">Ваша машина прямо здесь</string>
-    <string name="car_finder_almost_there">Почти на месте</string>
     <string name="car_finder_follow_arrow">Следуйте по стрелке</string>
-    <string name="car_finder_compass_uncalibrated">Компас не откалиброван — опишите телефоном восьмёрку</string>
-    <string name="car_finder_accuracy_margin">±%1$d м</string>
     <string name="car_finder_back">Назад</string>
     <string name="car_finder_close">Закрыть</string>
     <string name="car_finder_take_photo">Сфотографировать место</string>
     <string name="car_finder_retake_photo">Переснять</string>
     <string name="car_finder_delete_photo">Удалить</string>
-    <string name="car_finder_photo_title">Фото парковочного места</string>
     <string name="car_finder_add_note">Добавить заметку (напр., Колонна B2 №15)</string>
     <string name="car_finder_note_hint">Колонна, этаж, номер места…</string>
     <string name="car_finder_near_car_hint">Вы рядом с машиной (~%1$d м). Используйте радар для точного направления.</string>
@@ -607,8 +523,6 @@
     <string name="initial_setup_perm_storage_sub">Воспроизведение музыки, видео, папок и плейлистов на этом телефоне.</string>
     <string name="initial_setup_perm_notifications">Уведомления</string>
     <string name="initial_setup_perm_notifications_sub">Показ кнопок воспроизведения в шторке уведомлений и на экране блокировки.</string>
-    <string name="initial_setup_perm_microphone">Микрофон</string>
-    <string name="initial_setup_perm_microphone_sub">Голосовое управление и голосовой поиск.</string>
     <string name="initial_setup_perm_location">Геоданные</string>
     <string name="initial_setup_perm_location_sub">Карточка скорости, погода и сохранение места парковки.</string>
     <string name="initial_setup_perm_nav">Уведомления навигации</string>
@@ -689,7 +603,6 @@
     <string name="glass_addon_desc_favorites">Быстрый доступ к избранным трекам</string>
     <string name="glass_addon_desc_recent">История недавнего воспроизведения</string>
     <string name="glass_media_buffering">БУФЕРИЗАЦИЯ…</string>
-    <string name="glass_media_unknown_title">Неизвестное название</string>
 
     <!-- Units -->
     <string name="unit_m">м</string>

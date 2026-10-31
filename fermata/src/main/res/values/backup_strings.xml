@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="backup_restore">Backup &amp; Restore</string>
-	<string name="backup_restore_sub">Move all portable settings and account configuration between devices</string>
 	<string name="backup_all_data">Backup all data</string>
 	<string name="backup_all_data_sub">Create one encrypted FermataX backup file</string>
 	<string name="restore_backup">Restore backup</string>

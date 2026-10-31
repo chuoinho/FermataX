@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="backup_restore">Backup e ripristino</string>
-	<string name="backup_restore_sub">Trasferisci impostazioni e account portabili tra dispositivi</string>
 	<string name="backup_all_data">Backup di tutti i dati</string>
 	<string name="backup_all_data_sub">Crea un unico file FermataX crittografato</string>
 	<string name="restore_backup">Ripristina backup</string>

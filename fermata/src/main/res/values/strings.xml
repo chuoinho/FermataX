@@ -14,7 +14,6 @@
     <string name="engine_exo_name" translatable="false">ExoPlayer</string>
     <string name="engine_vlc_name" translatable="false">VLC</string>
 
-    <string name="module_name_gdrive" translatable="false">Google Drive</string>
     <string name="module_name_sftp" translatable="false">SFTP</string>
     <string name="module_name_smb" translatable="false">SMB</string>
 	<string name="module_name_web">Web</string>
@@ -22,19 +21,14 @@
 	<string name="module_name_radio">Internet Radio</string>
 	<string name="module_name_podcast">Podcast</string>
 	<string name="module_name_audiobook">Audiobook</string>
-	<string name="module_name_stremio" translatable="false">Stremio</string>
 
     <string name="addons">Addons</string>
     <string name="home">Home</string>
     <string name="dashboard">Dashboard</string>
-    <string name="open_dashboard">Open dashboard</string>
-    <string name="dashboard_order">Dashboard order</string>
     <string name="reset_dashboard_order">Reset dashboard order</string>
     <string name="dashboard_order_sub">Also controls the navigation order</string>
     <string name="dashboard_now_playing">Now playing</string>
     <string name="dashboard_continue">Continue watching</string>
-    <string name="dashboard_continue_sub">%1$s - %2$s</string>
-    <string name="dashboard_smart_recommended">Recommended for you</string>
     <string name="dashboard_smart_discover">Discover</string>
     <string name="dashboard_smart_empty_title">Choose an add-on</string>
     <string name="dashboard_smart_empty_subtitle">Start watching or listening</string>
@@ -72,10 +66,7 @@
 
 
     <string name="interface_prefs">Interface</string>
-    <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Playback settings</string>
-    <string name="playback_control">Playback control</string>
-    <string name="engine_prefs">Media engine</string>
 	<string name="car_keyboard_cancel">Cancel</string>
 	<string name="car_keyboard_input">Input</string>
 	<string name="car_keyboard_shift">Shift</string>
@@ -83,7 +74,6 @@
 	<string name="car_keyboard_paste">Paste</string>
 	<string name="car_keyboard_delete">Delete</string>
 	<string name="car_keyboard_clear">Clear</string>
-	<string name="car_keyboard_ok">OK</string>
 	<string name="car_keyboard_go">Go</string>
 	<string name="car_keyboard_send">Send</string>
 	<string name="car_keyboard_enter">Enter</string>
@@ -99,8 +89,6 @@
     <string name="theme_classic">Classic</string>
     <string name="theme_material_you">Material You / Bento</string>
     <string name="theme_glass">Glassmorphism</string>
-    <string name="theme_aa">Android Auto theme</string>
-    <string name="theme_aa_sub">Car screen theme: %1$s</string>
     <string name="glass_appearance">Glass theme mode</string>
     <string name="glass_appearance_sub">Applies to glass theme on phone and Android Auto: %1$s</string>
     <string name="glass_appearance_day">Day</string>
@@ -118,11 +106,8 @@
     <string name="nav_bar_pos_left">Left</string>
     <string name="nav_bar_pos_right">Right</string>
 
-    <string name="show_track_icons">Show track icons</string>
     <string name="lang">Language</string>
-    <string name="trans_lang">Translation language</string>
     <string name="hide_bars">Hide bars</string>
-    <string name="hide_bars_sub">Hide app bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
     <string name="use_dpad_cursor">Use cursor for D-pad navigation</string>
     <string name="fullscreen_mode">Fullscreen mode</string>
@@ -154,39 +139,18 @@
     <string name="action_cp_menu">Control panel menu</string>
     <string name="action_back_or_exit">Back or exit</string>
     <string name="action_exit">Exit</string>
-    <string name="action_default">Default</string>
     <string name="action_none">None</string>
 
     <string name="play_next_on_completion">Play next on completion</string>
 
-    <string name="rw_ff_click">RW/FF - click</string>
-    <string name="rw_ff_long_click">RW/FF - long click</string>
-    <string name="prev_next_long_click">Prev/Next - long click</string>
-    <string name="play_pause_stop">Stop on Play/Pause long click</string>
 
     <string name="time">Time</string>
-    <string name="time_unit">Time unit</string>
-    <string name="time_unit_sub">Current value: %1$s</string>
-    <string name="time_unit_second">Second</string>
-    <string name="time_unit_minute">Minute</string>
-    <string name="time_unit_percent">Percent</string>
 
-    <string name="video_control">Video control</string>
-    <string name="video_control_start_delay">Show on start</string>
-    <string name="video_control_touch_delay">Show on touch</string>
-    <string name="video_control_seek_delay">Show on seek</string>
-    <string name="video_aa_show_status">Show status bar in Android Auto</string>
 
-    <string name="enable_exoplayer">Enable ExoPlayer</string>
-    <string name="enable_vlcplayer">Enable VLC</string>
     <string name="preferred_audio_engine">Preferred audio engine</string>
     <string name="preferred_video_engine">Preferred video engine</string>
-    <string name="engine_installed">Media engine installed: %1$s</string>
     <string name="engine_uninstalled">Media engine uninstalled: %1$s</string>
 
-    <string name="preferred_media_scanner">Preferred media scanner</string>
-    <string name="preferred_media_scanner_default">Default</string>
-    <string name="preferred_media_scanner_system">System</string>
 
     <string name="voice_search">Voice search</string>
 	<string name="voice_control">Voice control</string>
@@ -221,16 +185,11 @@
 	<string name="audio_effects_applying">Applying EQ changes…</string>
 	<string name="audio_effects_applied">EQ changes applied</string>
 	<string name="audio_effects_apply_failed">EQ changes saved, but could not be applied</string>
-	<string name="audio_effects_flat">Flat</string>
 	<string name="audio_effects_custom">Custom</string>
-	<string name="audio_effects_set_flat">Reset EQ to 0</string>
 	<string name="audio_effects_scale">dB gain, -15 to +15 (0 dB center)</string>
 	<string name="audio_effects_mode">Mode</string>
 	<string name="audio_effects_band_scroll">Equalizer bands</string>
 	<string name="audio_effects_band_format">%1$s Hz, %2$s dB</string>
-	<string name="audio_effects_additional">Additional effects</string>
-	<string name="audio_effects_expand">Show additional effects</string>
-	<string name="audio_effects_collapse">Hide additional effects</string>
 	<string name="audio_effects_disabled">Disabled</string>
 	<string name="audio_effects_range_error">Enter a value from %1$d to %2$d.</string>
 	<string name="legacy_preset_migration_notice">Your previous device equalizer preset could not be converted automatically. Please choose or adjust the Equalizer once.</string>
@@ -241,11 +200,8 @@
     <string name="transaural">Transaural</string>
     <string name="bass_boost">Bass boost</string>
     <string name="vol_boost">Volume boost</string>
-    <string name="strength">Strength</string>
-    <string name="apply_to">Apply to</string>
 
     <string name="video">Video</string>
-    <string name="video_settings">Video settings</string>
     <string name="video_scaling">Video scaling</string>
     <string name="hw_accel">Hardware acceleration</string>
     <string name="hw_accel_auto">Auto</string>
@@ -266,7 +222,6 @@
     <string name="select_audio_stream">Select audio stream</string>
 
     <string name="subtitles">Subtitles</string>
-    <string name="subtitles_auto">Auto generated</string>
     <string name="subtitle_delay">Subtitles delay</string>
     <string name="display_subtitles">Display subtitles</string>
     <string name="preferred_sub_lang">Preferred subtitles languages</string>
@@ -274,8 +229,6 @@
     <string name="select_subtitles">Select subtitles</string>
 
     <string name="string_format" translatable="false">%1$s</string>
-    <string name="eq_hz">%1$s Hz</string>
-    <string name="eq_khz">%1$s kHz</string>
 
     <string name="current_track">Current track</string>
     <string name="current_folder">Current folder</string>
@@ -285,14 +238,11 @@
     <string name="recent">Recent</string>
     <string name="playlists">Playlists</string>
     <string name="search">Search</string>
-    <string name="filter">Filter</string>
     <string name="settings">Settings</string>
     <string name="menu">Menu</string>
     <string name="exit">Exit</string>
     <string name="cancel">Cancel</string>
-    <string name="got_to_current">Current track</string>
 
-    <string name="view">View</string>
     <string name="title">Title</string>
     <string name="subtitle">Subtitle</string>
     <string name="seq_num">Sequence number</string>
@@ -305,7 +255,6 @@
     <string name="artist">Artist</string>
     <string name="duration">Duration</string>
 
-    <string name="sort_by">Sort by</string>
     <string name="do_not_sort">Do not sort</string>
 
     <string name="play">Play</string>
@@ -381,15 +330,9 @@
 	<string name="m3u_playlist_timeout">Response timeout</string>
     <string name="m3u_playlist_video">Video playlist</string>
 
-    <string name="eq_manual">Manual</string>
-    <string name="eq_normal">Normal</string>
     <string name="eq_classical">Classical</string>
     <string name="eq_dance">Dance</string>
     <string name="eq_flat">Flat</string>
-    <string name="eq_folk">Folk</string>
-    <string name="eq_heavy_metal">Heavy Metal</string>
-    <string name="eq_hip_hop">Hip Hop</string>
-    <string name="eq_jazz">Jazz</string>
     <string name="eq_pop">Pop</string>
     <string name="eq_rock">Rock</string>
 
@@ -419,35 +362,13 @@
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
 
-    <string name="sys_bars_on_video_touch">Show system bars on video touch</string>
-    <string name="play_video_landscape">Playing video in landscape mode</string>
-    <string name="clock_pos">Clock position</string>
-    <string name="clock_pos_none">None</string>
-    <string name="clock_pos_left">Left</string>
-    <string name="clock_pos_right">Right</string>
-    <string name="clock_pos_center">Center</string>
-    <string name="change_brightness">Change brightness while playing video</string>
-    <string name="video_brightness">Video brightness</string>
-    <string name="change_brightness_sub">The brightness can also be changed with two finger scroll</string>
     <string name="watched_threshold">Watched threshold</string>
     <string name="watched_threshold_sub">Marked video as watched, if more than this number of percentages has been watched</string>
 
     <string name="other">Other</string>
-    <string name="check_updates">Check for updates on startup</string>
     <string name="update">Update</string>
-    <string name="update_question">New version %1$s is available.\nWould you like to update the app?</string>
-    <string name="export_prefs">Export preferences to file</string>
-    <string name="export_prefs_sub">Export settings, folders, playlists etc. to file</string>
-    <string name="export_prefs_ok">Preferences have been saved in file %1$s.</string>
-    <string name="export_prefs_failed">Failed to export preferences: %1$s</string>
-    <string name="import_prefs">Import preferences from file</string>
-    <string name="import_prefs_sub">Import, previously exported, preferences from file</string>
-    <string name="import_prefs_ok">Preferences have been successfully imported.\nPlease, restart the application.</string>
-    <string name="import_prefs_failed">Failed to import preferences: %1$s</string>
-    <string name="prefs_not_found">No preferences found</string>
     <string name="open_log">Open log file</string>
     <string name="diagnostics">Diagnostics</string>
-    <string name="diagnostics_sub">Local reports for crashes, hangs, and unexpected app states</string>
     <string name="detailed_diagnostics">Detailed diagnostics</string>
     <string name="detailed_diagnostics_sub">Record detailed events for up to 48 hours. You can turn this off at any time.</string>
     <string name="vehicle_key_test">Test vehicle controls</string>
@@ -468,7 +389,6 @@
     <string name="unlock_phone_and_grant">Unlock your phone, open FermataX and confirm screen sharing to start mirroring.</string>
     <string name="screen_capture_rejected">Screen capture request rejected.</string>
     <string name="accessibility_dsc">The accessibility service is used by Fermata Mirror to simulate touch screen events.</string>
-    <string name="media_projection_action_text">Start now</string>
 
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
@@ -492,7 +412,6 @@
     <string name="err_failed_to_download">Failed to download %1$s</string>
     <string name="err_no_audio_record_perm">Audio recording permission is not granted</string>
     <string name="err_speech_recognition_unavailable">Speech recognition is unavailable. You can continue with the keyboard.</string>
-    <string name="err_failed_start_service">Failed to start service: %s</string>
 	<string name="err_p2p_metadata_unavailable">Torrent metadata is unavailable. Try another stream.</string>
 	<string name="err_p2p_no_peers">No active P2P peers. Try another stream.</string>
 	<string name="err_p2p_data_timeout">P2P peers did not deliver data in time. Try another stream.</string>
@@ -537,7 +456,6 @@
     <string name="car_finder_waiting_gps">Waiting for GPS position…</string>
     <string name="car_finder_measuring_gps">Measuring location…</string>
     <string name="car_finder_precise_find">Precise Radar</string>
-    <string name="car_finder_directions">Directions</string>
     <string name="car_finder_found_car">Found My Car</string>
     <string name="car_finder_found_confirm_title">Confirm Found</string>
     <string name="car_finder_found_confirm_msg">Did you find your car? The saved parking location will be cleared.</string>
@@ -564,16 +482,12 @@
     <string name="car_finder_rear_left">Behind, slightly left</string>
     <string name="car_finder_behind">Behind you</string>
     <string name="car_finder_right_here">Your car is right here</string>
-    <string name="car_finder_almost_there">Almost there</string>
     <string name="car_finder_follow_arrow">Follow the arrow</string>
-    <string name="car_finder_compass_uncalibrated">Compass offset — move phone in figure 8</string>
-    <string name="car_finder_accuracy_margin">±%1$d m</string>
     <string name="car_finder_back">Back</string>
     <string name="car_finder_close">Close</string>
     <string name="car_finder_take_photo">Take spot photo</string>
     <string name="car_finder_retake_photo">Retake</string>
     <string name="car_finder_delete_photo">Delete</string>
-    <string name="car_finder_photo_title">Parking Spot Photo</string>
     <string name="car_finder_add_note">Add note (e.g. Pillar B2 #15)</string>
     <string name="car_finder_note_hint">Pillar, floor, parking spot number…</string>
     <string name="car_finder_near_car_hint">You are near your car (~%1$d m). You can also use Radar mode for precise direction.</string>
@@ -601,8 +515,6 @@
     <string name="initial_setup_perm_storage_sub">Play music, videos, folders and playlists stored on this phone.</string>
     <string name="initial_setup_perm_notifications">Notifications</string>
     <string name="initial_setup_perm_notifications_sub">Show playback controls in the notification shade and on the lock screen.</string>
-    <string name="initial_setup_perm_microphone">Microphone</string>
-    <string name="initial_setup_perm_microphone_sub">Voice control and voice search.</string>
     <string name="initial_setup_perm_location">Location</string>
     <string name="initial_setup_perm_location_sub">Speed card, weather and saving where you parked.</string>
     <string name="initial_setup_perm_nav">Navigation notifications</string>
@@ -697,7 +609,6 @@
     <string name="glass_addon_desc_favorites">Quick access starred tracks</string>
     <string name="glass_addon_desc_recent">Recently played history</string>
     <string name="glass_media_buffering">BUFFERING…</string>
-    <string name="glass_media_unknown_title">Unknown Title</string>
 
     <!-- Units -->
     <string name="unit_m">m</string>

@@ -37,7 +37,6 @@
     <string name="vcmd_location_tv" tools:ignore="MissingTranslation">&location_tv;</string>
     <string name="vcmd_location_youtube" tools:ignore="MissingTranslation">&location_youtube;</string>
     <string name="vcmd_location_browser" tools:ignore="MissingTranslation">&location_browser;</string>
-    <string name="vcmd_time_unit_second" tools:ignore="MissingTranslation">&time_unit_second;</string>
     <string name="vcmd_time_unit_minute" tools:ignore="MissingTranslation">&time_unit_minute;</string>
     <string name="vcmd_time_unit_hour" tools:ignore="MissingTranslation">&time_unit_hour;</string>
     <string name="vcmd_nums" tools:ignore="MissingTranslation">zero one two three four five six seven eight nine</string>
