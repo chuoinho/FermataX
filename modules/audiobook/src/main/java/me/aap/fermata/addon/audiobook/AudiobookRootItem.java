@@ -203,8 +203,16 @@ public final class AudiobookRootItem extends ExtRoot implements AudiobookItem {
 			AudiobookBook book, AudiobookChapter chapter, String nextChapterId) {
 		String location = chapter.isDownloaded() ? chapter.getLocalPath() : chapter.getMediaUrl();
 		return requestHeaders(book).then(headers -> getLib().getVfsManager().getResource(location)
-				.map(resource -> (resource == null) ? null : new AudiobookChapterItem(parent, book,
-						chapter, resource, repository, this, headers, nextChapterId)));
+				.map(resource -> {
+					if (resource == null) return null;
+					// The playing chapter may already exist (restored by the media session).
+					synchronized (getLib().cacheLock()) {
+						Item cached = getLib().getFromCache(chapterId(book.getId(), chapter.getId()));
+						if (cached instanceof AudiobookChapterItem item) return item;
+						return new AudiobookChapterItem(parent, book, chapter, resource, repository,
+								this, headers, nextChapterId);
+					}
+				}));
 	}
 
 	private FutureSupplier<Map<String, String>> requestHeaders(AudiobookBook book) {
