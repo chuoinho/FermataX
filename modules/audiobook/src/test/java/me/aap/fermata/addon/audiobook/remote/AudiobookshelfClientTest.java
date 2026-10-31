@@ -67,6 +67,10 @@ public class AudiobookshelfClientTest {
 				[{"id":"library-1","name":"Books","mediaType":"book"},
 				 {"id":"podcasts","name":"Podcasts","mediaType":"podcast"}]
 				""").stream().filter(library -> library.mediaType().equals("book")).count());
+		// What the server actually returns (LibraryController.findAll: res.json({ libraries })).
+		assertEquals("library-1", AudiobookshelfClient.parseLibraries("""
+				{"libraries":[{"id":"library-1","name":"Books","mediaType":"book"}]}
+				""").get(0).id());
 		AudiobookSource source = new AudiobookSource("source", AudiobookSourceType.AUDIOBOOKSHELF,
 				"ABS", "https://books.example", "credential", 1, 1);
 		AudiobookshelfClient.BookPage page = AudiobookshelfClient.parseBookPage("""
