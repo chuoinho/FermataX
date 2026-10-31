@@ -88,10 +88,18 @@ public class AutomotiveNavNotificationService extends NotificationListenerServic
         }
 
         NavTurnInfo info = NavTurnInfo.fromNotification(pkg, n.extras, n);
-        if (info.isActive()) {
+        // Nav apps keep other ongoing notifications (background service, Maps free drive after Exit,
+        // even with category navigation); only a turn carries a distance, an ETA or an exit action.
+        boolean ongoing = (n.flags & Notification.FLAG_ONGOING_EVENT) != 0;
+        boolean isTurn = info.isActive() && ongoing && (!info.getDistanceText().isEmpty()
+                || !info.getEta().isEmpty() || info.hasExitAction());
+        if (isTurn) {
             activeNavKey = sbn.getKey();
             currentInfo = info;
             dispatchUpdate(info);
+        } else if (sbn.getKey().equals(activeNavKey)) {
+            // The turn notification was updated in place when navigation ended.
+            clear();
         }
     }
 
