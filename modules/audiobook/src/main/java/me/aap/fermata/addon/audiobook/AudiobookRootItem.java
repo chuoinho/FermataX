@@ -30,6 +30,7 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 
@@ -311,7 +312,10 @@ public final class AudiobookRootItem extends ExtRoot implements AudiobookItem {
 	}
 
 	FutureSupplier<Boolean> delete(AudiobookSource source) {
-		return repository.deleteSource(source.getId()).map(deleted -> {
+		// The database cascade drops the books, so remove their downloaded files first.
+		return repository.listBooksBySource(source.getId())
+				.then(books -> Async.forEach(downloads::delete, books))
+				.then(ignored -> repository.deleteSource(source.getId())).map(deleted -> {
 			if (deleted && (source.getType() == AudiobookSourceType.AUDIOBOOKSHELF)) {
 				audiobookshelf.removeCredentials(source);
 			} else if (deleted && (source.getType() == AudiobookSourceType.OPDS)) {

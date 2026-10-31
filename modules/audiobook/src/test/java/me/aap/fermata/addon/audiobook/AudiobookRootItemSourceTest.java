@@ -22,4 +22,20 @@ public class AudiobookRootItemSourceTest {
 		int created = source.indexOf("new AudiobookChapterItem(", create);
 		assertTrue((create >= 0) && (cached > create) && (cached < created));
 	}
+
+	// The database cascade removes the books, so their downloaded files must go first (as podcasts do).
+	@Test
+	public void deletingSourceDeletesItsDownloadsFirst() throws Exception {
+		String source = read();
+		int delete = source.indexOf("FutureSupplier<Boolean> delete(AudiobookSource source)");
+		int files = source.indexOf("downloads::delete", delete);
+		int rows = source.indexOf("repository.deleteSource(", delete);
+		assertTrue((delete >= 0) && (files > delete) && (files < rows));
+	}
+
+	private static String read() throws Exception {
+		return new String(Files.readAllBytes(Paths.get(
+				"src/main/java/me/aap/fermata/addon/audiobook/AudiobookRootItem.java")),
+				StandardCharsets.UTF_8);
+	}
 }
