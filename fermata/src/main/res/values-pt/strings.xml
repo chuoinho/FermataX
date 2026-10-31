@@ -703,6 +703,10 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Módulo de extensão</string>
     <string name="glass_weather_header">CLIMA E PREVISÃO</string>
+    <string name="glass_weather_hazard_ice">Risco de gelo · reduza a velocidade</string>
+    <string name="glass_weather_hazard_fog">Nevoeiro · pouca visibilidade</string>
+    <string name="glass_weather_hazard_heavy">Chuva ou neve forte</string>
+    <string name="glass_weather_hazard_wind">Rajadas fortes · %1$s</string>
     <string name="glass_weather_updating">Atualizando…</string>
     <string name="glass_speedo_card_title">VELOCIDADE E TRAJETO</string>
 

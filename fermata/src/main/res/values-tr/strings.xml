@@ -612,6 +612,10 @@
     <string name="car_finder_camera_error">Kamera hatası: %1$s</string>
     <string name="glass_addon_module_desc">Eklenti Modülü</string>
     <string name="glass_weather_header">HAVA DURUMU VE TAHMİN</string>
+    <string name="glass_weather_hazard_ice">Buzlanma riski · yavaşlayın</string>
+    <string name="glass_weather_hazard_fog">Sis · düşük görüş</string>
+    <string name="glass_weather_hazard_heavy">Şiddetli yağmur veya kar</string>
+    <string name="glass_weather_hazard_wind">Kuvvetli rüzgâr · %1$s</string>
     <string name="glass_weather_updating">Güncelleniyor…</string>
     <string name="glass_speedo_card_title">HIZ VE SEYAHAT</string>
     <string name="glass_shortcut_open">Aç</string>

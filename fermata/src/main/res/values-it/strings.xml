@@ -612,6 +612,10 @@
     <string name="car_finder_camera_error">Errore fotocamera: %1$s</string>
     <string name="glass_addon_module_desc">Modulo aggiuntivo</string>
     <string name="glass_weather_header">METEO E PREVISIONI</string>
+    <string name="glass_weather_hazard_ice">Rischio ghiaccio · rallenta</string>
+    <string name="glass_weather_hazard_fog">Nebbia · scarsa visibilità</string>
+    <string name="glass_weather_hazard_heavy">Pioggia o neve intensa</string>
+    <string name="glass_weather_hazard_wind">Raffiche forti · %1$s</string>
     <string name="glass_weather_updating">Aggiornamento in corso…</string>
     <string name="glass_speedo_card_title">VELOCITÀ E VIAGGIO</string>
     <string name="glass_shortcut_open">Apri</string>

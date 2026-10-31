@@ -107,6 +107,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             if (speedoView != null) {
                 speedoView.updateSpeed(speedKmh, state, isMetric);
             }
+            refreshWeatherForDistance();
         };
         speedoView.setOnResetTripListener(tripRegistry::resetTrip);
         speedoView.setOnToggleTripListener(tripRegistry::toggleTrip);
@@ -309,6 +310,10 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     // Identifies the current one-shot location request; stale hub callbacks are ignored.
     @Nullable private Object weatherRequest;
     private long lastWeatherFetchMs = 0L;
+    private double lastWeatherLat = Double.NaN;
+    private double lastWeatherLon = Double.NaN;
+    // A failed fetch leaves lastWeatherFetchMs unchanged; this keeps the distance rule from retrying every second.
+    private long lastDistanceRefreshMs = 0L;
 
     private void scheduleNextWeatherRefresh() {
         if (isStopped) return;
@@ -488,11 +493,30 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         });
     }
 
+    private void refreshWeatherForDistance() {
+        if (isStopped || weatherBusy || Double.isNaN(lastWeatherLat)) return;
+        if (!AutomotiveConnectionState.get().isProjectionConnected()) return;
+        Context ctx = activity.getContext();
+        if (ctx == null) return;
+        Location latest = LocationHub.get(ctx).latest();
+        if (latest == null) return;
+        float[] dist = new float[1];
+        Location.distanceBetween(lastWeatherLat, lastWeatherLon, latest.getLatitude(), latest.getLongitude(), dist);
+        long now = System.currentTimeMillis();
+        if (WeatherLocationPolicy.shouldRefreshForDistance(dist[0], now,
+                Math.max(lastWeatherFetchMs, lastDistanceRefreshMs))) {
+            lastDistanceRefreshMs = now;
+            refreshWeather(ctx, true);
+        }
+    }
+
     private void fetchWeatherForLocation(Context ctx, double lat, double lon, boolean force) {
         weatherClient.fetchForecast(lat, lon, isMetric, force, new GlassOpenMeteoClient.ForecastCallback() {
             @Override
             public void onSuccess(@NonNull GlassOpenMeteoClient.HourlyForecast forecast) {
                 lastWeatherFetchMs = forecast.getTimestamp();
+                lastWeatherLat = lat;
+                lastWeatherLon = lon;
                 weatherBusy = false;
                 if (!isStopped) {
                     navWeatherView.bindWeather(forecast, isMetric, null, forecast.isExpired());

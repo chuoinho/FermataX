@@ -698,6 +698,10 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Модуль дополнения</string>
     <string name="glass_weather_header">ПОГОДА И ПРОГНОЗ</string>
+    <string name="glass_weather_hazard_ice">Риск гололёда · снизьте скорость</string>
+    <string name="glass_weather_hazard_fog">Туман · плохая видимость</string>
+    <string name="glass_weather_hazard_heavy">Сильный дождь или снег</string>
+    <string name="glass_weather_hazard_wind">Сильные порывы · %1$s</string>
     <string name="glass_weather_updating">Обновление…</string>
     <string name="glass_speedo_card_title">СКОРОСТЬ И МАРШРУТ</string>
 
