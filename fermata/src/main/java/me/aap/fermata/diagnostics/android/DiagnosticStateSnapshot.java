@@ -45,6 +45,7 @@ public final class DiagnosticStateSnapshot {
 			json.put("permissions", section(() -> permissions(context)));
 			json.put("location", section(() -> location(context)));
 			json.put("background", section(() -> background(context)));
+			json.put("device", section(() -> new JSONObject(DeviceConditions.read(context))));
 			json.put("auto", section(() -> auto(context)));
 			json.put("app", section(() -> app(context)));
 		} catch (Exception unexpected) {

@@ -22,6 +22,7 @@ import me.aap.fermata.addon.audiobook.model.AudiobookChapter;
 import me.aap.fermata.addon.audiobook.model.AudiobookSource;
 import me.aap.fermata.addon.audiobook.model.AudiobookSourceType;
 import me.aap.fermata.addon.audiobook.remote.AudiobookSourceSnapshot;
+import me.aap.fermata.addon.audiobook.remote.AudiobookshelfBookDetails;
 import me.aap.fermata.addon.audiobook.remote.AudiobookshelfClient;
 import me.aap.fermata.addon.audiobook.remote.OpdsCatalogClient;
 import me.aap.fermata.addon.audiobook.remote.OpdsCatalogSnapshot;
@@ -177,11 +178,12 @@ public final class AudiobookRootItem extends ExtRoot implements AudiobookItem {
 						(book.getRemoteId() == null)) {
 					return completed(new BookChapters(book, chapters));
 				}
-				return audiobookshelf.loadBook(source, book).then(details ->
-						repository.saveRemoteBook(source, details.book(), details.chapters(),
-								details.remoteProgressUpdatedMs()).map(saved ->
-									new BookChapters(saved, details.chapters())),
-					error -> completed(new BookChapters(book, chapters)));
+				return audiobookshelf.loadBook(source, book).then(details -> {
+					pushUnsyncedProgress(book.getId(), details);
+					return repository.saveRemoteBook(source, details.book(), details.chapters(),
+							details.remoteProgressUpdatedMs()).map(saved ->
+								new BookChapters(saved, details.chapters()));
+				}, error -> completed(new BookChapters(book, chapters)));
 			});
 		});
 	}
@@ -201,8 +203,16 @@ public final class AudiobookRootItem extends ExtRoot implements AudiobookItem {
 			AudiobookBook book, AudiobookChapter chapter, String nextChapterId) {
 		String location = chapter.isDownloaded() ? chapter.getLocalPath() : chapter.getMediaUrl();
 		return requestHeaders(book).then(headers -> getLib().getVfsManager().getResource(location)
-				.map(resource -> (resource == null) ? null : new AudiobookChapterItem(parent, book,
-						chapter, resource, repository, this, headers, nextChapterId)));
+				.map(resource -> {
+					if (resource == null) return null;
+					// The playing chapter may already exist (restored by the media session).
+					synchronized (getLib().cacheLock()) {
+						Item cached = getLib().getFromCache(chapterId(book.getId(), chapter.getId()));
+						if (cached instanceof AudiobookChapterItem item) return item;
+						return new AudiobookChapterItem(parent, book, chapter, resource, repository,
+								this, headers, nextChapterId);
+					}
+				}));
 	}
 
 	private FutureSupplier<Map<String, String>> requestHeaders(AudiobookBook book) {
@@ -322,6 +332,14 @@ public final class AudiobookRootItem extends ExtRoot implements AudiobookItem {
 						.onFailure(error -> Log.e(error,
 								"Failed to sync Audiobookshelf playback progress"));
 			}
+		});
+	}
+
+	// A progress push that failed (no signal) is only logged; resend it once the server is reachable.
+	private void pushUnsyncedProgress(String bookId, AudiobookshelfBookDetails details) {
+		repository.getBook(bookId).onSuccess(local -> {
+			AudiobookChapter chapter = details.unsyncedChapter(local);
+			if (chapter != null) syncProgress(local, chapter, local.getProgressMs(), local.isFinished());
 		});
 	}
 
