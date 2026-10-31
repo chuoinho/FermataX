@@ -59,6 +59,15 @@ final class InterfacePrefsBuilder {
 				o.values = new int[]{R.string.glass_appearance_day, R.string.glass_appearance_night};
 				o.valuesMap = new int[]{MainActivityPrefs.GLASS_APPEARANCE_DAY, MainActivityPrefs.GLASS_APPEARANCE_NIGHT};
 			});
+			// One unit system for the glass speedometer, trip distance, temperature and wind.
+			set.addListPref(o -> {
+				o.store = store;
+				o.pref = MainActivityPrefs.GLASS_SPEED_UNIT;
+				o.title = R.string.glass_units;
+				o.subtitle = R.string.glass_units_sub;
+				o.formatSubtitle = true;
+				o.values = new int[]{R.string.glass_units_metric, R.string.glass_units_imperial};
+			});
 		}
 
 		Pref<IntSupplier> navBarPosition = BuildConfig.AUTO ?

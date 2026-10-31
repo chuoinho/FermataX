@@ -527,6 +527,10 @@
     <string name="glass_appearance_sub">Применяется к стеклянной теме на телефоне и Android Auto: %1$s</string>
     <string name="glass_appearance_day">День</string>
     <string name="glass_appearance_night">Ночь</string>
+    <string name="glass_units">Единицы</string>
+    <string name="glass_units_sub">Скорость, расстояние и температура: %1$s</string>
+    <string name="glass_units_metric">км/ч, км, °C</string>
+    <string name="glass_units_imperial">mph, mi, °F</string>
     <string name="glass_quick_add">Добавить</string>
     <string name="glass_quick_manage_title">Управление ярлыками</string>
     <string name="glass_quick_manage_sub">Настройка 6 ярлыков панели</string>

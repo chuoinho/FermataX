@@ -246,6 +246,9 @@ public class DashboardFragment extends MainActivityFragment
 			if (MainActivityPrefs.hasThemePref(activity, prefs) || prefs.contains(MainActivityPrefs.GLASS_APPEARANCE)) {
 				glassLayout.refreshAppearance();
 			}
+			if (prefs.contains(MainActivityPrefs.GLASS_SPEED_UNIT) && glassDashboardController != null) {
+				glassDashboardController.onUnitsChanged();
+			}
 			if (prefs.contains(MainActivityPrefs.PREF_GLASS_QUICK_SHORTCUTS)) {
 				if (glassLayout.getQuickBarView() instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView qb) {
 					qb.refresh();

@@ -79,6 +79,10 @@
     <string name="glass_appearance_sub">Gilt für das Glass-Design auf Telefon und Android Auto: %1$s</string>
     <string name="glass_appearance_day">Tag</string>
     <string name="glass_appearance_night">Nacht</string>
+    <string name="glass_units">Einheiten</string>
+    <string name="glass_units_sub">Geschwindigkeit, Strecke und Temperatur: %1$s</string>
+    <string name="glass_units_metric">km/h, km, °C</string>
+    <string name="glass_units_imperial">mph, mi, °F</string>
     <string name="glass_quick_add">Hinzufügen</string>
     <string name="glass_quick_manage_title">Quick Dock-Verknüpfungen verwalten</string>
     <string name="glass_quick_manage_sub">6 Dashboard-Verknüpfungen konfigurieren</string>

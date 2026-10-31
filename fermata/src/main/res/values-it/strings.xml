@@ -79,6 +79,10 @@
     <string name="glass_appearance_sub">Si applica al tema Glass su telefono e Android Auto: %1$s</string>
     <string name="glass_appearance_day">Giorno</string>
     <string name="glass_appearance_night">Notte</string>
+    <string name="glass_units">Unità</string>
+    <string name="glass_units_sub">Velocità, distanza e temperatura: %1$s</string>
+    <string name="glass_units_metric">km/h, km, °C</string>
+    <string name="glass_units_imperial">mph, mi, °F</string>
     <string name="glass_quick_add">Aggiungi</string>
     <string name="glass_quick_manage_title">Gestisci scorciatoie Quick Dock</string>
     <string name="glass_quick_manage_sub">Configura 6 scorciatoie della dashboard</string>

@@ -535,6 +535,10 @@ Por favor, reinicie la aplicación.</string>
     <string name="glass_appearance_sub">Se aplica al tema cristal en el teléfono y Android Auto: %1$s</string>
     <string name="glass_appearance_day">Día</string>
     <string name="glass_appearance_night">Noche</string>
+    <string name="glass_units">Unidades</string>
+    <string name="glass_units_sub">Velocidad, distancia y temperatura: %1$s</string>
+    <string name="glass_units_metric">km/h, km, °C</string>
+    <string name="glass_units_imperial">mph, mi, °F</string>
     <string name="glass_quick_add">Añadir</string>
     <string name="glass_quick_manage_title">Gestionar accesos directos</string>
     <string name="glass_quick_manage_sub">Configurar 6 accesos directos</string>
