@@ -79,6 +79,10 @@
     <string name="glass_appearance_sub">Telefonda ve Android Auto\'da Glass temasına uygulanır: %1$s</string>
     <string name="glass_appearance_day">Gündüz</string>
     <string name="glass_appearance_night">Gece</string>
+    <string name="glass_units">Birimler</string>
+    <string name="glass_units_sub">Hız, mesafe ve sıcaklık: %1$s</string>
+    <string name="glass_units_metric">km/s, km, °C</string>
+    <string name="glass_units_imperial">mph, mi, °F</string>
     <string name="glass_quick_add">Ekle</string>
     <string name="glass_quick_manage_title">Quick Dock kısayollarını yönet</string>
     <string name="glass_quick_manage_sub">6 pano kısayolunu yapılandır</string>

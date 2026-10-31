@@ -375,6 +375,14 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         }
     }
 
+    /** Speed follows on the next trip update; the forecast is refetched since its units are part of the request. */
+    public void onUnitsChanged() {
+        boolean metric = activity.getPrefs().getIntPref(MainActivityPrefs.GLASS_SPEED_UNIT) == 0;
+        if (metric == isMetric) return;
+        isMetric = metric;
+        if (!isStopped) refreshWeather(activity.getContext(), true);
+    }
+
     @Override
     public void onNavTurnUpdated(@NonNull NavTurnInfo info) {
         navWeatherView.bindNavTurn(info);

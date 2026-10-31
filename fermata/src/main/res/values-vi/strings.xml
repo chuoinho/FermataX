@@ -90,6 +90,10 @@
     <string name="glass_appearance_sub">Áp dụng cho giao diện kính trên điện thoại và Android Auto: %1$s</string>
     <string name="glass_appearance_day">Sáng</string>
     <string name="glass_appearance_night">Tối</string>
+    <string name="glass_units">Đơn vị</string>
+    <string name="glass_units_sub">Tốc độ, quãng đường và nhiệt độ: %1$s</string>
+    <string name="glass_units_metric">km/h, km, °C</string>
+    <string name="glass_units_imperial">mph, dặm, °F</string>
     <string name="glass_quick_add">Thêm</string>
     <string name="glass_quick_manage_title">Quản lý phím tắt Quick Dock</string>
     <string name="glass_quick_manage_sub">Cấu hình 6 phím tắt màn hình chính</string>

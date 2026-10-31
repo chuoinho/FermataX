@@ -16,6 +16,16 @@ public class InterfacePrefsBuilderTest {
 		assertTrue(source.contains("android.R.attr.textColorPrimary"));
 	}
 
+	@Test
+	public void glassUnitsCanBeChosenAndApplyLive() throws Exception {
+		String builder = source("InterfacePrefsBuilder.java");
+		assertTrue(builder.contains("o.pref = MainActivityPrefs.GLASS_SPEED_UNIT;"));
+		assertTrue(builder.contains("R.string.glass_units_metric, R.string.glass_units_imperial"));
+		String dashboard = source("DashboardFragment.java");
+		assertTrue(dashboard.contains("prefs.contains(MainActivityPrefs.GLASS_SPEED_UNIT)"));
+		assertTrue(dashboard.contains("glassDashboardController.onUnitsChanged()"));
+	}
+
 	private static String source(String name) throws Exception {
 		Path root = Path.of(System.getProperty("user.dir"));
 		Path file = root.resolve("src/main/java/me/aap/fermata/ui/fragment").resolve(name);
