@@ -589,6 +589,10 @@
     <string name="glass_media_recent_media">Contenuti recenti</string>
     <string name="glass_nav_header">NAVIGAZIONE</string>
     <string name="glass_nav_exit">ESCI</string>
+    <string name="glass_card_show_weather">Meteo</string>
+    <string name="glass_card_show_nav">Navigazione</string>
+    <string name="glass_card_show_weather_desc">Mostra meteo</string>
+    <string name="glass_card_show_nav_desc">Mostra navigazione</string>
     <string name="glass_nav_gps_timeout">Timeout GPS. Tocca per riprovare.</string>
     <string name="glass_nav_network_error">Errore di rete. Tocca per riprovare.</string>
     <string name="glass_nav_weather_unavailable">Meteo non disponibile</string>

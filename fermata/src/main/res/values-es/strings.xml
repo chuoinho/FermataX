@@ -673,6 +673,10 @@ Por favor, reinicie la aplicación.</string>
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">NAVEGACIÓN</string>
     <string name="glass_nav_exit">SALIR</string>
+    <string name="glass_card_show_weather">Clima</string>
+    <string name="glass_card_show_nav">Navegación</string>
+    <string name="glass_card_show_weather_desc">Mostrar clima</string>
+    <string name="glass_card_show_nav_desc">Mostrar navegación</string>
     <string name="glass_nav_gps_timeout">Tiempo de espera GPS agotado. Toca para reintentar.</string>
     <string name="glass_nav_network_error">Error de red. Toca para reintentar.</string>
     <string name="glass_nav_weather_unavailable">Clima no disponible</string>

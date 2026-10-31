@@ -2,6 +2,7 @@ package me.aap.fermata.ui.glass.dashboard;
 
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -18,10 +19,12 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.Locale;
 
 import me.aap.fermata.R;
+import me.aap.fermata.ui.view.MinimumTouchTargetDelegate;
 import me.aap.fermata.ui.glass.nav.NavTurnInfo;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
@@ -50,6 +53,14 @@ public class GlassNavWeatherView extends FrameLayout {
     private LinearLayout navBottomBar;
     private PendingIntent activeExitIntent;
 
+    // Manual Weather / Navigation choice, offered only while navigation is active.
+    private static final String MODE_PREFS = "glass_nav_card";
+    private static final String MODE_SHOW_NAV = "show_nav";
+    private TextView btnShowWeather;
+    private TextView btnShowNav;
+    private boolean navActive;
+    private boolean showNav;
+
     // Weather container
     private LinearLayout weatherContainer;
     private TextView tvWeatherHeader;
@@ -77,6 +88,7 @@ public class GlassNavWeatherView extends FrameLayout {
 
     public GlassNavWeatherView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        this.showNav = modePrefs(context).getBoolean(MODE_SHOW_NAV, true);
         this.isNight = GlassThemeColors.isNight(context);
         this.colors = GlassThemeColors.get(context, isNight);
         initView(context);
@@ -90,6 +102,7 @@ public class GlassNavWeatherView extends FrameLayout {
 
         initNavLayout(context);
         initWeatherLayout(context);
+        MinimumTouchTargetDelegate.install(this, btnShowWeather, btnShowNav);
 
         // Default to weather fallback view
         navContainer.setVisibility(View.GONE);
@@ -127,7 +140,9 @@ public class GlassNavWeatherView extends FrameLayout {
         tvNavHeader.setTypeface(Typeface.DEFAULT_BOLD);
         tvNavHeader.setTextColor(colors.getTextSecondary());
         tvNavHeader.setLetterSpacing(0.08f);
-        navContainer.addView(tvNavHeader);
+        btnShowWeather = createModeButton(context, R.string.glass_card_show_weather, "Weather",
+                R.string.glass_card_show_weather_desc, "Show weather");
+        navContainer.addView(createHeaderRow(context, tvNavHeader, btnShowWeather));
 
         // Turn Maneuver Center
         LinearLayout maneuverLayout = new LinearLayout(context);
@@ -230,7 +245,9 @@ public class GlassNavWeatherView extends FrameLayout {
         tvWeatherHeader.setTypeface(Typeface.DEFAULT_BOLD);
         tvWeatherHeader.setTextColor(colors.getTextSecondary());
         tvWeatherHeader.setLetterSpacing(0.08f);
-        weatherContainer.addView(tvWeatherHeader);
+        btnShowNav = createModeButton(context, R.string.glass_card_show_nav, "Navigation",
+                R.string.glass_card_show_nav_desc, "Show navigation");
+        weatherContainer.addView(createHeaderRow(context, tvWeatherHeader, btnShowNav));
 
         // Road hazard chip, hidden unless the forecast reports one
         tvWeatherHazard = new TextView(context);
@@ -323,10 +340,8 @@ public class GlassNavWeatherView extends FrameLayout {
     }
 
     public void bindNavTurn(@Nullable NavTurnInfo info) {
-        if (info != null && info.isActive()) {
-            navContainer.setVisibility(View.VISIBLE);
-            weatherContainer.setVisibility(View.GONE);
-
+        navActive = info != null && info.isActive();
+        if (navActive) {
             navArrowView.setDirection(info.getDirection());
             tvNavDistance.setText(info.getDistanceText());
             tvNavInstruction.setText(info.getInstruction());
@@ -335,10 +350,70 @@ public class GlassNavWeatherView extends FrameLayout {
 
             this.activeExitIntent = info.getExitIntent();
             btnNavExit.setVisibility(info.hasExitAction() ? View.VISIBLE : View.GONE);
-        } else {
-            navContainer.setVisibility(View.GONE);
-            weatherContainer.setVisibility(View.VISIBLE);
         }
+        applyMode();
+    }
+
+    private void applyMode() {
+        boolean nav = navActive && showNav;
+        navContainer.setVisibility(nav ? View.VISIBLE : View.GONE);
+        weatherContainer.setVisibility(nav ? View.GONE : View.VISIBLE);
+        int toggle = navActive ? View.VISIBLE : View.GONE;
+        btnShowWeather.setVisibility(toggle);
+        btnShowNav.setVisibility(toggle);
+    }
+
+    private void setShowNav(boolean show) {
+        showNav = show;
+        modePrefs(getContext()).edit().putBoolean(MODE_SHOW_NAV, show).apply();
+        applyMode();
+    }
+
+    public boolean isShowingNavigation() {
+        return navContainer.getVisibility() == View.VISIBLE;
+    }
+
+    private static SharedPreferences modePrefs(Context context) {
+        return context.getSharedPreferences(MODE_PREFS, Context.MODE_PRIVATE);
+    }
+
+    @VisibleForTesting
+    public static void clearModeForTesting(Context context) {
+        modePrefs(context).edit().clear().commit();
+    }
+
+    private LinearLayout createHeaderRow(Context context, TextView header, TextView toggle) {
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        header.setGravity(Gravity.CENTER);
+        header.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(header);
+        row.addView(toggle);
+        return row;
+    }
+
+    private TextView createModeButton(Context context, int labelRes, String labelFallback,
+                                      int descRes, String descFallback) {
+        TextView btn = new TextView(context);
+        btn.setText(safeGetString(context, labelRes, labelFallback));
+        btn.setContentDescription(safeGetString(context, descRes, descFallback));
+        btn.setTextSize(11f);
+        btn.setTypeface(Typeface.DEFAULT_BOLD);
+        btn.setTextColor(colors.getTextPrimary());
+        btn.setGravity(Gravity.CENTER);
+        btn.setSingleLine(true);
+        // After setSingleLine, which replaces the transformation method that applies all caps.
+        btn.setAllCaps(true);
+        int padH = GlassDimensions.dpToPx(context, 14);
+        int padV = GlassDimensions.dpToPx(context, 6);
+        btn.setPadding(padH, padV, padH, padV);
+        btn.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        btn.setVisibility(View.GONE);
+        btn.setOnClickListener(v -> setShowNav(btn == btnShowNav));
+        return btn;
     }
 
     public boolean hasForecastData() {
@@ -515,6 +590,11 @@ public class GlassNavWeatherView extends FrameLayout {
         }
         if (tvNavRemaining != null) {
             tvNavRemaining.setTextColor(colors.getTextSecondary());
+        }
+        for (TextView btn : new TextView[]{btnShowWeather, btnShowNav}) {
+            if (btn == null) continue;
+            btn.setTextColor(colors.getTextPrimary());
+            btn.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
         }
         if (btnNavExit != null) {
             btnNavExit.setTextColor(colors.getTextPrimary());
