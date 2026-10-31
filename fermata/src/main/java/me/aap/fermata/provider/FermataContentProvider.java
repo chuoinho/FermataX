@@ -94,12 +94,6 @@ public class FermataContentProvider extends ContentProvider {
 		return materializeImage(source).map(LoadedArtwork::uri);
 	}
 
-	/** Loads the same normalized artwork without forcing callers through a second decode queue. */
-	@NonNull
-	public static FutureSupplier<Bitmap> loadImage(@NonNull Uri source) {
-		return materializeImage(source).map(LoadedArtwork::bitmap);
-	}
-
 	private static FutureSupplier<LoadedArtwork> materializeImage(Uri source) {
 		UriRequest current = UriRequest.parse(source);
 		if (current != null) {

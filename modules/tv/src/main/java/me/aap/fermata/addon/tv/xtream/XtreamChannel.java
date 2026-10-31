@@ -35,10 +35,6 @@ public class XtreamChannel {
 		return icon;
 	}
 
-	public String getEpgChannelId() {
-		return epgChannelId;
-	}
-
 	public boolean isTvArchive() {
 		return tvArchive;
 	}

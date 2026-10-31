@@ -54,14 +54,6 @@ public class XtreamHealth {
 		return liveCategories + vodCategories + seriesCategories;
 	}
 
-	public int getTestedStreamId() {
-		return testedStreamId;
-	}
-
-	public String getTestedStreamName() {
-		return testedStreamName;
-	}
-
 	public void setTestedStream(XtreamChannel channel) {
 		testedStreamId = channel.getStreamId();
 		testedStreamName = channel.getName();

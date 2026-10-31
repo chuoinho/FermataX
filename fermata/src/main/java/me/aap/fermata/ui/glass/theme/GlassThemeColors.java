@@ -111,10 +111,6 @@ public final class GlassThemeColors {
 		return cardBg;
 	}
 
-	public int getCardBg2() {
-		return cardBg2;
-	}
-
 	public int getCardBorder() {
 		return cardBorder;
 	}
@@ -173,10 +169,6 @@ public final class GlassThemeColors {
 
 	public int getErrorText() {
 		return errorText;
-	}
-
-	public int getSurfaceBg() {
-		return surfaceBg;
 	}
 
 	public int getNenA() {

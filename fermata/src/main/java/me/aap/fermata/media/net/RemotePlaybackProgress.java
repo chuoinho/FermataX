@@ -25,10 +25,6 @@ public record RemotePlaybackProgress(Phase phase, int peers, int seeds,
 		return new RemotePlaybackProgress(Phase.RESOLVING, 0, 0, 0, 0, 0, -1);
 	}
 
-	public static RemotePlaybackProgress findingPeers() {
-		return new RemotePlaybackProgress(Phase.FINDING_PEERS, 0, 0, 0, 0, 0, -1);
-	}
-
 	public static RemotePlaybackProgress buffering(int peers, int seeds, long rate,
 			long downloaded, long target, int percent) {
 		return new RemotePlaybackProgress(Phase.BUFFERING, peers, seeds, rate,

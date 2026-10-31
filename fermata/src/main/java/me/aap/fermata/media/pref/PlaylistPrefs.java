@@ -25,10 +25,6 @@ public interface PlaylistPrefs extends BrowsableItemPrefs {
 		getPlaylistPreferenceStore().applyStringPref(PLAYLIST_NAME, name);
 	}
 
-	default String[] getPlaylistItemsPref() {
-		return getPlaylistPreferenceStore().getStringArrayPref(PLAYLIST_ITEMS);
-	}
-
 	default void setPlaylistItemsPref(String[] items) {
 		getPlaylistPreferenceStore().applyStringArrayPref(PLAYLIST_ITEMS, items);
 	}

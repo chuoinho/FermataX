@@ -802,10 +802,6 @@ public class GlassNavigationRailView extends FrameLayout {
         autoHideHandler.removeCallbacks(autoHideRunnable);
     }
 
-    public void resetAutoHideTimer() {
-        scheduleAutoHide();
-    }
-
     void setBackActionListenerForTesting(@Nullable Runnable listener) {
         this.backActionListenerForTesting = listener;
     }

@@ -111,30 +111,12 @@ public class GlassSlider extends View {
 		}
 	}
 
-	public void setMin(float min) {
-		this.min = Math.max(0.0f, Math.min(1.0f, min));
-		if (this.progress < this.min) {
-			setProgress(this.min);
-		}
-	}
-
 	public void setOnSliderChangeListener(@Nullable OnSliderChangeListener listener) {
 		this.listener = listener;
 	}
 
 	public void setTrackColor(@ColorInt int color) {
 		this.trackColor = color;
-		invalidate();
-	}
-
-	public void setProgressColors(@ColorInt int startColor, @ColorInt int endColor) {
-		this.progressStartColor = startColor;
-		this.progressEndColor = endColor;
-		invalidate();
-	}
-
-	public void setThumbGlow(boolean enable) {
-		this.thumbGlow = enable;
 		invalidate();
 	}
 

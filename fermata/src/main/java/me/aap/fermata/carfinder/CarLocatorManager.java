@@ -15,8 +15,6 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -128,14 +126,6 @@ public final class CarLocatorManager {
 	private CarLocatorManager() {
 	}
 
-	public LocationKalmanFilter getKalmanFilter() {
-		return kalmanFilter;
-	}
-
-	public ParkingLocationSmoother getSmoother() {
-		return smoother;
-	}
-
 	@Nullable
 	public Location getCurrentUserLocation() {
 		return currentUserLocation;
@@ -201,12 +191,6 @@ public final class CarLocatorManager {
 			return (SystemClock.elapsedRealtimeNanos() - elapsed) / 1_000_000L;
 		}
 		return Math.max(0, System.currentTimeMillis() - loc.getTime());
-	}
-
-	/** Backwards-compatible alias */
-	@Nullable
-	public Location getBestOrLastKnownLocation(Context context) {
-		return queryBestKnownUserLocation(context);
 	}
 
 	/**
@@ -383,11 +367,6 @@ public final class CarLocatorManager {
 		reverseGeocodeAddressInBackground(app, loc);
 	}
 
-	/** Backwards-compatible alias */
-	public void saveManualLocation(Context context, Location location, @Nullable String note) {
-		saveManualParkingLocation(context, location, note);
-	}
-
 	/**
 	 * Explicitly marks vehicle found, clearing location and returning to idle state.
 	 */
@@ -396,11 +375,6 @@ public final class CarLocatorManager {
 		CarFinderPrefs.clearParkingLocation(app);
 		dismissParkingNotification(app);
 		Log.i("CarFinder: Vehicle marked found; cleared parking location");
-	}
-
-	/** Backwards-compatible alias */
-	public void markCarFound(Context context) {
-		clearParkingLocationOnCarFound(context);
 	}
 
 	private void reverseGeocodeAddressInBackground(Context app, CarParkingLocation loc) {

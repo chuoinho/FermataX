@@ -400,19 +400,6 @@ public class TextUtils {
 		return bytes;
 	}
 
-	public static byte[] hexToLong(CharSequence hex) {
-		int len = hex.length();
-		byte[] bytes = new byte[len / 2];
-		int n = 0;
-
-		for (int i = 0; i < bytes.length; i++) {
-			bytes[i] = (byte) ((Character.digit(hex.charAt(n++), 16) << 4) +
-					Character.digit(hex.charAt(n++), 16));
-		}
-
-		return bytes;
-	}
-
 	public static String toString(ByteBuffer b, Charset cs) {
 		if (!b.hasArray()) {
 			ByteBuffer bb = ByteBuffer.allocate(b.remaining());
@@ -420,29 +407,6 @@ public class TextUtils {
 			b = bb;
 		}
 		return new String(b.array(), b.arrayOffset() + b.position(), b.remaining(), cs);
-	}
-
-	public static int compareToIgnoreCase(CharSequence s1, CharSequence s2) {
-		int n1 = s1.length();
-		int n2 = s2.length();
-
-		for (int i = 0; i < Math.min(n1, n2); i++) {
-			char c1 = s1.charAt(i);
-			char c2 = s2.charAt(i);
-
-			if (c1 != c2) {
-				c1 = Character.toUpperCase(c1);
-				c2 = Character.toUpperCase(c2);
-
-				if (c1 != c2) {
-					c1 = Character.toLowerCase(c1);
-					c2 = Character.toLowerCase(c2);
-					if (c1 != c2) return c1 - c2;
-				}
-			}
-		}
-
-		return n1 - n2;
 	}
 
 	private static class HexTable {

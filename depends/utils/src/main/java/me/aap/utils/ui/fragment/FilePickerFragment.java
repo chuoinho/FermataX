@@ -96,10 +96,6 @@ public class FilePickerFragment extends GenericDialogFragment implements
 		setSupplier(fs.getRoots().map(r -> new BiHolder<>(null, r)));
 	}
 
-	public void setFolder(VirtualFolder folder) {
-		setSupplier(folder.getChildren().map(c -> new BiHolder<>(folder, c)));
-	}
-
 	public void setResources(VirtualResource parent, List<? extends VirtualResource> children) {
 		setSupplier(completed(new BiHolder<>(parent, children)));
 	}

@@ -4,7 +4,6 @@ import java.util.Objects;
 
 import me.aap.utils.BuildConfig;
 
-import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
 
 /**
  * @author Andrey Pavlenko
@@ -59,11 +58,4 @@ public class Assert {
 		if (BuildConfig.D && (l1 == l2)) throw new AssertionError();
 	}
 
-	public static void assertMainThread() {
-		if (BuildConfig.D && !isMainThread()) throw new AssertionError();
-	}
-
-	public static void assertNotMainThread() {
-		if (BuildConfig.D && isMainThread()) throw new AssertionError();
-	}
 }

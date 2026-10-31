@@ -1,7 +1,5 @@
 package me.aap.utils.ui.view;
 
-import static android.content.res.Configuration.SCREEN_HEIGHT_DP_UNDEFINED;
-import static android.content.res.Configuration.SCREEN_WIDTH_DP_UNDEFINED;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
 import static me.aap.utils.ui.UiUtils.isVisible;
@@ -203,18 +201,6 @@ public class NavBarView extends LinearLayoutCompat implements ActivityListener {
 	public View focusSearch() {
 		View v = findViewById(getActivity().getActiveNavItemId());
 		return isVisible(v) ? v : this;
-	}
-
-	public int suggestItemCount() {
-		int c;
-		if (getPosition() == POSITION_BOTTOM) {
-			int w = getContext().getResources().getConfiguration().screenWidthDp;
-			c = (w != SCREEN_WIDTH_DP_UNDEFINED) ? w / 100 : 5;
-		} else {
-			int h = getContext().getResources().getConfiguration().screenHeightDp;
-			c = (h != SCREEN_HEIGHT_DP_UNDEFINED) ? h / 100 : 5;
-		}
-		return Math.max(c, 5);
 	}
 
 	public interface Mediator extends ViewFragmentMediator<NavBarView>, OnClickListener {

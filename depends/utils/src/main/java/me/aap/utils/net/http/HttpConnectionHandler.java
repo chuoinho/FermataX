@@ -16,10 +16,6 @@ public class HttpConnectionHandler extends HttpRequestEncoder implements NetServ
 		return handlers.put(path, provider);
 	}
 
-	public HttpRequestHandler.Provider removeHandler(String path) {
-		return handlers.remove(path);
-	}
-
 	@Override
 	public void acceptConnection(NetChannel channel) {
 		readMessage(channel);

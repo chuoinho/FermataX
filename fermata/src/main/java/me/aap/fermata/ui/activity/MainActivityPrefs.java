@@ -3,7 +3,6 @@ package me.aap.fermata.ui.activity;
 import static me.aap.fermata.BuildConfig.AUTO;
 import static android.view.KeyEvent.KEYCODE_UNKNOWN;
 
-import android.content.pm.PackageInfo;
 
 import androidx.annotation.Nullable;
 
@@ -338,13 +337,6 @@ public interface MainActivityPrefs
 
 	default boolean shouldShowInitialSetup(MainActivityDelegate activity) {
 		return !getBooleanPref(INITIAL_SETUP_COMPLETED);
-	}
-
-	default void applyInitialSetupCompleted() {
-		try (PreferenceStore.Edit e = editPreferenceStore()) {
-			e.setBooleanPref(INITIAL_SETUP_COMPLETED, true);
-			e.setIntPref(INITIAL_SETUP_VERSION, INITIAL_SETUP_CURRENT_VERSION);
-		}
 	}
 
 	enum Lang {

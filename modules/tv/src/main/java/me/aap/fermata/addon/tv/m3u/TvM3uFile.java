@@ -122,11 +122,6 @@ public class TvM3uFile extends M3uFile {
 		return getPrefs().getLongPref(EpgPrefs.EPG_TIMESTAMP);
 	}
 
-	public void clearStamps() {
-		invalidatePlaylistValidation();
-		invalidateEpgValidation();
-	}
-
 	public void invalidatePlaylistValidation() {
 		try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
 			e.removePref(ETAG);

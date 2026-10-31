@@ -49,10 +49,6 @@ public final class AutomotiveConnectionState {
 		rawConnectionListeners.add(listener);
 	}
 
-	public synchronized void removeRawConnectionListener(RawConnectionListener listener) {
-		rawConnectionListeners.remove(listener);
-	}
-
 	public void connectionChanged(boolean connected) {
 		Listener[] notify = null;
 		RawConnectionListener[] rawNotify;

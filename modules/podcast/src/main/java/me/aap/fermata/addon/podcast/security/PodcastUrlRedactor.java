@@ -37,11 +37,6 @@ public final class PodcastUrlRedactor {
 		}
 	}
 
-	public static String forMessage(@Nullable String value) {
-		String redacted = forStorage(value);
-		return (redacted == null) ? "<invalid podcast URL>" : redacted;
-	}
-
 	@Nullable
 	private static String queryNames(@Nullable String query) {
 		if ((query == null) || query.isEmpty()) return null;

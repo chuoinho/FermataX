@@ -56,10 +56,6 @@ public class GenericDialogFragment extends GenericFragment {
 		this.backHandler = backHandler;
 	}
 
-	public void setCloseButtonVisible(boolean visible) {
-		closeButtonVisible = visible;
-	}
-
 	@Override
 	public int getFragmentId() {
 		return R.id.generic_dialog_fragment;

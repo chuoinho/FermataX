@@ -9,13 +9,11 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.location.LocationHub;
 import me.aap.fermata.location.LocationSource;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -374,7 +372,6 @@ public final class GlassSpeedoTripController {
 
     private static long now() { return SystemClock.elapsedRealtime(); }
 
-    Handler getWorkerForTesting() { return worker; }
     HandlerThread getThreadForTesting() { return thread; }
     boolean isRunningForTesting() { return running; }
 
@@ -446,7 +443,6 @@ public final class GlassSpeedoTripController {
     void setAttachedForTesting(boolean attached) { this.attached = attached; }
     void setRunningForTesting(boolean running) { this.running = running; }
     void setLastCallbackForTesting(long lastCallback) { this.lastCallback = lastCallback; }
-    void setLastProgressForTesting(long lastProgress) { this.lastProgress = lastProgress; }
     void triggerHeartbeatForTesting() { heartbeat.run(); }
     void flushDiagnosticsForTesting() { diagnostics.flush(now()); }
     void tripLogEventForTesting(String name) { if (tripLog != null) tripLog.event(name, now()); }

@@ -137,20 +137,6 @@ public class SecurityUtils {
 		return sha1String(UTF_8, text);
 	}
 
-	public static boolean isSha1String(String s) {
-		if (s.length() != 40) return false;
-
-		for (int i = 0; i < 40; i++) {
-			char c = s.charAt(i);
-			if ((c >= '0') && (c <= '9')) continue;
-			if ((c >= 'a') && (c <= 'f')) continue;
-			if ((c >= 'A') && (c <= 'F')) continue;
-			return false;
-		}
-
-		return true;
-	}
-
 	public static byte[] sha1(Charset charset, CharSequence... text) {
 		return digest(sha1Digest(), charset, text);
 	}

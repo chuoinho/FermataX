@@ -57,10 +57,6 @@ public interface VirtualResource extends Comparable<VirtualResource> {
 		return completedNull();
 	}
 
-	default boolean hasParent() {
-		return getParent().peek() != null;
-	}
-
 	@NonNull
 	default FutureSupplier<Boolean> exists() {
 		return completed(true);

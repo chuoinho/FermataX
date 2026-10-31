@@ -16,14 +16,12 @@ import androidx.annotation.Nullable;
 
 import com.google.android.play.core.splitcompat.SplitCompat;
 
-import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.io.FileUtils;
@@ -104,19 +102,6 @@ public class Utils {
 
 	public static boolean isExternalStorageManager() {
 		return (SDK_INT >= VERSION_CODES.R) && Environment.isExternalStorageManager();
-	}
-
-	public static File getAddonsFileDir(AddonInfo i) {
-		Context ctx = App.get();
-		String name = "addons/" + i.moduleName;
-		File f = ctx.getExternalFilesDir(name);
-		return ((f == null) ? new File(ctx.getFilesDir(), name) : f);
-	}
-
-	public static File getAddonsCacheDir(AddonInfo i) {
-		Context ctx = App.get();
-		File f = ctx.getExternalCacheDir();
-		return new File((f == null) ? ctx.getCacheDir() : f, "addons/" + i.moduleName);
 	}
 
 	public static void send(ActivityDelegate a, Uri uri, String title, String mime) {

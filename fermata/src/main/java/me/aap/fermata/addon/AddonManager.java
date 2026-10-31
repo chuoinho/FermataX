@@ -26,7 +26,6 @@ import me.aap.fermata.backup.BackupContributor;
 import me.aap.fermata.backup.BackupException;
 import me.aap.fermata.addon.external.ExternalPlaybackHandler;
 import me.aap.fermata.addon.external.ExternalPlaybackRequest;
-import me.aap.fermata.addon.external.ExternalPlaybackRouter;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ItemContainer;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -161,17 +160,6 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 			}
 		});
 		return result;
-	}
-
-	public synchronized boolean hasUnresolvedEnabledAddons() {
-		for (AddonInfo info : registry.getAvailable()) {
-			if (!store.getBooleanPref(info.enabledPref)) continue;
-			AddonState addonState = getAddonState(info);
-			if ((addonState == AddonState.LOADING) ||
-					(addonState == AddonState.ENABLED_PENDING) ||
-					(addonState == AddonState.FAILED)) return true;
-		}
-		return false;
 	}
 
 	/**
@@ -356,12 +344,6 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 			}
 		}
 		return List.copyOf(result);
-	}
-
-	public FutureSupplier<PlayableItem> resolveExternalPlayback(DefaultMediaLib lib,
-			ExternalPlaybackRequest request) {
-		return ExternalPlaybackRouter.route(snapshotExternalPlaybackHandlers(request),
-				handler -> isExternalPlaybackHandlerAvailable(handler, request), lib, request);
 	}
 
 	private synchronized boolean isExternalPlaybackHandlerAvailable(

@@ -37,7 +37,6 @@ final class TripStore {
     void setUserPaused(boolean paused) { prefs.edit().putBoolean("user_paused", paused).apply(); }
 
     boolean isAllowMock() { return prefs.getBoolean("allow_mock", false); }
-    void setAllowMock(boolean allow) { prefs.edit().putBoolean("allow_mock", allow).apply(); }
 
     boolean save(TripEngine.State state, TripEngine.State previous) {
         long now = System.currentTimeMillis();

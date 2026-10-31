@@ -39,10 +39,6 @@ public class VoiceCommand {
 		return (getAction() & ACTION_PLAY) != 0;
 	}
 
-	public boolean isFind() {
-		return (getAction() & ACTION_FIND) != 0;
-	}
-
 	public boolean isOpen() {
 		return (getAction() & ACTION_OPEN) != 0;
 	}

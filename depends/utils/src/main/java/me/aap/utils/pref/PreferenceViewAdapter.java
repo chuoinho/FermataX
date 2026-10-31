@@ -39,10 +39,6 @@ public class PreferenceViewAdapter extends RecyclerView.Adapter<PreferenceViewAd
 		this.onBindListener = listener;
 	}
 
-	public OnBindListener getOnBindListener() {
-		return onBindListener;
-	}
-
 	@Override
 	public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
 		this.recyclerView = recyclerView;

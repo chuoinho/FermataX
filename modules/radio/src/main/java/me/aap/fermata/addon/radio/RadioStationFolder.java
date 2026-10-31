@@ -47,10 +47,6 @@ class RadioStationFolder extends RadioFolder {
 		return offset;
 	}
 
-	String getFolderName() {
-		return folderName;
-	}
-
 	static RadioStationFolder popular(RadioRootItem root) {
 		String name = root.getLib().getContext().getString(R.string.radio_popular);
 		return new RadioStationFolder(ID_POPULAR, root, name, Type.POPULAR, "", null, 0);

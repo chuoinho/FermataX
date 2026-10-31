@@ -75,14 +75,6 @@ public class Utf8Reader extends Reader {
 		return in;
 	}
 
-	public long getBytesRead() {
-		return bytesRead;
-	}
-
-	public void setBytesRead(long bytesRead) {
-		this.bytesRead = bytesRead;
-	}
-
 	public void close() throws IOException {
 		in.close();
 	}

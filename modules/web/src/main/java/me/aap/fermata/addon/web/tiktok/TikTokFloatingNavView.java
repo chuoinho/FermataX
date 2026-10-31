@@ -23,7 +23,6 @@ import me.aap.fermata.addon.web.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
-import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
 import me.aap.utils.pref.PreferenceStore;
 
@@ -277,21 +276,6 @@ public class TikTokFloatingNavView extends FrameLayout implements TikTokJsBridge
 
 	public boolean isPlaying() {
 		return isPlaying;
-	}
-
-	@Nullable
-	public ImageButton getBtnPrev() {
-		return btnPrev;
-	}
-
-	@Nullable
-	public ImageButton getBtnPlayPause() {
-		return btnPlayPause;
-	}
-
-	@Nullable
-	public ImageButton getBtnNext() {
-		return btnNext;
 	}
 
 	@Override

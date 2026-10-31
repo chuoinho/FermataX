@@ -1,7 +1,5 @@
 package me.aap.fermata.ui.policy;
 
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
 
 import androidx.annotation.Nullable;
 
@@ -17,11 +15,6 @@ import me.aap.utils.ui.fragment.ActivityFragment;
  */
 public final class ChromePolicy {
 	private ChromePolicy() {
-	}
-
-	public static int getTopBackVisibility(MainActivityDelegate a,
-			@Nullable ActivityFragment f) {
-		return isTopBackVisible(a, f) ? VISIBLE : GONE;
 	}
 
 	public static boolean isTopBackVisible(MainActivityDelegate a,

@@ -52,10 +52,6 @@ public class GenericFragment extends ActivityFragment {
 		return (navBarMediator != null) ? navBarMediator : super.getNavBarMediator();
 	}
 
-	public void setNavBarMediator(NavBarView.Mediator navBarMediator) {
-		this.navBarMediator = navBarMediator;
-	}
-
 	public FloatingButton.Mediator getFloatingButtonMediator() {
 		return (floatingButtonMediator != null) ? floatingButtonMediator : super.getFloatingButtonMediator();
 	}

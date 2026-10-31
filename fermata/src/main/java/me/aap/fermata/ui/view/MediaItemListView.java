@@ -333,18 +333,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
 	}
 
-	/** Allows an addon-owned renderer to keep the shared focus policy in sync with its layout. */
-	public void setPresentationLayout(@NonNull LayoutManager manager, boolean grid) {
-		this.grid = grid;
-		setLayoutManager(manager);
-	}
-
-	/** Reapplies an addon-owned layout after global preference/configuration updates. */
-	public void setPresentationLayoutOverride(@Nullable Runnable override) {
-		presentationLayoutOverride = override;
-		if (override != null) override.run();
-	}
-
 	@Nullable
 	public MediaItemView focusTo(Item i) {
 		List<MediaItemWrapper> list = getAdapter().getList();
