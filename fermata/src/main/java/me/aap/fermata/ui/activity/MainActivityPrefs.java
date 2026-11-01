@@ -62,7 +62,6 @@ public interface MainActivityPrefs
 	Pref<BooleanSupplier> CHANGE_BRIGHTNESS = Pref.b("CHANGE_BRIGHTNESS", false);
 	Pref<IntSupplier> BRIGHTNESS = Pref.i("BRIGHTNESS", 255);
 	Pref<BooleanSupplier> VOICE_CONTROl_ENABLED = Pref.b("VOICE_CONTROl_ENABLED", true);
-	Pref<BooleanSupplier> VOICE_CONTROl_FB = Pref.b("VOICE_CONTROl_FB", false);
 	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
 	Pref<Supplier<String>> VOICE_CONTROL_LANG =
 			Pref.s("VOICE_CONTROL_LANG", () -> Locale.getDefault().toLanguageTag());
@@ -295,10 +294,6 @@ public interface MainActivityPrefs
 
 	default boolean getVoiceControlEnabledPref() {
 		return getBooleanPref(VOICE_CONTROl_ENABLED);
-	}
-
-	default boolean getVoiceControlFBPref() {
-		return getBooleanPref(VOICE_CONTROl_FB);
 	}
 
 	default String getVoiceControlLang(MainActivityDelegate a) {

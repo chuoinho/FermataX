@@ -36,7 +36,6 @@ import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.function.Cancellable;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 
 /** Phone-only first-run setup. It never initializes addons or changes source state. */
@@ -57,17 +56,6 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 
 		@Override
 		public void disable(NavBarView view) {
-			view.setVisibility(VISIBLE);
-		}
-	};
-	private static final FloatingButton.Mediator HIDDEN_FLOATING = new FloatingButton.Mediator() {
-		@Override
-		public void enable(FloatingButton view, me.aap.utils.ui.fragment.ActivityFragment fragment) {
-			view.setVisibility(GONE);
-		}
-
-		@Override
-		public void disable(FloatingButton view) {
 			view.setVisibility(VISIBLE);
 		}
 	};
@@ -100,11 +88,6 @@ public class InitialSetupFragment extends me.aap.utils.ui.fragment.ActivityFragm
 	@Override
 	public NavBarView.Mediator getNavBarMediator() {
 		return HIDDEN_NAV;
-	}
-
-	@Override
-	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return HIDDEN_FLOATING;
 	}
 
 	@Nullable

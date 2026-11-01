@@ -2,7 +2,6 @@ package me.aap.fermata.ui.activity;
 
 import static android.Manifest.permission.RECORD_AUDIO;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
@@ -44,7 +43,6 @@ final class SpeechRecognitionSupport {
 		if (!activity.isCarActivityNotMirror()) return false;
 		if (!hasRecordAudioPermission(activity.getContext())) {
 			showAlert(activity.getContext(), R.string.err_no_audio_record_perm);
-			activity.getPrefs().applyBooleanPref(VOICE_CONTROl_FB, false);
 		}
 		return true;
 	}

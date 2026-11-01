@@ -43,14 +43,6 @@ public class ControlPanelContractTest {
 
 	// The panel must not re-show the floating button on pages that hide it (TikTok's own capsule sits there).
 	@Test
-	public void presentationRespectsFloatingButtonHidePolicy() throws Exception {
-		String panel = source("ui/view/ControlPanelView.java");
-		int apply = panel.indexOf("private void applyPresentation(State state)");
-		String body = panel.substring(apply, panel.indexOf("a.setBarsHidden(", apply));
-		assertTrue(body.contains("FloatingButtonMediator.shouldHide(a, a.getActiveFragment())"));
-	}
-
-	@Test
 	public void panelGeometryIsOneFixed76DpLayoutInEveryState() throws Exception {
 		String dimensions = resource("values/dimens.xml");
 		assertTrue(dimensions.contains("name=\"control_panel_height\">76dp"));

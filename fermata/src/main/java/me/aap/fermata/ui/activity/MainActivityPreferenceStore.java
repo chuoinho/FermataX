@@ -9,7 +9,6 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.THEME_AA;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.THEME_DARK;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.THEME_MAIN;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 
 import android.content.SharedPreferences;
 
@@ -63,7 +62,6 @@ final class MainActivityPreferenceStore implements MainActivityPrefs {
 		if ((getIntPref(fbLongPress) == 1) || (getIntPref(fbLongPressAA) == 1)) {
 			try (PreferenceStore.Edit e = editPreferenceStore()) {
 				e.setBooleanPref(VOICE_CONTROl_ENABLED, true);
-				e.setBooleanPref(VOICE_CONTROl_FB, true);
 			}
 		}
 

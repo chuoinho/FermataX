@@ -8,6 +8,7 @@
     <item name="file_picker_ok" type="id" />
     <item name="file_picker_close" type="id" />
     <item name="file_picker_path" type="id" />
+    <item name="file_picker_create" type="id" />
     <item name="overlay_menu_title" type="id" />
     <item name="generic_fragment" type="id" />
     <item name="generic_dialog_fragment" type="id" />

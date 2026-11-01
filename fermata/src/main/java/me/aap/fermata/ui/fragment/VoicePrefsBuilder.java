@@ -5,7 +5,6 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_AUTO_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 
 import android.view.KeyEvent;
 
@@ -31,13 +30,6 @@ final class VoicePrefsBuilder {
 		addVehicleTrigger(activity, voice);
 		if (activity.isCarActivityNotMirror()) return;
 
-		voice.addBooleanPref(o -> {
-			o.title = R.string.voice_control_fb;
-			o.subtitle = R.string.voice_control_sub_long;
-			o.pref = VOICE_CONTROl_FB;
-			o.store = activity.getPrefs();
-			o.visibility = PrefCondition.create(activity.getPrefs(), VOICE_CONTROl_ENABLED);
-		});
 		voice.addStringPref(o -> {
 			o.title = R.string.voice_control_subst;
 			o.subtitle = R.string.voice_control_subst_sub;

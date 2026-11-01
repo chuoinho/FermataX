@@ -17,8 +17,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
@@ -45,7 +43,6 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.local.LocalFileSystem;
@@ -108,21 +105,6 @@ public class FoldersFragment extends MediaLibFragment {
 	@Override
 	protected boolean isRescanSupported() {
 		return true;
-	}
-
-	@Override
-	public void onHiddenChanged(boolean hidden) {
-		super.onHiddenChanged(hidden);
-		if (hidden) return;
-
-		FoldersAdapter a = getAdapter();
-		if (a != null) a.animateAddButton(a.getParent());
-	}
-
-	@Override
-	public void switchingTo(@NonNull ActivityFragment newFragment) {
-		super.switchingTo(newFragment);
-		getMainActivity().getFloatingButton().clearAnimation();
 	}
 
 	public void addFolder() {
@@ -276,12 +258,6 @@ public class FoldersFragment extends MediaLibFragment {
 
 		FoldersAdapter(MainActivityDelegate activity, BrowsableItem parent) {
 			super(activity, parent);
-			animateAddButton(parent);
-		}
-
-		@Override
-		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
-			return super.setParent(parent, userAction).onSuccess(v -> animateAddButton(parent));
 		}
 
 		public boolean isLongPressDragEnabled() {
@@ -300,20 +276,6 @@ public class FoldersFragment extends MediaLibFragment {
 			BrowsableItem i = getAdapter().getParent();
 			if (i instanceof Folders) ((Folders) i).moveItem(fromPosition, toPosition);
 			return super.onItemMove(fromPosition, toPosition);
-		}
-
-		private void animateAddButton(BrowsableItem parent) {
-			if (!(parent instanceof Folders)) return;
-
-			parent.getUnsortedChildren().onSuccess(c -> {
-				if (!c.isEmpty()) return;
-
-				FloatingButton fb = getMainActivity().getFloatingButton();
-				fb.requestFocus();
-				Animation shake =
-						AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
-				fb.startAnimation(shake);
-			});
 		}
 	}
 }

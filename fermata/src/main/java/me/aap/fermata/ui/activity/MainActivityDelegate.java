@@ -20,7 +20,6 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.CLOCK_POS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
@@ -133,7 +132,6 @@ import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.view.DialogBuilder;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
 
@@ -154,7 +152,6 @@ public class MainActivityDelegate extends ActivityDelegate
 	private NavBarView navBar;
 	private BodyLayout body;
 	private ControlPanelView controlPanel;
-	private FloatingButton floatingButton;
 	private ContentLoadingProgressBar progressBar;
 	private PhoneBottomMenuController phoneBottomMenuController;
 	private PhonePlaybackCarHeaderController phonePlaybackCarHeaderController;
@@ -672,10 +669,6 @@ public class MainActivityDelegate extends ActivityDelegate
 	public void onTextInputVisibilityChanged(boolean inputActive) {
 		ControlPanelView panel = controlPanel;
 		if (panel != null) panel.onTextInputVisibilityChanged(inputActive);
-	}
-
-	public FloatingButton getFloatingButton() {
-		return floatingButton;
 	}
 
 	@Override
@@ -1323,7 +1316,6 @@ public class MainActivityDelegate extends ActivityDelegate
 		navBar = a.findViewById(R.id.nav_bar);
 		body = a.findViewById(R.id.body_layout);
 		controlPanel = a.findViewById(R.id.control_panel);
-		floatingButton = a.findViewById(R.id.floating_button);
 		phoneBottomMenuController = new PhoneBottomMenuController(this,
 				a.findViewById(R.id.phone_bottom_menu));
 		if (PhoneRootPolicy.usesPhoneRoots(getRuntimeHostMode())) {
@@ -1336,8 +1328,6 @@ public class MainActivityDelegate extends ActivityDelegate
 					a.findViewById(R.id.phone_support_banner));
 			phoneSupportBannerController.start();
 		}
-		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
-		if (getRuntimeHostMode().usesAutomotivePresentation()) floatingButton.setVisibility(GONE);
 		controlPanel.bind(getMediaServiceBinder());
 		phoneBottomMenuController.refresh();
 		glassRailController.init(this);
@@ -1383,8 +1373,6 @@ public class MainActivityDelegate extends ActivityDelegate
 				}
 			}
 			recreate();
-		} else if (MainActivityPrefs.hasTextIconSizePref(this, prefs)) {
-			if (floatingButton != null) floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		} else if (MainActivityPrefs.hasNavBarSizePref(this, prefs)) {
 			if (navBar != null) navBar.setSize(getPrefs().getNavBarSizePref(this));
 		} else if (MainActivityPrefs.hasToolBarSizePref(this, prefs)) {
@@ -1403,7 +1391,6 @@ public class MainActivityDelegate extends ActivityDelegate
 			if (isVideoMode()) setBrightness(getPrefs().getBrightnessPref());
 		} else if (prefs.contains(VOICE_CONTROl_ENABLED)) {
 			if (!getPrefs().getVoiceControlEnabledPref()) {
-				getPrefs().applyBooleanPref(VOICE_CONTROl_FB, false);
 				fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 				return;
 			}
@@ -1413,7 +1400,6 @@ public class MainActivityDelegate extends ActivityDelegate
 				if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
 				if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
 				showAlert(getContext(), R.string.err_no_audio_record_perm);
-				getPrefs().applyBooleanPref(VOICE_CONTROl_FB, false);
 			});
 		} else if (prefs.contains(VOICE_CONTROL_SUBST)) {
 			voiceInteraction.updateWordSubst();

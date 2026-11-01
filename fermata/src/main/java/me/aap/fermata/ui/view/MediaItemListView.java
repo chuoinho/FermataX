@@ -257,8 +257,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	}
 
 	private View focusEmpty() {
-		View v = getActivity().getFloatingButton();
-		return isVisible(v) ? v : this;
+		return this;
 	}
 
 	@Override
@@ -310,8 +309,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		MainActivityDelegate a = getActivity();
 		BodyLayout b = a.getBody();
 		if (b.isBothMode() || b.isVideoMode()) return b.getVideoView();
-		View v = a.getFloatingButton();
-		if (isVisible(v)) return v;
 		NavBarView n = a.getNavBar();
 		return (isVisible(n) && n.isRight()) ? n.focusSearch() : focused;
 	}

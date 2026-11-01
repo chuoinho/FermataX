@@ -818,9 +818,7 @@ public class FermataWebView extends WebView
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
 		FermataChromeClient chrome = getWebChromeClient();
 
-		if ((chrome != null) && chrome.isFullScreen()) {
-			chrome.onTouchEvent(this, ev);
-		} else if (BuildConfig.AUTO) {
+		if (BuildConfig.AUTO && ((chrome == null) || !chrome.isFullScreen())) {
 			FermataActivity a = getActivity().map(MainActivityDelegate::getAppActivity).peek();
 
 			if ((a != null) && a.isInputActive()) {

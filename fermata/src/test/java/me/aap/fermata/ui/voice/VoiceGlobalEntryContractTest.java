@@ -18,8 +18,6 @@ public class VoiceGlobalEntryContractTest {
 				.contains("startGlobalVoiceControl()"));
 		assertTrue(source("fermata/src/main/java/me/aap/fermata/ui/fragment/DashboardFragment.java")
 				.contains("startGlobalVoiceControl()"));
-		assertTrue(source("fermata/src/main/java/me/aap/fermata/ui/fragment/FloatingButtonMediator.java")
-				.contains("startGlobalVoiceControl()"));
 	}
 
 	private static String source(String relative) throws IOException {

@@ -31,7 +31,6 @@ import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
 
@@ -180,11 +179,6 @@ public final class TikTokWebFragment extends WebBrowserFragment {
 	}
 
 	@Override
-	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return TikTokFloatingButtonMediator.instance;
-	}
-
-	@Override
 	public void contributeToNavBarMenu(OverlayMenu.Builder b) {
 		try {
 			b.addItem(me.aap.fermata.R.id.refresh,
@@ -288,20 +282,6 @@ public final class TikTokWebFragment extends WebBrowserFragment {
 				TopBarController.refresh(a, f);
 			} catch (Exception ignored) {
 			}
-		}
-	}
-
-	private static final class TikTokFloatingButtonMediator implements FloatingButton.Mediator {
-		static final TikTokFloatingButtonMediator instance = new TikTokFloatingButtonMediator();
-
-		@Override
-		public void enable(FloatingButton fb, ActivityFragment f) {
-			fb.setVisibility(View.GONE);
-		}
-
-		@Override
-		public void onActivityEvent(FloatingButton fb, ActivityDelegate a, long e) {
-			fb.setVisibility(View.GONE);
 		}
 	}
 }

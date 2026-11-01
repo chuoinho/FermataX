@@ -1,7 +1,6 @@
 package me.aap.fermata.addon.web;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static android.view.MotionEvent.ACTION_DOWN;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
@@ -39,13 +38,11 @@ import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsObserver;
 import me.aap.fermata.addon.web.FermataWebClient.DiagnosticsSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
-import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.UiUtils;
-import me.aap.utils.ui.view.FloatingButton;
 
 /**
  * @author Andrey Pavlenko
@@ -57,7 +54,6 @@ public class FermataChromeClient extends WebChromeClient {
 	private View customView;
 	private CustomViewCallback customViewCallback;
 	private Promise<Void> fullScreenReq;
-	private long touchStamp;
 	private boolean phonePermissionHintShown;
 	protected final DiagnosticsObserver diagnosticsObserver;
 
@@ -180,7 +176,6 @@ public class FermataChromeClient extends WebChromeClient {
 		View view = customView;
 		customView = null;
 		customViewCallback = null;
-		touchStamp = 0;
 		MainActivityDelegate a = getLiveActivity(view.getContext());
 		if (a == null) a = getLiveActivity(web.getContext());
 		diagnosticsObserver.onCustomView(CustomViewEvent.DETACH_REQUESTED,
@@ -235,7 +230,6 @@ public class FermataChromeClient extends WebChromeClient {
 
 	protected void setFullScreen(MainActivityDelegate a, boolean fullScreen) {
 		a.setVideoMode(fullScreen, null);
-		a.getFloatingButton().setVisibility(GONE);
 	}
 
 	public boolean canEnterFullScreen() {
@@ -288,23 +282,8 @@ public class FermataChromeClient extends WebChromeClient {
 		return req;
 	}
 
+	// Fullscreen touch hook; YoutubeChromeClient routes it to the control panel.
 	protected boolean onTouchEvent(View v, MotionEvent event) {
-		if (!isFullScreen() || (event.getAction() != ACTION_DOWN)) return false;
-
-		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
-		FloatingButton fb = a.getFloatingButton();
-		if (!a.getRuntimeHostMode().usesAutomotivePresentation()) {
-			touchStamp = 0L;
-			fb.setVisibility(GONE);
-			return false;
-		}
-		long st = touchStamp = System.currentTimeMillis();
-
-		fb.setVisibility(VISIBLE);
-		App.get().getHandler().postDelayed(() -> {
-			if (st == touchStamp) fb.setVisibility(GONE);
-		}, 3000);
-
 		return false;
 	}
 

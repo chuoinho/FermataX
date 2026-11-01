@@ -13,7 +13,6 @@ import androidx.annotation.Nullable;
 import me.aap.utils.R;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.ui.activity.ActivityDelegate;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
 
@@ -24,7 +23,6 @@ public class GenericFragment extends ActivityFragment {
 	private String title = "";
 	private ToolBarView.Mediator toolBarMediator;
 	private NavBarView.Mediator navBarMediator;
-	private FloatingButton.Mediator floatingButtonMediator;
 	private Consumer<ViewGroup> contentProvider;
 
 	@Override
@@ -50,14 +48,6 @@ public class GenericFragment extends ActivityFragment {
 
 	public NavBarView.Mediator getNavBarMediator() {
 		return (navBarMediator != null) ? navBarMediator : super.getNavBarMediator();
-	}
-
-	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return (floatingButtonMediator != null) ? floatingButtonMediator : super.getFloatingButtonMediator();
-	}
-
-	public void setFloatingButtonMediator(FloatingButton.Mediator floatingButtonMediator) {
-		this.floatingButtonMediator = floatingButtonMediator;
 	}
 
 	public void setContentProvider(Consumer<ViewGroup> contentProvider) {

@@ -134,8 +134,6 @@
 
     <string name="voice_search">Pesquisa por voz</string>
     <string name="voice_control">Controlo de voz</string>
-    <string name="voice_control_fb">Botão Flutoante</string>
-    <string name="voice_control_sub_long">Ativar o comando de voz ao pressionar continuo</string>
     <string name="voice_control_subst">Substituição de palavra</string>
     <string name="voice_control_subst_sub">Substituir uma palavra por outra palavra ou frase</string>
     <string name="voice_control_subst_hint">ligado: reproduzir\ndesligado: pausar</string>
