@@ -156,10 +156,10 @@ public class NavNotificationParserTest {
         return NavTurnInfo.fromNotification("com.google.android.apps.maps", extras, null);
     }
 
-    // findViewsWithText only walks visible views, so null means the button is not on screen
-    private static View button(View root, String text) {
+    // findViewsWithText only walks visible views, so null means the icon button is not on screen
+    private static View button(View root, String description) {
         ArrayList<View> found = new ArrayList<>();
-        root.findViewsWithText(found, text, View.FIND_VIEWS_WITH_TEXT);
+        root.findViewsWithText(found, description, View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION);
         for (View v : found) if (v.isClickable()) return v;
         return null;
     }
