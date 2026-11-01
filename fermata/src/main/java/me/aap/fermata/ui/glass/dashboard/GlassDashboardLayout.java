@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.ui.glass.media.GlassMediaPlayerView;
 import me.aap.fermata.ui.glass.quickbar.GlassQuickBarView;
+import me.aap.fermata.ui.glass.road.GlassSpeedCardSwitcher;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
@@ -82,6 +83,8 @@ public class GlassDashboardLayout extends ViewGroup {
         }
         if (speedoCard instanceof GlassSpeedoTripView s) {
             s.refreshAppearance();
+        } else if (speedoCard instanceof GlassSpeedCardSwitcher switcher) {
+            switcher.refreshAppearance();
         }
         if (navWeatherCard instanceof GlassNavWeatherView nw) {
             nw.refreshAppearance();

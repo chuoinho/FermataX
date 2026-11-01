@@ -30,6 +30,11 @@ import me.aap.fermata.ui.glass.quickbar.GlassQuickBarManager;
 import me.aap.fermata.ui.glass.quickbar.GlassQuickBarView;
 import me.aap.fermata.ui.glass.quickbar.GlassQuickShortcut;
 import me.aap.fermata.ui.glass.quickbar.GlassShortcutPickerDialog;
+import me.aap.fermata.ui.glass.road.GlassLimitsSignalsController;
+import me.aap.fermata.ui.glass.road.GlassLimitsSignalsView;
+import me.aap.fermata.ui.glass.road.GlassSpeedCardSwitcher;
+import me.aap.fermata.ui.glass.road.RoadDataSource;
+import me.aap.fermata.ui.glass.road.RoadPrefetch;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView;
 import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.glass.speedo.TripTrackingRegistry;
@@ -51,6 +56,8 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
     // Cards & Managers
     private GlassSpeedoTripView speedoView;
+    private GlassSpeedCardSwitcher speedCardSwitcher;
+    private GlassLimitsSignalsController limitsSignalsController;
     private final TripTrackingRegistry tripRegistry;
     private TripTrackingRegistry.Listener tripListener;
 
@@ -83,7 +90,7 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         initCards(ctx);
         initQuickBar(ctx);
 
-        layout.setViews(null, speedoView, navWeatherView, mediaView, quickBarView);
+        layout.setViews(null, speedCardSwitcher, navWeatherView, mediaView, quickBarView);
     }
 
     private void initCards(Context ctx) {
@@ -97,6 +104,16 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         };
         speedoView.setOnResetTripListener(tripRegistry::resetTrip);
         speedoView.setOnToggleTripListener(tripRegistry::toggleTrip);
+
+        GlassLimitsSignalsView limitsView = new GlassLimitsSignalsView(ctx);
+        RoadDataSource roadDataSource = RoadDataSource.get(ctx);
+        limitsSignalsController = new GlassLimitsSignalsController(ctx, limitsView, roadDataSource);
+        speedCardSwitcher = new GlassSpeedCardSwitcher(ctx, speedoView, limitsView, activity.getPrefs(),
+                isLimitsVisible -> {
+                    if (limitsSignalsController != null) {
+                        limitsSignalsController.setActive(dashboardStarted && isLimitsVisible);
+                    }
+                });
 
         // Nav & Weather
         navWeatherView = new GlassNavWeatherView(ctx);
@@ -322,6 +339,11 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         AutomotiveNavNotificationService.registerListener(this);
         speedoView.setTripMode(TripModePolicy.current(activity.getContext()));
 
+        if (limitsSignalsController != null && speedCardSwitcher != null) {
+            limitsSignalsController.setActive(speedCardSwitcher.isLimitsShown());
+        }
+        RoadPrefetch.scheduleCatchUp(activity.getContext());
+
         // On Android Auto this is the single initial load; the schedule takes over afterwards.
         refreshWeather(activity.getContext(), AutomotiveConnectionState.get().isProjectionConnected());
         if (!TripModePolicy.hasForegroundLocation(activity.getContext())) weatherHandler.postDelayed(permissionWatch, 2_000L);
@@ -331,6 +353,10 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         if (!dashboardStarted) return;
         dashboardStarted = false;
         isStopped = true;
+        if (limitsSignalsController != null) {
+            limitsSignalsController.setActive(false);
+        }
+        RoadPrefetch.scheduleCatchUp(activity.getContext());
         weatherHandler.removeCallbacks(scheduledWeatherRefresh);
         weatherHandler.removeCallbacks(permissionWatch);
         if (gpsTimeoutRunnable != null) {

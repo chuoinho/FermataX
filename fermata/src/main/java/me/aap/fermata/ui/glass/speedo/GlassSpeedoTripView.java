@@ -20,6 +20,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import java.util.Locale;
 
@@ -43,7 +44,9 @@ public class GlassSpeedoTripView extends FrameLayout {
     private TextView tvSpeedUnit;
     private TextView tvCardTitle;
     private TextView tvSignal;
+    private FrameLayout btnSwap;
     private TextView btnToggleTrip;
+    private Runnable onSwapListener;
     private TripEngine.State lastTripState;
 
     private TextView tvTripDistance;
@@ -118,6 +121,29 @@ public class GlassSpeedoTripView extends FrameLayout {
         FrameLayout.LayoutParams actionsLp = new FrameLayout.LayoutParams(
                 LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.END | Gravity.CENTER_VERTICAL);
         topActions.setLayoutParams(actionsLp);
+
+        btnSwap = new FrameLayout(context);
+        int swapMin = GlassDimensions.dpToPx(context, isCar ? 48 : 36);
+        btnSwap.setMinimumHeight(swapMin);
+        btnSwap.setMinimumWidth(swapMin);
+        btnSwap.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        btnSwap.setContentDescription(context.getString(R.string.glass_show_limits));
+        btnSwap.setClickable(true);
+        btnSwap.setFocusable(true);
+        ImageView swapIv = new ImageView(context);
+        swapIv.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_speed_limit_mini));
+        int iconSize = GlassDimensions.dpToPx(context, 20);
+        FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER);
+        btnSwap.addView(swapIv, ivLp);
+        btnSwap.setOnClickListener(v -> {
+            if (onSwapListener != null) {
+                onSwapListener.run();
+            }
+        });
+        LinearLayout.LayoutParams swapLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, swapMin);
+        swapLp.setMarginEnd(GlassDimensions.dpToPx(context, 6));
+        topActions.addView(btnSwap, swapLp);
 
         btnToggleTrip = new TextView(context);
         int minH = GlassDimensions.dpToPx(context, isCar ? 48 : 36);
@@ -318,6 +344,9 @@ public class GlassSpeedoTripView extends FrameLayout {
         if (tvCardTitle != null) {
             tvCardTitle.setTextColor(colors.getTextSecondary());
         }
+        if (btnSwap != null) {
+            btnSwap.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        }
         tvSignal.setTextColor(colors.getTextSecondary());
         if (tvTripHint != null) tvTripHint.setTextColor(colors.getTextSecondary());
         if (tvSpeedValue != null) {
@@ -483,6 +512,20 @@ public class GlassSpeedoTripView extends FrameLayout {
     private Locale displayLocale() {
         android.os.LocaleList locales = getResources().getConfiguration().getLocales();
         return locales.isEmpty() ? Locale.getDefault() : locales.get(0);
+    }
+
+    public View getSwapButton() {
+        return btnSwap;
+    }
+
+    public void setOnSwapListener(Runnable r) {
+        this.onSwapListener = r;
+    }
+
+    public void setSwapVisible(boolean visible) {
+        if (btnSwap != null) {
+            btnSwap.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
     }
 
     public void setOnResetTripListener(Runnable listener) {

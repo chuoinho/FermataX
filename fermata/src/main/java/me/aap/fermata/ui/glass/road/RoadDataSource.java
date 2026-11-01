@@ -19,7 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
 
-public final class RoadDataSource {
+public class RoadDataSource {
 
     private static volatile RoadDataSource instance;
 
