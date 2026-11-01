@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.Random;
 
 // shortcut: public Overpass suits a small user base only; needs a different source if usage grows.
-public final class OverpassClient {
+public class OverpassClient {
 
     public interface Opener {
         HttpURLConnection open(URL url) throws IOException;
