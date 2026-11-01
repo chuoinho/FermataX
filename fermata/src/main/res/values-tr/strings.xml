@@ -589,6 +589,7 @@
     <string name="glass_media_recent_media">Son Kullanılan Medya</string>
     <string name="glass_nav_header">NAVİGASYON</string>
     <string name="glass_nav_exit">ÇIKIŞ</string>
+    <string name="glass_nav_show_weather">HAVA</string>
     <string name="glass_nav_gps_timeout">GPS zaman aşımı. Tekrar denemek için dokunun.</string>
     <string name="glass_nav_network_error">Ağ hatası. Tekrar denemek için dokunun.</string>
     <string name="glass_nav_weather_unavailable">Hava Durumu Kullanılamıyor</string>

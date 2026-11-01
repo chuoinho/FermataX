@@ -670,6 +670,7 @@
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">NAVEGAÇÃO</string>
     <string name="glass_nav_exit">SAIR</string>
+    <string name="glass_nav_show_weather">CLIMA</string>
     <string name="glass_nav_gps_timeout">Tempo limite do GPS. Toque para tentar novamente.</string>
     <string name="glass_nav_network_error">Erro de rede. Toque para tentar novamente.</string>
     <string name="glass_nav_weather_unavailable">Clima indisponível</string>

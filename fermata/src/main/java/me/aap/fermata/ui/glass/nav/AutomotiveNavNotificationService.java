@@ -92,6 +92,9 @@ public class AutomotiveNavNotificationService extends NotificationListenerServic
             activeNavKey = sbn.getKey();
             currentInfo = info;
             dispatchUpdate(info);
+        } else if (sbn.getKey().equals(activeNavKey)) {
+            // Maps reuses the guidance notification for its status once the route ends
+            clear();
         }
     }
 

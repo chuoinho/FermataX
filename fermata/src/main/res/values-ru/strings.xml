@@ -665,6 +665,7 @@
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">НАВИГАЦИЯ</string>
     <string name="glass_nav_exit">ВЫХОД</string>
+    <string name="glass_nav_show_weather">ПОГОДА</string>
     <string name="glass_nav_gps_timeout">Тайм-аут GPS. Нажмите для повтора.</string>
     <string name="glass_nav_network_error">Ошибка сети. Нажмите для повтора.</string>
     <string name="glass_nav_weather_unavailable">Погода недоступна</string>

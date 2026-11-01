@@ -673,6 +673,7 @@
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">NAVIGATION</string>
     <string name="glass_nav_exit">EXIT</string>
+    <string name="glass_nav_show_weather">WEATHER</string>
     <string name="glass_nav_gps_timeout">GPS timeout. Tap to retry.</string>
     <string name="glass_nav_network_error">Network error. Tap to retry.</string>
     <string name="glass_nav_weather_unavailable">Weather Unavailable</string>

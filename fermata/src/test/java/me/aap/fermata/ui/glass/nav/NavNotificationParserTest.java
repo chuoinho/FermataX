@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
+import java.util.ArrayList;
 import java.util.Collections;
 
 import me.aap.fermata.ui.glass.dashboard.GlassNavWeatherView;
@@ -75,25 +76,61 @@ public class NavNotificationParserTest {
     }
 
     @Test
+    public void mapsDrivingStatusNotificationIsNotNavigation() {
+        // Real Maps foreground notification while driving without a route: category=navigation, no actions
+        Bundle extras = new Bundle();
+        extras.putString("android.title", "P. Trường Lâm");
+        Notification n = new Notification();
+        n.category = Notification.CATEGORY_NAVIGATION;
+
+        assertFalse(NavTurnInfo.fromNotification("com.google.android.apps.maps", extras, n).isActive());
+    }
+
+    @Test
+    public void navigationEndingInSameNotificationClearsTheTurn() {
+        String pkg = "com.google.android.apps.maps";
+        Notification nav = new Notification.Builder(RuntimeEnvironment.getApplication(), "c")
+                .setCategory(Notification.CATEGORY_NAVIGATION)
+                .setContentTitle("In 300m Turn Right onto Broadway").build();
+        Notification status = new Notification.Builder(RuntimeEnvironment.getApplication(), "c")
+                .setCategory(Notification.CATEGORY_NAVIGATION)
+                .setContentTitle("P. Trường Lâm").build();
+
+        AutomotiveNavNotificationService.handlePosted(
+                new StatusBarNotification(pkg, pkg, 1, null, 1000, 0, 0, nav, Process.myUserHandle(), 0L));
+        assertTrue(AutomotiveNavNotificationService.getCurrentInfo().isActive());
+        AutomotiveNavNotificationService.handlePosted(
+                new StatusBarNotification(pkg, pkg, 1, null, 1000, 0, 0, status, Process.myUserHandle(), 0L));
+        assertFalse(AutomotiveNavNotificationService.getCurrentInfo().isActive());
+    }
+
+    @Test
     public void testGlassNavWeatherViewTransitions() {
         GlassNavWeatherView view = new GlassNavWeatherView(RuntimeEnvironment.getApplication());
-        assertNotNull(view);
-
-        // Bind Weather
-        GlassOpenMeteoClient.HourlyForecast forecast = new GlassOpenMeteoClient.HourlyForecast(
+        view.bindWeather(new GlassOpenMeteoClient.HourlyForecast(
                 22f, 1, true, 26f, 18f,
                 Collections.singletonList(new GlassOpenMeteoClient.HourlyPoint("15:00", 22f, 1, true))
-        );
-        view.bindWeather(forecast, true);
+        ), true);
+        assertNull("no nav: weather only, no way to switch", button(view, "WEATHER"));
+        assertNull(button(view, "NAVIGATION"));
 
-        // Bind Active Nav Turn
-        Bundle extras = new Bundle();
-        extras.putString("android.title", "Turn Left on Oxford St");
-        NavTurnInfo activeNav = NavTurnInfo.fromNotification("com.google.android.apps.maps", extras, null);
-        view.bindNavTurn(activeNav);
+        view.bindNavTurn(activeTurn("In 300m Turn Left on Oxford St"));
+        assertNull(button(view, "NAVIGATION"));
+        button(view, "WEATHER").performClick();
+        assertNull(button(view, "WEATHER"));
 
-        // Bind Inactive Nav Turn -> falls back to weather
+        view.bindNavTurn(activeTurn("In 100m Turn Left on Oxford St"));
+        assertNull("turn updates keep the user's choice", button(view, "WEATHER"));
+        button(view, "NAVIGATION").performClick();
+        assertNull(button(view, "NAVIGATION"));
+
+        button(view, "WEATHER").performClick();
         view.bindNavTurn(NavTurnInfo.inactive());
+        assertNull("nav ended: weather only", button(view, "WEATHER"));
+        assertNull(button(view, "NAVIGATION"));
+
+        view.bindNavTurn(activeTurn("In 300m Turn Right onto Broadway"));
+        assertNotNull("next route shows nav again", button(view, "WEATHER"));
     }
 
     @Test
@@ -111,5 +148,19 @@ public class NavNotificationParserTest {
         assertTrue("another Maps notification must not clear the turn", AutomotiveNavNotificationService.getCurrentInfo().isActive());
         AutomotiveNavNotificationService.handleRemoved(nav.getKey());
         assertFalse(AutomotiveNavNotificationService.getCurrentInfo().isActive());
+    }
+
+    private static NavTurnInfo activeTurn(String title) {
+        Bundle extras = new Bundle();
+        extras.putString("android.title", title);
+        return NavTurnInfo.fromNotification("com.google.android.apps.maps", extras, null);
+    }
+
+    // findViewsWithText only walks visible views, so null means the button is not on screen
+    private static View button(View root, String text) {
+        ArrayList<View> found = new ArrayList<>();
+        root.findViewsWithText(found, text, View.FIND_VIEWS_WITH_TEXT);
+        for (View v : found) if (v.isClickable()) return v;
+        return null;
     }
 }
