@@ -542,4 +542,16 @@
     <string name="glass_shortcut_remove">Kaldır</string>
     <string name="speedo_location_lost_background">FermataX arka planda çalışırken konum kayboldu. Telefonunuzda FermataX\'i açıp konuma “Her zaman izin ver” iznini verin.</string>
     <string name="speedo_background_restricted">Sistem FermataX\'i arka planda durdurdu. Pil kısıtlamalarını kaldırmak için FermataX\'i telefonunuzda açın.</string>
+
+    <!-- Glass Road Limits & Signals -->
+    <string name="glass_limits_title">HIZ SINIRLARI VE TRAFİK IŞIKLARI</string>
+    <string name="glass_show_limits">Hız sınırını ve ışıkları göster</string>
+    <string name="glass_show_speed">Hızı ve geziyi göster</string>
+    <string name="glass_signal_label">Trafik ışığı</string>
+    <string name="glass_signal_none">İleride trafik ışığı yok</string>
+    <string name="glass_limits_no_data">Hız sınırı verisi yok</string>
+    <string name="glass_speed_limit_desc">Hız sınırı %1$d</string>
+    <string name="glass_signal_desc">%1$d metre ileride trafik ışığı</string>
+    <string name="glass_road_data">Hız sınırları ve trafik ışıkları verileri</string>
+    <string name="glass_road_data_sub">Sık gittiğiniz yerlerin harita verilerini Wi‑Fi üzerinden indirir. © OpenStreetMap katkıda bulunanları</string>
 </resources>

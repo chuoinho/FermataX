@@ -633,4 +633,16 @@
     <string name="glass_shortcut_open">開啟</string>
     <string name="glass_shortcut_replace">替換</string>
     <string name="glass_shortcut_remove">移除</string>
+
+    <!-- Glass Road Limits & Signals -->
+    <string name="glass_limits_title">速限與號誌</string>
+    <string name="glass_show_limits">顯示速限與號誌</string>
+    <string name="glass_show_speed">顯示車速與行程</string>
+    <string name="glass_signal_label">交通號誌</string>
+    <string name="glass_signal_none">前方無號誌</string>
+    <string name="glass_limits_no_data">無速限資料</string>
+    <string name="glass_speed_limit_desc">速限 %1$d</string>
+    <string name="glass_signal_desc">距離交通號誌 %1$d 公尺</string>
+    <string name="glass_road_data">速限與號誌資料</string>
+    <string name="glass_road_data_sub">透過 Wi‑Fi 下載常用地點周邊的地圖資料。© OpenStreetMap 貢獻者</string>
 </resources>

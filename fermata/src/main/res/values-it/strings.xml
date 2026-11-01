@@ -542,4 +542,16 @@
     <string name="glass_shortcut_remove">Rimuovi</string>
     <string name="speedo_location_lost_background">Posizione persa mentre FermataX è in background. Apri FermataX sul telefono e consenti “Sempre”.</string>
     <string name="speedo_background_restricted">Il sistema ha arrestato FermataX in background. Apri FermataX sul telefono per rimuovere le limitazioni della batteria.</string>
+
+    <!-- Glass Road Limits & Signals -->
+    <string name="glass_limits_title">LIMITI E SEGNALI</string>
+    <string name="glass_show_limits">Mostra limite di velocità e segnali</string>
+    <string name="glass_show_speed">Mostra velocità e viaggio</string>
+    <string name="glass_signal_label">Semaforo</string>
+    <string name="glass_signal_none">Nessun semaforo avanti</string>
+    <string name="glass_limits_no_data">Nessun dato sul limite di velocità</string>
+    <string name="glass_speed_limit_desc">Limite di velocità %1$d</string>
+    <string name="glass_signal_desc">Semaforo a %1$d metri</string>
+    <string name="glass_road_data">Dati sui limiti di velocità e segnali</string>
+    <string name="glass_road_data_sub">Scarica i dati delle mappe vicino ai tuoi luoghi abituali tramite Wi‑Fi. © Collaboratori di OpenStreetMap</string>
 </resources>

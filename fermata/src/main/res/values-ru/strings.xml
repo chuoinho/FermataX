@@ -628,4 +628,16 @@
     <string name="glass_shortcut_open">Открыть</string>
     <string name="glass_shortcut_replace">Заменить</string>
     <string name="glass_shortcut_remove">Удалить</string>
+
+    <!-- Glass Road Limits & Signals -->
+    <string name="glass_limits_title">ОГРАНИЧЕНИЯ И СВЕТОФОРЫ</string>
+    <string name="glass_show_limits">Показать ограничение скорости и светофоры</string>
+    <string name="glass_show_speed">Показать скорость и поездку</string>
+    <string name="glass_signal_label">Светофор</string>
+    <string name="glass_signal_none">Впереди нет светофоров</string>
+    <string name="glass_limits_no_data">Нет данных об ограничении скорости</string>
+    <string name="glass_speed_limit_desc">Ограничение скорости %1$d</string>
+    <string name="glass_signal_desc">Светофор через %1$d метров</string>
+    <string name="glass_road_data">Данные об ограничениях скорости и светофорах</string>
+    <string name="glass_road_data_sub">Загрузка данных карты для часто посещаемых мест по Wi‑Fi. © Участники OpenStreetMap</string>
 </resources>
