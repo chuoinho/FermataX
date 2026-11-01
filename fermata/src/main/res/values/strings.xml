@@ -587,8 +587,6 @@
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">NAVIGATION</string>
     <string name="glass_nav_exit">EXIT</string>
-    <string name="glass_card_show_weather">Weather</string>
-    <string name="glass_card_show_nav">Navigation</string>
     <string name="glass_card_show_weather_desc">Show weather</string>
     <string name="glass_card_show_nav_desc">Show navigation</string>
     <string name="glass_nav_gps_timeout">GPS timeout. Tap to retry.</string>

@@ -3,6 +3,7 @@ package me.aap.fermata.ui.glass.dashboard;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -56,8 +57,8 @@ public class GlassNavWeatherView extends FrameLayout {
     // Manual Weather / Navigation choice, offered only while navigation is active.
     private static final String MODE_PREFS = "glass_nav_card";
     private static final String MODE_SHOW_NAV = "show_nav";
-    private TextView btnShowWeather;
-    private TextView btnShowNav;
+    private ImageView btnShowWeather;
+    private ImageView btnShowNav;
     private boolean navActive;
     private boolean showNav;
 
@@ -140,7 +141,7 @@ public class GlassNavWeatherView extends FrameLayout {
         tvNavHeader.setTypeface(Typeface.DEFAULT_BOLD);
         tvNavHeader.setTextColor(colors.getTextSecondary());
         tvNavHeader.setLetterSpacing(0.08f);
-        btnShowWeather = createModeButton(context, R.string.glass_card_show_weather, "Weather",
+        btnShowWeather = createModeButton(context, R.drawable.ic_glass_weather,
                 R.string.glass_card_show_weather_desc, "Show weather");
         navContainer.addView(createHeaderRow(context, tvNavHeader, btnShowWeather));
 
@@ -245,7 +246,7 @@ public class GlassNavWeatherView extends FrameLayout {
         tvWeatherHeader.setTypeface(Typeface.DEFAULT_BOLD);
         tvWeatherHeader.setTextColor(colors.getTextSecondary());
         tvWeatherHeader.setLetterSpacing(0.08f);
-        btnShowNav = createModeButton(context, R.string.glass_card_show_nav, "Navigation",
+        btnShowNav = createModeButton(context, R.drawable.ic_nav_arrow,
                 R.string.glass_card_show_nav_desc, "Show navigation");
         weatherContainer.addView(createHeaderRow(context, tvWeatherHeader, btnShowNav));
 
@@ -382,7 +383,7 @@ public class GlassNavWeatherView extends FrameLayout {
         modePrefs(context).edit().clear().commit();
     }
 
-    private LinearLayout createHeaderRow(Context context, TextView header, TextView toggle) {
+    private LinearLayout createHeaderRow(Context context, TextView header, View toggle) {
         LinearLayout row = new LinearLayout(context);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -395,25 +396,25 @@ public class GlassNavWeatherView extends FrameLayout {
         return row;
     }
 
-    private TextView createModeButton(Context context, int labelRes, String labelFallback,
-                                      int descRes, String descFallback) {
-        TextView btn = new TextView(context);
-        btn.setText(safeGetString(context, labelRes, labelFallback));
+    // Small round glass icon at the header's right end; MinimumTouchTargetDelegate widens the tap area to 48dp.
+    private ImageView createModeButton(Context context, int iconRes, int descRes, String descFallback) {
+        ImageView btn = new ImageView(context);
+        btn.setImageResource(iconRes);
         btn.setContentDescription(safeGetString(context, descRes, descFallback));
-        btn.setTextSize(11f);
-        btn.setTypeface(Typeface.DEFAULT_BOLD);
-        btn.setTextColor(colors.getTextPrimary());
-        btn.setGravity(Gravity.CENTER);
-        btn.setSingleLine(true);
-        // After setSingleLine, which replaces the transformation method that applies all caps.
-        btn.setAllCaps(true);
-        int padH = GlassDimensions.dpToPx(context, 14);
-        int padV = GlassDimensions.dpToPx(context, 6);
-        btn.setPadding(padH, padV, padH, padV);
-        btn.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        btn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        int size = GlassDimensions.dpToPx(context, 28);
+        btn.setLayoutParams(new LinearLayout.LayoutParams(size, size));
+        int pad = GlassDimensions.dpToPx(context, 6);
+        btn.setPadding(pad, pad, pad, pad);
+        styleModeButton(btn);
         btn.setVisibility(View.GONE);
         btn.setOnClickListener(v -> setShowNav(btn == btnShowNav));
         return btn;
+    }
+
+    private void styleModeButton(ImageView btn) {
+        btn.setImageTintList(ColorStateList.valueOf(colors.getTextSecondary()));
+        btn.setBackground(GlassDrawables.createGlassPillDrawable(getContext(), 14f, isNight));
     }
 
     public boolean hasForecastData() {
@@ -591,10 +592,8 @@ public class GlassNavWeatherView extends FrameLayout {
         if (tvNavRemaining != null) {
             tvNavRemaining.setTextColor(colors.getTextSecondary());
         }
-        for (TextView btn : new TextView[]{btnShowWeather, btnShowNav}) {
-            if (btn == null) continue;
-            btn.setTextColor(colors.getTextPrimary());
-            btn.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        for (ImageView btn : new ImageView[]{btnShowWeather, btnShowNav}) {
+            if (btn != null) styleModeButton(btn);
         }
         if (btnNavExit != null) {
             btnNavExit.setTextColor(colors.getTextPrimary());

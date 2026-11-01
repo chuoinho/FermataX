@@ -597,8 +597,6 @@
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">ĐIỀU HƯỚNG</string>
     <string name="glass_nav_exit">THOÁT</string>
-    <string name="glass_card_show_weather">Thời tiết</string>
-    <string name="glass_card_show_nav">Dẫn đường</string>
     <string name="glass_card_show_weather_desc">Hiện thời tiết</string>
     <string name="glass_card_show_nav_desc">Hiện dẫn đường</string>
     <string name="glass_nav_gps_timeout">Hết thời gian chờ GPS. Chạm để thử lại.</string>
