@@ -152,11 +152,6 @@ public class XtreamTrackItem extends PlayableItemBase implements StreamItem, Str
 		return (l != null) ? l : load;
 	}
 
-	FutureSupplier<XtreamEpgItem> getCurrentEpg() {
-		long time = System.currentTimeMillis();
-		return getEpg().map(epg -> findEpg(epg, time));
-	}
-
 	@NonNull
 	@Override
 	public FutureSupplier<List<EpgItem>> getChildren() {

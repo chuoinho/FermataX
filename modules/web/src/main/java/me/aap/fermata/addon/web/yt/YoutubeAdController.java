@@ -237,10 +237,6 @@ public final class YoutubeAdController {
 		return contentStarted;
 	}
 
-	public synchronized PlaybackGeneration getPlaybackGeneration() {
-		return active ? new PlaybackGeneration(generation, playbackId) : null;
-	}
-
 	public synchronized long getCooldownUntil() {
 		return cooldownUntil;
 	}

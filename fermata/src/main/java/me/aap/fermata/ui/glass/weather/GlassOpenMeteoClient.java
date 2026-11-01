@@ -58,10 +58,6 @@ public class GlassOpenMeteoClient {
             return temp;
         }
 
-        public int getWeatherCode() {
-            return weatherCode;
-        }
-
         public boolean isDay() {
             return isDay;
         }
@@ -464,10 +460,5 @@ public class GlassOpenMeteoClient {
         this.cachedIsMetric = isMetric;
     }
 
-    @VisibleForTesting
-    @Nullable
-    public HourlyForecast getCachedForecastForTesting() {
-        return cachedForecast;
-    }
 }
 

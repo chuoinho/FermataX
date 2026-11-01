@@ -452,10 +452,15 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		synchronized (itemCache) {
 			clearRefs(itemCache, itemRefQueue);
 			String id = i.getId();
-			if (BuildConfig.D && itemCache.containsKey(id)) {
-				throw new AssertionError(
-						"Unable to add item " + i + ". Item with id=" + id + "already exists: " +
-								itemCache.get(id));
+			if (BuildConfig.D) {
+				// A collected item may linger until its reference is dequeued; only a live one clashes.
+				WeakRef<Item> r = itemCache.get(id);
+				Item existing = (r == null) ? null : r.get();
+				if (existing != null) {
+					throw new AssertionError(
+							"Unable to add item " + i + ". Item with id=" + id + " already exists: " +
+									existing);
+				}
 			}
 			itemCache.put(id, new WeakRef<>(id, i, itemRefQueue));
 		}

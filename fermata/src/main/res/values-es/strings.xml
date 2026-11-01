@@ -1,14 +1,10 @@
 <resources>
     <string name="home">Inicio</string>
     <string name="dashboard">Panel</string>
-    <string name="open_dashboard">Abrir panel</string>
-    <string name="dashboard_order">Orden del panel</string>
     <string name="reset_dashboard_order">Restablecer orden del panel</string>
     <string name="dashboard_order_sub">También controla el orden de la navegación</string>
     <string name="dashboard_now_playing">Reproduciendo ahora</string>
     <string name="dashboard_continue">Seguir viendo</string>
-    <string name="dashboard_continue_sub">%1$s - %2$s</string>
-    <string name="dashboard_smart_recommended">Recomendado para ti</string>
     <string name="dashboard_smart_discover">Descubrir</string>
     <string name="dashboard_smart_empty_title">Elige un complemento</string>
     <string name="dashboard_smart_empty_subtitle">Empieza a ver o escuchar</string>
@@ -73,10 +69,7 @@
     
 
     <string name="interface_prefs">Interfaz</string>
-    <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Configuración de reproducción</string>
-    <string name="playback_control">Control de reproducción</string>
-    <string name="engine_prefs">Motor de medios</string>
 
     <string name="theme">Tema de la aplicación</string>
     <string name="theme_sub">Tema actual: %1$s</string>
@@ -93,11 +86,8 @@
     <string name="nav_bar_pos_left">Izquierda</string>
     <string name="nav_bar_pos_right">Derecha</string>
 
-    <string name="show_track_icons">Mostrar iconos de pista</string>
     <string name="lang">Idioma</string>
-    <string name="trans_lang">Idioma de traducción</string>
     <string name="hide_bars">Ocultar barras</string>
-    <string name="hide_bars_sub">Ocultar las barras de la app cuando aparezca el panel de control</string>
     <string name="show_pg_up_down">Mostrar botones de página arriba/abajo</string>
     <string name="use_dpad_cursor">Usar el cursor para la navegación del D-pad</string>
     <string name="fullscreen_mode">Modo de pantalla completa</string>
@@ -129,39 +119,18 @@
     <string name="action_cp_menu">Menú del panel de control</string>
     <string name="action_back_or_exit">Atrás o salir</string>
     <string name="action_exit">Salida</string>
-    <string name="action_default">Predeterminado</string>
     <string name="action_none">Ninguno</string>
 
     <string name="play_next_on_completion">Juega a continuación al finalizar</string>
 
-    <string name="rw_ff_click">RW/FF - haga clic en</string>
-    <string name="rw_ff_long_click">RW/FF - clic largo</string>
-    <string name="prev_next_long_click">Anterior/Siguiente - clic largo</string>
-    <string name="play_pause_stop">Detener al reproducir/pausar clic largo</string>
 
     <string name="time">Hora</string>
-    <string name="time_unit">Unidad de tiempo</string>
-    <string name="time_unit_sub">Valor actual: %1$s</string>
-    <string name="time_unit_second">Segundo</string>
-    <string name="time_unit_minute">Minuto</string>
-    <string name="time_unit_percent">Por ciento</string>
 
-    <string name="video_control">Control de vídeo</string>
-    <string name="video_control_start_delay">Mostrar al inicio</string>
-    <string name="video_control_touch_delay">Mostrar al tacto</string>
-    <string name="video_control_seek_delay">Mostrar en busca</string>
-    <string name="video_aa_show_status">Mostrar barra de estado en Android Auto</string>
 
-    <string name="enable_exoplayer">Habilitar ExoPlayer</string>
-    <string name="enable_vlcplayer">Habilitar VLC</string>
     <string name="preferred_audio_engine">Motor de audio preferido</string>
     <string name="preferred_video_engine">Motor de video preferido</string>
-    <string name="engine_installed">Motor de medios instalado: %1$s</string>
     <string name="engine_uninstalled">Motor de medios desinstalado: %1$s</string>
 
-    <string name="preferred_media_scanner">Escáner de medios preferido</string>
-    <string name="preferred_media_scanner_default">Predeterminado</string>
-    <string name="preferred_media_scanner_system">Sistema</string>
 
     <string name="voice_search">Búsqueda por voz</string>
     <string name="voice_control">Control por voz</string>
@@ -189,11 +158,8 @@ Apagado: pausa</string>
     <string name="transaural">Transaural</string>
     <string name="bass_boost">Refuerzo de graves</string>
     <string name="vol_boost">Aumento de volumen</string>
-    <string name="strength">Fuerza</string>
-    <string name="apply_to">Aplicar a</string>
 
     <string name="video">Vídeo</string>
-    <string name="video_settings">Configuración de video</string>
     <string name="video_scaling">Escalado de video</string>
     <string name="hw_accel">Aceleración de hardware</string>
     <string name="hw_accel_auto">Coche</string>
@@ -214,7 +180,6 @@ Apagado: pausa</string>
     <string name="select_audio_stream">Seleccionar transmisión de audio</string>
 
     <string name="subtitles">Subtítulos</string>
-    <string name="subtitles_auto">Generado automáticamente</string>
     <string name="subtitle_delay">Retraso de los subtítulos</string>
     <string name="display_subtitles">Mostrar subtítulos</string>
     <string name="preferred_sub_lang">Idiomas preferidos de subtítulos</string>
@@ -222,8 +187,6 @@ Apagado: pausa</string>
     <string name="select_subtitles">Seleccionar subtítulos</string>
 
     
-    <string name="eq_hz">%1$s Hz</string>
-    <string name="eq_khz">%1$s kHz</string>
 
     <string name="current_track">Trayectoria actual</string>
     <string name="current_folder">Carpeta actual</string>
@@ -232,14 +195,11 @@ Apagado: pausa</string>
     <string name="favorites">Favoritos</string>
     <string name="playlists">Listas de reproducción</string>
     <string name="search">Buscar</string>
-    <string name="filter">Filtro</string>
     <string name="settings">Configuración</string>
     <string name="menu">Menú</string>
     <string name="exit">Salida</string>
     <string name="cancel">Cancelar</string>
-    <string name="got_to_current">Trayectoria actual</string>
 
-    <string name="view">Vista</string>
     <string name="title">Título</string>
     <string name="subtitle">Subtítulo</string>
     <string name="seq_num">Número de secuencia</string>
@@ -252,7 +212,6 @@ Apagado: pausa</string>
     <string name="artist">Artista</string>
     <string name="duration">Duración</string>
 
-    <string name="sort_by">Ordenar por</string>
     <string name="do_not_sort">No ordenar</string>
 
     <string name="play">Jugar</string>
@@ -321,15 +280,9 @@ Apagado: pausa</string>
     
     <string name="m3u_playlist_video">Lista de reproducción de videos</string>
 
-    <string name="eq_manual">Manual</string>
-    <string name="eq_normal">Normal</string>
     <string name="eq_classical">Clásico</string>
     <string name="eq_dance">Bailar</string>
     <string name="eq_flat">Plano</string>
-    <string name="eq_folk">Gente</string>
-    <string name="eq_heavy_metal">Metal pesado</string>
-    <string name="eq_hip_hop">Hip Hop</string>
-    <string name="eq_jazz">Jazz</string>
     <string name="eq_pop">Pop</string>
     <string name="eq_rock">Roca</string>
 
@@ -357,39 +310,15 @@ Apagado: pausa</string>
     <string name="move_up">Desplazar hacia arriba</string>
     <string name="move_down">Desplazar hacia abajo</string>
 
-    <string name="sys_bars_on_video_touch">Mostrar barras del sistema en el toque de vídeo</string>
-    <string name="play_video_landscape">Reproducción de vídeo en modo horizontal</string>
-    <string name="clock_pos">Posición del reloj</string>
-    <string name="clock_pos_none">Ninguno</string>
-    <string name="clock_pos_left">Izquierda</string>
-    <string name="clock_pos_right">Derecha</string>
-    <string name="clock_pos_center">Centro</string>
-    <string name="change_brightness">Cambiar el brillo mientras se reproduce el vídeo</string>
-    <string name="video_brightness">Brillo de video</string>
-    <string name="change_brightness_sub">El brillo también se puede cambiar con un desplazamiento de dos dedos</string>
     <string name="watched_threshold">Umbral de vigilancia</string>
     <string name="watched_threshold_sub">Vídeo marcado como visto, si se ha visto más de este número de porcentajes</string>
 
     <string name="other">Otro</string>
-    <string name="check_updates">Buscar actualizaciones sobre el inicio</string>
     <string name="update">Actualizar</string>
-    <string name="update_question">Nueva versión %1$s está disponible.
-¿Te gustaría actualizar la aplicación\?</string>
-    <string name="export_prefs">Exportar preferencias a archivo</string>
-    <string name="export_prefs_sub">Exportar configuraciones, carpetas, listas de reproducción, etc. a un archivo</string>
-    <string name="export_prefs_ok">Las preferencias se han guardado en el archivo %1$s.</string>
-    <string name="export_prefs_failed">Error al exportar las preferencias: %1$s</string>
-    <string name="import_prefs">Importar preferencias desde el archivo</string>
-    <string name="import_prefs_sub">Importar, previamente exportado, preferencias desde el archivo</string>
-    <string name="import_prefs_ok">Las preferencias se han importado correctamente.
-Por favor, reinicie la aplicación.</string>
-    <string name="import_prefs_failed">Error al importar preferencias: %1$s</string>
-    <string name="prefs_not_found">No se han encontrado preferencias</string>
     <string name="open_log">Abrir archivo de registro</string>
     <string name="unlock_phone_and_grant">Desbloquee el teléfono y otorgue los permisos solicitados.</string>
     <string name="screen_capture_rejected">Solicitud de captura de pantalla rechazada.</string>
     <string name="accessibility_dsc">El servicio de accesibilidad es utilizado por Fermata Mirror para simular eventos de pantalla táctil.</string>
-    <string name="media_projection_action_text">Empieza ahora</string>
 
     <string name="about">Acerca de</string>
     <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
@@ -413,7 +342,6 @@ Por favor, reinicie la aplicación.</string>
     <string name="err_failed_to_download">No se pudo descargar %1$s</string>
     <string name="err_no_audio_record_perm">No se concede permiso de grabación de audio</string>
     <string name="err_speech_recognition_unavailable">El reconocimiento de voz no está disponible. Puedes continuar con el teclado.</string>
-    <string name="err_failed_start_service">No se pudo iniciar el servicio: %s</string>
     <string name="addon_name_podcast">Pódcasts</string>
     <string name="dashboard_podcast_sub">Programas, episodios y escucha sin conexión</string>
 	<string name="dashboard_audiobook_sub">Libros, capítulos y escucha sin conexión.</string>
@@ -470,13 +398,11 @@ Por favor, reinicie la aplicación.</string>
 	<string name="car_keyboard_paste">Pasta</string>
 	<string name="car_keyboard_delete">Borrar</string>
 	<string name="car_keyboard_clear">Claro</string>
-	<string name="car_keyboard_ok">DE ACUERDO</string>
 	<string name="car_keyboard_go">Ir</string>
 	<string name="car_keyboard_send">Enviar</string>
 	<string name="car_keyboard_enter">Intro</string>
 	<string name="m3u_playlist_timeout">Tiempo de espera de respuesta</string>
 	<string name="diagnostics">Diagnóstico</string>
-	<string name="diagnostics_sub">Informes locales de fallos, bloqueos y estados inesperados de la aplicación</string>
 	<string name="detailed_diagnostics">Diagnóstico detallado</string>
 	<string name="detailed_diagnostics_sub">Registra eventos detallados durante un máximo de 48 horas. Puedes desactivarlo en cualquier momento.</string>
 	<string name="export_diagnostic_report">Exportar informe de diagnóstico</string>
@@ -512,16 +438,11 @@ Por favor, reinicie la aplicación.</string>
     <string name="audio_effects_applying">Aplicando cambios de EQ…</string>
     <string name="audio_effects_applied">Cambios de EQ aplicados</string>
     <string name="audio_effects_apply_failed">Cambios guardados, pero no se pudieron aplicar</string>
-    <string name="audio_effects_flat">Plano</string>
     <string name="audio_effects_custom">Personalizado</string>
-    <string name="audio_effects_set_flat">Restablecer EQ a 0</string>
     <string name="audio_effects_scale">ganancia en dB, de -15 a +15 (0 dB centro)</string>
     <string name="audio_effects_mode">Modo</string>
     <string name="audio_effects_band_scroll">Bandas del ecualizador</string>
     <string name="audio_effects_band_format">%1$s Hz, %2$s dB</string>
-    <string name="audio_effects_additional">Efectos adicionales</string>
-    <string name="audio_effects_expand">Mostrar efectos adicionales</string>
-    <string name="audio_effects_collapse">Ocultar efectos adicionales</string>
     <string name="audio_effects_disabled">Desactivado</string>
     <string name="audio_effects_range_error">Introduce un valor entre %1$d y %2$d.</string>
 
@@ -529,8 +450,6 @@ Por favor, reinicie la aplicación.</string>
 
     <string name="theme_material_you">Material You / Bento</string>
     <string name="theme_glass">Glassmorphism</string>
-    <string name="theme_aa">Tema de Android Auto</string>
-    <string name="theme_aa_sub">Tema de pantalla del coche: %1$s</string>
     <string name="glass_appearance">Modo de tema cristal</string>
     <string name="glass_appearance_sub">Se aplica al tema cristal en el teléfono y Android Auto: %1$s</string>
     <string name="glass_appearance_day">Día</string>
@@ -553,7 +472,6 @@ Por favor, reinicie la aplicación.</string>
     <string name="car_finder_waiting_gps">Esperando señal GPS…</string>
     <string name="car_finder_measuring_gps">Calculando ubicación…</string>
     <string name="car_finder_precise_find">Radar preciso</string>
-    <string name="car_finder_directions">Cómo llegar</string>
     <string name="car_finder_found_car">Encontré mi vehículo</string>
     <string name="car_finder_found_confirm_title">Confirmar hallazgo</string>
     <string name="car_finder_found_confirm_msg">¿Has encontrado tu vehículo? Se borrará la ubicación de aparcamiento guardada.</string>
@@ -580,16 +498,12 @@ Por favor, reinicie la aplicación.</string>
     <string name="car_finder_rear_left">Detrás, ligeramente a la izquierda</string>
     <string name="car_finder_behind">Detrás de ti</string>
     <string name="car_finder_right_here">Tu vehículo está aquí mismo</string>
-    <string name="car_finder_almost_there">Casi has llegado</string>
     <string name="car_finder_follow_arrow">Sigue la flecha</string>
-    <string name="car_finder_compass_uncalibrated">Brújula descalibrada — mueve el teléfono en forma de 8</string>
-    <string name="car_finder_accuracy_margin">±%1$d m</string>
     <string name="car_finder_back">Volver</string>
     <string name="car_finder_close">Cerrar</string>
     <string name="car_finder_take_photo">Tomar foto del lugar</string>
     <string name="car_finder_retake_photo">Repetir foto</string>
     <string name="car_finder_delete_photo">Eliminar</string>
-    <string name="car_finder_photo_title">Foto del aparcamiento</string>
     <string name="car_finder_add_note">Añadir nota (ej. Columna B2 #15)</string>
     <string name="car_finder_note_hint">Columna, planta, número de plaza…</string>
     <string name="car_finder_near_car_hint">Estás cerca de tu vehículo (~%1$d m). Puedes usar el radar para mayor precisión.</string>
@@ -615,8 +529,6 @@ Por favor, reinicie la aplicación.</string>
     <string name="initial_setup_perm_storage_sub">Reproducir música, vídeos, carpetas y listas guardadas en este teléfono.</string>
     <string name="initial_setup_perm_notifications">Notificaciones</string>
     <string name="initial_setup_perm_notifications_sub">Mostrar los controles de reproducción en las notificaciones y en la pantalla de bloqueo.</string>
-    <string name="initial_setup_perm_microphone">Micrófono</string>
-    <string name="initial_setup_perm_microphone_sub">Control y búsqueda por voz.</string>
     <string name="initial_setup_perm_location">Ubicación</string>
     <string name="initial_setup_perm_location_sub">Tarjeta de velocidad, tiempo y guardar dónde aparcaste.</string>
     <string name="initial_setup_perm_nav">Notificaciones de navegación</string>
@@ -697,7 +609,6 @@ Por favor, reinicie la aplicación.</string>
     <string name="glass_addon_desc_favorites">Acceso rápido a pistas favoritas</string>
     <string name="glass_addon_desc_recent">Historial de reproducción reciente</string>
     <string name="glass_media_buffering">ALMACENANDO EN BÚFER…</string>
-    <string name="glass_media_unknown_title">Título desconocido</string>
 
     <!-- Units -->
     <string name="unit_m">m</string>

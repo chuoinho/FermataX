@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="backup_restore">Cópia e restauro</string>
-	<string name="backup_restore_sub">Transfira definições e contas portáteis entre dispositivos</string>
 	<string name="backup_all_data">Copiar todos os dados</string>
 	<string name="backup_all_data_sub">Crie um único ficheiro FermataX encriptado</string>
 	<string name="restore_backup">Restaurar cópia</string>

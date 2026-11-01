@@ -96,10 +96,6 @@ public final class PlaybackRequestProfile {
 		return allowedOrigins;
 	}
 
-	public long getExpiresAtEpochMillis() {
-		return expiresAtEpochMillis;
-	}
-
 	public RedirectPolicy getRedirectPolicy() {
 		return redirectPolicy;
 	}

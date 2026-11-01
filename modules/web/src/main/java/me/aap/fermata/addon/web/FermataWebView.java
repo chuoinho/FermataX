@@ -470,10 +470,6 @@ public class FermataWebView extends WebView
 		return hostMode;
 	}
 
-	final boolean isPhoneSource() {
-		return hostMode == RuntimeHostMode.PHONE;
-	}
-
 	final boolean usesAutomotivePresentation() {
 		return hostMode.usesAutomotivePresentation();
 	}

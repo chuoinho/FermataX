@@ -178,11 +178,6 @@ public class ListView<I> extends RecyclerView {
 		this.itemAdapter = itemAdapter;
 	}
 
-	public void setProgressBar(ProgressBar progressBar, boolean hideProgressBar) {
-		this.progressBar = progressBar;
-		this.hideProgressBar = hideProgressBar;
-	}
-
 	public void setItemClickListener(@Nullable ItemClickListener<I> itemClickListener) {
 		this.itemClickListener = itemClickListener;
 	}
@@ -191,16 +186,8 @@ public class ListView<I> extends RecyclerView {
 		this.itemsChangeListener = itemsChangeListener;
 	}
 
-	public void setErrorHandler(@NonNull Consumer<Throwable> errorHandler) {
-		this.errorHandler = errorHandler;
-	}
-
 	public void setFilter(@Nullable Function<I, Boolean> filter) {
 		this.filter = filter;
-	}
-
-	public void setSort(@NonNull Function<List<? extends I>, List<? extends I>> sort) {
-		this.sort = sort;
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})

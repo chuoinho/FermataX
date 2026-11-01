@@ -908,25 +908,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		else if (isCurrentEngine()) cb.onStop();
 	}
 
-	private void discardBridgeState() {
-		clearFullscreenTapPauseGuard();
-		endAdPlayback();
-		current = null;
-		audibleStartPending = false;
-		qualityUrl = null;
-		playbackIntentGate.reset();
-		targetPrepareGate.cancel();
-		playbackSession.invalidate();
-		recordPlayback(PlaybackEvent.SESSION_INVALIDATED, playbackSessionSnapshot,
-				false, false, false, false, false, 0L);
-		playbackSessionSnapshot = null;
-		if (!webDestroyed) web.clearPlaybackGeneration();
-		web.onYoutubePlaybackOwnershipLost();
-		fullScreenCoordinator.cancelPlayback();
-		clearExternalPlaybackOwner();
-		playbackOwner.clear();
-	}
-
 	boolean isYoutubeActive(MainActivityDelegate a) {
 		return (a.getActiveFragment() instanceof YoutubeFragment youtube) &&
 				youtube.getWebView() == web;

@@ -34,7 +34,6 @@
     <string name="vcmd_location_tv">&location_tv;</string>
     <string name="vcmd_location_youtube">&location_youtube;</string>
     <string name="vcmd_location_browser">&location_browser;</string>
-    <string name="vcmd_time_unit_second">&time_unit_second;</string>
     <string name="vcmd_time_unit_minute">&time_unit_minute;</string>
     <string name="vcmd_time_unit_hour">&time_unit_hour;</string>
     <string name="vcmd_nums">cero uno dos tres cuatro cinco seis siete ocho nueve</string>

@@ -131,11 +131,6 @@ public class NetThread extends PooledThread {
 		return ByteBuffer.allocate(SSL_READ_BUFFER_SIZE);
 	}
 
-	public static boolean isSslReadBuffer(ByteBuffer bb) {
-		Thread t = Thread.currentThread();
-		return (t instanceof NetThread) && (((NetThread) t).sslReadBuffer == bb);
-	}
-
 	public static ByteBuffer getSslWriteBuffer() {
 		Thread t = Thread.currentThread();
 
@@ -152,11 +147,6 @@ public class NetThread extends PooledThread {
 
 		Log.w("Not a NetThread: ", t);
 		return ByteBuffer.allocate(SSL_WRITE_BUFFER_SIZE);
-	}
-
-	public static boolean isSslWriteBuffer(ByteBuffer bb) {
-		Thread t = Thread.currentThread();
-		return (t instanceof NetThread) && (((NetThread) t).sslWriteBuffer == bb);
 	}
 
 	public static void assertReadBuffer(ByteBuffer bb) {

@@ -141,11 +141,6 @@ public final class CarMapTileView extends View {
 		invalidate();
 	}
 
-	/** Backwards-compatible alias */
-	public void setPositions(@Nullable CarParkingLocation carLoc, @Nullable Location userLoc) {
-		updateVehicleAndUserLocations(carLoc, userLoc);
-	}
-
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);

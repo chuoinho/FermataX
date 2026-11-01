@@ -101,10 +101,6 @@ public class GlassDashboardLayout extends ViewGroup {
         return quickBarView;
     }
 
-    public boolean isSplit() {
-        return split;
-    }
-
     public void setSplit(boolean split) {
         if (this.split != split) {
             this.split = split;

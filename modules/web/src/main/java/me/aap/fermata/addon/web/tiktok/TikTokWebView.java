@@ -97,11 +97,6 @@ public final class TikTokWebView extends FermataWebView {
 		return jsBridge;
 	}
 
-	@Nullable
-	public TikTokOpenOnCarBridge getOpenOnCarBridge() {
-		return openOnCarBridge;
-	}
-
 	public boolean isProjectionDestination() {
 		return getRuntimeHostMode() == me.aap.fermata.ui.policy.RuntimeHostMode.AA_PROJECTION;
 	}

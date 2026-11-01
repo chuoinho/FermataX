@@ -7,7 +7,6 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
 public final class PlaybackUiPolicy {
@@ -42,15 +41,6 @@ public final class PlaybackUiPolicy {
 	public static boolean shouldRenderPlayerBar(boolean presentationVisible,
 			boolean textInputActive) {
 		return presentationVisible && !textInputActive;
-	}
-
-	public static boolean isActiveListOnCurrentAudioPath(MainActivityDelegate activity) {
-		PlayableItem source = getAudioSource(activity.getMediaServiceBinder().getCurrentEngine());
-		ActivityFragment fragment = activity.getActiveFragment();
-		if ((source == null) || !(fragment instanceof MediaLibFragment media)) return false;
-		MediaLibFragment.ListAdapter adapter = media.getAdapter();
-		BrowsableItem current = (adapter == null) ? null : adapter.getParent();
-		return isSameOrAncestor(current, source.getParent());
 	}
 
 	static boolean isSameOrAncestor(@Nullable BrowsableItem current,

@@ -1,24 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Kept as base resources while legacy locale packs still carry their translations. -->
-    <string name="control_nothing_playing" translatable="false">Nothing playing</string>
-    <string name="control_current_content" translatable="false">Current content</string>
-    <string name="control_open_dashboard" translatable="false">Open FermataX on the car screen</string>
-    <string name="control_aa_disconnected" translatable="false">AA disconnected</string>
-    <string name="control_aa_unknown" translatable="false">Checking AA</string>
-    <string name="control_aa_connected" translatable="false">AA connected</string>
-    <string name="control_aa_visible" translatable="false">On car screen</string>
-    <string name="control_aa_disconnected_detail" translatable="false">Connect Android Auto, then open FermataX on the car screen.</string>
-    <string name="control_aa_unknown_detail" translatable="false">Waiting for the official Android Auto connection status.</string>
-    <string name="control_aa_connected_detail" translatable="false">Open FermataX on the car screen to choose an addon.</string>
-    <string name="control_aa_visible_detail" translatable="false">Choose an addon below to open it on the car screen.</string>
-    <string name="control_addons_heading" translatable="false">OPEN ON CAR SCREEN · ENABLED ADDONS</string>
-    <string name="control_open_on_car" translatable="false">Open</string>
-    <string name="control_addon_loading" translatable="false">Loading</string>
-    <string name="control_addon_failed" translatable="false">Failed to load</string>
-    <string name="control_open_car_first" translatable="false">Open FermataX on the car screen first.</string>
-    <string name="control_open_failed" translatable="false">Could not open this addon on the car screen.</string>
-    <string name="control_no_addons" translatable="false">No enabled addons with a car screen.</string>
     <string name="phone_header_nothing_playing">Nothing playing</string>
     <string name="phone_header_aa_disconnect">AA disconnected</string>
     <string name="phone_header_aa_connected">AA connected</string>

@@ -27,17 +27,8 @@ public final class VoiceCommandOutcome {
 		return new VoiceCommandOutcome(Status.ASYNC_PENDING, effect);
 	}
 
-	public static VoiceCommandOutcome awaitingSelection() {
-		return new VoiceCommandOutcome(Status.AWAITING_SELECTION,
-				PlaybackEffect.REPLACE_PENDING);
-	}
-
 	public Status getStatus() {
 		return status;
-	}
-
-	public PlaybackEffect getPlaybackEffect() {
-		return playbackEffect;
 	}
 
 	public boolean isHandled() {

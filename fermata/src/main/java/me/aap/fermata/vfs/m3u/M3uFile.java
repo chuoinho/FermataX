@@ -89,10 +89,6 @@ public class M3uFile implements VirtualFile {
 		getPrefs().applyBooleanPref(VIDEO, video);
 	}
 
-	public int getMaxAge() {
-		return getPrefs().getIntPref(MAX_AGE);
-	}
-
 	public void setMaxAge(int maxAge) {
 		getPrefs().applyIntPref(MAX_AGE, maxAge);
 	}

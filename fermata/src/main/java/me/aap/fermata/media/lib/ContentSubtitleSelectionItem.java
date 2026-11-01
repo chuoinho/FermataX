@@ -7,7 +7,6 @@ import androidx.annotation.Nullable;
  * Other playable items keep the existing player-menu behavior.
  */
 public interface ContentSubtitleSelectionItem {
-	String getSubtitleSelectionKey();
 
 	@Nullable
 	Long getPreferredSubtitleTrackId();

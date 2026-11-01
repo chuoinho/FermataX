@@ -652,11 +652,6 @@ public class GlassMediaPlayerController implements FermataServiceUiBinder.Listen
         return currentItem;
     }
 
-    @Nullable
-    public MediaLib.PlayableItem getRecentItem() {
-        return recentItem;
-    }
-
     public PresentationState getPresentationState() {
         return presentationState;
     }

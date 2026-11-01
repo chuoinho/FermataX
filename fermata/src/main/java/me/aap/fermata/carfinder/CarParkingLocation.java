@@ -93,14 +93,6 @@ public final class CarParkingLocation implements Serializable {
 		return new CarParkingLocation(latitude, longitude, accuracy, uncertainty, confidenceLevel, timestamp, newAddress, note, photoPath);
 	}
 
-	public CarParkingLocation withNote(String newNote) {
-		return new CarParkingLocation(latitude, longitude, accuracy, uncertainty, confidenceLevel, timestamp, address, newNote, photoPath);
-	}
-
-	public CarParkingLocation withPhotoPath(String newPhotoPath) {
-		return new CarParkingLocation(latitude, longitude, accuracy, uncertainty, confidenceLevel, timestamp, address, note, newPhotoPath);
-	}
-
 	public void setNote(@Nullable String note) {
 		this.note = (note != null) ? note : "";
 	}

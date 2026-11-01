@@ -131,29 +131,6 @@ public abstract class ConcurrentQueueBase<E, N extends ConcurrentQueueBase.Node<
 		};
 	}
 
-	protected Iterator<N> nodeIterator() {
-		N node = peekNode();
-		if (node == null) return Collections.emptyIterator();
-
-		return new Iterator<N>() {
-			N current = node;
-
-			@Override
-			public boolean hasNext() {
-				return current != null;
-			}
-
-			@SuppressWarnings("unchecked")
-			@Override
-			public N next() {
-				N c = current;
-				if (c == null) throw new NoSuchElementException();
-				current = (N) c.getNext();
-				return (N) c;
-			}
-		};
-	}
-
 	@Override
 	public int size() {
 		Node node = peekNode();

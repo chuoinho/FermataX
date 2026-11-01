@@ -4,7 +4,6 @@ import static android.content.pm.PackageManager.FEATURE_LEANBACK;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 
 import androidx.annotation.NonNull;
 
@@ -34,15 +33,6 @@ public class MiscUtils {
 			c.accept(check);
 			return true;
 		} else {
-			return false;
-		}
-	}
-
-	public static boolean isPackageInstalled(Context ctx, String pkgName) {
-		try {
-			ctx.getPackageManager().getPackageInfo(pkgName, 0);
-			return true;
-		} catch (PackageManager.NameNotFoundException e) {
 			return false;
 		}
 	}

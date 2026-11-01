@@ -108,11 +108,9 @@ import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
-import me.aap.fermata.media.lib.PersistentMediaItem;
 import me.aap.fermata.media.lib.PlayableItemResolver;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
-import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.net.RemotePlaybackProgress;
 import me.aap.fermata.media.net.RemotePlaybackItem;
@@ -431,13 +429,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return (source != null) && (PlayableItemResolver.unwrap(source) == item);
 	}
 
-	public void setEngine(MediaEngine engine) {
-		if (terminal) { MediaEngineShutdown.release(engine, audioManager, audioFocusReq); return; }
-		invalidateAudioEffectsApply();
-		revokeControlOnly();
-		switchEngine(engine);
-	}
-
 	private void recordPlaybackDiagnostic(String name, DiagnosticScope scope,
 			DiagnosticPriority priority, @Nullable MediaEngine mediaEngine,
 			@Nullable PlayableItem item, long revision, @Nullable String reason,
@@ -482,43 +473,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		recordPlaybackDiagnostic("engine_handoff", DiagnosticScope.ESSENTIAL,
 				DiagnosticPriority.STATE, replacement, replacement.getSource(), playbackRequestRevision,
 				"replaced", null);
-		return true;
-	}
-
-	/** Completes an Activity-backed handoff only while its requested item remains pending. */
-	public long capturePendingEngineHandoff(@NonNull MediaEngine expected,
-			@NonNull PlayableItem target) {
-		target = PlayableItemResolver.unwrap(target);
-		return acceptsPendingEngineHandoff(engine, expected,
-				playbackTransition.isPending(target)) &&
-				playbackOwnership.isRequestCurrent(playbackRequestRevision, target) ?
-				playbackRequestRevision : -1L;
-	}
-
-	public boolean handoffPendingEngine(@NonNull MediaEngine expected,
-				@NonNull MediaEngine replacement, long requestRevision) {
-		if (rejectsHandoff(requestRevision, playbackRequestRevision, engine, expected,
-				replacement)) {
-			recordPlaybackDiagnostic("engine_handoff_rejected", DiagnosticScope.DETAILED,
-					DiagnosticPriority.DETAIL, expected, expected.getSource(), requestRevision,
-					"stale_request", null);
-			return false;
-		}
-		if (!playbackOwnership.replaceEngine(expected, replacement)) {
-			recordPlaybackDiagnostic("engine_handoff_rejected", DiagnosticScope.DETAILED,
-					DiagnosticPriority.DETAIL, expected, expected.getSource(), requestRevision,
-					"ownership_mismatch", null);
-			return false;
-		}
-		if (engine == expected) {
-			engine = replacement;
-			syncDuckingOnEngineChange(replacement);
-			bindVideoOutput(replacement);
-		}
-		session.setActive(true);
-		recordPlaybackDiagnostic("engine_handoff", DiagnosticScope.ESSENTIAL,
-				DiagnosticPriority.STATE, replacement, replacement.getSource(), requestRevision,
-				"pending_completed", null);
 		return true;
 	}
 
@@ -691,8 +645,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
 		return listeners;
 	}
-
-	public void addVideoView(VideoView view, int priority) { videoOutput.add(view, priority); }
 
 	public boolean admitPlaybackHost(me.aap.fermata.auto.OpenOnCarMediaRouting.Admission admission) { return !terminal && videoOutput.admit(admission); }
 
@@ -2006,33 +1958,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private PlayableItem selectPlaybackItem(PlayableItem presented) {
 		return playbackQueueContext.selectAndCanonicalize(presented);
-	}
-
-	/** Persists the current managed item without changing playback or media-session state. */
-	public FutureSupplier<Void> saveCurrentPlaybackProgress() {
-		MediaEngine current = getEngine();
-		if (current == null) return completedVoid();
-		PlayableItem source = current.getSource();
-		if (source == null) return completedVoid();
-		source = PlayableItemResolver.unwrap(source);
-		if (!PlaybackProgressPolicy.isManaged(source)) return completedVoid();
-
-		PlayableItem item = source;
-		long generation = playbackRequestRevision;
-		return current.getPosition().and(item.getDuration()).main().then(values -> {
-			if ((generation != playbackRequestRevision) || (current != getEngine())) {
-				return completedVoid();
-			}
-			PlayableItem active = current.getSource();
-			if ((active == null) || (PlayableItemResolver.unwrap(active) != item)) {
-				return completedVoid();
-			}
-			return progressPolicy.lifecycle(item, generation, values.value1, values.value2,
-					true, false);
-		}).ifFail(error -> {
-			Log.w(error, "Failed to save current playback progress");
-			return null;
-		});
 	}
 
 	private FutureSupplier<?> createPlayItemTask(PlayableItem i, long pos) {

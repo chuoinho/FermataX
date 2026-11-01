@@ -111,10 +111,6 @@ public final class CarFinderPrefs {
 		return getPrefs(context).getString(KEY_DISTANCE_UNIT, "m");
 	}
 
-	public static void setDistanceUnit(Context context, String unit) {
-		getPrefs(context).edit().putString(KEY_DISTANCE_UNIT, unit).apply();
-	}
-
 	private static void notifyLocationChanged(@Nullable CarParkingLocation location) {
 		if (Looper.myLooper() == Looper.getMainLooper()) {
 			for (Listener l : LISTENERS) {

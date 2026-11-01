@@ -1,29 +1,18 @@
 package me.aap.fermata.ui.glass.dashboard;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.location.Location;
 import android.os.SystemClock;
-import android.view.Gravity;
-import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonState;
-import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.location.LocationHub;
 import me.aap.fermata.media.lib.MediaLib;
@@ -41,13 +30,10 @@ import me.aap.fermata.ui.glass.quickbar.GlassQuickBarManager;
 import me.aap.fermata.ui.glass.quickbar.GlassQuickBarView;
 import me.aap.fermata.ui.glass.quickbar.GlassQuickShortcut;
 import me.aap.fermata.ui.glass.quickbar.GlassShortcutPickerDialog;
-import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripController;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView;
 import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.glass.speedo.TripTrackingRegistry;
 import me.aap.fermata.ui.glass.speedo.TripTrackingService;
-import me.aap.fermata.ui.glass.theme.GlassDimensions;
-import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
 import me.aap.fermata.ui.glass.weather.GlassOpenMeteoClient;
 import me.aap.fermata.ui.glass.weather.WeatherLocationPolicy;
@@ -541,18 +527,6 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
                 scheduleNextWeatherRefresh();
             }
         });
-    }
-
-    public GlassSpeedoTripView getSpeedoView() {
-        return speedoView;
-    }
-
-    public GlassNavWeatherView getNavWeatherView() {
-        return navWeatherView;
-    }
-
-    public GlassMediaPlayerView getMediaView() {
-        return mediaView;
     }
 
     public GlassQuickBarView getQuickBarView() {

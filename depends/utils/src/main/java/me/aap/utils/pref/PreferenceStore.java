@@ -34,10 +34,6 @@ public interface PreferenceStore extends EventBroadcaster<PreferenceStore.Listen
 
 	String[] getStringArrayPref(Pref<? extends Supplier<String[]>> pref);
 
-	default <T> T getCompoundPref(Pref<? extends Compound<T>> pref) {
-		return pref.getDefaultValue().get(this);
-	}
-
 	default boolean hasPref(Pref<?> pref) {
 		return hasPref(pref, true);
 	}

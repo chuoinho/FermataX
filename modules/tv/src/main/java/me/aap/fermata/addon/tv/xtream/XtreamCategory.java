@@ -22,7 +22,4 @@ public class XtreamCategory {
 		return name;
 	}
 
-	public String getParentId() {
-		return parentId;
-	}
 }

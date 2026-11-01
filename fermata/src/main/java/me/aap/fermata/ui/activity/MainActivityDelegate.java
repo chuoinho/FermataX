@@ -43,7 +43,6 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.LocaleList;
 import android.provider.Settings;
-import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Base64;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -725,10 +724,6 @@ public class MainActivityDelegate extends ActivityDelegate
 		if (phoneSupportBannerController != null) {
 			phoneSupportBannerController.start();
 		}
-	}
-
-	public PhoneSupportBannerController getPhoneSupportBannerController() {
-		return phoneSupportBannerController;
 	}
 
 	private boolean isCurrentSplitMode() {

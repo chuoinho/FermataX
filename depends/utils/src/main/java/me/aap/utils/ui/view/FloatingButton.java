@@ -78,26 +78,14 @@ public class FloatingButton extends FloatingActionButton implements ActivityList
 		return borderWidth;
 	}
 
-	public void setBorderWidth(@Px float borderWidthDpi) {
-		this.borderWidth = borderWidthDpi;
-	}
-
 	@ColorInt
 	public int getBorderColor() {
 		return borderColor;
 	}
 
-	public void setBorderColor(@ColorInt int borderColor) {
-		this.borderColor = borderColor;
-	}
-
 	@ColorInt
 	public int getBorderFocusColor() {
 		return borderFocusColor;
-	}
-
-	public void setBorderFocusColor(@ColorInt int borderFocusColor) {
-		this.borderFocusColor = borderFocusColor;
 	}
 
 	@Override

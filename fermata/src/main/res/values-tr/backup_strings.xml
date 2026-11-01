@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="backup_restore">Yedekleme ve geri yükleme</string>
-	<string name="backup_restore_sub">Taşınabilir ayarları ve hesapları cihazlar arasında aktarın</string>
 	<string name="backup_all_data">Tüm verileri yedekle</string>
 	<string name="backup_all_data_sub">Tek bir şifreli FermataX dosyası oluşturun</string>
 	<string name="restore_backup">Yedeği geri yükle</string>

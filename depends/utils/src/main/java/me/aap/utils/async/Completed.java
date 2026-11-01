@@ -97,10 +97,6 @@ public abstract class Completed<T> implements FutureSupplier<T> {
 		return Null.instance;
 	}
 
-	public static boolean isCompletedNull(FutureSupplier<?> f) {
-		return f == Null.instance;
-	}
-
 	@SuppressWarnings("unchecked")
 	public static FutureSupplier<Void> completedVoid() {
 		return Null.instance;

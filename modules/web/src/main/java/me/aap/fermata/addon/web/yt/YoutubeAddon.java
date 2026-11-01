@@ -591,10 +591,6 @@ public class YoutubeAddon extends WebBrowserAddon
 		return YoutubeSponsorBlock.isEnabled(getPreferenceStore());
 	}
 
-	SponsorBlockController getSponsorBlockController() {
-		return sponsorBlockController;
-	}
-
 	@Nullable
 	@Override
 	public FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme,

@@ -256,38 +256,6 @@ public class ToolBarView extends ConstraintLayout implements ActivityListener,
 			lp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
 		}
 
-		default void addViewAt(ToolBarView tb, View v, @IdRes int id, int idx) {
-			ConstraintLayout.LayoutParams lp = null;
-			tb.addView(v, idx);
-			int count = tb.getChildCount();
-			v.setId(id);
-
-			if (idx > 0) {
-				View lv = tb.getChildAt(idx - 1);
-				lp = (ConstraintLayout.LayoutParams) lv.getLayoutParams();
-				lp.endToStart = id;
-				lp.endToEnd = UNSET;
-				lp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
-				lp = (ConstraintLayout.LayoutParams) v.getLayoutParams();
-				lp.startToEnd = lv.getId();
-				lp.startToStart = UNSET;
-			}
-			if (idx < count - 1) {
-				View rv = tb.getChildAt(idx + 1);
-				lp = (ConstraintLayout.LayoutParams) rv.getLayoutParams();
-				lp.startToEnd = id;
-				lp.startToStart = UNSET;
-				lp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
-				lp = (ConstraintLayout.LayoutParams) v.getLayoutParams();
-				lp.endToStart = rv.getId();
-				lp.endToEnd = UNSET;
-			}
-
-			assert lp != null;
-			lp.topToTop = lp.bottomToBottom = PARENT_ID;
-			lp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
-		}
-
 		default ImageButton addButton(ToolBarView tb, @DrawableRes int icon, OnClickListener onClick,
 																	@IdRes int id) {
 			return addButton(tb, icon, onClick, id, RIGHT);
