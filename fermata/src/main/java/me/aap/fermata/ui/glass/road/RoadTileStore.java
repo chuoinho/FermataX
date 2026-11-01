@@ -199,7 +199,7 @@ public final class RoadTileStore {
             }
         }
         synchronized (prefs) {
-            prefs.edit().clear().commit();
+            prefs.edit().clear().apply();
         }
     }
 }

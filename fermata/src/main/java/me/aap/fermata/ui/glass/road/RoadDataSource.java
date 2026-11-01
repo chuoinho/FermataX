@@ -91,8 +91,12 @@ public class RoadDataSource {
 
         if (allowLive) {
             TileId ahead = Float.isNaN(bearingDeg) ? null : center.ahead(bearingDeg);
-            boolean centerMissing = store.read(center) == null;
-            boolean aheadMissing = ahead != null && !center.equals(ahead) && store.read(ahead) == null;
+            boolean centerMissing;
+            boolean aheadMissing;
+            synchronized (lru) {
+                centerMissing = !lru.containsKey(center);
+                aheadMissing = ahead != null && !center.equals(ahead) && !lru.containsKey(ahead);
+            }
 
             if (centerMissing || aheadMissing) {
                 triggerLiveFetch(center, ahead, centerMissing, aheadMissing);
@@ -164,12 +168,15 @@ public class RoadDataSource {
                     lru.put(t, parsed);
                 }
                 store.removePending(t);
+                recordSuccess();
                 return true;
             } else {
+                recordFailure();
                 store.addPending(t);
                 return false;
             }
         } catch (Exception e) {
+            recordFailure();
             store.addPending(t);
             return false;
         }

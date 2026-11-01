@@ -357,7 +357,7 @@ public class GlassLimitsSignalsView extends FrameLayout {
             this.limit = limit;
             if (limit != null) {
                 if (limit.unlimited) {
-                    setContentDescription("No speed limit");
+                    setContentDescription(getContext().getString(R.string.glass_limits_no_data));
                 } else {
                     setContentDescription(getContext().getString(R.string.glass_speed_limit_desc, limit.value));
                 }

@@ -101,6 +101,7 @@ import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.RecentFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.SubtitlesFragment;
+import me.aap.fermata.ui.glass.road.RoadPrefetch;
 import me.aap.fermata.ui.policy.BackNavigationPolicy;
 import me.aap.fermata.ui.policy.HostRelaunchPolicy;
 import me.aap.fermata.ui.policy.ItemRoutePolicy;
@@ -1356,6 +1357,11 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		if (prefs.contains(MainActivityPrefs.GLASS_ROAD_DATA)) {
+			if (!store.getBooleanPref(MainActivityPrefs.GLASS_ROAD_DATA)) {
+				new Thread(() -> RoadPrefetch.disable(getContext()), "RoadPrefetchDisable").start();
+			}
+		}
 		if (MainActivityPrefs.hasThemePref(this, prefs)) {
 			if (isGlassTheme()) {
 				glassRailController.refreshAppearance(this);

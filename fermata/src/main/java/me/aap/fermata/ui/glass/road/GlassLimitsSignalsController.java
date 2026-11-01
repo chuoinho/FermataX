@@ -19,7 +19,7 @@ public final class GlassLimitsSignalsController {
     private final RoadMatcher matcher = new RoadMatcher();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private boolean active = false;
+    private volatile boolean active = false;
     private float initialSignalDistance = -1f;
 
     public GlassLimitsSignalsController(@NonNull Context context,
@@ -79,7 +79,11 @@ public final class GlassLimitsSignalsController {
 
         final float finalSigDist = signalDistanceM;
         final float finalProg = progress;
-        postToMain(() -> view.show(limit, speedKmh, roadName, finalSigDist, finalProg));
+        postToMain(() -> {
+            if (active) {
+                view.show(limit, speedKmh, roadName, finalSigDist, finalProg);
+            }
+        });
     }
 
     private void postToMain(Runnable r) {

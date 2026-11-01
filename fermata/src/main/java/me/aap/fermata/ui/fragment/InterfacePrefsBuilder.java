@@ -75,11 +75,6 @@ final class InterfacePrefsBuilder {
 				o.title = R.string.glass_road_data;
 				o.subtitle = R.string.glass_road_data_sub;
 			});
-			store.addBroadcastListener((s, p) -> {
-				if (p.contains(MainActivityPrefs.GLASS_ROAD_DATA) && !s.getBooleanPref(MainActivityPrefs.GLASS_ROAD_DATA)) {
-					RoadPrefetch.disable(activity.getContext());
-				}
-			});
 		}
 
 		Pref<IntSupplier> navBarPosition = BuildConfig.AUTO ?
