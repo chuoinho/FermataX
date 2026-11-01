@@ -29,6 +29,8 @@ import java.util.Map;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.location.LocationHub;
+import me.aap.fermata.ui.glass.road.RoadPrefetch;
 import me.aap.utils.log.Log;
 
 /**
@@ -320,6 +322,11 @@ public class TripTrackingService extends Service {
         }
         stopForeground(true);
         isForeground = false;
+        try {
+            RoadPrefetch.onTripEnded(this, LocationHub.get(this).latest());
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to run RoadPrefetch onTripEnded", t);
+        }
         super.onDestroy();
     }
 

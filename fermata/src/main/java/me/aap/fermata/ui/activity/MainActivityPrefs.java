@@ -41,6 +41,8 @@ public interface MainActivityPrefs
 
 	Pref<Supplier<String>> PREF_GLASS_QUICK_SHORTCUTS = Pref.s("GLASS_QUICK_SHORTCUTS", "[]");
 	Pref<IntSupplier> GLASS_SPEED_UNIT = Pref.i("GLASS_SPEED_UNIT", 0);
+	Pref<BooleanSupplier> GLASS_ROAD_DATA = Pref.b("GLASS_ROAD_DATA", true);
+	Pref<IntSupplier> GLASS_SPEED_CARD = Pref.i("GLASS_SPEED_CARD", 0); /* 0 speed & trip, 1 limits & signals */
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_GLASS);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);

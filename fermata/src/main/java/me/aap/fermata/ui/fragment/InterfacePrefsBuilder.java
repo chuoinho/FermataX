@@ -14,6 +14,7 @@ import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.control.PhoneReadiness;
+import me.aap.fermata.ui.glass.road.RoadPrefetch;
 import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.glass.speedo.TripTrackingService;
 import me.aap.fermata.ui.policy.BackgroundRunPolicy;
@@ -67,6 +68,17 @@ final class InterfacePrefsBuilder {
 				o.subtitle = R.string.glass_units_sub;
 				o.formatSubtitle = true;
 				o.values = new int[]{R.string.glass_units_metric, R.string.glass_units_imperial};
+			});
+			set.addBooleanPref(o -> {
+				o.store = store;
+				o.pref = MainActivityPrefs.GLASS_ROAD_DATA;
+				o.title = R.string.glass_road_data;
+				o.subtitle = R.string.glass_road_data_sub;
+			});
+			store.addBroadcastListener((s, p) -> {
+				if (p.contains(MainActivityPrefs.GLASS_ROAD_DATA) && !s.getBooleanPref(MainActivityPrefs.GLASS_ROAD_DATA)) {
+					RoadPrefetch.disable(activity.getContext());
+				}
 			});
 		}
 
