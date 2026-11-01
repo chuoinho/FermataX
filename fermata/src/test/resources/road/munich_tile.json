@@ -1,0 +1,68 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API",
+  "elements": [
+    {
+      "type": "way",
+      "id": 101,
+      "nodes": [1, 2, 3],
+      "geometry": [
+        {"lat": 48.10, "lon": 11.50},
+        {"lat": 48.11, "lon": 11.51},
+        {"lat": 48.12, "lon": 11.52}
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Main St",
+        "oneway": "yes",
+        "maxspeed:forward": "30"
+      }
+    },
+    {
+      "type": "way",
+      "id": 102,
+      "nodes": [4, 5],
+      "geometry": [
+        {"lat": 48.13, "lon": 11.53},
+        {"lat": 48.14, "lon": 11.54}
+      ],
+      "tags": {
+        "highway": "primary",
+        "name": "Highway 1",
+        "maxspeed": "50"
+      }
+    },
+    {
+      "type": "way",
+      "id": 103,
+      "nodes": [6, 7],
+      "geometry": [
+        {"lat": 48.15, "lon": 11.55},
+        {"lat": 48.16, "lon": 11.56}
+      ],
+      "tags": {
+        "highway": "secondary",
+        "name": "Side St"
+      }
+    },
+    {
+      "type": "node",
+      "id": 201,
+      "lat": 48.11,
+      "lon": 11.51,
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals:direction": "forward"
+      }
+    },
+    {
+      "type": "node",
+      "id": 202,
+      "lat": 48.14,
+      "lon": 11.54,
+      "tags": {
+        "highway": "traffic_signals"
+      }
+    }
+  ]
+}
