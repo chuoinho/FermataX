@@ -12,7 +12,6 @@ import me.aap.fermata.ui.activity.VoiceCommand;
 import me.aap.fermata.ui.view.TopBarMediator;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
 
 /**
@@ -39,11 +38,6 @@ public abstract class MainActivityFragment extends ActivityFragment {
 	@Override
 	public NavBarMediator getNavBarMediator() {
 		return getActivityDelegate().getNavBarMediator();
-	}
-
-	@Override
-	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return FloatingButtonMediator.instance;
 	}
 
 	@CallSuper

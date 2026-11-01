@@ -718,7 +718,6 @@ public class ControlPanelView extends ConstraintLayout
 	private void applyPresentation(State state) {
 		MainActivityDelegate a = getActivity();
 		updatePanelVisibility(state);
-		a.getFloatingButton().setVisibility(state.videoMode() || isAutoUi(a) ? GONE : VISIBLE);
 		a.setBarsHidden(state.barsHidden());
 		if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(state.barsHidden());
 		if (!state.barsHidden()) presentationView.updateVideoTitle(a);

@@ -26,6 +26,14 @@ public class TopBarAuthorityContractTest {
 		assertTrue(controller.contains("toolBar.setVisibility(visibility)"));
 	}
 
+	// Root pages hide Back; without an inset their title sits flush against the screen edge.
+	@Test
+	public void titleGetsStartInsetWhenBackIsGone() throws Exception {
+		String controller = coreSource("ui/view/TopBarController.java");
+		assertTrue(controller.contains("state.backVisibility() == View.GONE"));
+		assertTrue(controller.contains("title.setPaddingRelative("));
+	}
+
 	@Test
 	public void controllerUsesTheHostSpecificPrimaryRoot() throws Exception {
 		String controller = coreSource("ui/view/TopBarController.java");

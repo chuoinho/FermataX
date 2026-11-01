@@ -14,6 +14,7 @@ import me.aap.fermata.ui.policy.ItemRoutePolicy;
 import me.aap.fermata.ui.policy.PhoneRootPolicy;
 import me.aap.fermata.ui.policy.TopBarPolicy;
 import me.aap.fermata.ui.policy.TopBarPolicy.State;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.ToolBarView;
 
@@ -45,6 +46,12 @@ public final class TopBarController {
 		TextView title = toolBar.findViewById(me.aap.utils.R.id.tool_bar_title);
 		if ((title != null) && !TextUtils.equals(title.getText(), state.title()))
 			title.setText(state.title());
+		if (title != null) {
+			// Root pages hide Back, which would leave the title flush against the screen edge.
+			int start = (state.backVisibility() == View.GONE) ? UiUtils.toIntPx(title.getContext(), 14) : 0;
+			if (title.getPaddingStart() != start) title.setPaddingRelative(start, title.getPaddingTop(),
+					title.getPaddingEnd(), title.getPaddingBottom());
+		}
 		if (toolBar instanceof FermataToolBarView ftb) {
 			ftb.applyGlassThemeIfNeeded();
 		}

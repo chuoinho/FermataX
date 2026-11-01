@@ -129,8 +129,6 @@
     <string name="voice_trigger_clear">Cancella assegnazione del pulsante vocale</string>
     <string name="voice_trigger_cleared">Assegnazione del pulsante vocale del veicolo cancellata.</string>
     <string name="voice_selection_prompt">Di’ numero uno, due o tre</string>
-    <string name="voice_control_fb">Pulsante fluttuante</string>
-    <string name="voice_control_sub_long">Attiva controllo vocale con clic lungo</string>
     <string name="voice_control_subst">Sostituzione comandi</string>
     <string name="voice_control_subst_sub">Sostituisci un comando con un\'altra parola o con una frase</string>
     <string name="voice_control_subst_hint">on: riproduci\noff: pausa</string>

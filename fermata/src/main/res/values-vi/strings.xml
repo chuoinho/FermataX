@@ -149,8 +149,6 @@
 	<string name="voice_trigger_clear">Xóa nút voice đã gán</string>
 	<string name="voice_trigger_cleared">Đã xóa nút voice trên xe.</string>
 	<string name="voice_selection_prompt">Hãy nói số một, hai hoặc ba</string>
-    <string name="voice_control_fb">Nút nhấn</string>
-    <string name="voice_control_sub_long">Kích hoạt điều khiển bằng giọng nói khi nhấn giữ</string>
     <string name="voice_control_subst">Từ thay thế</string>
     <string name="voice_control_subst_sub">Thay thế một từ bằng một từ hoặc cụm từ khác</string>
     <string name="voice_control_subst_hint">bật: phát\ntắt: tạm dừng</string>

@@ -13,7 +13,6 @@ import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.LEF
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.ui.UiUtils.toPx;
-import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 import android.Manifest;
@@ -31,6 +30,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageButton;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IdRes;
@@ -52,7 +52,6 @@ import me.aap.utils.holder.BiHolder;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ListView;
 import me.aap.utils.ui.view.ToolBarView;
 import me.aap.utils.ui.view.VirtualResourceAdapter;
@@ -72,7 +71,7 @@ public class FilePickerFragment extends GenericDialogFragment implements
 	private State state = new State();
 
 	public FilePickerFragment() {
-		super(ToolBarMediator.instance, FloatingButtonMediator.instance);
+		super(ToolBarMediator.instance);
 	}
 
 	@Override
@@ -122,6 +121,28 @@ public class FilePickerFragment extends GenericDialogFragment implements
 
 	public void setCreateFolder(CreateFolder create) {
 		state.create = create;
+	}
+
+	private boolean isCreateAvailable() {
+		return (state.create != null) && state.create.isAvailable(this);
+	}
+
+	private void createFolder() {
+		State st = state;
+		if (!isCreateAvailable()) return;
+		State state = (State) resetState();
+		state.create.create(st.parent, st.children).main().onCompletion((h, err) -> {
+			if (h != null) {
+				state.parent = h.getValue1();
+				state.children = h.getValue2();
+			}
+			if ((err != null) && !(err instanceof CancellationException)) {
+				ListView<VirtualResource> lv = getListView();
+				if (lv != null) lv.onFailure(err);
+			}
+			restoreState(state);
+			getActivityDelegate().showFragment(R.id.file_picker);
+		});
 	}
 
 	public void setOnLongClick(Function<VirtualResource, Boolean> onLongClick) {
@@ -363,6 +384,9 @@ public class FilePickerFragment extends GenericDialogFragment implements
 			addView(tb, t, getPathId(), LEFT);
 
 			GenericDialogFragment.ToolBarMediator.super.enable(tb, f);
+			// The create action is set after the picker is shown, so the button starts hidden.
+			addButton(tb, R.drawable.folder, v -> p.createFolder(), getCreateButtonId())
+					.setVisibility(GONE);
 		}
 
 		@Override
@@ -376,8 +400,18 @@ public class FilePickerFragment extends GenericDialogFragment implements
 				if (t == null) return;
 
 				t.setText(p.getPath());
+				ImageButton c = tb.findViewById(getCreateButtonId());
+				if (c != null) {
+					if (p.state.create != null) c.setImageResource(p.state.create.getIcon());
+					c.setVisibility(p.isCreateAvailable() ? VISIBLE : GONE);
+				}
 				GenericDialogFragment.ToolBarMediator.super.onActivityEvent(tb, a, e);
 			}
+		}
+
+		@IdRes
+		default int getCreateButtonId() {
+			return R.id.file_picker_create;
 		}
 
 		default boolean onPathKeyEvent(FilePickerFragment f, EditText text, int keyCode, KeyEvent event) {
@@ -423,67 +457,6 @@ public class FilePickerFragment extends GenericDialogFragment implements
 		default void setPathPadding(EditText t) {
 			int p = (int) toPx(t.getContext(), 2);
 			t.setPadding(p, p, p, p);
-		}
-	}
-
-	public interface FloatingButtonMediator extends FloatingButton.Mediator.Back {
-		FloatingButtonMediator instance = new FloatingButtonMediator() {
-		};
-
-		@Override
-		default void onActivityEvent(FloatingButton fb, ActivityDelegate a, long e) {
-			FloatingButton.Mediator.Back.super.onActivityEvent(fb, a, e);
-
-			switch ((int) e) {
-				case FRAGMENT_CHANGED:
-				case FRAGMENT_CONTENT_CHANGED:
-					fb.setImageResource(getIcon(fb));
-					break;
-			}
-		}
-
-		@Override
-		default int getIcon(FloatingButton fb) {
-			ActivityDelegate a = ActivityDelegate.get(fb.getContext());
-			ActivityFragment f = a.getActiveFragment();
-
-			if (f instanceof FilePickerFragment) {
-				FilePickerFragment p = (FilePickerFragment) f;
-				State st = p.state;
-				if ((st.create != null) && st.create.isAvailable(p)) return st.create.getIcon();
-			}
-
-			return FloatingButton.Mediator.Back.super.getIcon(fb);
-		}
-
-		@Override
-		default void onClick(View v) {
-			ActivityDelegate a = ActivityDelegate.get(v.getContext());
-			ActivityFragment f = a.getActiveFragment();
-
-			if (f instanceof FilePickerFragment) {
-				FilePickerFragment p = (FilePickerFragment) f;
-				State st = p.state;
-
-				if ((st.create != null) && st.create.isAvailable(p)) {
-					State state = (State) p.resetState();
-					state.create.create(st.parent, st.children).main().onCompletion((h, err) -> {
-						if (h != null) {
-							state.parent = h.getValue1();
-							state.children = h.getValue2();
-						}
-						if ((err != null) && !(err instanceof CancellationException)) {
-							ListView<VirtualResource> lv = p.getListView();
-							if (lv != null) lv.onFailure(err);
-						}
-						p.restoreState(state);
-						p.getActivityDelegate().showFragment(R.id.file_picker);
-					});
-					return;
-				}
-			}
-
-			FloatingButton.Mediator.Back.super.onClick(v);
 		}
 	}
 }

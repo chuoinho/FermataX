@@ -127,8 +127,6 @@
 
     <string name="voice_search">Голосовой поиск</string>
     <string name="voice_control">Голосовое управление</string>
-    <string name="voice_control_fb">Плавающая кнопка</string>
-    <string name="voice_control_sub_long">Активировать голосовое управление, при долгом нажатии</string>
     <string name="voice_control_subst">Замена слов</string>
     <string name="voice_control_subst_sub">Заменять слово другим словом или фразой</string>
     <string name="voice_control_subst_hint">включить: играть\nвыключить: пауза</string>

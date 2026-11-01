@@ -41,6 +41,7 @@ public class ControlPanelContractTest {
 		}
 	}
 
+	// The panel must not re-show the floating button on pages that hide it (TikTok's own capsule sits there).
 	@Test
 	public void panelGeometryIsOneFixed76DpLayoutInEveryState() throws Exception {
 		String dimensions = resource("values/dimens.xml");

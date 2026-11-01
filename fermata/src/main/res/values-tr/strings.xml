@@ -129,8 +129,6 @@
     <string name="voice_trigger_clear">Ses düğmesi atamasını temizle</string>
     <string name="voice_trigger_cleared">Araç ses düğmesi ataması temizlendi.</string>
     <string name="voice_selection_prompt">Bir, iki veya üç numara deyin</string>
-    <string name="voice_control_fb">Kayan düğme</string>
-    <string name="voice_control_sub_long">Uzun dokununca ses kontrolünü etkinleştir</string>
     <string name="voice_control_subst">Kelime değiştirme</string>
     <string name="voice_control_subst_sub">Bir kelimeyi başka bir kelime veya kelime öbeği ile değiştirin</string>
     <string name="voice_control_subst_hint">açık: oynat\nkapalı: duraklat</string>

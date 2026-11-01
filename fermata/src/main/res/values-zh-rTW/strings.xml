@@ -134,8 +134,6 @@
 
     <string name="voice_search">語音輸入搜尋</string>
     <string name="voice_control">語音輸入控制</string>
-    <string name="voice_control_fb">浮動操作按鈕</string>
-    <string name="voice_control_sub_long">長按啟用語音控制</string>
     <string name="voice_control_subst">替代文字</string>
     <string name="voice_control_subst_sub">將文字用其他文字或句子替代</string>
     <string name="voice_control_subst_hint">開：播放\n關：暫停</string>

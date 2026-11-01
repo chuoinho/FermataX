@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
@@ -60,6 +61,7 @@ public class CarFinderFragment extends MainActivityFragment
 
 	private FrameLayout rootContainer;
 	private LinearLayout overviewContainer;
+	private LinearLayout overviewBody;
 	private LinearLayout radarContainer;
 
 	private CarMapTileView mapTileView;
@@ -414,7 +416,9 @@ public class CarFinderFragment extends MainActivityFragment
 		// Map Canvas View (Takes top remaining height)
 		mapTileView = new CarMapTileView(requireContext());
 		mapTileView.setNightMode(isNight);
-		overviewContainer.addView(mapTileView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
+		overviewBody = new LinearLayout(requireContext());
+		overviewBody.addView(mapTileView);
+		overviewContainer.addView(overviewBody, new LinearLayout.LayoutParams(-1, 0, 1.0f));
 
 		// Bottom Card Container (Material 3 rounded bottom sheet in Fermata dark navy / Glass)
 		LinearLayout cardContainer = new LinearLayout(requireContext());
@@ -603,7 +607,25 @@ public class CarFinderFragment extends MainActivityFragment
 		((LinearLayout) cardActiveInfo).addView(cardFoundCar, pFound);
 
 		cardContainer.addView(cardActiveInfo, new LinearLayout.LayoutParams(-1, -2));
-		overviewContainer.addView(cardContainer, new LinearLayout.LayoutParams(-1, -2));
+		overviewBody.addView(cardContainer);
+		layoutOverviewBody(getResources().getConfiguration());
+	}
+
+	// Stacked in landscape, the card leaves the map only a sliver, so it moves beside the map.
+	private void layoutOverviewBody(Configuration config) {
+		if (overviewBody == null) return;
+		boolean landscape = config.orientation == Configuration.ORIENTATION_LANDSCAPE;
+		overviewBody.setOrientation(landscape ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+		mapTileView.setLayoutParams(landscape ? new LinearLayout.LayoutParams(0, -1, 1.0f)
+				: new LinearLayout.LayoutParams(-1, 0, 1.0f));
+		cardContainer.setLayoutParams(landscape ? new LinearLayout.LayoutParams(0, -2, 1.0f)
+				: new LinearLayout.LayoutParams(-1, -2));
+	}
+
+	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		layoutOverviewBody(newConfig);
 	}
 
 	private void setupPhotoAndNoteSection(float density) {

@@ -129,8 +129,6 @@
     <string name="voice_trigger_clear">Zuweisung der Sprachtaste löschen</string>
     <string name="voice_trigger_cleared">Zuweisung der Sprachtaste wurde gelöscht.</string>
     <string name="voice_selection_prompt">Sage Nummer eins, zwei oder drei</string>
-    <string name="voice_control_fb">Schwebender Button</string>
-    <string name="voice_control_sub_long">Aktivieren der Sprachsteuerung durch langes Drücken</string>
     <string name="voice_control_subst">Wortersetzung</string>
     <string name="voice_control_subst_sub">Ersetzen Sie ein Wort durch ein anderes Wort oder einen Satz</string>
     <string name="voice_control_subst_hint">Ein: Wiedergabe\nAus: Pause</string>

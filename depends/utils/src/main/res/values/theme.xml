@@ -12,7 +12,6 @@
         <item name="bottomNavigationStyle">@style/Theme.Utils.Base.NavBarStyle</item>
         <item name="android:preferenceStyle">@style/Theme.Utils.Base.PreferenceStyle</item>
         <item name="fileListViewStyle">@style/Theme.Utils.Base.FileListViewStyle</item>
-        <item name="floatingActionButtonStyle">@style/Theme.Utils.Base.FloatingButtonStyle</item>
         <item name="materialAlertDialogTheme">@style/Theme.Utils.Base.AlertDialog</item>
 
         <item name="rippleColor">#FFFFFF</item>
@@ -99,15 +98,6 @@
         <item name="fileIcon">@drawable/file</item>
         <item name="folderIcon">@drawable/folder</item>
         <item name="background">@drawable/focusable_shape_transparent</item>
-    </style>
-
-    <style name="Theme.Utils.Base.FloatingButtonStyle" parent="Widget.MaterialComponents.FloatingActionButton">
-        <item name="borderWidth">2dp</item>
-        <item name="borderColor">?attr/colorOnPrimary</item>
-        <item name="borderFocusColor">?attr/colorAccent</item>
-        <item name="tint">?attr/colorOnPrimary</item>
-        <item name="backgroundTint">?attr/colorPrimary</item>
-        <item name="rippleColor">?colorAccent</item>
     </style>
 
     <declare-styleable name="AlertDialog">

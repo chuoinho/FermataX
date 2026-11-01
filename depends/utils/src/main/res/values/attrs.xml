@@ -26,12 +26,6 @@
         <attr name="android:colorBackground" />
     </declare-styleable>
 
-    <declare-styleable name="FloatingButton">
-        <attr name="borderWidth" />
-        <attr name="borderColor" format="color|reference" />
-        <attr name="borderFocusColor" format="color|reference" />
-    </declare-styleable>
-
     <declare-styleable name="PreferenceView">
         <attr name="android:textColor" />
         <attr name="android:textColorHint" />
