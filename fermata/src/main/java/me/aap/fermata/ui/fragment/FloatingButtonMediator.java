@@ -100,7 +100,7 @@ public class FloatingButtonMediator implements BackMenu {
 		fb.setVisibility(shouldHide(a, f) ? View.GONE : View.VISIBLE);
 	}
 
-	static boolean shouldHide(MainActivityDelegate a, @Nullable ActivityFragment f) {
+	public static boolean shouldHide(MainActivityDelegate a, @Nullable ActivityFragment f) {
 		if (BuildConfig.AUTO || a.isVideoMode()) return true;
 		if (f == null) return false;
 		int id = f.getFragmentId();

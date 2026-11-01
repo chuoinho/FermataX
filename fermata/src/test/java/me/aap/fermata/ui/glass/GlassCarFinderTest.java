@@ -22,6 +22,16 @@ public class GlassCarFinderTest {
 		assertTrue(source.contains("isGlassTheme"));
 	}
 
+	// Stacked in landscape, the info card leaves the map only a sliver; it must sit beside the map.
+	@Test
+	public void landscapePlacesCardBesideMapAndFollowsRotation() throws Exception {
+		String source = source("carfinder", "CarFinderFragment.java");
+		assertTrue(source.contains("Configuration.ORIENTATION_LANDSCAPE"));
+		assertTrue(source.contains("LinearLayout.HORIZONTAL"));
+		assertTrue(source.contains("public void onConfigurationChanged("));
+		assertTrue(source.contains("overviewBody.addView(cardContainer"));
+	}
+
 	@Test
 	public void testCarFinderSettingsDialogSupportsGlassTheme() throws Exception {
 		String source = source("carfinder", "CarFinderSettingsDialog.java");
