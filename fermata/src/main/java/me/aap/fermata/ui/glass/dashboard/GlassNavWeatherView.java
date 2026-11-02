@@ -2,7 +2,6 @@ package me.aap.fermata.ui.glass.dashboard;
 
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -50,7 +49,8 @@ public class GlassNavWeatherView extends FrameLayout {
     private TextView btnNavExit;
     private LinearLayout navBottomBar;
     private PendingIntent activeExitIntent;
-    private ImageView btnModeToggle;
+    private TextView btnShowWeather;
+    private TextView btnShowNav;
     private boolean navActive;
     // User switched to weather during the current route; reset when the route ends
     private boolean weatherPinned;
@@ -94,7 +94,6 @@ public class GlassNavWeatherView extends FrameLayout {
 
         initNavLayout(context);
         initWeatherLayout(context);
-        initModeToggle(context);
 
         // Default to weather fallback view
         navContainer.setVisibility(View.GONE);
@@ -215,6 +214,12 @@ public class GlassNavWeatherView extends FrameLayout {
                 } catch (Exception ignored) {}
             }
         });
+        btnShowWeather = createModeButton(context,
+                safeGetString(context, R.string.glass_nav_show_weather, "WEATHER"), true);
+        LinearLayout.LayoutParams showWeatherLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        showWeatherLp.rightMargin = GlassDimensions.dpToPx(context, 8);
+        navBottomBar.addView(btnShowWeather, showWeatherLp);
         navBottomBar.addView(btnNavExit);
 
         navContainer.addView(navBottomBar);
@@ -235,7 +240,16 @@ public class GlassNavWeatherView extends FrameLayout {
         tvWeatherHeader.setTypeface(Typeface.DEFAULT_BOLD);
         tvWeatherHeader.setTextColor(colors.getTextSecondary());
         tvWeatherHeader.setLetterSpacing(0.08f);
-        weatherContainer.addView(tvWeatherHeader);
+        LinearLayout headerRow = new LinearLayout(context);
+        headerRow.setOrientation(LinearLayout.HORIZONTAL);
+        headerRow.setGravity(Gravity.CENTER_VERTICAL);
+        headerRow.addView(tvWeatherHeader, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        btnShowNav = createModeButton(context,
+                safeGetString(context, R.string.glass_nav_header, "NAVIGATION"), false);
+        btnShowNav.setVisibility(View.GONE);
+        headerRow.addView(btnShowNav);
+        weatherContainer.addView(headerRow, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         // Center Current Weather
         LinearLayout centerWeather = new LinearLayout(context);
@@ -330,42 +344,32 @@ public class GlassNavWeatherView extends FrameLayout {
         boolean showNav = navActive && !weatherPinned;
         navContainer.setVisibility(showNav ? View.VISIBLE : View.GONE);
         weatherContainer.setVisibility(showNav ? View.GONE : View.VISIBLE);
-        btnModeToggle.setVisibility(navActive ? View.VISIBLE : View.GONE);
-        btnModeToggle.setImageResource(showNav ? R.drawable.ic_glass_weather : R.drawable.ic_nav_arrow);
-        btnModeToggle.setContentDescription(showNav
-                ? safeGetString(getContext(), R.string.glass_nav_show_weather, "WEATHER")
-                : safeGetString(getContext(), R.string.glass_nav_header, "NAVIGATION"));
+        btnShowNav.setVisibility(navActive && weatherPinned ? View.VISIBLE : View.GONE);
     }
 
-    private void initModeToggle(Context context) {
-        btnModeToggle = new ImageView(context);
-        btnModeToggle.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        // 48dp touch target pulled into the card's top-right padding corner
-        int touch = GlassDimensions.dpToPx(context, 48);
-        LayoutParams lp = new LayoutParams(touch, touch, Gravity.TOP | Gravity.END);
-        lp.topMargin = -getPaddingTop();
-        lp.setMarginEnd(-getPaddingEnd());
-        setClipToPadding(false);
-        btnModeToggle.setOnClickListener(v -> {
-            weatherPinned = !weatherPinned;
+    private TextView createModeButton(Context context, String label, boolean pinWeather) {
+        TextView b = new TextView(context);
+        b.setText(label);
+        b.setTextSize(11f);
+        b.setTypeface(Typeface.DEFAULT_BOLD);
+        b.setGravity(Gravity.CENTER);
+        b.setMaxLines(1);
+        int padH = GlassDimensions.dpToPx(context, 14);
+        b.setPadding(padH, 0, padH, 0);
+        b.setMinHeight(GlassDimensions.dpToPx(context, 48)); // Android touch target; the pill is drawn inset
+        b.setOnClickListener(v -> {
+            weatherPinned = pinWeather;
             updateMode();
         });
-        btnModeToggle.setVisibility(View.GONE);
-        styleModeToggle();
-        addView(btnModeToggle, lp);
+        styleModeButton(b);
+        return b;
     }
 
-    private void styleModeToggle() {
-        Context context = getContext();
-        // 28dp glass circle near the top of the touch area so it sits level with the header text
-        int side = GlassDimensions.dpToPx(context, 10);
-        int top = GlassDimensions.dpToPx(context, 4);
-        int bottom = GlassDimensions.dpToPx(context, 48) - top - GlassDimensions.dpToPx(context, 28);
-        int icon = GlassDimensions.dpToPx(context, 6);
-        btnModeToggle.setBackground(new InsetDrawable(
-                GlassDrawables.createGlassPillDrawable(context, 14f, isNight), side, top, side, bottom));
-        btnModeToggle.setPadding(side + icon, top + icon, side + icon, bottom + icon);
-        btnModeToggle.setImageTintList(ColorStateList.valueOf(colors.getTextSecondary()));
+    private void styleModeButton(TextView b) {
+        b.setTextColor(colors.getActionText());
+        int inset = GlassDimensions.dpToPx(getContext(), 10);
+        b.setBackground(new InsetDrawable(
+                GlassDrawables.createGlassPillDrawable(getContext(), 14f, isNight), 0, inset, 0, inset));
     }
 
     public boolean hasForecastData() {
@@ -513,8 +517,11 @@ public class GlassNavWeatherView extends FrameLayout {
             btnNavExit.setTextColor(colors.getTextPrimary());
             btnNavExit.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
         }
-        if (btnModeToggle != null) {
-            styleModeToggle();
+        if (btnShowWeather != null) {
+            styleModeButton(btnShowWeather);
+        }
+        if (btnShowNav != null) {
+            styleModeButton(btnShowNav);
         }
         if (navBottomBar != null) {
             navBottomBar.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));
