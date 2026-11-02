@@ -17,6 +17,13 @@ public final class GlassDimensions {
 		return Math.round(dp * density);
 	}
 
+	// Card header buttons grow with the card on large car screens: 28dp on the smallest cards, at most 36dp (stays inside the card padding).
+	public static int headerButtonPx(Context context, int cardHeightPx) {
+		float density = context.getResources().getDisplayMetrics().density;
+		float dp = cardHeightPx / Math.max(0.1f, density) * 0.11f;
+		return dpToPx(context, Math.max(28f, Math.min(36f, dp)));
+	}
+
 	public static boolean isCar(Context context) {
 		if (context == null) return false;
 		try {

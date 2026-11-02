@@ -639,11 +639,12 @@
     <string name="glass_limits_title">LIMITS &amp; SIGNALS</string>
     <string name="glass_show_limits">Show speed limit and signals</string>
     <string name="glass_show_speed">Show speed and trip</string>
-    <string name="glass_signal_label">Traffic signal</string>
-    <string name="glass_signal_none">No signal ahead</string>
+    <string name="glass_signal_label">Traffic light</string>
+    <string name="glass_road_unnamed">Unnamed road</string>
+    <string name="glass_road_searching">Finding road…</string>
     <string name="glass_limits_no_data">No speed limit data</string>
     <string name="glass_speed_limit_desc">Speed limit %1$d</string>
-    <string name="glass_signal_desc">Traffic signal in %1$d metres</string>
+    <string name="glass_signal_desc">Traffic light in %1$d metres</string>
     <string name="glass_road_data">Speed limits &amp; signals data</string>
     <string name="glass_road_data_sub">Downloads map data around your usual places over Wi‑Fi. © OpenStreetMap contributors</string>
 </resources>

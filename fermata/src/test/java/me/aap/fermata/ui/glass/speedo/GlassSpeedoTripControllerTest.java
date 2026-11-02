@@ -270,13 +270,15 @@ public class GlassSpeedoTripControllerTest {
         assertTrue("Reset listener should be called after confirmation", resetCalled.get());
     }
 
-    @Test public void toggleTripButtonTriggersListener() {
+    @Test public void headerHasOnlyTheSwapButton() {
         GlassSpeedoTripView view = new GlassSpeedoTripView(context);
-        java.util.concurrent.atomic.AtomicBoolean toggleCalled = new java.util.concurrent.atomic.AtomicBoolean(false);
-        view.setOnToggleTripListener(() -> toggleCalled.set(true));
-
-        assertTrue(view.performToggleTrip());
-        assertTrue("Toggle listener should be called when toggle button clicked", toggleCalled.get());
+        view.setTripMode(TripModePolicy.Mode.ON);
+        android.view.ViewGroup actions = (android.view.ViewGroup) view.getSwapButton().getParent();
+        assertEquals(1, actions.getChildCount());
+        // Pause lives in the trip notification; reset stays on the trip row (tripStatsRowLongClickTriggersResetTrip).
+        java.util.ArrayList<android.view.View> found = new java.util.ArrayList<>();
+        view.findViewsWithText(found, context.getString(me.aap.fermata.R.string.speedo_pause_trip), android.view.View.FIND_VIEWS_WITH_TEXT);
+        assertTrue(found.isEmpty());
     }
 
     @Test public void backgroundBlockedSignalDoesNotOfferATapAction() {

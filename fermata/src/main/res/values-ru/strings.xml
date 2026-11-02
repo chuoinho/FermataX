@@ -632,7 +632,8 @@
     <string name="glass_show_limits">Показать ограничение скорости и светофоры</string>
     <string name="glass_show_speed">Показать скорость и поездку</string>
     <string name="glass_signal_label">Светофор</string>
-    <string name="glass_signal_none">Впереди нет светофоров</string>
+    <string name="glass_road_unnamed">Безымянная дорога</string>
+    <string name="glass_road_searching">Поиск дороги…</string>
     <string name="glass_limits_no_data">Нет данных об ограничении скорости</string>
     <string name="glass_speed_limit_desc">Ограничение скорости %1$d</string>
     <string name="glass_signal_desc">Светофор через %1$d метров</string>

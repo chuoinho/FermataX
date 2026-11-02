@@ -12,6 +12,7 @@ import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -124,6 +125,10 @@ public class GlassNavWeatherView extends FrameLayout {
             } else {
                 tvWeatherTemp.setTextSize(50f);
             }
+            int size = GlassDimensions.headerButtonPx(getContext(), h);
+            post(() -> {
+                for (ImageView btn : new ImageView[]{btnShowWeather, btnShowNav}) sizeModeButton(btn, size);
+            });
         }
     }
 
@@ -402,14 +407,22 @@ public class GlassNavWeatherView extends FrameLayout {
         btn.setImageResource(iconRes);
         btn.setContentDescription(safeGetString(context, descRes, descFallback));
         btn.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        int size = GlassDimensions.dpToPx(context, 28);
-        btn.setLayoutParams(new LinearLayout.LayoutParams(size, size));
-        int pad = GlassDimensions.dpToPx(context, 6);
-        btn.setPadding(pad, pad, pad, pad);
+        btn.setLayoutParams(new LinearLayout.LayoutParams(0, 0));
+        sizeModeButton(btn, GlassDimensions.dpToPx(context, 28));
         styleModeButton(btn);
         btn.setVisibility(View.GONE);
         btn.setOnClickListener(v -> setShowNav(btn == btnShowNav));
         return btn;
+    }
+
+    private static void sizeModeButton(ImageView btn, int size) {
+        ViewGroup.LayoutParams lp = btn.getLayoutParams();
+        if (lp.width == size) return;
+        lp.width = size;
+        lp.height = size;
+        int pad = Math.round(size * 0.1f);
+        btn.setPadding(pad, pad, pad, pad);
+        btn.setLayoutParams(lp);
     }
 
     private void styleModeButton(ImageView btn) {

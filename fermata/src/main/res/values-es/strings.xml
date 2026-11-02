@@ -638,7 +638,8 @@ Apagado: pausa</string>
     <string name="glass_show_limits">Mostrar límite de velocidad y señales</string>
     <string name="glass_show_speed">Mostrar velocidad y viaje</string>
     <string name="glass_signal_label">Semáforo</string>
-    <string name="glass_signal_none">Sin semáforos delante</string>
+    <string name="glass_road_unnamed">Calle sin nombre</string>
+    <string name="glass_road_searching">Buscando calle…</string>
     <string name="glass_limits_no_data">Sin datos de límite de velocidad</string>
     <string name="glass_speed_limit_desc">Límite de velocidad %1$d</string>
     <string name="glass_signal_desc">Semáforo a %1$d metros</string>

@@ -546,7 +546,8 @@
     <string name="glass_show_limits">Hız sınırını ve ışıkları göster</string>
     <string name="glass_show_speed">Hızı ve geziyi göster</string>
     <string name="glass_signal_label">Trafik ışığı</string>
-    <string name="glass_signal_none">İleride trafik ışığı yok</string>
+    <string name="glass_road_unnamed">İsimsiz yol</string>
+    <string name="glass_road_searching">Yol aranıyor…</string>
     <string name="glass_limits_no_data">Hız sınırı verisi yok</string>
     <string name="glass_speed_limit_desc">Hız sınırı %1$d</string>
     <string name="glass_signal_desc">%1$d metre ileride trafik ışığı</string>

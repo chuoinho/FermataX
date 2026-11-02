@@ -546,7 +546,8 @@
     <string name="glass_show_limits">Tempolimits und Ampeln anzeigen</string>
     <string name="glass_show_speed">Geschwindigkeit und Fahrtdaten anzeigen</string>
     <string name="glass_signal_label">Ampel</string>
-    <string name="glass_signal_none">Keine Ampel voraus</string>
+    <string name="glass_road_unnamed">Unbenannte Straße</string>
+    <string name="glass_road_searching">Straße wird gesucht…</string>
     <string name="glass_limits_no_data">Keine Tempolimit-Daten</string>
     <string name="glass_speed_limit_desc">Tempolimit %1$d</string>
     <string name="glass_signal_desc">Ampel in %1$d Metern</string>

@@ -649,11 +649,12 @@
     <string name="glass_limits_title">GIỚI HẠN &amp; ĐÈN</string>
     <string name="glass_show_limits">Hiện giới hạn tốc độ và đèn</string>
     <string name="glass_show_speed">Hiện tốc độ và chuyến đi</string>
-    <string name="glass_signal_label">Đèn tín hiệu</string>
-    <string name="glass_signal_none">Không có đèn phía trước</string>
+    <string name="glass_signal_label">Đèn giao thông</string>
+    <string name="glass_road_unnamed">Đường không tên</string>
+    <string name="glass_road_searching">Đang tìm đường…</string>
     <string name="glass_limits_no_data">Đường chưa có dữ liệu giới hạn</string>
     <string name="glass_speed_limit_desc">Giới hạn tốc độ %1$d</string>
-    <string name="glass_signal_desc">Đèn tín hiệu cách %1$d mét</string>
+    <string name="glass_signal_desc">Đèn giao thông cách %1$d mét</string>
     <string name="glass_road_data">Dữ liệu giới hạn tốc độ &amp; đèn</string>
     <string name="glass_road_data_sub">Tải dữ liệu bản đồ quanh nơi bạn hay đến khi có Wi‑Fi. © OpenStreetMap contributors</string>
 </resources>

@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView;
+import me.aap.utils.pref.PreferenceStore;
 
 public class GlassSpeedCardSwitcher extends FrameLayout {
 
@@ -17,6 +18,8 @@ public class GlassSpeedCardSwitcher extends FrameLayout {
     private final GlassLimitsSignalsView limitsView;
     private final MainActivityPrefs prefs;
     private final Consumer<Boolean> onLimitsVisible;
+    // The store keeps listeners only weakly, so this field keeps it alive as long as the switcher.
+    private final PreferenceStore.Listener prefsListener;
     private boolean isLimits;
 
     public GlassSpeedCardSwitcher(@NonNull Context context,
@@ -62,7 +65,7 @@ public class GlassSpeedCardSwitcher extends FrameLayout {
             }
         }
 
-        prefs.addBroadcastListener((store, p) -> {
+        prefsListener = (store, p) -> {
             if (p.contains(MainActivityPrefs.GLASS_ROAD_DATA)) {
                 boolean enabled = store.getBooleanPref(MainActivityPrefs.GLASS_ROAD_DATA);
                 speed.setSwapVisible(enabled);
@@ -70,7 +73,8 @@ public class GlassSpeedCardSwitcher extends FrameLayout {
                     forceSpeedCard();
                 }
             }
-        });
+        };
+        prefs.addBroadcastListener(prefsListener);
     }
 
     public boolean isLimitsShown() {

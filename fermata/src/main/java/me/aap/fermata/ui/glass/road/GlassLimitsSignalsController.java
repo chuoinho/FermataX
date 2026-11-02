@@ -55,8 +55,7 @@ public final class GlassLimitsSignalsController {
         RoadMatcher.Match match = matcher.update(tiles, lat, lon, accuracy, bearing, speed, System.currentTimeMillis());
 
         SpeedLimit limit = match != null ? match.limit() : null;
-        String roadName = match != null ? match.way.name : null;
-        float speedKmh = speed * 3.6f;
+        String roadName = match == null ? null : match.way.name != null ? match.way.name : "";
 
         float signalDistanceM = -1f;
         float progress = 0f;
@@ -81,7 +80,7 @@ public final class GlassLimitsSignalsController {
         final float finalProg = progress;
         postToMain(() -> {
             if (active) {
-                view.show(limit, speedKmh, roadName, finalSigDist, finalProg);
+                view.show(limit, roadName, finalSigDist, finalProg);
             }
         });
     }

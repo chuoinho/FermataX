@@ -23,6 +23,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
+import me.aap.fermata.ui.view.MinimumTouchTargetDelegate;
 
 public class GlassLimitsSignalsView extends FrameLayout {
 
@@ -40,7 +41,6 @@ public class GlassLimitsSignalsView extends FrameLayout {
     private TextView tvChipActiveDist;
     private SignalProgressBar chipProgressBar;
     private TextView tvChipMuted;
-    private TextView tvRoadName;
 
     private Runnable onSwapListener;
 
@@ -88,14 +88,17 @@ public class GlassLimitsSignalsView extends FrameLayout {
         tvCardTitle.setEllipsize(TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams titleLp = new FrameLayout.LayoutParams(
                 LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL);
-        titleLp.setMarginEnd(GlassDimensions.dpToPx(context, isCar ? 60 : 48));
+        titleLp.setMarginEnd(GlassDimensions.dpToPx(context, 36));
         topBar.addView(tvCardTitle, titleLp);
 
-        btnSwap = createSwapButton(context, isCar);
-        FrameLayout.LayoutParams swapLp = new FrameLayout.LayoutParams(
-                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.END | Gravity.CENTER_VERTICAL);
-        topBar.addView(btnSwap, swapLp);
         contentLayout.addView(topBar);
+
+        // Outside the title row and centred on the title line, so the title sits at the same height as on other cards.
+        btnSwap = createSwapButton(context);
+        addView(btnSwap, new LayoutParams(0, 0, Gravity.TOP | Gravity.END));
+        sizeSwapButton(GlassDimensions.dpToPx(context, 28));
+        setClipToPadding(false);
+        MinimumTouchTargetDelegate.install(this, btnSwap);
 
         // 2. Middle Row: Round Speed Limit Sign (left) + Speed & Unit (right)
         LinearLayout midRow = new LinearLayout(context);
@@ -158,6 +161,14 @@ public class GlassLimitsSignalsView extends FrameLayout {
         activeTop.setOrientation(LinearLayout.HORIZONTAL);
         activeTop.setGravity(Gravity.CENTER_VERTICAL);
 
+        ImageView lightIcon = new ImageView(context);
+        lightIcon.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_traffic_light));
+        lightIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        int iconSize = GlassDimensions.dpToPx(context, 18);
+        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(iconSize, iconSize);
+        iconLp.setMarginEnd(GlassDimensions.dpToPx(context, 6));
+        activeTop.addView(lightIcon, iconLp);
+
         tvChipActiveLabel = new TextView(context);
         tvChipActiveLabel.setText(context.getString(R.string.glass_signal_label));
         tvChipActiveLabel.setTextSize(12f);
@@ -185,74 +196,69 @@ public class GlassLimitsSignalsView extends FrameLayout {
         tvChipMuted.setTextColor(colors.getTextSecondary());
         tvChipMuted.setGravity(Gravity.CENTER);
         tvChipMuted.setSingleLine(true);
+        tvChipMuted.setEllipsize(TextUtils.TruncateAt.END);
         FrameLayout.LayoutParams mutedLp = new FrameLayout.LayoutParams(
                 LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER);
         chipContainer.addView(tvChipMuted, mutedLp);
 
         contentLayout.addView(chipContainer);
 
-        // 4. Road Name
-        tvRoadName = new TextView(context);
-        tvRoadName.setTextSize(11f);
-        tvRoadName.setTextColor(colors.getTextSecondary());
-        tvRoadName.setSingleLine(true);
-        tvRoadName.setEllipsize(TextUtils.TruncateAt.END);
-        tvRoadName.setGravity(Gravity.CENTER);
-        tvRoadName.setLines(1);
-        LinearLayout.LayoutParams roadLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        roadLp.topMargin = GlassDimensions.dpToPx(context, 6);
-        contentLayout.addView(tvRoadName, roadLp);
-
         showWaiting();
     }
 
-    private View createSwapButton(Context context, boolean isCar) {
-        FrameLayout container = new FrameLayout(context);
-        int minSize = GlassDimensions.dpToPx(context, isCar ? 48 : 36);
-        container.setMinimumWidth(minSize);
-        container.setMinimumHeight(minSize);
-        container.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
-        container.setContentDescription(context.getString(R.string.glass_show_speed));
-        container.setClickable(true);
-        container.setFocusable(true);
+    // Same 28dp corner icon as the Weather / Navigation switch; MinimumTouchTargetDelegate widens the tap area to 48dp.
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (h > 0) post(() -> sizeSwapButton(GlassDimensions.headerButtonPx(getContext(), h)));
+    }
 
-        ImageView iv = new ImageView(context);
-        iv.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_speedo_mini));
-        int iconSize = GlassDimensions.dpToPx(context, 20);
-        FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER);
-        container.addView(iv, ivLp);
+    // Centred on the single-line title (font padding included, the TextView default).
+    private void sizeSwapButton(int size) {
+        LayoutParams lp = (LayoutParams) btnSwap.getLayoutParams();
+        if (lp.width == size) return;
+        Paint.FontMetricsInt fm = tvCardTitle.getPaint().getFontMetricsInt();
+        lp.width = size;
+        lp.height = size;
+        lp.topMargin = (fm.bottom - fm.top - size) / 2;
+        int pad = Math.round(size * 0.1f);
+        btnSwap.setPadding(pad, pad, pad, pad);
+        btnSwap.setLayoutParams(lp);
+    }
 
-        container.setOnClickListener(v -> {
+    private View createSwapButton(Context context) {
+        ImageView btn = new ImageView(context);
+        btn.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_speedo_mini));
+        btn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        btn.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        btn.setContentDescription(context.getString(R.string.glass_show_speed));
+        btn.setFocusable(true);
+        btn.setOnClickListener(v -> {
             if (onSwapListener != null) {
                 onSwapListener.run();
             }
         });
-        return container;
+        return btn;
     }
 
+    // Speed is not touched here: it always mirrors the speed card (showSpeed).
     public void showWaiting() {
         signView.setLimit(null);
-        tvSpeedValue.setText("--");
-        tvSpeedUnit.setText("KM/H");
-        chipActiveLayout.setVisibility(View.GONE);
-        tvChipMuted.setVisibility(View.VISIBLE);
-        tvChipMuted.setText("◌ " + getContext().getString(R.string.speedo_waiting));
-        chipContainer.setContentDescription(getContext().getString(R.string.speedo_waiting));
-        tvRoadName.setText("");
+        showMuted("◌ " + getContext().getString(R.string.speedo_waiting));
     }
 
-    public void show(@Nullable SpeedLimit limit, float speedKmh, @Nullable String roadName,
-                     float signalDistanceM, float signalProgress) {
-        if (limit != null && limit.mph) {
-            float speedMph = speedKmh / 1.609344f;
-            tvSpeedValue.setText(String.valueOf(Math.round(speedMph)));
-            tvSpeedUnit.setText("MPH");
-        } else {
-            tvSpeedValue.setText(String.valueOf(Math.round(speedKmh)));
-            tvSpeedUnit.setText("KM/H");
-        }
+    /** The exact value and unit the speed card shows, so both cards always agree. */
+    public void showSpeed(CharSequence value, CharSequence unit) {
+        tvSpeedValue.setText(value);
+        tvSpeedUnit.setText(unit);
+    }
 
+    /**
+     * The chip shows the traffic light only while one is in range; otherwise it names the road.
+     * roadName is null when no road is matched yet, empty for an unnamed road.
+     */
+    public void show(@Nullable SpeedLimit limit, @Nullable String roadName,
+                     float signalDistanceM, float signalProgress) {
         signView.setLimit(limit);
 
         if (signalDistanceM >= 0f) {
@@ -262,20 +268,20 @@ public class GlassLimitsSignalsView extends FrameLayout {
             tvChipActiveDist.setText(distM + " m");
             chipProgressBar.setProgress(signalProgress);
             chipContainer.setContentDescription(getContext().getString(R.string.glass_signal_desc, distM));
+        } else if (roadName == null) {
+            showMuted(getContext().getString(R.string.glass_road_searching));
+        } else if (roadName.isEmpty()) {
+            showMuted(getContext().getString(R.string.glass_road_unnamed));
         } else {
-            chipActiveLayout.setVisibility(View.GONE);
-            tvChipMuted.setVisibility(View.VISIBLE);
-            tvChipMuted.setText(getContext().getString(R.string.glass_signal_none));
-            chipContainer.setContentDescription(getContext().getString(R.string.glass_signal_none));
+            showMuted(roadName);
         }
+    }
 
-        if (roadName != null && !roadName.isEmpty()) {
-            tvRoadName.setText(roadName);
-        } else if (limit == null) {
-            tvRoadName.setText(getContext().getString(R.string.glass_limits_no_data));
-        } else {
-            tvRoadName.setText("");
-        }
+    private void showMuted(String text) {
+        chipActiveLayout.setVisibility(View.GONE);
+        tvChipMuted.setVisibility(View.VISIBLE);
+        tvChipMuted.setText(text);
+        chipContainer.setContentDescription(text);
     }
 
     public void setOnSwapListener(Runnable r) {
@@ -295,7 +301,6 @@ public class GlassLimitsSignalsView extends FrameLayout {
         tvChipActiveLabel.setTextColor(colors.getTextPrimary());
         tvChipActiveDist.setTextColor(colors.getTextPrimary());
         tvChipMuted.setTextColor(colors.getTextSecondary());
-        tvRoadName.setTextColor(colors.getTextSecondary());
     }
 
     // Testing and inspection helpers
@@ -317,10 +322,6 @@ public class GlassLimitsSignalsView extends FrameLayout {
 
     public CharSequence getChipText() {
         return tvChipMuted.getVisibility() == View.VISIBLE ? tvChipMuted.getText() : tvChipActiveDist.getText();
-    }
-
-    public CharSequence getRoadNameText() {
-        return tvRoadName.getText();
     }
 
     public View getSwapButton() {

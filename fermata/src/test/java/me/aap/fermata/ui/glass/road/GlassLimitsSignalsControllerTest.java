@@ -82,9 +82,7 @@ public class GlassLimitsSignalsControllerTest {
 
         controller.onLocation(loc);
 
-        assertEquals("36", view.getSpeedText());
-        assertEquals("KM/H", view.getSpeedUnitText());
         assertEquals(context.getString(R.string.glass_speed_limit_desc, 50), view.getSignContentDescription());
-        assertEquals("Main Avenue", view.getRoadNameText());
+        assertEquals("Main Avenue", view.getChipText());
     }
 }

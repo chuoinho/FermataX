@@ -86,4 +86,28 @@ public class GlassSpeedCardSwitcherTest {
         assertEquals(View.GONE, limitsView.getVisibility());
         assertEquals(View.GONE, speedView.getSwapButton().getVisibility());
     }
+
+    @Test
+    public void speedCardHeaderLinesUpWithOtherCards() {
+        speedView.setTripMode(me.aap.fermata.ui.glass.speedo.TripModePolicy.Mode.ON);
+        speedView.measure(View.MeasureSpec.makeMeasureSpec(300, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(400, View.MeasureSpec.EXACTLY));
+        speedView.layout(0, 0, 300, 400);
+        java.util.ArrayList<View> found = new java.util.ArrayList<>();
+        speedView.findViewsWithText(found, "SPEED & TRIP", View.FIND_VIEWS_WITH_TEXT);
+        View title = found.get(0);
+        View swap = speedView.getSwapButton();
+        int size = Math.round(28 * context.getResources().getDisplayMetrics().density);
+
+        assertEquals(size, swap.getHeight());
+        assertEquals(speedView.getPaddingTop(), topIn(speedView, title));
+        assertEquals(topIn(speedView, title) + title.getHeight() / 2f,
+                topIn(speedView, swap) + swap.getHeight() / 2f, 1f);
+    }
+
+    private static int topIn(View root, View v) {
+        int top = 0;
+        for (View cur = v; cur != root; cur = (View) cur.getParent()) top += cur.getTop();
+        return top;
+    }
 }

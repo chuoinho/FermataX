@@ -637,7 +637,8 @@
     <string name="glass_show_limits">顯示速限與號誌</string>
     <string name="glass_show_speed">顯示車速與行程</string>
     <string name="glass_signal_label">交通號誌</string>
-    <string name="glass_signal_none">前方無號誌</string>
+    <string name="glass_road_unnamed">未命名道路</string>
+    <string name="glass_road_searching">正在尋找道路…</string>
     <string name="glass_limits_no_data">無速限資料</string>
     <string name="glass_speed_limit_desc">速限 %1$d</string>
     <string name="glass_signal_desc">距離交通號誌 %1$d 公尺</string>

@@ -96,16 +96,16 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     private void initCards(Context ctx) {
         // Speedo & Trip
         speedoView = new GlassSpeedoTripView(ctx);
+        GlassLimitsSignalsView limitsView = new GlassLimitsSignalsView(ctx);
         tripListener = (speedKmh, state) -> {
             if (speedoView != null) {
                 speedoView.updateSpeed(speedKmh, state, isMetric);
+                limitsView.showSpeed(speedoView.getSpeedText(), speedoView.getSpeedUnitText());
             }
             refreshWeatherForDistance();
         };
         speedoView.setOnResetTripListener(tripRegistry::resetTrip);
-        speedoView.setOnToggleTripListener(tripRegistry::toggleTrip);
 
-        GlassLimitsSignalsView limitsView = new GlassLimitsSignalsView(ctx);
         RoadDataSource roadDataSource = RoadDataSource.get(ctx);
         limitsSignalsController = new GlassLimitsSignalsController(ctx, limitsView, roadDataSource);
         speedCardSwitcher = new GlassSpeedCardSwitcher(ctx, speedoView, limitsView, activity.getPrefs(),
