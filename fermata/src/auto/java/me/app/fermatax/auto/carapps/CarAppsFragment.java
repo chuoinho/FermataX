@@ -12,6 +12,7 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -77,9 +78,13 @@ public class CarAppsFragment extends MainActivityFragment {
 	private LinearLayout serverErrorOverlay;
 	private Button btnGrantRoot;
 
+	private boolean dimRequested;
+	private boolean touching;
+	private long touchDownTime;
+	private float lastTouchX;
+	private float lastTouchY;
 	private final Runnable rootListener = this::onRootChanged;
 	private final Consumer<CarDisplayClient.State> clientListener = s -> updateUiState();
-	private final Consumer<Boolean> panelListener = off -> updateUiState();
 	private final Handler mainHandler = new Handler(Looper.getMainLooper());
 	private final LauncherActivity.VisibilityListener launcherVisibilityListener = visible -> {
 		mainHandler.post(() -> {
@@ -127,6 +132,7 @@ public class CarAppsFragment extends MainActivityFragment {
 
 		@Override
 		public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+			cancelActiveTouch();
 			client.setSurface(null, 0, 0, 0);
 		}
 	};
@@ -174,17 +180,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		surfaceView.setLayoutParams(surfaceLp);
 		surfaceView.getHolder().addCallback(surfaceCallback);
 		surfaceView.setOnTouchListener((v, event) -> {
-			MotionEvent clean = MotionEvent.obtain(
-					event.getDownTime(),
-					event.getEventTime(),
-					event.getAction(),
-					event.getX(),
-					event.getY(),
-					event.getMetaState()
-			);
-			clean.setSource(InputDevice.SOURCE_TOUCHSCREEN); // source 0 is not routed as a pointer event
-			client.inject(clean);
-			clean.recycle();
+			forwardTouch(event);
 			return true;
 		});
 		viewportContainer.addView(surfaceView);
@@ -275,6 +271,32 @@ public class CarAppsFragment extends MainActivityFragment {
 		viewportContainer.addView(serverErrorOverlay);
 	}
 
+	/** The zone and the surface share the origin, so view coordinates are display coordinates. */
+	void forwardTouch(MotionEvent event) {
+		int a = event.getActionMasked();
+		if (a == MotionEvent.ACTION_DOWN) {
+			touching = true;
+			touchDownTime = event.getDownTime();
+		} else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) {
+			touching = false;
+		}
+		lastTouchX = event.getX();
+		lastTouchY = event.getY();
+		MotionEvent copy = MotionEvent.obtain(event); // keeps tool type and batched history
+		copy.setSource(InputDevice.SOURCE_TOUCHSCREEN); // source 0 is not routed as a pointer event
+		client.inject(copy);
+		copy.recycle();
+	}
+
+	/** Without it the app on the car display would keep a finger "down" that no longer exists. */
+	private void cancelActiveTouch() {
+		if (!touching) return;
+		long now = SystemClock.uptimeMillis();
+		MotionEvent c = MotionEvent.obtain(touchDownTime, now, MotionEvent.ACTION_CANCEL, lastTouchX, lastTouchY, 0);
+		forwardTouch(c);
+		c.recycle();
+	}
+
 	private void createTopEdgeZone(Context ctx) {
 		int edge = GlassDimensions.dpToPx(ctx, 24);
 		topSwipe = new TopEdgeSwipeDetector(edge, GlassDimensions.dpToPx(ctx, 48));
@@ -282,7 +304,14 @@ public class CarAppsFragment extends MainActivityFragment {
 		zone.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, edge, Gravity.TOP));
 		zone.setOnTouchListener((v, e) -> {
 			topSwipe.onTouch(e.getActionMasked(), e.getX(), e.getY());
-			if (topSwipe.consumeTriggered()) peekToolbar();
+			if (topSwipe.consumeTriggered()) {
+				// the swipe is ours: end the gesture the app already started, hide the rest from it
+				e.setAction(MotionEvent.ACTION_CANCEL);
+				forwardTouch(e);
+				peekToolbar();
+			} else if (topSwipe.forwardsToApp()) {
+				forwardTouch(e); // a plain tap on the top edge belongs to the app
+			}
 			return true;
 		});
 		viewportContainer.addView(zone);
@@ -378,7 +407,6 @@ public class CarAppsFragment extends MainActivityFragment {
 		LauncherActivity.addVisibilityListener(launcherVisibilityListener);
 		CarAppsFeature.addListener(rootListener);
 		client.addStateListener(clientListener);
-		client.addPanelListener(panelListener);
 		if (CarAppsFeature.usable(CarAppsFeature.state())) {
 			Context ctx = getContext();
 			if (ctx != null) {
@@ -397,10 +425,9 @@ public class CarAppsFragment extends MainActivityFragment {
 		LauncherActivity.removeVisibilityListener(launcherVisibilityListener);
 		CarAppsFeature.removeListener(rootListener);
 		client.removeStateListener(clientListener);
-		client.removePanelListener(panelListener);
-		if (client.isPanelOff()) {
-			client.setPanelOff(false);
-		}
+		cancelActiveTouch();
+		PhoneDimActivity.dismiss();
+		dimRequested = false;
 		mainHandler.removeCallbacks(hideToolbarTask);
 		peeking = false;
 		uiState = CarAppsUiState.State.LOADING;
@@ -513,14 +540,14 @@ public class CarAppsFragment extends MainActivityFragment {
 		}
 	}
 
+	/** Black phone screen once per attach; the user touching it must not bring it back. */
 	private void applyPanelPref() {
 		Context c = getContext();
-		if (c != null && client.hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
-			SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
-			boolean prefOff = prefs.getBoolean(PanelPowerPolicy.PREF_PANEL_OFF, true);
-			if (prefOff && !client.isPanelOff()) {
-				client.setPanelOff(true);
-			}
+		if (c == null || dimRequested) return;
+		SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
+		if (prefs.getBoolean(CarAppsFeature.PREF_PANEL_OFF, true)) {
+			dimRequested = true;
+			PhoneDimActivity.show(c);
 		}
 	}
 

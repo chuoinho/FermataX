@@ -8,6 +8,7 @@ final class TopEdgeSwipeDetector {
 	private final int thresholdPx;
 	private boolean tracking;
 	private boolean triggered;
+	private boolean swipeTaken;
 
 	TopEdgeSwipeDetector(int edgePx, int thresholdPx) {
 		this.edgePx = edgePx;
@@ -20,10 +21,12 @@ final class TopEdgeSwipeDetector {
 			case MotionEvent.ACTION_DOWN:
 				tracking = y <= edgePx;
 				triggered = false;
+				swipeTaken = false;
 				return tracking;
 			case MotionEvent.ACTION_MOVE:
 				if (tracking && y >= thresholdPx) {
 					triggered = true;
+					swipeTaken = true;
 					tracking = false;
 					return true;
 				}
@@ -33,6 +36,11 @@ final class TopEdgeSwipeDetector {
 				tracking = false;
 				return was;
 		}
+	}
+
+	/** False once the gesture became a swipe: the app must not see the rest of it. */
+	boolean forwardsToApp() {
+		return !swipeTaken;
 	}
 
 	/** True once per gesture, after the swipe passed the threshold. */

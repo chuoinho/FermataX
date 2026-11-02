@@ -10,7 +10,6 @@ import me.aap.fermata.R;
 public final class CarAppsReadinessModel {
 
 	public static final int CAP_INJECT = 4;
-	public static final int CAP_PANEL_POWER = 8;
 
 	public final boolean rowVisible;
 	public final int statusStringRes;
@@ -41,8 +40,6 @@ public final class CarAppsReadinessModel {
 		int warning = 0;
 		if ((capabilities & CAP_INJECT) == 0) {
 			warning = R.string.car_apps_readiness_warn_xiaomi_inject;
-		} else if ((capabilities & CAP_PANEL_POWER) == 0) {
-			warning = R.string.car_apps_readiness_warn_panel_power;
 		}
 
 		return new CarAppsReadinessModel(

@@ -125,11 +125,9 @@ public class CarSessionCoordinatorTest {
 		CarDisplayClient client = CarDisplayClient.get();
 
 		assertEquals(CarDisplayClient.State.IDLE, client.state());
-		assertFalse(client.isPanelOff());
 
 		client.release();
 		assertEquals(CarDisplayClient.State.IDLE, client.state());
-		assertFalse(client.isPanelOff());
 
 		CarSessionCoordinator.shutdown(context);
 		assertEquals(CarDisplayClient.State.IDLE, client.state());

@@ -6,7 +6,6 @@ import android.content.ContextWrapper;
 import android.hardware.display.DisplayManager;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.PowerManager;
 import android.os.Process;
 import android.view.InputEvent;
 import android.view.SurfaceControl;
@@ -28,7 +27,6 @@ public final class Hidden {
 	private static int capabilities = 0;
 	private static Context systemContext;
 	private static DisplayManager displayManager;
-	private static PowerManager powerManager;
 
 	// Input injection reflection
 	private static Object inputManagerInstance;
@@ -40,10 +38,6 @@ public final class Hidden {
 	private static Method setDisplayImePolicyMethod;
 
 	// Panel power reflection
-	private static Class<?> displayControlClass;
-	private static Method getPhysicalDisplayIdsMethod;
-	private static Method getPhysicalDisplayTokenMethod;
-	private static Method setDisplayPowerModeMethod;
 
 	// ActivityTaskManager reflection
 	private static Object activityTaskManagerInstance;
@@ -63,7 +57,6 @@ public final class Hidden {
 		initDisplayManager();
 		initInputManager();
 		initWindowManager();
-		initPanelControl();
 		initActivityTaskManager();
 	}
 
@@ -87,10 +80,8 @@ public final class Hidden {
 					return pkg;
 				}
 			};
-			powerManager = (PowerManager) systemContext.getSystemService(Context.POWER_SERVICE);
 		} catch (Throwable t) {
 			systemContext = null;
-			powerManager = null;
 		}
 	}
 
@@ -147,35 +138,6 @@ public final class Hidden {
 		}
 	}
 
-	private static void initPanelControl() {
-		try {
-			try {
-				SurfaceControl.class.getMethod("getPhysicalDisplayIds");
-				displayControlClass = SurfaceControl.class;
-			} catch (NoSuchMethodException e) {
-				Class<?> f = Class.forName("com.android.internal.os.ClassLoaderFactory");
-				Method create = f.getDeclaredMethod("createClassLoader", String.class, String.class, String.class,
-						ClassLoader.class, int.class, boolean.class, String.class);
-				ClassLoader cl = (ClassLoader) create.invoke(null, android.system.Os.getenv("SYSTEMSERVERCLASSPATH"), null, null,
-						ClassLoader.getSystemClassLoader(), 0, true, null);
-				displayControlClass = cl.loadClass("com.android.server.display.DisplayControl");
-				Method load = Runtime.class.getDeclaredMethod("loadLibrary0", Class.class, String.class);
-				load.setAccessible(true);
-				load.invoke(Runtime.getRuntime(), displayControlClass, "android_servers");
-			}
-
-			getPhysicalDisplayIdsMethod = displayControlClass.getMethod("getPhysicalDisplayIds");
-			getPhysicalDisplayTokenMethod = displayControlClass.getMethod("getPhysicalDisplayToken", long.class);
-			setDisplayPowerModeMethod = SurfaceControl.class.getMethod("setDisplayPowerMode", IBinder.class, int.class);
-
-			if (getPhysicalDisplayIdsMethod != null && getPhysicalDisplayTokenMethod != null && setDisplayPowerModeMethod != null) {
-				capabilities |= ICarDisplayServer.CAP_PANEL_POWER;
-			}
-		} catch (Throwable t) {
-			capabilities &= ~ICarDisplayServer.CAP_PANEL_POWER;
-		}
-	}
-
 	private static void initActivityTaskManager() {
 		try {
 			IBinder b = (IBinder) Class.forName("android.os.ServiceManager")
@@ -211,16 +173,6 @@ public final class Hidden {
 		return displayManager;
 	}
 
-	public static PowerManager.WakeLock createWakeLock(String tag) {
-		init();
-		if (powerManager == null) return null;
-		try {
-			return powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, tag);
-		} catch (Throwable t) {
-			return null;
-		}
-	}
-
 	public static boolean injectInputEvent(InputEvent event, int mode) {
 		init();
 		if (inputManagerInstance == null || injectInputEventMethod == null) return false;
@@ -253,28 +205,6 @@ public final class Hidden {
 			return true;
 		} catch (Throwable t) {
 			clearCapability(ICarDisplayServer.CAP_IME);
-			return false;
-		}
-	}
-
-	public static boolean setPhysicalDisplayPowerMode(int mode) {
-		init();
-		if (displayControlClass == null || getPhysicalDisplayIdsMethod == null
-				|| getPhysicalDisplayTokenMethod == null || setDisplayPowerModeMethod == null) {
-			return false;
-		}
-		try {
-			long[] ids = (long[]) getPhysicalDisplayIdsMethod.invoke(null);
-			if (ids == null || ids.length == 0) return false;
-			for (long id : ids) {
-				IBinder token = (IBinder) getPhysicalDisplayTokenMethod.invoke(null, id);
-				if (token != null) {
-					setDisplayPowerModeMethod.invoke(null, token, mode);
-				}
-			}
-			return true;
-		} catch (Throwable t) {
-			clearCapability(ICarDisplayServer.CAP_PANEL_POWER);
 			return false;
 		}
 	}

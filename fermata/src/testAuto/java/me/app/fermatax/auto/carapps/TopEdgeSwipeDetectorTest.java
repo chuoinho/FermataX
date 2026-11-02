@@ -40,4 +40,23 @@ public class TopEdgeSwipeDetectorTest {
 		d.onTouch(MotionEvent.ACTION_MOVE, 100, 90);
 		assertFalse(d.consumeTriggered());
 	}
+
+	@Test
+	public void tapInTopEdgeStillReachesTheApp() {
+		d.onTouch(MotionEvent.ACTION_DOWN, 100, 5);
+		assertTrue(d.forwardsToApp());
+		d.onTouch(MotionEvent.ACTION_UP, 100, 5);
+		assertTrue(d.forwardsToApp());
+	}
+
+	@Test
+	public void swipeStopsForwardingUntilNextTouch() {
+		d.onTouch(MotionEvent.ACTION_DOWN, 100, 5);
+		d.onTouch(MotionEvent.ACTION_MOVE, 100, 70);
+		assertFalse(d.forwardsToApp());
+		d.onTouch(MotionEvent.ACTION_UP, 100, 70);
+		assertFalse(d.forwardsToApp());
+		d.onTouch(MotionEvent.ACTION_DOWN, 100, 5);
+		assertTrue(d.forwardsToApp());
+	}
 }

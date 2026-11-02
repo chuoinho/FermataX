@@ -145,25 +145,7 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
-	public void setPanelOffCallsServerAndBroadcastScreenOffRestores() {
-		client.ensureRunning(context);
-		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
-		client.onServerBinderReceived(server);
-
-		client.setPanelOff(true);
-		assertTrue("Panel state must be off", client.isPanelOff());
-		assertEquals("Server setPanelPower must be called with false", Boolean.FALSE, server.lastPanelPower);
-
-		// Now user presses phone power button -> ACTION_SCREEN_OFF broadcast
-		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
-		ShadowLooper.idleMainLooper();
-
-		assertFalse("Panel state must be restored to on after screen off broadcast", client.isPanelOff());
-		assertEquals("Server setPanelPower must be called with true", Boolean.TRUE, server.lastPanelPower);
-	}
-
-	@Test
-	public void screenOffWhileDisplayAttachedWakesPhoneEvenWithPanelOn() {
+	public void screenOffWhileDisplayAttachedWakesPhone() {
 		client.ensureRunning(context);
 		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
 		client.onServerBinderReceived(server);
@@ -178,45 +160,18 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
-	public void serverDeathRestoresPanelPower() {
+	public void screenOffAfterReleaseDoesNotWakePhone() {
 		client.ensureRunning(context);
 		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
 		client.onServerBinderReceived(server);
-
-		client.setPanelOff(true);
-		assertTrue(client.isPanelOff());
-
-		server.triggerDeath();
-
-		assertFalse("Panel state must be restored to on when server dies", client.isPanelOff());
-		assertEquals(Boolean.TRUE, server.lastPanelPower);
-	}
-
-	@Test
-	public void releaseRestoresPanelPower() {
-		client.ensureRunning(context);
-		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
-		client.onServerBinderReceived(server);
-
-		client.setPanelOff(true);
-		assertTrue(client.isPanelOff());
-
+		client.attach(null, 100, 100, 160);
 		client.release();
+		org.robolectric.shadows.ShadowPowerManager.reset();
 
-		assertFalse("Panel state must be restored to on on release", client.isPanelOff());
-		assertEquals(Boolean.TRUE, server.lastPanelPower);
-	}
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
 
-	@Test
-	public void capabilityMissingDoesNotTurnPanelOff() {
-		client.ensureRunning(context);
-		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
-		server.caps = 0; // missing CAP_PANEL_POWER
-		client.onServerBinderReceived(server);
-
-		client.setPanelOff(true);
-		assertFalse("Panel must remain on when CAP_PANEL_POWER is missing", client.isPanelOff());
-		assertEquals(0, server.panelPowerCalls.size());
+		assertEquals(null, org.robolectric.shadows.ShadowPowerManager.getLatestWakeLock());
 	}
 
 	@Test
@@ -279,8 +234,6 @@ public class CarDisplayClientTest {
 		private final AtomicBoolean released;
 		private DeathRecipient deathRecipient;
 		int caps = 0x1f;
-		final List<Boolean> panelPowerCalls = new ArrayList<>();
-		Boolean lastPanelPower = null;
 
 		FakeServerBinder(int version, AtomicBoolean released) {
 			this.version = version;
@@ -340,12 +293,6 @@ public class CarDisplayClientTest {
 		@Override
 		public String closeTopApp(boolean force) {
 			return "";
-		}
-
-		@Override
-		public void setPanelPower(boolean on) {
-			panelPowerCalls.add(on);
-			lastPanelPower = on;
 		}
 
 		@Override

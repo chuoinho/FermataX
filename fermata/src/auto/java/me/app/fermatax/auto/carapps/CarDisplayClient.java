@@ -48,15 +48,10 @@ public class CarDisplayClient {
 		FAILED
 	}
 
-	public static final String PREF_PANEL_OFF = PanelPowerPolicy.PREF_PANEL_OFF;
-
 	private static final CarDisplayClient INSTANCE = new CarDisplayClient();
 
 	private volatile State state = State.IDLE;
 	private final List<Consumer<State>> stateListeners = new CopyOnWriteArrayList<>();
-	private final List<Consumer<Boolean>> panelListeners = new CopyOnWriteArrayList<>();
-
-	private volatile boolean panelOff = false;
 	private BroadcastReceiver screenOffReceiver;
 	private DisplayManager.DisplayListener displayListener;
 	/** True while a virtual display is attached: a sleeping phone would blank it, so the phone is woken. */
@@ -100,32 +95,6 @@ public class CarDisplayClient {
 	public void removeStateListener(Consumer<State> listener) {
 		if (listener != null) {
 			stateListeners.remove(listener);
-		}
-	}
-
-	public boolean isPanelOff() {
-		return panelOff;
-	}
-
-	public void addPanelListener(Consumer<Boolean> listener) {
-		if (listener != null) {
-			panelListeners.add(listener);
-		}
-	}
-
-	public void removePanelListener(Consumer<Boolean> listener) {
-		if (listener != null) {
-			panelListeners.remove(listener);
-		}
-	}
-
-	private void notifyPanelListeners(boolean off) {
-		for (Consumer<Boolean> listener : panelListeners) {
-			try {
-				listener.accept(off);
-			} catch (Throwable t) {
-				Log.e(t, "Error in CarDisplayClient panel listener");
-			}
 		}
 	}
 
@@ -241,14 +210,7 @@ public class CarDisplayClient {
 	private synchronized void onServerDied() {
 		displayAttached = false;
 		unlinkServerBinder();
-		if (panelOff) {
-			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.SERVER_DIED);
-			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
-				restorePanelAndWake();
-			}
-		} else {
-			unregisterScreenOffReceiver();
-		}
+		unregisterScreenOffReceiver();
 		this.server = null;
 		this.serverBinder = null;
 		setState(State.RETRYING);
@@ -441,37 +403,6 @@ public class CarDisplayClient {
 		return (capabilities() & cap) == cap;
 	}
 
-	public void setPanelPower(boolean on) {
-		ICarDisplayServer srv = this.server;
-		if (srv == null) return;
-		try {
-			srv.setPanelPower(on);
-		} catch (RemoteException e) {
-			Log.e(e, "CarDisplayServer.setPanelPower failed");
-		}
-	}
-
-	public synchronized void setPanelOff(boolean off) {
-		if (off) {
-			if (!hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
-				PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.CAPABILITY_MISSING);
-				return;
-			}
-			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.USER_OFF);
-			if (action == PanelPowerPolicy.PanelAction.PANEL_OFF_AND_HOLD) {
-				panelOff = true;
-				setPanelPower(false);
-				registerScreenOffReceiver();
-				notifyPanelListeners(true);
-			}
-		} else {
-			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.USER_ON);
-			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
-				restorePanelAndWake();
-			}
-		}
-	}
-
 	private synchronized void registerScreenOffReceiver() {
 		if (screenOffReceiver != null) return;
 		if (lastContext == null) return;
@@ -525,21 +456,7 @@ public class CarDisplayClient {
 	}
 
 	private synchronized void onScreenOffReceived() {
-		PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.SCREEN_OFF_BROADCAST);
-		if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
-			restorePanelAndWake();
-		} else if (displayAttached) {
-			wakeScreen();
-		}
-	}
-
-	private synchronized void restorePanelAndWake() {
-		unregisterScreenOffReceiver();
-		panelOff = false;
-		setPanelPower(true);
-		wakeScreen();
-		notifyPanelListeners(false);
-		if (displayAttached) registerScreenOffReceiver();
+		if (displayAttached) wakeScreen();
 	}
 
 	private void wakeScreen() {
@@ -559,28 +476,14 @@ public class CarDisplayClient {
 
 	public synchronized void onCarSessionStopped() {
 		displayAttached = false;
-		if (panelOff) {
-			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.CAR_DISCONNECTED);
-			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
-				restorePanelAndWake();
-			}
-		} else {
-			unregisterScreenOffReceiver();
-		}
+		unregisterScreenOffReceiver();
 	}
 
 	public synchronized void release() {
 		displayAttached = false;
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
-		if (panelOff) {
-			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.RELEASED);
-			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
-				restorePanelAndWake();
-			}
-		} else {
-			unregisterScreenOffReceiver();
-		}
+		unregisterScreenOffReceiver();
 		ICarDisplayServer srv = this.server;
 		this.server = null;
 		this.serverBinder = null;
@@ -624,7 +527,6 @@ public class CarDisplayClient {
 	public void resetForTesting() {
 		displayAttached = false;
 		unregisterScreenOffReceiver();
-		panelOff = false;
 		unlinkServerBinder();
 		this.server = null;
 		this.serverBinder = null;
@@ -633,7 +535,6 @@ public class CarDisplayClient {
 		this.testCommandRunner = null;
 		this.diagnosticsConsumerForTest = null;
 		this.stateListeners.clear();
-		this.panelListeners.clear();
 		this.lastContext = null;
 	}
 }

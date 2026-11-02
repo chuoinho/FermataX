@@ -48,13 +48,6 @@ public class Main {
 			ServerLifecycle.killStale(Process.myPid());
 			Hidden.init();
 
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				try {
-					Hidden.setPhysicalDisplayPowerMode(2);
-				} catch (Throwable ignored) {
-				}
-			}));
-
 			server = new CarDisplayServerImpl(appUid, versionCode, appPackage);
 			System.out.println("SERVER_READY uid=" + appUid + " version=" + versionCode + " pkg=" + appPackage);
 
@@ -66,11 +59,6 @@ public class Main {
 			if (server != null) {
 				try {
 					server.releaseInternal();
-				} catch (Throwable ignored) {
-				}
-			} else {
-				try {
-					Hidden.setPhysicalDisplayPowerMode(2);
 				} catch (Throwable ignored) {
 				}
 			}
@@ -241,18 +229,6 @@ public class Main {
 			server.injectKey(KeyEvent.KEYCODE_BACK);
 			System.out.println("INJECT_KEY_OK=true");
 
-			server.setPanelPower(false);
-			System.out.println("PANEL_POWER_OFF_OK=true");
-			System.out.println("WAKELOCK_HELD=" + server.isWakeLockHeld());
-
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException ignored) {
-			}
-
-			server.setPanelPower(true);
-			System.out.println("PANEL_POWER_ON_OK=true");
-
 			server.release();
 			ir.close();
 			System.out.println("RELEASE_OK=true");
@@ -261,10 +237,6 @@ public class Main {
 			System.exit(0);
 		} catch (Throwable t) {
 			t.printStackTrace();
-			try {
-				Hidden.setPhysicalDisplayPowerMode(2);
-			} catch (Throwable ignored) {
-			}
 			System.exit(1);
 		}
 	}

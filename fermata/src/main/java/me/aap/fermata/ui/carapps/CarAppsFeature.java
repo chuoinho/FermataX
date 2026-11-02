@@ -24,7 +24,7 @@ public final class CarAppsFeature {
 		ActivityFragment createFragment();
 
 		default int capabilities() {
-			return CarAppsReadinessModel.CAP_INJECT | CarAppsReadinessModel.CAP_PANEL_POWER;
+			return CarAppsReadinessModel.CAP_INJECT;
 		}
 	}
 
@@ -104,6 +104,6 @@ public final class CarAppsFeature {
 		if (b != null) {
 			return b.capabilities();
 		}
-		return CarAppsReadinessModel.CAP_INJECT | CarAppsReadinessModel.CAP_PANEL_POWER;
+		return CarAppsReadinessModel.CAP_INJECT;
 	}
 }

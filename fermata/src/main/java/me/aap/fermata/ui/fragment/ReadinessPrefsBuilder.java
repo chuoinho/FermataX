@@ -136,8 +136,7 @@ final class ReadinessPrefsBuilder {
 			o.hideChevron = (model.actionStringRes == 0);
 			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
 		});
-		if (CarAppsFeature.state() == RootState.GRANTED
-				&& (CarAppsFeature.capabilities() & CarAppsReadinessModel.CAP_PANEL_POWER) != 0) {
+		if (CarAppsFeature.state() == RootState.GRANTED) {
 			target.addBooleanPref(o -> {
 				o.store = FermataApplication.get().getPreferenceStore();
 				o.pref = CarAppsFeature.PANEL_OFF;

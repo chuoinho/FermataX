@@ -272,25 +272,92 @@ public class CarAppsFragmentTest {
 		}
 	}
 
-	@Test
-	public void panelPowerAutomaticallyEngagedOnAttach() {
-		CarAppsFeature.setState(RootState.GRANTED);
-		CarAppsFragment fragment = createAndAttachFragment();
-		SurfaceHolder.Callback callback = fragment.getSurfaceHolderCallback();
-		Surface surface = createTestSurface();
-		FakeSurfaceHolder holder = new FakeSurfaceHolder(surface, 1024, 600);
-		callback.surfaceCreated(holder);
-		assertTrue("Panel should be turned off automatically when attached if pref is true", client.isPanelOff());
+	private String nextStartedActivityClass() {
+		android.content.Intent i = org.robolectric.Shadows.shadowOf(
+				(Application) context.getApplicationContext()).getNextStartedActivity();
+		return i == null || i.getComponent() == null ? null : i.getComponent().getClassName();
+	}
+
+	private void setDimPref(boolean on) {
+		context.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit()
+				.putBoolean(CarAppsFeature.PREF_PANEL_OFF, on).commit();
 	}
 
 	@Test
-	public void panelPowerEngagedWhenAttachedFromSurfaceChanged() {
+	public void phoneDimScreenShownOnAttach() {
 		CarAppsFeature.setState(RootState.GRANTED);
 		CarAppsFragment fragment = createAndAttachFragment();
-		FakeSurfaceHolder holder = new FakeSurfaceHolder(createTestSurface(), 1024, 600);
-		fragment.getSurfaceHolderCallback().surfaceChanged(holder, 0, 1024, 600);
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertEquals(PhoneDimActivity.class.getName(), nextStartedActivityClass());
+	}
+
+	@Test
+	public void phoneDimScreenShownWhenAttachedFromSurfaceChanged() {
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.getSurfaceHolderCallback().surfaceChanged(new FakeSurfaceHolder(createTestSurface(), 1024, 600), 0, 1024, 600);
 		assertEquals(1, serverBinder.attachCount.get());
-		assertTrue(client.isPanelOff());
+		assertEquals(PhoneDimActivity.class.getName(), nextStartedActivityClass());
+	}
+
+	@Test
+	public void phoneDimScreenNotShownWhenOptionOff() {
+		setDimPref(false);
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertEquals(null, nextStartedActivityClass());
+	}
+
+	@Test
+	public void phoneDimScreenNotReshownAfterUserDismissedIt() {
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertEquals(PhoneDimActivity.class.getName(), nextStartedActivityClass());
+		fragment.onStart(); // any later UI refresh must not bring the black screen back
+		assertEquals(null, nextStartedActivityClass());
+	}
+
+	private static MotionEvent touch(long down, int action, float x, float y) {
+		return MotionEvent.obtain(down, down, action, x, y, 0);
+	}
+
+	@Test
+	public void losingSurfaceMidTouchCancelsTheGesture() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.forwardTouch(touch(1000, MotionEvent.ACTION_DOWN, 40, 50));
+
+		fragment.getSurfaceHolderCallback().surfaceDestroyed(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+
+		MotionEvent last = serverBinder.injected.get(serverBinder.injected.size() - 1);
+		assertEquals(MotionEvent.ACTION_CANCEL, last.getActionMasked());
+		assertEquals(1000, last.getDownTime());
+		assertEquals(40f, last.getX(), 0f);
+		assertEquals(50f, last.getY(), 0f);
+	}
+
+	@Test
+	public void stoppingMidTouchCancelsTheGesture() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.forwardTouch(touch(2000, MotionEvent.ACTION_DOWN, 10, 20));
+		fragment.forwardTouch(touch(2000, MotionEvent.ACTION_MOVE, 15, 25));
+
+		fragment.onStop();
+
+		assertEquals(MotionEvent.ACTION_CANCEL,
+				serverBinder.injected.get(serverBinder.injected.size() - 1).getActionMasked());
+	}
+
+	@Test
+	public void finishedTouchIsNotCancelledAgain() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.forwardTouch(touch(3000, MotionEvent.ACTION_DOWN, 10, 20));
+		fragment.forwardTouch(touch(3000, MotionEvent.ACTION_UP, 10, 20));
+
+		fragment.getSurfaceHolderCallback().surfaceDestroyed(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+
+		assertEquals(2, serverBinder.injected.size());
 	}
 
 	@Test
@@ -307,14 +374,6 @@ public class CarAppsFragmentTest {
 		CarAppsFeature.setState(RootState.GRANTED);
 		assertEquals("Granting root must restart the failed server", 1, cmds.size());
 		fragment.onStop();
-	}
-
-	@Test
-	public void panelPowerRestoredOnStop() {
-		CarAppsFragment fragment = createAndAttachFragment();
-		client.setPanelOff(true);
-		fragment.onStop();
-		assertFalse("Panel state must be restored to on when fragment stops", client.isPanelOff());
 	}
 
 	private static class FakeSurfaceHolder implements SurfaceHolder {
@@ -375,7 +434,7 @@ public class CarAppsFragmentTest {
 		int lastHeight;
 		ComponentName lastLaunchedComponent;
 		int caps = 0x1f;
-		final AtomicBoolean lastPanelPower = new AtomicBoolean(true);
+		final List<MotionEvent> injected = new ArrayList<>();
 
 		TestServerBinder() {
 			attachInterface(this, ICarDisplayServer.DESCRIPTOR);
@@ -401,7 +460,9 @@ public class CarAppsFragmentTest {
 		}
 
 		@Override
-		public void inject(MotionEvent e) {}
+		public void inject(MotionEvent e) {
+			injected.add(MotionEvent.obtain(e)); // the caller recycles e right after this call
+		}
 
 		@Override
 		public void injectKey(int keyCode) {
@@ -418,11 +479,6 @@ public class CarAppsFragmentTest {
 		public String closeTopApp(boolean force) {
 			lastForceClose.set(force);
 			return "closed";
-		}
-
-		@Override
-		public void setPanelPower(boolean on) {
-			lastPanelPower.set(on);
 		}
 
 		@Override

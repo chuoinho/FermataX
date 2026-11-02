@@ -62,7 +62,7 @@ public class CarAppsReadinessModelTest {
 
 	@Test
 	public void grantedWithAllCapabilitiesShowsReady() {
-		int allCaps = CarAppsReadinessModel.CAP_INJECT | CarAppsReadinessModel.CAP_PANEL_POWER;
+		int allCaps = CarAppsReadinessModel.CAP_INJECT;
 		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.GRANTED, allCaps);
 		assertTrue(model.rowVisible);
 		assertEquals(R.string.car_apps_readiness_status_ready, model.statusStringRes);
@@ -74,22 +74,8 @@ public class CarAppsReadinessModelTest {
 	}
 
 	@Test
-	public void grantedWithoutPanelPowerWarns() {
-		int caps = CarAppsReadinessModel.CAP_INJECT;
-		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.GRANTED, caps);
-		assertTrue(model.rowVisible);
-		assertEquals(R.string.car_apps_readiness_status_ready, model.statusStringRes);
-		assertEquals(0, model.actionStringRes);
-		assertEquals(R.string.car_apps_readiness_warn_panel_power, model.warningStringRes);
-
-		Context context = RuntimeEnvironment.getApplication();
-		assertEquals("Cannot turn off phone display on this device", context.getString(model.warningStringRes));
-	}
-
-	@Test
 	public void grantedWithoutInjectShowsXiaomiHint() {
-		int caps = CarAppsReadinessModel.CAP_PANEL_POWER;
-		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.GRANTED, caps);
+		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.GRANTED, 0);
 		assertTrue(model.rowVisible);
 		assertEquals(R.string.car_apps_readiness_status_ready, model.statusStringRes);
 		assertEquals(0, model.actionStringRes);
@@ -125,7 +111,7 @@ public class CarAppsReadinessModelTest {
 		CarAppsReadinessModel absent = CarAppsReadinessModel.from(RootState.ABSENT, 0);
 		CarAppsReadinessModel available = CarAppsReadinessModel.from(RootState.AVAILABLE, 0);
 		CarAppsReadinessModel granted = CarAppsReadinessModel.from(RootState.GRANTED,
-				CarAppsReadinessModel.CAP_INJECT | CarAppsReadinessModel.CAP_PANEL_POWER);
+				CarAppsReadinessModel.CAP_INJECT);
 
 		assertFalse(absent.rowVisible);
 		assertTrue(available.rowVisible);

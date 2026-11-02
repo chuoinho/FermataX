@@ -143,6 +143,13 @@
             android:exported="true"
             android:launchMode="singleInstance" />
 
+        <activity
+            android:name="me.app.fermatax.auto.carapps.PhoneDimActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
         <service
             android:name="me.app.fermatax.auto.ProjectionService"
             android:exported="false"

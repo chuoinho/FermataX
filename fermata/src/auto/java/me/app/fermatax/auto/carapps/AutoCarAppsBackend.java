@@ -36,7 +36,7 @@ public final class AutoCarAppsBackend {
 				}
 				SharedPreferences prefs = ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE);
 				return prefs.getInt("CAR_APPS_CAPABILITIES",
-						CarAppsReadinessModel.CAP_INJECT | CarAppsReadinessModel.CAP_PANEL_POWER);
+						CarAppsReadinessModel.CAP_INJECT);
 			}
 		});
 	}

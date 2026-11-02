@@ -9,7 +9,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.view.Display;
@@ -34,12 +33,10 @@ import me.app.fermatax.auto.carapps.VirtualDisplayFlags;
 public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 
 	private static final String DISPLAY_NAME = "fermatax-car";
-	private static final String WAKELOCK_TAG = "fermatax:cardisplay";
 
 	private final int appUid;
 	private final int versionCode;
 	private final String appPackage;
-	private final PowerManager.WakeLock wakeLock;
 
 	private volatile VirtualDisplay virtualDisplay;
 	private volatile int displayId = -1;
@@ -58,7 +55,6 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		this.appUid = appUid;
 		this.versionCode = versionCode;
 		this.appPackage = appPackage;
-		this.wakeLock = Hidden.createWakeLock(WAKELOCK_TAG);
 		scheduleIdleExit();
 	}
 
@@ -289,34 +285,6 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	}
 
 	@Override
-	public void setPanelPower(boolean on) {
-		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid)) {
-			return;
-		}
-		setPanelPowerInternal(on);
-	}
-
-	public synchronized void setPanelPowerInternal(boolean on) {
-		if (!on) {
-			Hidden.setPhysicalDisplayPowerMode(0); // 0 = OFF
-			if (wakeLock != null && !wakeLock.isHeld()) {
-				try {
-					wakeLock.acquire();
-				} catch (Throwable ignored) {
-				}
-			}
-		} else {
-			Hidden.setPhysicalDisplayPowerMode(2); // 2 = NORMAL
-			if (wakeLock != null && wakeLock.isHeld()) {
-				try {
-					wakeLock.release();
-				} catch (Throwable ignored) {
-				}
-			}
-		}
-	}
-
-	@Override
 	public void release() {
 		int callingUid = Binder.getCallingUid();
 		if (callingUid != android.os.Process.myUid() && !CallerPolicy.serverAccepts(callingUid, appUid)) {
@@ -326,13 +294,6 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	}
 
 	public synchronized void releaseInternal() {
-		setPanelPowerInternal(true);
-		if (wakeLock != null && wakeLock.isHeld()) {
-			try {
-				wakeLock.release();
-			} catch (Throwable ignored) {
-			}
-		}
 		if (clientBinder != null) {
 			try {
 				clientBinder.unlinkToDeath(deathRecipient, 0);
@@ -364,13 +325,6 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	private synchronized void onIdleTimer() {
 		long now = SystemClock.elapsedRealtime();
 		if (IdleExitPolicy.shouldExit(now, lastDetachMs, virtualDisplay != null)) {
-			setPanelPowerInternal(true);
-			if (wakeLock != null && wakeLock.isHeld()) {
-				try {
-					wakeLock.release();
-				} catch (Throwable ignored) {
-				}
-			}
 			System.exit(0);
 		}
 	}
@@ -387,10 +341,6 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 
 	public Display getDisplay() {
 		return virtualDisplay != null ? virtualDisplay.getDisplay() : null;
-	}
-
-	public boolean isWakeLockHeld() {
-		return wakeLock != null && wakeLock.isHeld();
 	}
 
 	public int getDisplayId() {
