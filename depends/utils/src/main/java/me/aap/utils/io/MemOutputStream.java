@@ -73,10 +73,6 @@ public class MemOutputStream extends OutputStream {
 		off += len;
 	}
 
-	public void writeTo(@NonNull OutputStream out) throws IOException {
-		out.write(buf, 0, off);
-	}
-
 	public void readFrom(InputStream in) throws IOException {
 		for (byte[] buf = this.buf; ; ) {
 			if (off == buf.length) buf = ensureCapacity(Math.max(1, in.available()));

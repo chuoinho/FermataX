@@ -13,13 +13,11 @@ public class SmartTopPhase4ContractTest {
 	@Test
 	public void recommendationRemainsCompatibleButUnreachableFromDisplayFlow() throws Exception {
 		String coordinator = source("ui/smarttop/SmartTopCoordinator.java");
-		String selection = source("ui/smarttop/SmartTopSelectionPolicy.java");
 		String mode = source("ui/smarttop/SmartTopMode.java");
 		String candidate = source("addon/SmartTopCandidate.java");
 
 		assertFalse(coordinator.contains("SmartTopCandidate.Kind.RECOMMENDED"));
 		assertFalse(coordinator.contains("SmartTopMode.RECOMMENDED"));
-		assertFalse(selection.contains("return SmartTopMode.RECOMMENDED"));
 		assertTrue(mode.contains("RECOMMENDED"));
 		assertTrue(candidate.contains("RECOMMENDED"));
 	}

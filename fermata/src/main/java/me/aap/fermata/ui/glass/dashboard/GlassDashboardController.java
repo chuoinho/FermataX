@@ -1,29 +1,18 @@
 package me.aap.fermata.ui.glass.dashboard;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.location.Location;
 import android.os.SystemClock;
-import android.view.Gravity;
-import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.AddonState;
-import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.location.LocationHub;
 import me.aap.fermata.media.lib.MediaLib;
@@ -41,13 +30,15 @@ import me.aap.fermata.ui.glass.quickbar.GlassQuickBarManager;
 import me.aap.fermata.ui.glass.quickbar.GlassQuickBarView;
 import me.aap.fermata.ui.glass.quickbar.GlassQuickShortcut;
 import me.aap.fermata.ui.glass.quickbar.GlassShortcutPickerDialog;
-import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripController;
+import me.aap.fermata.ui.glass.road.GlassLimitsSignalsController;
+import me.aap.fermata.ui.glass.road.GlassLimitsSignalsView;
+import me.aap.fermata.ui.glass.road.GlassSpeedCardSwitcher;
+import me.aap.fermata.ui.glass.road.RoadDataSource;
+import me.aap.fermata.ui.glass.road.RoadPrefetch;
 import me.aap.fermata.ui.glass.speedo.GlassSpeedoTripView;
 import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.glass.speedo.TripTrackingRegistry;
 import me.aap.fermata.ui.glass.speedo.TripTrackingService;
-import me.aap.fermata.ui.glass.theme.GlassDimensions;
-import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
 import me.aap.fermata.ui.glass.weather.GlassOpenMeteoClient;
 import me.aap.fermata.ui.glass.weather.WeatherLocationPolicy;
@@ -65,6 +56,8 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
 
     // Cards & Managers
     private GlassSpeedoTripView speedoView;
+    private GlassSpeedCardSwitcher speedCardSwitcher;
+    private GlassLimitsSignalsController limitsSignalsController;
     private final TripTrackingRegistry tripRegistry;
     private TripTrackingRegistry.Listener tripListener;
 
@@ -97,19 +90,30 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         initCards(ctx);
         initQuickBar(ctx);
 
-        layout.setViews(null, speedoView, navWeatherView, mediaView, quickBarView);
+        layout.setViews(null, speedCardSwitcher, navWeatherView, mediaView, quickBarView);
     }
 
     private void initCards(Context ctx) {
         // Speedo & Trip
         speedoView = new GlassSpeedoTripView(ctx);
+        GlassLimitsSignalsView limitsView = new GlassLimitsSignalsView(ctx);
         tripListener = (speedKmh, state) -> {
             if (speedoView != null) {
                 speedoView.updateSpeed(speedKmh, state, isMetric);
+                limitsView.showSpeed(speedoView.getSpeedText(), speedoView.getSpeedUnitText());
             }
+            refreshWeatherForDistance();
         };
         speedoView.setOnResetTripListener(tripRegistry::resetTrip);
-        speedoView.setOnToggleTripListener(tripRegistry::toggleTrip);
+
+        RoadDataSource roadDataSource = RoadDataSource.get(ctx);
+        limitsSignalsController = new GlassLimitsSignalsController(ctx, limitsView, roadDataSource);
+        speedCardSwitcher = new GlassSpeedCardSwitcher(ctx, speedoView, limitsView, activity.getPrefs(),
+                isLimitsVisible -> {
+                    if (limitsSignalsController != null) {
+                        limitsSignalsController.setActive(dashboardStarted && isLimitsVisible);
+                    }
+                });
 
         // Nav & Weather
         navWeatherView = new GlassNavWeatherView(ctx);
@@ -309,6 +313,10 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
     // Identifies the current one-shot location request; stale hub callbacks are ignored.
     @Nullable private Object weatherRequest;
     private long lastWeatherFetchMs = 0L;
+    private double lastWeatherLat = Double.NaN;
+    private double lastWeatherLon = Double.NaN;
+    // A failed fetch leaves lastWeatherFetchMs unchanged; this keeps the distance rule from retrying every second.
+    private long lastDistanceRefreshMs = 0L;
 
     private void scheduleNextWeatherRefresh() {
         if (isStopped) return;
@@ -331,6 +339,11 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         AutomotiveNavNotificationService.registerListener(this);
         speedoView.setTripMode(TripModePolicy.current(activity.getContext()));
 
+        if (limitsSignalsController != null && speedCardSwitcher != null) {
+            limitsSignalsController.setActive(speedCardSwitcher.isLimitsShown());
+        }
+        RoadPrefetch.scheduleCatchUp(activity.getContext());
+
         // On Android Auto this is the single initial load; the schedule takes over afterwards.
         refreshWeather(activity.getContext(), AutomotiveConnectionState.get().isProjectionConnected());
         if (!TripModePolicy.hasForegroundLocation(activity.getContext())) weatherHandler.postDelayed(permissionWatch, 2_000L);
@@ -340,6 +353,10 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         if (!dashboardStarted) return;
         dashboardStarted = false;
         isStopped = true;
+        if (limitsSignalsController != null) {
+            limitsSignalsController.setActive(false);
+        }
+        RoadPrefetch.scheduleCatchUp(activity.getContext());
         weatherHandler.removeCallbacks(scheduledWeatherRefresh);
         weatherHandler.removeCallbacks(permissionWatch);
         if (gpsTimeoutRunnable != null) {
@@ -368,6 +385,14 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
             speedoView.setTripMode(TripModePolicy.current(activity.getContext()));
             refreshWeather(activity.getContext());
         }
+    }
+
+    /** Speed follows on the next trip update; the forecast is refetched since its units are part of the request. */
+    public void onUnitsChanged() {
+        boolean metric = activity.getPrefs().getIntPref(MainActivityPrefs.GLASS_SPEED_UNIT) == 0;
+        if (metric == isMetric) return;
+        isMetric = metric;
+        if (!isStopped) refreshWeather(activity.getContext(), true);
     }
 
     @Override
@@ -488,11 +513,30 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
         });
     }
 
+    private void refreshWeatherForDistance() {
+        if (isStopped || weatherBusy || Double.isNaN(lastWeatherLat)) return;
+        if (!AutomotiveConnectionState.get().isProjectionConnected()) return;
+        Context ctx = activity.getContext();
+        if (ctx == null) return;
+        Location latest = LocationHub.get(ctx).latest();
+        if (latest == null) return;
+        float[] dist = new float[1];
+        Location.distanceBetween(lastWeatherLat, lastWeatherLon, latest.getLatitude(), latest.getLongitude(), dist);
+        long now = System.currentTimeMillis();
+        if (WeatherLocationPolicy.shouldRefreshForDistance(dist[0], now,
+                Math.max(lastWeatherFetchMs, lastDistanceRefreshMs))) {
+            lastDistanceRefreshMs = now;
+            refreshWeather(ctx, true);
+        }
+    }
+
     private void fetchWeatherForLocation(Context ctx, double lat, double lon, boolean force) {
         weatherClient.fetchForecast(lat, lon, isMetric, force, new GlassOpenMeteoClient.ForecastCallback() {
             @Override
             public void onSuccess(@NonNull GlassOpenMeteoClient.HourlyForecast forecast) {
                 lastWeatherFetchMs = forecast.getTimestamp();
+                lastWeatherLat = lat;
+                lastWeatherLon = lon;
                 weatherBusy = false;
                 if (!isStopped) {
                     navWeatherView.bindWeather(forecast, isMetric, null, forecast.isExpired());
@@ -509,18 +553,6 @@ public class GlassDashboardController implements AutomotiveNavNotificationServic
                 scheduleNextWeatherRefresh();
             }
         });
-    }
-
-    public GlassSpeedoTripView getSpeedoView() {
-        return speedoView;
-    }
-
-    public GlassNavWeatherView getNavWeatherView() {
-        return navWeatherView;
-    }
-
-    public GlassMediaPlayerView getMediaView() {
-        return mediaView;
     }
 
     public GlassQuickBarView getQuickBarView() {

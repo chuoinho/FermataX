@@ -137,20 +137,6 @@ final class TikTokMediaSessionBridge implements MediaSessionCallback.ControlOnly
 		}
 	}
 
-	public void requestTitleUpdate() {
-		if (web == null) return;
-		web.evaluateJavascript("(function(){ return typeof window.__cntTitle === 'function' ? window.__cntTitle() : ''; })()",
-				value -> {
-					if (value != null && !value.equals("null") && !value.isEmpty()) {
-						String clean = value.replaceAll("^\"|\"$", "").trim();
-						if (!clean.isEmpty()) {
-							state.setMetadata("", clean, "TikTok");
-							syncClaim();
-						}
-					}
-				});
-	}
-
 	@NonNull
 	static String getActionScript(MediaSessionCallback.ControlOnlyAction action) {
 		return switch (action) {

@@ -25,7 +25,6 @@
 	<dimen name="dashboard_smart_v2_standard_height">152dp</dimen>
 	<dimen name="dashboard_smart_v2_expanded_height">152dp</dimen>
 	<dimen name="dashboard_smart_v2_control_size">48dp</dimen>
-	<dimen name="dashboard_smart_v2_visual_action_size">44dp</dimen>
 	<dimen name="dashboard_smart_v2_action_glyph_size">22dp</dimen>
 	<dimen name="dashboard_smart_v2_action_padding">13dp</dimen>
     <dimen name="dashboard_smart_padding">10dp</dimen>

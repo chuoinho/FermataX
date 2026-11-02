@@ -15,10 +15,6 @@ public final class LocationKalmanFilter {
 		timestamp = 0L;
 	}
 
-	public synchronized boolean isInitialized() {
-		return variance >= 0.0f;
-	}
-
 	public synchronized double getLatitude() {
 		return lat;
 	}

@@ -13,17 +13,12 @@ import org.junit.Test;
 /** Source contracts for device regressions found during the final UI-shell acceptance pass. */
 public class UiRuntimeRegressionContractTest {
 	@Test
-	public void phoneFloatingButtonCannotBecomeBackOverlay() throws Exception {
+	public void mainLayoutsHaveNoFloatingButton() throws Exception {
 		for (String layout : new String[]{"main_activity_left.xml", "main_activity_right.xml"}) {
 			String xml = resource("layout/" + layout);
-			assertTrue(xml.contains("me.aap.fermata.ui.view.FermataFloatingButton"));
-			assertFalse(xml.contains("<me.aap.utils.ui.view.FloatingButton"));
+			assertFalse(xml.contains("FloatingButton"));
+			assertFalse(xml.contains("floating_button"));
 		}
-
-		String button = source("fermata/src/main/java/me/aap/fermata/ui/view/FermataFloatingButton.java");
-		assertTrue(button.contains("!activity.getRuntimeHostMode().usesAutomotivePresentation()"));
-		assertTrue(button.contains("activity.isVideoMode() || !activity.isRootPage()"));
-		assertTrue(button.contains("super.setVisibility((visibility == VISIBLE)"));
 	}
 
 	@Test

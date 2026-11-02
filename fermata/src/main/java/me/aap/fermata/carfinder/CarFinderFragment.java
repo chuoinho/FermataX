@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
@@ -60,6 +61,7 @@ public class CarFinderFragment extends MainActivityFragment
 
 	private FrameLayout rootContainer;
 	private LinearLayout overviewContainer;
+	private LinearLayout overviewBody;
 	private LinearLayout radarContainer;
 
 	private CarMapTileView mapTileView;
@@ -414,7 +416,9 @@ public class CarFinderFragment extends MainActivityFragment
 		// Map Canvas View (Takes top remaining height)
 		mapTileView = new CarMapTileView(requireContext());
 		mapTileView.setNightMode(isNight);
-		overviewContainer.addView(mapTileView, new LinearLayout.LayoutParams(-1, 0, 1.0f));
+		overviewBody = new LinearLayout(requireContext());
+		overviewBody.addView(mapTileView);
+		overviewContainer.addView(overviewBody, new LinearLayout.LayoutParams(-1, 0, 1.0f));
 
 		// Bottom Card Container (Material 3 rounded bottom sheet in Fermata dark navy / Glass)
 		LinearLayout cardContainer = new LinearLayout(requireContext());
@@ -603,7 +607,25 @@ public class CarFinderFragment extends MainActivityFragment
 		((LinearLayout) cardActiveInfo).addView(cardFoundCar, pFound);
 
 		cardContainer.addView(cardActiveInfo, new LinearLayout.LayoutParams(-1, -2));
-		overviewContainer.addView(cardContainer, new LinearLayout.LayoutParams(-1, -2));
+		overviewBody.addView(cardContainer);
+		layoutOverviewBody(getResources().getConfiguration());
+	}
+
+	// Stacked in landscape, the card leaves the map only a sliver, so it moves beside the map.
+	private void layoutOverviewBody(Configuration config) {
+		if (overviewBody == null) return;
+		boolean landscape = config.orientation == Configuration.ORIENTATION_LANDSCAPE;
+		overviewBody.setOrientation(landscape ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+		mapTileView.setLayoutParams(landscape ? new LinearLayout.LayoutParams(0, -1, 1.0f)
+				: new LinearLayout.LayoutParams(-1, 0, 1.0f));
+		cardContainer.setLayoutParams(landscape ? new LinearLayout.LayoutParams(0, -2, 1.0f)
+				: new LinearLayout.LayoutParams(-1, -2));
+	}
+
+	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		layoutOverviewBody(newConfig);
 	}
 
 	private void setupPhotoAndNoteSection(float density) {
@@ -906,11 +928,6 @@ public class CarFinderFragment extends MainActivityFragment
 		renderParkingStateToViews();
 	}
 
-	/** Backwards-compatible alias */
-	public void switchMode(boolean radar) {
-		setRadarModeVisible(radar);
-	}
-
 	/**
 	 * Synchronizes the visual state of all cards, maps, and radar with current parking & user data.
 	 */
@@ -1057,11 +1074,6 @@ public class CarFinderFragment extends MainActivityFragment
 		}
 	}
 
-	/** Backwards-compatible alias */
-	public void updateUiState() {
-		renderParkingStateToViews();
-	}
-
 	private void updateRadarBearing(float relativeBearingDegrees, boolean valid) {
 		if (glassRadarView != null) {
 			glassRadarView.updateRelativeBearing(relativeBearingDegrees, valid);
@@ -1110,11 +1122,6 @@ public class CarFinderFragment extends MainActivityFragment
 		}
 	}
 
-	/** Backwards-compatible alias */
-	public void updateRadarState(float distance, float relativeBearing) {
-		updateRadarTelemetry(distance, relativeBearing);
-	}
-
 	private void launchWalkingNavigationInExternalMap() {
 		if (currentParkingLocation == null || !currentParkingLocation.isValid()) return;
 		String latLng = currentParkingLocation.getLatitude() + "," + currentParkingLocation.getLongitude();
@@ -1149,11 +1156,6 @@ public class CarFinderFragment extends MainActivityFragment
 				startActivity(geoIntent);
 			}
 		}
-	}
-
-	/** Backwards-compatible alias */
-	public void openExternalNavigation() {
-		launchWalkingNavigationInExternalMap();
 	}
 
 	private void captureParkingLocationPhoto() {
@@ -1191,11 +1193,6 @@ public class CarFinderFragment extends MainActivityFragment
 		}
 	}
 
-	/** Backwards-compatible alias */
-	public void takeParkingPhoto() {
-		captureParkingLocationPhoto();
-	}
-
 	private void removeParkingLocationPhoto() {
 		if (currentParkingLocation != null && currentParkingLocation.getPhotoPath() != null) {
 			try {
@@ -1206,11 +1203,6 @@ public class CarFinderFragment extends MainActivityFragment
 			CarFinderPrefs.saveParkingLocation(requireContext(), currentParkingLocation);
 			renderParkingStateToViews();
 		}
-	}
-
-	/** Backwards-compatible alias */
-	public void deleteParkingPhoto() {
-		removeParkingLocationPhoto();
 	}
 
 	private void displayFullPhotoViewerDialog(String path) {
@@ -1239,11 +1231,6 @@ public class CarFinderFragment extends MainActivityFragment
 
 		dialog.setContentView(layout);
 		dialog.show();
-	}
-
-	/** Backwards-compatible alias */
-	public void showPhotoDialog(String path) {
-		displayFullPhotoViewerDialog(path);
 	}
 
 	private void displayNoteEditorDialog() {
@@ -1285,11 +1272,6 @@ public class CarFinderFragment extends MainActivityFragment
 		noteDialog.show();
 	}
 
-	/** Backwards-compatible alias */
-	public void showNoteEditDialog() {
-		displayNoteEditorDialog();
-	}
-
 	private void promptCarFoundConfirmationAndReset() {
 		AlertDialog confirmDialog = new AlertDialog.Builder(requireContext())
 				.setTitle(R.string.car_finder_found_confirm_title)
@@ -1312,11 +1294,6 @@ public class CarFinderFragment extends MainActivityFragment
 			me.aap.fermata.ui.glass.dialog.GlassDialogBuilder.styleAlertDialog(confirmDialog, requireContext());
 		}
 		confirmDialog.show();
-	}
-
-	/** Backwards-compatible alias */
-	public void confirmCarFound() {
-		promptCarFoundConfirmationAndReset();
 	}
 
 	@Override

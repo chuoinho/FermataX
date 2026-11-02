@@ -12,20 +12,6 @@ import org.junit.Test;
 /** Integration contracts for the device-tested PHONE controls and global video-scale behavior. */
 public class MobileControlsAndGlobalVideoScaleContractTest {
 	@Test
-	public void phoneBackOverlayIsSuppressedByCommonFloatingButtonBoundary() throws Exception {
-		String button = fermataSource("ui/view/FermataFloatingButton.java");
-		assertTrue(button.contains("!activity.getRuntimeHostMode().usesAutomotivePresentation()"));
-		assertTrue(button.contains("activity.isVideoMode() || !activity.isRootPage()"));
-		assertTrue(button.contains("super.setVisibility((visibility == VISIBLE)"));
-
-		String mediator = fermataSource("ui/fragment/FloatingButtonMediator.java");
-		assertTrue(mediator.contains("updateVisibility(fb, MainActivityDelegate.get(fb.getContext()), f)"));
-		assertTrue(mediator.contains("if (BuildConfig.AUTO || a.isVideoMode()) return true;"));
-		assertTrue(mediator.contains("id == R.id.youtube_fragment"));
-		assertTrue(mediator.contains("id == R.id.web_browser_fragment"));
-	}
-
-	@Test
 	public void phonePlayerbarEdgeIsPassiveWhileAutomotiveKeepsItsBackTarget() throws Exception {
 		for (String layout : new String[]{"control_panel_view.xml", "control_panel_view2.xml"}) {
 			String xml = repositorySource("fermata/src/main/res/layout/" + layout);

@@ -310,6 +310,11 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <service
+            android:name="me.aap.fermata.ui.glass.road.RoadPrefetchJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
+
         <receiver
             android:name="androidx.media.session.MediaButtonReceiver"
             android:exported="false">

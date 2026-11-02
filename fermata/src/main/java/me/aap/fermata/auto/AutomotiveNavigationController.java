@@ -88,10 +88,6 @@ public final class AutomotiveNavigationController {
 		listener.onReadinessChanged(available, epoch);
 	}
 
-	public synchronized void removeReadinessListener(ReadinessListener listener) {
-		readinessListeners.remove(listener);
-	}
-
 	public FutureSupplier<OpenResult> open(int destinationId) {
 		Navigator captured;
 		long registration;

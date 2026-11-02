@@ -47,7 +47,4 @@ public class Utf8LineReader extends Utf8Reader {
 		return (n == 0) ? -1 : n;
 	}
 
-	public int skipLine() throws IOException {
-		return readLine(IoUtils.nullWriter());
-	}
 }

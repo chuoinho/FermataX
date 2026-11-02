@@ -428,6 +428,7 @@ public final class AndroidDiagnosticsRuntime {
 		attributes.put("stalled_for_ms", tick.getStalledForMillis());
 		attributes.put("thread_dump", BoundedThreadDump.format(
 				Looper.getMainLooper().getThread(), WATCHDOG_THREAD_DUMP_CHARS));
+		attributes.putAll(DeviceConditions.read(application));
 		record(DiagnosticEvent.builder("performance", "suspected_main_thread_stall")
 				.scope(DiagnosticScope.DETAILED)
 				.priority(DiagnosticPriority.WARN)

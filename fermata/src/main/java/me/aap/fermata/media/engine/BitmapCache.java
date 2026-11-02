@@ -105,22 +105,6 @@ public class BitmapCache {
 		}
 	}
 
-	public ParcelFileDescriptor openResourceImage(Uri uri) throws FileNotFoundException {
-		Context ctx = getContext();
-		int size = getIconSize(ctx);
-		String iconUri = toIconUri(uri.toString(), size);
-		File iconFile = new File(iconsCache, iconUri.substring(iconsCacheUri.length()));
-
-		if (iconFile.isFile()) {
-			return ctx.getContentResolver().openFileDescriptor(Uri.parse(iconUri), "r");
-		} else if (ContentResolver.SCHEME_ANDROID_RESOURCE.equals(uri.getScheme())) {
-			loadBitmap(ctx, uri.toString(), iconUri, true, size);
-			return ctx.getContentResolver().openFileDescriptor(Uri.parse(iconUri), "r");
-		} else {
-			return openResource(ctx, uri, 0).getParcelFileDescriptor();
-		}
-	}
-
 	@NonNull
 	public FutureSupplier<Bitmap> getBitmap(Context ctx, String uri, boolean cache, boolean resize) {
 		String orig = FermataContentProvider.getOrigUri(uri);

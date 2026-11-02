@@ -13,9 +13,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -221,17 +219,6 @@ public class CollectionUtils {
 		return filterMap(collection, t -> true, mapper, generator);
 	}
 
-	public static <K, V> Map<K, V> mapOf(K k, V v, Object... kvs) {
-		Map<K, V> m = new HashMap<>((kvs.length / 2 + 1) * 4 / 3 + 1);
-		m.put(k, v);
-		for (int i = 0; i < kvs.length; i += 2) {
-			@SuppressWarnings("unchecked") K key = (K) kvs[i];
-			@SuppressWarnings("unchecked") V value = (V) kvs[i + 1];
-			m.put(key, value);
-		}
-		return m;
-	}
-
 	public static <T> List<T> filter(Collection<T> list, Predicate<? super T> predicate) {
 		return filter(list, predicate, ArrayList::new);
 	}
@@ -261,10 +248,6 @@ public class CollectionUtils {
 		}
 
 		return a;
-	}
-
-	public static <T> LinkedHashSet<T> newLinkedHashSet(int size) {
-		return new LinkedHashSet<>((int) (size / 0.75 + 1));
 	}
 
 	public static <T> void addAll(Collection<T> c, @Nullable T[] values) {
@@ -319,15 +302,4 @@ public class CollectionUtils {
 		return (c1, c2) -> Integer.compare(k.applyAsInt(c1), k.applyAsInt(c2));
 	}
 
-	public static List<Long> boxed(long[] array) {
-		List<Long> list = new ArrayList<>(array.length);
-		for (long v : array) list.add(v);
-		return list;
-	}
-
-	public static long[] unboxed(List<Long> list) {
-		long[] array = new long[list.size()];
-		for (int i = 0, n = list.size(); i < n; i++) array[i] = list.get(i);
-		return array;
-	}
 }

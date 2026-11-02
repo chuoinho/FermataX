@@ -53,31 +53,6 @@ public class IoUtils {
 		return skipped;
 	}
 
-	public static long calculateLen(InputStream in) throws IOException {
-		try {
-			return skip(in, Long.MAX_VALUE);
-		} finally {
-			close(in);
-		}
-	}
-
-	public static void writeToStream(ByteBuffer src, OutputStream out) throws IOException {
-		int len = src.remaining();
-
-		if (src.hasArray()) {
-			byte[] a = src.array();
-			out.write(a, src.arrayOffset() + src.position(), len);
-			src.position(src.position() + len);
-		} else {
-			byte[] a = new byte[Math.min(len, 8192)];
-
-			for (int l = a.length; l > 0; l = Math.min(src.remaining(), a.length)) {
-				src.get(a, 0, l);
-				out.write(a, 0, l);
-			}
-		}
-	}
-
 	public static byte[] emptyByteArray() {
 		return Empty.array;
 	}
@@ -96,10 +71,6 @@ public class IoUtils {
 
 	public static Writer nullWriter() {
 		return NullWriter.instance;
-	}
-
-	public static AsyncOutputStream nullAsyncOutputStream() {
-		return NullAsyncOutputStream.instance;
 	}
 
 	public static ByteBuffer ensureCapacity(ByteBuffer buf, int len, int max) throws BufferOverflowException {

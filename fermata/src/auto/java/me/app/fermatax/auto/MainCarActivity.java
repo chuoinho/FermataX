@@ -1192,20 +1192,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 				scroll(false);
 			}
 
-			if (!focusFb(screen(), cursorX, cursorY)) requestFocus();
+			requestFocus();
 			animate().x(cursorX).y(cursorY).setDuration(0).start();
-		}
-
-		private boolean focusFb(ViewGroup screen, float cursorX, float cursorY) {
-			View fb = screen.findViewById(R.id.floating_button);
-			float fbX = fb.getX();
-			float fbY = fb.getY();
-			if ((cursorX >= fbX) && (cursorX < fbX + fb.getWidth()) && (cursorY >= fbY) &&
-					(cursorY < fbY + fb.getHeight())) {
-				fb.requestFocus();
-				return true;
-			}
-			return false;
 		}
 
 		private void scroll(boolean up) {

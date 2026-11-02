@@ -278,11 +278,6 @@ public class Async {
 		});
 	}
 
-	public static <T> FutureSupplier<T> scheduleAt(CheckedSupplier<FutureSupplier<T>, Throwable> s,
-																								 long time) {
-		return schedule(s, time - System.currentTimeMillis());
-	}
-
 	public static <T> FutureSupplier<T> schedule(CheckedSupplier<FutureSupplier<T>, Throwable> s,
 																						 long delay) {
 		return schedule(App.get().getScheduler(), s, delay);

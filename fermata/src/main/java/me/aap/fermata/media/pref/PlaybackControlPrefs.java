@@ -59,10 +59,6 @@ public interface PlaybackControlPrefs extends SharedPreferenceStore {
 		return getBooleanPref(PLAY_PAUSE_STOP);
 	}
 
-	default int getVideoControlStartDelayPref() {
-		return getIntPref(VIDEO_CONTROL_START_DELAY);
-	}
-
 	default int getVideoControlTouchDelayPref() {
 		return getIntPref(VIDEO_CONTROL_TOUCH_DELAY);
 	}

@@ -3,7 +3,6 @@ package me.aap.fermata.ui.activity;
 import static me.aap.fermata.BuildConfig.AUTO;
 import static android.view.KeyEvent.KEYCODE_UNKNOWN;
 
-import android.content.pm.PackageInfo;
 
 import androidx.annotation.Nullable;
 
@@ -42,6 +41,8 @@ public interface MainActivityPrefs
 
 	Pref<Supplier<String>> PREF_GLASS_QUICK_SHORTCUTS = Pref.s("GLASS_QUICK_SHORTCUTS", "[]");
 	Pref<IntSupplier> GLASS_SPEED_UNIT = Pref.i("GLASS_SPEED_UNIT", 0);
+	Pref<BooleanSupplier> GLASS_ROAD_DATA = Pref.b("GLASS_ROAD_DATA", true);
+	Pref<IntSupplier> GLASS_SPEED_CARD = Pref.i("GLASS_SPEED_CARD", 0); /* 0 speed & trip, 1 limits & signals */
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_GLASS);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
@@ -63,7 +64,6 @@ public interface MainActivityPrefs
 	Pref<BooleanSupplier> CHANGE_BRIGHTNESS = Pref.b("CHANGE_BRIGHTNESS", false);
 	Pref<IntSupplier> BRIGHTNESS = Pref.i("BRIGHTNESS", 255);
 	Pref<BooleanSupplier> VOICE_CONTROl_ENABLED = Pref.b("VOICE_CONTROl_ENABLED", true);
-	Pref<BooleanSupplier> VOICE_CONTROl_FB = Pref.b("VOICE_CONTROl_FB", false);
 	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
 	Pref<Supplier<String>> VOICE_CONTROL_LANG =
 			Pref.s("VOICE_CONTROL_LANG", () -> Locale.getDefault().toLanguageTag());
@@ -298,10 +298,6 @@ public interface MainActivityPrefs
 		return getBooleanPref(VOICE_CONTROl_ENABLED);
 	}
 
-	default boolean getVoiceControlFBPref() {
-		return getBooleanPref(VOICE_CONTROl_FB);
-	}
-
 	default String getVoiceControlLang(MainActivityDelegate a) {
 		return a.getPrefs().getStringPref(VOICE_CONTROL_LANG);
 	}
@@ -338,13 +334,6 @@ public interface MainActivityPrefs
 
 	default boolean shouldShowInitialSetup(MainActivityDelegate activity) {
 		return !getBooleanPref(INITIAL_SETUP_COMPLETED);
-	}
-
-	default void applyInitialSetupCompleted() {
-		try (PreferenceStore.Edit e = editPreferenceStore()) {
-			e.setBooleanPref(INITIAL_SETUP_COMPLETED, true);
-			e.setIntPref(INITIAL_SETUP_VERSION, INITIAL_SETUP_CURRENT_VERSION);
-		}
 	}
 
 	enum Lang {

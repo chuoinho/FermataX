@@ -84,7 +84,6 @@ public class YoutubeAddon extends WebBrowserAddon
 	private static final Pref<Supplier<String>> YT_PINNED_ITEMS = Pref.s("YT_PINNED_ITEMS", "");
 	private static final YoutubeRetentionPolicy ITEM_RETENTION =
 			new YoutubeRetentionPolicy(10, Long.MAX_VALUE);
-	private final SponsorBlockController sponsorBlockController = new SponsorBlockController();
 	private static final YoutubeSessionPolicy SESSION_POLICY = new YoutubeSessionPolicy(
 			YoutubeSessionPolicy.DEFAULT_RETENTION_MILLIS);
 	private final YoutubeNavigationGeneration navigationGeneration =
@@ -589,10 +588,6 @@ public class YoutubeAddon extends WebBrowserAddon
 
 	boolean getSponsorBlockEnabled() {
 		return YoutubeSponsorBlock.isEnabled(getPreferenceStore());
-	}
-
-	SponsorBlockController getSponsorBlockController() {
-		return sponsorBlockController;
 	}
 
 	@Nullable

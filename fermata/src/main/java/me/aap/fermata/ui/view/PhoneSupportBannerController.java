@@ -191,7 +191,4 @@ public final class PhoneSupportBannerController implements MainActivityListener 
 		}
 	}
 
-	public static void resetShowTimeForTesting() {
-		lastShowTime = 0L;
-	}
 }

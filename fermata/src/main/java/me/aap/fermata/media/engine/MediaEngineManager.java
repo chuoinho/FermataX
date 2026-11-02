@@ -490,9 +490,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (prefs.contains(EXO_ENABLED)) {
 			if (lib.getPrefs().getExoEnabledPref()) {
-				exoPlayer = null;
-				FutureSupplier<Void> i = installPlayer(MODULE_EXO, R.string.engine_exo_name);
-				i.main().onSuccess(v -> setExoPlayer(false)).onFailure(this::installExoFailed);
+				setExoPlayer(true);
 			} else {
 				exoPlayer = null;
 				Log.i("Uninstalling module ", MODULE_EXO);
@@ -502,9 +500,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 			}
 		} else if (prefs.contains(MediaLibPrefs.VLC_ENABLED)) {
 			if (lib.getPrefs().getVlcEnabledPref()) {
-				vlcPlayer = null;
-				FutureSupplier<Void> i = installPlayer(MODULE_VLC, R.string.engine_vlc_name);
-				i.main().onSuccess(v -> setVlcPlayer(false)).onFailure(this::installVlcFailed);
+				setVlcPlayer(true);
 			} else {
 				vlcPlayer = null;
 				Log.i("Uninstalling module ", MODULE_VLC);

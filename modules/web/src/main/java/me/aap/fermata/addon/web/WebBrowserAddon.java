@@ -333,10 +333,6 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 		return TextUtils.isNullOrBlank(ua) ? p.getDefaultValue().get() : ua;
 	}
 
-	public boolean isDisableDark() {
-		return getPreferenceStore().getIntPref(getForceDarkPref()) == 0;
-	}
-
 	public boolean isForceDark() {
 		return getPreferenceStore().getIntPref(getForceDarkPref()) == 1;
 	}

@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -237,7 +236,10 @@ public final class AudiobookshelfClient {
 	}
 
 	static List<Library> parseLibraries(String json) throws JSONException {
-		JSONArray array = new JSONArray(json);
+		// The server wraps the list: {"libraries":[...]}.
+		String trimmed = json.trim();
+		JSONArray array = trimmed.startsWith("[") ? new JSONArray(trimmed) :
+				new JSONObject(trimmed).getJSONArray("libraries");
 		List<Library> result = new ArrayList<>(array.length());
 		for (int index = 0; index < array.length(); index++) {
 			JSONObject item;

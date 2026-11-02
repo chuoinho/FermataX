@@ -9,7 +9,6 @@ import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.utils.text.SharedTextBuilder;
 
 /**
  * @author Andrey Pavlenko
@@ -154,30 +153,4 @@ public interface MediaPrefs extends PreferenceStore {
 		return getIntPref(WATCHED_THRESHOLD);
 	}
 
-	static String getUserPresetName(String preset) {
-		return preset.substring(preset.indexOf(':') + 1);
-	}
-
-	static int[] getUserPresetBands(String preset) {
-		String[] a = preset.substring(0, preset.indexOf(':')).split(" ");
-		int[] bands = new int[a.length];
-
-		for (int i = 0; i < bands.length; i++) {
-			bands[i] = Integer.parseInt(a[i]);
-		}
-
-		return bands;
-	}
-
-	static String toUserPreset(String name, int[] bands) {
-		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-			for (int i = 0; i < bands.length; i++) {
-				tb.append(bands[i]);
-				if (i == (bands.length - 1)) tb.append(':');
-				else tb.append(' ');
-			}
-
-			return tb.append(name).toString();
-		}
-	}
 }

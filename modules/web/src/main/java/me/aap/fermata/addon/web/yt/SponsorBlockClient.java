@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -174,11 +173,6 @@ public final class SponsorBlockClient {
 	private static boolean isRetryableTransportFailure(Throwable error) {
 		return (error instanceof IOException) && !(error instanceof HttpException) &&
 				!(error instanceof ProtocolException);
-	}
-
-	static boolean isRetryableFailure(Throwable error) {
-		if (error instanceof HttpException http) return isRetryableStatus(http.status());
-		return isRetryableTransportFailure(error);
 	}
 
 	private static String categoryJson(Set<Category> categories) {

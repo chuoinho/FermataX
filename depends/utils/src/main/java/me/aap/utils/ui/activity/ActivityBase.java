@@ -13,7 +13,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -314,21 +313,6 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 		ActivityDelegate d = delegate.peek();
 		return (d != null) ? d.onKeyLongPress(keyCode, keyEvent, super::onKeyLongPress)
 				: super.onKeyLongPress(keyCode, keyEvent);
-	}
-
-	public void installApk(Uri u, boolean known) {
-		checkPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES).onSuccess(perms -> {
-			Intent i = new Intent("android.intent.action.INSTALL_PACKAGE");
-			int flags = Intent.FLAG_ACTIVITY_NEW_TASK;
-			if (SDK_INT >= VERSION_CODES.N) flags |= Intent.FLAG_GRANT_READ_URI_PERMISSION;
-			i.setData(u);
-			i.setFlags(flags);
-			if (known) {
-				i.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true);
-				i.putExtra(Intent.EXTRA_INSTALLER_PACKAGE_NAME, "com.android.vending");
-			}
-			startActivity(i);
-		});
 	}
 
 	private static final class StartActivityPromise extends Promise<Intent> {

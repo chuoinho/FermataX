@@ -1,14 +1,10 @@
 package me.aap.fermata.ui.glass.speedo;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.Gravity;
@@ -20,6 +16,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import java.util.Locale;
 
@@ -30,6 +27,7 @@ import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.aap.fermata.ui.glass.theme.GlassThemeColors;
 import me.aap.fermata.ui.policy.BackgroundRunPolicy;
 import me.aap.fermata.ui.policy.BackgroundRunState;
+import me.aap.fermata.ui.view.MinimumTouchTargetDelegate;
 
 /**
  * Automotive frosted glass card displaying GPS speedometer and Trip Computer statistics.
@@ -43,7 +41,9 @@ public class GlassSpeedoTripView extends FrameLayout {
     private TextView tvSpeedUnit;
     private TextView tvCardTitle;
     private TextView tvSignal;
-    private TextView btnToggleTrip;
+    private ImageView btnSwap;
+    private LinearLayout topActions;
+    private Runnable onSwapListener;
     private TripEngine.State lastTripState;
 
     private TextView tvTripDistance;
@@ -59,7 +59,6 @@ public class GlassSpeedoTripView extends FrameLayout {
     private boolean isMetric = true;
     private final SpeedDisplay speedDisplay = new SpeedDisplay();
     private Runnable onResetTripListener;
-    private Runnable onToggleTripListener;
 
     public GlassSpeedoTripView(@NonNull Context context) {
         this(context, null);
@@ -106,46 +105,45 @@ public class GlassSpeedoTripView extends FrameLayout {
         tvCardTitle.setLetterSpacing(0.08f);
         tvCardTitle.setSingleLine(true);
         tvCardTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        boolean isCar = GlassDimensions.isCar(context);
         FrameLayout.LayoutParams titleLp = new FrameLayout.LayoutParams(
                 LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL);
-        boolean isCar = GlassDimensions.isCar(context);
-        titleLp.setMarginEnd(GlassDimensions.dpToPx(context, isCar ? 120 : 90));
         topBar.addView(tvCardTitle, titleLp);
 
-        LinearLayout topActions = new LinearLayout(context);
+        topActions = new LinearLayout(context);
         topActions.setOrientation(LinearLayout.HORIZONTAL);
         topActions.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        FrameLayout.LayoutParams actionsLp = new FrameLayout.LayoutParams(
-                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.END | Gravity.CENTER_VERTICAL);
-        topActions.setLayoutParams(actionsLp);
 
-        btnToggleTrip = new TextView(context);
-        int minH = GlassDimensions.dpToPx(context, isCar ? 48 : 36);
-        btnToggleTrip.setMinHeight(minH);
-        btnToggleTrip.setMinWidth(minH);
-        btnToggleTrip.setGravity(Gravity.CENTER);
-        btnToggleTrip.setTextSize(10f);
-        btnToggleTrip.setTypeface(Typeface.DEFAULT_BOLD);
-        btnToggleTrip.setTextColor(colors.getTextPrimary());
-        int padHBtn = GlassDimensions.dpToPx(context, 10);
-        btnToggleTrip.setPadding(padHBtn, 0, padHBtn, 0);
-        btnToggleTrip.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
-        btnToggleTrip.setText(context.getString(R.string.speedo_pause_trip));
-        btnToggleTrip.setContentDescription(context.getString(R.string.speedo_pause_trip));
-        btnToggleTrip.setClickable(true);
-        btnToggleTrip.setFocusable(true);
-        btnToggleTrip.setOnClickListener(v -> {
-            if (onToggleTripListener != null) {
-                onToggleTripListener.run();
+        int gap = GlassDimensions.dpToPx(context, 6);
+        btnSwap = new ImageView(context);
+        btnSwap.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_speed_limit_mini));
+        btnSwap.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        btnSwap.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        btnSwap.setContentDescription(context.getString(R.string.glass_show_limits));
+        btnSwap.setFocusable(true);
+        btnSwap.setOnClickListener(v -> {
+            if (onSwapListener != null) {
+                onSwapListener.run();
             }
         });
-        LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, minH);
-        btnLp.setMarginEnd(GlassDimensions.dpToPx(context, 6));
-        topActions.addView(btnToggleTrip, btnLp);
+        topActions.addView(btnSwap, new LinearLayout.LayoutParams(0, 0));
 
-        topBar.addView(topActions);
         contentLayout.addView(topBar);
+
+        // Outside the title row and centred on the title line, so the title sits at the same height as on
+        // other cards; MinimumTouchTargetDelegate widens the button to a 48dp tap area.
+        addView(topActions, new LayoutParams(LayoutParams.WRAP_CONTENT, 0, Gravity.TOP | Gravity.END));
+        sizeHeaderButtons(GlassDimensions.dpToPx(context, 28));
+        setClipToPadding(false);
+        MinimumTouchTargetDelegate.install(this, btnSwap);
+        // The title gets all the width the button leaves.
+        topActions.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            int end = (r - l) + gap;
+            if (titleLp.getMarginEnd() != end) {
+                titleLp.setMarginEnd(end);
+                tvCardTitle.post(tvCardTitle::requestLayout);
+            }
+        });
 
         // Central Speedometer Section
         LinearLayout speedCenter = new LinearLayout(context);
@@ -233,7 +231,6 @@ public class GlassSpeedoTripView extends FrameLayout {
     public void setTripMode(@NonNull TripModePolicy.Mode mode) {
         boolean on = mode == TripModePolicy.Mode.ON;
         tripStatsRow.setVisibility(on ? View.VISIBLE : View.GONE);
-        btnToggleTrip.setVisibility(on ? View.VISIBLE : View.GONE);
         boolean hint = mode == TripModePolicy.Mode.NEEDS_BACKGROUND_PERMISSION;
         tvTripHint.setVisibility(hint ? View.VISIBLE : View.GONE);
         if (hint) tvTripHint.setText(R.string.location_speed_hint);
@@ -243,17 +240,25 @@ public class GlassSpeedoTripView extends FrameLayout {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         if (w > 0 && h > 0) {
-            float density = getResources().getDisplayMetrics().density;
-            float hDp = h / Math.max(0.1f, density);
-            float wDp = w / Math.max(0.1f, density);
-            if (hDp < 220f || wDp < 160f) {
-                tvSpeedValue.setTextSize(36f);
-            } else if (hDp < 260f || wDp < 190f) {
-                tvSpeedValue.setTextSize(42f);
-            } else {
-                tvSpeedValue.setTextSize(48f);
-            }
+            float density = Math.max(0.1f, getResources().getDisplayMetrics().density);
+            float rDp = arcBounds(w / density, h / density, 1f, new RectF());
+            tvSpeedValue.setTextSize(speedTextSp(rDp));
+            post(() -> sizeHeaderButtons(GlassDimensions.headerButtonPx(getContext(), h)));
         }
+    }
+
+    // Centred on the single-line title (font padding included, the TextView default).
+    private void sizeHeaderButtons(int size) {
+        LayoutParams actionsLp = (LayoutParams) topActions.getLayoutParams();
+        if (btnSwap.getLayoutParams().width == size && actionsLp.height == size) return;
+        Paint.FontMetricsInt fm = tvCardTitle.getPaint().getFontMetricsInt();
+        actionsLp.height = size;
+        actionsLp.topMargin = (fm.bottom - fm.top - size) / 2;
+        btnSwap.getLayoutParams().width = size;
+        btnSwap.getLayoutParams().height = size;
+        int pad = Math.round(size * 0.1f);
+        btnSwap.setPadding(pad, pad, pad, pad);
+        topActions.setLayoutParams(actionsLp);
     }
 
     private TextView createStatItem(Context context, LinearLayout parent, String label, String initialValue, boolean isCar) {
@@ -318,6 +323,9 @@ public class GlassSpeedoTripView extends FrameLayout {
         if (tvCardTitle != null) {
             tvCardTitle.setTextColor(colors.getTextSecondary());
         }
+        if (btnSwap != null) {
+            btnSwap.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
+        }
         tvSignal.setTextColor(colors.getTextSecondary());
         if (tvTripHint != null) tvTripHint.setTextColor(colors.getTextSecondary());
         if (tvSpeedValue != null) {
@@ -347,10 +355,6 @@ public class GlassSpeedoTripView extends FrameLayout {
         if (speedArcView != null) {
             speedArcView.refreshAppearance(isNight, colors);
         }
-        if (btnToggleTrip != null) {
-            btnToggleTrip.setBackground(GlassDrawables.createGlassPillDrawable(context, 12f, isNight));
-            btnToggleTrip.setTextColor(colors.getActionText());
-        }
         invalidate();
     }
 
@@ -377,16 +381,6 @@ public class GlassSpeedoTripView extends FrameLayout {
         tvSpeedUnit.setText(isMetric ? "KM/H" : "MPH");
 
         if (tripState != null) {
-            boolean isPaused = tripState.isPaused();
-            if (btnToggleTrip != null) {
-                if (isPaused) {
-                    btnToggleTrip.setText(R.string.speedo_resume_trip);
-                    btnToggleTrip.setContentDescription(getContext().getString(R.string.speedo_resume_trip));
-                } else {
-                    btnToggleTrip.setText(R.string.speedo_pause_trip);
-                    btnToggleTrip.setContentDescription(getContext().getString(R.string.speedo_pause_trip));
-                }
-            }
             String approx = tripState.isMostlyEstimated() ? "≈" : "";
             if (isMetric) {
                 tvTripDistance.setText(approx + String.format(locale, "%.1f km", tripState.getDistanceKm()));
@@ -485,18 +479,56 @@ public class GlassSpeedoTripView extends FrameLayout {
         return locales.isEmpty() ? Locale.getDefault() : locales.get(0);
     }
 
+    public View getSwapButton() {
+        return btnSwap;
+    }
+
+    public void setOnSwapListener(Runnable r) {
+        this.onSwapListener = r;
+    }
+
+    public void setSwapVisible(boolean visible) {
+        if (btnSwap != null) {
+            btnSwap.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
     public void setOnResetTripListener(Runnable listener) {
         this.onResetTripListener = listener;
     }
 
-    public void setOnToggleTripListener(Runnable listener) { onToggleTripListener = listener; }
-
-    public boolean performToggleTrip() {
-        return btnToggleTrip != null && btnToggleTrip.performClick();
-    }
 
     boolean performTripStatsLongClick() {
         return tripStatsRow != null && tripStatsRow.performLongClick();
+    }
+
+    /**
+     * Circle of the 240° speed arc, between the title (38dp) and the trip row (46dp). The arc is
+     * 1.5 radii tall (open at the bottom), so it is fitted and centred on that height, never the
+     * full diameter. Returns the radius; sizes in px for the given density.
+     */
+    static float arcBounds(float w, float h, float density, RectF out) {
+        float padTop = 38f * density, padBottom = 46f * density, stroke = 5f * density;
+        float availH = Math.max(10f, h - padTop - padBottom - stroke);
+        float availW = Math.max(10f, w - 20f * density - stroke);
+        float r = Math.min(availW / 2f, availH / 1.5f);
+        float cx = w / 2f;
+        float cy = padTop + stroke / 2f + availH / 2f + r * 0.25f;
+        out.set(cx - r, cy - r, cx + r, cy + r);
+        return r;
+    }
+
+    /** Digits keep the same share of the arc on every screen: 48sp in a 100dp arc, 36sp at least. */
+    static float speedTextSp(float arcRadiusDp) {
+        return Math.max(36f, arcRadiusDp * 0.48f);
+    }
+
+    public CharSequence getSpeedText() {
+        return tvSpeedValue.getText();
+    }
+
+    public CharSequence getSpeedUnitText() {
+        return tvSpeedUnit.getText();
     }
 
     /**
@@ -561,15 +593,7 @@ public class GlassSpeedoTripView extends FrameLayout {
             int h = getHeight();
             if (w <= 0 || h <= 0) return;
 
-            int padTop = GlassDimensions.dpToPx(getContext(), 38);
-            int padBottom = GlassDimensions.dpToPx(getContext(), 46);
-            float availH = Math.max(10, h - padTop - padBottom);
-            float availW = Math.max(10, w - GlassDimensions.dpToPx(getContext(), 20));
-            float diameter = Math.min(availW, availH * 1.35f);
-            float cx = w / 2f;
-            float cy = padTop + availH * 0.50f;
-            float r = diameter / 2f;
-            arcRect.set(cx - r, cy - r, cx + r, cy + r);
+            arcBounds(w, h, getResources().getDisplayMetrics().density, arcRect);
 
             // Draw 240-degree arc from 150 deg to 390 deg
             canvas.drawArc(arcRect, 150f, 240f, false, arcTrackPaint);

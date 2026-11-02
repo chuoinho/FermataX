@@ -196,6 +196,7 @@ public final class AudiobookFragment extends MediaLibFragment {
 		pendingAction = input;
 		input.onSuccess(config -> {
 			if (pendingAction != input) return;
+			getMainActivity().showFragment(getFragmentId());
 			FutureSupplier<?> action = getRootItem().addAudiobookshelf(config.endpoint(),
 					config.username(), config.password()).main();
 			pendingAction = action;
@@ -212,6 +213,7 @@ public final class AudiobookFragment extends MediaLibFragment {
 		pendingAction = input;
 		input.onSuccess(config -> {
 			if (pendingAction != input) return;
+			getMainActivity().showFragment(getFragmentId());
 			FutureSupplier<?> action = getRootItem().addOpds(config.endpoint(), config.username(),
 					config.password(), config.bearerToken()).main();
 			pendingAction = action;

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="backup_restore">Sao lưu &amp; khôi phục</string>
-	<string name="backup_restore_sub">Chuyển toàn bộ cài đặt và cấu hình tài khoản có thể di chuyển giữa các thiết bị</string>
 	<string name="backup_all_data">Sao lưu toàn bộ dữ liệu</string>
 	<string name="backup_all_data_sub">Tạo một tệp sao lưu FermataX được mã hóa</string>
 	<string name="restore_backup">Khôi phục bản sao lưu</string>

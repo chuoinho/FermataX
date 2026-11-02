@@ -2,13 +2,10 @@ package me.aap.utils.concurrent;
 
 import android.os.Looper;
 
-import androidx.annotation.Nullable;
 
 import java.util.concurrent.locks.LockSupport;
 
 import me.aap.utils.BuildConfig;
-import me.aap.utils.app.App;
-import me.aap.utils.function.Consumer;
 import me.aap.utils.misc.TestUtils;
 
 /**
@@ -23,18 +20,6 @@ public class ConcurrentUtils {
 	public static void ensureMainThread(boolean debug) {
 		if (debug && !BuildConfig.D) return;
 		if (!isMainThread()) throw new AssertionError("Not the main thread");
-	}
-
-	public static void ensureNotMainThread(boolean debug) {
-		if (debug && !BuildConfig.D) return;
-		if (isMainThread()) throw new AssertionError("Main thread");
-	}
-
-	public static <T> void consumeInMainThread(@Nullable Consumer<T> c, T t) {
-		if (c != null) {
-			if (isMainThread()) c.accept(t);
-			else App.get().getHandler().post(() -> c.accept(t));
-		}
 	}
 
 	public static void wait(Object monitor) throws InterruptedException {

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="backup_restore">Sichern &amp; Wiederherstellen</string>
-	<string name="backup_restore_sub">Alle übertragbaren Einstellungen und Kontodaten zwischen Geräten verschieben</string>
 	<string name="backup_all_data">Alle Daten sichern</string>
 	<string name="backup_all_data_sub">Eine verschlüsselte FermataX-Sicherungsdatei erstellen</string>
 	<string name="restore_backup">Sicherung wiederherstellen</string>

@@ -58,10 +58,6 @@ public class GlassOpenMeteoClient {
             return temp;
         }
 
-        public int getWeatherCode() {
-            return weatherCode;
-        }
-
         public boolean isDay() {
             return isDay;
         }
@@ -75,6 +71,7 @@ public class GlassOpenMeteoClient {
         private final float lowTemp;
         private final List<HourlyPoint> hourlyPoints;
         private final long timestamp;
+        private final RoadHazardPolicy.Hazard hazard;
 
         public HourlyForecast(float currentTemp, int currentWeatherCode, boolean isDay,
                               float highTemp, float lowTemp, List<HourlyPoint> hourlyPoints) {
@@ -83,6 +80,14 @@ public class GlassOpenMeteoClient {
 
         public HourlyForecast(float currentTemp, int currentWeatherCode, boolean isDay,
                               float highTemp, float lowTemp, List<HourlyPoint> hourlyPoints, long timestamp) {
+            this(currentTemp, currentWeatherCode, isDay, highTemp, lowTemp, hourlyPoints, timestamp,
+                    RoadHazardPolicy.Hazard.NONE);
+        }
+
+        public HourlyForecast(float currentTemp, int currentWeatherCode, boolean isDay,
+                              float highTemp, float lowTemp, List<HourlyPoint> hourlyPoints, long timestamp,
+                              @NonNull RoadHazardPolicy.Hazard hazard) {
+            this.hazard = hazard;
             this.currentTemp = currentTemp;
             this.currentWeatherCode = currentWeatherCode;
             this.isDay = isDay;
@@ -120,6 +125,12 @@ public class GlassOpenMeteoClient {
             return timestamp;
         }
 
+        /** Most severe road hazard now or within the next 3 hours. */
+        @NonNull
+        public RoadHazardPolicy.Hazard getHazard() {
+            return hazard;
+        }
+
         public boolean isExpired() {
             return isExpired(System.currentTimeMillis());
         }
@@ -142,8 +153,8 @@ public class GlassOpenMeteoClient {
         String tempUnit = metric ? "celsius" : "fahrenheit";
         String windUnit = metric ? "kmh" : "mph";
         return String.format(Locale.US,
-                "%s?latitude=%s&longitude=%s&current=temperature_2m,weather_code,is_day" +
-                        "&hourly=temperature_2m,weather_code,is_day" +
+                "%s?latitude=%s&longitude=%s&current=temperature_2m,weather_code,is_day,wind_gusts_10m,visibility" +
+                        "&hourly=temperature_2m,weather_code,is_day,wind_gusts_10m,visibility" +
                         "&daily=temperature_2m_max,temperature_2m_min" +
                         "&temperature_unit=%s&wind_speed_unit=%s&timezone=auto&forecast_days=2",
                 BASE_URL, WeatherLocationPolicy.roundCoordinate(lat), WeatherLocationPolicy.roundCoordinate(lon),
@@ -244,6 +255,8 @@ public class GlassOpenMeteoClient {
         float currentTemp = current != null ? (float) current.optDouble("temperature_2m", 20.0) : 20.0f;
         int weatherCode = current != null ? current.optInt("weather_code", 0) : 0;
         boolean isDay = current == null || current.optInt("is_day", 1) == 1;
+        RoadHazardPolicy.Hazard hazard = (current == null) ? RoadHazardPolicy.Hazard.NONE
+                : hazardAt(current, root.optJSONObject("current_units"));
 
         float highTemp = currentTemp;
         float lowTemp = currentTemp;
@@ -290,6 +303,12 @@ public class GlassOpenMeteoClient {
                     startIndex = Math.max(0, times.length() - 24);
                 }
 
+                JSONObject hourlyUnits = root.optJSONObject("hourly_units");
+                int hazardEnd = Math.min(times.length(), startIndex + HAZARD_HOURS + 1);
+                for (int i = startIndex; i < hazardEnd; i++) {
+                    hazard = RoadHazardPolicy.worst(hazard, hazardAt(hourly, hourlyUnits, i));
+                }
+
                 int totalAvailable = times.length();
                 int count = Math.min(24, Math.max(0, totalAvailable - startIndex));
                 for (int i = startIndex; i < startIndex + count; i++) {
@@ -304,7 +323,41 @@ public class GlassOpenMeteoClient {
             }
         }
 
-        return new HourlyForecast(currentTemp, weatherCode, isDay, highTemp, lowTemp, points);
+        return new HourlyForecast(currentTemp, weatherCode, isDay, highTemp, lowTemp, points,
+                System.currentTimeMillis(), hazard);
+    }
+
+    private static final int HAZARD_HOURS = 3;
+
+    private static RoadHazardPolicy.Hazard hazardAt(JSONObject current, @Nullable JSONObject units) {
+        return RoadHazardPolicy.of(
+                RoadHazardPolicy.toCelsius(num(current.opt("temperature_2m")), unit(units, "temperature_2m")),
+                current.optInt("weather_code", -1),
+                RoadHazardPolicy.toKmh(num(current.opt("wind_gusts_10m")), unit(units, "wind_gusts_10m")),
+                RoadHazardPolicy.toMeters(num(current.opt("visibility")), unit(units, "visibility")));
+    }
+
+    private static RoadHazardPolicy.Hazard hazardAt(JSONObject hourly, @Nullable JSONObject units, int i) {
+        JSONArray codes = hourly.optJSONArray("weather_code");
+        return RoadHazardPolicy.of(
+                RoadHazardPolicy.toCelsius(num(hourly, "temperature_2m", i), unit(units, "temperature_2m")),
+                (codes == null || codes.isNull(i)) ? -1 : codes.optInt(i, -1),
+                RoadHazardPolicy.toKmh(num(hourly, "wind_gusts_10m", i), unit(units, "wind_gusts_10m")),
+                RoadHazardPolicy.toMeters(num(hourly, "visibility", i), unit(units, "visibility")));
+    }
+
+    private static float num(JSONObject hourly, String key, int i) {
+        JSONArray arr = hourly.optJSONArray(key);
+        return (arr == null) ? Float.NaN : num(arr.opt(i));
+    }
+
+    private static float num(@Nullable Object v) {
+        return (v instanceof Number) ? ((Number) v).floatValue() : Float.NaN;
+    }
+
+    @Nullable
+    private static String unit(@Nullable JSONObject units, String key) {
+        return (units == null) ? null : units.optString(key, null);
     }
 
     public static int getWeatherConditionResId(int weatherCode) {
@@ -407,10 +460,5 @@ public class GlassOpenMeteoClient {
         this.cachedIsMetric = isMetric;
     }
 
-    @VisibleForTesting
-    @Nullable
-    public HourlyForecast getCachedForecastForTesting() {
-        return cachedForecast;
-    }
 }
 

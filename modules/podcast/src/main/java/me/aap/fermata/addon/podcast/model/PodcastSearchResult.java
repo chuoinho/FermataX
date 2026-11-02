@@ -58,11 +58,6 @@ public final class PodcastSearchResult {
 	}
 
 	@NonNull
-	public String getProviderId() {
-		return providerId;
-	}
-
-	@NonNull
 	public String getTitle() {
 		return title;
 	}

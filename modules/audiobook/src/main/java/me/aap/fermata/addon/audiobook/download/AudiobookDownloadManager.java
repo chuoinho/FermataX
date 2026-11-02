@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -130,7 +131,7 @@ public final class AudiobookDownloadManager implements Closeable {
 				AudiobookDownloadState.FAILED, null);
 	}
 
-	private static File downloadFile(String sourceUrl, Map<String, String> requestHeaders,
+	static File downloadFile(String sourceUrl, Map<String, String> requestHeaders,
 			File partial, File complete,
 			CancellationCheck cancellation) throws IOException {
 		if (!sourceUrl.regionMatches(true, 0, "https://", 0, 8) &&
@@ -143,6 +144,7 @@ public final class AudiobookDownloadManager implements Closeable {
 		}
 		if (complete.isFile() && (complete.length() > 0)) return complete;
 		long existing = partial.isFile() ? partial.length() : 0;
+		File validatorFile = new File(partial.getPath() + ".validator");
 		HttpURLConnection connection = (HttpURLConnection) new URL(sourceUrl).openConnection();
 		connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
 		connection.setReadTimeout(READ_TIMEOUT_MS);
@@ -155,7 +157,12 @@ public final class AudiobookDownloadManager implements Closeable {
 					name.equalsIgnoreCase("User-Agent")) continue;
 			connection.setRequestProperty(name, header.getValue());
 		}
-		if (existing > 0) connection.setRequestProperty("Range", "bytes=" + existing + '-');
+		if (existing > 0) {
+			connection.setRequestProperty("Range", "bytes=" + existing + '-');
+			// The server answers with the whole file when it changed since the partial was started.
+			if (validatorFile.isFile()) connection.setRequestProperty("If-Range",
+					new String(Files.readAllBytes(validatorFile.toPath()), StandardCharsets.UTF_8));
+		}
 		try {
 			int status = connection.getResponseCode();
 			if ((status == 416) && (existing > 0)) {
@@ -166,6 +173,13 @@ public final class AudiobookDownloadManager implements Closeable {
 				throw new IOException("Audiobook download returned HTTP " + status);
 			}
 			boolean append = (status == 206) && (existing > 0);
+			if (append && !rangeStartsAt(connection.getHeaderField("Content-Range"), existing)) {
+				if (!partial.delete()) throw new IOException("Cannot restart Audiobook download");
+				return downloadFile(sourceUrl, requestHeaders, partial, complete, cancellation);
+			}
+			if (!append) saveValidator(connection, validatorFile);
+			long bodyLength = connection.getContentLengthLong();
+			long received = 0;
 			try (InputStream input = new BufferedInputStream(connection.getInputStream());
 				 BufferedOutputStream output = new BufferedOutputStream(
 						new FileOutputStream(partial, append))) {
@@ -173,14 +187,34 @@ public final class AudiobookDownloadManager implements Closeable {
 				for (int read; (read = input.read(buffer)) != -1; ) {
 					cancellation.checkCancelled();
 					output.write(buffer, 0, read);
+					received += read;
 				}
+			}
+			// A dropped connection just ends the stream; keep the partial for a resume.
+			if ((bodyLength >= 0) && (received != bodyLength)) {
+				throw new IOException("Audiobook download ended before the expected length");
 			}
 			cancellation.checkCancelled();
 			move(partial, complete);
+			validatorFile.delete();
 			return complete;
 		} finally {
 			connection.disconnect();
 		}
+	}
+
+	private static boolean rangeStartsAt(String contentRange, long start) {
+		return (contentRange != null) &&
+				contentRange.trim().toLowerCase(Locale.ROOT).startsWith("bytes " + start + '-');
+	}
+
+	// If-Range needs a strong validator, so a weak ETag falls back to Last-Modified.
+	private static void saveValidator(HttpURLConnection connection, File file) throws IOException {
+		String etag = connection.getHeaderField("ETag");
+		String validator = ((etag != null) && !etag.startsWith("W/")) ? etag :
+				connection.getHeaderField("Last-Modified");
+		if (validator == null) Files.deleteIfExists(file.toPath());
+		else Files.write(file.toPath(), validator.getBytes(StandardCharsets.UTF_8));
 	}
 
 	private File complete(AudiobookBook book, AudiobookChapter chapter) {

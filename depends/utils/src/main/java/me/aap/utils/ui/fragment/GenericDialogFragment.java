@@ -17,7 +17,6 @@ import me.aap.utils.R;
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.ui.activity.ActivityDelegate;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ImageButton;
 import me.aap.utils.ui.view.ToolBarView;
 
@@ -38,12 +37,6 @@ public class GenericDialogFragment extends GenericFragment {
 		setToolBarMediator(toolBarMediator);
 	}
 
-	public GenericDialogFragment(ToolBarView.Mediator toolBarMediator,
-															 FloatingButton.Mediator floatingButtonMediator) {
-		setToolBarMediator(toolBarMediator);
-		setFloatingButtonMediator(floatingButtonMediator);
-	}
-
 	public void setDialogConsumer(BooleanConsumer consumer) {
 		this.consumer = consumer;
 	}
@@ -54,10 +47,6 @@ public class GenericDialogFragment extends GenericFragment {
 
 	public void setBackHandler(BooleanSupplier backHandler) {
 		this.backHandler = backHandler;
-	}
-
-	public void setCloseButtonVisible(boolean visible) {
-		closeButtonVisible = visible;
 	}
 
 	@Override

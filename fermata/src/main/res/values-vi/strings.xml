@@ -1,14 +1,8 @@
 <resources>
     <string name="home">Trang chủ</string>
     <string name="dashboard">Bảng điều khiển</string>
-    <string name="open_dashboard">Mở bảng điều khiển</string>
-    <string name="dashboard_order">Thứ tự bảng điều khiển</string>
-    <string name="reset_dashboard_order">Đặt lại thứ tự bảng điều khiển</string>
-    <string name="dashboard_order_sub">Cũng điều khiển thứ tự thanh điều hướng</string>
     <string name="dashboard_now_playing">Đang phát</string>
     <string name="dashboard_continue">Xem tiếp</string>
-    <string name="dashboard_continue_sub">%1$s - %2$s</string>
-    <string name="dashboard_smart_recommended">Gợi ý cho bạn</string>
     <string name="dashboard_smart_discover">Khám phá</string>
     <string name="dashboard_smart_empty_title">Chọn một addon</string>
     <string name="dashboard_smart_empty_subtitle">Bắt đầu xem hoặc nghe</string>
@@ -68,10 +62,7 @@
     
 
     <string name="interface_prefs">Giao diện</string>
-    <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Cài đặt phát lại</string>
-    <string name="playback_control">Điều khiển phát lại</string>
-	<string name="engine_prefs">Bộ máy phát đa phương tiện</string>
 
     <string name="theme">Chủ đề</string>
     <string name="theme_sub">Chủ đề hiện tại: %1$s</string>
@@ -84,12 +75,14 @@
     <string name="theme_classic">Cổ điển</string>
     <string name="theme_material_you">Material You / Bento Grid</string>
     <string name="theme_glass">Giao diện Kính (Glassmorphism)</string>
-    <string name="theme_aa">Giao diện Android Auto</string>
-    <string name="theme_aa_sub">Giao diện màn hình xe: %1$s</string>
     <string name="glass_appearance">Chế độ theme kính</string>
     <string name="glass_appearance_sub">Áp dụng cho giao diện kính trên điện thoại và Android Auto: %1$s</string>
     <string name="glass_appearance_day">Sáng</string>
     <string name="glass_appearance_night">Tối</string>
+    <string name="glass_units">Đơn vị</string>
+    <string name="glass_units_sub">Tốc độ, quãng đường và nhiệt độ: %1$s</string>
+    <string name="glass_units_metric">km/h, km, °C</string>
+    <string name="glass_units_imperial">mph, dặm, °F</string>
     <string name="glass_quick_add">Thêm</string>
     <string name="glass_quick_manage_title">Quản lý phím tắt Quick Dock</string>
     <string name="glass_quick_manage_sub">Cấu hình 6 phím tắt màn hình chính</string>
@@ -99,11 +92,8 @@
     <string name="nav_bar_pos_left">Bên trái</string>
     <string name="nav_bar_pos_right">Bên phải</string>
 
-    <string name="show_track_icons">Hiển thị biểu tượng bản nhạc</string>
     <string name="lang">Ngôn Ngữ</string>
-    <string name="trans_lang">Ngôn ngữ dịch</string>
     <string name="hide_bars">Ẩn thanh điều hướng</string>
-    <string name="hide_bars_sub">Ẩn các thanh của ứng dụng khi bảng điều khiển xuất hiện</string>
     <string name="show_pg_up_down">Hiển thị nút lên/xuống trang</string>
     <string name="use_dpad_cursor">Sử dụng con trỏ để điều hướng D-pad</string>
     <string name="fullscreen_mode">Chế độ toàn màn hình</string>
@@ -133,56 +123,22 @@
 	<string name="action_cp_menu">Menu bảng điều khiển</string>
     <string name="action_back_or_exit">Quay lại hoặc thoát</string>
     <string name="action_exit">Thoát</string>
-    <string name="action_default">Mặc định</string>
     <string name="action_none">Trống</string>
 
     <string name="play_next_on_completion">Phát tiếp khi hoàn thành</string>
 
-    <string name="rw_ff_click">RW/FF - nhấn</string>
-    <string name="rw_ff_long_click">RW/FF - nhấn giữ</string>
-    <string name="prev_next_long_click">Prev/Next - nhấn giữ</string>
-    <string name="play_pause_stop">Dừng hoặc Chạy/Tạm dừng - nhấn giữ</string>
 
     <string name="time">Thời gian</string>
-    <string name="time_unit">Đơn vị thời gian</string>
-    <string name="time_unit_sub">Thời gian hiện tại: %1$s</string>
-    <string name="time_unit_second">Giây</string>
-    <string name="time_unit_minute">Phút</string>
-    <string name="time_unit_percent">Phần trăm</string>
 
-    <string name="video_control">Điều khiển video</string>
-    <string name="video_control_start_delay">Hiển thị khi bắt đầu</string>
-    <string name="video_control_touch_delay">Hiển thị khi chạm</string>
-    <string name="video_control_seek_delay">Hiển thị khi tìm kiếm</string>
-    <string name="video_aa_show_status">Hiển thị thanh trạng thái trong Android Auto</string>
 
-    <string name="enable_exoplayer">Cho phép ExoPlayer</string>
-    <string name="enable_vlcplayer">Cho phép VLC</string>
     <string name="preferred_audio_engine">Mã nguồn âm thanh được ưa thích</string>
     <string name="preferred_video_engine">Mã nguồn video được ưa thích</string>
-    <string name="engine_installed">Cài đặt mã nguồn Media: %1$s</string>
     <string name="engine_uninstalled">Gỡ mã nguồn Media: %1$s</string>
 
-    <string name="preferred_media_scanner">Quét media ưa thích</string>
-    <string name="preferred_media_scanner_default">Mặc định</string>
-    <string name="preferred_media_scanner_system">Theo hệ thống</string>
 
     <string name="voice_search">Tìm kiếm bằng giọng nói</string>
 	<string name="voice_control">Điều khiển bằng giọng nói</string>
-	<string name="voice_trigger_assign">Gán nút voice trên xe</string>
-	<string name="voice_trigger_current">Hiện tại: %1$s. Chỉ hoạt động khi FermataX đang hiển thị.</string>
-	<string name="voice_trigger_unassigned">Chưa gán</string>
-	<string name="voice_trigger_capture_started">Hãy nhấn một lần nút trên vô-lăng hoặc head unit. Lần nhấn này sẽ không chạy chức năng gốc.</string>
-	<string name="voice_trigger_capture_timeout">Không phát hiện nút được hỗ trợ. Không có thay đổi nào được lưu.</string>
-	<string name="voice_trigger_capture_success">Đã gán %1$s (%2$d). Nút chỉ mở voice của FermataX khi ứng dụng đang hiển thị.</string>
-	<string name="voice_trigger_clear">Xóa nút voice đã gán</string>
-	<string name="voice_trigger_cleared">Đã xóa nút voice trên xe.</string>
 	<string name="voice_selection_prompt">Hãy nói số một, hai hoặc ba</string>
-    <string name="voice_control_fb">Nút nhấn</string>
-    <string name="voice_control_sub_long">Kích hoạt điều khiển bằng giọng nói khi nhấn giữ</string>
-    <string name="voice_control_subst">Từ thay thế</string>
-    <string name="voice_control_subst_sub">Thay thế một từ bằng một từ hoặc cụm từ khác</string>
-    <string name="voice_control_subst_hint">bật: phát\ntắt: tạm dừng</string>
 
     <string name="module_installation">Cài đặt Module: %1$s</string>
     <string name="install_pending">Đang chờ cài đặt: %1$s</string>
@@ -201,11 +157,8 @@
     <string name="transaural">Transaural</string>
     <string name="bass_boost">Tăng cường âm trầm</string>
     <string name="vol_boost">Tăng cường âm lượng</string>
-	<string name="strength">Cường độ</string>
-    <string name="apply_to">Áp dụng cho</string>
 
     <string name="video">Video</string>
-    <string name="video_settings">Cài đặt video</string>
     <string name="video_scaling">Chia tỷ lệ video</string>
     <string name="hw_accel">Tăng tốc phần cứng</string>
     <string name="hw_accel_auto">Tự động</string>
@@ -226,7 +179,6 @@
     <string name="select_audio_stream">Chọn luồng âm thanh</string>
 
     <string name="subtitles">Phụ đề</string>
-    <string name="subtitles_auto">Tự động tạo</string>
     <string name="subtitle_delay">Độ trễ của phụ đề</string>
     <string name="display_subtitles">Hiển thị phụ đề</string>
     <string name="preferred_sub_lang">Phụ đề theo ngôn ngữ ưa thích</string>
@@ -234,8 +186,6 @@
     <string name="select_subtitles">Chọn phụ đề</string>
 
     
-    <string name="eq_hz">%1$s Hz</string>
-    <string name="eq_khz">%1$s kHz</string>
 
     <string name="current_track">Bài hát hiện tại</string>
     <string name="current_folder">Thư mục hiện tại</string>
@@ -244,14 +194,11 @@
     <string name="favorites">Yêu thích</string>
     <string name="playlists">Danh sách phát</string>
     <string name="search">Tìm kiếm</string>
-    <string name="filter">Lọc</string>
     <string name="settings">Cài đặt</string>
     <string name="menu">Menu</string>
     <string name="exit">Thoát</string>
     <string name="cancel">Hủy bỏ</string>
-    <string name="got_to_current">Bài hát hiện tại</string>
 
-    <string name="view">Lượt xem gần nhất</string>
     <string name="title">Tiêu đề</string>
     <string name="subtitle">Phụ đề</string>
     <string name="seq_num">STT</string>
@@ -264,7 +211,6 @@
     <string name="artist">Nghệ sĩ</string>
     <string name="duration">Khoảng thời gian</string>
 
-    <string name="sort_by">Sắp xếp theo</string>
     <string name="do_not_sort">Không sắp xếp</string>
 
     <string name="play">Phát</string>
@@ -333,15 +279,9 @@
     
     <string name="m3u_playlist_video">Danh sách phát video</string>
 
-    <string name="eq_manual">Thủ công</string>
-    <string name="eq_normal">Bình thường</string>
     <string name="eq_classical">cổ điển</string>
     <string name="eq_dance">Dance</string>
     <string name="eq_flat">Flat</string>
-    <string name="eq_folk">Folk</string>
-    <string name="eq_heavy_metal">Heavy Metal</string>
-    <string name="eq_hip_hop">Hip Hop</string>
-    <string name="eq_jazz">Jazz</string>
     <string name="eq_pop">Pop</string>
     <string name="eq_rock">Rock</string>
 
@@ -371,37 +311,15 @@
     <string name="move_up">Di chuyển sang lên trên</string>
     <string name="move_down">Di chuyển sang xuống dưới</string>
 
-    <string name="sys_bars_on_video_touch">Hiện thanh hệ thống khi chạm vào video</string>
-    <string name="play_video_landscape">Phát video ở chế độ ngang</string>
-    <string name="clock_pos">Vị trí đồng hồ</string>
-    <string name="clock_pos_none">Trống</string>
-    <string name="clock_pos_left">Trái</string>
-    <string name="clock_pos_right">Phải</string>
-    <string name="clock_pos_center">Giữa</string>
-    <string name="change_brightness">Thay đổi độ sáng khi phát video</string>
-    <string name="video_brightness">Độ sáng video</string>
-    <string name="change_brightness_sub">Độ sáng cũng có thể được thay đổi bằng cách cuộn bằng hai ngón tay</string>
     <string name="watched_threshold">Ngưỡng thời gian đã xem</string>
     <string name="watched_threshold_sub">Đã đánh dấu video là đã xem nếu nhiều hơn số phần trăm này được xem</string>
 
     <string name="other">Khác</string>
-    <string name="check_updates">Kiểm tra cập khi khởi động ứng dụng</string>
     <string name="update">Cập nhật</string>
-    <string name="update_question">Phiên bản mới %1$s khả dụng.\nBạn có muốn cập nhật ứng dụng không?</string>
-    <string name="export_prefs">Xuất cấu hình cài đặt ra tệp tin</string>
-    <string name="export_prefs_sub">Xuất cấu hình cài đặt, thư mục, danh sách phát, v.v. sang tệp</string>
-    <string name="export_prefs_ok">Cấu hình cài đặt đã được lưu trong tệp tin %1$s.</string>
-    <string name="export_prefs_failed">Không xuất được cấu hình cài đặt: %1$s</string>
-    <string name="import_prefs">Nhập cấu hình cài đặt từ tệp tin</string>
-    <string name="import_prefs_sub">Nhập cấu hình cài đặt đã xuất trước đó từ tệp</string>
-    <string name="import_prefs_ok">Cấu hình cài đặt đã được nhập thành công.\nXin vui lòng khởi động lại ứng dụng.</string>
-    <string name="import_prefs_failed">Không thể nhập tệp tin cấu hình cài đặt: %1$s</string>
-    <string name="prefs_not_found">Không tìm thấy tệp tin cấu hình cài đặt</string>
     <string name="open_log">Mở tệp nhật ký</string>
     <string name="unlock_phone_and_grant">Mở khóa điện thoại, mở FermataX và xác nhận chia sẻ màn hình để bắt đầu mirroring.</string>
     <string name="screen_capture_rejected">Yêu cầu chụp ảnh màn hình bị từ chối.</string>
     <string name="accessibility_dsc">Dịch vụ trợ năng được Fermata Mirror sử dụng để mô phỏng các sự kiện trên màn hình cảm ứng.</string>
-    <string name="media_projection_action_text">Bắt đầu ngay</string>
 
     <string name="about">Giới thiệu</string>
     <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
@@ -450,8 +368,6 @@
     <string name="initial_setup_continue">Tiếp tục đến dashboard</string>
     <string name="initial_setup_reopen">Mở lại thiết lập ban đầu</string>
     <string name="initial_setup_reopen_sub">Đổi thiết bị, ngôn ngữ ứng dụng hoặc tùy chọn giọng nói.</string>
-    <string name="voice_control_auto_language">Tự nhận diện ngôn ngữ giọng nói</string>
-    <string name="voice_control_auto_language_sub">Dùng tính năng nhận diện ngôn ngữ của Android 14 và ngôn ngữ đã chọn làm dự phòng.</string>
 	<string name="dashboard_stremio_sub">Phim, loạt phim và nhà cung cấp đã cài đặt</string>
 	<string name="dashboard_back_to_list">Quay lại danh sách</string>
 	<string name="action_prev_folder">Phát thư mục trước đó</string>
@@ -463,7 +379,6 @@
 	<string name="p2p_starting_player_status">%1$d đồng nghiệp | %2$s/s | Người chơi bắt đầu</string>
 	<string name="p2p_streaming_status">%1$d đồng nghiệp | %2$s/s | Đang chơi</string>
 	<string name="p2p_rebuffering_status">Đang đệm lại | %1$d đồng nghiệp | %2$s/s</string>
-	<string name="err_failed_start_service">Không thể khởi động dịch vụ: %s</string>
 	<string name="err_p2p_metadata_unavailable">Siêu dữ liệu torrent không có sẵn. Hãy thử một luồng khác.</string>
 	<string name="err_p2p_no_peers">Không có đồng nghiệp P2P nào đang hoạt động. Hãy thử một luồng khác.</string>
 	<string name="err_p2p_data_timeout">Các đồng nghiệp P2P không cung cấp dữ liệu kịp thời. Hãy thử một luồng khác.</string>
@@ -482,13 +397,11 @@
 	<string name="car_keyboard_paste">Dán</string>
 	<string name="car_keyboard_delete">Xóa bỏ</string>
 	<string name="car_keyboard_clear">Thông thoáng</string>
-	<string name="car_keyboard_ok">ĐƯỢC RỒI</string>
 	<string name="car_keyboard_go">Đi</string>
 	<string name="car_keyboard_send">Gửi</string>
 	<string name="car_keyboard_enter">Xuống dòng</string>
 	<string name="m3u_playlist_timeout">Hết thời gian phản hồi</string>
 	<string name="diagnostics">Chẩn đoán</string>
-	<string name="diagnostics_sub">Báo cáo cục bộ về sự cố, treo ứng dụng và trạng thái bất thường</string>
 	<string name="detailed_diagnostics">Chẩn đoán chi tiết</string>
 	<string name="detailed_diagnostics_sub">Ghi lại sự kiện chi tiết trong tối đa 48 giờ. Bạn có thể tắt bất cứ lúc nào.</string>
 	<string name="vehicle_key_test">Kiểm tra nút điều khiển trên xe</string>
@@ -515,16 +428,11 @@
 	<string name="audio_effects_applying">Đang áp dụng thay đổi EQ…</string>
 	<string name="audio_effects_applied">Đã áp dụng thay đổi EQ</string>
 	<string name="audio_effects_apply_failed">Đã lưu thay đổi EQ nhưng không thể áp dụng</string>
-	<string name="audio_effects_flat">Phẳng</string>
 	<string name="audio_effects_custom">Tùy chỉnh</string>
-	<string name="audio_effects_set_flat">Đặt EQ về 0</string>
 	<string name="audio_effects_scale">Mức dB, từ -15 đến +15 (0 dB ở giữa)</string>
 	<string name="audio_effects_mode">Chế độ</string>
 	<string name="audio_effects_band_scroll">Các dải cân bằng</string>
 	<string name="audio_effects_band_format">%1$s Hz, %2$s dB</string>
-	<string name="audio_effects_additional">Hiệu ứng bổ sung</string>
-	<string name="audio_effects_expand">Hiện hiệu ứng bổ sung</string>
-	<string name="audio_effects_collapse">Ẩn hiệu ứng bổ sung</string>
 	<string name="audio_effects_disabled">Đã tắt</string>
 	<string name="audio_effects_range_error">Nhập giá trị từ %1$d đến %2$d.</string>
 
@@ -540,7 +448,6 @@
     <string name="car_finder_waiting_gps">Đang đợi định vị GPS…</string>
     <string name="car_finder_measuring_gps">Đang đo vị trí…</string>
     <string name="car_finder_precise_find">Tìm chính xác</string>
-    <string name="car_finder_directions">Chỉ đường</string>
     <string name="car_finder_found_car">Đã tìm thấy xe</string>
     <string name="car_finder_found_confirm_title">Xác nhận tìm thấy xe</string>
     <string name="car_finder_found_confirm_msg">Bạn đã tìm thấy xe rồi chứ? Dữ liệu vị trí đỗ sẽ được xóa ngay.</string>
@@ -567,16 +474,12 @@
     <string name="car_finder_rear_left">Phía sau, chếch trái</string>
     <string name="car_finder_behind">Phía sau bạn</string>
     <string name="car_finder_right_here">Xe ở ngay đây</string>
-    <string name="car_finder_almost_there">Sắp tới nơi</string>
     <string name="car_finder_follow_arrow">Đi theo mũi tên</string>
-    <string name="car_finder_compass_uncalibrated">La bàn đang lệch — xoay máy hình số 8</string>
-    <string name="car_finder_accuracy_margin">±%1$d m</string>
     <string name="car_finder_back">Quay lại</string>
     <string name="car_finder_close">Đóng</string>
     <string name="car_finder_take_photo">Chụp ảnh điểm đỗ</string>
     <string name="car_finder_retake_photo">Chụp lại</string>
     <string name="car_finder_delete_photo">Xoá ảnh</string>
-    <string name="car_finder_photo_title">Ảnh điểm đỗ xe</string>
     <string name="car_finder_add_note">Thêm ghi chú (vd: Cột B2 #15)</string>
     <string name="car_finder_note_hint">Số cột, tầng hầm, vị trí đỗ…</string>
     <string name="car_finder_near_car_hint">Bạn đang ở rất gần xe (~%1$d m). Hãy dùng Radar để xác định hướng chính xác!</string>
@@ -604,8 +507,6 @@
     <string name="initial_setup_perm_storage_sub">Phát nhạc, video, thư mục và playlist lưu trên điện thoại.</string>
     <string name="initial_setup_perm_notifications">Thông báo</string>
     <string name="initial_setup_perm_notifications_sub">Hiện điều khiển phát nhạc trên thanh thông báo và màn hình khoá.</string>
-    <string name="initial_setup_perm_microphone">Micro</string>
-    <string name="initial_setup_perm_microphone_sub">Điều khiển và tìm kiếm bằng giọng nói.</string>
     <string name="initial_setup_perm_location">Vị trí</string>
     <string name="initial_setup_perm_location_sub">Thẻ tốc độ, thời tiết và lưu vị trí đỗ xe.</string>
     <string name="initial_setup_perm_nav">Thông báo dẫn đường</string>
@@ -681,6 +582,8 @@
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">ĐIỀU HƯỚNG</string>
     <string name="glass_nav_exit">THOÁT</string>
+    <string name="glass_card_show_weather_desc">Hiện thời tiết</string>
+    <string name="glass_card_show_nav_desc">Hiện dẫn đường</string>
     <string name="glass_nav_gps_timeout">Hết thời gian chờ GPS. Chạm để thử lại.</string>
     <string name="glass_nav_network_error">Lỗi kết nối mạng. Chạm để thử lại.</string>
     <string name="glass_nav_weather_unavailable">Thời tiết không khả dụng</string>
@@ -697,7 +600,6 @@
     <string name="glass_addon_desc_favorites">Truy cập nhanh các mục yêu thích</string>
     <string name="glass_addon_desc_recent">Lịch sử phát gần đây</string>
     <string name="glass_media_buffering">ĐANG TẢI ĐỆM…</string>
-    <string name="glass_media_unknown_title">Tiêu đề không xác định</string>
 
     <!-- Units -->
     <string name="unit_m">m</string>
@@ -714,6 +616,10 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">Tiện ích mở rộng</string>
     <string name="glass_weather_header">THỜI TIẾT &amp; DỰ BÁO</string>
+    <string name="glass_weather_hazard_ice">Nguy cơ đóng băng · giảm tốc</string>
+    <string name="glass_weather_hazard_fog">Sương mù · tầm nhìn kém</string>
+    <string name="glass_weather_hazard_heavy">Mưa hoặc tuyết lớn</string>
+    <string name="glass_weather_hazard_wind">Gió giật mạnh · %1$s</string>
     <string name="glass_weather_updating">Đang cập nhật…</string>
     <string name="glass_speedo_card_title">TỐC ĐỘ &amp; HÀNH TRÌNH</string>
 
@@ -723,4 +629,17 @@
     <string name="glass_shortcut_remove">Xóa</string>
     <string name="speedo_location_lost_background">Mất vị trí khi FermataX chạy nền. Mở FermataX trên điện thoại để cấp \'Luôn cho phép\'.</string>
     <string name="speedo_background_restricted">Hệ thống đã dừng FermataX khi chạy nền. Mở FermataX trên điện thoại để bỏ giới hạn pin.</string>
+
+    <!-- Glass Road Limits & Signals -->
+    <string name="glass_limits_title">GIỚI HẠN &amp; ĐÈN</string>
+    <string name="glass_show_limits">Hiện giới hạn tốc độ và đèn</string>
+    <string name="glass_show_speed">Hiện tốc độ và chuyến đi</string>
+    <string name="glass_signal_label">Đèn giao thông</string>
+    <string name="glass_road_unnamed">Đường không tên</string>
+    <string name="glass_road_searching">Đang tìm đường…</string>
+    <string name="glass_limits_no_data">Đường chưa có dữ liệu giới hạn</string>
+    <string name="glass_speed_limit_desc">Giới hạn tốc độ %1$d</string>
+    <string name="glass_signal_desc">Đèn giao thông cách %1$d mét</string>
+    <string name="glass_road_data">Dữ liệu giới hạn tốc độ &amp; đèn</string>
+    <string name="glass_road_data_sub">Tải dữ liệu bản đồ quanh nơi bạn hay đến khi có Wi‑Fi. © OpenStreetMap contributors</string>
 </resources>

@@ -23,10 +23,6 @@ public class MetadataBuilder {
 		builder.putString(METADATA_KEY_ALBUM_ART_URI, imageUri);
 	}
 
-	public boolean hasImage() {
-		return hasBitmap || (imageUri != null);
-	}
-
 	public long getDuration() {
 		return duration;
 	}

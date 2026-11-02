@@ -63,7 +63,6 @@ import me.aap.fermata.ui.voice.VoiceUiPolicy;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 import me.aap.utils.ui.view.ToolBarView;
 
@@ -100,11 +99,6 @@ public class DashboardFragment extends MainActivityFragment
 	@Override
 	public ToolBarView.Mediator getToolBarMediator() {
 		return DashboardToolBarMediator.instance;
-	}
-
-	@Override
-	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return DashboardFloatingButtonMediator.instance;
 	}
 
 	@Nullable
@@ -245,6 +239,9 @@ public class DashboardFragment extends MainActivityFragment
 			MainActivityDelegate activity = getActivityDelegate();
 			if (MainActivityPrefs.hasThemePref(activity, prefs) || prefs.contains(MainActivityPrefs.GLASS_APPEARANCE)) {
 				glassLayout.refreshAppearance();
+			}
+			if (prefs.contains(MainActivityPrefs.GLASS_SPEED_UNIT) && glassDashboardController != null) {
+				glassDashboardController.onUnitsChanged();
 			}
 			if (prefs.contains(MainActivityPrefs.PREF_GLASS_QUICK_SHORTCUTS)) {
 				if (glassLayout.getQuickBarView() instanceof me.aap.fermata.ui.glass.quickbar.GlassQuickBarView qb) {
@@ -1311,22 +1308,6 @@ public class DashboardFragment extends MainActivityFragment
 			ActivityDelegate a = ActivityDelegate.get(tb.getContext());
 			View root = a.getActiveFragment() == null ? null : a.getActiveFragment().getView();
 			return root instanceof RecyclerView ? ((RecyclerView) root).getChildAt(0) : null;
-		}
-	}
-
-	private static final class DashboardFloatingButtonMediator implements FloatingButton.Mediator {
-		static final DashboardFloatingButtonMediator instance = new DashboardFloatingButtonMediator();
-
-		@Override
-		public void enable(FloatingButton fb, ActivityFragment f) {
-			fb.setVisibility(View.GONE);
-			FloatingButton.Mediator.super.disable(fb);
-		}
-
-		@Override
-		public void disable(FloatingButton fb) {
-			FloatingButton.Mediator.super.disable(fb);
-			fb.setVisibility(View.VISIBLE);
 		}
 	}
 

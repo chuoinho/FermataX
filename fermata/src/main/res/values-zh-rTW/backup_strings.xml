@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="backup_restore">備份與還原</string>
-	<string name="backup_restore_sub">在裝置間移轉可攜式設定與帳戶資料</string>
 	<string name="backup_all_data">備份所有資料</string>
 	<string name="backup_all_data_sub">建立一個加密的 FermataX 備份檔</string>
 	<string name="restore_backup">還原備份</string>

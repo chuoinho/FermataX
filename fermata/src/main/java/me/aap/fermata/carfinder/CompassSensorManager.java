@@ -69,10 +69,6 @@ public final class CompassSensorManager implements SensorEventListener {
 		this.magneticSensor = mag;
 	}
 
-	public boolean hasCompassSensor() {
-		return rotationVectorSensor != null || (accelerometerSensor != null && magneticSensor != null);
-	}
-
 	public synchronized void start() {
 		if (isRunning || sensorManager == null) return;
 		isRunning = true;
@@ -101,10 +97,6 @@ public final class CompassSensorManager implements SensorEventListener {
 
 	public boolean isRunning() {
 		return isRunning;
-	}
-
-	public boolean isUnreliable() {
-		return isUnreliableAccuracy;
 	}
 
 	/**

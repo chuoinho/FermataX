@@ -101,13 +101,4 @@ public interface Rid {
 		return Uri.parse(toString());
 	}
 
-	default URI toJavaUri() {
-		if (this instanceof JavaUriWrapper) return ((JavaUriWrapper) this).getUri();
-
-		try {
-			return new URI(toString());
-		} catch (URISyntaxException ex) {
-			throw new IllegalArgumentException(ex);
-		}
-	}
 }

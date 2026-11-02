@@ -26,14 +26,19 @@ public class TopBarAuthorityContractTest {
 		assertTrue(controller.contains("toolBar.setVisibility(visibility)"));
 	}
 
+	// Root pages hide Back; without an inset their title sits flush against the screen edge.
+	@Test
+	public void titleGetsStartInsetWhenBackIsGone() throws Exception {
+		String controller = coreSource("ui/view/TopBarController.java");
+		assertTrue(controller.contains("state.backVisibility() == View.GONE"));
+		assertTrue(controller.contains("title.setPaddingRelative("));
+	}
+
 	@Test
 	public void controllerUsesTheHostSpecificPrimaryRoot() throws Exception {
 		String controller = coreSource("ui/view/TopBarController.java");
 		assertTrue(controller.contains("PhoneRootPolicy.isPrimaryRoot("));
 		assertTrue(controller.contains("activity.getPhoneRootId(), fragment.getFragmentId()"));
-
-		String chrome = coreSource("ui/policy/ChromePolicy.java");
-		assertTrue(chrome.contains("PhoneRootPolicy.isPrimaryRoot("));
 	}
 
 	@Test
@@ -112,15 +117,6 @@ public class TopBarAuthorityContractTest {
 
 		String shell = coreSource("ui/view/UiShellController.java");
 		assertTrue(shell.contains("TopBarController.refresh(activity);"));
-	}
-
-	@Test
-	public void compatibilityChromeFacadeDoesNotWriteTopBarViews() throws Exception {
-		String chrome = coreSource("ui/policy/ChromePolicy.java");
-		assertTrue(chrome.contains("TopBarPolicy.isTopBackVisible"));
-		assertTrue(chrome.contains("TopBarController.refresh(a);"));
-		assertFalse(chrome.contains("findViewById"));
-		assertFalse(chrome.contains("setVisibility("));
 	}
 
 	@Test

@@ -87,18 +87,6 @@ public abstract class Log {
 		return BuildConfig.D;
 	}
 
-	public static boolean isLoggableI() {
-		return isLoggable(INFO);
-	}
-
-	public static boolean isLoggableW() {
-		return isLoggable(WARN);
-	}
-
-	public static boolean isLoggableE() {
-		return isLoggable(ERROR);
-	}
-
 	public static boolean isLoggable(Level level) {
 		return impl.isLoggable(level);
 	}

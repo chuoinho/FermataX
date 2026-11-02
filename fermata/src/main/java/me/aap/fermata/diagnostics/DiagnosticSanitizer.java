@@ -46,8 +46,6 @@ public final class DiagnosticSanitizer {
 	private static final Pattern UNIX_PATH_PATTERN = Pattern.compile(
 			"(?i)(?<![a-z0-9:])/(?:data|storage|sdcard|mnt|home|users|private|var|tmp|" +
 					"cache)(?:/[^\\s\\\"'<>]*)?");
-	private static final Pattern URI_SECRET_PATH_PATTERN = Pattern.compile(
-			"(?i)/(?:token|password|passwd|secret|credential|api[_-]?key)(?:/[^/?#]*)?");
 	private static final Pattern OPAQUE_SECRET_PATTERN = Pattern.compile(
 			"^[A-Za-z0-9_+/=-]{40,}$");
 	private static final Pattern METADATA_IDENTIFIER = Pattern.compile("^[a-z][a-z0-9_]{0,63}$");
@@ -59,7 +57,7 @@ public final class DiagnosticSanitizer {
 					"duplicate", "fixes", "invalid_accuracy", "invalid_position", "invalid_time", "mock", "mock_rejected", "not_running",
 					"src_gps", "src_google_fused", "src_platform_fused", "from", "to", "provider", "recovering", "rejected", "signal", "signal_only", "speed_low_confidence",
 					"speed_missing", "speed_ok", "speed_out_of_range", "speed_stop", "speed_unknown",
-					"attached", "attempt", "auto", "automotive", "bound", "browser_fullscreen", "byte_count",
+					"attached", "attempt", "auto", "automotive", "battery_pct", "battery_temp_c", "plugged", "thermal_status", "bound", "browser_fullscreen", "byte_count",
 					"command_type", "count", "current_engine_class", "current_engine_id",
 					"duration_ms", "endpoint", "engine_class", "engine_fingerprint", "engine_id", "epoch",
 					"error", "error_class", "error_code", "failure", "failure_class_id",

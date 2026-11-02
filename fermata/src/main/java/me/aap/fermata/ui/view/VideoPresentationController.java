@@ -36,8 +36,4 @@ public final class VideoPresentationController {
 		return true;
 	}
 
-	public static void showFrame(MainActivityDelegate activity) {
-		BodyLayout body = activity.getBody();
-		if ((body != null) && !body.isFrameMode()) body.setMode(BodyLayout.Mode.FRAME);
-	}
 }

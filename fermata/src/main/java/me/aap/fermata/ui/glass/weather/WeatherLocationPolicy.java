@@ -24,6 +24,15 @@ public final class WeatherLocationPolicy {
         return !busy && !automotive && shouldFetch(nowMs, lastFetchMs, hasData);
     }
 
+    public static final float DISTANCE_REFRESH_M = 25_000f;
+    public static final long DISTANCE_REFRESH_MIN_MS = 10 * 60_000L;
+
+    /** On a long drive the forecast follows the car: 25 km from the last fetch, at most every 10 minutes. */
+    public static boolean shouldRefreshForDistance(float distanceM, long nowMs, long lastFetchMs) {
+        return lastFetchMs > 0 && distanceM >= DISTANCE_REFRESH_M
+                && nowMs - lastFetchMs >= DISTANCE_REFRESH_MIN_MS;
+    }
+
     public static long nextFetchDelayMs(long nowMs, long lastFetchMs) {
         if (lastFetchMs <= 0) return 0L;
         return Math.max(0L, lastFetchMs + REFRESH_MS - nowMs);

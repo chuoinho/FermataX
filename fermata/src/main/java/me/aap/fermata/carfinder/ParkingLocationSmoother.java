@@ -75,11 +75,6 @@ public final class ParkingLocationSmoother {
 		));
 	}
 
-	/** Backwards-compatible alias */
-	public synchronized void addLocation(@Nullable Location loc) {
-		recordLocationSample(loc);
-	}
-
 	/** Clears all buffered location fixes */
 	public synchronized void clear() {
 		buffer.clear();

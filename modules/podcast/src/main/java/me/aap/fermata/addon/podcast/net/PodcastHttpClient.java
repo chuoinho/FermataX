@@ -17,7 +17,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.CancellationException;
 
 import javax.net.ssl.SSLException;
@@ -348,7 +347,6 @@ public class PodcastHttpClient {
 		}
 
 		public String getUrl() { return url; }
-		public String getAccept() { return accept; }
 		public String getAuthorization() { return authorization; }
 		public String getEtag() { return etag; }
 		public String getLastModified() { return lastModified; }

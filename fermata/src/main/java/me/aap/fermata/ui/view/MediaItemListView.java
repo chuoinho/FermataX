@@ -257,8 +257,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	}
 
 	private View focusEmpty() {
-		View v = getActivity().getFloatingButton();
-		return isVisible(v) ? v : this;
+		return this;
 	}
 
 	@Override
@@ -310,8 +309,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		MainActivityDelegate a = getActivity();
 		BodyLayout b = a.getBody();
 		if (b.isBothMode() || b.isVideoMode()) return b.getVideoView();
-		View v = a.getFloatingButton();
-		if (isVisible(v)) return v;
 		NavBarView n = a.getNavBar();
 		return (isVisible(n) && n.isRight()) ? n.focusSearch() : focused;
 	}
@@ -331,18 +328,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 		List<MediaItemWrapper> list = getAdapter().getList();
 		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
-	}
-
-	/** Allows an addon-owned renderer to keep the shared focus policy in sync with its layout. */
-	public void setPresentationLayout(@NonNull LayoutManager manager, boolean grid) {
-		this.grid = grid;
-		setLayoutManager(manager);
-	}
-
-	/** Reapplies an addon-owned layout after global preference/configuration updates. */
-	public void setPresentationLayoutOverride(@Nullable Runnable override) {
-		presentationLayoutOverride = override;
-		if (override != null) override.run();
 	}
 
 	@Nullable

@@ -1,14 +1,8 @@
 <resources>
     <string name="home">首頁</string>
     <string name="dashboard">儀表板</string>
-    <string name="open_dashboard">開啟儀表板</string>
-    <string name="dashboard_order">儀表板順序</string>
-    <string name="reset_dashboard_order">重設儀表板順序</string>
-    <string name="dashboard_order_sub">也控制導覽順序</string>
     <string name="dashboard_now_playing">正在播放</string>
     <string name="dashboard_continue">繼續觀看</string>
-    <string name="dashboard_continue_sub">%1$s - %2$s</string>
-    <string name="dashboard_smart_recommended">為你推薦</string>
     <string name="dashboard_smart_discover">探索</string>
     <string name="dashboard_smart_empty_title">選擇附加元件</string>
     <string name="dashboard_smart_empty_subtitle">開始觀看或聆聽</string>
@@ -73,10 +67,7 @@
     
 
     <string name="interface_prefs">選項</string>
-    <string name="interface_prefs_aa">Android Auto模式選項</string>
     <string name="playback_settings">播放設定</string>
-    <string name="playback_control">播放控制設定</string>
-    <string name="engine_prefs">播放器設定</string>
 
     <string name="theme">佈景主題</string>
     <string name="theme_sub">目前佈景主題: %1$s</string>
@@ -93,11 +84,8 @@
     <string name="nav_bar_pos_left">左</string>
     <string name="nav_bar_pos_right">右</string>
 
-    <string name="show_track_icons">顯示播放圖示</string>
     <string name="lang">語言</string>
-    <string name="trans_lang">翻譯語言</string>
     <string name="hide_bars">隱藏工具列</string>
-    <string name="hide_bars_sub">控制面板出現時隱藏應用程式列</string>
     <string name="show_pg_up_down">顯示上移/下移按鈕</string>
     <string name="use_dpad_cursor">使用方向鍵瀏覽游標</string>
     <string name="fullscreen_mode">全螢幕模式</string>
@@ -129,47 +117,21 @@
     <string name="action_cp_menu">控制功能表單</string>
     <string name="action_back_or_exit">退出或關閉</string>
     <string name="action_exit">關閉</string>
-    <string name="action_default">預設</string>
     <string name="action_none">無</string>
 
     <string name="play_next_on_completion">自動播放下一個</string>
 
-    <string name="rw_ff_click">倒帶/快轉 - 點擊</string>
-    <string name="rw_ff_long_click">倒帶/快轉 - 長按</string>
-    <string name="prev_next_long_click">上一個/下一個 - 長按</string>
-    <string name="play_pause_stop">長按播放/暫停停止播放</string>
 
     <string name="time">時間</string>
-    <string name="time_unit">時間單位</string>
-    <string name="time_unit_sub">目前: %1$s</string>
-    <string name="time_unit_second">秒</string>
-    <string name="time_unit_minute">分</string>
-    <string name="time_unit_percent">百分比</string>
 
-    <string name="video_control">影片控制</string>
-    <string name="video_control_start_delay">開啟時顯示</string>
-    <string name="video_control_touch_delay">觸碰時顯示</string>
-    <string name="video_control_seek_delay">滑動搜尋時顯示</string>
-    <string name="video_aa_show_status">在Android Auto中顯示狀態列</string>
 
-    <string name="enable_exoplayer">啟用ExoPlayer</string>
-    <string name="enable_vlcplayer">啟用VLC</string>
     <string name="preferred_audio_engine">預設音效播放器</string>
     <string name="preferred_video_engine">預設影片播放器</string>
-    <string name="engine_installed">已安裝媒體播放器: %1$s</string>
     <string name="engine_uninstalled">解除安裝媒體播放器: %1$s</string>
 
-    <string name="preferred_media_scanner">預設媒體掃描</string>
-    <string name="preferred_media_scanner_default">預設</string>
-    <string name="preferred_media_scanner_system">系統</string>
 
     <string name="voice_search">語音輸入搜尋</string>
     <string name="voice_control">語音輸入控制</string>
-    <string name="voice_control_fb">浮動操作按鈕</string>
-    <string name="voice_control_sub_long">長按啟用語音控制</string>
-    <string name="voice_control_subst">替代文字</string>
-    <string name="voice_control_subst_sub">將文字用其他文字或句子替代</string>
-    <string name="voice_control_subst_hint">開：播放\n關：暫停</string>
 
     <string name="module_installation">模組安裝: %1$s</string>
     <string name="install_pending">等待安裝: %1$s</string>
@@ -188,11 +150,8 @@
     <string name="transaural">立體音</string>
     <string name="bass_boost">重低音強化</string>
     <string name="vol_boost">音量強化</string>
-    <string name="strength">強度</string>
-    <string name="apply_to">套用</string>
 
     <string name="video">影片</string>
-    <string name="video_settings">影片設定</string>
     <string name="video_scaling">影片尺寸</string>
     <string name="hw_accel">硬體加速</string>
     <string name="hw_accel_auto">自動</string>
@@ -213,7 +172,6 @@
     <string name="select_audio_stream">選擇音訊串流</string>
 
     <string name="subtitles">字幕</string>
-    <string name="subtitles_auto">自動生成</string>
     <string name="subtitle_delay">字幕延遲</string>
     <string name="display_subtitles">顯示字幕</string>
     <string name="preferred_sub_lang">預設字幕語言</string>
@@ -221,8 +179,6 @@
     <string name="select_subtitles">選擇字幕</string>
 
     
-    <string name="eq_hz">%1$s Hz</string>
-    <string name="eq_khz">%1$s kHz</string>
 
     <string name="current_track">目前影音</string>
     <string name="current_folder">目前檔案夾</string>
@@ -231,14 +187,11 @@
     <string name="favorites">我的最愛</string>
     <string name="playlists">播放清單</string>
     <string name="search">搜尋</string>
-    <string name="filter">過濾</string>
     <string name="settings">設定</string>
     <string name="menu">功能</string>
     <string name="exit">關閉</string>
     <string name="cancel">取消</string>
-    <string name="got_to_current">目前影音</string>
 
-    <string name="view">顯示</string>
     <string name="title">標題</string>
     <string name="subtitle">字幕</string>
     <string name="seq_num">曲目</string>
@@ -251,7 +204,6 @@
     <string name="artist">歌手</string>
     <string name="duration">曲目長度</string>
 
-    <string name="sort_by">分類</string>
     <string name="do_not_sort">取消分類</string>
 
     <string name="play">播放</string>
@@ -320,15 +272,9 @@
     
     <string name="m3u_playlist_video">影片播放清單</string>
 
-    <string name="eq_manual">手動</string>
-    <string name="eq_normal">一般</string>
     <string name="eq_classical">古典</string>
     <string name="eq_dance">舞曲</string>
     <string name="eq_flat">平坦</string>
-    <string name="eq_folk">鄉村</string>
-    <string name="eq_heavy_metal">重金屬</string>
-    <string name="eq_hip_hop">嘻哈</string>
-    <string name="eq_jazz">爵士</string>
     <string name="eq_pop">流行</string>
     <string name="eq_rock">搖滾</string>
 
@@ -356,37 +302,15 @@
     <string name="move_up">向上移動</string>
     <string name="move_down">向下移動</string>
 
-    <string name="sys_bars_on_video_touch">觸碰影片時顯示系統列</string>
-    <string name="play_video_landscape">在全螢幕模式播放影片</string>
-    <string name="clock_pos">時間位置</string>
-    <string name="clock_pos_none">無</string>
-    <string name="clock_pos_left">左</string>
-    <string name="clock_pos_right">右</string>
-    <string name="clock_pos_center">中</string>
-    <string name="change_brightness">播放影片時變更亮度</string>
-    <string name="video_brightness">影片亮度</string>
-    <string name="change_brightness_sub">雙指滑動也可變更亮度</string>
     <string name="watched_threshold">已觀看設定</string>
     <string name="watched_threshold_sub">將影片標示為已觀看之百分比</string>
 
     <string name="other">其他</string>
-    <string name="check_updates">啟動時檢查更新</string>
     <string name="update">更新</string>
-    <string name="update_question">已有新版本 %1$s 提供更新. \n要更新應用程式嗎?</string>
-    <string name="export_prefs">匯出偏好至檔案</string>
-    <string name="export_prefs_sub">匯出設定、檔案夾及播放清單至檔案</string>
-    <string name="export_prefs_ok">偏好已存至檔案 %1$s.</string>
-    <string name="export_prefs_failed">無法將偏好匯出至檔案: %1$s</string>
-    <string name="import_prefs">從檔案匯入偏好</string>
-    <string name="import_prefs_sub">從過去匯出的檔案匯入偏好</string>
-    <string name="import_prefs_ok">偏好已完成匯入.\n請重新啟動應用程式.</string>
-    <string name="import_prefs_failed">無法從檔案匯入偏好: %1$s</string>
-    <string name="prefs_not_found">沒有找到偏好檔</string>
     <string name="open_log">開啟記錄檔</string>
     <string name="unlock_phone_and_grant">請解鎖手機並同意需要的權限</string>
     <string name="screen_capture_rejected">無法取得螢幕截圖權限</string>
     <string name="accessibility_dsc">Fermata Mirror使用無障礙功能進行螢幕觸控模擬</string>
-    <string name="media_projection_action_text">正在開始</string>
 
     <string name="about">關於</string>
     <string name="about_html"><![CDATA[<H1 align="center">FermataX</H1>
@@ -410,7 +334,6 @@
     <string name="err_failed_to_download">無法下載 %1$s</string>
     <string name="err_no_audio_record_perm">無法取得錄音權限</string>
     <string name="err_speech_recognition_unavailable">無法使用語音辨識。您仍可使用鍵盤繼續操作。</string>
-    <string name="err_failed_start_service">未能啟動服務：%s</string>
     <string name="addon_name_podcast">Podcast</string>
     <string name="dashboard_podcast_sub">節目、單集與離線收聽</string>
 	<string name="dashboard_audiobook_sub">書籍、章節和離線收聽</string>
@@ -453,8 +376,6 @@
 	<string name="initial_setup_continue">繼續儀表板</string>
 	<string name="initial_setup_reopen">開啟初始設定</string>
 	<string name="initial_setup_reopen_sub">變更裝置、應用程式語言或語音首選項。</string>
-	<string name="voice_control_auto_language">自動偵測語音語言</string>
-	<string name="voice_control_auto_language_sub">使用 Android 14 語言偵測並將所選語言作為後備。</string>
 	<string name="module_name_web">網路</string>
 	<string name="module_name_tv">電視</string>
 	<string name="module_name_radio">網路廣播</string>
@@ -467,13 +388,11 @@
 	<string name="car_keyboard_paste">貼上</string>
 	<string name="car_keyboard_delete">刪除</string>
 	<string name="car_keyboard_clear">清除</string>
-	<string name="car_keyboard_ok">好的</string>
 	<string name="car_keyboard_go">前往</string>
 	<string name="car_keyboard_send">傳送</string>
 	<string name="car_keyboard_enter">輸入</string>
 	<string name="m3u_playlist_timeout">回應超時</string>
 	<string name="diagnostics">診斷</string>
-	<string name="diagnostics_sub">儲存在裝置上的當機、卡住及應用程式異常狀態報告</string>
 	<string name="detailed_diagnostics">詳細診斷</string>
 	<string name="detailed_diagnostics_sub">記錄詳細事件，最長 48 小時。您可以隨時關閉。</string>
 	<string name="export_diagnostic_report">匯出診斷報告</string>
@@ -494,14 +413,6 @@
 	<string name="vehicle_key_test_started">測試已開始。請按下要測試的控制鍵，然後再次選取此項目以查看結果。</string>
 	<string name="vehicle_key_test_no_events">沒有控制鍵傳到 FermataX。車機或車輛韌體可能已攔截輸入。</string>
 	<string name="vehicle_key_test_result">車輛控制結果：\n%1$s</string>
-	<string name="voice_trigger_assign">指派車輛語音按鈕</string>
-	<string name="voice_trigger_current">目前：%1$s。僅在 FermataX 顯示時啟用。</string>
-	<string name="voice_trigger_unassigned">尚未指派</string>
-	<string name="voice_trigger_capture_started">請按一下方向盤或主機按鈕。此次按壓不會執行原本功能。</string>
-	<string name="voice_trigger_capture_timeout">未偵測到支援的按鈕。未變更任何設定。</string>
-	<string name="voice_trigger_capture_success">已指派 %1$s（%2$d）。僅在應用程式顯示時開啟 FermataX 語音控制。</string>
-	<string name="voice_trigger_clear">清除語音按鈕指派</string>
-	<string name="voice_trigger_cleared">已清除車輛語音按鈕指派。</string>
 	<string name="voice_selection_prompt">請說一、二或三</string>
     <string name="equalizer_apply_next_session">等化器變更已儲存。將在下一個播放工作階段套用。</string>
     <string name="audio_effects_apply">套用</string>
@@ -509,16 +420,11 @@
     <string name="audio_effects_applying">正在套用等化器變更…</string>
     <string name="audio_effects_applied">等化器變更已套用</string>
     <string name="audio_effects_apply_failed">變更已儲存，但無法套用</string>
-    <string name="audio_effects_flat">標準</string>
     <string name="audio_effects_custom">自訂</string>
-    <string name="audio_effects_set_flat">將等化器重設為 0</string>
     <string name="audio_effects_scale">dB 增益，-15 至 +15（0 dB 為中心）</string>
     <string name="audio_effects_mode">模式</string>
     <string name="audio_effects_band_scroll">等化器頻段</string>
     <string name="audio_effects_band_format">%1$s Hz, %2$s dB</string>
-    <string name="audio_effects_additional">附加音效</string>
-    <string name="audio_effects_expand">顯示附加音效</string>
-    <string name="audio_effects_collapse">隱藏附加音效</string>
     <string name="audio_effects_disabled">已停用</string>
     <string name="audio_effects_range_error">請輸入 %1$d 至 %2$d 之間的值。</string>
 
@@ -526,12 +432,14 @@
 
     <string name="theme_material_you">Material You / 便當風格</string>
     <string name="theme_glass">毛玻璃主題 (Glassmorphism)</string>
-    <string name="theme_aa">Android Auto 主題</string>
-    <string name="theme_aa_sub">車載螢幕主題：%1$s</string>
     <string name="glass_appearance">毛玻璃主題模式</string>
     <string name="glass_appearance_sub">套用於手機與 Android Auto 上的毛玻璃主題：%1$s</string>
     <string name="glass_appearance_day">淺色</string>
     <string name="glass_appearance_night">深色</string>
+    <string name="glass_units">單位</string>
+    <string name="glass_units_sub">速度、距離與溫度：%1$s</string>
+    <string name="glass_units_metric">公里/時、公里、°C</string>
+    <string name="glass_units_imperial">英里/時、英里、°F</string>
     <string name="glass_quick_add">新增</string>
     <string name="glass_quick_manage_title">管理快速捷徑</string>
     <string name="glass_quick_manage_sub">設定儀表板 6 個捷徑</string>
@@ -546,7 +454,6 @@
     <string name="car_finder_waiting_gps">正在等待 GPS 定位…</string>
     <string name="car_finder_measuring_gps">正在測量精確位置…</string>
     <string name="car_finder_precise_find">精確雷達導引</string>
-    <string name="car_finder_directions">路線導航</string>
     <string name="car_finder_found_car">已找到車輛</string>
     <string name="car_finder_found_confirm_title">確認已找到</string>
     <string name="car_finder_found_confirm_msg">您已找到車輛了嗎？已儲存的停放位置記錄將會清除。</string>
@@ -573,16 +480,12 @@
     <string name="car_finder_rear_left">後方偏左</string>
     <string name="car_finder_behind">在您後方</string>
     <string name="car_finder_right_here">車輛就在此處</string>
-    <string name="car_finder_almost_there">即將抵達</string>
     <string name="car_finder_follow_arrow">請跟隨箭頭指引</string>
-    <string name="car_finder_compass_uncalibrated">指南針未校準 — 請將手機呈 8 字形擺動校準</string>
-    <string name="car_finder_accuracy_margin">±%1$d 公尺</string>
     <string name="car_finder_back">返回</string>
     <string name="car_finder_close">關閉</string>
     <string name="car_finder_take_photo">拍攝停車位置照片</string>
     <string name="car_finder_retake_photo">重新拍攝</string>
     <string name="car_finder_delete_photo">刪除照片</string>
-    <string name="car_finder_photo_title">停車位置照片</string>
     <string name="car_finder_add_note">新增備註（例如：B2 柱 15 號）</string>
     <string name="car_finder_note_hint">柱號、樓層、車位號碼…</string>
     <string name="car_finder_near_car_hint">您已接近車輛（約 %1$d 公尺）。您可以使用雷達模式進行精確指引。</string>
@@ -608,8 +511,6 @@
     <string name="initial_setup_perm_storage_sub">播放手機上的音樂、影片、資料夾與播放清單。</string>
     <string name="initial_setup_perm_notifications">通知</string>
     <string name="initial_setup_perm_notifications_sub">在通知欄與鎖定畫面顯示播放控制。</string>
-    <string name="initial_setup_perm_microphone">麥克風</string>
-    <string name="initial_setup_perm_microphone_sub">語音控制與語音搜尋。</string>
     <string name="initial_setup_perm_location">位置</string>
     <string name="initial_setup_perm_location_sub">速度卡、天氣與記錄停車位置。</string>
     <string name="initial_setup_perm_nav">導航通知</string>
@@ -670,6 +571,8 @@
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">導航</string>
     <string name="glass_nav_exit">退出</string>
+    <string name="glass_card_show_weather_desc">顯示天氣</string>
+    <string name="glass_card_show_nav_desc">顯示導航</string>
     <string name="glass_nav_gps_timeout">GPS 超時。點擊重試。</string>
     <string name="glass_nav_network_error">網路錯誤。點擊重試。</string>
     <string name="glass_nav_weather_unavailable">天氣資訊不可用</string>
@@ -686,7 +589,6 @@
     <string name="glass_addon_desc_favorites">快速存取收藏的曲目</string>
     <string name="glass_addon_desc_recent">最近播放記錄</string>
     <string name="glass_media_buffering">正在緩衝…</string>
-    <string name="glass_media_unknown_title">未知標題</string>
 
     <!-- Units -->
     <string name="unit_m">公尺</string>
@@ -703,6 +605,10 @@
     <!-- Glass Addons & Headers -->
     <string name="glass_addon_module_desc">外掛模組</string>
     <string name="glass_weather_header">天氣與預報</string>
+    <string name="glass_weather_hazard_ice">結冰風險 · 請減速</string>
+    <string name="glass_weather_hazard_fog">起霧 · 能見度低</string>
+    <string name="glass_weather_hazard_heavy">大雨或大雪</string>
+    <string name="glass_weather_hazard_wind">強陣風 · %1$s</string>
     <string name="glass_weather_updating">更新中…</string>
     <string name="glass_speedo_card_title">速度與旅程</string>
 
@@ -710,4 +616,17 @@
     <string name="glass_shortcut_open">開啟</string>
     <string name="glass_shortcut_replace">替換</string>
     <string name="glass_shortcut_remove">移除</string>
+
+    <!-- Glass Road Limits & Signals -->
+    <string name="glass_limits_title">速限與號誌</string>
+    <string name="glass_show_limits">顯示速限與號誌</string>
+    <string name="glass_show_speed">顯示車速與行程</string>
+    <string name="glass_signal_label">交通號誌</string>
+    <string name="glass_road_unnamed">未命名道路</string>
+    <string name="glass_road_searching">正在尋找道路…</string>
+    <string name="glass_limits_no_data">無速限資料</string>
+    <string name="glass_speed_limit_desc">速限 %1$d</string>
+    <string name="glass_signal_desc">距離交通號誌 %1$d 公尺</string>
+    <string name="glass_road_data">速限與號誌資料</string>
+    <string name="glass_road_data_sub">透過 Wi‑Fi 下載常用地點周邊的地圖資料。© OpenStreetMap 貢獻者</string>
 </resources>

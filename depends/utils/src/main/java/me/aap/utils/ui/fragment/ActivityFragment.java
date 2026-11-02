@@ -6,7 +6,6 @@ import androidx.fragment.app.Fragment;
 
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.ui.activity.ActivityDelegate;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
 
@@ -27,10 +26,6 @@ public abstract class ActivityFragment extends Fragment {
 
 	public NavBarView.Mediator getNavBarMediator() {
 		return NavBarView.Mediator.instance;
-	}
-
-	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return FloatingButton.Mediator.Back.instance;
 	}
 
 	public boolean isRootPage() {

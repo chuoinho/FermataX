@@ -33,18 +33,15 @@ import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.ContentSubtitleSelectionItem;
-import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
-import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.media.service.PlaybackSnapshot;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.fermata.ui.policy.PlaybackPresentationOwner.Token;
 import me.aap.fermata.ui.policy.PlaybackPresentationReducer.State;
 import me.aap.fermata.ui.policy.PlaybackUiPolicy;
 import me.aap.utils.async.FutureSupplier;
@@ -522,19 +519,6 @@ public class ControlPanelView extends ConstraintLayout
 		}
 	}
 
-	public Token getPresentationOwner() {
-		return presentationCoordinator.getOwner();
-	}
-
-	public boolean isPresentationOwner(Token token) {
-		return presentationCoordinator.isCurrent(token);
-	}
-
-	public boolean releasePresentation(Token token) {
-		boolean showAudio = ((mask & MASK_VISIBLE) != 0) && isAudioPanelSupported(getActivity());
-		return presentationCoordinator.leaveVideo(token, showAudio);
-	}
-
 	@Override
 	public void onPlaybackMetadataChanged(PlaybackSnapshot snapshot) {
 		presentationView.updateVideoTitle(getActivity());
@@ -734,7 +718,6 @@ public class ControlPanelView extends ConstraintLayout
 	private void applyPresentation(State state) {
 		MainActivityDelegate a = getActivity();
 		updatePanelVisibility(state);
-		a.getFloatingButton().setVisibility(state.videoMode() || isAutoUi(a) ? GONE : VISIBLE);
 		a.setBarsHidden(state.barsHidden());
 		if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(state.barsHidden());
 		if (!state.barsHidden()) presentationView.updateVideoTitle(a);

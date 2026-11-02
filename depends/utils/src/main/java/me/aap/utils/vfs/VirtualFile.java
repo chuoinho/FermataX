@@ -170,10 +170,6 @@ public interface VirtualFile extends VirtualResource {
 		return ByteBuffer.allocate((int) Math.min(getInputBufferLen(), max));
 	}
 
-	default ByteBuffer allocateOutputBuffer(long max) {
-		return ByteBuffer.allocate((int) Math.min(getOutputBufferLen(), max));
-	}
-
 	interface Info {
 		static Info localFileInfo(File f) {
 			return new Info() {

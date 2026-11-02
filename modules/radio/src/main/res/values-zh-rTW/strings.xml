@@ -10,4 +10,7 @@
 	<string name="radio_source_name">站名</string>
 	<string name="radio_source_url">串流網址</string>
 	<string name="radio_source_add_failed">保存廣播來源失敗：%1$s</string>
+	<string name="radio_languages">語言</string>
+	<string name="radio_near_you">附近的電台</string>
+	<string name="radio_load_more">載入更多</string>
 </resources>

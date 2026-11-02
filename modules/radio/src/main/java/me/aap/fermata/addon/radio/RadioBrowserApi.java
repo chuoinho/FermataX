@@ -23,7 +23,7 @@ import me.aap.utils.async.FutureSupplier;
 
 class RadioBrowserApi {
 	static final String USER_AGENT = "FermataX/" + BuildConfig.VERSION_NAME + " (" +
-			App.get().getPackageName() + ")";
+			(App.get() != null ? App.get().getPackageName() : "me.aap.fermata") + ")";
 	private static final String[] BASE_URLS = {
 			"https://all.api.radio-browser.info/json/",
 			"https://de1.api.radio-browser.info/json/"
@@ -32,6 +32,39 @@ class RadioBrowserApi {
 	private static final int READ_TIMEOUT = 30000;
 	private static final long CACHE_TTL = 20 * 60 * 1000L;
 	private final Map<String, CacheEntry<?>> cache = new ConcurrentHashMap<>();
+
+	static String countryStationsPath(String countryCode, int offset, int limit) {
+		return "stations/search?hidebroken=true&order=clickcount&reverse=true&offset=" +
+				offset + "&limit=" + limit + "&countrycode=" + enc(countryCode);
+	}
+
+	static String tagStationsPath(String tag, int offset, int limit) {
+		return "stations/search?hidebroken=true&order=clickcount&reverse=true&offset=" +
+				offset + "&limit=" + limit + "&tagList=" + enc(tag);
+	}
+
+	static String languageStationsPath(String language, int offset, int limit) {
+		return "stations/search?hidebroken=true&order=clickcount&reverse=true&offset=" +
+				offset + "&limit=" + limit + "&language=" + enc(language);
+	}
+
+	static String searchByNamePath(String query, int offset, int limit) {
+		int actualLimit = (limit > 0) ? limit : 50;
+		return "stations/search?hidebroken=true&order=clickcount&reverse=true&offset=" +
+				offset + "&limit=" + actualLimit + "&name=" + enc(query);
+	}
+
+	static String languagesPath() {
+		return "languages?hidebroken=true&order=stationcount&reverse=true";
+	}
+
+	static String countriesPath() {
+		return "countries?hidebroken=true&order=stationcount&reverse=true";
+	}
+
+	static String tagsPath() {
+		return "tags?hidebroken=true&order=stationcount&reverse=true";
+	}
 
 	FutureSupplier<List<RadioBrowserStation>> getPopularStations(int limit) {
 		return getStations("stations/topclick/" + limit + "?hidebroken=true");
@@ -42,25 +75,61 @@ class RadioBrowserApi {
 	}
 
 	FutureSupplier<List<RadioBrowserStation>> getCountryStations(String countryCode, int limit) {
-		return getStations("stations/search?hidebroken=true&order=clickcount&reverse=true&limit=" +
-				limit + "&countrycode=" + enc(countryCode));
+		return getCountryStations(countryCode, 0, limit);
+	}
+
+	FutureSupplier<List<RadioBrowserStation>> getCountryStations(String countryCode, int offset, int limit) {
+		return getStations(countryStationsPath(countryCode, offset, limit));
 	}
 
 	FutureSupplier<List<RadioBrowserStation>> getTagStations(String tag, int limit) {
-		return getStations("stations/search?hidebroken=true&order=clickcount&reverse=true&limit=" +
-				limit + "&tagList=" + enc(tag));
+		return getTagStations(tag, 0, limit);
+	}
+
+	FutureSupplier<List<RadioBrowserStation>> getTagStations(String tag, int offset, int limit) {
+		return getStations(tagStationsPath(tag, offset, limit));
+	}
+
+	FutureSupplier<List<RadioBrowserStation>> getLanguageStations(String language, int offset, int limit) {
+		return getStations(languageStationsPath(language, offset, limit));
+	}
+
+	FutureSupplier<List<RadioBrowserStation>> searchByName(String query, int offset, int limit) {
+		return getStations(searchByNamePath(query, offset, limit));
+	}
+
+	FutureSupplier<List<DirectoryEntry>> getCountries() {
+		return getCountries(0);
 	}
 
 	FutureSupplier<List<DirectoryEntry>> getCountries(int limit) {
 		return cached("countries:" + limit, () ->
-				App.get().execute(() -> request("countries?hidebroken=true&order=stationcount&reverse=true",
-						reader -> readDirectories(reader, limit, true))));
+				App.get().execute(() -> request(countriesPath(),
+						reader -> readDirectories(reader, limit, true, false, 1))));
+	}
+
+	FutureSupplier<List<DirectoryEntry>> getLanguages() {
+		return getLanguages(0);
+	}
+
+	FutureSupplier<List<DirectoryEntry>> getLanguages(int limit) {
+		return cached("languages:" + limit, () ->
+				App.get().execute(() -> request(languagesPath(),
+						reader -> readDirectories(reader, limit, false, true, 1))));
+	}
+
+	FutureSupplier<List<DirectoryEntry>> getTags() {
+		return getTags(0, 5);
 	}
 
 	FutureSupplier<List<DirectoryEntry>> getTags(int limit) {
-		return cached("tags:" + limit, () ->
-				App.get().execute(() -> request("tags?hidebroken=true&order=stationcount&reverse=true",
-						reader -> readDirectories(reader, limit, false))));
+		return getTags(limit, limit > 0 ? 1 : 5);
+	}
+
+	FutureSupplier<List<DirectoryEntry>> getTags(int limit, int minStationCount) {
+		return cached("tags:" + limit + ":" + minStationCount, () ->
+				App.get().execute(() -> request(tagsPath(),
+						reader -> readDirectories(reader, limit, false, false, minStationCount))));
 	}
 
 	FutureSupplier<RadioBrowserStation> getStation(String uuid) {
@@ -197,9 +266,10 @@ class RadioBrowserApi {
 				country, countryCode, language, codec, bitrate, votes, clickCount);
 	}
 
-	private List<DirectoryEntry> readDirectories(JsonReader reader, int limit, boolean country)
+	static List<DirectoryEntry> readDirectories(JsonReader reader, int limit, boolean country,
+																								boolean language, int minStationCount)
 			throws IOException {
-		List<DirectoryEntry> entries = new ArrayList<>(limit);
+		List<DirectoryEntry> entries = limit > 0 ? new ArrayList<>(limit) : new ArrayList<>();
 		reader.beginArray();
 		while (reader.hasNext()) {
 			String name = "";
@@ -210,17 +280,21 @@ class RadioBrowserApi {
 				switch (reader.nextName()) {
 					case "name" -> name = nextString(reader);
 					case "iso_3166_1" -> code = nextString(reader);
+					case "iso_639" -> {
+						if (code.isEmpty()) code = nextString(reader);
+						else reader.skipValue();
+					}
 					case "stationcount" -> stationCount = nextInt(reader);
 					default -> reader.skipValue();
 				}
 			}
 			reader.endObject();
 
-			if (!name.isEmpty() && (stationCount > 0)) {
-				entries.add(new DirectoryEntry(name, country && !code.isEmpty() ? code : name,
-						stationCount));
+			if (!name.isEmpty() && (stationCount >= minStationCount)) {
+				String queryCode = (country || language) && !code.isEmpty() ? code : name;
+				entries.add(new DirectoryEntry(name, queryCode, stationCount));
 			}
-			if (entries.size() >= limit) {
+			if (limit > 0 && entries.size() >= limit) {
 				while (reader.hasNext()) reader.skipValue();
 				break;
 			}

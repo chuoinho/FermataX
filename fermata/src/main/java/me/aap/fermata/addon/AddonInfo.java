@@ -106,15 +106,6 @@ public class AddonInfo implements Comparable<AddonInfo> {
 		return Collections.unmodifiableSet(result);
 	}
 
-	public boolean isInstalled() {
-		try {
-			Class.forName(className);
-			return true;
-		} catch (Exception ignore) {
-			return false;
-		}
-	}
-
 	@Override
 	public int compareTo(AddonInfo ai) {
 		var cmp = Integer.compare(order, ai.order);

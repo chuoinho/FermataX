@@ -10,4 +10,7 @@
 	<string name="radio_source_name">Stationsname</string>
 	<string name="radio_source_url">Stream-URL</string>
 	<string name="radio_source_add_failed">Radioquelle konnte nicht gespeichert werden: %1$s</string>
+	<string name="radio_languages">Sprachen</string>
+	<string name="radio_near_you">In Ihrer Nähe</string>
+	<string name="radio_load_more">Mehr laden</string>
 </resources>

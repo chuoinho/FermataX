@@ -5,10 +5,7 @@ import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 
-import androidx.annotation.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -43,10 +40,8 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
-import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
-import me.aap.utils.ui.view.FloatingButton;
 
 /**
  * @author Andrey Pavlenko
@@ -65,11 +60,6 @@ public class TvFragment extends MediaLibFragment {
 	@Override
 	public int getFragmentId() {
 		return me.aap.fermata.R.id.tv_fragment;
-	}
-
-	@Override
-	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return TvFloatingButtonMediator.instance;
 	}
 
 	@Override
@@ -93,16 +83,9 @@ public class TvFragment extends MediaLibFragment {
 
 		TvAdapter a = getAdapter();
 		if (a != null) {
-			a.animateAddButton(a.getParent());
 			autoReloadSources(a);
 			showFailedSources(getRootItem());
 		}
-	}
-
-	@Override
-	public void switchingTo(@NonNull ActivityFragment newFragment) {
-		super.switchingTo(newFragment);
-		getMainActivity().getFloatingButton().clearAnimation();
 	}
 
 	public void addSource() {
@@ -516,12 +499,6 @@ public class TvFragment extends MediaLibFragment {
 
 		TvAdapter(MainActivityDelegate activity, BrowsableItem parent) {
 			super(activity, parent);
-			animateAddButton(parent);
-		}
-
-		@Override
-		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
-			return super.setParent(parent, userAction).onSuccess(v -> animateAddButton(parent));
 		}
 
 		@Override
@@ -547,20 +524,6 @@ public class TvFragment extends MediaLibFragment {
 			BrowsableItem i = getAdapter().getParent();
 			if (i instanceof MediaLib.Folders) ((MediaLib.Folders) i).moveItem(fromPosition, toPosition);
 			return super.onItemMove(fromPosition, toPosition);
-		}
-
-		private void animateAddButton(BrowsableItem parent) {
-			if (!(parent instanceof TvRootItem)) return;
-
-			parent.getUnsortedChildren().onSuccess(c -> {
-				if (!c.isEmpty()) return;
-
-				FloatingButton fb = getMainActivity().getFloatingButton();
-				fb.requestFocus();
-				Animation shake =
-						AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
-				fb.startAnimation(shake);
-			});
 		}
 	}
 }

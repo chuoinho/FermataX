@@ -8,8 +8,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Process;
 import android.service.notification.StatusBarNotification;
-import android.view.View;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -22,6 +22,77 @@ import me.aap.fermata.ui.glass.weather.GlassOpenMeteoClient;
 
 @RunWith(RobolectricTestRunner.class)
 public class NavNotificationParserTest {
+    private static final String MAPS = "com.google.android.apps.maps";
+    private static final String WAZE = "com.waze";
+
+    @Before
+    public void resetNavState() {
+        new AutomotiveNavNotificationService().onListenerDisconnected();
+    }
+
+    private static StatusBarNotification sbn(String pkg, int id, String title, String text,
+                                             String category, boolean ongoing) {
+        Notification n = new Notification.Builder(RuntimeEnvironment.getApplication(), "c")
+                .setCategory(category).setOngoing(ongoing)
+                .setContentTitle(title).setContentText(text).build();
+        return new StatusBarNotification(pkg, pkg, id, null, 1000, 0, 0, n, Process.myUserHandle(), 0L);
+    }
+
+    private static boolean navActive() {
+        return AutomotiveNavNotificationService.getCurrentInfo().isActive();
+    }
+
+    @Test
+    public void backgroundNotificationOfNavAppIsNotNavigation() {
+        AutomotiveNavNotificationService.handlePosted(sbn(WAZE, 1, "Waze is running", "Tap to open Waze", null, true));
+        assertFalse(navActive());
+    }
+
+    @Test
+    public void dismissibleNotificationOfNavAppIsNotNavigation() {
+        AutomotiveNavNotificationService.handlePosted(sbn(MAPS, 3, "Trip summary", "You drove 12 km", null, false));
+        assertFalse(navActive());
+    }
+
+    @Test
+    public void ongoingTurnWithDistanceFromNavAppIsNavigation() {
+        AutomotiveNavNotificationService.handlePosted(sbn(WAZE, 1, "In 300 m turn left", "Main St", null, true));
+        assertTrue(navActive());
+    }
+
+    @Test
+    public void navNotificationUpdatedToNonNavContentReturnsToWeather() {
+        AutomotiveNavNotificationService.handlePosted(sbn(WAZE, 1, "In 300 m turn left", "Main St", null, true));
+        assertTrue(navActive());
+        AutomotiveNavNotificationService.handlePosted(sbn(WAZE, 1, "Waze is running", "Tap to open Waze", null, true));
+        assertFalse(navActive());
+    }
+
+    @Test
+    public void mapsFreeDriveAfterExitReturnsToWeather() {
+        // Observed on Google Maps: after Exit the same notification stays ongoing with category
+        // navigation, but only carries the current street as title (no ETA, no actions).
+        StatusBarNotification nav = sbn(MAPS, 1, "Hướng về Ng. 9 P. Ô Cách", null,
+                Notification.CATEGORY_NAVIGATION, true);
+        nav.getNotification().extras.putString("android.subText", "Đến nơi lúc 1:06");
+        AutomotiveNavNotificationService.handlePosted(nav);
+        assertTrue(navActive());
+        AutomotiveNavNotificationService.handlePosted(sbn(MAPS, 1, "P. Trường Lâm", null,
+                Notification.CATEGORY_NAVIGATION, true));
+        assertFalse(navActive());
+    }
+
+    @Test
+    public void nonNavNotificationDoesNotTakeOverTheTurn() {
+        StatusBarNotification nav = sbn(MAPS, 1, "In 300m Turn Right onto Broadway", "4.2 km · 12 min",
+                Notification.CATEGORY_NAVIGATION, true);
+        AutomotiveNavNotificationService.handlePosted(nav);
+        AutomotiveNavNotificationService.handlePosted(sbn(MAPS, 2, "Location sharing", "Sharing with Alex", null, true));
+        assertTrue(navActive());
+        AutomotiveNavNotificationService.handleRemoved(nav.getKey());
+        assertFalse(navActive());
+    }
+
 
     @Test
     public void testNavigationNotificationExtractionWithoutLanguageHardcoding() {
@@ -99,7 +170,7 @@ public class NavNotificationParserTest {
     @Test
     public void removingAnotherNotificationOfTheNavAppKeepsTheTurn() {
         Notification n = new Notification.Builder(RuntimeEnvironment.getApplication(), "c")
-                .setCategory(Notification.CATEGORY_NAVIGATION)
+                .setCategory(Notification.CATEGORY_NAVIGATION).setOngoing(true)
                 .setContentTitle("In 300m Turn Right onto Broadway").setContentText("4.2 km · 12 min").build();
         String pkg = "com.google.android.apps.maps";
         StatusBarNotification nav = new StatusBarNotification(pkg, pkg, 1, null, 1000, 0, 0, n, Process.myUserHandle(), 0L);
