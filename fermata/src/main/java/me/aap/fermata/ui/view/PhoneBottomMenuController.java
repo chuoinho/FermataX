@@ -28,7 +28,7 @@ public final class PhoneBottomMenuController {
 		if (activity.getPrefs().isGlassTheme(activity.isCarActivity())) {
 			android.content.Context ctx = view.getContext();
 			boolean isNight = activity.getPrefs().isGlassNightMode();
-			view.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassRailDrawable(ctx, 0f, isNight));
+			view.setBackground(me.aap.fermata.ui.glass.theme.GlassDrawables.createGlassBottomBarDrawable(ctx, isNight));
 			view.setElevation(me.aap.fermata.ui.glass.theme.GlassDimensions.dpToPx(ctx, 8));
 			int actionColor = isNight ? 0xFF00E5FF : 0xFF007A87;
 			int unselectedColor = isNight ? 0xFF94A3B8 : 0xFF475569;

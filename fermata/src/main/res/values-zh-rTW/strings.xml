@@ -1,8 +1,6 @@
 <resources>
     <string name="home">首頁</string>
     <string name="dashboard">儀表板</string>
-    <string name="reset_dashboard_order">重設儀表板順序</string>
-    <string name="dashboard_order_sub">也控制導覽順序</string>
     <string name="dashboard_now_playing">正在播放</string>
     <string name="dashboard_continue">繼續觀看</string>
     <string name="dashboard_smart_discover">探索</string>
@@ -134,9 +132,6 @@
 
     <string name="voice_search">語音輸入搜尋</string>
     <string name="voice_control">語音輸入控制</string>
-    <string name="voice_control_subst">替代文字</string>
-    <string name="voice_control_subst_sub">將文字用其他文字或句子替代</string>
-    <string name="voice_control_subst_hint">開：播放\n關：暫停</string>
 
     <string name="module_installation">模組安裝: %1$s</string>
     <string name="install_pending">等待安裝: %1$s</string>
@@ -381,8 +376,6 @@
 	<string name="initial_setup_continue">繼續儀表板</string>
 	<string name="initial_setup_reopen">開啟初始設定</string>
 	<string name="initial_setup_reopen_sub">變更裝置、應用程式語言或語音首選項。</string>
-	<string name="voice_control_auto_language">自動偵測語音語言</string>
-	<string name="voice_control_auto_language_sub">使用 Android 14 語言偵測並將所選語言作為後備。</string>
 	<string name="module_name_web">網路</string>
 	<string name="module_name_tv">電視</string>
 	<string name="module_name_radio">網路廣播</string>
@@ -420,14 +413,6 @@
 	<string name="vehicle_key_test_started">測試已開始。請按下要測試的控制鍵，然後再次選取此項目以查看結果。</string>
 	<string name="vehicle_key_test_no_events">沒有控制鍵傳到 FermataX。車機或車輛韌體可能已攔截輸入。</string>
 	<string name="vehicle_key_test_result">車輛控制結果：\n%1$s</string>
-	<string name="voice_trigger_assign">指派車輛語音按鈕</string>
-	<string name="voice_trigger_current">目前：%1$s。僅在 FermataX 顯示時啟用。</string>
-	<string name="voice_trigger_unassigned">尚未指派</string>
-	<string name="voice_trigger_capture_started">請按一下方向盤或主機按鈕。此次按壓不會執行原本功能。</string>
-	<string name="voice_trigger_capture_timeout">未偵測到支援的按鈕。未變更任何設定。</string>
-	<string name="voice_trigger_capture_success">已指派 %1$s（%2$d）。僅在應用程式顯示時開啟 FermataX 語音控制。</string>
-	<string name="voice_trigger_clear">清除語音按鈕指派</string>
-	<string name="voice_trigger_cleared">已清除車輛語音按鈕指派。</string>
 	<string name="voice_selection_prompt">請說一、二或三</string>
     <string name="equalizer_apply_next_session">等化器變更已儲存。將在下一個播放工作階段套用。</string>
     <string name="audio_effects_apply">套用</string>

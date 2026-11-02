@@ -8,8 +8,6 @@
     <string name="addons">Addons</string>
     <string name="home">Start</string>
     <string name="dashboard">Dashboard</string>
-    <string name="reset_dashboard_order">Dashboard-Reihenfolge zurücksetzen</string>
-    <string name="dashboard_order_sub">Steuert auch die Reihenfolge der Navigation</string>
     <string name="dashboard_now_playing">Läuft gerade</string>
     <string name="dashboard_continue">Weiterschauen</string>
     <string name="dashboard_smart_discover">Entdecken</string>
@@ -120,18 +118,7 @@
     <string name="engine_uninstalled">Medien-Engine deinstalliert: %1$s</string>
     <string name="voice_search">Sprachsuche</string>
     <string name="voice_control">Sprachsteuerung</string>
-    <string name="voice_trigger_assign">Sprachtaste im Fahrzeug zuweisen</string>
-    <string name="voice_trigger_current">Aktuell: %1$s. Nur aktiv, solange FermataX sichtbar ist.</string>
-    <string name="voice_trigger_unassigned">Nicht zugewiesen</string>
-    <string name="voice_trigger_capture_started">Drücke einmal die Lenkrad- oder Headunit-Taste. Die normale Funktion wird dabei nicht ausgeführt.</string>
-    <string name="voice_trigger_capture_timeout">Keine unterstützte Taste erkannt. Es wurde nichts geändert.</string>
-    <string name="voice_trigger_capture_success">%1$s (%2$d) zugewiesen. Die Taste öffnet FermataX Voice nur, solange die App sichtbar ist.</string>
-    <string name="voice_trigger_clear">Zuweisung der Sprachtaste löschen</string>
-    <string name="voice_trigger_cleared">Zuweisung der Sprachtaste wurde gelöscht.</string>
     <string name="voice_selection_prompt">Sage Nummer eins, zwei oder drei</string>
-    <string name="voice_control_subst">Wortersetzung</string>
-    <string name="voice_control_subst_sub">Ersetzen Sie ein Wort durch ein anderes Wort oder einen Satz</string>
-    <string name="voice_control_subst_hint">Ein: Wiedergabe\nAus: Pause</string>
     <string name="module_installation">Modul-Installation: %1$s</string>
     <string name="install_pending">Installation läuft: %1$s</string>
     <string name="downloading">Downloaden %1$s</string>
@@ -372,8 +359,6 @@
     <string name="initial_setup_continue">Weiter zum Dashboard</string>
     <string name="initial_setup_reopen">Öffnen Sie die Ersteinrichtung</string>
     <string name="initial_setup_reopen_sub">Ändern Sie die Geräte-, App-Sprache oder Spracheinstellungen.</string>
-    <string name="voice_control_auto_language">Sprachsprache automatisch erkennen</string>
-    <string name="voice_control_auto_language_sub">Verwenden Sie die Spracherkennung von Android 14 mit der ausgewählten Sprache als Fallback.</string>
     <string name="retry">Erneut versuchen</string>
     <string name="media_list_empty">Noch keine Einträge</string>
     <string name="media_list_load_failed">Elemente konnten nicht geladen werden.</string>

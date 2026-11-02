@@ -8,8 +8,6 @@
     <string name="addons">Eklentiler</string>
     <string name="home">Ana sayfa</string>
     <string name="dashboard">Pano</string>
-    <string name="reset_dashboard_order">Pano sırasını sıfırla</string>
-    <string name="dashboard_order_sub">Gezinme sırasını da kontrol eder</string>
     <string name="dashboard_now_playing">Şimdi oynatılıyor</string>
     <string name="dashboard_continue">İzlemeye devam et</string>
     <string name="dashboard_smart_discover">Keşfet</string>
@@ -120,18 +118,7 @@
     <string name="engine_uninstalled">Medya motoru kaldırıldı: %1$s</string>
     <string name="voice_search">Sesli arama</string>
     <string name="voice_control">Sesli kontrol</string>
-    <string name="voice_trigger_assign">Araç ses düğmesini ata</string>
-    <string name="voice_trigger_current">Geçerli: %1$s. Yalnızca FermataX görünürken etkindir.</string>
-    <string name="voice_trigger_unassigned">Atanmamış</string>
-    <string name="voice_trigger_capture_started">Direksiyon veya ana ünite düğmesine bir kez basın. Bu basış normal işlevini çalıştırmaz.</string>
-    <string name="voice_trigger_capture_timeout">Desteklenen bir düğme algılanmadı. Hiçbir şey değiştirilmedi.</string>
-    <string name="voice_trigger_capture_success">%1$s (%2$d) atandı. FermataX sesini yalnızca uygulama görünürken açar.</string>
-    <string name="voice_trigger_clear">Ses düğmesi atamasını temizle</string>
-    <string name="voice_trigger_cleared">Araç ses düğmesi ataması temizlendi.</string>
     <string name="voice_selection_prompt">Bir, iki veya üç numara deyin</string>
-    <string name="voice_control_subst">Kelime değiştirme</string>
-    <string name="voice_control_subst_sub">Bir kelimeyi başka bir kelime veya kelime öbeği ile değiştirin</string>
-    <string name="voice_control_subst_hint">açık: oynat\nkapalı: duraklat</string>
     <string name="module_installation">Modül kurulumu: %1$s</string>
     <string name="install_pending">Kurulum bekleniyor: %1$s</string>
     <string name="downloading">%1$s indiriliyor</string>
@@ -372,8 +359,6 @@
     <string name="initial_setup_continue">Panoya devam et</string>
     <string name="initial_setup_reopen">İlk kurulumu aç</string>
     <string name="initial_setup_reopen_sub">Cihazı, uygulama dilini veya ses tercihlerini değiştirin.</string>
-    <string name="voice_control_auto_language">Ses dilini otomatik algıla</string>
-    <string name="voice_control_auto_language_sub">Yedek olarak seçilen dille Android 14 dil algılamayı kullanın.</string>
     <string name="retry">Tekrar dene</string>
     <string name="media_list_empty">Henüz öğe yok</string>
     <string name="media_list_load_failed">Öğeler yüklenemedi.</string>

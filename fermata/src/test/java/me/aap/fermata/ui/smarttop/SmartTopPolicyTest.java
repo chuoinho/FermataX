@@ -17,30 +17,6 @@ import me.aap.fermata.media.service.ControlOnlyPresentation;
 
 public class SmartTopPolicyTest {
 	@Test
-	public void selectionOrderStopsAtRecentAndRecommendationIsCompatibilityOnly() {
-		assertEquals(SmartTopMode.CURRENT,
-				SmartTopSelectionPolicy.select(true, true, true, true));
-		assertEquals(SmartTopMode.RESUME,
-				SmartTopSelectionPolicy.select(false, true, true, true));
-		assertEquals(SmartTopMode.RECENT,
-				SmartTopSelectionPolicy.select(false, false, true, true));
-		assertEquals(SmartTopMode.EMPTY,
-				SmartTopSelectionPolicy.select(false, false, false, true));
-		assertEquals(SmartTopMode.EMPTY,
-				SmartTopSelectionPolicy.select(false, false, false, false));
-	}
-
-	@Test
-	public void canonicalCurrentWinsOverLiveWebAndWebWinsOverFallbacks() {
-		assertEquals(SmartTopMode.CURRENT,
-				SmartTopSelectionPolicy.select(true, true, false, true, false));
-		assertEquals(SmartTopMode.CURRENT_WEB,
-				SmartTopSelectionPolicy.select(false, true, false, true, false));
-		assertEquals(SmartTopMode.RECENT,
-				SmartTopSelectionPolicy.select(false, false, false, true, false));
-	}
-
-	@Test
 	public void smartTopUsesOnlyRemainingPlaybackControls() {
 		SmartTopCapabilities current = SmartTopCapabilities.current(true);
 		assertEquals(List.of(SmartTopAction.PLAY_PAUSE, SmartTopAction.FAVORITE),

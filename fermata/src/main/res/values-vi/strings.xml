@@ -1,8 +1,6 @@
 <resources>
     <string name="home">Trang chủ</string>
     <string name="dashboard">Bảng điều khiển</string>
-    <string name="reset_dashboard_order">Đặt lại thứ tự bảng điều khiển</string>
-    <string name="dashboard_order_sub">Cũng điều khiển thứ tự thanh điều hướng</string>
     <string name="dashboard_now_playing">Đang phát</string>
     <string name="dashboard_continue">Xem tiếp</string>
     <string name="dashboard_smart_discover">Khám phá</string>
@@ -140,18 +138,7 @@
 
     <string name="voice_search">Tìm kiếm bằng giọng nói</string>
 	<string name="voice_control">Điều khiển bằng giọng nói</string>
-	<string name="voice_trigger_assign">Gán nút voice trên xe</string>
-	<string name="voice_trigger_current">Hiện tại: %1$s. Chỉ hoạt động khi FermataX đang hiển thị.</string>
-	<string name="voice_trigger_unassigned">Chưa gán</string>
-	<string name="voice_trigger_capture_started">Hãy nhấn một lần nút trên vô-lăng hoặc head unit. Lần nhấn này sẽ không chạy chức năng gốc.</string>
-	<string name="voice_trigger_capture_timeout">Không phát hiện nút được hỗ trợ. Không có thay đổi nào được lưu.</string>
-	<string name="voice_trigger_capture_success">Đã gán %1$s (%2$d). Nút chỉ mở voice của FermataX khi ứng dụng đang hiển thị.</string>
-	<string name="voice_trigger_clear">Xóa nút voice đã gán</string>
-	<string name="voice_trigger_cleared">Đã xóa nút voice trên xe.</string>
 	<string name="voice_selection_prompt">Hãy nói số một, hai hoặc ba</string>
-    <string name="voice_control_subst">Từ thay thế</string>
-    <string name="voice_control_subst_sub">Thay thế một từ bằng một từ hoặc cụm từ khác</string>
-    <string name="voice_control_subst_hint">bật: phát\ntắt: tạm dừng</string>
 
     <string name="module_installation">Cài đặt Module: %1$s</string>
     <string name="install_pending">Đang chờ cài đặt: %1$s</string>
@@ -381,8 +368,6 @@
     <string name="initial_setup_continue">Tiếp tục đến dashboard</string>
     <string name="initial_setup_reopen">Mở lại thiết lập ban đầu</string>
     <string name="initial_setup_reopen_sub">Đổi thiết bị, ngôn ngữ ứng dụng hoặc tùy chọn giọng nói.</string>
-    <string name="voice_control_auto_language">Tự nhận diện ngôn ngữ giọng nói</string>
-    <string name="voice_control_auto_language_sub">Dùng tính năng nhận diện ngôn ngữ của Android 14 và ngôn ngữ đã chọn làm dự phòng.</string>
 	<string name="dashboard_stremio_sub">Phim, loạt phim và nhà cung cấp đã cài đặt</string>
 	<string name="dashboard_back_to_list">Quay lại danh sách</string>
 	<string name="action_prev_folder">Phát thư mục trước đó</string>

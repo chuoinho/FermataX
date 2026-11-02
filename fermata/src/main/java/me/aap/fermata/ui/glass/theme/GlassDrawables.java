@@ -2,7 +2,9 @@ package me.aap.fermata.ui.glass.theme;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 
 public final class GlassDrawables {
 
@@ -31,6 +33,17 @@ public final class GlassDrawables {
 		drawable.setColor(bgColor);
 		drawable.setCornerRadius(radiusDp * density);
 		drawable.setStroke(Math.max(1, (int) (1.2f * density)), borderColor);
+		return drawable;
+	}
+
+	// The rail's colours with a line on the top edge only: the bar spans the screen, so a full stroke reads as a frame.
+	public static Drawable createGlassBottomBarDrawable(Context context, boolean isNight) {
+		float density = context != null ? context.getResources().getDisplayMetrics().density : 1.0f;
+		int bgColor = isNight ? 0xFF14181B : 0xFFF4F3F1;
+		int borderColor = isNight ? 0x40FFFFFF : 0x28000000;
+		LayerDrawable drawable = new LayerDrawable(new Drawable[]{new ColorDrawable(bgColor),
+				new ColorDrawable(borderColor), new ColorDrawable(bgColor)});
+		drawable.setLayerInset(2, 0, Math.max(1, (int) (1.2f * density)), 0, 0);
 		return drawable;
 	}
 

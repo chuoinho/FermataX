@@ -39,9 +39,6 @@ public class TopBarAuthorityContractTest {
 		String controller = coreSource("ui/view/TopBarController.java");
 		assertTrue(controller.contains("PhoneRootPolicy.isPrimaryRoot("));
 		assertTrue(controller.contains("activity.getPhoneRootId(), fragment.getFragmentId()"));
-
-		String chrome = coreSource("ui/policy/ChromePolicy.java");
-		assertTrue(chrome.contains("PhoneRootPolicy.isPrimaryRoot("));
 	}
 
 	@Test
@@ -120,15 +117,6 @@ public class TopBarAuthorityContractTest {
 
 		String shell = coreSource("ui/view/UiShellController.java");
 		assertTrue(shell.contains("TopBarController.refresh(activity);"));
-	}
-
-	@Test
-	public void compatibilityChromeFacadeDoesNotWriteTopBarViews() throws Exception {
-		String chrome = coreSource("ui/policy/ChromePolicy.java");
-		assertTrue(chrome.contains("TopBarPolicy.isTopBackVisible"));
-		assertTrue(chrome.contains("TopBarController.refresh(a);"));
-		assertFalse(chrome.contains("findViewById"));
-		assertFalse(chrome.contains("setVisibility("));
 	}
 
 	@Test

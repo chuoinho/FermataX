@@ -8,8 +8,6 @@
     <string name="addons">Addon</string>
     <string name="home">Home</string>
     <string name="dashboard">Dashboard</string>
-    <string name="reset_dashboard_order">Reimposta ordine dashboard</string>
-    <string name="dashboard_order_sub">Controlla anche l\'ordine della navigazione</string>
     <string name="dashboard_now_playing">In riproduzione</string>
     <string name="dashboard_continue">Continua a guardare</string>
     <string name="dashboard_smart_discover">Scopri</string>
@@ -120,18 +118,7 @@
     <string name="engine_uninstalled">Motore multimediale disinstallato: %1$s</string>
     <string name="voice_search">Ricerca vocale</string>
     <string name="voice_control">Controllo vocale</string>
-    <string name="voice_trigger_assign">Assegna pulsante vocale del veicolo</string>
-    <string name="voice_trigger_current">Attuale: %1$s. Attivo solo mentre FermataX è visibile.</string>
-    <string name="voice_trigger_unassigned">Non assegnato</string>
-    <string name="voice_trigger_capture_started">Premi una volta il pulsante sul volante o sull’unità principale. La pressione non eseguirà la funzione normale.</string>
-    <string name="voice_trigger_capture_timeout">Nessun pulsante supportato rilevato. Non è stato modificato nulla.</string>
-    <string name="voice_trigger_capture_success">Assegnato %1$s (%2$d). Apre la voce di FermataX solo mentre l’app è visibile.</string>
-    <string name="voice_trigger_clear">Cancella assegnazione del pulsante vocale</string>
-    <string name="voice_trigger_cleared">Assegnazione del pulsante vocale del veicolo cancellata.</string>
     <string name="voice_selection_prompt">Di’ numero uno, due o tre</string>
-    <string name="voice_control_subst">Sostituzione comandi</string>
-    <string name="voice_control_subst_sub">Sostituisci un comando con un\'altra parola o con una frase</string>
-    <string name="voice_control_subst_hint">on: riproduci\noff: pausa</string>
     <string name="module_installation">Installazione modulo: %1$s</string>
     <string name="install_pending">Installazione in attesa: %1$s</string>
     <string name="downloading">Scaricamento %1$s</string>
@@ -372,8 +359,6 @@
     <string name="initial_setup_continue">Continua alla dashboard</string>
     <string name="initial_setup_reopen">Apri la configurazione iniziale</string>
     <string name="initial_setup_reopen_sub">Modifica il dispositivo, la lingua dell\'app o le preferenze vocali.</string>
-    <string name="voice_control_auto_language">Rileva automaticamente la lingua vocale</string>
-    <string name="voice_control_auto_language_sub">Utilizza il rilevamento della lingua di Android 14 con la lingua selezionata come fallback.</string>
     <string name="retry">Riprova</string>
     <string name="media_list_empty">Nessun elemento</string>
     <string name="media_list_load_failed">Impossibile caricare gli elementi.</string>

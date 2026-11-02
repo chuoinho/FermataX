@@ -1,8 +1,6 @@
 <resources>
     <string name="home">Início</string>
     <string name="dashboard">Painel</string>
-    <string name="reset_dashboard_order">Redefinir ordem do painel</string>
-    <string name="dashboard_order_sub">Também controla a ordem da navegação</string>
     <string name="dashboard_now_playing">Reproduzindo agora</string>
     <string name="dashboard_continue">Continuar assistindo</string>
     <string name="dashboard_smart_discover">Descobrir</string>
@@ -134,9 +132,6 @@
 
     <string name="voice_search">Pesquisa por voz</string>
     <string name="voice_control">Controlo de voz</string>
-    <string name="voice_control_subst">Substituição de palavra</string>
-    <string name="voice_control_subst_sub">Substituir uma palavra por outra palavra ou frase</string>
-    <string name="voice_control_subst_hint">ligado: reproduzir\ndesligado: pausar</string>
 
     <string name="module_installation">Instalação do módulo: %1$s</string>
     <string name="install_pending">Instalação pendente: %1$s</string>
@@ -381,8 +376,6 @@
 	<string name="initial_setup_continue">Continuar para o painel</string>
 	<string name="initial_setup_reopen">Abra a configuração inicial</string>
 	<string name="initial_setup_reopen_sub">Altere o dispositivo, o idioma do aplicativo ou as preferências de voz.</string>
-	<string name="voice_control_auto_language">Detectar automaticamente o idioma da voz</string>
-	<string name="voice_control_auto_language_sub">Use a detecção de idioma do Android 14 com o idioma selecionado como substituto.</string>
 	<string name="module_name_web">Rede</string>
 	<string name="module_name_tv">TV</string>
 	<string name="module_name_radio">Rádio na Internet</string>
@@ -420,14 +413,6 @@
 	<string name="vehicle_key_test_started">Teste iniciado. Prima os controlos que pretende testar e selecione novamente este item para ver o resultado.</string>
 	<string name="vehicle_key_test_no_events">Nenhuma tecla de controlo chegou ao FermataX. A unidade principal ou o firmware pode ter retido a entrada.</string>
 	<string name="vehicle_key_test_result">Resultados dos controlos do veículo:\n%1$s</string>
-	<string name="voice_trigger_assign">Atribuir botão de voz do veículo</string>
-	<string name="voice_trigger_current">Atual: %1$s. Ativo apenas enquanto o FermataX estiver visível.</string>
-	<string name="voice_trigger_unassigned">Não atribuído</string>
-	<string name="voice_trigger_capture_started">Pressione uma vez o botão do volante ou da unidade principal. O toque não executará a função normal.</string>
-	<string name="voice_trigger_capture_timeout">Nenhum botão compatível foi detectado. Nada foi alterado.</string>
-	<string name="voice_trigger_capture_success">%1$s (%2$d) atribuído. Abre a voz do FermataX apenas enquanto o aplicativo estiver visível.</string>
-	<string name="voice_trigger_clear">Limpar atribuição do botão de voz</string>
-	<string name="voice_trigger_cleared">A atribuição do botão de voz do veículo foi removida.</string>
 	<string name="voice_selection_prompt">Diga número um, dois ou três</string>
     <string name="equalizer_apply_next_session">As alterações do equalizador foram guardadas. Serão aplicadas na próxima sessão de reprodução.</string>
     <string name="audio_effects_apply">Aplicar</string>

@@ -36,6 +36,18 @@ public class GlassDrawablesTest {
 	}
 
 	@Test
+	public void bottomBarHasALineOnItsTopEdgeOnly() {
+		Context context = RuntimeEnvironment.getApplication();
+		android.graphics.drawable.LayerDrawable bar =
+				(android.graphics.drawable.LayerDrawable) GlassDrawables.createGlassBottomBarDrawable(context, true);
+		int top = bar.getNumberOfLayers() - 1;
+		assertTrue(bar.getLayerInsetTop(top) > 0);
+		assertEquals(0, bar.getLayerInsetLeft(top));
+		assertEquals(0, bar.getLayerInsetRight(top));
+		assertEquals(0, bar.getLayerInsetBottom(top));
+	}
+
+	@Test
 	public void testBackgroundGradientCreation() {
 		GradientDrawable bg = (GradientDrawable) GlassDrawables.createBackgroundGradient(1920, 720, true);
 		assertNotNull(bg);
