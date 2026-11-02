@@ -1,6 +1,6 @@
 # FermataX Changelog
 
-## [Unreleased] - changes since 2.1
+## [2.1.1] - 2026-11-02
 
 ### What's New & Noteworthy
 - **Speed limits & traffic lights (Glass, Android Auto)**: Tap the corner icon on the Speed card to switch to the Limits & Signals card. It shows the speed limit sign of the road you are on, the distance to the next traffic light ahead, and the road name. Your speed on both cards is always the same number. Map data comes from OpenStreetMap and downloads in the background over Wi‑Fi around the places you drive; turn it off with "Speed limits & signals data" in settings. Roads without a mapped limit show a grey sign instead of a guess.
