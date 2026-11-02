@@ -589,7 +589,6 @@
     <string name="glass_media_recent_media">Zuletzt abgespielt</string>
     <string name="glass_nav_header">NAVIGATION</string>
     <string name="glass_nav_exit">BEENDEN</string>
-    <string name="glass_nav_show_weather">WETTER</string>
     <string name="glass_nav_gps_timeout">GPS-Zeitüberschreitung. Tippen zum Wiederholen.</string>
     <string name="glass_nav_network_error">Netzwerkfehler. Tippen zum Wiederholen.</string>
     <string name="glass_nav_weather_unavailable">Wetter nicht verfügbar</string>

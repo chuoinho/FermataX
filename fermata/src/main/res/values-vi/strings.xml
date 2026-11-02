@@ -681,7 +681,6 @@
     <!-- Glass Nav & Weather UI -->
     <string name="glass_nav_header">ĐIỀU HƯỚNG</string>
     <string name="glass_nav_exit">THOÁT</string>
-    <string name="glass_nav_show_weather">THỜI TIẾT</string>
     <string name="glass_nav_gps_timeout">Hết thời gian chờ GPS. Chạm để thử lại.</string>
     <string name="glass_nav_network_error">Lỗi kết nối mạng. Chạm để thử lại.</string>
     <string name="glass_nav_weather_unavailable">Thời tiết không khả dụng</string>

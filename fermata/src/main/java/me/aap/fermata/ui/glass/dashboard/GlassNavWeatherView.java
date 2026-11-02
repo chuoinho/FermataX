@@ -7,7 +7,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Typeface;
-import android.graphics.drawable.InsetDrawable;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -49,11 +48,6 @@ public class GlassNavWeatherView extends FrameLayout {
     private TextView btnNavExit;
     private LinearLayout navBottomBar;
     private PendingIntent activeExitIntent;
-    private TextView btnShowWeather;
-    private TextView btnShowNav;
-    private boolean navActive;
-    // User switched to weather during the current route; reset when the route ends
-    private boolean weatherPinned;
 
     // Weather container
     private LinearLayout weatherContainer;
@@ -214,12 +208,6 @@ public class GlassNavWeatherView extends FrameLayout {
                 } catch (Exception ignored) {}
             }
         });
-        btnShowWeather = createModeButton(context,
-                safeGetString(context, R.string.glass_nav_show_weather, "WEATHER"), true);
-        LinearLayout.LayoutParams showWeatherLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        showWeatherLp.rightMargin = GlassDimensions.dpToPx(context, 8);
-        navBottomBar.addView(btnShowWeather, showWeatherLp);
         navBottomBar.addView(btnNavExit);
 
         navContainer.addView(navBottomBar);
@@ -240,16 +228,7 @@ public class GlassNavWeatherView extends FrameLayout {
         tvWeatherHeader.setTypeface(Typeface.DEFAULT_BOLD);
         tvWeatherHeader.setTextColor(colors.getTextSecondary());
         tvWeatherHeader.setLetterSpacing(0.08f);
-        LinearLayout headerRow = new LinearLayout(context);
-        headerRow.setOrientation(LinearLayout.HORIZONTAL);
-        headerRow.setGravity(Gravity.CENTER_VERTICAL);
-        headerRow.addView(tvWeatherHeader, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        btnShowNav = createModeButton(context,
-                safeGetString(context, R.string.glass_nav_header, "NAVIGATION"), false);
-        btnShowNav.setVisibility(View.GONE);
-        headerRow.addView(btnShowNav);
-        weatherContainer.addView(headerRow, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        weatherContainer.addView(tvWeatherHeader);
 
         // Center Current Weather
         LinearLayout centerWeather = new LinearLayout(context);
@@ -325,9 +304,10 @@ public class GlassNavWeatherView extends FrameLayout {
     }
 
     public void bindNavTurn(@Nullable NavTurnInfo info) {
-        navActive = info != null && info.isActive();
-        if (!navActive) weatherPinned = false;
-        if (navActive) {
+        if (info != null && info.isActive()) {
+            navContainer.setVisibility(View.VISIBLE);
+            weatherContainer.setVisibility(View.GONE);
+
             navArrowView.setDirection(info.getDirection());
             tvNavDistance.setText(info.getDistanceText());
             tvNavInstruction.setText(info.getInstruction());
@@ -336,40 +316,10 @@ public class GlassNavWeatherView extends FrameLayout {
 
             this.activeExitIntent = info.getExitIntent();
             btnNavExit.setVisibility(info.hasExitAction() ? View.VISIBLE : View.GONE);
+        } else {
+            navContainer.setVisibility(View.GONE);
+            weatherContainer.setVisibility(View.VISIBLE);
         }
-        updateMode();
-    }
-
-    private void updateMode() {
-        boolean showNav = navActive && !weatherPinned;
-        navContainer.setVisibility(showNav ? View.VISIBLE : View.GONE);
-        weatherContainer.setVisibility(showNav ? View.GONE : View.VISIBLE);
-        btnShowNav.setVisibility(navActive && weatherPinned ? View.VISIBLE : View.GONE);
-    }
-
-    private TextView createModeButton(Context context, String label, boolean pinWeather) {
-        TextView b = new TextView(context);
-        b.setText(label);
-        b.setTextSize(11f);
-        b.setTypeface(Typeface.DEFAULT_BOLD);
-        b.setGravity(Gravity.CENTER);
-        b.setMaxLines(1);
-        int padH = GlassDimensions.dpToPx(context, 14);
-        b.setPadding(padH, 0, padH, 0);
-        b.setMinHeight(GlassDimensions.dpToPx(context, 48)); // Android touch target; the pill is drawn inset
-        b.setOnClickListener(v -> {
-            weatherPinned = pinWeather;
-            updateMode();
-        });
-        styleModeButton(b);
-        return b;
-    }
-
-    private void styleModeButton(TextView b) {
-        b.setTextColor(colors.getActionText());
-        int inset = GlassDimensions.dpToPx(getContext(), 10);
-        b.setBackground(new InsetDrawable(
-                GlassDrawables.createGlassPillDrawable(getContext(), 14f, isNight), 0, inset, 0, inset));
     }
 
     public boolean hasForecastData() {
@@ -516,12 +466,6 @@ public class GlassNavWeatherView extends FrameLayout {
         if (btnNavExit != null) {
             btnNavExit.setTextColor(colors.getTextPrimary());
             btnNavExit.setBackground(GlassDrawables.createGlassPillDrawable(context, 14f, isNight));
-        }
-        if (btnShowWeather != null) {
-            styleModeButton(btnShowWeather);
-        }
-        if (btnShowNav != null) {
-            styleModeButton(btnShowNav);
         }
         if (navBottomBar != null) {
             navBottomBar.setBackground(GlassDrawables.createGlassPillDrawable(context, GlassDimensions.PILL_RADIUS_DP, isNight));

@@ -121,12 +121,6 @@ public class NavTurnInfo {
             }
         }
 
-        // Maps keeps a category=navigation status notification (just the current area) while driving
-        // without a route; real guidance always carries a distance or an exit action.
-        if (distance.isEmpty() && exitPi == null) {
-            return inactive();
-        }
-
         return new NavTurnInfo(true, direction, title, distance, eta, text, exitPi);
     }
 
