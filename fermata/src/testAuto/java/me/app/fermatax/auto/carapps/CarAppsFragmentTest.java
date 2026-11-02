@@ -258,6 +258,21 @@ public class CarAppsFragmentTest {
 	}
 
 	@Test
+	public void bottomBarIsCompact() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		int maxPx = (int) Math.ceil(52 * context.getResources().getDisplayMetrics().density);
+		assertTrue("Bottom bar must be at most 52 dp", fragment.getBottomBar().getLayoutParams().height <= maxPx);
+	}
+
+	@Test
+	public void bottomBarIconsFollowThemeTint() {
+		CarAppsFragment fragment = createAndAttachFragment();
+		for (ImageButton b : new ImageButton[]{fragment.getBackButton(), fragment.getDrawerButton(), fragment.getCloseButton()}) {
+			assertTrue("Icon must be tinted from the active theme", b.getImageTintList() != null);
+		}
+	}
+
+	@Test
 	public void panelPowerAutomaticallyEngagedOnAttach() {
 		CarAppsFeature.setState(RootState.GRANTED);
 		CarAppsFragment fragment = createAndAttachFragment();
@@ -266,6 +281,32 @@ public class CarAppsFragmentTest {
 		FakeSurfaceHolder holder = new FakeSurfaceHolder(surface, 1024, 600);
 		callback.surfaceCreated(holder);
 		assertTrue("Panel should be turned off automatically when attached if pref is true", client.isPanelOff());
+	}
+
+	@Test
+	public void panelPowerEngagedWhenAttachedFromSurfaceChanged() {
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		FakeSurfaceHolder holder = new FakeSurfaceHolder(createTestSurface(), 1024, 600);
+		fragment.getSurfaceHolderCallback().surfaceChanged(holder, 0, 1024, 600);
+		assertEquals(1, serverBinder.attachCount.get());
+		assertTrue(client.isPanelOff());
+	}
+
+	@Test
+	public void rootGrantedAfterFailureRestartsServer() {
+		CarAppsFeature.setState(RootState.AVAILABLE);
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.onStart();
+		for (int i = 0; i < 20 && client.state() != CarDisplayClient.State.FAILED; i++) {
+			client.retryConnectionForTesting();
+		}
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		java.util.List<String> cmds = new java.util.ArrayList<>();
+		client.setCommandRunnerForTest(cmds::add);
+		CarAppsFeature.setState(RootState.GRANTED);
+		assertEquals("Granting root must restart the failed server", 1, cmds.size());
+		fragment.onStop();
 	}
 
 	@Test

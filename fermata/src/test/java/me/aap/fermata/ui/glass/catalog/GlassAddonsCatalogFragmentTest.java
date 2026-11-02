@@ -44,6 +44,20 @@ public class GlassAddonsCatalogFragmentTest {
         assertEquals(1, fragment.broadcastCount);
     }
 
+    @Test
+    public void carAppsEntryOnlyWhenVisible() {
+        android.content.Context ctx = org.robolectric.RuntimeEnvironment.getApplication();
+        java.util.List<GlassAddonsCatalogFragment.CatalogItem> hidden = new java.util.ArrayList<>();
+        GlassAddonsCatalogFragment.addCarApps(hidden, ctx, false);
+        assertTrue(hidden.isEmpty());
+
+        java.util.List<GlassAddonsCatalogFragment.CatalogItem> shown = new java.util.ArrayList<>();
+        GlassAddonsCatalogFragment.addCarApps(shown, ctx, true);
+        assertEquals(1, shown.size());
+        assertEquals(R.id.car_apps_fragment, shown.get(0).id);
+        assertTrue(shown.get(0).isEnabled);
+    }
+
     public static class TestHostActivity extends ActivityBase {
         private boolean delegateReady;
         private MainActivityDelegate testDelegate;

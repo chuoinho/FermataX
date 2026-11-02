@@ -16,4 +16,6 @@
     <string name="car_apps_readiness_action_grant">Предоставить root</string>
     <string name="car_apps_readiness_warn_panel_power">Невозможно выключить экран телефона на этом устройстве</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Требуется отладка по USB (настройки безопасности)</string>
+    <string name="car_apps_panel_off_pref">Выключать экран телефона при работе приложений авто</string>
+    <string name="car_apps_grant_root_blocked">Root-доступ не предоставлен. Повторите попытку и разрешите запрос в менеджере root.</string>
 </resources>

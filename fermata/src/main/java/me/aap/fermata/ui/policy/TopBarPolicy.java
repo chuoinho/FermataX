@@ -40,7 +40,9 @@ public final class TopBarPolicy {
 	/** In-page chrome routes (Stremio, Car Finder) own their headers and must use full content height. */
 	public static int resolveTopBarVisibility(int activeFragmentId, boolean barsHidden) {
 		return barsHidden || (activeFragmentId == me.aap.fermata.R.id.stremio_fragment)
-				|| (activeFragmentId == me.aap.fermata.R.id.car_finder_fragment) ?
+				|| (activeFragmentId == me.aap.fermata.R.id.car_finder_fragment)
+				|| (activeFragmentId == me.aap.fermata.R.id.car_apps_fragment
+				&& me.aap.fermata.ui.carapps.CarAppsFeature.isFullscreen()) ?
 				GONE : VISIBLE;
 	}
 

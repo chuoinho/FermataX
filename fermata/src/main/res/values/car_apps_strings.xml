@@ -5,6 +5,7 @@
     <string name="car_apps_loading">Starting car display…</string>
     <string name="car_apps_needs_root">Root access is required to run independent car apps</string>
     <string name="car_apps_grant_root">Grant root</string>
+    <string name="car_apps_grant_root_blocked">Root was not granted. Try again and allow the request in your root manager.</string>
     <string name="car_apps_server_error">Failed to start car display server</string>
     <string name="car_apps_nav_back">Back</string>
     <string name="car_apps_nav_drawer">App drawer</string>
@@ -16,4 +17,5 @@
     <string name="car_apps_readiness_action_grant">Grant root</string>
     <string name="car_apps_readiness_warn_panel_power">Cannot turn off phone display on this device</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Requires USB debugging (Security settings)</string>
+    <string name="car_apps_panel_off_pref">Turn off phone screen during car apps</string>
 </resources>

@@ -16,4 +16,6 @@
     <string name="car_apps_readiness_action_grant">Conceder root</string>
     <string name="car_apps_readiness_warn_panel_power">No se puede apagar la pantalla del teléfono en este dispositivo</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Requiere depuración USB (Ajustes de seguridad)</string>
+    <string name="car_apps_panel_off_pref">Apagar la pantalla del teléfono con las apps del coche</string>
+    <string name="car_apps_grant_root_blocked">No se concedió root. Inténtalo de nuevo y permite la solicitud en tu gestor de root.</string>
 </resources>

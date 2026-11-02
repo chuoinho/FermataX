@@ -31,6 +31,8 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.CarAppsReadinessModel;
+import me.aap.fermata.ui.carapps.RootState;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.ui.control.PhoneReadiness;
 import me.aap.fermata.ui.control.PhoneReadiness.Action;
 import me.aap.fermata.ui.control.PhoneReadiness.Check;
@@ -134,6 +136,14 @@ final class ReadinessPrefsBuilder {
 			o.hideChevron = (model.actionStringRes == 0);
 			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
 		});
+		if (CarAppsFeature.state() == RootState.GRANTED
+				&& (CarAppsFeature.capabilities() & CarAppsReadinessModel.CAP_PANEL_POWER) != 0) {
+			target.addBooleanPref(o -> {
+				o.store = FermataApplication.get().getPreferenceStore();
+				o.pref = CarAppsFeature.PANEL_OFF;
+				o.title = R.string.car_apps_panel_off_pref;
+			});
+		}
 	}
 
 	private CharSequence carAppsSubtitle(CarAppsReadinessModel model) {
@@ -152,7 +162,13 @@ final class ReadinessPrefsBuilder {
 		if (!isRefreshAllowed(uiActive, closed)) return;
 		CarAppsFeature.Backend b = CarAppsFeature.backend();
 		if (b != null) {
-			b.requestRoot().onCompletion((granted, err) -> scheduleRefresh());
+			b.requestRoot().onCompletion((granted, err) -> {
+				if (!Boolean.TRUE.equals(granted)) {
+					android.widget.Toast.makeText(activity.getContext(), R.string.car_apps_grant_root_blocked,
+							android.widget.Toast.LENGTH_LONG).show();
+				}
+				scheduleRefresh();
+			});
 		}
 	}
 

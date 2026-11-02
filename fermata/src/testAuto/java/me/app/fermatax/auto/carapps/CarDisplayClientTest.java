@@ -163,6 +163,21 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
+	public void screenOffWhileDisplayAttachedWakesPhoneEvenWithPanelOn() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		client.onServerBinderReceived(server);
+		client.attach(null, 100, 100, 160);
+
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+
+		android.os.PowerManager.WakeLock wl = org.robolectric.shadows.ShadowPowerManager.getLatestWakeLock();
+		assertTrue("phone must be woken so the car display is not blanked",
+				wl != null && wl.isHeld());
+	}
+
+	@Test
 	public void serverDeathRestoresPanelPower() {
 		client.ensureRunning(context);
 		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));

@@ -5,7 +5,7 @@ package me.app.fermatax.auto.carapps;
  */
 public final class PanelPowerPolicy {
 
-	public static final String PREF_PANEL_OFF = "CAR_APPS_PANEL_OFF";
+	public static final String PREF_PANEL_OFF = me.aap.fermata.ui.carapps.CarAppsFeature.PREF_PANEL_OFF;
 
 	public enum PanelEvent {
 		USER_OFF,

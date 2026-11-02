@@ -6,7 +6,9 @@ import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemClock;
@@ -22,6 +24,7 @@ import java.util.List;
 
 import me.app.fermatax.auto.carapps.CallerPolicy;
 import me.app.fermatax.auto.carapps.ICarDisplayServer;
+import me.app.fermatax.auto.carapps.IdleExitPolicy;
 import me.app.fermatax.auto.carapps.VirtualDisplayFlags;
 
 /**
@@ -41,6 +44,8 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	private volatile VirtualDisplay virtualDisplay;
 	private volatile int displayId = -1;
 	private IBinder clientBinder;
+	private final Runnable idleExit = this::onIdleTimer;
+	private volatile long lastDetachMs = SystemClock.elapsedRealtime();
 
 	private final IBinder.DeathRecipient deathRecipient = new IBinder.DeathRecipient() {
 		@Override
@@ -54,6 +59,7 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		this.versionCode = versionCode;
 		this.appPackage = appPackage;
 		this.wakeLock = Hidden.createWakeLock(WAKELOCK_TAG);
+		scheduleIdleExit();
 	}
 
 	@Override
@@ -66,6 +72,7 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid)) {
 			return -1;
 		}
+		cancelIdleExit();
 
 		if (virtualDisplay != null && virtualDisplay.getDisplay() != null && virtualDisplay.getDisplay().isValid()) {
 			setSurfaceInternal(s, w, h, dpi);
@@ -341,6 +348,36 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 			virtualDisplay = null;
 		}
 		displayId = -1;
+		lastDetachMs = SystemClock.elapsedRealtime();
+		scheduleIdleExit();
+	}
+
+	/** One timer from the last detach (or process start): exit only if still without a client. */
+	private void scheduleIdleExit() {
+		Looper l = Looper.getMainLooper();
+		if (l == null) return;
+		Handler h = new Handler(l);
+		h.removeCallbacks(idleExit);
+		h.postDelayed(idleExit, IdleExitPolicy.IDLE_LIMIT_MS);
+	}
+
+	private synchronized void onIdleTimer() {
+		long now = SystemClock.elapsedRealtime();
+		if (IdleExitPolicy.shouldExit(now, lastDetachMs, virtualDisplay != null)) {
+			setPanelPowerInternal(true);
+			if (wakeLock != null && wakeLock.isHeld()) {
+				try {
+					wakeLock.release();
+				} catch (Throwable ignored) {
+				}
+			}
+			System.exit(0);
+		}
+	}
+
+	private void cancelIdleExit() {
+		Looper l = Looper.getMainLooper();
+		if (l != null) new Handler(l).removeCallbacks(idleExit);
 	}
 
 	@Override

@@ -294,6 +294,8 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment implements 
                 safeGetString(ctx, R.string.glass_addon_desc_recent, "Recently played history"),
                 R.drawable.timer, 0xFFFFA000, false, null, true));
 
+        addCarApps(allItems, ctx, me.aap.fermata.ui.carapps.CarAppsFeature.isVisible());
+
         // 3. Sort according to saved order
         String[] savedOrder = store.getStringArrayPref(PREF_ADDONS_ORDER);
         if (savedOrder != null && savedOrder.length > 0) {
@@ -314,6 +316,15 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment implements 
                 items.add(ci);
             }
         }
+    }
+
+    /** Root-gated "Car apps" entry, so the Glass catalog offers it like the classic navigation does. */
+    static void addCarApps(List<CatalogItem> out, Context ctx, boolean visible) {
+        if (!visible) return;
+        out.add(new CatalogItem("car_apps", R.id.car_apps_fragment,
+                ctx.getString(R.string.car_apps_title),
+                ctx.getString(R.string.car_apps_dashboard_sub),
+                R.drawable.ic_car_apps, GlassThemeColors.ACCENT_CYAN, false, null, true));
     }
 
     private void saveOrder() {

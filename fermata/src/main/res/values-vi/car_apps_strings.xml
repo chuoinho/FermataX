@@ -5,6 +5,7 @@
     <string name="car_apps_loading">Đang khởi động màn hình xe…</string>
     <string name="car_apps_needs_root">Cần quyền root để chạy ứng dụng xe độc lập</string>
     <string name="car_apps_grant_root">Cấp quyền root</string>
+    <string name="car_apps_grant_root_blocked">Chưa cấp được quyền root. Hãy thử lại và cho phép trong ứng dụng quản lý root.</string>
     <string name="car_apps_server_error">Không thể khởi động máy chủ hiển thị xe</string>
     <string name="car_apps_nav_back">Quay lại</string>
     <string name="car_apps_nav_drawer">Ngăn ứng dụng</string>
@@ -16,4 +17,5 @@
     <string name="car_apps_readiness_action_grant">Cấp quyền root</string>
     <string name="car_apps_readiness_warn_panel_power">Không tắt được màn hình điện thoại trên máy này</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Yêu cầu bật USB debugging (Security settings)</string>
+    <string name="car_apps_panel_off_pref">Tắt màn hình điện thoại khi dùng ứng dụng xe</string>
 </resources>

@@ -1,7 +1,5 @@
 package me.app.fermatax.auto.carapps;
 
-import static me.aap.utils.async.Completed.completed;
-
 import android.content.Context;
 
 import java.util.function.Supplier;
@@ -11,7 +9,6 @@ import me.aap.fermata.ui.carapps.RootProbe;
 import me.aap.fermata.ui.carapps.RootState;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
-import me.app.fermatax.auto.CarService;
 import me.app.fermatax.auto.Su;
 
 /**
@@ -27,10 +24,6 @@ public final class RootGrant {
 	}
 
 	static FutureSupplier<Boolean> request(Context ctx, Supplier<FutureSupplier<Su>> suSupplier) {
-		if (CarService.isActive()) {
-			return completed(false);
-		}
-
 		Promise<Boolean> promise = new Promise<>();
 		try {
 			FutureSupplier<Su> suFuture = suSupplier.get();

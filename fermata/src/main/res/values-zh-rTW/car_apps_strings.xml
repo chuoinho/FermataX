@@ -16,4 +16,6 @@
     <string name="car_apps_readiness_action_grant">授予 Root 權限</string>
     <string name="car_apps_readiness_warn_panel_power">此裝置無法關閉手機螢幕</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">需要啟用 USB 偵錯（安全設定）</string>
+    <string name="car_apps_panel_off_pref">使用車載應用時關閉手機螢幕</string>
+    <string name="car_apps_grant_root_blocked">未取得 Root 權限。請再試一次，並在 Root 管理程式中允許該要求。</string>
 </resources>

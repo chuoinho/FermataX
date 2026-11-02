@@ -3,6 +3,7 @@ package me.app.fermatax.auto;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD;
@@ -177,9 +178,10 @@ public class LauncherActivity extends AppCompatActivity {
 
 	private void setRequestedOrientation() {
 		var land = FermataApplication.get().isMirroringLandscape();
+		// The car-apps virtual display is landscape; a forced portrait orientation letterboxes it.
 		setRequestedOrientation(
-				land ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE :
-						SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+				isVirtualDisplay() ? SCREEN_ORIENTATION_UNSPECIFIED :
+						land ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_SENSOR_PORTRAIT);
 	}
 
 	public boolean isVirtualDisplay() {

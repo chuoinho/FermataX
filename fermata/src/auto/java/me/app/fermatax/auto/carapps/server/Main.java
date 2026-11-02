@@ -45,6 +45,7 @@ public class Main {
 				Looper.prepareMainLooper();
 			}
 
+			ServerLifecycle.killStale(Process.myPid());
 			Hidden.init();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {

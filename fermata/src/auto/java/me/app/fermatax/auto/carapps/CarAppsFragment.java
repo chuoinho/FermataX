@@ -4,7 +4,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.util.TypedValue;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,6 +15,7 @@ import android.os.Looper;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -27,6 +31,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.widget.ImageViewCompat;
 
 import java.util.function.Consumer;
 
@@ -51,6 +56,13 @@ public class CarAppsFragment extends MainActivityFragment {
 	private CarAppsUiState.State uiState = CarAppsUiState.State.LOADING;
 	private boolean attached = false;
 	private boolean barsHidden = false;
+	private static final long TOOLBAR_PEEK_MS = 4000;
+	private boolean peeking;
+	private final Runnable hideToolbarTask = () -> {
+		peeking = false;
+		applyToolbarVisibility();
+	};
+	private TopEdgeSwipeDetector topSwipe;
 
 	private LinearLayout rootLayout;
 	private FrameLayout viewportContainer;
@@ -65,7 +77,7 @@ public class CarAppsFragment extends MainActivityFragment {
 	private LinearLayout serverErrorOverlay;
 	private Button btnGrantRoot;
 
-	private final Runnable rootListener = this::updateUiState;
+	private final Runnable rootListener = this::onRootChanged;
 	private final Consumer<CarDisplayClient.State> clientListener = s -> updateUiState();
 	private final Consumer<Boolean> panelListener = off -> updateUiState();
 	private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -170,6 +182,7 @@ public class CarAppsFragment extends MainActivityFragment {
 					event.getY(),
 					event.getMetaState()
 			);
+			clean.setSource(InputDevice.SOURCE_TOUCHSCREEN); // source 0 is not routed as a pointer event
 			client.inject(clean);
 			clean.recycle();
 			return true;
@@ -177,9 +190,10 @@ public class CarAppsFragment extends MainActivityFragment {
 		viewportContainer.addView(surfaceView);
 
 		createStateOverlays(ctx);
+		createTopEdgeZone(ctx);
 		rootLayout.addView(viewportContainer);
 
-		// 2. Bottom bar (3 buttons: Back, App drawer, Close app; height >= 76 dp)
+		// 2. Bottom bar (3 icon buttons: Back, App drawer, Close app; compact 52 dp)
 		createBottomBar(ctx);
 		rootLayout.addView(bottomBar);
 
@@ -261,36 +275,52 @@ public class CarAppsFragment extends MainActivityFragment {
 		viewportContainer.addView(serverErrorOverlay);
 	}
 
+	private void createTopEdgeZone(Context ctx) {
+		int edge = GlassDimensions.dpToPx(ctx, 24);
+		topSwipe = new TopEdgeSwipeDetector(edge, GlassDimensions.dpToPx(ctx, 48));
+		View zone = new View(ctx);
+		zone.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, edge, Gravity.TOP));
+		zone.setOnTouchListener((v, e) -> {
+			topSwipe.onTouch(e.getActionMasked(), e.getX(), e.getY());
+			if (topSwipe.consumeTriggered()) peekToolbar();
+			return true;
+		});
+		viewportContainer.addView(zone);
+	}
+
+	private static int themeColor(Context ctx, int attr, int fallback) {
+		TypedValue tv = new TypedValue();
+		return ctx.getTheme().resolveAttribute(attr, tv, true) && tv.type >= TypedValue.TYPE_FIRST_COLOR_INT
+				&& tv.type <= TypedValue.TYPE_LAST_COLOR_INT ? tv.data : fallback;
+	}
+
+	private ImageButton createNavButton(Context ctx, int iconRes, int descRes) {
+		ImageButton b = new ImageButton(ctx);
+		b.setImageResource(iconRes);
+		b.setContentDescription(ctx.getString(descRes));
+		TypedValue tv = new TypedValue();
+		ctx.getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, tv, true);
+		b.setBackgroundResource(tv.resourceId);
+		b.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+		b.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f));
+		return b;
+	}
+
 	private void createBottomBar(Context ctx) {
 		bottomBar = new LinearLayout(ctx);
 		bottomBar.setOrientation(LinearLayout.HORIZONTAL);
 		bottomBar.setGravity(Gravity.CENTER);
+		bottomBar.setLayoutParams(new LinearLayout.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, GlassDimensions.dpToPx(ctx, 52)));
+		// Flat bar tinted by the active theme, so every theme gets the same Android-style strip.
+		int bg = themeColor(ctx, android.R.attr.colorBackground, 0xFF07090D);
+		bottomBar.setBackground(new ColorDrawable((bg & 0x00FFFFFF) | 0xE6000000));
 
-		int barHeight = Math.max(GlassDimensions.dpToPx(ctx, 76), 76);
-		LinearLayout.LayoutParams barLp = new LinearLayout.LayoutParams(
-				ViewGroup.LayoutParams.MATCH_PARENT, barHeight);
-		bottomBar.setLayoutParams(barLp);
-		bottomBar.setBackground(GlassDrawables.createGlassRailDrawable(ctx, GlassDimensions.PILL_RADIUS_DP, true));
-
-		// 1. Back button
-		btnBack = new ImageButton(ctx);
-		btnBack.setImageResource(R.drawable.ic_arrow_back);
-		btnBack.setContentDescription(ctx.getString(R.string.car_apps_nav_back));
-		btnBack.setBackground(GlassDrawables.createGlassItemHighlightDrawable(ctx, true));
-		btnBack.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-		LinearLayout.LayoutParams btnBackLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
-		btnBack.setLayoutParams(btnBackLp);
+		btnBack = createNavButton(ctx, R.drawable.ic_car_nav_back, R.string.car_apps_nav_back);
 		btnBack.setOnClickListener(v -> client.injectKey(KeyEvent.KEYCODE_BACK));
 		bottomBar.addView(btnBack);
 
-		// 2. App drawer button
-		btnDrawer = new ImageButton(ctx);
-		btnDrawer.setImageResource(R.drawable.view_grid);
-		btnDrawer.setContentDescription(ctx.getString(R.string.car_apps_nav_drawer));
-		btnDrawer.setBackground(GlassDrawables.createGlassItemHighlightDrawable(ctx, true));
-		btnDrawer.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-		LinearLayout.LayoutParams btnDrawerLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
-		btnDrawer.setLayoutParams(btnDrawerLp);
+		btnDrawer = createNavButton(ctx, R.drawable.ic_car_nav_drawer, R.string.car_apps_nav_drawer);
 		btnDrawer.setOnClickListener(v -> {
 			Context c = getContext();
 			if (c != null) {
@@ -301,14 +331,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		});
 		bottomBar.addView(btnDrawer);
 
-		// 3. Close app button
-		btnClose = new ImageButton(ctx);
-		btnClose.setImageResource(R.drawable.keyboard_close);
-		btnClose.setContentDescription(ctx.getString(R.string.car_apps_nav_close));
-		btnClose.setBackground(GlassDrawables.createGlassItemHighlightDrawable(ctx, true));
-		btnClose.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-		LinearLayout.LayoutParams btnCloseLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
-		btnClose.setLayoutParams(btnCloseLp);
+		btnClose = createNavButton(ctx, R.drawable.ic_car_nav_close, R.string.car_apps_nav_close);
 		btnClose.setOnClickListener(v -> {
 			client.closeTopApp(false);
 			setScreen(CarAppsNavModel.Screen.DRAWER);
@@ -319,6 +342,34 @@ public class CarAppsFragment extends MainActivityFragment {
 			return true;
 		});
 		bottomBar.addView(btnClose);
+		applyNavModel(CarAppsNavModel.of(screen));
+	}
+
+	/** Header is hidden while the virtual display is shown; it returns on errors and while peeking. */
+	private void applyToolbarVisibility() {
+		try {
+			CarAppsFeature.setFullscreen(uiState == CarAppsUiState.State.READY && !peeking);
+			getActivityDelegate().getToolBar().refreshMediatorVisibility();
+		} catch (RuntimeException ignored) {
+			// no MainActivityDelegate host (unit tests)
+		}
+	}
+
+	private void peekToolbar() {
+		peeking = true;
+		applyToolbarVisibility();
+		mainHandler.removeCallbacks(hideToolbarTask);
+		mainHandler.postDelayed(hideToolbarTask, TOOLBAR_PEEK_MS);
+	}
+
+	private void onRootChanged() {
+		Context ctx = getContext();
+		// root just granted after a failed start (e.g. denied earlier): retry without a manual tap
+		if (ctx != null && client.state() == CarDisplayClient.State.FAILED
+				&& CarAppsFeature.state() == RootState.GRANTED) {
+			client.ensureRunning(ctx);
+		}
+		updateUiState();
 	}
 
 	@Override
@@ -338,6 +389,7 @@ public class CarAppsFragment extends MainActivityFragment {
 			setScreen(CarAppsNavModel.Screen.DRAWER);
 		}
 		updateUiState();
+		applyToolbarVisibility();
 	}
 
 	@Override
@@ -349,6 +401,10 @@ public class CarAppsFragment extends MainActivityFragment {
 		if (client.isPanelOff()) {
 			client.setPanelOff(false);
 		}
+		mainHandler.removeCallbacks(hideToolbarTask);
+		peeking = false;
+		uiState = CarAppsUiState.State.LOADING;
+		applyToolbarVisibility();
 		super.onStop();
 	}
 
@@ -371,18 +427,18 @@ public class CarAppsFragment extends MainActivityFragment {
 	}
 
 	private void applyNavModel(CarAppsNavModel model) {
-		if (btnBack != null) {
-			btnBack.setEnabled(model.backEnabled);
-			btnBack.setAlpha(model.backEnabled ? 1.0f : 0.35f);
-		}
-		if (btnDrawer != null) {
-			btnDrawer.setSelected(model.drawerHighlighted);
-			btnDrawer.setAlpha(model.drawerHighlighted ? 1.0f : 0.85f);
-		}
-		if (btnClose != null) {
-			btnClose.setEnabled(model.closeEnabled);
-			btnClose.setAlpha(model.closeEnabled ? 1.0f : 0.35f);
-		}
+		if (btnBack == null) return;
+		Context ctx = btnBack.getContext();
+		int normal = themeColor(ctx, android.R.attr.textColorPrimary, Color.WHITE);
+		int accent = themeColor(ctx, androidx.appcompat.R.attr.colorPrimary, normal);
+		btnBack.setEnabled(model.backEnabled);
+		btnClose.setEnabled(model.closeEnabled);
+		btnBack.setAlpha(model.backEnabled ? 1.0f : 0.35f);
+		btnClose.setAlpha(model.closeEnabled ? 1.0f : 0.35f);
+		btnDrawer.setSelected(model.drawerHighlighted);
+		ImageViewCompat.setImageTintList(btnBack, ColorStateList.valueOf(normal));
+		ImageViewCompat.setImageTintList(btnClose, ColorStateList.valueOf(normal));
+		ImageViewCompat.setImageTintList(btnDrawer, ColorStateList.valueOf(model.drawerHighlighted ? accent : normal));
 	}
 
 	public void setBarsHidden(boolean hidden) {
@@ -416,6 +472,7 @@ public class CarAppsFragment extends MainActivityFragment {
 			attached = false;
 		}
 		uiState = CarAppsUiState.from(root, clientState);
+		applyToolbarVisibility();
 
 		if (loadingOverlay == null || needsRootOverlay == null || serverErrorOverlay == null) {
 			return;
@@ -452,13 +509,17 @@ public class CarAppsFragment extends MainActivityFragment {
 		}
 
 		if (uiState == CarAppsUiState.State.READY && attached) {
-			Context c = getContext();
-			if (c != null && client.hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
-				SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
-				boolean prefOff = prefs.getBoolean(PanelPowerPolicy.PREF_PANEL_OFF, true);
-				if (prefOff && !client.isPanelOff()) {
-					client.setPanelOff(true);
-				}
+			applyPanelPref();
+		}
+	}
+
+	private void applyPanelPref() {
+		Context c = getContext();
+		if (c != null && client.hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
+			SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
+			boolean prefOff = prefs.getBoolean(PanelPowerPolicy.PREF_PANEL_OFF, true);
+			if (prefOff && !client.isPanelOff()) {
+				client.setPanelOff(true);
 			}
 		}
 	}
@@ -489,6 +550,7 @@ public class CarAppsFragment extends MainActivityFragment {
 			client.launch(comp, Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 		}
 		setScreen(CarAppsNavModel.Screen.DRAWER);
+		applyPanelPref();
 	}
 
 	private int getDensityDpi() {

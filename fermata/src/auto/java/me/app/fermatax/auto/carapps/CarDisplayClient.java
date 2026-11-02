@@ -6,12 +6,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.hardware.display.DisplayManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.Surface;
 
@@ -27,6 +29,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
+import me.aap.fermata.ui.carapps.RootProbe;
 import me.aap.fermata.ui.carapps.RootState;
 import me.aap.utils.log.Log;
 import me.app.fermatax.auto.CarService;
@@ -55,6 +58,9 @@ public class CarDisplayClient {
 
 	private volatile boolean panelOff = false;
 	private BroadcastReceiver screenOffReceiver;
+	private DisplayManager.DisplayListener displayListener;
+	/** True while a virtual display is attached: a sleeping phone would blank it, so the phone is woken. */
+	private volatile boolean displayAttached;
 
 	private volatile ICarDisplayServer server;
 	private volatile IBinder serverBinder;
@@ -233,6 +239,7 @@ public class CarDisplayClient {
 	}
 
 	private synchronized void onServerDied() {
+		displayAttached = false;
 		unlinkServerBinder();
 		if (panelOff) {
 			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.SERVER_DIED);
@@ -322,6 +329,8 @@ public class CarDisplayClient {
 			recordDiagnostic("root_grant", Map.of("result", "failed"));
 			recordDiagnostic("server_failed", Map.of("reason", "root_failed"));
 			Log.e(err, "Failed to obtain root shell to launch CarDisplayServer");
+				// root was revoked since the grant was recorded: show the grant UI, not a generic failure
+				RootProbe.recordGranted(ctx, false);
 			setState(State.FAILED);
 		});
 	}
@@ -353,7 +362,12 @@ public class CarDisplayClient {
 		ICarDisplayServer srv = this.server;
 		if (srv == null) return -1;
 		try {
-			return srv.attach(s, w, h, dpi, clientToken);
+			int id = srv.attach(s, w, h, dpi, clientToken);
+			if (id >= 0) {
+				displayAttached = true;
+				registerScreenOffReceiver();
+			}
+			return id;
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.attach failed");
 			return -1;
@@ -472,9 +486,35 @@ public class CarDisplayClient {
 		};
 		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
 		lastContext.registerReceiver(screenOffReceiver, filter);
+		// The power key leaves the system Dozing without ACTION_SCREEN_OFF, so also watch the default display.
+		DisplayManager dm = (DisplayManager) lastContext.getSystemService(Context.DISPLAY_SERVICE);
+		if (dm != null) {
+			displayListener = new DisplayManager.DisplayListener() {
+				@Override
+				public void onDisplayAdded(int displayId) {
+				}
+
+				@Override
+				public void onDisplayRemoved(int displayId) {
+				}
+
+				@Override
+				public void onDisplayChanged(int displayId) {
+					if (displayId != Display.DEFAULT_DISPLAY) return;
+					Display d = dm.getDisplay(displayId);
+					if (d != null && d.getState() != Display.STATE_ON) onScreenOffReceived();
+				}
+			};
+			dm.registerDisplayListener(displayListener, mainHandler);
+		}
 	}
 
 	private synchronized void unregisterScreenOffReceiver() {
+		if (displayListener != null && lastContext != null) {
+			DisplayManager dm = (DisplayManager) lastContext.getSystemService(Context.DISPLAY_SERVICE);
+			if (dm != null) dm.unregisterDisplayListener(displayListener);
+			displayListener = null;
+		}
 		if (screenOffReceiver != null && lastContext != null) {
 			try {
 				lastContext.unregisterReceiver(screenOffReceiver);
@@ -488,6 +528,8 @@ public class CarDisplayClient {
 		PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.SCREEN_OFF_BROADCAST);
 		if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
 			restorePanelAndWake();
+		} else if (displayAttached) {
+			wakeScreen();
 		}
 	}
 
@@ -497,6 +539,7 @@ public class CarDisplayClient {
 		setPanelPower(true);
 		wakeScreen();
 		notifyPanelListeners(false);
+		if (displayAttached) registerScreenOffReceiver();
 	}
 
 	private void wakeScreen() {
@@ -515,6 +558,7 @@ public class CarDisplayClient {
 	}
 
 	public synchronized void onCarSessionStopped() {
+		displayAttached = false;
 		if (panelOff) {
 			PanelPowerPolicy.PanelAction action = PanelPowerPolicy.next(panelOff, PanelPowerPolicy.PanelEvent.CAR_DISCONNECTED);
 			if (action == PanelPowerPolicy.PanelAction.PANEL_ON_AND_WAKE) {
@@ -526,6 +570,7 @@ public class CarDisplayClient {
 	}
 
 	public synchronized void release() {
+		displayAttached = false;
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
 		if (panelOff) {
@@ -577,6 +622,7 @@ public class CarDisplayClient {
 	}
 
 	public void resetForTesting() {
+		displayAttached = false;
 		unregisterScreenOffReceiver();
 		panelOff = false;
 		unlinkServerBinder();

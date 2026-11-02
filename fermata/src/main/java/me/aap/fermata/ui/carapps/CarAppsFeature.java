@@ -9,6 +9,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
 /**
@@ -26,9 +28,14 @@ public final class CarAppsFeature {
 		}
 	}
 
+	/** Turn the phone panel off while the virtual display is in use (user option, default on). */
+	public static final String PREF_PANEL_OFF = "CAR_APPS_PANEL_OFF";
+	public static final Pref<BooleanSupplier> PANEL_OFF = Pref.b(PREF_PANEL_OFF, true);
+
 	private static volatile RootState state = RootState.ABSENT;
 	private static final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 	private static volatile Backend backend;
+	private static volatile boolean fullscreen;
 
 	private CarAppsFeature() {
 	}
@@ -39,6 +46,15 @@ public final class CarAppsFeature {
 
 	public static boolean usable(@Nullable RootState s) {
 		return s == RootState.GRANTED;
+	}
+
+	/** True while the virtual display owns the screen; the top bar is hidden meanwhile. */
+	public static boolean isFullscreen() {
+		return fullscreen;
+	}
+
+	public static void setFullscreen(boolean value) {
+		fullscreen = value;
 	}
 
 	public static boolean isVisible() {

@@ -58,4 +58,17 @@ public class TopBarPolicyTest {
 				false, 42, 99, "TV", "Other playback", "Preparing");
 		assertEquals("TV", state.title());
 	}
+
+	@Test
+	public void carAppsTopBarHiddenOnlyWhileFullscreen() {
+		try {
+			me.aap.fermata.ui.carapps.CarAppsFeature.setFullscreen(true);
+			assertEquals(GONE, TopBarPolicy.resolveTopBarVisibility(R.id.car_apps_fragment));
+			assertEquals(VISIBLE, TopBarPolicy.resolveTopBarVisibility(R.id.dashboard_fragment));
+			me.aap.fermata.ui.carapps.CarAppsFeature.setFullscreen(false);
+			assertEquals(VISIBLE, TopBarPolicy.resolveTopBarVisibility(R.id.car_apps_fragment));
+		} finally {
+			me.aap.fermata.ui.carapps.CarAppsFeature.setFullscreen(false);
+		}
+	}
 }

@@ -317,6 +317,9 @@ Máy thử: Redmi Note 8 (ginkgo), ROM tùy biến Android 16 (API 36, build BP4
 | Launcher trên xe | **Đạt một phần.** `LauncherActivity` hiện có chạy được trên display ảo (3 app + nút thêm). Chạm Chrome trong đó → Chrome mở **trên display ảo**, không phải điện thoại (hệ thống mở theo display của Activity gọi) — code `startActivity` hiện có đã đủ cho trường hợp này, `server.launch` chỉ cần cho lần mở đầu và nút dock. Chưa có hàng “Gần đây”. | `dumpsys activity`: Chrome ở `Display #455` |
 | Bàn phím trên xe | **Đạt, với điều kiện.** Mặc định bàn phím hiện **trên điện thoại** (`mCurTokenDisplayId=0`). Sau `IWindowManager.setDisplayImePolicy(id, LOCAL)` do root gọi, Gboard hiện trên display ảo và gõ chữ vào Chrome được. Bàn phím chiếm khoảng 45% chiều cao ở 720p. | Ảnh khung hình, `mCurTokenDisplayId=455` |
 | Thanh điều hướng đáy + rail gốc | **Chưa thử được**: cần bản build có fragment “Ứng dụng xe” + DHU. | — |
+| Chi phí server rảnh | Một `app_process` rảnh (chưa bật màn hình ảo) trên Redmi Note 8: CPU 0 tick trong 30 giây, không giữ wake lock, `oom_score_adj=-1000` (không bị LMK giết). RAM: **~85 MB private dirty (PSS ~125 MB)** dù chỉ có `Looper`. Phần lớn là ảnh khởi động ART phải tự chỉnh lại (`boot-framework.art` 14,5 MB, `boot-framework-adservices.art` 10,4 MB, `boot.art` 3 MB…). Các cờ `-Xnorelocate`, `-Xmx16m -Xms2m`, `-Xusejit:false` không giảm; `-Xnoimage-relocate`, `-Xint` không chạy. Khi Android nén trang rảnh vào zram (tỉ lệ 3,7:1 trên máy này), ép thử bằng `/proc/<pid>/reclaim` đưa PSS từ 126 MB xuống 2 MB, 85 MB sang zram ≈ 23 MB RAM thật. | `smaps_rollup`, `/proc/<pid>/stat`, `mm_stat` |
+| S10: `persist.adb.tcp.port` bằng quyền shell | **Không đạt** trên máy thử: `setprop` bị SELinux từ chối (giá trị vẫn rỗng, máy không bị thay đổi). Không dùng được để `adbd` nghe TCP sau khởi động lại cho máy không root. Chưa thử ROM khác. | `Failed to set property` |
+| S6b: mẹo hotspot của Shizuku-Next (ghi `adb_wifi_enabled` liên tục) | **Chưa kết luận.** Với hotspot bật, Wi‑Fi tắt: một lần ghi và 25 lần ghi cách ~100 ms (`settings put`) đều bị Android đặt lại về 0 ngay, không xuất hiện cổng TLS. Vòng ghi 2–20 ms như Shizuku-Next chưa chạy được từ công cụ thử (lỗi `SecurityException` do tên gói), nên phải thử trong app có `WRITE_SECURE_SETTINGS`. | `adb_wifi_enabled`, `service.adb.tls.port`, `/proc/net/tcp6` |
 | S2, S4, S8 | Chưa thử: cần máy Android 10–12, DHU với bản build FermataX, và xe thật | — |
 
 **Đối chiếu CarStream** (bản 1.24.93 trên máy cần key kích hoạt nên không chạy được; đọc mã nguồn v696 đã giải mã):
@@ -332,13 +335,33 @@ Hệ quả cho thiết kế:
 2. Không root **cần Wi‑Fi tin cậy sau mỗi lần khởi động máy**, và thêm sau mỗi lần `adbd` khởi động lại — trừ khi bật chế độ TCP (4.5 bước 7). Hotspot không thay được.
 4. Root ổn định hơn hẳn: không phụ thuộc mạng, không phụ thuộc `adbd`.
 
-### Kết quả giai đoạn 1 (Nghiệm thu trên máy thật & DHU 2026-10-30)
+### Kết quả giai đoạn 1 (Nghiệm thu trên máy thật & DHU, cập nhật 2026-11-01)
 
-- **Môi trường nghiệm thu:** Redmi Note 8 (`15c36230`), Android 16 (API 36), Magisk Root v27+, Desktop Head Unit (DHU 2.0) trên Windows qua ADB forwarding.
-- **Bản build:** `fermata-2.1-me.app.fermataX.auto-auto-debug.apk` trên nhánh `feat/car-apps-phase1-root`.
+- **Môi trường:** Redmi Note 8 (`15c36230`), Android 16 (API 36), Magisk, Desktop Head Unit 2.0 trên Windows qua ADB forwarding. Bản build `fermata-2.1-me.app.fermataX.auto-auto-debug.apk`, nhánh `feat/car-apps-phase1-root` (chưa commit).
+- Mọi thao tác "bấm" dưới đây là chuột trên DHU hoặc lệnh adb (`input keyevent 26` thay cho nút nguồn); chưa thử nút nguồn vật lý.
 
-| Nhóm tiêu chuẩn | Hạng mục kiểm tra | Kết quả | Bằng chứng thực nghiệm |
+| Nhóm | Hạng mục | Kết quả | Ghi chú |
 |---|---|---|---|
+| Root & ô vào | Phát hiện root thụ động, không chạy `su` khi mở app | ĐẠT | `RootProbe` + unit test |
+| | Ô "Car Apps" trên Glass Addons (DHU) | ĐẠT | `GlassAddonsCatalogFragment.addCarApps`; chỉ hiện khi root không ABSENT |
+| | Cấp root từ Readiness khi AA đang kết nối | ĐẠT | Hộp thoại Magisk hiện, cấp xong pref=true (2026-11-02). Hộp thoại đếm ngược 8 s rồi tự từ chối |
+| | Root bị từ chối | ĐẠT (sau sửa) | Ô vẫn hiện; xe báo "cần root" (trước đó báo "Failed" vì pref cũ — đã sửa trong startServer). Cấp lại từ Readiness thì xe tự khởi động server, không cần bấm (đã kiểm trên máy). Máy không có su: không kiểm được |
+| Màn hình & điều khiển | Mở Car Apps → danh sách app trên display ảo | ĐẠT | Server tự khởi động khi AA kết nối; chưa đo thời gian |
+| | Chrome chạy trên display ảo, cảm ứng (mở trang YouTube) | ĐẠT | Cần `SOURCE_TOUCHSCREEN` cho sự kiện inject |
+| | Bar dưới 3 nút Back / Home / Close, cao 52 dp | ĐẠT | Thay thế mốc 76 dp cũ theo quyết định của chủ dự án |
+| | Back, Home (về danh sách), Close (task Chrome biến mất) | ĐẠT | Long-press Close chưa thử |
+| | Ẩn thanh trên khi READY; vuốt từ cạnh trên hiện 4 s | ĐẠT | `TopBarPolicy` + `TopEdgeSwipeDetector` |
+| | Bàn phím, long-press Close, rail | ĐẠT | Bàn phím gõ được trên màn xe; long-press Close giết Chrome, phiên giữ nguyên. Pinch: DHU chuột không mô phỏng được, CHƯA KIỂM |
+| Nguồn điện thoại | Panel tự tắt khi dùng (mặc định bật) | ĐẠT | `SurfaceFlinger powerMode=Off`, hệ thống vẫn Awake. Lỗi cũ: nhánh attach qua `surfaceChanged` không áp dụng cài đặt, đã sửa |
+| | Bấm nguồn khi panel tắt | ĐẠT (giả lập adb) | Nút nguồn không phát `ACTION_SCREEN_OFF`; thêm `DisplayListener` → panel bật lại trong ~1 s |
+| | Ngắt DHU khi panel tắt | ĐẠT | `powerMode=On` ngay sau khi ngắt |
+| | Bấm nút nguồn khi display đang mở, tùy chọn tắt panel đang TẮT | ĐẠT | Phone tự sáng lại (mState=ON), xe vẫn hiện Chrome; đánh đổi: phone không ngủ được khi Car Apps đang gắn (2026-11-02) |
+| Tự phục hồi & vòng đời | Server duy nhất | ĐẠT | Server mới kill server cũ (`ServerLifecycle`) |
+| | Kill server giữa phiên → client tự khởi động lại | ĐẠT (2026-10-30) | Chưa chạy lại trong đợt này |
+| | Server thoát khi rảnh (`IdleExitPolicy`, 10 phút) | ĐẠT | Sau khi ngắt DHU, server còn ở 617 s và hết ở 648 s (~10 phút); panel `powerMode=On` | |
+| | Cài đè APK khi display đang mở | ĐẠT | Không crash, xe về Home, không còn server/display thừa (2026-11-02) |
+
+---|---|---|---|
 | **1. Root Gating thụ động** | Phát hiện root thụ động, không gọi `su` khi khởi động app | **ĐẠT** | `RootProbe` kiểm tra file/package passive; màn hình Readiness hiển thị "Yêu cầu quyền root" |
 | | Cấp quyền root qua nút "Cấp quyền root" | **ĐẠT** | Magisk policy cập nhật; sau cấp quyền Readiness chuyển "Sẵn sàng" |
 | | Hiển thị ô "Ứng dụng xe" trên Android Auto | **ĐẠT** | Dashboard items thêm `10 car_apps`; xuất hiện trên DHU |

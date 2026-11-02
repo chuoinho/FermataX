@@ -1,8 +1,10 @@
 package me.app.fermatax.auto.carapps;
 
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
 import android.content.Context;
@@ -60,10 +62,9 @@ public class RootGrantTest {
 	}
 
 	@Test
-	public void grantIsNeverRequestedWhileCarServiceActive() throws Exception {
+	public void grantIsAllowedWhileCarServiceActive() throws Exception {
 		setCarServiceActive(true);
-		boolean granted = RootGrant.request(context).get(() -> false);
-		assertFalse(granted);
-		assertEquals(RootState.AVAILABLE, CarAppsFeature.state());
+		boolean granted = RootGrant.request(context, () -> completed((me.app.fermatax.auto.Su) null)).get(() -> false);
+		assertTrue(granted);
 	}
 }
