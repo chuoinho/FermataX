@@ -346,22 +346,6 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		return List.copyOf(result);
 	}
 
-	private synchronized boolean isExternalPlaybackHandlerAvailable(
-			ExternalPlaybackHandler handler, ExternalPlaybackRequest request) {
-		AddonInfo info = handler.getInfo();
-		return state.isLoaded(info, handler) && store.getBooleanPref(info.enabledPref) &&
-				info.hasCapability(request.getTargetKind().getCapability()) &&
-				(handler.getExternalPlaybackTargetKind() == request.getTargetKind());
-	}
-
-	private synchronized List<ExternalPlaybackHandler> snapshotExternalPlaybackHandlers(
-			ExternalPlaybackRequest request) {
-		return selectExternalPlaybackHandlers(state.getAll(), addon -> {
-			AddonInfo info = addon.getInfo();
-			return state.isLoaded(info, addon) && store.getBooleanPref(info.enabledPref);
-		}, request);
-	}
-
 	static List<ExternalPlaybackHandler> selectExternalPlaybackHandlers(
 			Collection<FermataAddon> addons, Predicate<FermataAddon> enabled,
 			ExternalPlaybackRequest request) {

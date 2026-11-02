@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Process;
 import android.service.notification.StatusBarNotification;
-import android.view.View;
 
 import org.junit.Before;
 import org.junit.Test;

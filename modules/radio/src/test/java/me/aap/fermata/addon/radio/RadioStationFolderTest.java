@@ -18,11 +18,9 @@ import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib;
-import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 

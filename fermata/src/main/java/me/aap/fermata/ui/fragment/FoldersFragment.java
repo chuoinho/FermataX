@@ -18,7 +18,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
 import com.google.android.play.core.install.InstallException;
@@ -35,11 +34,9 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
-import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
-import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;

@@ -29,7 +29,6 @@ import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 
 @RunWith(RobolectricTestRunner.class)

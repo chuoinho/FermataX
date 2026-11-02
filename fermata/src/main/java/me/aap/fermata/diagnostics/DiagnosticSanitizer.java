@@ -46,8 +46,6 @@ public final class DiagnosticSanitizer {
 	private static final Pattern UNIX_PATH_PATTERN = Pattern.compile(
 			"(?i)(?<![a-z0-9:])/(?:data|storage|sdcard|mnt|home|users|private|var|tmp|" +
 					"cache)(?:/[^\\s\\\"'<>]*)?");
-	private static final Pattern URI_SECRET_PATH_PATTERN = Pattern.compile(
-			"(?i)/(?:token|password|passwd|secret|credential|api[_-]?key)(?:/[^/?#]*)?");
 	private static final Pattern OPAQUE_SECRET_PATTERN = Pattern.compile(
 			"^[A-Za-z0-9_+/=-]{40,}$");
 	private static final Pattern METADATA_IDENTIFIER = Pattern.compile("^[a-z][a-z0-9_]{0,63}$");

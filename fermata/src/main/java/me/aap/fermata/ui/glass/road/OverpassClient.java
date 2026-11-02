@@ -1,6 +1,5 @@
 package me.aap.fermata.ui.glass.road;
 
-import androidx.annotation.NonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

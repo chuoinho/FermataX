@@ -21,7 +21,6 @@ import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.async.FutureSupplier;
 
 @RunWith(RobolectricTestRunner.class)

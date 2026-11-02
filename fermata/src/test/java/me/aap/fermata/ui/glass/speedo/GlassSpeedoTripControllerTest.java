@@ -6,9 +6,6 @@ import android.Manifest;
 import android.app.Application;
 import android.content.Context;
 import android.location.Location;
-import android.content.ContextWrapper;
-import android.content.ComponentName;
-import android.content.Intent;
 import android.os.HandlerThread;
 import android.location.LocationManager;
 import android.os.SystemClock;
@@ -16,7 +13,6 @@ import android.provider.Settings;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.LinearLayout;
 
 import org.junit.Before;
 import org.junit.Test;

@@ -14,7 +14,6 @@ import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.control.PhoneReadiness;
-import me.aap.fermata.ui.glass.road.RoadPrefetch;
 import me.aap.fermata.ui.glass.speedo.TripModePolicy;
 import me.aap.fermata.ui.glass.speedo.TripTrackingService;
 import me.aap.fermata.ui.policy.BackgroundRunPolicy;

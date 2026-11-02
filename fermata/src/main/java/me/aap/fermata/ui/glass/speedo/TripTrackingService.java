@@ -24,7 +24,6 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
 
-import java.util.Locale;
 import java.util.Map;
 
 import me.aap.fermata.FermataApplication;
