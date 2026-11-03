@@ -142,7 +142,8 @@ public class LauncherActivity extends AppCompatActivity {
 		this.appListView = v;
 		setContentView(v);
 		var w = getWindow();
-		w.addFlags(
+		// On the car's display these would act on the phone: waking it, or holding its lock screen on.
+		if (!isVirtualDisplay()) w.addFlags(
 				FLAG_KEEP_SCREEN_ON | FLAG_TURN_SCREEN_ON | FLAG_DISMISS_KEYGUARD | FLAG_SHOW_WHEN_LOCKED);
 		w.getDecorView().setSystemUiVisibility(FULLSCREEN_FLAGS);
 		getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {

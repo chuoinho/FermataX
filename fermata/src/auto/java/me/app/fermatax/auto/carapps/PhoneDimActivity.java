@@ -1,12 +1,8 @@
 package me.app.fermatax.auto.carapps;
 
 import android.app.Activity;
-import android.app.ActivityOptions;
-import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
@@ -23,14 +19,6 @@ import me.aap.fermata.R;
  */
 public final class PhoneDimActivity extends Activity {
 	private static WeakReference<PhoneDimActivity> current;
-
-	/** Shows the screen on the phone display even when called from the car-side activity. */
-	public static void show(Context ctx) {
-		Intent i = new Intent(ctx.getApplicationContext(), PhoneDimActivity.class)
-				.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-		ActivityOptions o = ActivityOptions.makeBasic().setLaunchDisplayId(Display.DEFAULT_DISPLAY);
-		ctx.getApplicationContext().startActivity(i, o.toBundle());
-	}
 
 	public static void dismiss() {
 		PhoneDimActivity a = (current == null) ? null : current.get();
@@ -61,7 +49,8 @@ public final class PhoneDimActivity extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		finish(); // Home / app switch: the phone goes back to normal behaviour
+		// Home / app switch: the phone goes back to normal behaviour. Rotating also stops it, but it comes back.
+		if (!isChangingConfigurations()) finish();
 	}
 
 	@Override

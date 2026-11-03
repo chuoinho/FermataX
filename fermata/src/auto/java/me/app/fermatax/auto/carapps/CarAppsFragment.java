@@ -76,6 +76,8 @@ public class CarAppsFragment extends MainActivityFragment {
 	private LinearLayout loadingOverlay;
 	private LinearLayout needsRootOverlay;
 	private LinearLayout serverErrorOverlay;
+	private LinearLayout phoneAsleepOverlay;
+	private TextView phoneAsleepText;
 	private Button btnGrantRoot;
 
 	private boolean dimRequested;
@@ -187,6 +189,7 @@ public class CarAppsFragment extends MainActivityFragment {
 
 		createStateOverlays(ctx);
 		createTopEdgeZone(ctx);
+		createPhoneAsleepOverlay(ctx);
 		rootLayout.addView(viewportContainer);
 
 		// 2. Bottom bar (3 icon buttons: Back, App drawer, Close app; compact 52 dp)
@@ -269,6 +272,29 @@ public class CarAppsFragment extends MainActivityFragment {
 			}
 		});
 		viewportContainer.addView(serverErrorOverlay);
+	}
+
+	/**
+	 * Added last, so it blocks the apps. A sleeping phone has paused them, and a touch means "continue";
+	 * a locked one must not let the car see or control them until it is unlocked on the phone.
+	 */
+	private void createPhoneAsleepOverlay(Context ctx) {
+		phoneAsleepOverlay = new LinearLayout(ctx);
+		phoneAsleepOverlay.setOrientation(LinearLayout.VERTICAL);
+		phoneAsleepOverlay.setGravity(Gravity.CENTER);
+		phoneAsleepOverlay.setLayoutParams(new FrameLayout.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+		phoneAsleepOverlay.setBackgroundColor(0xFF07090D);
+		phoneAsleepText = new TextView(ctx);
+		phoneAsleepText.setTextColor(0xFFE2E8F0);
+		phoneAsleepText.setTextSize(18f);
+		phoneAsleepText.setGravity(Gravity.CENTER);
+		phoneAsleepOverlay.addView(phoneAsleepText);
+		phoneAsleepOverlay.setOnClickListener(v -> {
+			if (client.isPhoneAsleep()) client.wakeScreen();
+			dimRequested = false; // the driver wants the car, not the phone: cover it again once it is usable
+		});
+		viewportContainer.addView(phoneAsleepOverlay);
 	}
 
 	/** The zone and the surface share the origin, so view coordinates are display coordinates. */
@@ -436,6 +462,20 @@ public class CarAppsFragment extends MainActivityFragment {
 	}
 
 	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		if (surfaceView == null) return;
+		// a hidden parent alone leaves the surface alive, and with it the keep-awake lock
+		surfaceView.setVisibility(hidden ? View.GONE : View.VISIBLE);
+		if (hidden) {
+			PhoneDimActivity.dismiss();
+			dimRequested = false;
+		} else {
+			updateUiState();
+		}
+	}
+
+	@Override
 	public boolean onBackPressed() {
 		if (screen == CarAppsNavModel.Screen.APP) {
 			client.injectKey(KeyEvent.KEYCODE_BACK);
@@ -501,7 +541,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		uiState = CarAppsUiState.from(root, clientState);
 		applyToolbarVisibility();
 
-		if (loadingOverlay == null || needsRootOverlay == null || serverErrorOverlay == null) {
+		if (loadingOverlay == null || needsRootOverlay == null || serverErrorOverlay == null || phoneAsleepOverlay == null) {
 			return;
 		}
 
@@ -535,19 +575,32 @@ public class CarAppsFragment extends MainActivityFragment {
 				break;
 		}
 
+		boolean ready = uiState == CarAppsUiState.State.READY;
+		boolean asleep = client.isPhoneAsleep();
+		boolean locked = client.isPhoneLocked();
+		phoneAsleepOverlay.setVisibility(ready && (asleep || locked) ? View.VISIBLE : View.GONE);
+		phoneAsleepText.setText(asleep ? R.string.car_apps_phone_asleep : R.string.car_apps_phone_locked);
+		// INVISIBLE keeps the viewport size, so the virtual display is not resized
+		if (bottomBar != null) bottomBar.setVisibility(ready && locked ? View.INVISIBLE : View.VISIBLE);
+
 		if (uiState == CarAppsUiState.State.READY && attached) {
 			applyPanelPref();
 		}
 	}
 
-	/** Black phone screen once per attach; the user touching it must not bring it back. */
+	/**
+	 * Black phone screen once per attach; the user touching it must not bring it back.
+	 * The server starts it because Android blocks the car side, which has no visible activity,
+	 * and it waits for the screen to be on because it ends itself when stopped.
+	 */
 	private void applyPanelPref() {
 		Context c = getContext();
-		if (c == null || dimRequested) return;
+		if (c == null || dimRequested || isHidden() || client.isPhoneAsleep() || client.isPhoneLocked()) return;
 		SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
 		if (prefs.getBoolean(CarAppsFeature.PREF_PANEL_OFF, true)) {
 			dimRequested = true;
-			PhoneDimActivity.show(c);
+			client.launchOnPhone(new ComponentName(c, PhoneDimActivity.class),
+					Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
 		}
 	}
 
@@ -608,6 +661,10 @@ public class CarAppsFragment extends MainActivityFragment {
 
 	public ImageButton getCloseButton() {
 		return btnClose;
+	}
+
+	public View getPhoneAsleepOverlay() {
+		return phoneAsleepOverlay;
 	}
 
 	public Button getGrantRootButton() {

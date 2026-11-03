@@ -238,6 +238,19 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	}
 
 	@Override
+	public void launchOnPhone(ComponentName c, int intentFlags) {
+		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid) || c == null) {
+			return;
+		}
+
+		try {
+			Runtime.getRuntime().exec(new String[]{"am", "start", "--display", "0",
+					"-n", c.flattenToShortString(), "-f", String.valueOf(intentFlags)}).waitFor();
+		} catch (Throwable ignored) {
+		}
+	}
+
+	@Override
 	public String closeTopApp(boolean force) {
 		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid)) {
 			return "";

@@ -18,4 +18,6 @@
     <string name="car_apps_panel_off_pref">Schermo del telefono nero con le app auto</string>
     <string name="car_apps_grant_root_blocked">Root non concesso. Riprova e consenti la richiesta nel tuo gestore root.</string>
     <string name="car_apps_phone_dim_text">Car Apps è in uso sull\'auto\nTocca per usare il telefono</string>
+    <string name="car_apps_phone_asleep">Lo schermo del telefono è spento\nTocca per continuare</string>
+    <string name="car_apps_phone_locked">Il telefono è bloccato\nSbloccalo per continuare</string>
 </resources>

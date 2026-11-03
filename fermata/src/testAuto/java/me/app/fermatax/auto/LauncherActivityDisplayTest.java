@@ -14,6 +14,7 @@ import android.hardware.display.DisplayManager;
 import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
@@ -48,6 +49,9 @@ public class LauncherActivityDisplayTest {
 
 	private static final String TEST_PKG = "com.example.testapp";
 	private static final String TEST_CLS = "com.example.testapp.MainActivity";
+	private static final int PHONE_SCREEN_FLAGS = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+			WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+			WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
 
 	public static class TestVirtualLauncherActivity extends LauncherActivity {
 		private Display display;
@@ -175,6 +179,20 @@ public class LauncherActivityDisplayTest {
 		assertEquals(TEST_CLS, startedIntent.getComponent().getClassName());
 		assertFalse("Virtual display must not inject mirroring mode extra",
 				startedIntent.hasExtra(LauncherActivity.INTENT_EXTRA_MODE));
+	}
+
+	@Test
+	public void virtualDisplayDoesNotWakeOrHoldThePhone() {
+		LauncherActivity activity = launchOnDisplay(createSecondaryDisplay());
+
+		assertEquals(0, activity.getWindow().getAttributes().flags & PHONE_SCREEN_FLAGS);
+	}
+
+	@Test
+	public void defaultDisplayKeepsThePhoneScreenFlagsForMirroring() {
+		LauncherActivity activity = launchOnDisplay(null);
+
+		assertEquals(PHONE_SCREEN_FLAGS, activity.getWindow().getAttributes().flags & PHONE_SCREEN_FLAGS);
 	}
 
 	@Test

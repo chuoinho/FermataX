@@ -18,4 +18,6 @@
     <string name="car_apps_panel_off_pref">Tela do telefone preta nos apps do carro</string>
     <string name="car_apps_grant_root_blocked">O root não foi concedido. Tente novamente e permita o pedido no seu gerenciador de root.</string>
     <string name="car_apps_phone_dim_text">Car Apps está em uso no carro\nToque para usar o telefone</string>
+    <string name="car_apps_phone_asleep">A tela do telefone está desligada\nToque para continuar</string>
+    <string name="car_apps_phone_locked">O telefone está bloqueado\nDesbloqueie para continuar</string>
 </resources>

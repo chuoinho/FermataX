@@ -1,5 +1,6 @@
 package me.app.fermatax.auto.carapps;
 
+import android.app.KeyguardManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -18,6 +19,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import java.util.List;
 import java.util.Map;
@@ -52,10 +54,15 @@ public class CarDisplayClient {
 
 	private volatile State state = State.IDLE;
 	private final List<Consumer<State>> stateListeners = new CopyOnWriteArrayList<>();
-	private BroadcastReceiver screenOffReceiver;
 	private DisplayManager.DisplayListener displayListener;
-	/** True while a virtual display is attached: a sleeping phone would blank it, so the phone is woken. */
-	private volatile boolean displayAttached;
+	private BroadcastReceiver unlockReceiver;
+	private PowerManager.WakeLock keepAwakeLock;
+	private volatile boolean phoneAsleep;
+	private volatile boolean phoneLocked;
+	private Surface carSurface;
+	private int carWidth;
+	private int carHeight;
+	private int carDpi;
 
 	private volatile ICarDisplayServer server;
 	private volatile IBinder serverBinder;
@@ -103,6 +110,11 @@ public class CarDisplayClient {
 			return;
 		}
 		this.state = newState;
+		notifyStateListeners();
+	}
+
+	private void notifyStateListeners() {
+		State newState = this.state;
 		for (Consumer<State> listener : stateListeners) {
 			try {
 				listener.accept(newState);
@@ -208,9 +220,8 @@ public class CarDisplayClient {
 	}
 
 	private synchronized void onServerDied() {
-		displayAttached = false;
 		unlinkServerBinder();
-		unregisterScreenOffReceiver();
+		stopKeepingPhoneAwake();
 		this.server = null;
 		this.serverBinder = null;
 		setState(State.RETRYING);
@@ -324,10 +335,11 @@ public class CarDisplayClient {
 		ICarDisplayServer srv = this.server;
 		if (srv == null) return -1;
 		try {
-			int id = srv.attach(s, w, h, dpi, clientToken);
+			boolean locked = (lastContext != null) && isKeyguardHoldingPhone();
+			int id = srv.attach(locked ? null : s, w, h, dpi, clientToken);
 			if (id >= 0) {
-				displayAttached = true;
-				registerScreenOffReceiver();
+				rememberCarSurface(s, w, h, dpi);
+				startKeepingPhoneAwake();
 			}
 			return id;
 		} catch (RemoteException e) {
@@ -339,6 +351,10 @@ public class CarDisplayClient {
 	public void setSurface(@Nullable Surface s, int w, int h, int dpi) {
 		ICarDisplayServer srv = this.server;
 		if (srv == null) return;
+		rememberCarSurface(s, w, h, dpi);
+		if (s == null) stopKeepingPhoneAwake();
+		else startKeepingPhoneAwake();
+		if ((s != null) && phoneLocked) return; // given to the display on unlock
 		try {
 			srv.setSurface(s, w, h, dpi);
 		} catch (RemoteException e) {
@@ -377,6 +393,16 @@ public class CarDisplayClient {
 		}
 	}
 
+	public void launchOnPhone(ComponentName c, int intentFlags) {
+		ICarDisplayServer srv = this.server;
+		if (srv == null) return;
+		try {
+			srv.launchOnPhone(c, intentFlags);
+		} catch (RemoteException e) {
+			Log.e(e, "CarDisplayServer.launchOnPhone failed");
+		}
+	}
+
 	public String closeTopApp(boolean force) {
 		ICarDisplayServer srv = this.server;
 		if (srv == null) return "";
@@ -403,21 +429,13 @@ public class CarDisplayClient {
 		return (capabilities() & cap) == cap;
 	}
 
-	private synchronized void registerScreenOffReceiver() {
-		if (screenOffReceiver != null) return;
-		if (lastContext == null) return;
-		screenOffReceiver = new BroadcastReceiver() {
-			@Override
-			public void onReceive(Context context, Intent intent) {
-				if (intent != null && Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-					Log.i("CarDisplayClient received ACTION_SCREEN_OFF, restoring phone panel");
-					onScreenOffReceived();
-				}
-			}
-		};
-		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
-		lastContext.registerReceiver(screenOffReceiver, filter);
-		// The power key leaves the system Dozing without ACTION_SCREEN_OFF, so also watch the default display.
+	/**
+	 * Apps on the virtual display stop if the phone sleeps. The dim lock makes the screen timeout dim the phone
+	 * instead, in any app, and the power key still really sleeps it: that is reported, never undone.
+	 * A locked phone is not kept awake, so its lock screen times out as usual.
+	 */
+	private synchronized void startKeepingPhoneAwake() {
+		if (displayListener != null || lastContext == null) return;
 		DisplayManager dm = (DisplayManager) lastContext.getSystemService(Context.DISPLAY_SERVICE);
 		if (dm != null) {
 			displayListener = new DisplayManager.DisplayListener() {
@@ -433,33 +451,104 @@ public class CarDisplayClient {
 				public void onDisplayChanged(int displayId) {
 					if (displayId != Display.DEFAULT_DISPLAY) return;
 					Display d = dm.getDisplay(displayId);
-					if (d != null && d.getState() != Display.STATE_ON) onScreenOffReceived();
+					setPhoneState((d != null) ? (d.getState() != Display.STATE_ON) : phoneAsleep, isKeyguardHoldingPhone());
 				}
 			};
 			dm.registerDisplayListener(displayListener, mainHandler);
 		}
+		unlockReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				setPhoneState(phoneAsleep, false);
+			}
+		};
+		// Exported because SystemUI, not the system uid, sends it; a protected broadcast, so no app can fake it.
+		ContextCompat.registerReceiver(lastContext, unlockReceiver, new IntentFilter(Intent.ACTION_USER_PRESENT),
+				ContextCompat.RECEIVER_EXPORTED);
+		setPhoneState(phoneAsleep, isKeyguardHoldingPhone());
 	}
 
-	private synchronized void unregisterScreenOffReceiver() {
+	private synchronized void stopKeepingPhoneAwake() {
+		releaseKeepAwakeLock();
 		if (displayListener != null && lastContext != null) {
 			DisplayManager dm = (DisplayManager) lastContext.getSystemService(Context.DISPLAY_SERVICE);
 			if (dm != null) dm.unregisterDisplayListener(displayListener);
 			displayListener = null;
 		}
-		if (screenOffReceiver != null && lastContext != null) {
-			try {
-				lastContext.unregisterReceiver(screenOffReceiver);
-			} catch (Throwable ignored) {
+		if (unlockReceiver != null && lastContext != null) {
+			lastContext.unregisterReceiver(unlockReceiver);
+			unlockReceiver = null;
+		}
+		carSurface = null;
+		setPhoneState(false, false);
+	}
+
+	private boolean isKeyguardHoldingPhone() {
+		KeyguardManager km = (KeyguardManager) lastContext.getSystemService(Context.KEYGUARD_SERVICE);
+		return (km != null) && km.isKeyguardSecure() && km.isKeyguardLocked();
+	}
+
+	/** Both change first and listeners hear once, so they never see a sleeping phone as awake or a locked one as open. */
+	@SuppressWarnings("deprecation")
+	private synchronized void setPhoneState(boolean asleep, boolean locked) {
+		boolean changed = (phoneAsleep != asleep) || (phoneLocked != locked);
+		phoneAsleep = asleep;
+		setPhoneLocked(locked);
+		if (locked) {
+			releaseKeepAwakeLock();
+		} else if ((keepAwakeLock == null) && (unlockReceiver != null)) {
+			PowerManager pm = (PowerManager) lastContext.getSystemService(Context.POWER_SERVICE);
+			if (pm != null) {
+				keepAwakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "fermatax:carapps");
+				keepAwakeLock.acquire();
 			}
-			screenOffReceiver = null;
+		}
+		if (changed) notifyStateListeners();
+	}
+
+	private synchronized void releaseKeepAwakeLock() {
+		if (keepAwakeLock != null) {
+			keepAwakeLock.release();
+			keepAwakeLock = null;
 		}
 	}
 
-	private synchronized void onScreenOffReceived() {
-		if (displayAttached) wakeScreen();
+	/**
+	 * No surface turns the virtual display off while the phone is locked: its apps stop, nothing reaches the car,
+	 * and their keep-screen-on windows no longer hold the lock screen on.
+	 */
+	private synchronized void setPhoneLocked(boolean locked) {
+		if (phoneLocked == locked) return;
+		phoneLocked = locked;
+		ICarDisplayServer srv = this.server;
+		if ((srv != null) && (locked || (carSurface != null))) {
+			try {
+				if (locked) srv.setSurface(null, 0, 0, 0);
+				else srv.setSurface(carSurface, carWidth, carHeight, carDpi);
+			} catch (RemoteException e) {
+				Log.e(e, "CarDisplayServer.setSurface failed");
+			}
+		}
 	}
 
-	private void wakeScreen() {
+	private synchronized void rememberCarSurface(@Nullable Surface s, int w, int h, int dpi) {
+		carSurface = s;
+		carWidth = w;
+		carHeight = h;
+		carDpi = dpi;
+	}
+
+	/** True when the phone sleeping has paused the apps on the car; state listeners are told when it changes. */
+	public boolean isPhoneAsleep() {
+		return phoneAsleep;
+	}
+
+	/** True when the car must not show or control the apps until the phone is unlocked; listeners are told. */
+	public boolean isPhoneLocked() {
+		return phoneLocked;
+	}
+
+	public void wakeScreen() {
 		if (lastContext == null) return;
 		try {
 			PowerManager pm = (PowerManager) lastContext.getSystemService(Context.POWER_SERVICE);
@@ -475,15 +564,13 @@ public class CarDisplayClient {
 	}
 
 	public synchronized void onCarSessionStopped() {
-		displayAttached = false;
-		unregisterScreenOffReceiver();
+		stopKeepingPhoneAwake();
 	}
 
 	public synchronized void release() {
-		displayAttached = false;
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
-		unregisterScreenOffReceiver();
+		stopKeepingPhoneAwake();
 		ICarDisplayServer srv = this.server;
 		this.server = null;
 		this.serverBinder = null;
@@ -525,8 +612,7 @@ public class CarDisplayClient {
 	}
 
 	public void resetForTesting() {
-		displayAttached = false;
-		unregisterScreenOffReceiver();
+		stopKeepingPhoneAwake();
 		unlinkServerBinder();
 		this.server = null;
 		this.serverBinder = null;

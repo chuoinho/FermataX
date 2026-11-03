@@ -16,6 +16,7 @@ interface ICarDisplayServer {
     oneway void inject(in MotionEvent e);
     oneway void injectKey(int keyCode);
     int launch(in ComponentName c, int intentFlags);
+    oneway void launchOnPhone(in ComponentName c, int intentFlags);
     String closeTopApp(boolean force);
     void release();
     int serverVersion();

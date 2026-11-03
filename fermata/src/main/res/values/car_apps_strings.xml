@@ -18,4 +18,6 @@
     <string name="car_apps_readiness_warn_xiaomi_inject">Requires USB debugging (Security settings)</string>
     <string name="car_apps_panel_off_pref">Dim phone screen during car apps</string>
     <string name="car_apps_phone_dim_text">Car Apps is running on the car\nTouch to use the phone</string>
+    <string name="car_apps_phone_asleep">The phone screen is off\nTouch to continue</string>
+    <string name="car_apps_phone_locked">The phone is locked\nUnlock it to continue</string>
 </resources>

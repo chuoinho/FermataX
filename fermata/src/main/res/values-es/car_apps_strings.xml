@@ -18,4 +18,6 @@
     <string name="car_apps_panel_off_pref">Pantalla del teléfono en negro con las apps del coche</string>
     <string name="car_apps_grant_root_blocked">No se concedió root. Inténtalo de nuevo y permite la solicitud en tu gestor de root.</string>
     <string name="car_apps_phone_dim_text">Car Apps se está usando en el coche\nToca para usar el teléfono</string>
+    <string name="car_apps_phone_asleep">La pantalla del teléfono está apagada\nToca para continuar</string>
+    <string name="car_apps_phone_locked">El teléfono está bloqueado\nDesbloquéalo para continuar</string>
 </resources>

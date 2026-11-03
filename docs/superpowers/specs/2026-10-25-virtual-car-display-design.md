@@ -335,10 +335,10 @@ Hệ quả cho thiết kế:
 2. Không root **cần Wi‑Fi tin cậy sau mỗi lần khởi động máy**, và thêm sau mỗi lần `adbd` khởi động lại — trừ khi bật chế độ TCP (4.5 bước 7). Hotspot không thay được.
 4. Root ổn định hơn hẳn: không phụ thuộc mạng, không phụ thuộc `adbd`.
 
-### Kết quả giai đoạn 1 (Nghiệm thu trên máy thật & DHU, cập nhật 2026-11-01)
+### Kết quả giai đoạn 1 (Nghiệm thu trên máy thật & DHU, cập nhật 2026-11-03)
 
 - **Môi trường:** Redmi Note 8 (`15c36230`), Android 16 (API 36), Magisk, Desktop Head Unit 2.0 trên Windows qua ADB forwarding. Bản build `fermata-2.1-me.app.fermataX.auto-auto-debug.apk`, nhánh `feat/car-apps-phase1-root` (chưa commit).
-- Mọi thao tác "bấm" dưới đây là chuột trên DHU hoặc lệnh adb (`input keyevent 26` thay cho nút nguồn); chưa thử nút nguồn vật lý.
+- Thao tác "bấm" dưới đây là chuột trên DHU hoặc lệnh adb; nhóm Nguồn điện thoại (2026-11-03) dùng nút nguồn thật và PIN thật do người dùng thao tác.
 
 | Nhóm | Hạng mục | Kết quả | Ghi chú |
 |---|---|---|---|
@@ -352,30 +352,19 @@ Hệ quả cho thiết kế:
 | | Back, Home (về danh sách), Close (task Chrome biến mất) | ĐẠT | Long-press Close chưa thử |
 | | Ẩn thanh trên khi READY; vuốt từ cạnh trên hiện 4 s | ĐẠT | `TopBarPolicy` + `TopEdgeSwipeDetector` |
 | | Bàn phím, long-press Close, rail | ĐẠT | Bàn phím gõ được trên màn xe; long-press Close giết Chrome, phiên giữ nguyên. Pinch: DHU chuột không mô phỏng được, CHƯA KIỂM |
-| Nguồn điện thoại | Panel tự tắt khi dùng (mặc định bật) | ĐẠT | `SurfaceFlinger powerMode=Off`, hệ thống vẫn Awake. Lỗi cũ: nhánh attach qua `surfaceChanged` không áp dụng cài đặt, đã sửa |
-| | Bấm nguồn khi panel tắt | ĐẠT (giả lập adb) | Nút nguồn không phát `ACTION_SCREEN_OFF`; thêm `DisplayListener` → panel bật lại trong ~1 s |
-| | Ngắt DHU khi panel tắt | ĐẠT | `powerMode=On` ngay sau khi ngắt |
-| | Bấm nút nguồn khi display đang mở, tùy chọn tắt panel đang TẮT | ĐẠT | Phone tự sáng lại (mState=ON), xe vẫn hiện Chrome; đánh đổi: phone không ngủ được khi Car Apps đang gắn (2026-11-02) |
+| Nguồn điện thoại (2026-11-03) | Màn hình đen trên phone thay tắt panel bằng root | ĐẠT | Chi tiết và log: `2026-11-02-car-apps-phone-dim-screen-design.md`. Các dòng tắt panel cũ đã bỏ vì code đã xóa |
+| | Nút nguồn thật: phone ngủ và khóa, xe báo, chạm trên xe đánh thức | ĐẠT | Log 18:01:42 → 18:01:44, không vượt qua màn khóa |
+| | Phone có PIN: khóa thì xe che app, lấy surface khỏi display | ĐẠT | Log 18:01:42 |
+| | Màn khóa tự tắt theo giờ chờ khi Car Apps đang mở | ĐẠT | Sáng 18:01:44, tự tắt 18:01:56 |
+| | Mở Car Apps khi phone đang khóa và ngủ: không đánh thức phone | ĐẠT | Log 15:43:00 và 18:01:04: không có `screen_toggled 1` theo sau. Trước khi sửa: sáng sau 0,4 s và sáng 8,5 phút |
+| | Mở khóa bằng PIN: xe tự chạy lại app, không cần chạm | ĐẠT | Surface về ngay sau `KEYGUARD_HIDDEN` (18:01:18, 18:04:53) |
+| | Hết giờ chờ khi chưa khóa, phone ở launcher, xe ở danh sách app: giảm sáng, không ngủ | ĐẠT | `policy=DIM`, độ sáng 0.38 → 0.05, chỉ còn `fermatax:carapps` sau 84 giây (18:09:01) |
+| | Như trên nhưng xe đang dẫn đường bằng Maps: giảm sáng | KHÔNG ĐẠT | Maps giữ `WindowManager/displayId:322`, phone `policy=BRIGHT`, 0.38 suốt 105 giây (19:49:49 → 19:51:34). Màn hình đen vẫn ép được độ sáng. Nguyên nhân và hướng xử lý: `2026-11-02-car-apps-phone-dim-screen-design.md` |
+| | Mở khóa bằng vân tay, nơi tin cậy | CHƯA KIỂM | |
 | Tự phục hồi & vòng đời | Server duy nhất | ĐẠT | Server mới kill server cũ (`ServerLifecycle`) |
 | | Kill server giữa phiên → client tự khởi động lại | ĐẠT (2026-10-30) | Chưa chạy lại trong đợt này |
 | | Server thoát khi rảnh (`IdleExitPolicy`, 10 phút) | ĐẠT | Sau khi ngắt DHU, server còn ở 617 s và hết ở 648 s (~10 phút); panel `powerMode=On` | |
 | | Cài đè APK khi display đang mở | ĐẠT | Không crash, xe về Home, không còn server/display thừa (2026-11-02) |
-
----|---|---|---|
-| **1. Root Gating thụ động** | Phát hiện root thụ động, không gọi `su` khi khởi động app | **ĐẠT** | `RootProbe` kiểm tra file/package passive; màn hình Readiness hiển thị "Yêu cầu quyền root" |
-| | Cấp quyền root qua nút "Cấp quyền root" | **ĐẠT** | Magisk policy cập nhật; sau cấp quyền Readiness chuyển "Sẵn sàng" |
-| | Hiển thị ô "Ứng dụng xe" trên Android Auto | **ĐẠT** | Dashboard items thêm `10 car_apps`; xuất hiện trên DHU |
-| **2. Khởi chạy & Drawer** | Mở Virtual Display trong < 3s | **ĐẠT** | Virtual Display `fermatax-car` (id 512, 674x576 160dpi, `TRUSTED, ALWAYS_UNLOCKED`) khởi tạo tức thì |
-| | Thanh Bottom Bar (Back, Drawer, Panel, Close) ≥ 76dp | **ĐẠT** | Layout 76dp với Glass pill background, icon rõ ràng, không cấn viền |
-| **3. Tương tác Ứng dụng** | Mở ứng dụng độc lập (Maps, YouTube, Chrome) | **ĐẠT** | `LauncherActivity`, `MapsActivity`, `morphe_original_1`, Chrome chạy song song trên display 512 |
-| | Cảm ứng, cuộn, IME ảo | **ĐẠT** | Touch injection qua Virtual input device; IME policy hướng bàn phím về display ảo |
-| **4. Điều hướng 3 Nút** | Nút Back (Quay lại) | **ĐẠT** | Inject `KEYCODE_BACK` lùi màn hình app đang mở trên display ảo |
-| | Nút Drawer (Ngăn ứng dụng) | **ĐẠT** | Đưa `LauncherActivity` lên top resumed display 512 |
-| | Nút Close (Đóng / Force stop) | **ĐẠT** | `Hidden.removeTask` xóa task khỏi display; long-press gọi force-stop |
-| **5. An toàn Nguồn điện thoại** | Tắt màn hình điện thoại khi dùng xe | **ĐẠT** | `DisplayControl.setDisplayPowerMode(0)` tắt đen màn hình điện thoại, `SCREEN_DIM_WAKE_LOCK` giữ máy thức |
-| | Khôi phục bằng nút nguồn vật lý | **ĐẠT** | Màn hình điện thoại bật lại khi nhấn nguồn hoặc ngắt kết nối AA |
-| **6. Khả năng tự phục hồi** | Kill server giữa phiên (`pkill carapps.server.Main`) | **ĐẠT** | `CarDisplayClient` bắt `binderDied`, tự động respawn server qua `su` sau 1s mà không crash app |
-| | Tương thích Glass Rail & Mirroring | **ĐẠT** | 100% mã nguồn Rail và Mirroring giữ nguyên vẹn, không xảy ra xung đột layout |
 
 ---
 

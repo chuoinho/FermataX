@@ -18,4 +18,6 @@
     <string name="car_apps_readiness_warn_xiaomi_inject">Yêu cầu bật USB debugging (Security settings)</string>
     <string name="car_apps_panel_off_pref">Màn hình đen trên điện thoại khi dùng ứng dụng xe</string>
     <string name="car_apps_phone_dim_text">Đang dùng chế độ Car Apps trên xe\nChạm để dùng điện thoại</string>
+    <string name="car_apps_phone_asleep">Màn hình điện thoại đang tắt\nChạm để tiếp tục</string>
+    <string name="car_apps_phone_locked">Điện thoại đang khóa\nMở khóa điện thoại để tiếp tục</string>
 </resources>

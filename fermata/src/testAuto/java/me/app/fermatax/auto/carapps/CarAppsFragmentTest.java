@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -19,6 +18,7 @@ import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
@@ -272,10 +272,10 @@ public class CarAppsFragmentTest {
 		}
 	}
 
-	private String nextStartedActivityClass() {
-		android.content.Intent i = org.robolectric.Shadows.shadowOf(
-				(Application) context.getApplicationContext()).getNextStartedActivity();
-		return i == null || i.getComponent() == null ? null : i.getComponent().getClassName();
+	private String nextPhoneLaunchClass() {
+		ComponentName c = serverBinder.lastPhoneLaunch;
+		serverBinder.lastPhoneLaunch = null;
+		return c == null ? null : c.getClassName();
 	}
 
 	private void setDimPref(boolean on) {
@@ -288,7 +288,7 @@ public class CarAppsFragmentTest {
 		CarAppsFeature.setState(RootState.GRANTED);
 		CarAppsFragment fragment = createAndAttachFragment();
 		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
-		assertEquals(PhoneDimActivity.class.getName(), nextStartedActivityClass());
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
 	}
 
 	@Test
@@ -297,7 +297,7 @@ public class CarAppsFragmentTest {
 		CarAppsFragment fragment = createAndAttachFragment();
 		fragment.getSurfaceHolderCallback().surfaceChanged(new FakeSurfaceHolder(createTestSurface(), 1024, 600), 0, 1024, 600);
 		assertEquals(1, serverBinder.attachCount.get());
-		assertEquals(PhoneDimActivity.class.getName(), nextStartedActivityClass());
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
 	}
 
 	@Test
@@ -306,7 +306,7 @@ public class CarAppsFragmentTest {
 		CarAppsFeature.setState(RootState.GRANTED);
 		CarAppsFragment fragment = createAndAttachFragment();
 		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
-		assertEquals(null, nextStartedActivityClass());
+		assertEquals(null, nextPhoneLaunchClass());
 	}
 
 	@Test
@@ -314,9 +314,211 @@ public class CarAppsFragmentTest {
 		CarAppsFeature.setState(RootState.GRANTED);
 		CarAppsFragment fragment = createAndAttachFragment();
 		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
-		assertEquals(PhoneDimActivity.class.getName(), nextStartedActivityClass());
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
 		fragment.onStart(); // any later UI refresh must not bring the black screen back
-		assertEquals(null, nextStartedActivityClass());
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	private CarAppsFragment fragmentShowingCarDisplay() {
+		CarAppsFeature.setState(RootState.GRANTED);
+		client.ensureRunning(context); // gives the client the context it watches the phone with
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		nextPhoneLaunchClass();
+		return fragment;
+	}
+
+	private static void setPhoneScreen(int state) {
+		org.robolectric.Shadows.shadowOf(org.robolectric.shadows.ShadowDisplay.getDefaultDisplay()).setState(state);
+		org.robolectric.shadows.ShadowLooper.idleMainLooper();
+	}
+
+	@Test
+	public void carTellsTheUserWhenThePhoneSleeps() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		assertEquals(View.GONE, fragment.getPhoneAsleepOverlay().getVisibility());
+
+		setPhoneScreen(android.view.Display.STATE_OFF);
+		assertEquals(View.VISIBLE, fragment.getPhoneAsleepOverlay().getVisibility());
+
+		setPhoneScreen(android.view.Display.STATE_ON);
+		assertEquals(View.GONE, fragment.getPhoneAsleepOverlay().getVisibility());
+	}
+
+	@Test
+	public void touchingTheCarWakesThePhoneToTheDimScreen() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		setPhoneScreen(android.view.Display.STATE_OFF);
+
+		fragment.getPhoneAsleepOverlay().performClick();
+
+		android.os.PowerManager.WakeLock wl = org.robolectric.shadows.ShadowPowerManager.getLatestWakeLock();
+		assertEquals("fermatax:panelwake", org.robolectric.Shadows.shadowOf(wl).getTag());
+		assertEquals("The dim screen would stop at once while the phone still sleeps", null, nextPhoneLaunchClass());
+
+		setPhoneScreen(android.view.Display.STATE_ON);
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+	}
+
+	@Test
+	public void touchingTheCarKeepsThePhoneScreenOptionOff() {
+		setDimPref(false);
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		setPhoneScreen(android.view.Display.STATE_OFF);
+
+		fragment.getPhoneAsleepOverlay().performClick();
+		setPhoneScreen(android.view.Display.STATE_ON);
+
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	@Test
+	public void wakingThePhoneOnThePhoneDoesNotCoverIt() {
+		fragmentShowingCarDisplay();
+		setPhoneScreen(android.view.Display.STATE_OFF);
+
+		setPhoneScreen(android.view.Display.STATE_ON);
+
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	private void setDeviceLocked(boolean locked) {
+		org.robolectric.shadows.ShadowKeyguardManager km = org.robolectric.Shadows.shadowOf(
+				(android.app.KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE));
+		km.setIsKeyguardSecure(true);
+		km.setKeyguardLocked(locked);
+	}
+
+	@Test
+	public void phoneGoingToSleepDoesNotOpenTheDimScreen() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		lockPhoneAndWake();
+		fragment.getPhoneAsleepOverlay().performClick();
+		setDeviceLocked(false); // unlock noticed only when the screen goes off
+
+		setPhoneScreen(android.view.Display.STATE_OFF);
+
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	private void sendUnlocked() {
+		setDeviceLocked(false);
+		context.sendBroadcast(new android.content.Intent(android.content.Intent.ACTION_USER_PRESENT));
+		org.robolectric.shadows.ShadowLooper.idleMainLooper();
+	}
+
+	private void lockPhoneAndWake() {
+		setPhoneScreen(android.view.Display.STATE_OFF);
+		setDeviceLocked(true);
+		setPhoneScreen(android.view.Display.STATE_ON);
+	}
+
+	private String overlayText(CarAppsFragment fragment) {
+		return ((TextView) ((ViewGroup) fragment.getPhoneAsleepOverlay()).getChildAt(0)).getText().toString();
+	}
+
+	@Test
+	public void lockedPhoneCoversTheAppsAndDisablesTheBar() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+
+		lockPhoneAndWake();
+
+		assertEquals(View.VISIBLE, fragment.getPhoneAsleepOverlay().getVisibility());
+		assertEquals(context.getString(me.aap.fermata.R.string.car_apps_phone_locked), overlayText(fragment));
+		assertEquals(View.INVISIBLE, fragment.getBottomBar().getVisibility());
+	}
+
+	@Test
+	public void unlockingUncoversTheApps() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		lockPhoneAndWake();
+
+		sendUnlocked();
+
+		assertEquals(View.GONE, fragment.getPhoneAsleepOverlay().getVisibility());
+		assertEquals(View.VISIBLE, fragment.getBottomBar().getVisibility());
+	}
+
+	@Test
+	public void sleepingPhoneStillAsksForATouch() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+
+		setPhoneScreen(android.view.Display.STATE_OFF);
+
+		assertEquals(context.getString(me.aap.fermata.R.string.car_apps_phone_asleep), overlayText(fragment));
+	}
+
+	@Test
+	public void touchingTheCarDimsThePhoneOnlyAfterItIsUnlocked() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		setPhoneScreen(android.view.Display.STATE_OFF);
+		setDeviceLocked(true);
+		fragment.getPhoneAsleepOverlay().performClick();
+
+		setPhoneScreen(android.view.Display.STATE_ON);
+		assertEquals("Android closes it over the lock screen", null, nextPhoneLaunchClass());
+
+		sendUnlocked();
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+	}
+
+	@Test
+	public void unlockingOnThePhoneDoesNotCoverIt() {
+		fragmentShowingCarDisplay();
+		lockPhoneAndWake();
+
+		sendUnlocked();
+
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	@Test
+	public void touchingTheLockedCarDoesNotWakeAnything() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		lockPhoneAndWake();
+		android.os.PowerManager.WakeLock before = org.robolectric.shadows.ShadowPowerManager.getLatestWakeLock();
+
+		fragment.getPhoneAsleepOverlay().performClick();
+
+		assertEquals(before, org.robolectric.shadows.ShadowPowerManager.getLatestWakeLock());
+	}
+
+	private static void setHidden(CarAppsFragment fragment, boolean hidden) {
+		androidx.fragment.app.FragmentTransaction tr = fragment.getParentFragmentManager().beginTransaction();
+		(hidden ? tr.hide(fragment) : tr.show(fragment)).commitNow();
+		org.robolectric.shadows.ShadowLooper.idleMainLooper();
+	}
+
+	@Test
+	public void otherCarPageReleasesTheSurface() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+
+		setHidden(fragment, true);
+
+		// a hidden parent alone leaves the surface alive, and with it the keep-awake lock
+		assertEquals(View.GONE, fragment.getSurfaceView().getVisibility());
+	}
+
+	@Test
+	public void otherCarPageDoesNotCoverThePhone() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+
+		setHidden(fragment, true);
+		setPhoneScreen(android.view.Display.STATE_OFF);
+		setPhoneScreen(android.view.Display.STATE_ON);
+
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	@Test
+	public void comingBackToCarAppsRestoresTheDisplayAndDimScreen() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		setHidden(fragment, true);
+
+		setHidden(fragment, false);
+
+		assertEquals(View.VISIBLE, fragment.getSurfaceView().getVisibility());
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
 	}
 
 	private static MotionEvent touch(long down, int action, float x, float y) {
@@ -433,6 +635,7 @@ public class CarAppsFragmentTest {
 		int lastWidth;
 		int lastHeight;
 		ComponentName lastLaunchedComponent;
+		ComponentName lastPhoneLaunch;
 		int caps = 0x1f;
 		final List<MotionEvent> injected = new ArrayList<>();
 
@@ -473,6 +676,11 @@ public class CarAppsFragmentTest {
 		public int launch(ComponentName c, int intentFlags) {
 			lastLaunchedComponent = c;
 			return 0;
+		}
+
+		@Override
+		public void launchOnPhone(ComponentName c, int intentFlags) {
+			lastPhoneLaunch = c;
 		}
 
 		@Override

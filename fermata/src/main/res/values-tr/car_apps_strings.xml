@@ -18,4 +18,6 @@
     <string name="car_apps_panel_off_pref">Araç uygulamalarında telefon ekranını karart</string>
     <string name="car_apps_grant_root_blocked">Root izni verilmedi. Tekrar deneyin ve isteği root yöneticinizde onaylayın.</string>
     <string name="car_apps_phone_dim_text">Car Apps araçta kullanılıyor\nTelefonu kullanmak için dokunun</string>
+    <string name="car_apps_phone_asleep">Telefon ekranı kapalı\nDevam etmek için dokunun</string>
+    <string name="car_apps_phone_locked">Telefon kilitli\nDevam etmek için kilidi açın</string>
 </resources>

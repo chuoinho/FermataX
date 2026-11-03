@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 35, application = Application.class)
+@Config(sdk = 35, application = me.aap.utils.app.App.class)
 public class TripTrackingServiceTest {
 
     private Context context;
