@@ -15,6 +15,7 @@ import android.view.MotionEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import me.app.fermatax.auto.carapps.ICarDisplayServer;
 import me.app.fermatax.auto.carapps.VirtualDisplayFlags;
 
 /**
@@ -183,7 +184,7 @@ public class Main {
 			}
 
 			Hidden.init();
-			CarDisplayServerImpl server = new CarDisplayServerImpl(0, 1, "me.app.fermataX.auto.debug");
+			CarDisplayServerImpl server = new CarDisplayServerImpl(android.os.Process.myUid(), 1, "me.app.fermataX.auto.debug");
 
 			int caps = server.capabilities();
 			System.out.println("CAPABILITIES=0x" + Integer.toHexString(caps));
@@ -191,9 +192,16 @@ public class Main {
 			ImageReader ir = ImageReader.newInstance(1280, 720, PixelFormat.RGBA_8888, 2);
 			int id = server.attach(ir.getSurface(), 1280, 720, 160, new Binder());
 			System.out.println("ATTACHED displayId=" + id);
+			if (id < 0) throw new IllegalStateException("attach failed");
 
 			int sdkFlags = VirtualDisplayFlags.forSdk(Build.VERSION.SDK_INT);
 			System.out.println("DISPLAY_FLAGS=0x" + Integer.toHexString(sdkFlags));
+			android.view.Display created = Hidden.getDisplayManager().getDisplay(id);
+			System.out.println("REPORTED_DISPLAY_FLAGS=0x" + (created == null ? "null" : Integer.toHexString(created.getFlags())));
+			int capsAfter = server.capabilities();
+			System.out.println("CAPABILITIES_AFTER_ATTACH=0x" + Integer.toHexString(capsAfter));
+			System.out.println("HAS_CAP_TASKS=" + ((capsAfter & ICarDisplayServer.CAP_TASKS) != 0));
+			System.out.println("HAS_CAP_FOCUS=" + ((capsAfter & ICarDisplayServer.CAP_FOCUS) != 0));
 
 			// Verify display in dumpsys
 			boolean dumpsysConfirmed = false;

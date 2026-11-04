@@ -136,6 +136,33 @@ final class ReadinessPrefsBuilder {
 			o.hideChevron = (model.actionStringRes == 0);
 			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
 		});
+
+		if (CarAppsFeature.state() == RootState.GRANTED && !model.checks.isEmpty()) {
+			for (me.aap.fermata.ui.carapps.CarAppsChecks.Check check : model.checks) {
+				int checkColor;
+				switch (check.status) {
+					case FAIL:
+						checkColor = 0xFFEF4444;
+						break;
+					case WARN:
+						checkColor = 0xFFF59E0B;
+						break;
+					case OK:
+						checkColor = 0xFF22C55E;
+						break;
+					case NA:
+					default:
+						checkColor = 0xFF9CA3AF;
+						break;
+				}
+				target.addButton(o -> {
+					o.ctitle = statusTitle(activity.getString(check.summaryRes), checkColor);
+					o.csubtitle = (check.fixRes != 0) ? activity.getString(check.fixRes) : null; // "" would keep an empty subtitle line
+					o.hideChevron = true;
+				});
+			}
+		}
+
 		if (CarAppsFeature.state() == RootState.GRANTED) {
 			target.addBooleanPref(o -> {
 				o.store = FermataApplication.get().getPreferenceStore();

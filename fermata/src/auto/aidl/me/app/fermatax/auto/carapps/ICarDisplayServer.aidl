@@ -9,6 +9,9 @@ interface ICarDisplayServer {
     const int CAP_TRUSTED = 2;
     const int CAP_INJECT = 4;
     const int CAP_IME = 16;
+    const int CAP_OWN_POWER_GROUP = 32;
+    const int CAP_TASKS = 64;
+    const int CAP_FOCUS = 128;
 
     int capabilities();
     int attach(in Surface s, int w, int h, int dpi, IBinder client);

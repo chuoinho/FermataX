@@ -310,6 +310,15 @@ public class CarAppsFragmentTest {
 	}
 
 	@Test
+	public void phoneDimScreenNotShownWithOwnPowerGroup() {
+		serverBinder.caps = 0x1f | ICarDisplayServer.CAP_OWN_POWER_GROUP;
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	@Test
 	public void phoneDimScreenNotReshownAfterUserDismissedIt() {
 		CarAppsFeature.setState(RootState.GRANTED);
 		CarAppsFragment fragment = createAndAttachFragment();

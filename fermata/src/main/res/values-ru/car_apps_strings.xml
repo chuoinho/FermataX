@@ -20,4 +20,29 @@
     <string name="car_apps_phone_dim_text">Car Apps работает в автомобиле\nКоснитесь, чтобы пользоваться телефоном</string>
     <string name="car_apps_phone_asleep">Экран телефона выключен\nКоснитесь, чтобы продолжить</string>
     <string name="car_apps_phone_locked">Телефон заблокирован\nРазблокируйте, чтобы продолжить</string>
+
+    <string name="car_apps_check_channel_root">Канал Root</string>
+    <string name="car_apps_check_channel_available">Root доступен, но не предоставлен</string>
+    <string name="car_apps_check_channel_grant_fix">Предоставьте root в менеджере root</string>
+    <string name="car_apps_check_channel_absent">Root-доступ не найден</string>
+    <string name="car_apps_check_channel_root_fix">Требуется root для Car Apps</string>
+    <string name="car_apps_check_trusted_ok">Доверенный экран</string>
+    <string name="car_apps_check_trusted_missing">Нет прав доверенного экрана</string>
+    <string name="car_apps_check_trusted_fix">Невозможно задать политику IME</string>
+    <string name="car_apps_check_trusted_na">Не применимо на Android 9-10</string>
+    <string name="car_apps_check_inject_ok">Ввод касаний</string>
+    <string name="car_apps_check_inject_missing">Невозможно отправить касания</string>
+    <string name="car_apps_check_inject_fix">Требуется отладка по USB (безопасность) на Xiaomi</string>
+    <string name="car_apps_check_ime_ok">Политика клавиатуры IME</string>
+    <string name="car_apps_check_ime_missing">Политика IME не поддерживается</string>
+    <string name="car_apps_check_ime_fix">Клавиатура может не появляться в автомобиле</string>
+    <string name="car_apps_check_tasks_ok">Управление задачами</string>
+    <string name="car_apps_check_tasks_missing">Управление задачами недоступно</string>
+    <string name="car_apps_check_tasks_fix">Невозможно закрывать приложения из авто</string>
+    <string name="car_apps_check_focus_ok">Независимый фокус экрана</string>
+    <string name="car_apps_check_focus_missing">Нет фокуса экрана авто</string>
+    <string name="car_apps_check_focus_fix">Фокус может конфликтовать с телефоном</string>
+    <string name="car_apps_check_focus_na">Не применимо в этой версии Android</string>
+    <string name="car_apps_check_power_group_own">Отдельная группа питания</string>
+    <string name="car_apps_check_power_group_shared">Общая группа питания с телефоном</string>
 </resources>

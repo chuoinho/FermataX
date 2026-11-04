@@ -20,4 +20,29 @@
     <string name="car_apps_phone_dim_text">Car Apps se está usando en el coche\nToca para usar el teléfono</string>
     <string name="car_apps_phone_asleep">La pantalla del teléfono está apagada\nToca para continuar</string>
     <string name="car_apps_phone_locked">El teléfono está bloqueado\nDesbloquéalo para continuar</string>
+
+    <string name="car_apps_check_channel_root">Canal Root</string>
+    <string name="car_apps_check_channel_available">Root disponible pero no otorgado</string>
+    <string name="car_apps_check_channel_grant_fix">Otorgue root en su gestor de root</string>
+    <string name="car_apps_check_channel_absent">Acceso root no encontrado</string>
+    <string name="car_apps_check_channel_root_fix">Se requiere root para Car Apps</string>
+    <string name="car_apps_check_trusted_ok">Pantalla de confianza</string>
+    <string name="car_apps_check_trusted_missing">Falta permiso de pantalla de confianza</string>
+    <string name="car_apps_check_trusted_fix">No se puede definir política IME</string>
+    <string name="car_apps_check_trusted_na">No aplicable en Android 9-10</string>
+    <string name="car_apps_check_inject_ok">Inyección táctil</string>
+    <string name="car_apps_check_inject_missing">No se pueden inyectar eventos táctiles</string>
+    <string name="car_apps_check_inject_fix">Requiere depuración USB (Ajustes de seguridad) en Xiaomi</string>
+    <string name="car_apps_check_ime_ok">Política de teclado IME</string>
+    <string name="car_apps_check_ime_missing">Política IME no compatible</string>
+    <string name="car_apps_check_ime_fix">El teclado puede no mostrarse en el auto</string>
+    <string name="car_apps_check_tasks_ok">Gestión de tareas</string>
+    <string name="car_apps_check_tasks_missing">Falta capacidad de gestión de tareas</string>
+    <string name="car_apps_check_tasks_fix">No se pueden cerrar apps desde el auto</string>
+    <string name="car_apps_check_focus_ok">Foco de pantalla independiente</string>
+    <string name="car_apps_check_focus_missing">Falta foco independiente en pantalla de auto</string>
+    <string name="car_apps_check_focus_fix">El foco puede entrar en conflicto con el teléfono</string>
+    <string name="car_apps_check_focus_na">No aplicable en esta versión de Android</string>
+    <string name="car_apps_check_power_group_own">Grupo de energía de pantalla independiente</string>
+    <string name="car_apps_check_power_group_shared">Grupo de energía compartido con el teléfono</string>
 </resources>

@@ -30,4 +30,25 @@ public class ServerCommandTest {
 		assertTrue(cmd.contains("nohup app_process / me.app.fermatax.auto.carapps.server.Main " + appUid + " " + versionCode + " " + pkg));
 		assertTrue(cmd.endsWith(">/dev/null 2>&1 &"));
 	}
+
+	@Test
+	public void rootStartsTheServerAsShellBecauseOnlyShellCanCreateAVirtualDevice() {
+		String plain = ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg");
+		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg");
+		assertTrue(cmd.startsWith("su 2000 -c '" + plain.replace("'", "'\\''") + "' || "));
+	}
+
+	@Test
+	public void rootStillStartsTheServerWhenSuCannotSwitchUser() {
+		String plain = ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg");
+		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg");
+		assertTrue(cmd.endsWith(" || " + plain));
+	}
+
+	@Test
+	public void rootCommandSurvivesAQuoteInThePath() {
+		String cmd = ServerCommand.buildForRoot("/data/app/foo'bar/base.apk", 10150, 21000, "pkg");
+		// one more level of quoting for the inner shell
+		assertTrue(cmd.contains("CLASSPATH='\\''/data/app/foo'\\''\\'\\'''\\''bar/base.apk'\\''"));
+	}
 }

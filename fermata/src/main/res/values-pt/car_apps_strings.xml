@@ -20,4 +20,29 @@
     <string name="car_apps_phone_dim_text">Car Apps está em uso no carro\nToque para usar o telefone</string>
     <string name="car_apps_phone_asleep">A tela do telefone está desligada\nToque para continuar</string>
     <string name="car_apps_phone_locked">O telefone está bloqueado\nDesbloqueie para continuar</string>
+
+    <string name="car_apps_check_channel_root">Canal Root</string>
+    <string name="car_apps_check_channel_available">Root disponível mas não concedido</string>
+    <string name="car_apps_check_channel_grant_fix">Conceda root no gerenciador de root</string>
+    <string name="car_apps_check_channel_absent">Acesso root não encontrado</string>
+    <string name="car_apps_check_channel_root_fix">Root necessário para Car Apps</string>
+    <string name="car_apps_check_trusted_ok">Tela confiável</string>
+    <string name="car_apps_check_trusted_missing">Permissão de tela confiável ausente</string>
+    <string name="car_apps_check_trusted_fix">Não é possível definir política IME</string>
+    <string name="car_apps_check_trusted_na">Não aplicável no Android 9-10</string>
+    <string name="car_apps_check_inject_ok">Injeção de toque</string>
+    <string name="car_apps_check_inject_missing">Não é possível injetar eventos de toque</string>
+    <string name="car_apps_check_inject_fix">Requer depuração USB (Configurações de segurança) na Xiaomi</string>
+    <string name="car_apps_check_ime_ok">Política de teclado IME</string>
+    <string name="car_apps_check_ime_missing">Política IME não suportada</string>
+    <string name="car_apps_check_ime_fix">O teclado pode não aparecer no carro</string>
+    <string name="car_apps_check_tasks_ok">Gerenciamento de tarefas</string>
+    <string name="car_apps_check_tasks_missing">Gerenciamento de tarefas ausente</string>
+    <string name="car_apps_check_tasks_fix">Não é possível fechar apps pelo carro</string>
+    <string name="car_apps_check_focus_ok">Foco de tela independente</string>
+    <string name="car_apps_check_focus_missing">Foco de tela do carro ausente</string>
+    <string name="car_apps_check_focus_fix">O foco pode conflitar com o celular</string>
+    <string name="car_apps_check_focus_na">Não aplicável nesta versão do Android</string>
+    <string name="car_apps_check_power_group_own">Grupo de energia de tela independente</string>
+    <string name="car_apps_check_power_group_shared">Grupo de energia compartilhado com o celular</string>
 </resources>

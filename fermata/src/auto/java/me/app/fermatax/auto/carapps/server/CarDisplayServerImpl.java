@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.view.Display;
@@ -27,7 +28,7 @@ import me.app.fermatax.auto.carapps.IdleExitPolicy;
 import me.app.fermatax.auto.carapps.VirtualDisplayFlags;
 
 /**
- * Concrete implementation of ICarDisplayServer running as root (app_process).
+ * Concrete implementation of ICarDisplayServer running as shell, or root if su cannot switch (app_process).
  */
 @SuppressWarnings("deprecation")
 public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
@@ -39,6 +40,8 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	private final String appPackage;
 
 	private volatile VirtualDisplay virtualDisplay;
+	private volatile CarVirtualDevice carDevice;
+	private volatile PowerManager.WakeLock displayWakeLock;
 	private volatile int displayId = -1;
 	private IBinder clientBinder;
 	private final Runnable idleExit = this::onIdleTimer;
@@ -60,7 +63,8 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 
 	@Override
 	public int capabilities() {
-		return Hidden.getCapabilities();
+		boolean own = (carDevice != null) || (displayWakeLock != null);
+		return Hidden.getCapabilities() | (own ? ICarDisplayServer.CAP_OWN_POWER_GROUP : 0);
 	}
 
 	@Override
@@ -76,48 +80,76 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 			return displayId;
 		}
 
-		if (virtualDisplay != null) {
-			try {
-				virtualDisplay.release();
-			} catch (Throwable ignored) {
+		releaseDisplay();
+
+		int flags = VirtualDisplayFlags.forVirtualDevice(Build.VERSION.SDK_INT);
+		carDevice = CarVirtualDevice.create(DISPLAY_NAME, w, h, dpi, s, flags);
+		if (carDevice != null) {
+			virtualDisplay = carDevice.display();
+		} else {
+			DisplayManager dm = Hidden.getDisplayManager();
+			if (dm == null) {
+				return -1;
 			}
-			virtualDisplay = null;
-		}
 
-		DisplayManager dm = Hidden.getDisplayManager();
-		if (dm == null) {
-			return -1;
-		}
+			flags = VirtualDisplayFlags.forSdk(Build.VERSION.SDK_INT);
+			if (!Hidden.hasCapability(ICarDisplayServer.CAP_TRUSTED)) {
+				flags &= ~VirtualDisplayFlags.FLAG_TRUSTED;
+			}
 
-		int flags = VirtualDisplayFlags.forSdk(Build.VERSION.SDK_INT);
-		if (!Hidden.hasCapability(ICarDisplayServer.CAP_TRUSTED)) {
-			flags &= ~VirtualDisplayFlags.FLAG_TRUSTED;
-		}
-
-		try {
-			virtualDisplay = dm.createVirtualDisplay(DISPLAY_NAME, w, h, dpi, s, flags);
-		} catch (SecurityException se) {
-			Hidden.clearCapability(ICarDisplayServer.CAP_TRUSTED);
-			flags &= ~VirtualDisplayFlags.FLAG_TRUSTED;
 			try {
 				virtualDisplay = dm.createVirtualDisplay(DISPLAY_NAME, w, h, dpi, s, flags);
+			} catch (SecurityException se) {
+				Hidden.clearCapability(ICarDisplayServer.CAP_TRUSTED);
+				flags &= ~VirtualDisplayFlags.FLAG_TRUSTED;
+				try {
+					virtualDisplay = dm.createVirtualDisplay(DISPLAY_NAME, w, h, dpi, s, flags);
+				} catch (Throwable t) {
+					virtualDisplay = null;
+				}
 			} catch (Throwable t) {
 				virtualDisplay = null;
 			}
-		} catch (Throwable t) {
-			virtualDisplay = null;
 		}
 
 		if (virtualDisplay == null || virtualDisplay.getDisplay() == null) {
+			releaseDisplay();
 			displayId = -1;
 			return -1;
 		}
 
+		if ((carDevice == null) && VirtualDisplayFlags.trustedDropped(flags, virtualDisplay.getDisplay().getFlags())) {
+			Hidden.clearCapability(ICarDisplayServer.CAP_TRUSTED);
+		}
+		if (VirtualDisplayFlags.focusDropped(flags, virtualDisplay.getDisplay().getFlags())) {
+			Hidden.clearCapability(ICarDisplayServer.CAP_FOCUS);
+		}
+
 		displayId = virtualDisplay.getDisplay().getDisplayId();
 		Hidden.setDisplayImePolicy(displayId, 0); // 0 = LOCAL
+		if ((carDevice == null) && VirtualDisplayFlags.needsDisplayWakeLock(Build.VERSION.SDK_INT, Hidden.getDisplayGroupId(displayId))) {
+			displayWakeLock = Hidden.acquireDisplayWakeLock(displayId, "fermatax:cardisplay");
+		}
 		bindClient(client);
 
 		return displayId;
+	}
+
+	private void releaseDisplay() {
+		if (displayWakeLock != null) {
+			displayWakeLock.release();
+			displayWakeLock = null;
+		}
+		if (carDevice != null) {
+			carDevice.close();
+			carDevice = null;
+		} else if (virtualDisplay != null) {
+			try {
+				virtualDisplay.release();
+			} catch (Throwable ignored) {
+			}
+		}
+		virtualDisplay = null;
 	}
 
 	private void bindClient(IBinder client) {
@@ -314,13 +346,7 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 			}
 			clientBinder = null;
 		}
-		if (virtualDisplay != null) {
-			try {
-				virtualDisplay.release();
-			} catch (Throwable ignored) {
-			}
-			virtualDisplay = null;
-		}
+		releaseDisplay();
 		displayId = -1;
 		lastDetachMs = SystemClock.elapsedRealtime();
 		scheduleIdleExit();

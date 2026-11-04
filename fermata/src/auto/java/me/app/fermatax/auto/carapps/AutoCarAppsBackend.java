@@ -1,7 +1,6 @@
 package me.app.fermatax.auto.carapps;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.CarAppsReadinessModel;
@@ -34,9 +33,7 @@ public final class AutoCarAppsBackend {
 				if (client != null && client.capabilities() != 0) {
 					return client.capabilities();
 				}
-				SharedPreferences prefs = ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE);
-				return prefs.getInt("CAR_APPS_CAPABILITIES",
-						CarAppsReadinessModel.CAP_INJECT);
+				return CarDisplayClient.savedCapabilities(ctx, CarAppsReadinessModel.CAP_INJECT);
 			}
 		});
 	}

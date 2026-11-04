@@ -20,4 +20,29 @@
     <string name="car_apps_phone_dim_text">Car Apps läuft im Fahrzeug\nBerühren, um das Telefon zu nutzen</string>
     <string name="car_apps_phone_asleep">Der Telefonbildschirm ist aus\nBerühren, um fortzufahren</string>
     <string name="car_apps_phone_locked">Das Telefon ist gesperrt\nEntsperren, um fortzufahren</string>
+
+    <string name="car_apps_check_channel_root">Root-Kanal</string>
+    <string name="car_apps_check_channel_available">Root verfügbar, aber nicht gewährt</string>
+    <string name="car_apps_check_channel_grant_fix">Root-Rechte im Root-Manager gewähren</string>
+    <string name="car_apps_check_channel_absent">Kein Root-Zugriff gefunden</string>
+    <string name="car_apps_check_channel_root_fix">Root für Car Apps erforderlich</string>
+    <string name="car_apps_check_trusted_ok">Vertrauenswürdiges Display</string>
+    <string name="car_apps_check_trusted_missing">Keine Berechtigung für vertrauenswürdiges Display</string>
+    <string name="car_apps_check_trusted_fix">IME-Richtlinie kann nicht gesetzt werden</string>
+    <string name="car_apps_check_trusted_na">Nicht zutreffend für Android 9-10</string>
+    <string name="car_apps_check_inject_ok">Touch-Eingabeinjektion</string>
+    <string name="car_apps_check_inject_missing">Touch-Events können nicht gesendet werden</string>
+    <string name="car_apps_check_inject_fix">USB-Debugging (Sicherheitseinstellungen) erforderlich</string>
+    <string name="car_apps_check_ime_ok">IME-Tastaturrichtlinie</string>
+    <string name="car_apps_check_ime_missing">IME-Richtlinie nicht unterstützt</string>
+    <string name="car_apps_check_ime_fix">Tastatur erscheint möglicherweise nicht im Auto</string>
+    <string name="car_apps_check_tasks_ok">Task-Verwaltung</string>
+    <string name="car_apps_check_tasks_missing">Task-Verwaltung nicht verfügbar</string>
+    <string name="car_apps_check_tasks_fix">Apps können nicht vom Auto aus geschlossen werden</string>
+    <string name="car_apps_check_focus_ok">Unabhängiger Display-Fokus</string>
+    <string name="car_apps_check_focus_missing">Kein unabhängiger Fokus für Auto-Display</string>
+    <string name="car_apps_check_focus_fix">Fokus kann mit Smartphone kollidieren</string>
+    <string name="car_apps_check_focus_na">Nicht zutreffend für diese Android-Version</string>
+    <string name="car_apps_check_power_group_own">Eigene Stromversorgungsgruppe</string>
+    <string name="car_apps_check_power_group_shared">Gemeinsame Stromversorgung mit Smartphone</string>
 </resources>

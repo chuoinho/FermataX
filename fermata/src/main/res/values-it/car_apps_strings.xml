@@ -20,4 +20,29 @@
     <string name="car_apps_phone_dim_text">Car Apps è in uso sull\'auto\nTocca per usare il telefono</string>
     <string name="car_apps_phone_asleep">Lo schermo del telefono è spento\nTocca per continuare</string>
     <string name="car_apps_phone_locked">Il telefono è bloccato\nSbloccalo per continuare</string>
+
+    <string name="car_apps_check_channel_root">Canale Root</string>
+    <string name="car_apps_check_channel_available">Root disponibile ma non concesso</string>
+    <string name="car_apps_check_channel_grant_fix">Concedi root nel gestore root</string>
+    <string name="car_apps_check_channel_absent">Accesso root non trovato</string>
+    <string name="car_apps_check_channel_root_fix">Root richiesto per Car Apps</string>
+    <string name="car_apps_check_trusted_ok">Schermo attendibile</string>
+    <string name="car_apps_check_trusted_missing">Permesso schermo attendibile mancante</string>
+    <string name="car_apps_check_trusted_fix">Impossibile impostare politica IME</string>
+    <string name="car_apps_check_trusted_na">Non applicabile su Android 9-10</string>
+    <string name="car_apps_check_inject_ok">Iniezione tocco</string>
+    <string name="car_apps_check_inject_missing">Impossibile iniettare eventi tocco</string>
+    <string name="car_apps_check_inject_fix">Richiede debug USB (Impostazioni di sicurezza) su Xiaomi</string>
+    <string name="car_apps_check_ime_ok">Politica tastiera IME</string>
+    <string name="car_apps_check_ime_missing">Politica IME non supportata</string>
+    <string name="car_apps_check_ime_fix">La tastiera potrebbe non apparire sull\'auto</string>
+    <string name="car_apps_check_tasks_ok">Gestione attività</string>
+    <string name="car_apps_check_tasks_missing">Gestione attività mancante</string>
+    <string name="car_apps_check_tasks_fix">Impossibile chiudere app dall\'auto</string>
+    <string name="car_apps_check_focus_ok">Focus schermo indipendente</string>
+    <string name="car_apps_check_focus_missing">Focus schermo auto mancante</string>
+    <string name="car_apps_check_focus_fix">Il focus potrebbe entrare in conflitto con il telefono</string>
+    <string name="car_apps_check_focus_na">Non applicabile in questa versione di Android</string>
+    <string name="car_apps_check_power_group_own">Gruppo alimentazione indipendente</string>
+    <string name="car_apps_check_power_group_shared">Gruppo alimentazione condiviso con il telefono</string>
 </resources>

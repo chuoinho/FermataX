@@ -93,6 +93,23 @@ public class CarAppsReadinessModelTest {
 	}
 
 	@Test
+	public void grantedModelExposesChecksList() {
+		int allCaps = CarAppsChecks.CAP_VD | CarAppsChecks.CAP_INJECT | CarAppsChecks.CAP_TRUSTED;
+		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.GRANTED, allCaps, 34);
+		org.junit.Assert.assertNotNull(model.checks);
+		assertFalse(model.checks.isEmpty());
+		assertTrue(model.checks.stream().anyMatch(c -> "inject".equals(c.id) && c.status == CarAppsChecks.Status.OK));
+		assertTrue(model.checks.stream().anyMatch(c -> "tasks".equals(c.id) && c.status == CarAppsChecks.Status.WARN));
+	}
+
+	@Test
+	public void noServerSeenYetShowsNoChecksInsteadOfFalseAlarms() {
+		// 0 and the backend's CAP_INJECT default are "unknown": every real server reports CAP_VD
+		assertTrue(CarAppsReadinessModel.from(RootState.GRANTED, 0, 34).checks.isEmpty());
+		assertTrue(CarAppsReadinessModel.from(RootState.GRANTED, CarAppsChecks.CAP_INJECT, 34).checks.isEmpty());
+	}
+
+	@Test
 	public void rowNeverTriggersSuAtConstruction() throws Exception {
 		AtomicInteger rootRequests = new AtomicInteger();
 		CarAppsFeature.setBackend(new CarAppsFeature.Backend() {

@@ -595,7 +595,8 @@ public class CarAppsFragment extends MainActivityFragment {
 	 */
 	private void applyPanelPref() {
 		Context c = getContext();
-		if (c == null || dimRequested || isHidden() || client.isPhoneAsleep() || client.isPhoneLocked()) return;
+		if (c == null || dimRequested || isHidden() || client.isPhoneAsleep() || client.isPhoneLocked()
+				|| client.hasOwnPowerGroup()) return;
 		SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
 		if (prefs.getBoolean(CarAppsFeature.PREF_PANEL_OFF, true)) {
 			dimRequested = true;

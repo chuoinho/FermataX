@@ -20,4 +20,29 @@
     <string name="car_apps_phone_dim_text">Car Apps araçta kullanılıyor\nTelefonu kullanmak için dokunun</string>
     <string name="car_apps_phone_asleep">Telefon ekranı kapalı\nDevam etmek için dokunun</string>
     <string name="car_apps_phone_locked">Telefon kilitli\nDevam etmek için kilidi açın</string>
+
+    <string name="car_apps_check_channel_root">Root kanalı</string>
+    <string name="car_apps_check_channel_available">Root mevcut ancak izin verilmedi</string>
+    <string name="car_apps_check_channel_grant_fix">Root yöneticisinden root izni verin</string>
+    <string name="car_apps_check_channel_absent">Root erişimi bulunamadı</string>
+    <string name="car_apps_check_channel_root_fix">Car Apps için root gereklidir</string>
+    <string name="car_apps_check_trusted_ok">Güvenilir ekran</string>
+    <string name="car_apps_check_trusted_missing">Güvenilir ekran izni eksik</string>
+    <string name="car_apps_check_trusted_fix">IME politikası ayarlanamıyor</string>
+    <string name="car_apps_check_trusted_na">Android 9-10 için geçerli değil</string>
+    <string name="car_apps_check_inject_ok">Dokunma enjeksiyonu</string>
+    <string name="car_apps_check_inject_missing">Dokunma olayları gönderilemiyor</string>
+    <string name="car_apps_check_inject_fix">Xiaomi cihazlarda USB hata ayıklama (Güvenlik ayarları) gereklidir</string>
+    <string name="car_apps_check_ime_ok">IME klavye politikası</string>
+    <string name="car_apps_check_ime_missing">IME politikası desteklenmiyor</string>
+    <string name="car_apps_check_ime_fix">Klavye araç ekranında düzgün görünmeyebilir</string>
+    <string name="car_apps_check_tasks_ok">Görev yönetimi</string>
+    <string name="car_apps_check_tasks_missing">Görev yönetimi özelliği eksik</string>
+    <string name="car_apps_check_tasks_fix">Uygulamalar araçtan kapatılamıyor</string>
+    <string name="car_apps_check_focus_ok">Bağımsız ekran odağı</string>
+    <string name="car_apps_check_focus_missing">Araç ekranı odak özelliği eksik</string>
+    <string name="car_apps_check_focus_fix">Odak telefonla çakışabilir</string>
+    <string name="car_apps_check_focus_na">Bu Android sürümü için geçerli değil</string>
+    <string name="car_apps_check_power_group_own">Bağımsız ekran güç grubu</string>
+    <string name="car_apps_check_power_group_shared">Telefonla paylaşılan güç grubu</string>
 </resources>

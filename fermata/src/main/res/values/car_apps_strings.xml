@@ -20,4 +20,29 @@
     <string name="car_apps_phone_dim_text">Car Apps is running on the car\nTouch to use the phone</string>
     <string name="car_apps_phone_asleep">The phone screen is off\nTouch to continue</string>
     <string name="car_apps_phone_locked">The phone is locked\nUnlock it to continue</string>
+
+    <string name="car_apps_check_channel_root">Root channel</string>
+    <string name="car_apps_check_channel_available">Root available but not granted</string>
+    <string name="car_apps_check_channel_grant_fix">Grant root in your root manager</string>
+    <string name="car_apps_check_channel_absent">Root access not found</string>
+    <string name="car_apps_check_channel_root_fix">Root required to run Car Apps</string>
+    <string name="car_apps_check_trusted_ok">Trusted display</string>
+    <string name="car_apps_check_trusted_missing">Trusted display capability missing</string>
+    <string name="car_apps_check_trusted_fix">Cannot set IME policy; some apps may not receive keyboard input</string>
+    <string name="car_apps_check_trusted_na">Not applicable on Android 9-10</string>
+    <string name="car_apps_check_inject_ok">Touch injection</string>
+    <string name="car_apps_check_inject_missing">Cannot inject touch events</string>
+    <string name="car_apps_check_inject_fix">Requires USB debugging (Security settings) on Xiaomi</string>
+    <string name="car_apps_check_ime_ok">IME keyboard policy</string>
+    <string name="car_apps_check_ime_missing">IME policy not supported</string>
+    <string name="car_apps_check_ime_fix">Keyboard may not appear properly on car display</string>
+    <string name="car_apps_check_tasks_ok">Task management</string>
+    <string name="car_apps_check_tasks_missing">Task management capability missing</string>
+    <string name="car_apps_check_tasks_fix">Cannot close apps from the car</string>
+    <string name="car_apps_check_focus_ok">Independent display focus</string>
+    <string name="car_apps_check_focus_missing">Car display focus capability missing</string>
+    <string name="car_apps_check_focus_fix">Focus may conflict with the phone</string>
+    <string name="car_apps_check_focus_na">Not applicable on this Android version</string>
+    <string name="car_apps_check_power_group_own">Independent display power group</string>
+    <string name="car_apps_check_power_group_shared">Shared power group with phone</string>
 </resources>

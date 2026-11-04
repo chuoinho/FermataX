@@ -454,6 +454,134 @@ public class CarDisplayClientTest {
 		assertTrue(wl.isHeld());
 	}
 
+	private FakeServerBinder attachWithOwnPowerGroup(Surface surface) {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x1f | ICarDisplayServer.CAP_OWN_POWER_GROUP;
+		client.onServerBinderReceived(server);
+		client.attach(surface, 100, 100, 160);
+		return server;
+	}
+
+	private void lockWhileAsleep() {
+		setPhoneScreen(Display.STATE_OFF);
+		setDeviceLocked(true);
+		setPhoneScreen(Display.STATE_ON);
+	}
+
+	@Test
+	public void ownPowerGroupLeavesThePhoneFreeToSleep() {
+		attachWithOwnPowerGroup(newSurface());
+
+		PowerManager.WakeLock wl = latestWakeLock();
+		assertTrue(wl == null || !wl.isHeld());
+		assertTrue(client.hasOwnPowerGroup());
+	}
+
+	@Test
+	public void sharedPowerGroupStillKeepsThePhoneAwake() {
+		attachDisplay(newSurface());
+
+		assertTrue(latestWakeLock().isHeld());
+		assertFalse(client.hasOwnPowerGroup());
+	}
+
+	@Test
+	public void ownPowerGroupDoesNotReportASleepingPhone() {
+		attachWithOwnPowerGroup(newSurface());
+
+		setPhoneScreen(Display.STATE_OFF);
+
+		assertFalse("apps keep running, the car must not ask to continue", client.isPhoneAsleep());
+	}
+
+	@Test
+	public void lockingDuringAnUnlockedCarSessionKeepsTheCarRunning() {
+		Surface surface = newSurface();
+		FakeServerBinder server = attachWithOwnPowerGroup(surface);
+
+		lockWhileAsleep();
+
+		assertFalse(client.isPhoneLocked());
+		assertSame(surface, lastOf(server));
+	}
+
+	@Test
+	public void openingOnALockedPhoneStillNeedsTheUnlock() {
+		setDeviceLocked(true);
+
+		FakeServerBinder server = attachWithOwnPowerGroup(newSurface());
+
+		assertTrue(client.isPhoneLocked());
+		assertEquals(null, server.surfaces.get(0));
+	}
+
+	@Test
+	public void unlockOpensTheCarSessionAndALaterLockKeepsItOpen() {
+		Surface surface = newSurface();
+		setDeviceLocked(true);
+		FakeServerBinder server = attachWithOwnPowerGroup(surface);
+
+		sendUnlocked();
+		assertFalse(client.isPhoneLocked());
+		assertSame(surface, lastOf(server));
+
+		lockWhileAsleep();
+		assertFalse(client.isPhoneLocked());
+		assertSame(surface, lastOf(server));
+	}
+
+	@Test
+	public void reopeningWithinTheCarSessionDoesNotAskForTheUnlockAgain() {
+		Surface surface = newSurface();
+		FakeServerBinder server = attachWithOwnPowerGroup(surface);
+		client.setSurface(null, 0, 0, 0);
+		setDeviceLocked(true);
+
+		client.attach(surface, 100, 100, 160);
+
+		assertFalse(client.isPhoneLocked());
+		assertSame(surface, lastOf(server));
+	}
+
+	@Test
+	public void leavingTheCarSessionEndsTheUnlock() {
+		attachWithOwnPowerGroup(newSurface());
+		client.release();
+		setDeviceLocked(true);
+
+		FakeServerBinder server = attachWithOwnPowerGroup(newSurface());
+
+		assertTrue(client.isPhoneLocked());
+		assertEquals(null, server.surfaces.get(0));
+	}
+
+	@Test
+	public void losingTheCarSurfaceWhileLockedDoesNotUnlockTheSession() {
+		setDeviceLocked(true);
+		Surface surface = newSurface();
+		FakeServerBinder server = attachWithOwnPowerGroup(surface);
+
+		client.setSurface(null, 0, 0, 0);
+		client.attach(surface, 100, 100, 160);
+
+		assertTrue(client.isPhoneLocked());
+		assertEquals(null, lastOf(server));
+	}
+
+	@Test
+	public void serverDeathDoesNotEndTheCarSession() {
+		Surface surface = newSurface();
+		FakeServerBinder first = attachWithOwnPowerGroup(surface);
+		first.triggerDeath();
+		setDeviceLocked(true);
+
+		FakeServerBinder second = attachWithOwnPowerGroup(surface);
+
+		assertFalse(client.isPhoneLocked());
+		assertSame(surface, lastOf(second));
+	}
+
 	@Test
 	public void diagnosticsRecordedOnServerLifecycleEvents() {
 		List<String> recordedEvents = new ArrayList<>();
@@ -490,6 +618,47 @@ public class CarDisplayClientTest {
 		client.retryConnectionForTesting();
 		assertTrue(recordedEvents.contains("server_failed"));
 		assertEquals("max_retries_exceeded", recordedAttrs.get("server_failed").get("reason"));
+	}
+
+	@Test
+	public void carAppsChecksWaitForAttachBecauseTheDisplayCanLowerCapabilities() {
+		java.util.Map<String, java.util.Map<String, ?>> recorded = new java.util.HashMap<>();
+		client.setDiagnosticsConsumerForTest(recorded::put);
+
+		AtomicBoolean released = new AtomicBoolean(false);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), released);
+		server.caps = ICarDisplayServer.CAP_VD | ICarDisplayServer.CAP_INJECT | ICarDisplayServer.CAP_TRUSTED | ICarDisplayServer.CAP_TASKS;
+		client.onServerBinderReceived(server);
+
+		assertTrue(recorded.containsKey("server_connected"));
+		assertFalse(recorded.containsKey("carapps_checks"));
+
+		server.caps &= ~ICarDisplayServer.CAP_TRUSTED; // what attach does when the system drops the flag
+		client.attach(null, 800, 480, 160);
+
+		java.util.Map<String, ?> checks = recorded.get("carapps_checks");
+		org.junit.Assert.assertNotNull(checks);
+		assertEquals("OK", checks.get("inject"));
+		assertEquals("OK", checks.get("tasks"));
+		if (android.os.Build.VERSION.SDK_INT >= 30) assertEquals("WARN", checks.get("trusted"));
+	}
+
+	@Test
+	public void savedCapabilitiesOfAnotherAppVersionAreUnknown() {
+		android.content.Context ctx = org.robolectric.RuntimeEnvironment.getApplication();
+		android.content.SharedPreferences prefs = ctx.getSharedPreferences("fermata", android.content.Context.MODE_PRIVATE);
+		int fallback = ICarDisplayServer.CAP_INJECT;
+
+		assertEquals("nothing saved", fallback, CarDisplayClient.savedCapabilities(ctx, fallback));
+
+		prefs.edit().putInt("CAR_APPS_CAPABILITIES", 0x17).commit();
+		assertEquals("saved by a build without the version", fallback, CarDisplayClient.savedCapabilities(ctx, fallback));
+
+		prefs.edit().putInt("CAR_APPS_CAPABILITIES_VERSION", client.getExpectedVersion() - 1).commit();
+		assertEquals("saved by another version", fallback, CarDisplayClient.savedCapabilities(ctx, fallback));
+
+		prefs.edit().putInt("CAR_APPS_CAPABILITIES_VERSION", client.getExpectedVersion()).commit();
+		assertEquals(0x17, CarDisplayClient.savedCapabilities(ctx, fallback));
 	}
 
 	@Test

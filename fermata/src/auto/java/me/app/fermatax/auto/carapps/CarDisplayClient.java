@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.hardware.display.DisplayManager;
+import android.os.Build;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -21,6 +22,7 @@ import android.view.Surface;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -30,6 +32,7 @@ import java.util.function.Consumer;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
+import me.aap.fermata.ui.carapps.CarAppsChecks;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootProbe;
 import me.aap.fermata.ui.carapps.RootState;
@@ -59,6 +62,8 @@ public class CarDisplayClient {
 	private PowerManager.WakeLock keepAwakeLock;
 	private volatile boolean phoneAsleep;
 	private volatile boolean phoneLocked;
+	private volatile boolean ownPowerGroup;
+	private boolean sessionUnlocked;
 	private Surface carSurface;
 	private int carWidth;
 	private int carHeight;
@@ -209,14 +214,35 @@ public class CarDisplayClient {
 		setState(State.READY);
 		Log.i("CarDisplayServer connected successfully (version " + version + ")");
 		recordDiagnostic("server_connected", Map.of("version", version, "capabilities", caps));
+		saveCapabilities(caps);
+	}
+
+	/** Last known capabilities for when no server runs: readiness reads them on the phone. */
+	private void saveCapabilities(int caps) {
 		try {
 			Context ctx = (lastContext != null) ? lastContext : FermataApplication.get();
 			if (ctx != null) {
 				ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE)
-						.edit().putInt("CAR_APPS_CAPABILITIES", caps).apply();
+						.edit().putInt("CAR_APPS_CAPABILITIES", caps)
+						.putInt("CAR_APPS_CAPABILITIES_VERSION", BuildConfig.VERSION_CODE).apply();
 			}
 		} catch (Throwable ignored) {
 		}
+	}
+
+	/** An older server knew fewer capabilities: what it saved would read as missing ones after an app update. */
+	static int savedCapabilities(Context ctx, int unknown) {
+		SharedPreferences prefs = ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE);
+		return (prefs.getInt("CAR_APPS_CAPABILITIES_VERSION", -1) == BuildConfig.VERSION_CODE)
+				? prefs.getInt("CAR_APPS_CAPABILITIES", unknown) : unknown;
+	}
+
+	private void recordChecks(int caps) {
+		Map<String, String> statuses = new LinkedHashMap<>();
+		for (CarAppsChecks.Check c : CarAppsChecks.from(CarAppsFeature.state(), caps, Build.VERSION.SDK_INT)) {
+			statuses.put(c.id, c.status.name());
+		}
+		recordDiagnostic("carapps_checks", statuses);
 	}
 
 	private synchronized void onServerDied() {
@@ -296,8 +322,9 @@ public class CarDisplayClient {
 
 		Su.get().onSuccess(su -> {
 			recordDiagnostic("root_grant", Map.of("result", "granted"));
-			Log.i("Starting CarDisplayServer via su: " + cmd);
-			su.exec(cmd);
+			String rootCmd = ServerCommand.buildForRoot(apkPath, appUid, versionCode, pkg);
+			Log.i("Starting CarDisplayServer via su: " + rootCmd);
+			su.exec(rootCmd);
 		}).onFailure(err -> {
 			recordDiagnostic("root_grant", Map.of("result", "failed"));
 			recordDiagnostic("server_failed", Map.of("reason", "root_failed"));
@@ -335,9 +362,14 @@ public class CarDisplayClient {
 		ICarDisplayServer srv = this.server;
 		if (srv == null) return -1;
 		try {
-			boolean locked = (lastContext != null) && isKeyguardHoldingPhone();
+			boolean locked = (lastContext != null) && isKeyguardHoldingPhone() && !sessionUnlocked;
 			int id = srv.attach(locked ? null : s, w, h, dpi, clientToken);
 			if (id >= 0) {
+				// Only now are they true: creating the display can lower CAP_TRUSTED and CAP_FOCUS
+				int caps = srv.capabilities();
+				ownPowerGroup = (caps & ICarDisplayServer.CAP_OWN_POWER_GROUP) != 0;
+				saveCapabilities(caps);
+				recordChecks(caps);
 				rememberCarSurface(s, w, h, dpi);
 				startKeepingPhoneAwake();
 			}
@@ -430,9 +462,10 @@ public class CarDisplayClient {
 	}
 
 	/**
-	 * Apps on the virtual display stop if the phone sleeps. The dim lock makes the screen timeout dim the phone
-	 * instead, in any app, and the power key still really sleeps it: that is reported, never undone.
+	 * Apps on a display sharing the phone's power group stop if the phone sleeps. The dim lock makes the screen timeout
+	 * dim the phone instead, in any app, and the power key still really sleeps it: that is reported, never undone.
 	 * A locked phone is not kept awake, so its lock screen times out as usual.
+	 * With its own power group the display needs none of this, and only the lock state is followed.
 	 */
 	private synchronized void startKeepingPhoneAwake() {
 		if (displayListener != null || lastContext == null) return;
@@ -491,10 +524,16 @@ public class CarDisplayClient {
 	/** Both change first and listeners hear once, so they never see a sleeping phone as awake or a locked one as open. */
 	@SuppressWarnings("deprecation")
 	private synchronized void setPhoneState(boolean asleep, boolean locked) {
+		if (ownPowerGroup) {
+			// The phone sleeping no longer touches the car. Unlocked once, the car stays open until the session ends.
+			if (!locked && (unlockReceiver != null)) sessionUnlocked = true;
+			asleep = false;
+			locked = locked && !sessionUnlocked;
+		}
 		boolean changed = (phoneAsleep != asleep) || (phoneLocked != locked);
 		phoneAsleep = asleep;
 		setPhoneLocked(locked);
-		if (locked) {
+		if (locked || ownPowerGroup) {
 			releaseKeepAwakeLock();
 		} else if ((keepAwakeLock == null) && (unlockReceiver != null)) {
 			PowerManager pm = (PowerManager) lastContext.getSystemService(Context.POWER_SERVICE);
@@ -548,6 +587,11 @@ public class CarDisplayClient {
 		return phoneLocked;
 	}
 
+	/** True when the phone dims, sleeps and locks on its own, so the dim screen has nothing to do. */
+	public boolean hasOwnPowerGroup() {
+		return ownPowerGroup;
+	}
+
 	public void wakeScreen() {
 		if (lastContext == null) return;
 		try {
@@ -571,6 +615,8 @@ public class CarDisplayClient {
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();
+		ownPowerGroup = false;
+		sessionUnlocked = false;
 		ICarDisplayServer srv = this.server;
 		this.server = null;
 		this.serverBinder = null;
@@ -613,6 +659,8 @@ public class CarDisplayClient {
 
 	public void resetForTesting() {
 		stopKeepingPhoneAwake();
+		this.ownPowerGroup = false;
+		this.sessionUnlocked = false;
 		unlinkServerBinder();
 		this.server = null;
 		this.serverBinder = null;

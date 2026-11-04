@@ -20,4 +20,29 @@
     <string name="car_apps_phone_dim_text">Đang dùng chế độ Car Apps trên xe\nChạm để dùng điện thoại</string>
     <string name="car_apps_phone_asleep">Màn hình điện thoại đang tắt\nChạm để tiếp tục</string>
     <string name="car_apps_phone_locked">Điện thoại đang khóa\nMở khóa điện thoại để tiếp tục</string>
+
+    <string name="car_apps_check_channel_root">Kênh khởi động Root</string>
+    <string name="car_apps_check_channel_available">Chưa cấp quyền Root</string>
+    <string name="car_apps_check_channel_grant_fix">Cấp quyền root trong trình quản lý root</string>
+    <string name="car_apps_check_channel_absent">Không tìm thấy quyền Root</string>
+    <string name="car_apps_check_channel_root_fix">Thiết bị cần được root để sử dụng Car Apps</string>
+    <string name="car_apps_check_trusted_ok">Màn hình tin cậy (Trusted Display)</string>
+    <string name="car_apps_check_trusted_missing">Màn hình chưa được cấp quyền tin cậy</string>
+    <string name="car_apps_check_trusted_fix">Không đặt được chính sách IME, một số app không nhận bàn phím</string>
+    <string name="car_apps_check_trusted_na">Không áp dụng trên Android 9-10</string>
+    <string name="car_apps_check_inject_ok">Tiêm sự kiện chạm (Touch Injection)</string>
+    <string name="car_apps_check_inject_missing">Không thể gửi sự kiện chạm</string>
+    <string name="car_apps_check_inject_fix">Cần bật Gỡ lỗi USB (Cài đặt bảo mật) trên Xiaomi</string>
+    <string name="car_apps_check_ime_ok">Chính sách bàn phím IME</string>
+    <string name="car_apps_check_ime_missing">Không hỗ trợ chính sách IME</string>
+    <string name="car_apps_check_ime_fix">Bàn phím ảo có thể không xuất hiện đúng trên xe</string>
+    <string name="car_apps_check_tasks_ok">Quản lý tác vụ xe</string>
+    <string name="car_apps_check_tasks_missing">Thiếu quyền quản lý tác vụ</string>
+    <string name="car_apps_check_tasks_fix">Không đóng được app từ xe</string>
+    <string name="car_apps_check_focus_ok">Tiêu điểm hiển thị độc lập</string>
+    <string name="car_apps_check_focus_missing">Màn hình xe thiếu quyền tiêu điểm</string>
+    <string name="car_apps_check_focus_fix">Tiêu điểm có thể bị lệch hoặc tranh chấp với điện thoại</string>
+    <string name="car_apps_check_focus_na">Không áp dụng cho phiên bản Android này</string>
+    <string name="car_apps_check_power_group_own">Nhóm nguồn hiển thị độc lập</string>
+    <string name="car_apps_check_power_group_shared">Chia sẻ nhóm nguồn với điện thoại</string>
 </resources>
