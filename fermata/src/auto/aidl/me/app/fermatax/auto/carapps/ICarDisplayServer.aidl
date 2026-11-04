@@ -16,7 +16,7 @@ interface ICarDisplayServer {
     int capabilities();
     int attach(in Surface s, int w, int h, int dpi, IBinder client);
     void setSurface(in @nullable Surface s, int w, int h, int dpi);
-    oneway void inject(in MotionEvent e);
+    void inject(in MotionEvent e);
     oneway void injectKey(int keyCode);
     int launch(in ComponentName c, int intentFlags);
     oneway void launchOnPhone(in ComponentName c, int intentFlags);

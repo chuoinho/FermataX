@@ -26,6 +26,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -72,6 +75,10 @@ public class CarDisplayClient {
 	private volatile ICarDisplayServer server;
 	private volatile IBinder serverBinder;
 	private final IBinder clientToken = new Binder();
+
+	private final TouchQueue touchQueue = new TouchQueue(64, 250_000_000L);
+	private final AtomicBoolean drainScheduled = new AtomicBoolean(false);
+	private volatile Executor sendExecutor;
 
 	private Context lastContext;
 	private int retryAttempt = 0;
@@ -248,6 +255,7 @@ public class CarDisplayClient {
 	private synchronized void onServerDied() {
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();
+		flushTouchQueueDiagnosticsAndClear();
 		this.server = null;
 		this.serverBinder = null;
 		setState(State.RETRYING);
@@ -395,13 +403,89 @@ public class CarDisplayClient {
 	}
 
 	public void inject(MotionEvent e) {
-		ICarDisplayServer srv = this.server;
-		if (srv == null || e == null) return;
-		try {
-			srv.inject(e);
-		} catch (RemoteException ex) {
-			Log.e(ex, "CarDisplayServer.inject failed");
+		if (e == null || this.server == null) return;
+		long now = System.nanoTime();
+		touchQueue.offer(e, now);
+		scheduleDrain();
+	}
+
+	private void scheduleDrain() {
+		if (drainScheduled.compareAndSet(false, true)) {
+			try {
+				getSendExecutor().execute(this::drainTouchQueue);
+			} catch (Throwable t) {
+				drainScheduled.set(false);
+				Log.e(t, "Failed to schedule touch queue drain");
+			}
 		}
+	}
+
+	private void drainTouchQueue() {
+		try {
+			while (true) {
+				MotionEvent ev;
+				long now = System.nanoTime();
+				ev = touchQueue.take(now);
+				if (ev == null) {
+					break;
+				}
+				ICarDisplayServer srv = this.server;
+				if (srv != null) {
+					try {
+						srv.inject(ev);
+					} catch (RemoteException ex) {
+						Log.e(ex, "CarDisplayServer.inject failed");
+						flushTouchQueueDiagnosticsAndClear();
+						break;
+					} catch (Throwable t) {
+						Log.e(t, "Unexpected error injecting touch event");
+					} finally {
+						ev.recycle();
+					}
+				} else {
+					ev.recycle();
+				}
+			}
+		} finally {
+			drainScheduled.set(false);
+			if (!touchQueue.isEmpty()) {
+				scheduleDrain();
+			}
+		}
+	}
+
+	private Executor getSendExecutor() {
+		Executor ex = sendExecutor;
+		if (ex == null) {
+			synchronized (this) {
+				ex = sendExecutor;
+				if (ex == null) {
+					ex = Executors.newSingleThreadExecutor(r -> {
+						Thread t = new Thread(r, "fermatax-touch-send");
+						t.setDaemon(true);
+						return t;
+					});
+					sendExecutor = ex;
+				}
+			}
+		}
+		return ex;
+	}
+
+	private void flushTouchQueueDiagnosticsAndClear() {
+		TouchQueue.Counters c = touchQueue.counters();
+		if (c.merged > 0 || c.dropped > 0 || c.resetOverload > 0) {
+			recordDiagnostic("touch_queue", Map.of(
+					"merged", c.merged,
+					"dropped", c.dropped,
+					"resetOverload", c.resetOverload
+			));
+		}
+		touchQueue.clear();
+	}
+
+	public void setSendExecutorForTest(Executor executor) {
+		this.sendExecutor = executor;
 	}
 
 	public void injectKey(int keyCode) {
@@ -615,6 +699,7 @@ public class CarDisplayClient {
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();
+		flushTouchQueueDiagnosticsAndClear();
 		ownPowerGroup = false;
 		sessionUnlocked = false;
 		ICarDisplayServer srv = this.server;
@@ -670,5 +755,8 @@ public class CarDisplayClient {
 		this.diagnosticsConsumerForTest = null;
 		this.stateListeners.clear();
 		this.lastContext = null;
+		this.sendExecutor = Runnable::run;
+		this.touchQueue.clear();
+		this.drainScheduled.set(false);
 	}
 }

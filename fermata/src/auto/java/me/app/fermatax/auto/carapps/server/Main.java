@@ -202,6 +202,7 @@ public class Main {
 			System.out.println("CAPABILITIES_AFTER_ATTACH=0x" + Integer.toHexString(capsAfter));
 			System.out.println("HAS_CAP_TASKS=" + ((capsAfter & ICarDisplayServer.CAP_TASKS) != 0));
 			System.out.println("HAS_CAP_FOCUS=" + ((capsAfter & ICarDisplayServer.CAP_FOCUS) != 0));
+			System.out.println("INJECT_SELFTEST=" + ((capsAfter & ICarDisplayServer.CAP_INJECT) != 0));
 
 			// Verify display in dumpsys
 			boolean dumpsysConfirmed = false;

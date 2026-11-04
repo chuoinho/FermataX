@@ -32,6 +32,7 @@ import org.robolectric.shadows.ShadowPowerManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -678,8 +679,144 @@ public class CarDisplayClientTest {
 		assertEquals("version_mismatch", recordedAttrs.get("server_failed").get("reason"));
 	}
 
+	@Test
+	public void injectSendsEventViaSendExecutor() {
+		FakeServerBinder server = attachDisplay(newSurface());
+		client.setSendExecutorForTest(Runnable::run);
+
+		long now = android.os.SystemClock.uptimeMillis();
+		MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 100f, 200f, 0);
+		MotionEvent move = MotionEvent.obtain(now, now + 10, MotionEvent.ACTION_MOVE, 120f, 220f, 0);
+		MotionEvent up = MotionEvent.obtain(now, now + 20, MotionEvent.ACTION_UP, 120f, 220f, 0);
+
+		client.inject(down);
+		client.inject(move);
+		client.inject(up);
+
+		down.recycle();
+		move.recycle();
+		up.recycle();
+
+		assertEquals(3, server.injected.size());
+		assertEquals(MotionEvent.ACTION_DOWN, server.injected.get(0).getActionMasked());
+		assertEquals(MotionEvent.ACTION_MOVE, server.injected.get(1).getActionMasked());
+		assertEquals(MotionEvent.ACTION_UP, server.injected.get(2).getActionMasked());
+	}
+
+	@Test
+	public void injectQueuesAndCoalescesMovesWhenSendExecutorIsDeferred() {
+		FakeServerBinder server = attachDisplay(newSurface());
+		List<Runnable> tasks = new ArrayList<>();
+		client.setSendExecutorForTest(tasks::add);
+
+		long now = android.os.SystemClock.uptimeMillis();
+		MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 100f, 200f, 0);
+		MotionEvent move1 = MotionEvent.obtain(now, now + 10, MotionEvent.ACTION_MOVE, 110f, 210f, 0);
+		MotionEvent move2 = MotionEvent.obtain(now, now + 20, MotionEvent.ACTION_MOVE, 150f, 250f, 0);
+		MotionEvent up = MotionEvent.obtain(now, now + 30, MotionEvent.ACTION_UP, 150f, 250f, 0);
+
+		client.inject(down);
+		client.inject(move1);
+		client.inject(move2);
+		client.inject(up);
+
+		down.recycle();
+		move1.recycle();
+		move2.recycle();
+		up.recycle();
+
+		assertEquals("Events should be queued and not sent until executor runs", 0, server.injected.size());
+		assertEquals(1, tasks.size());
+
+		tasks.get(0).run();
+
+		assertEquals("MOVEs should be coalesced into one", 3, server.injected.size());
+		assertEquals(MotionEvent.ACTION_DOWN, server.injected.get(0).getActionMasked());
+		assertEquals(MotionEvent.ACTION_MOVE, server.injected.get(1).getActionMasked());
+		assertEquals(150f, server.injected.get(1).getX(), 0.01f);
+		assertEquals(250f, server.injected.get(1).getY(), 0.01f);
+		assertEquals(MotionEvent.ACTION_UP, server.injected.get(2).getActionMasked());
+	}
+
+	@Test
+	public void touchQueueDiagnosticsFlushedOnRelease() {
+		FakeServerBinder server = attachDisplay(newSurface());
+		List<Runnable> tasks = new ArrayList<>();
+		client.setSendExecutorForTest(tasks::add);
+
+		List<Map<String, ?>> recorded = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((evt, attrs) -> {
+			if ("touch_queue".equals(evt)) {
+				recorded.add(attrs);
+			}
+		});
+
+		long now = android.os.SystemClock.uptimeMillis();
+		MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 100f, 200f, 0);
+		MotionEvent move1 = MotionEvent.obtain(now, now + 10, MotionEvent.ACTION_MOVE, 110f, 210f, 0);
+		MotionEvent move2 = MotionEvent.obtain(now, now + 20, MotionEvent.ACTION_MOVE, 120f, 220f, 0);
+
+		client.inject(down);
+		client.inject(move1);
+		client.inject(move2);
+
+		down.recycle();
+		move1.recycle();
+		move2.recycle();
+
+		tasks.get(0).run();
+
+		client.release();
+
+		assertEquals(1, recorded.size());
+		assertEquals(1, recorded.get(0).get("merged"));
+	}
+
+	@Test
+	public void cancelReachesTheServerAfterPendingMoves() {
+		FakeServerBinder server = attachDisplay(newSurface());
+		List<Runnable> tasks = new ArrayList<>();
+		client.setSendExecutorForTest(tasks::add);
+
+		long now = android.os.SystemClock.uptimeMillis();
+		for (int action : new int[]{MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_CANCEL}) {
+			MotionEvent e = MotionEvent.obtain(now, now, action, 100f, 200f, 0);
+			client.inject(e);
+			e.recycle();
+		}
+		tasks.get(0).run();
+
+		assertEquals(3, server.injected.size());
+		assertEquals(MotionEvent.ACTION_CANCEL, server.injected.get(2).getActionMasked());
+	}
+
+	@Test
+	public void failedInjectKeepsTheCountsForDiagnostics() {
+		FakeServerBinder server = attachDisplay(newSurface());
+		List<Runnable> tasks = new ArrayList<>();
+		client.setSendExecutorForTest(tasks::add);
+		List<Map<String, ?>> recorded = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((evt, attrs) -> {
+			if ("touch_queue".equals(evt)) recorded.add(attrs);
+		});
+
+		long now = android.os.SystemClock.uptimeMillis();
+		for (int action : new int[]{MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_MOVE}) {
+			MotionEvent e = MotionEvent.obtain(now, now, action, 100f, 200f, 0);
+			client.inject(e);
+			e.recycle();
+		}
+		server.failInject = true;
+		tasks.get(0).run();
+
+		assertEquals(1, recorded.size());
+		assertEquals(1, recorded.get(0).get("merged"));
+	}
+
 	private static class FakeServerBinder extends Binder implements ICarDisplayServer {
 		final List<Surface> surfaces = new ArrayList<>();
+		final List<MotionEvent> injected = new ArrayList<>();
+		boolean failInject;
 		private final int version;
 		private final AtomicBoolean released;
 		private DeathRecipient deathRecipient;
@@ -730,7 +867,9 @@ public class CarDisplayClientTest {
 		}
 
 		@Override
-		public void inject(MotionEvent e) {
+		public void inject(MotionEvent e) throws android.os.RemoteException {
+			if (failInject) throw new android.os.RemoteException();
+			injected.add(MotionEvent.obtain(e));
 		}
 
 		@Override

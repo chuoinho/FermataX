@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import me.app.fermatax.auto.carapps.CallerPolicy;
 import me.app.fermatax.auto.carapps.ICarDisplayServer;
@@ -130,9 +131,32 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		if ((carDevice == null) && VirtualDisplayFlags.needsDisplayWakeLock(Build.VERSION.SDK_INT, Hidden.getDisplayGroupId(displayId))) {
 			displayWakeLock = Hidden.acquireDisplayWakeLock(displayId, "fermatax:cardisplay");
 		}
+		verifyInputInjection(displayId);
 		bindClient(client);
 
 		return displayId;
+	}
+
+	private void verifyInputInjection(int displayId) {
+		if (Hidden.hasCapability(ICarDisplayServer.CAP_INJECT)
+				&& !injectionAccepted(displayId, e -> Hidden.injectInputEvent(e, 0))) {
+			Hidden.clearCapability(ICarDisplayServer.CAP_INJECT);
+		}
+	}
+
+	/**
+	 * A harmless key press, with its release so the display keeps no key held down. Mode 0 does not wait for the app
+	 * (InputManagerService.injectInputEventToTarget, android16-release): accepted says nothing about a touch arriving.
+	 */
+	static boolean injectionAccepted(int displayId, Predicate<KeyEvent> inject) {
+		long now = SystemClock.uptimeMillis();
+		boolean accepted = true;
+		for (int action : new int[]{KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP}) {
+			KeyEvent event = new KeyEvent(now, now, action, KeyEvent.KEYCODE_UNKNOWN, 0);
+			Hidden.setDisplayId(event, displayId);
+			accepted &= inject.test(event);
+		}
+		return accepted;
 	}
 
 	private void releaseDisplay() {
