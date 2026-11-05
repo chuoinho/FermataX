@@ -8,10 +8,26 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import me.aap.fermata.ui.carapps.CarAppsChecks;
+import me.app.fermatax.auto.carapps.ICarDisplayServer;
+import me.app.fermatax.auto.carapps.PanelPowerPolicy.PanelMode;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 33)
 public class PanelPowerPolicyTest {
+
+	@Test public void buttonFollowsTheDesignTable() {
+		int own = ICarDisplayServer.CAP_OWN_POWER_GROUP, panel = ICarDisplayServer.CAP_PANEL_POWER;
+		assertEquals(PanelMode.NONE, PanelPowerPolicy.forButton(own | panel, 35, true, false));
+		assertEquals(PanelMode.NONE, PanelPowerPolicy.forButton(own, 36, true, true));
+		assertEquals(PanelMode.SLEEP, PanelPowerPolicy.forButton(own, 36, false, false));
+		assertEquals(PanelMode.SLEEP, PanelPowerPolicy.forButton(own | panel, 35, false, true));
+		assertEquals(PanelMode.SLEEP, PanelPowerPolicy.forButton(0, 31, false, true));
+		assertEquals(PanelMode.PANEL_OFF, PanelPowerPolicy.forButton(own | panel, 35, false, false));
+		assertEquals(PanelMode.PANEL_OFF, PanelPowerPolicy.forButton(panel, 31, false, false));
+		assertEquals(PanelMode.DIM, PanelPowerPolicy.forButton(own, 35, false, false));
+		assertEquals(PanelMode.DIM, PanelPowerPolicy.forButton(0, 36, false, false));
+		assertEquals(PanelMode.DIM, PanelPowerPolicy.forButton(0, 31, false, false));
+	}
 
 	@Test
 	public void prefOffProducesNone() {
@@ -63,10 +79,9 @@ public class PanelPowerPolicyTest {
 	}
 
 	@Test
-	public void sdkSupportedRangeIs29To35() {
-		org.junit.Assert.assertFalse(PanelPowerPolicy.sdkSupported(28));
-		org.junit.Assert.assertTrue(PanelPowerPolicy.sdkSupported(29));
-		org.junit.Assert.assertTrue(PanelPowerPolicy.sdkSupported(33));
+	public void sdkSupportedRangeIs30To35() {
+		org.junit.Assert.assertFalse(PanelPowerPolicy.sdkSupported(29));
+		org.junit.Assert.assertTrue(PanelPowerPolicy.sdkSupported(30));
 		org.junit.Assert.assertTrue(PanelPowerPolicy.sdkSupported(35));
 		org.junit.Assert.assertFalse(PanelPowerPolicy.sdkSupported(36));
 	}

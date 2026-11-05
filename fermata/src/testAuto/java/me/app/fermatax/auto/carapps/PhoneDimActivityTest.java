@@ -124,6 +124,7 @@ public class PhoneDimActivityTest {
 		@Override public void launchOnPhone(android.content.ComponentName c, int f) {}
 		@Override public String closeTopApp(boolean force) { return ""; }
 		@Override public void setPanelPower(boolean on) { lastPower = on; }
+		@Override public void sleepPhone() {}
 		@Override public void release() {}
 		@Override public int serverVersion() { return me.aap.fermata.BuildConfig.VERSION_CODE; }
 		@Override public android.os.IBinder asBinder() { return this; }

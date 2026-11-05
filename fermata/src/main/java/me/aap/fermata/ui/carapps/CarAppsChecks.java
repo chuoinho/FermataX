@@ -125,8 +125,8 @@ public final class CarAppsChecks {
 			list.add(new Check("focus", Status.NA, R.string.car_apps_check_focus_na, 0));
 		}
 
-		// 7. Panel power (only shown on SDK 29..35)
-		if (sdk >= 29 && sdk <= 35) {
+		// 7. Panel power (only shown on SDK 30..35)
+		if (sdk >= 30 && sdk <= 35) {
 			if ((capabilities & CAP_PANEL_POWER) != 0) {
 				list.add(new Check("panel_power", Status.OK, R.string.car_apps_check_panel_power_ok, 0));
 			} else {

@@ -15,6 +15,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -63,9 +64,13 @@ public class CarDisplayClient {
 	private volatile boolean panelOff;
 	private volatile boolean panelOffRequested;
 	private volatile boolean restorePanelOnReconnect;
+	private volatile long nextPhoneSleepMs;
 	private BroadcastReceiver screenOffReceiver;
 	private DisplayManager.DisplayListener displayListener;
+	private static final long LOCK_REREAD_DELAY_MS = 1000;
 	private BroadcastReceiver unlockReceiver;
+	private BroadcastReceiver screenOnReceiver;
+	private final Runnable delayedLockCheck = this::rereadLockState;
 	private PowerManager.WakeLock keepAwakeLock;
 	private volatile boolean phoneAsleep;
 	private volatile boolean phoneLocked;
@@ -143,6 +148,19 @@ public class CarDisplayClient {
 		}
 	}
 
+	public void sleepPhone() {
+		ICarDisplayServer s = server;
+		if (s == null) return;
+		long now = SystemClock.elapsedRealtime();
+		if (now < nextPhoneSleepMs) return;
+		nextPhoneSleepMs = now + 2000;
+		try {
+			s.sleepPhone();
+		} catch (RemoteException e) {
+			Log.w("Failed to sleep phone", e);
+		}
+	}
+
 	/** Panel mode swallows touch, so a panel that cannot turn off must not stay in it. */
 	public synchronized void setPanelOff(boolean off) {
 		if (off == panelOff) return;
@@ -186,7 +204,13 @@ public class CarDisplayClient {
 	}
 
 	private synchronized void onScreenOffReceived() {
-		if (panelOff) restorePanelAndWake();
+		if (panelOff) {
+			restorePanelAndWake();
+		} else if (restorePanelOnReconnect) {
+			restorePanelOnReconnect = false;
+			unregisterScreenOffReceiver();
+			wakeScreen();
+		}
 	}
 
 	private synchronized void restorePanelAndWake() {
@@ -305,8 +329,10 @@ public class CarDisplayClient {
 				Log.e(e, "Failed to restore panel on reconnect");
 			}
 			restorePanelOnReconnect = false;
+			unregisterScreenOffReceiver();
 		}
 		this.retryAttempt = 0;
+		this.nextPhoneSleepMs = 0;
 		setState(State.READY);
 		Log.i("CarDisplayServer connected successfully (version " + version + ")");
 		recordDiagnostic("server_connected", Map.of("version", version, "capabilities", caps));
@@ -350,6 +376,8 @@ public class CarDisplayClient {
 		if (panelOff) {
 			restorePanelOnReconnect = true;
 			restorePanelAndWake();
+			// No server can light the panel, but the system does when it wakes: the power key or the timeout gets it there
+			registerScreenOffReceiver();
 		} else {
 			PhoneDimActivity.dismiss();
 		}
@@ -397,6 +425,7 @@ public class CarDisplayClient {
 		}
 
 		this.retryAttempt = 0;
+		this.nextPhoneSleepMs = 0;
 		setState(State.STARTING);
 		startServer(ctx != null ? ctx : lastContext);
 	}
@@ -454,7 +483,7 @@ public class CarDisplayClient {
 		boolean carActive = CarService.isActive();
 		RootState rootState = CarAppsFeature.state();
 
-		if (AutoStartPolicy.shouldStart(carActive, rootState, autoStartPref)) {
+		if (AutoStartPolicy.shouldStart(carActive, rootState, autoStartPref, Build.VERSION.SDK_INT)) {
 			ensureRunning(ctx);
 		}
 	}
@@ -674,17 +703,34 @@ public class CarDisplayClient {
 		unlockReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
+				mainHandler.removeCallbacks(delayedLockCheck);
 				setPhoneState(phoneAsleep, false);
 			}
 		};
 		// Exported because SystemUI, not the system uid, sends it; a protected broadcast, so no app can fake it.
 		ContextCompat.registerReceiver(lastContext, unlockReceiver, new IntentFilter(Intent.ACTION_USER_PRESENT),
 				ContextCompat.RECEIVER_EXPORTED);
+		screenOnReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				mainHandler.removeCallbacks(delayedLockCheck);
+				rereadLockState();
+				mainHandler.postDelayed(delayedLockCheck, LOCK_REREAD_DELAY_MS);
+			}
+		};
+		ContextCompat.registerReceiver(lastContext, screenOnReceiver, new IntentFilter(Intent.ACTION_SCREEN_ON),
+				ContextCompat.RECEIVER_NOT_EXPORTED);
+		setPhoneState(phoneAsleep, isKeyguardHoldingPhone());
+	}
+
+	private synchronized void rereadLockState() {
+		if (unlockReceiver == null) return;
 		setPhoneState(phoneAsleep, isKeyguardHoldingPhone());
 	}
 
 	private synchronized void stopKeepingPhoneAwake() {
 		releaseKeepAwakeLock();
+		mainHandler.removeCallbacks(delayedLockCheck);
 		if (displayListener != null && lastContext != null) {
 			DisplayManager dm = (DisplayManager) lastContext.getSystemService(Context.DISPLAY_SERVICE);
 			if (dm != null) dm.unregisterDisplayListener(displayListener);
@@ -694,13 +740,22 @@ public class CarDisplayClient {
 			lastContext.unregisterReceiver(unlockReceiver);
 			unlockReceiver = null;
 		}
+		if (screenOnReceiver != null && lastContext != null) {
+			lastContext.unregisterReceiver(screenOnReceiver);
+			screenOnReceiver = null;
+		}
 		carSurface = null;
 		setPhoneState(false, false);
 	}
 
+	public static boolean keyguardHoldsPhone(int sdk, boolean secure, boolean keyguardLocked) {
+		return keyguardLocked && (secure || sdk < 33);
+	}
+
 	private boolean isKeyguardHoldingPhone() {
 		KeyguardManager km = (KeyguardManager) lastContext.getSystemService(Context.KEYGUARD_SERVICE);
-		return (km != null) && km.isKeyguardSecure() && km.isKeyguardLocked();
+		// CarAppsFragment.applyPanelPref checks raw km.isKeyguardLocked(); here we decide if the car must block apps.
+		return (km != null) && keyguardHoldsPhone(Build.VERSION.SDK_INT, km.isKeyguardSecure(), km.isKeyguardLocked());
 	}
 
 	/** Both change first and listeners hear once, so they never see a sleeping phone as awake or a locked one as open. */
@@ -863,6 +918,7 @@ public class CarDisplayClient {
 		this.serverBinder = null;
 		this.state = State.IDLE;
 		this.retryAttempt = 0;
+		this.nextPhoneSleepMs = 0;
 		this.testCommandRunner = null;
 		this.diagnosticsConsumerForTest = null;
 		this.stateListeners.clear();

@@ -75,14 +75,34 @@ public class CarDisplayClientTest {
 		assertEquals(1, runCount.get());
 	}
 
+	@Test public void secondSleepWithinTwoSecondsIsIgnored() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		client.onServerBinderReceived(server);
+
+		client.sleepPhone();
+		client.sleepPhone();
+		assertEquals(1, server.sleepCount.get()); // a second power key would wake the phone
+
+		ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.SECONDS);
+		client.sleepPhone();
+		assertEquals(2, server.sleepCount.get());
+	}
+
+	@Test public void sleepPhoneWithoutAServerDoesNothing() {
+		client.sleepPhone();
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+	}
+
 	@Test
 	public void autoStartOnlyWhenGrantedAndCarActive() {
-		assertTrue(AutoStartPolicy.shouldStart(true, RootState.GRANTED, true));
-		assertFalse(AutoStartPolicy.shouldStart(false, RootState.GRANTED, true));
-		assertFalse(AutoStartPolicy.shouldStart(true, RootState.AVAILABLE, true));
-		assertFalse(AutoStartPolicy.shouldStart(true, RootState.ABSENT, true));
-		assertFalse(AutoStartPolicy.shouldStart(true, RootState.GRANTED, false));
-		assertFalse(AutoStartPolicy.shouldStart(false, RootState.AVAILABLE, false));
+		assertTrue(AutoStartPolicy.shouldStart(true, RootState.GRANTED, true, 34));
+		assertFalse(AutoStartPolicy.shouldStart(false, RootState.GRANTED, true, 34));
+		assertFalse(AutoStartPolicy.shouldStart(true, RootState.AVAILABLE, true, 34));
+		assertFalse(AutoStartPolicy.shouldStart(true, RootState.ABSENT, true, 34));
+		assertFalse(AutoStartPolicy.shouldStart(true, RootState.GRANTED, false, 34));
+		assertFalse(AutoStartPolicy.shouldStart(false, RootState.AVAILABLE, false, 34));
+		assertFalse("12L is hidden", AutoStartPolicy.shouldStart(true, RootState.GRANTED, true, 32));
 	}
 
 	@Test
@@ -262,6 +282,49 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
+	public void deadServerLeftThePanelOffSoTheNextScreenOffWakesThePhoneOnce() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+		client.setPanelOff(true);
+		server.triggerDeath();
+		ShadowPowerManager.clearWakeLocks();
+
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+		assertEquals("fermatax:panelwake", Shadows.shadowOf(latestWakeLock()).getTag());
+
+		ShadowPowerManager.clearWakeLocks();
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+		assertPhoneNotWoken();
+
+		FakeServerBinder server2 = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		client.onServerBinderReceived(server2);
+		org.junit.Assert.assertNull("the system already lit the panel", server2.lastPanelPower);
+	}
+
+	@Test
+	public void reconnectedServerRestoresThePanelAndTheNextScreenOffIsLeftAlone() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+		client.setPanelOff(true);
+		server.triggerDeath();
+		FakeServerBinder server2 = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		client.onServerBinderReceived(server2);
+		assertEquals(Boolean.TRUE, server2.lastPanelPower);
+		ShadowPowerManager.clearWakeLocks();
+
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+
+		assertPhoneNotWoken();
+	}
+
+	@Test
 	public void phoneSleepingAfterPanelRestoreIsNotWokenAgain() {
 		client.ensureRunning(context);
 		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
@@ -364,7 +427,57 @@ public class CarDisplayClientTest {
 		assertTrue(found);
 	}
 
+	@Test public void keyguardHoldsThePhoneByVersion() {
+		assertTrue(CarDisplayClient.keyguardHoldsPhone(33, true, true));
+		assertFalse(CarDisplayClient.keyguardHoldsPhone(33, false, true));
+		assertTrue(CarDisplayClient.keyguardHoldsPhone(31, false, true));
+		assertTrue(CarDisplayClient.keyguardHoldsPhone(30, true, true));
+		assertFalse(CarDisplayClient.keyguardHoldsPhone(31, true, false));
+	}
+
+	@Test public void lockAfterTheScreenChangeIsReadWhenTheScreenComesOn() {
+		attachDisplay();
+		setDeviceLocked(true); // no display change follows: the race seen on a real power press
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_ON));
+		ShadowLooper.idleMainLooper();
+		assertTrue(client.isPhoneLocked());
+	}
+
+	@Test public void lockAfterScreenOnIsReadOneSecondLater() {
+		attachDisplay();
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_ON));
+		ShadowLooper.idleMainLooper();
+		setDeviceLocked(true);
+		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+		assertTrue(client.isPhoneLocked());
+	}
+
+	@Test public void unlockCancelsTheLateRead() {
+		attachDisplay();
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_ON));
+		ShadowLooper.idleMainLooper();
+		setDeviceLocked(true); // stale: SystemUI already said the user is present
+		sendUserPresent();
+		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+		assertFalse(client.isPhoneLocked());
+	}
+
+	@Test public void sessionEndCancelsTheLateRead() {
+		attachDisplay();
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_ON));
+		ShadowLooper.idleMainLooper();
+		client.onCarSessionStopped();
+		setDeviceLocked(true);
+		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+		assertFalse(client.isPhoneLocked());
+		for (org.robolectric.shadows.ShadowApplication.Wrapper w :
+				Shadows.shadowOf((Application) context.getApplicationContext()).getRegisteredReceivers()) {
+			assertFalse(w.getIntentFilter().hasAction(Intent.ACTION_SCREEN_ON));
+		}
+	}
+
 	@Test
+	@Config(sdk = 33)
 	public void keyguardWithoutACredentialDoesNotBlockTheCar() {
 		Shadows.shadowOf((android.app.KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE))
 				.setKeyguardLocked(true);
@@ -976,6 +1089,7 @@ public class CarDisplayClientTest {
 		int caps = 0x17;
 		Boolean lastPanelPower;
 		boolean panelFails;
+		final AtomicInteger sleepCount = new AtomicInteger();
 
 		FakeServerBinder(int version, AtomicBoolean released) {
 			this.version = version;
@@ -1049,6 +1163,11 @@ public class CarDisplayClientTest {
 		public void setPanelPower(boolean on) {
 			lastPanelPower = on;
 			if (panelFails && !on) caps &= ~CAP_PANEL_POWER;
+		}
+
+		@Override
+		public void sleepPhone() {
+			sleepCount.incrementAndGet();
 		}
 
 		@Override

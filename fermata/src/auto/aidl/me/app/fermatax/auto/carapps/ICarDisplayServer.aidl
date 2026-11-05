@@ -25,4 +25,5 @@ interface ICarDisplayServer {
     void release();
     int serverVersion();
     void setPanelPower(boolean on);
+    oneway void sleepPhone();
 }

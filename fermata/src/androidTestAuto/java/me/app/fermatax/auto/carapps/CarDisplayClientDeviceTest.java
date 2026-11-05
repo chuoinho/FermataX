@@ -3,6 +3,7 @@ package me.app.fermatax.auto.carapps;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static me.app.fermatax.auto.carapps.TestDevice.waitUntil;
 
@@ -99,7 +100,8 @@ public class CarDisplayClientDeviceTest {
 	@Test
 	public void connectsAttachesAndReleasesInAnyPhoneState() {
 		connect();
-		boolean lockedAtStart = device.keyguard().isKeyguardSecure() && device.keyguard().isKeyguardLocked();
+		boolean lockedAtStart = CarDisplayClient.keyguardHoldsPhone(Build.VERSION.SDK_INT,
+				device.keyguard().isKeyguardSecure(), device.keyguard().isKeyguardLocked());
 
 		int id = client.attach(surface, W, H, DPI);
 
@@ -107,9 +109,11 @@ public class CarDisplayClientDeviceTest {
 		assertEquals("own power group", hasOwnGroup(), client.hasOwnPowerGroup());
 		assertEquals(lockedAtStart, client.isPhoneLocked());
 		assertFalse(client.isPhoneAsleep());
-		assertLocksDuringSession();
 
-		if (!lockedAtStart) assertCarShows(id, SETTINGS);
+		if (!lockedAtStart) {
+			assertLocksDuringSession(); // a locked phone is not kept awake
+			assertCarShows(id, SETTINGS);
+		}
 
 		client.release();
 		assertEquals(CarDisplayClient.State.IDLE, client.state());
@@ -243,10 +247,53 @@ public class CarDisplayClientDeviceTest {
 
 		waitUntil("the panel to come back", 15_000, () -> !isPanelOff());
 		waitUntil("the phone to wake", 15_000, this::isPhoneScreenOn);
-		waitUntil("the black screen to end", 15_000,
-				() -> !device.shell("dumpsys activity activities").contains("PhoneDimActivity"));
+		// not dumpsys: its insets section keeps naming the window after the activity is gone
+		waitUntil("the black screen to end", 15_000, () -> !PhoneDimActivity.isShowing());
 		assertFalse(client.isPanelOff());
-		assertCarShows(id, otherApp());
+		if (hasOwnGroup()) assertCarShows(id, otherApp());
+		else waitUntil("the car to ask for an unlock", 15_000, client::isPhoneLocked);
+	}
+
+	@Test public void swipeLockTellsTheCarWhenAppsStop() {
+		assumeTrue("Android 11-12, emulators only", TestDevice.isEmulator() && Build.VERSION.SDK_INT < 33);
+		assumeFalse("needs a lock without a PIN", device.keyguard().isKeyguardSecure());
+		device.wakeAndOpen();
+		connect();
+		int id = attach();
+		assertCarShows(id, SETTINGS);
+		powerKeyOff();
+		device.shell("input keyevent KEYCODE_WAKEUP");
+		waitUntil("the car to ask for an unlock", 15_000, client::isPhoneLocked);
+	}
+
+	@Test public void sleepPhoneOnlySleepsAScreenThatIsOn() {
+		assumeTrue("emulators only", TestDevice.isEmulator());
+		device.wakeAndOpen();
+		connect();
+		int id = attach();
+		client.sleepPhone();
+		waitUntil("the screen to go off", 15_000, () -> !isPhoneScreenOn());
+		if (hasOwnGroup()) assertCarShows(id, SETTINGS);
+		SystemClock.sleep(2100);
+		client.sleepPhone();
+		SystemClock.sleep(3000);
+		assertFalse("a second press must not wake it", isPhoneScreenOn());
+	}
+
+	@Test public void panelOffThenPowerKeyAsksToUnlock() {
+		assumeTrue("Android 11-12, emulators only", TestDevice.isEmulator() && Build.VERSION.SDK_INT < 33);
+		device.wakeAndOpen();
+		device.setPin();
+		pinSet = true;
+		connect();
+		attach();
+		client.setPanelOffRequested(true);
+		client.launchOnPhone(new ComponentName(ctx, PhoneDimActivity.class),
+				Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+		waitUntil("the panel to turn off", 20_000, this::isPanelOff);
+		device.shell("input keyevent KEYCODE_POWER");
+		waitUntil("the keyguard", 15_000, () -> device.keyguard().isKeyguardLocked());
+		waitUntil("the car to ask for an unlock", 15_000, client::isPhoneLocked);
 	}
 
 	@Test
@@ -258,14 +305,56 @@ public class CarDisplayClientDeviceTest {
 	}
 
 	@Test
+	public void serverThatNeverComesBackLeavesOnePowerPressToBringThePanelBack() {
+		startWithPanelOff();
+		client.setCommandRunnerForTest(command -> { });
+		device.killServer();
+		waitUntil("the client to notice", 10_000, () -> client.state() != CarDisplayClient.State.READY);
+		assertTrue("nothing can light it yet", isPanelOff());
+
+		device.shell("input keyevent KEYCODE_POWER");
+
+		waitUntil("the panel to come back", 15_000, () -> !isPanelOff() && isPhoneScreenOn());
+	}
+
+	@Test
+	public void serverThatNeverComesBackLetsTheScreenTimeoutBringThePanelBack() {
+		startWithPanelOff();
+		client.setCommandRunnerForTest(command -> { });
+		timeout = device.shell("settings get system screen_off_timeout").trim();
+		device.shell("settings put system screen_off_timeout 15000");
+		// the 11 and 12 images keep the screen on while plugged in, and there no timeout ever comes
+		String stayOn = device.shell("settings get global stay_on_while_plugged_in").trim();
+		device.shell("settings put global stay_on_while_plugged_in 0");
+		try {
+			device.killServer();
+			waitUntil("the panel to come back", 60_000, () -> !isPanelOff() && isPhoneScreenOn());
+		} finally {
+			device.shell("settings put global stay_on_while_plugged_in " + stayOn);
+		}
+	}
+
+	@Test
 	public void releaseBringsThePanelBack() {
 		startWithPanelOff();
 		client.release();
 		waitUntil("the panel to come back", 15_000, () -> !isPanelOff());
 	}
 
+	@Test public void panelTurnsOffAgainAfterThePowerKeyBroughtItBack() {
+		startWithPanelOff();
+		device.shell("input keyevent KEYCODE_POWER");
+		waitUntil("the panel to come back", 15_000, () -> !isPanelOff());
+		waitUntil("the black screen to end", 15_000, () -> !PhoneDimActivity.isShowing());
+		device.wakeAndOpen();
+		client.setPanelOffRequested(true);
+		client.launchOnPhone(new ComponentName(ctx, PhoneDimActivity.class),
+				Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+		waitUntil("the panel to turn off again", 20_000, this::isPanelOff);
+	}
+
 	private int startWithPanelOff() {
-		assumeTrue("Android 10-15, emulators only", TestDevice.isEmulator() && PanelPowerPolicy.sdkSupported(Build.VERSION.SDK_INT));
+		assumeTrue("Android 11-15, emulators only", TestDevice.isEmulator() && PanelPowerPolicy.sdkSupported(Build.VERSION.SDK_INT));
 		device.wakeAndOpen();
 		connect();
 		int id = attach();

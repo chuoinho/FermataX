@@ -41,7 +41,12 @@ public final class CarAppsFeature {
 	}
 
 	public static boolean visible(boolean autoBuild, int sdk, @Nullable RootState s) {
-		return autoBuild && (sdk >= 33) && (s != null) && (s != RootState.ABSENT);
+		return autoBuild && (sdk >= 30) && !isBlockedSdk(sdk) && (s != null) && (s != RootState.ABSENT);
+	}
+
+	/** 12L: as uid 1000, which the server needs below 33, am start exits 255, so no app can open. */
+	public static boolean isBlockedSdk(int sdk) {
+		return sdk == 32;
 	}
 
 	public static boolean usable(@Nullable RootState s) {

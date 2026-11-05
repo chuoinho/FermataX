@@ -51,15 +51,15 @@ public class CarAppsChecksTest {
 	}
 
 	@Test
-	public void panelPowerCheckShownOnlyOnSdk29To35() {
+	public void panelPowerCheckShownOnlyOnSdk30To35() {
 		int withPanel = CarAppsChecks.CAP_PANEL_POWER | CarAppsChecks.CAP_INJECT;
 		int withoutPanel = CarAppsChecks.CAP_INJECT;
 
-		// SDK 28: not present
-		assertNull(checksMap(RootState.GRANTED, withPanel, 28).get("panel_power"));
+		// SDK 29: not present
+		assertNull(checksMap(RootState.GRANTED, withPanel, 29).get("panel_power"));
 
-		// SDK 29..35 with panel: OK; without panel: WARN with fix
-		for (int sdk = 29; sdk <= 35; sdk++) {
+		// SDK 30..35 with panel: OK; without panel: WARN with fix
+		for (int sdk = 30; sdk <= 35; sdk++) {
 			CarAppsChecks.Check okCheck = checksMap(RootState.GRANTED, withPanel, sdk).get("panel_power");
 			assertNotNull("SDK " + sdk, okCheck);
 			assertEquals("SDK " + sdk, CarAppsChecks.Status.OK, okCheck.status);

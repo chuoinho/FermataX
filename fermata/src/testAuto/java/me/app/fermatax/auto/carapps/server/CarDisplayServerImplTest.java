@@ -13,6 +13,7 @@ import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 33)
@@ -22,6 +23,22 @@ public class CarDisplayServerImplTest {
 	public void cleanPanel() {
 		HiddenTest.resetPanel();
 		org.robolectric.util.ReflectionHelpers.setStaticField(Hidden.class, "initialized", false);
+	}
+
+	@Test public void powerKeyOnlySentToAScreenThatIsOn() {
+		AtomicInteger sent = new AtomicInteger();
+		CarDisplayServerImpl.sleepIfScreenOn(false, sent::incrementAndGet);
+		assertEquals(0, sent.get());
+		CarDisplayServerImpl.sleepIfScreenOn(true, sent::incrementAndGet);
+		assertEquals(1, sent.get());
+	}
+
+	@Test public void sleepPhoneRefusesAStrangerUid() {
+		AtomicInteger sent = new AtomicInteger();
+		new CarDisplayServerImpl(android.os.Binder.getCallingUid() + 1, 1, "p") {
+			@Override void sendPowerIfScreenOn() { sent.incrementAndGet(); }
+		}.sleepPhone();
+		assertEquals(0, sent.get());
 	}
 
 	@Test

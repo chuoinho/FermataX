@@ -95,6 +95,8 @@ public class CarAppsReadinessModelTest {
 	@Test
 	public void grantedModelExposesChecksList() {
 		int allCaps = CarAppsChecks.CAP_VD | CarAppsChecks.CAP_INJECT | CarAppsChecks.CAP_TRUSTED;
+		assertFalse("12L is hidden", CarAppsReadinessModel.from(RootState.GRANTED, allCaps, 32).rowVisible);
+		assertFalse("12L is hidden", CarAppsReadinessModel.from(RootState.AVAILABLE, 0, 32).rowVisible);
 		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.GRANTED, allCaps, 34);
 		org.junit.Assert.assertNotNull(model.checks);
 		assertFalse(model.checks.isEmpty());

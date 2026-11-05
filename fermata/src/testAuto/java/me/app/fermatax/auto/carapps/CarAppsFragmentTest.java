@@ -251,10 +251,12 @@ public class CarAppsFragmentTest {
 		View bottomBar = fragment.getBottomBar();
 		assertTrue(bottomBar instanceof ViewGroup);
 		ViewGroup bar = (ViewGroup) bottomBar;
-		assertEquals("Bottom bar must have exactly 3 buttons per approved design", 3, bar.getChildCount());
+		assertEquals("Bottom bar has 4 buttons", 4, bar.getChildCount());
 		assertSame(fragment.getBackButton(), bar.getChildAt(0));
 		assertSame(fragment.getDrawerButton(), bar.getChildAt(1));
 		assertSame(fragment.getCloseButton(), bar.getChildAt(2));
+		assertSame(fragment.getPhoneScreenButton(), bar.getChildAt(3));
+		assertEquals(context.getString(me.aap.fermata.R.string.car_apps_panel_off), fragment.getPhoneScreenButton().getContentDescription());
 	}
 
 	@Test
@@ -267,9 +269,65 @@ public class CarAppsFragmentTest {
 	@Test
 	public void bottomBarIconsFollowThemeTint() {
 		CarAppsFragment fragment = createAndAttachFragment();
-		for (ImageButton b : new ImageButton[]{fragment.getBackButton(), fragment.getDrawerButton(), fragment.getCloseButton()}) {
+		for (ImageButton b : new ImageButton[]{fragment.getBackButton(), fragment.getDrawerButton(), fragment.getCloseButton(), fragment.getPhoneScreenButton()}) {
 			assertTrue("Icon must be tinted from the active theme", b.getImageTintList() != null);
 		}
+	}
+
+	@Test public void phoneScreenButtonDarkensAgainAfterTheAutoDim() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		fragment.getPhoneScreenButton().performClick();
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+		assertFalse(client.isPanelOffRequested());
+	}
+
+	@Test public void phoneScreenButtonTurnsThePanelOffWhenItCan() {
+		serverBinder.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		fragment.getPhoneScreenButton().performClick();
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+		assertTrue(client.isPanelOffRequested());
+	}
+
+	@Test public void phoneScreenButtonWorksWithTheOptionOff() {
+		setDimPref(false);
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		fragment.getPhoneScreenButton().performClick();
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+	}
+
+	@Test public void phoneScreenButtonLeavesADarkScreenAlone() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		setPhoneScreen(android.view.Display.STATE_OFF);
+		fragment.getPhoneScreenButton().performClick();
+		assertEquals(null, nextPhoneLaunchClass());
+		assertEquals(0, serverBinder.sleepCount.get());
+	}
+
+	@Test public void phoneScreenButtonLeavesTheBlackScreenAlone() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		org.robolectric.android.controller.ActivityController<PhoneDimActivity> dim =
+				org.robolectric.Robolectric.buildActivity(PhoneDimActivity.class).create();
+		fragment.getPhoneScreenButton().performClick();
+		assertEquals(null, nextPhoneLaunchClass());
+		dim.destroy();
+	}
+
+	@Test public void phoneScreenButtonSleepsALockedPhone() {
+		serverBinder.caps = 0x17 | ICarDisplayServer.CAP_OWN_POWER_GROUP | ICarDisplayServer.CAP_PANEL_POWER;
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		lockPhoneAndWake(); // already unlocked once: the bar stays
+		fragment.getPhoneScreenButton().performClick();
+		assertEquals(1, serverBinder.sleepCount.get());
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	@Test public void phoneScreenButtonOffUntilTheDisplayIsUp() {
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		assertFalse(fragment.getPhoneScreenButton().isEnabled());
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertTrue(fragment.getPhoneScreenButton().isEnabled());
 	}
 
 	private String nextPhoneLaunchClass() {
@@ -377,7 +435,7 @@ public class CarAppsFragmentTest {
 		assertEquals("The dim screen would stop at once while the phone still sleeps", null, nextPhoneLaunchClass());
 
 		setPhoneScreen(android.view.Display.STATE_ON);
-		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+		assertEquals("Mid-session the driver presses the button to darken", null, nextPhoneLaunchClass());
 	}
 
 	@Test
@@ -479,7 +537,23 @@ public class CarAppsFragmentTest {
 		assertEquals("Android closes it over the lock screen", null, nextPhoneLaunchClass());
 
 		sendUnlocked();
+		assertEquals(null, nextPhoneLaunchClass());
+	}
+
+	@Test public void phoneLockedAtOpenDimsOnceAfterUnlock() {
+		setDeviceLocked(true);
+		CarAppsFeature.setState(RootState.GRANTED);
+		client.ensureRunning(context);
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertEquals(null, nextPhoneLaunchClass());
+
+		sendUnlocked();
 		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+
+		lockPhoneAndWake();
+		sendUnlocked();
+		assertEquals(null, nextPhoneLaunchClass());
 	}
 
 	@Test
@@ -659,6 +733,7 @@ public class CarAppsFragmentTest {
 		int caps = 0x17;
 		Boolean lastPanelPower;
 		final List<MotionEvent> injected = new ArrayList<>();
+		final AtomicInteger sleepCount = new AtomicInteger();
 
 		TestServerBinder() {
 			attachInterface(this, ICarDisplayServer.DESCRIPTOR);
@@ -713,6 +788,11 @@ public class CarAppsFragmentTest {
 		@Override
 		public void setPanelPower(boolean on) {
 			lastPanelPower = on;
+		}
+
+		@Override
+		public void sleepPhone() {
+			sleepCount.incrementAndGet();
 		}
 
 		@Override

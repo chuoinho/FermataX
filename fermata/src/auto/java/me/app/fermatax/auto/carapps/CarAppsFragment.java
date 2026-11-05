@@ -4,6 +4,7 @@ import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
+import android.os.Build;
 import android.os.PowerManager;
 import android.view.Display;
 import android.content.Intent;
@@ -51,8 +52,8 @@ import me.app.fermatax.auto.LauncherActivity;
 
 /**
  * Android Auto fragment for independent car apps.
- * Hosts a SurfaceView rendering the root VirtualDisplay and a 3-button bottom bar
- * (Back, App drawer, Close app).
+ * Hosts a SurfaceView rendering the root VirtualDisplay and a 4-button bottom bar
+ * (Back, App drawer, Close app, Phone screen).
  */
 public class CarAppsFragment extends MainActivityFragment {
 
@@ -76,6 +77,7 @@ public class CarAppsFragment extends MainActivityFragment {
 	private ImageButton btnBack;
 	private ImageButton btnDrawer;
 	private ImageButton btnClose;
+	private ImageButton btnPhoneScreen;
 
 	private LinearLayout loadingOverlay;
 	private LinearLayout needsRootOverlay;
@@ -196,7 +198,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		createPhoneAsleepOverlay(ctx);
 		rootLayout.addView(viewportContainer);
 
-		// 2. Bottom bar (3 icon buttons: Back, App drawer, Close app; compact 52 dp)
+		// 2. Bottom bar (4 icon buttons: Back, App drawer, Close app, Phone screen; compact 52 dp)
 		createBottomBar(ctx);
 		rootLayout.addView(bottomBar);
 
@@ -296,7 +298,6 @@ public class CarAppsFragment extends MainActivityFragment {
 		phoneAsleepOverlay.addView(phoneAsleepText);
 		phoneAsleepOverlay.setOnClickListener(v -> {
 			if (client.isPhoneAsleep()) client.wakeScreen();
-			dimRequested = false; // the driver wants the car, not the phone: cover it again once it is usable
 		});
 		viewportContainer.addView(phoneAsleepOverlay);
 	}
@@ -401,6 +402,11 @@ public class CarAppsFragment extends MainActivityFragment {
 			return true;
 		});
 		bottomBar.addView(btnClose);
+
+		btnPhoneScreen = createNavButton(ctx, R.drawable.ic_car_nav_phone_off, R.string.car_apps_panel_off);
+		btnPhoneScreen.setOnClickListener(v -> onPhoneScreenButton());
+		bottomBar.addView(btnPhoneScreen);
+
 		applyNavModel(CarAppsNavModel.of(screen));
 	}
 
@@ -510,6 +516,9 @@ public class CarAppsFragment extends MainActivityFragment {
 		ImageViewCompat.setImageTintList(btnBack, ColorStateList.valueOf(normal));
 		ImageViewCompat.setImageTintList(btnClose, ColorStateList.valueOf(normal));
 		ImageViewCompat.setImageTintList(btnDrawer, ColorStateList.valueOf(model.drawerHighlighted ? accent : normal));
+		if (btnPhoneScreen != null) {
+			ImageViewCompat.setImageTintList(btnPhoneScreen, ColorStateList.valueOf(normal));
+		}
 	}
 
 	public void setBarsHidden(boolean hidden) {
@@ -590,6 +599,25 @@ public class CarAppsFragment extends MainActivityFragment {
 		if (uiState == CarAppsUiState.State.READY && attached) {
 			applyPanelPref();
 		}
+
+		boolean usable = (uiState == CarAppsUiState.State.READY) && attached;
+		if (btnPhoneScreen != null) {
+			btnPhoneScreen.setEnabled(usable);
+			btnPhoneScreen.setAlpha(usable ? 1.0f : 0.35f);
+		}
+	}
+
+	private boolean phoneScreenOn(Context c) {
+		DisplayManager dm = (DisplayManager) c.getSystemService(Context.DISPLAY_SERVICE);
+		Display defaultDisplay = (dm != null) ? dm.getDisplay(Display.DEFAULT_DISPLAY) : null;
+		return (defaultDisplay != null) && (defaultDisplay.getState() == Display.STATE_ON);
+	}
+
+	private void showPhoneDim(Context c, PanelPowerPolicy.PanelMode mode) {
+		dimRequested = true;
+		client.setPanelOffRequested(mode == PanelPowerPolicy.PanelMode.PANEL_OFF);
+		client.launchOnPhone(new ComponentName(c, PhoneDimActivity.class),
+				Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
 	}
 
 	/**
@@ -604,20 +632,29 @@ public class CarAppsFragment extends MainActivityFragment {
 		boolean prefPanelOff = prefs.getBoolean(CarAppsFeature.PREF_PANEL_OFF, true);
 		PowerManager pm = (PowerManager) c.getSystemService(Context.POWER_SERVICE);
 		KeyguardManager km = (KeyguardManager) c.getSystemService(Context.KEYGUARD_SERVICE);
-		DisplayManager dm = (DisplayManager) c.getSystemService(Context.DISPLAY_SERVICE);
-		Display defaultDisplay = (dm != null) ? dm.getDisplay(Display.DEFAULT_DISPLAY) : null;
-		boolean displayOn = (defaultDisplay == null) || (defaultDisplay.getState() == Display.STATE_ON);
-		boolean interactive = (pm != null) && pm.isInteractive() && displayOn;
+		boolean interactive = (pm != null) && pm.isInteractive() && phoneScreenOn(c);
 		boolean locked = (km != null) && km.isKeyguardLocked();
 		int caps = client.capabilities();
 
 		PanelPowerPolicy.PanelMode mode = PanelPowerPolicy.decide(prefPanelOff, caps, interactive, locked);
 		if (mode == PanelPowerPolicy.PanelMode.NONE) return;
 
-		dimRequested = true;
-		client.setPanelOffRequested(mode == PanelPowerPolicy.PanelMode.PANEL_OFF);
-		client.launchOnPhone(new ComponentName(c, PhoneDimActivity.class),
-				Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+		showPhoneDim(c, mode);
+	}
+
+	private void onPhoneScreenButton() {
+		Context c = getContext();
+		if (c == null) return;
+		boolean dark = client.isPanelOff() || !phoneScreenOn(c) || PhoneDimActivity.isShowing();
+		KeyguardManager km = (KeyguardManager) c.getSystemService(Context.KEYGUARD_SERVICE);
+		boolean locked = (km != null) && km.isKeyguardLocked();
+		PanelPowerPolicy.PanelMode mode = PanelPowerPolicy.forButton(
+				client.capabilities(), Build.VERSION.SDK_INT, dark, locked);
+		if (mode == PanelPowerPolicy.PanelMode.SLEEP) {
+			client.sleepPhone();
+		} else if (mode == PanelPowerPolicy.PanelMode.PANEL_OFF || mode == PanelPowerPolicy.PanelMode.DIM) {
+			showPhoneDim(c, mode);
+		}
 	}
 
 	private void checkAttachSurface() {
@@ -677,6 +714,10 @@ public class CarAppsFragment extends MainActivityFragment {
 
 	public ImageButton getCloseButton() {
 		return btnClose;
+	}
+
+	public ImageButton getPhoneScreenButton() {
+		return btnPhoneScreen;
 	}
 
 	public View getPhoneAsleepOverlay() {

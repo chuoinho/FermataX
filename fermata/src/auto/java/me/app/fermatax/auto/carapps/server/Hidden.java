@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
+import android.view.Display;
 import android.view.InputEvent;
 import android.view.SurfaceControl;
 
@@ -237,6 +238,17 @@ public final class Hidden {
 	public static DisplayManager getDisplayManager() {
 		init();
 		return displayManager;
+	}
+
+	public static boolean isPhoneScreenOn() {
+		try {
+			Class<?> global = Class.forName("android.hardware.display.DisplayManagerGlobal");
+			Object info = global.getMethod("getDisplayInfo", int.class)
+					.invoke(global.getMethod("getInstance").invoke(null), 0);
+			return (info != null) && info.getClass().getField("state").getInt(info) == Display.STATE_ON;
+		} catch (Throwable t) {
+			return false;
+		}
 	}
 
 	/** 0, the phone's own group, if unknown: the caller then treats the display as sharing it. */

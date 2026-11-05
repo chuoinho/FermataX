@@ -40,7 +40,7 @@ public final class CarAppsReadinessModel {
 	}
 
 	public static CarAppsReadinessModel from(@Nullable RootState rootState, int capabilities, int sdk) {
-		if (rootState == null || rootState == RootState.ABSENT) {
+		if (rootState == null || rootState == RootState.ABSENT || CarAppsFeature.isBlockedSdk(sdk)) {
 			return new CarAppsReadinessModel(false, 0, 0, 0, Collections.emptyList());
 		}
 

@@ -378,6 +378,25 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		Hidden.setPhysicalDisplayPowerMode(on ? 2 : 0); // 2 = NORMAL, 0 = OFF
 	}
 
+	@Override
+	public void sleepPhone() {
+		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid)) return;
+		sendPowerIfScreenOn();
+	}
+
+	void sendPowerIfScreenOn() {
+		sleepIfScreenOn(Hidden.isPhoneScreenOn(), () -> {
+			try {
+				Runtime.getRuntime().exec(new String[]{"input", "keyevent", "26"}).waitFor();
+			} catch (Throwable ignored) {
+			}
+		});
+	}
+
+	static void sleepIfScreenOn(boolean screenOn, Runnable powerKey) {
+		if (screenOn) powerKey.run();
+	}
+
 	public synchronized void releaseInternal() {
 		Hidden.restorePanelIfForcedOff();
 		if (clientBinder != null) {

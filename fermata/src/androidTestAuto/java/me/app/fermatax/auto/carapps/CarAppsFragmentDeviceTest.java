@@ -49,6 +49,12 @@ import me.app.fermatax.auto.LauncherActivity;
  */
 @RunWith(AndroidJUnit4.class)
 public class CarAppsFragmentDeviceTest {
+
+	@Test
+	public void featureIsOfferedOnThisAndroid() {
+		assertEquals(android.os.Build.VERSION.SDK_INT != 32,
+				CarAppsFeature.visible(me.aap.fermata.BuildConfig.AUTO, android.os.Build.VERSION.SDK_INT, RootState.GRANTED));
+	}
 	private static final int DRAWER = 1;
 	private static final int CLOSE = 2;
 

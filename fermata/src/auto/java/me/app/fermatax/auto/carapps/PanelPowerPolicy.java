@@ -6,14 +6,26 @@ public final class PanelPowerPolicy {
 	public enum PanelMode {
 		NONE,
 		DIM,
-		PANEL_OFF
+		PANEL_OFF,
+		SLEEP
 	}
 
 	public static boolean sdkSupported(int sdk) {
-		return sdk >= 29 && sdk <= 35;
+		return sdk >= 30 && sdk <= 35;
 	}
 
 	private PanelPowerPolicy() {
+	}
+
+	public static PanelMode forButton(int caps, int sdk, boolean dark, boolean keyguardLocked) {
+		if (dark) return PanelMode.NONE;
+		if (keyguardLocked || ((caps & ICarDisplayServer.CAP_OWN_POWER_GROUP) != 0 && sdk >= 36)) {
+			return PanelMode.SLEEP;
+		}
+		if ((caps & ICarDisplayServer.CAP_PANEL_POWER) != 0) {
+			return PanelMode.PANEL_OFF;
+		}
+		return PanelMode.DIM;
 	}
 
 	public static PanelMode decide(boolean prefPanelOff, int caps, boolean interactive, boolean keyguardLocked) {

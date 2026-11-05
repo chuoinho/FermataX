@@ -26,15 +26,15 @@ public class CarAppsFeatureTest {
 	}
 
 	@Test
-	public void visibleOnlyForAutoSdk33AndRootNotAbsent() {
+	public void visibleOnlyForAutoSdk30Not12LAndRootNotAbsent() {
 		boolean[] autoBuildOptions = {false, true};
-		int[] sdkVersions = {28, 32, 33, 36};
+		int[] sdkVersions = {29, 30, 32, 33, 36};
 		RootState[] states = RootState.values();
 
 		for (boolean autoBuild : autoBuildOptions) {
 			for (int sdk : sdkVersions) {
 				for (RootState state : states) {
-					boolean expected = autoBuild && (sdk >= 33) && (state != RootState.ABSENT);
+					boolean expected = autoBuild && (sdk >= 30) && (sdk != 32) && (state != RootState.ABSENT);
 					boolean actual = CarAppsFeature.visible(autoBuild, sdk, state);
 					assertEquals(
 							"Failed for autoBuild=" + autoBuild + ", sdk=" + sdk + ", state=" + state,
@@ -44,7 +44,7 @@ public class CarAppsFeatureTest {
 				}
 			}
 		}
-		assertFalse(CarAppsFeature.visible(true, 33, null));
+		assertFalse(CarAppsFeature.visible(true, 30, null));
 	}
 
 	@Test

@@ -1,5 +1,6 @@
 package me.app.fermatax.auto.carapps;
 
+import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootState;
 
 /**
@@ -12,7 +13,7 @@ public final class AutoStartPolicy {
 	private AutoStartPolicy() {
 	}
 
-	public static boolean shouldStart(boolean carServiceActive, RootState s, boolean autoStartPref) {
-		return carServiceActive && (s == RootState.GRANTED) && autoStartPref;
+	public static boolean shouldStart(boolean carServiceActive, RootState s, boolean autoStartPref, int sdk) {
+		return carServiceActive && (s == RootState.GRANTED) && autoStartPref && !CarAppsFeature.isBlockedSdk(sdk);
 	}
 }

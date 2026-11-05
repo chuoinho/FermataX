@@ -22,6 +22,10 @@ import me.aap.fermata.R;
 public final class PhoneDimActivity extends Activity {
 	private static WeakReference<PhoneDimActivity> current;
 
+	public static boolean isShowing() {
+		return current != null && current.get() != null;
+	}
+
 	public static void dismiss() {
 		PhoneDimActivity a = (current == null) ? null : current.get();
 		if (a != null) a.finish();
