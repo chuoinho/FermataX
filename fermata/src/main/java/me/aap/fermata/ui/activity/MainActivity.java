@@ -61,9 +61,7 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	protected FutureSupplier<MainActivityDelegate> createDelegate(AppActivity a) {
-		FermataMediaServiceConnection s = service;
-
-		if ((s != null) && s.isConnected()) {
+		if (canRestoreFragments()) {
 			return completed(new MainActivityDelegate(a, service.createBinder()));
 		}
 
@@ -72,6 +70,12 @@ public class MainActivity extends SplitCompatActivityBase
 			service = c;
 			return new MainActivityDelegate(a, service.createBinder());
 		}).onFailure(err -> showAlert(getContext(), String.valueOf(err)));
+	}
+
+	@Override
+	protected boolean canRestoreFragments() {
+		FermataMediaServiceConnection s = service;
+		return (s != null) && s.isConnected();
 	}
 
 	@Override
