@@ -34,20 +34,28 @@ public class ServerCommandTest {
 	@Test
 	public void rootStartsTheServerAsShellBecauseOnlyShellCanCreateAVirtualDevice() {
 		String plain = ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg");
-		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg");
+		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg", 33);
 		assertTrue(cmd.startsWith("su 2000 -c '" + plain.replace("'", "'\\''") + "' || "));
 	}
 
 	@Test
 	public void rootStillStartsTheServerWhenSuCannotSwitchUser() {
 		String plain = ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg");
-		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg");
+		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg", 36);
 		assertTrue(cmd.endsWith(" || " + plain));
+	}
+
+	/** Measured on Android 12: as shell the display is untrusted and an app opened on the car lands on the phone. */
+	@Test
+	public void beforeAndroid13TheServerRunsAsSystemForATrustedDisplay() {
+		String plain = ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg");
+		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg", 32);
+		assertTrue(cmd.startsWith("su 1000 -c '" + plain.replace("'", "'\\''") + "' || "));
 	}
 
 	@Test
 	public void rootCommandSurvivesAQuoteInThePath() {
-		String cmd = ServerCommand.buildForRoot("/data/app/foo'bar/base.apk", 10150, 21000, "pkg");
+		String cmd = ServerCommand.buildForRoot("/data/app/foo'bar/base.apk", 10150, 21000, "pkg", 33);
 		// one more level of quoting for the inner shell
 		assertTrue(cmd.contains("CLASSPATH='\\''/data/app/foo'\\''\\'\\'''\\''bar/base.apk'\\''"));
 	}

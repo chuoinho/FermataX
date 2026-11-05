@@ -95,20 +95,23 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 
 			flags = VirtualDisplayFlags.forSdk(Build.VERSION.SDK_INT);
 			if (!Hidden.hasCapability(ICarDisplayServer.CAP_TRUSTED)) {
-				flags &= ~VirtualDisplayFlags.FLAG_TRUSTED;
+				flags = VirtualDisplayFlags.untrusted(flags);
 			}
 
 			try {
 				virtualDisplay = dm.createVirtualDisplay(DISPLAY_NAME, w, h, dpi, s, flags);
 			} catch (SecurityException se) {
+				android.util.Log.w("CarDisplayServer", "createVirtualDisplay refused, retrying untrusted", se);
 				Hidden.clearCapability(ICarDisplayServer.CAP_TRUSTED);
-				flags &= ~VirtualDisplayFlags.FLAG_TRUSTED;
+				flags = VirtualDisplayFlags.untrusted(flags);
 				try {
 					virtualDisplay = dm.createVirtualDisplay(DISPLAY_NAME, w, h, dpi, s, flags);
 				} catch (Throwable t) {
+					android.util.Log.w("CarDisplayServer", "createVirtualDisplay failed", t);
 					virtualDisplay = null;
 				}
 			} catch (Throwable t) {
+				android.util.Log.w("CarDisplayServer", "createVirtualDisplay failed", t);
 				virtualDisplay = null;
 			}
 		}
@@ -204,10 +207,15 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		if (virtualDisplay != null) {
 			try {
 				virtualDisplay.setSurface(s);
-				virtualDisplay.resize(w, h, dpi);
+				if (canResize(w, h, dpi)) virtualDisplay.resize(w, h, dpi);
 			} catch (Throwable ignored) {
 			}
 		}
+	}
+
+	/** Android 10: a display resized to 0 kills system_server, divide by zero in configureDisplayPolicy. */
+	static boolean canResize(int w, int h, int dpi) {
+		return (w > 0) && (h > 0) && (dpi > 0);
 	}
 
 	@Override
@@ -362,7 +370,16 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 		releaseInternal();
 	}
 
+	@Override
+	public void setPanelPower(boolean on) {
+		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid)) {
+			return;
+		}
+		Hidden.setPhysicalDisplayPowerMode(on ? 2 : 0); // 2 = NORMAL, 0 = OFF
+	}
+
 	public synchronized void releaseInternal() {
+		Hidden.restorePanelIfForcedOff();
 		if (clientBinder != null) {
 			try {
 				clientBinder.unlinkToDeath(deathRecipient, 0);
@@ -388,7 +405,7 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	private synchronized void onIdleTimer() {
 		long now = SystemClock.elapsedRealtime();
 		if (IdleExitPolicy.shouldExit(now, lastDetachMs, virtualDisplay != null)) {
-			System.exit(0);
+			System.exit(0); // the shutdown hook restores the panel
 		}
 	}
 

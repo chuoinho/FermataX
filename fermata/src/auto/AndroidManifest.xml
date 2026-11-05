@@ -146,7 +146,8 @@
         <activity
             android:name="me.app.fermatax.auto.carapps.PhoneDimActivity"
             android:excludeFromRecents="true"
-            android:exported="false"
+            android:exported="true"
+            android:permission="android.permission.WRITE_SECURE_SETTINGS"
             android:launchMode="singleTop"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
 

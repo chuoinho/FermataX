@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.IInterface;
@@ -148,6 +149,158 @@ public class CarDisplayClientTest {
 		client.onServerBinderReceived(server2);
 		assertEquals(CarDisplayClient.State.READY, client.state());
 		assertEquals(0, client.getRetryAttemptCountForTesting());
+	}
+
+	@Test
+	public void setPanelOffCallsServerAndBroadcastScreenOffRestores() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+
+		client.setPanelOff(true);
+		assertTrue("Panel state must be off", client.isPanelOff());
+		assertEquals("Server setPanelPower must be called with false", Boolean.FALSE, server.lastPanelPower);
+
+		// Now user presses phone power button -> ACTION_SCREEN_OFF broadcast
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+
+		assertFalse("Panel state must be restored to on after screen off broadcast", client.isPanelOff());
+		assertEquals("Server setPanelPower must be called with true", Boolean.TRUE, server.lastPanelPower);
+	}
+
+	@Test
+	public void displayChangedToNonOnRestoresPanelPower() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+		client.attach(null, 100, 100, 160);
+
+		client.setPanelOff(true);
+		assertTrue(client.isPanelOff());
+
+		setPhoneScreen(Display.STATE_OFF);
+
+		assertFalse("Panel state must be restored when default display turns off", client.isPanelOff());
+		assertEquals(Boolean.TRUE, server.lastPanelPower);
+	}
+
+	@Test
+	public void serverDeathRestoresPanelPowerAndRestoresOnReconnect() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+
+		client.setPanelOff(true);
+		assertTrue(client.isPanelOff());
+
+		server.triggerDeath();
+
+		assertFalse("Panel state must be restored to on when server dies", client.isPanelOff());
+
+		FakeServerBinder server2 = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		client.onServerBinderReceived(server2);
+
+		assertEquals("New server must be told to restore panel on reconnect", Boolean.TRUE, server2.lastPanelPower);
+	}
+
+	@Test
+	public void releaseRestoresPanelPower() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+
+		client.setPanelOff(true);
+		assertTrue(client.isPanelOff());
+
+		client.release();
+
+		assertFalse("Panel state must be restored to on on release", client.isPanelOff());
+		assertEquals(Boolean.TRUE, server.lastPanelPower);
+	}
+
+	@Test
+	public void capabilityMissingDoesNotTurnPanelOff() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17; // missing CAP_PANEL_POWER
+		client.onServerBinderReceived(server);
+
+		client.setPanelOff(true);
+		assertFalse("Panel must remain on when CAP_PANEL_POWER is missing", client.isPanelOff());
+		org.junit.Assert.assertNull(server.lastPanelPower);
+	}
+
+	@Test
+	public void serverDeathLeavesASleepingPhoneAsleep() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_OWN_POWER_GROUP;
+		client.onServerBinderReceived(server);
+		client.attach(null, 100, 100, 160);
+
+		server.triggerDeath();
+
+		assertPhoneNotWoken();
+	}
+
+	@Test
+	public void serverDeathWithPanelOffWakesThePhone() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+		client.setPanelOff(true);
+
+		server.triggerDeath();
+
+		assertEquals("fermatax:panelwake", Shadows.shadowOf(latestWakeLock()).getTag());
+	}
+
+	@Test
+	public void phoneSleepingAfterPanelRestoreIsNotWokenAgain() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER | ICarDisplayServer.CAP_OWN_POWER_GROUP;
+		client.onServerBinderReceived(server);
+		client.attach(null, 100, 100, 160);
+		client.setSurface(null, 0, 0, 0);
+		client.setPanelOff(true);
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+		assertFalse(client.isPanelOff());
+		ShadowPowerManager.clearWakeLocks();
+
+		setPhoneScreen(Display.STATE_ON);
+		setPhoneScreen(Display.STATE_OFF);
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+
+		assertPhoneNotWoken();
+	}
+
+	@Test
+	public void failedPanelOffDropsPanelMode() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		server.panelFails = true;
+		client.onServerBinderReceived(server);
+		client.setPanelOffRequested(true);
+
+		client.setPanelOff(true);
+
+		assertFalse(client.isPanelOff());
+		assertFalse(client.isPanelOffRequested());
+	}
+
+	private static void assertPhoneNotWoken() {
+		PowerManager.WakeLock wl = latestWakeLock();
+		if (wl != null) assertFalse("the phone must not be woken", "fermatax:panelwake".equals(Shadows.shadowOf(wl).getTag()));
 	}
 
 	private void attachDisplay() {
@@ -458,7 +611,7 @@ public class CarDisplayClientTest {
 	private FakeServerBinder attachWithOwnPowerGroup(Surface surface) {
 		client.ensureRunning(context);
 		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
-		server.caps = 0x1f | ICarDisplayServer.CAP_OWN_POWER_GROUP;
+		server.caps = 0x17 | ICarDisplayServer.CAP_OWN_POWER_GROUP;
 		client.onServerBinderReceived(server);
 		client.attach(surface, 100, 100, 160);
 		return server;
@@ -602,12 +755,12 @@ public class CarDisplayClientTest {
 		AtomicBoolean released = new AtomicBoolean(false);
 		int currentVersion = client.getExpectedVersion();
 		FakeServerBinder server = new FakeServerBinder(currentVersion, released);
-		server.caps = 0x1f;
+		server.caps = 0x17;
 		client.onServerBinderReceived(server);
 
 		assertTrue(recordedEvents.contains("server_connected"));
 		assertEquals(currentVersion, recordedAttrs.get("server_connected").get("version"));
-		assertEquals(0x1f, recordedAttrs.get("server_connected").get("capabilities"));
+		assertEquals(0x17, recordedAttrs.get("server_connected").get("capabilities"));
 
 		// 3. server_retry & server_failed
 		server.triggerDeath();
@@ -820,7 +973,9 @@ public class CarDisplayClientTest {
 		private final int version;
 		private final AtomicBoolean released;
 		private DeathRecipient deathRecipient;
-		int caps = 0x1f;
+		int caps = 0x17;
+		Boolean lastPanelPower;
+		boolean panelFails;
 
 		FakeServerBinder(int version, AtomicBoolean released) {
 			this.version = version;
@@ -888,6 +1043,12 @@ public class CarDisplayClientTest {
 		@Override
 		public String closeTopApp(boolean force) {
 			return "";
+		}
+
+		@Override
+		public void setPanelPower(boolean on) {
+			lastPanelPower = on;
+			if (panelFails && !on) caps &= ~CAP_PANEL_POWER;
 		}
 
 		@Override

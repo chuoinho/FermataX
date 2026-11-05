@@ -25,6 +25,7 @@ public class CarAppsChecksTest {
 		assertEquals(1, CarAppsChecks.CAP_VD);
 		assertEquals(2, CarAppsChecks.CAP_TRUSTED);
 		assertEquals(4, CarAppsChecks.CAP_INJECT);
+		assertEquals(8, CarAppsChecks.CAP_PANEL_POWER);
 		assertEquals(16, CarAppsChecks.CAP_IME);
 		assertEquals(32, CarAppsChecks.CAP_OWN_POWER_GROUP);
 		assertEquals(64, CarAppsChecks.CAP_TASKS);
@@ -47,6 +48,30 @@ public class CarAppsChecksTest {
 		assertEquals(CarAppsChecks.Status.OK, checks.get("tasks").status);
 		assertEquals(CarAppsChecks.Status.OK, checks.get("focus").status);
 		assertEquals(CarAppsChecks.Status.OK, checks.get("own_power_group").status);
+	}
+
+	@Test
+	public void panelPowerCheckShownOnlyOnSdk29To35() {
+		int withPanel = CarAppsChecks.CAP_PANEL_POWER | CarAppsChecks.CAP_INJECT;
+		int withoutPanel = CarAppsChecks.CAP_INJECT;
+
+		// SDK 28: not present
+		assertNull(checksMap(RootState.GRANTED, withPanel, 28).get("panel_power"));
+
+		// SDK 29..35 with panel: OK; without panel: WARN with fix
+		for (int sdk = 29; sdk <= 35; sdk++) {
+			CarAppsChecks.Check okCheck = checksMap(RootState.GRANTED, withPanel, sdk).get("panel_power");
+			assertNotNull("SDK " + sdk, okCheck);
+			assertEquals("SDK " + sdk, CarAppsChecks.Status.OK, okCheck.status);
+
+			CarAppsChecks.Check warnCheck = checksMap(RootState.GRANTED, withoutPanel, sdk).get("panel_power");
+			assertNotNull("SDK " + sdk, warnCheck);
+			assertEquals("SDK " + sdk, CarAppsChecks.Status.WARN, warnCheck.status);
+			assertEquals("SDK " + sdk, R.string.car_apps_check_panel_power_fix, warnCheck.fixRes);
+		}
+
+		// SDK 36: not present
+		assertNull(checksMap(RootState.GRANTED, withPanel, 36).get("panel_power"));
 	}
 
 	@Test

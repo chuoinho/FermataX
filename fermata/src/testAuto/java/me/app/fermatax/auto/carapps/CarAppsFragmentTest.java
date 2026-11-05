@@ -311,11 +311,20 @@ public class CarAppsFragmentTest {
 
 	@Test
 	public void phoneDimScreenNotShownWithOwnPowerGroup() {
-		serverBinder.caps = 0x1f | ICarDisplayServer.CAP_OWN_POWER_GROUP;
+		serverBinder.caps = 0x17 | ICarDisplayServer.CAP_OWN_POWER_GROUP;
 		CarAppsFeature.setState(RootState.GRANTED);
 		CarAppsFragment fragment = createAndAttachFragment();
 		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
 		assertEquals(null, nextPhoneLaunchClass());
+	}
+	@Test
+	public void phoneDimScreenShownWithPanelPowerEvenWithOwnPowerGroup() {
+		serverBinder.caps = 0x17 | ICarDisplayServer.CAP_OWN_POWER_GROUP | ICarDisplayServer.CAP_PANEL_POWER;
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+		assertTrue(client.isPanelOffRequested());
 	}
 
 	@Test
@@ -339,6 +348,8 @@ public class CarAppsFragmentTest {
 
 	private static void setPhoneScreen(int state) {
 		org.robolectric.Shadows.shadowOf(org.robolectric.shadows.ShadowDisplay.getDefaultDisplay()).setState(state);
+		android.os.PowerManager pm = (android.os.PowerManager) org.robolectric.RuntimeEnvironment.getApplication().getSystemService(Context.POWER_SERVICE);
+		if (pm != null) org.robolectric.Shadows.shadowOf(pm).setIsInteractive(state == android.view.Display.STATE_ON);
 		org.robolectric.shadows.ShadowLooper.idleMainLooper();
 	}
 
@@ -645,7 +656,8 @@ public class CarAppsFragmentTest {
 		int lastHeight;
 		ComponentName lastLaunchedComponent;
 		ComponentName lastPhoneLaunch;
-		int caps = 0x1f;
+		int caps = 0x17;
+		Boolean lastPanelPower;
 		final List<MotionEvent> injected = new ArrayList<>();
 
 		TestServerBinder() {
@@ -696,6 +708,11 @@ public class CarAppsFragmentTest {
 		public String closeTopApp(boolean force) {
 			lastForceClose.set(force);
 			return "closed";
+		}
+
+		@Override
+		public void setPanelPower(boolean on) {
+			lastPanelPower = on;
 		}
 
 		@Override

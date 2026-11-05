@@ -16,7 +16,7 @@
     <string name="car_apps_readiness_status_need_root">Root access required</string>
     <string name="car_apps_readiness_action_grant">Grant root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Requires USB debugging (Security settings)</string>
-    <string name="car_apps_panel_off_pref">Dim phone screen during car apps</string>
+    <string name="car_apps_panel_off_pref">Turn off phone screen during car apps</string>
     <string name="car_apps_phone_dim_text">Car Apps is running on the car\nTouch to use the phone</string>
     <string name="car_apps_phone_asleep">The phone screen is off\nTouch to continue</string>
     <string name="car_apps_phone_locked">The phone is locked\nUnlock it to continue</string>
@@ -45,4 +45,7 @@
     <string name="car_apps_check_focus_na">Not applicable on this Android version</string>
     <string name="car_apps_check_power_group_own">Independent display power group</string>
     <string name="car_apps_check_power_group_shared">Shared power group with phone</string>
+    <string name="car_apps_check_panel_power_ok">Phone screen turns off during car apps</string>
+    <string name="car_apps_check_panel_power_missing">Cannot turn off phone screen</string>
+    <string name="car_apps_check_panel_power_fix">Screen cannot be turned off; black screen will be used</string>
 </resources>

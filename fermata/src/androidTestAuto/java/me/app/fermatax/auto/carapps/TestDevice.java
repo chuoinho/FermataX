@@ -8,14 +8,12 @@ import android.content.Context;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
+import android.util.Base64;
 import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Matcher;
@@ -28,28 +26,25 @@ final class TestDevice {
 
 	private final Instrumentation instrumentation;
 	private final Context ctx;
-	private final File script;
 
 	TestDevice(Instrumentation instrumentation) {
 		this.instrumentation = instrumentation;
 		ctx = instrumentation.getTargetContext().getApplicationContext();
-		script = new File(ctx.getExternalCacheDir(), "t.sh"); // the only app files that shell can read
 	}
 
 	static boolean isEmulator() {
 		return Build.HARDWARE.startsWith("ranchu");
 	}
 
-	/** As the shell uid; executeShellCommand itself parses no quotes or operators, so they go in a script. */
+	/**
+	 * As the shell uid. executeShellCommand splits on whitespace and parses no quotes or operators, and on Android 11
+	 * shell cannot read a script in the app's external cache, so the commands travel as one base64 word.
+	 */
 	synchronized String shell(String commands) {
 		Log.i("FMXTEST", "shell: " + commands);
-		try (OutputStream os = new FileOutputStream(script)) {
-			os.write((commands + '\n').getBytes(StandardCharsets.UTF_8));
-		} catch (IOException e) {
-			throw new AssertionError("script: " + commands, e);
-		}
+		String encoded = Base64.encodeToString(commands.getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP);
 		ParcelFileDescriptor out = instrumentation.getUiAutomation()
-				.executeShellCommand("timeout 60 sh " + script.getAbsolutePath());
+				.executeShellCommand("timeout 60 sh -c echo${IFS}" + encoded + "|base64${IFS}-d|sh");
 		try (InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(out)) {
 			ByteArrayOutputStream text = new ByteArrayOutputStream();
 			byte[] buf = new byte[8192];
@@ -91,7 +86,17 @@ final class TestDevice {
 	}
 
 	void killServer() {
-		shell("pkill -9 -f " + SERVER_MATCH);
+		String kill = "pkill -9 -f " + SERVER_MATCH;
+		shell(asServerUid(kill));
+	}
+
+	/** As the app starts the server: see ServerCommand. Emulator images have a su for shell. */
+	void startServer(String command) {
+		shell(asServerUid(command));
+	}
+
+	private static String asServerUid(String command) {
+		return (Build.VERSION.SDK_INT < 33) ? "/system/xbin/su 1000 sh -c '" + command.replace("'", "'\\''") + "'" : command;
 	}
 
 
@@ -99,8 +104,8 @@ final class TestDevice {
 	String resumedOn(int displayId) {
 		for (String d : shell("dumpsys activity activities").split("(?m)^Display #")) {
 			if (d.startsWith(displayId + " ")) {
-				// not ResumedActivity: Settings embeds its panes on a large display, and that line then has none
-				Matcher m = Pattern.compile("topResumedActivity=ActivityRecord\\{[^}]*u0 (\\S+)/").matcher(d);
+				// Android 12 and older write mResumedActivity; not ResumedActivity: Settings embeds its panes on a large display, and that line then has none
+				Matcher m = Pattern.compile("(?:topResumedActivity=|mResumedActivity: )ActivityRecord\\{[^}]*u0 (\\S+)/").matcher(d);
 				return m.find() ? m.group(1) : null;
 			}
 		}

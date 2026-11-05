@@ -66,8 +66,12 @@ public class CarAppsFragmentDeviceTest {
 		Context ctx = instrumentation.getTargetContext().getApplicationContext();
 		client = CarDisplayClient.get();
 		client.release();
-		client.setCommandRunnerForTest(device::shell);
+		client.setCommandRunnerForTest(device::startServer);
 		device.wakeAndOpen();
+		// The fragment is on the phone here, not on a car: covering the phone would stop what these tests drive.
+		// The panel itself is tested in CarDisplayClientDeviceTest.
+		ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit()
+				.putBoolean(CarAppsFeature.PREF_PANEL_OFF, false).commit();
 		instrumentation.runOnMainSync(() -> CarAppsFeature.setState(RootState.GRANTED));
 		Intent main = new Intent(ctx, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		activity = (MainActivity) instrumentation.startActivitySync(main);
@@ -82,6 +86,8 @@ public class CarAppsFragmentDeviceTest {
 		device.killServer();
 		if (pinSet) device.unlockAndClearPin();
 		if (activity != null) activity.finishAndRemoveTask();
+		instrumentation.getTargetContext().getApplicationContext().getSharedPreferences("fermata", Context.MODE_PRIVATE)
+				.edit().remove(CarAppsFeature.PREF_PANEL_OFF).commit();
 	}
 
 	@Test
@@ -89,7 +95,7 @@ public class CarAppsFragmentDeviceTest {
 		CarAppsFragment fragment = showFragment();
 		int car = waitForLauncherOnCar();
 		assertSurfaceShowsAPicture(fragment);
-		assertTrue("own power group", client.hasOwnPowerGroup());
+		assertEquals("own power group", android.os.Build.VERSION.SDK_INT >= 33, client.hasOwnPowerGroup());
 		assertFalse("no black phone screen", device.shell("dumpsys activity activities").contains("PhoneDimActivity"));
 		assertEquals(View.VISIBLE, fragment.getBottomBar().getVisibility());
 

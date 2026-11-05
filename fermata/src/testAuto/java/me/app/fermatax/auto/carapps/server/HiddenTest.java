@@ -11,13 +11,114 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import org.robolectric.util.ReflectionHelpers;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 
+import me.app.fermatax.auto.carapps.ICarDisplayServer;
+
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 33)
 public class HiddenTest {
+
+	public static class FakePanel {
+		public static final List<Integer> modes = new java.util.ArrayList<>();
+		public static boolean fail;
+
+		public static long[] getPhysicalDisplayIds() {
+			return new long[]{1, 2};
+		}
+
+		public static android.os.IBinder getPhysicalDisplayToken(long id) {
+			return new android.os.Binder();
+		}
+
+		public static void setDisplayPowerMode(android.os.IBinder token, int mode) {
+			if (fail) throw new IllegalStateException();
+			modes.add(mode);
+		}
+	}
+
+	public static class FakePanelWithoutToken {
+		public static long[] getPhysicalDisplayIds() {
+			return new long[0];
+		}
+	}
+
+	static void usePanelFake() throws Exception {
+		resetPanel();
+		Hidden.bindPanelControl(FakePanel.class, FakePanel.class);
+	}
+
+	static void resetPanel() {
+		ReflectionHelpers.setStaticField(Hidden.class, "initialized", true);
+		ReflectionHelpers.setStaticField(Hidden.class, "capabilities", 0);
+		ReflectionHelpers.setStaticField(Hidden.class, "panelForcedOff", false);
+		FakePanel.modes.clear();
+		FakePanel.fail = false;
+	}
+
+	@org.junit.After
+	public void cleanPanel() {
+		resetPanel();
+		ReflectionHelpers.setStaticField(Hidden.class, "initialized", false);
+	}
+
+	@Test
+	public void panelOffAppliesToEveryPhysicalDisplayAndReportsTheCapability() throws Exception {
+		usePanelFake();
+		assertEquals(true, Hidden.hasCapability(ICarDisplayServer.CAP_PANEL_POWER));
+		assertEquals(true, Hidden.setPhysicalDisplayPowerMode(0));
+		assertEquals(Arrays.asList(0, 0), FakePanel.modes);
+	}
+
+	@Test
+	public void missingHiddenApiIsNoCapability() {
+		resetPanel();
+		try {
+			Hidden.bindPanelControl(FakePanelWithoutToken.class, FakePanel.class);
+		} catch (NoSuchMethodException expected) {
+		}
+		assertEquals(false, Hidden.hasCapability(ICarDisplayServer.CAP_PANEL_POWER));
+	}
+
+	@Test
+	public void failingPanelCallLowersTheCapabilityWithoutThrowing() throws Exception {
+		usePanelFake();
+		FakePanel.fail = true;
+		assertEquals(false, Hidden.setPhysicalDisplayPowerMode(0));
+		assertEquals(false, Hidden.hasCapability(ICarDisplayServer.CAP_PANEL_POWER));
+	}
+
+	@Test
+	public void restoreOnlyTouchesAPanelThisProcessTurnedOff() throws Exception {
+		usePanelFake();
+		Hidden.restorePanelIfForcedOff();
+		assertEquals(Arrays.asList(), FakePanel.modes);
+
+		Hidden.setPhysicalDisplayPowerMode(0);
+		FakePanel.modes.clear();
+		Hidden.restorePanelIfForcedOff();
+		assertEquals(Arrays.asList(2, 2), FakePanel.modes);
+
+		FakePanel.modes.clear();
+		Hidden.restorePanelIfForcedOff();
+		assertEquals(Arrays.asList(), FakePanel.modes);
+	}
+
+	@Test
+	public void android16DoesNotReportPanelPower() throws Exception {
+		usePanelFake();
+		try {
+			ReflectionHelpers.setStaticField(android.os.Build.VERSION.class, "SDK_INT", 36);
+			Hidden.initPanelControl();
+			assertEquals(false, Hidden.hasCapability(ICarDisplayServer.CAP_PANEL_POWER));
+		} finally {
+			ReflectionHelpers.setStaticField(android.os.Build.VERSION.class, "SDK_INT", 33);
+		}
+	}
 
 	public static class FakeEmptyTaskManager {
 	}

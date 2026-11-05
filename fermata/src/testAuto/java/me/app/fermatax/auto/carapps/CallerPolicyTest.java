@@ -21,11 +21,12 @@ public class CallerPolicyTest {
 
 	@Test
 	public void providerAcceptsOnlyRootAndShell() {
-		assertTrue(CallerPolicy.providerAccepts(0));
-		assertTrue(CallerPolicy.providerAccepts(2000));
+		assertTrue(CallerPolicy.providerAccepts(0, 36));
+		assertTrue(CallerPolicy.providerAccepts(2000, 36));
 
-		assertFalse(CallerPolicy.providerAccepts(1000));
-		assertFalse(CallerPolicy.providerAccepts(10123));
-		assertFalse(CallerPolicy.providerAccepts(-1));
+		assertFalse(CallerPolicy.providerAccepts(1000, 33));
+		assertTrue("the server is system before Android 13", CallerPolicy.providerAccepts(1000, 32));
+		assertFalse(CallerPolicy.providerAccepts(10123, 32));
+		assertFalse(CallerPolicy.providerAccepts(-1, 36));
 	}
 }

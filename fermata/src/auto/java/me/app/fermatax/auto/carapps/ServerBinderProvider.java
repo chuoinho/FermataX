@@ -29,7 +29,7 @@ public class ServerBinderProvider extends ContentProvider {
 	@Override
 	public Bundle call(@NonNull String method, @Nullable String arg, @Nullable Bundle extras) {
 		int callingUid = Binder.getCallingUid();
-		if (!CallerPolicy.providerAccepts(callingUid)) {
+		if (!CallerPolicy.providerAccepts(callingUid, android.os.Build.VERSION.SDK_INT)) {
 			throw new SecurityException("Unauthorized caller UID: " + callingUid);
 		}
 

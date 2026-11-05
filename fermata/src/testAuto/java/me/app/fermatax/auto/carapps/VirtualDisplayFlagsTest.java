@@ -9,6 +9,15 @@ import org.junit.Test;
 
 public class VirtualDisplayFlagsTest {
 
+	/** Android 12 refuses OWN_DISPLAY_GROUP from a shell as it does TRUSTED: both need ADD_TRUSTED_DISPLAY. */
+	@Test
+	public void untrustedDropsEverythingThatNeedsTheTrustedPermission() {
+		int flags = VirtualDisplayFlags.untrusted(VirtualDisplayFlags.forSdk(33));
+		assertEquals(0, flags & VirtualDisplayFlags.FLAG_TRUSTED);
+		assertEquals(0, flags & VirtualDisplayFlags.FLAG_OWN_DISPLAY_GROUP);
+		assertEquals(VirtualDisplayFlags.FLAG_PUBLIC, flags & VirtualDisplayFlags.FLAG_PUBLIC);
+	}
+
 	@Test
 	public void sdk28FlagsAre0x014B() {
 		int flags = VirtualDisplayFlags.forSdk(28);
@@ -41,12 +50,11 @@ public class VirtualDisplayFlagsTest {
 	}
 
 	@Test
-	public void sdk31And32AddOwnDisplayGroup() {
+	public void sdk31And32LeaveOutOwnDisplayGroupSoThePowerKeyStillLocksThePhone() {
 		for (int sdk = 31; sdk <= 32; sdk++) {
 			int flags = VirtualDisplayFlags.forSdk(sdk);
-			assertEquals("SDK " + sdk, 0x0D4B, flags);
-			assertEquals(VirtualDisplayFlags.FLAG_OWN_DISPLAY_GROUP, flags & VirtualDisplayFlags.FLAG_OWN_DISPLAY_GROUP);
-			assertEquals(0, flags & (VirtualDisplayFlags.FLAG_ALWAYS_UNLOCKED | VirtualDisplayFlags.FLAG_TOUCH_FEEDBACK_DISABLED));
+			assertEquals("SDK " + sdk, 0x054B, flags);
+			assertEquals(0, flags & VirtualDisplayFlags.FLAG_OWN_DISPLAY_GROUP);
 		}
 	}
 

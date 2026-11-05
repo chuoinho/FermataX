@@ -15,7 +15,7 @@
     <string name="car_apps_readiness_status_need_root">Se requiere acceso root</string>
     <string name="car_apps_readiness_action_grant">Conceder root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Requiere depuración USB (Ajustes de seguridad)</string>
-    <string name="car_apps_panel_off_pref">Pantalla del teléfono en negro con las apps del coche</string>
+    <string name="car_apps_panel_off_pref">Apagar la pantalla del teléfono con las apps del coche</string>
     <string name="car_apps_grant_root_blocked">No se concedió root. Inténtalo de nuevo y permite la solicitud en tu gestor de root.</string>
     <string name="car_apps_phone_dim_text">Car Apps se está usando en el coche\nToca para usar el teléfono</string>
     <string name="car_apps_phone_asleep">La pantalla del teléfono está apagada\nToca para continuar</string>
@@ -45,4 +45,7 @@
     <string name="car_apps_check_focus_na">No aplicable en esta versión de Android</string>
     <string name="car_apps_check_power_group_own">Grupo de energía de pantalla independiente</string>
     <string name="car_apps_check_power_group_shared">Grupo de energía compartido con el teléfono</string>
+    <string name="car_apps_check_panel_power_ok">La pantalla del teléfono se apaga durante las apps del coche</string>
+    <string name="car_apps_check_panel_power_missing">No se puede apagar la pantalla del teléfono</string>
+    <string name="car_apps_check_panel_power_fix">No se puede apagar la pantalla; se usará pantalla negra</string>
 </resources>

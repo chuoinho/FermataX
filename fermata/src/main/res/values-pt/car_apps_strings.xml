@@ -15,7 +15,7 @@
     <string name="car_apps_readiness_status_need_root">Acesso root necessário</string>
     <string name="car_apps_readiness_action_grant">Conceder root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Requer depuração USB (Configurações de segurança)</string>
-    <string name="car_apps_panel_off_pref">Tela do telefone preta nos apps do carro</string>
+    <string name="car_apps_panel_off_pref">Desligar a tela do telefone nos apps do carro</string>
     <string name="car_apps_grant_root_blocked">O root não foi concedido. Tente novamente e permita o pedido no seu gerenciador de root.</string>
     <string name="car_apps_phone_dim_text">Car Apps está em uso no carro\nToque para usar o telefone</string>
     <string name="car_apps_phone_asleep">A tela do telefone está desligada\nToque para continuar</string>
@@ -45,4 +45,7 @@
     <string name="car_apps_check_focus_na">Não aplicável nesta versão do Android</string>
     <string name="car_apps_check_power_group_own">Grupo de energia de tela independente</string>
     <string name="car_apps_check_power_group_shared">Grupo de energia compartilhado com o celular</string>
+    <string name="car_apps_check_panel_power_ok">A tela do telefone desliga durante os apps do carro</string>
+    <string name="car_apps_check_panel_power_missing">Não é possível desligar a tela do telefone</string>
+    <string name="car_apps_check_panel_power_fix">A tela não pode ser desligada; a tela preta será usada</string>
 </resources>

@@ -5,9 +5,8 @@ package me.app.fermatax.auto.carapps;
  * DisplayManager.VIRTUAL_DISPLAY_FLAG_* bits (hidden ones included).
  *
  * SDK 28..29 (Android 9..10): 0x014B
- * SDK 30 (Android 11): 0x054B (adds TRUSTED)
- * SDK 31..32 (Android 12..12L): 0x0D4B (adds OWN_DISPLAY_GROUP)
- * SDK 33 (Android 13 Tiramisu): 0x3D4B (adds ALWAYS_UNLOCKED, TOUCH_FEEDBACK_DISABLED)
+ * SDK 30..32 (Android 11..12L): 0x054B (adds TRUSTED)
+ * SDK 33 (Android 13 Tiramisu): 0x3D4B (adds OWN_DISPLAY_GROUP, ALWAYS_UNLOCKED, TOUCH_FEEDBACK_DISABLED)
  * SDK 34+ (Android 14+): 0x7D4B (adds 0x4000 OWN_FOCUS)
  *
  * Bit 0x80 (ROTATES_WITH_CONTENT) must NEVER be set on any SDK to avoid
@@ -34,8 +33,8 @@ public final class VirtualDisplayFlags {
 	public static final int FLAGS_SDK_28 = FLAG_PUBLIC | FLAG_PRESENTATION | FLAG_OWN_CONTENT_ONLY
 			| FLAG_SUPPORTS_TOUCH | FLAG_DESTROY_CONTENT_ON_REMOVAL;
 	public static final int FLAGS_SDK_30 = FLAGS_SDK_28 | FLAG_TRUSTED;
-	public static final int FLAGS_SDK_31 = FLAGS_SDK_30 | FLAG_OWN_DISPLAY_GROUP;
-	public static final int FLAGS_SDK_33 = FLAGS_SDK_31 | FLAG_ALWAYS_UNLOCKED | FLAG_TOUCH_FEEDBACK_DISABLED;
+	// Android 12 has OWN_DISPLAY_GROUP, but measured: with it the power key turns the phone off without locking it.
+	public static final int FLAGS_SDK_33 = FLAGS_SDK_30 | FLAG_OWN_DISPLAY_GROUP | FLAG_ALWAYS_UNLOCKED | FLAG_TOUCH_FEEDBACK_DISABLED;
 	public static final int FLAGS_SDK_34_PLUS = FLAGS_SDK_33 | FLAG_OWN_FOCUS;
 
 	private VirtualDisplayFlags() {
@@ -48,13 +47,15 @@ public final class VirtualDisplayFlags {
 		if (sdk >= 33) {
 			return FLAGS_SDK_33;
 		}
-		if (sdk >= 31) {
-			return FLAGS_SDK_31;
-		}
 		if (sdk >= 30) {
 			return FLAGS_SDK_30;
 		}
 		return FLAGS_SDK_28;
+	}
+
+	/** Without ADD_TRUSTED_DISPLAY the system refuses a display that asks for either. */
+	public static int untrusted(int flags) {
+		return flags & ~(FLAG_TRUSTED | FLAG_OWN_DISPLAY_GROUP);
 	}
 
 	/** Display.FLAG_TRUSTED as reported by Display.getFlags() (Display.java), not the 1 << 10 request flag. */

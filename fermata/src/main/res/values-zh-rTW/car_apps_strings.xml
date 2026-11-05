@@ -15,7 +15,7 @@
     <string name="car_apps_readiness_status_need_root">需要 Root 權限</string>
     <string name="car_apps_readiness_action_grant">授予 Root 權限</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">需要啟用 USB 偵錯（安全設定）</string>
-    <string name="car_apps_panel_off_pref">使用車載應用時手機螢幕顯示黑畫面</string>
+    <string name="car_apps_panel_off_pref">使用車載應用時關閉手機螢幕</string>
     <string name="car_apps_grant_root_blocked">未取得 Root 權限。請再試一次，並在 Root 管理程式中允許該要求。</string>
     <string name="car_apps_phone_dim_text">正在車上使用 Car Apps\n輕觸即可使用手機</string>
     <string name="car_apps_phone_asleep">手機螢幕已關閉\n輕觸即可繼續</string>
@@ -45,4 +45,7 @@
     <string name="car_apps_check_focus_na">不適用於此 Android 版本</string>
     <string name="car_apps_check_power_group_own">獨立電源群組</string>
     <string name="car_apps_check_power_group_shared">與手機共用電源群組</string>
+    <string name="car_apps_check_panel_power_ok">車載應用運作時關閉手機螢幕</string>
+    <string name="car_apps_check_panel_power_missing">無法關閉手機螢幕</string>
+    <string name="car_apps_check_panel_power_fix">無法關閉螢幕，將使用黑畫面</string>
 </resources>

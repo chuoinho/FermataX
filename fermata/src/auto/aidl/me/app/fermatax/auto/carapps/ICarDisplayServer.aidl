@@ -8,6 +8,7 @@ interface ICarDisplayServer {
     const int CAP_VD = 1;
     const int CAP_TRUSTED = 2;
     const int CAP_INJECT = 4;
+    const int CAP_PANEL_POWER = 8;
     const int CAP_IME = 16;
     const int CAP_OWN_POWER_GROUP = 32;
     const int CAP_TASKS = 64;
@@ -23,4 +24,5 @@ interface ICarDisplayServer {
     String closeTopApp(boolean force);
     void release();
     int serverVersion();
+    void setPanelPower(boolean on);
 }

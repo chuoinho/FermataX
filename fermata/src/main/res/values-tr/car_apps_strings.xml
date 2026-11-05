@@ -15,7 +15,7 @@
     <string name="car_apps_readiness_status_need_root">Root erişimi gerekli</string>
     <string name="car_apps_readiness_action_grant">Root izni ver</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">USB hata ayıklama (Güvenlik ayarları) gereklidir</string>
-    <string name="car_apps_panel_off_pref">Araç uygulamalarında telefon ekranını karart</string>
+    <string name="car_apps_panel_off_pref">Araç uygulamalarında telefon ekranını kapat</string>
     <string name="car_apps_grant_root_blocked">Root izni verilmedi. Tekrar deneyin ve isteği root yöneticinizde onaylayın.</string>
     <string name="car_apps_phone_dim_text">Car Apps araçta kullanılıyor\nTelefonu kullanmak için dokunun</string>
     <string name="car_apps_phone_asleep">Telefon ekranı kapalı\nDevam etmek için dokunun</string>
@@ -45,4 +45,7 @@
     <string name="car_apps_check_focus_na">Bu Android sürümü için geçerli değil</string>
     <string name="car_apps_check_power_group_own">Bağımsız ekran güç grubu</string>
     <string name="car_apps_check_power_group_shared">Telefonla paylaşılan güç grubu</string>
+    <string name="car_apps_check_panel_power_ok">Araç uygulamalarında telefon ekranı kapanır</string>
+    <string name="car_apps_check_panel_power_missing">Telefon ekranı kapatılamıyor</string>
+    <string name="car_apps_check_panel_power_fix">Ekran kapatılamıyor; siyah ekran kullanılacak</string>
 </resources>

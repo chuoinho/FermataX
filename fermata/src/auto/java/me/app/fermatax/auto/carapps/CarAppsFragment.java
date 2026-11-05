@@ -1,7 +1,11 @@
 package me.app.fermatax.auto.carapps;
 
+import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.hardware.display.DisplayManager;
+import android.os.PowerManager;
+import android.view.Display;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -595,14 +599,25 @@ public class CarAppsFragment extends MainActivityFragment {
 	 */
 	private void applyPanelPref() {
 		Context c = getContext();
-		if (c == null || dimRequested || isHidden() || client.isPhoneAsleep() || client.isPhoneLocked()
-				|| client.hasOwnPowerGroup()) return;
+		if (c == null || dimRequested || isHidden()) return;
 		SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
-		if (prefs.getBoolean(CarAppsFeature.PREF_PANEL_OFF, true)) {
-			dimRequested = true;
-			client.launchOnPhone(new ComponentName(c, PhoneDimActivity.class),
-					Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-		}
+		boolean prefPanelOff = prefs.getBoolean(CarAppsFeature.PREF_PANEL_OFF, true);
+		PowerManager pm = (PowerManager) c.getSystemService(Context.POWER_SERVICE);
+		KeyguardManager km = (KeyguardManager) c.getSystemService(Context.KEYGUARD_SERVICE);
+		DisplayManager dm = (DisplayManager) c.getSystemService(Context.DISPLAY_SERVICE);
+		Display defaultDisplay = (dm != null) ? dm.getDisplay(Display.DEFAULT_DISPLAY) : null;
+		boolean displayOn = (defaultDisplay == null) || (defaultDisplay.getState() == Display.STATE_ON);
+		boolean interactive = (pm != null) && pm.isInteractive() && displayOn;
+		boolean locked = (km != null) && km.isKeyguardLocked();
+		int caps = client.capabilities();
+
+		PanelPowerPolicy.PanelMode mode = PanelPowerPolicy.decide(prefPanelOff, caps, interactive, locked);
+		if (mode == PanelPowerPolicy.PanelMode.NONE) return;
+
+		dimRequested = true;
+		client.setPanelOffRequested(mode == PanelPowerPolicy.PanelMode.PANEL_OFF);
+		client.launchOnPhone(new ComponentName(c, PhoneDimActivity.class),
+				Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
 	}
 
 	private void checkAttachSurface() {

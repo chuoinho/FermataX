@@ -49,6 +49,8 @@ public class Main {
 			ServerLifecycle.killStale(Process.myPid());
 			Hidden.init();
 
+			Runtime.getRuntime().addShutdownHook(new Thread(Hidden::restorePanelIfForcedOff));
+
 			server = new CarDisplayServerImpl(appUid, versionCode, appPackage);
 			System.out.println("SERVER_READY uid=" + appUid + " version=" + versionCode + " pkg=" + appPackage);
 

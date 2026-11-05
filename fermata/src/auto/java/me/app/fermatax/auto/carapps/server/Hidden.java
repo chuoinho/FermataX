@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import me.app.fermatax.auto.carapps.ICarDisplayServer;
+import me.app.fermatax.auto.carapps.PanelPowerPolicy;
 
 /**
  * Encapsulates hidden Android framework APIs accessed via reflection from the root server process.
@@ -46,6 +47,10 @@ public final class Hidden {
 	private static Method setDisplayImePolicyMethod;
 
 	// Panel power reflection
+	private static Method getPhysicalDisplayIdsMethod;
+	private static Method getPhysicalDisplayTokenMethod;
+	private static Method setDisplayPowerModeMethod;
+	private static volatile boolean panelForcedOff;
 
 	// ActivityTaskManager reflection
 	private static Object activityTaskManagerInstance;
@@ -65,6 +70,7 @@ public final class Hidden {
 		initDisplayManager();
 		initInputManager();
 		initWindowManager();
+		initPanelControl();
 		initActivityTaskManager();
 	}
 
@@ -76,7 +82,8 @@ public final class Hidden {
 			Class<?> atClass = Class.forName("android.app.ActivityThread");
 			Object thread = atClass.getMethod("systemMain").invoke(null);
 			Context rawSys = (Context) atClass.getMethod("getSystemContext").invoke(thread);
-			final String pkg = Process.myUid() == 0 ? "root" : "com.android.shell";
+			final int uid = Process.myUid();
+			final String pkg = (uid == 0) ? "root" : (uid == 1000) ? "android" : "com.android.shell";
 			systemContext = new ContextWrapper(rawSys) {
 				@Override
 				public String getPackageName() {
@@ -146,6 +153,39 @@ public final class Hidden {
 		} catch (Throwable t) {
 			capabilities &= ~ICarDisplayServer.CAP_IME;
 		}
+	}
+
+	static void initPanelControl() {
+		try {
+			if (!PanelPowerPolicy.sdkSupported(Build.VERSION.SDK_INT)) {
+				capabilities &= ~ICarDisplayServer.CAP_PANEL_POWER;
+				return;
+			}
+			Class<?> control = android.view.SurfaceControl.class;
+			try {
+				control.getMethod("getPhysicalDisplayIds");
+			} catch (NoSuchMethodException e) {
+				Class<?> f = Class.forName("com.android.internal.os.ClassLoaderFactory");
+				Method create = f.getDeclaredMethod("createClassLoader", String.class, String.class, String.class,
+						ClassLoader.class, int.class, boolean.class, String.class);
+				ClassLoader cl = (ClassLoader) create.invoke(null, "/system/framework/services.jar", null, null,
+						ClassLoader.getSystemClassLoader(), 0, true, null);
+				control = cl.loadClass("com.android.server.display.DisplayControl");
+				Method load = Runtime.class.getDeclaredMethod("loadLibrary0", Class.class, String.class);
+				load.setAccessible(true);
+				load.invoke(Runtime.getRuntime(), control, "android_servers");
+			}
+			bindPanelControl(control, android.view.SurfaceControl.class);
+		} catch (Throwable t) {
+			capabilities &= ~ICarDisplayServer.CAP_PANEL_POWER;
+		}
+	}
+
+	static void bindPanelControl(Class<?> control, Class<?> power) throws NoSuchMethodException {
+		getPhysicalDisplayIdsMethod = control.getMethod("getPhysicalDisplayIds");
+		getPhysicalDisplayTokenMethod = control.getMethod("getPhysicalDisplayToken", long.class);
+		setDisplayPowerModeMethod = power.getMethod("setDisplayPowerMode", IBinder.class, int.class);
+		capabilities |= ICarDisplayServer.CAP_PANEL_POWER;
 	}
 
 	private static void initActivityTaskManager() {
@@ -263,6 +303,28 @@ public final class Hidden {
 			clearCapability(ICarDisplayServer.CAP_IME);
 			return false;
 		}
+	}
+
+	public static boolean setPhysicalDisplayPowerMode(int mode) {
+		if (!hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) return false;
+		panelForcedOff = (mode == 0);
+		try {
+			long[] ids = (long[]) getPhysicalDisplayIdsMethod.invoke(null);
+			if (ids == null || ids.length == 0) return false;
+			for (long id : ids) {
+				IBinder token = (IBinder) getPhysicalDisplayTokenMethod.invoke(null, id);
+				if (token != null) setDisplayPowerModeMethod.invoke(null, token, mode);
+			}
+			return true;
+		} catch (Throwable t) {
+			clearCapability(ICarDisplayServer.CAP_PANEL_POWER);
+			return false;
+		}
+	}
+
+	/** Only a panel this process turned off: a sleeping phone must not light up when the server exits. */
+	public static void restorePanelIfForcedOff() {
+		if (panelForcedOff) setPhysicalDisplayPowerMode(2);
 	}
 
 	public static ActivityManager.RunningTaskInfo getTopTask(int displayId) {

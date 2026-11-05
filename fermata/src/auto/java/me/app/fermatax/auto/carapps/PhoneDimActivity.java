@@ -15,7 +15,9 @@ import me.aap.fermata.R;
 
 /**
  * Black, lowest-brightness phone screen shown while Car Apps runs on the car: the screen stays on
- * (so the car's virtual display keeps rendering) and tells the user why. Touch or leaving the app ends it.
+ * (so the car's virtual display keeps rendering) and tells the user why.
+ * In panel mode: screen is turned off via root, touch is swallowed and does not end it.
+ * In dim mode: touch or leaving the app ends it.
  */
 public final class PhoneDimActivity extends Activity {
 	private static WeakReference<PhoneDimActivity> current;
@@ -34,23 +36,41 @@ public final class PhoneDimActivity extends Activity {
 		getWindow().setAttributes(lp);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-		TextView tv = new TextView(this);
-		tv.setText(R.string.car_apps_phone_dim_text);
-		tv.setTextColor(0xFF6B7280);
-		tv.setTextSize(16f);
-		tv.setGravity(Gravity.CENTER);
 		FrameLayout root = new FrameLayout(this);
 		root.setBackgroundColor(Color.BLACK);
-		root.addView(tv, new FrameLayout.LayoutParams(-1, -1));
-		root.setOnClickListener((View v) -> finish());
+
+		boolean panelMode = CarDisplayClient.get().isPanelOffRequested();
+		if (panelMode) {
+			root.setOnTouchListener((v, e) -> true);
+		} else {
+			TextView tv = new TextView(this);
+			tv.setText(R.string.car_apps_phone_dim_text);
+			tv.setTextColor(0xFF6B7280);
+			tv.setTextSize(16f);
+			tv.setGravity(Gravity.CENTER);
+			root.addView(tv, new FrameLayout.LayoutParams(-1, -1));
+			root.setOnClickListener((View v) -> finish());
+		}
 		setContentView(root);
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		CarDisplayClient client = CarDisplayClient.get();
+		if (client.isPanelOffRequested()) {
+			client.setPanelOff(true);
+			if (!client.isPanelOff()) finish();
+		}
 	}
 
 	@Override
 	protected void onStop() {
 		super.onStop();
 		// Home / app switch: the phone goes back to normal behaviour. Rotating also stops it, but it comes back.
-		if (!isChangingConfigurations()) finish();
+		if (isChangingConfigurations()) return;
+		CarDisplayClient.get().setPanelOff(false);
+		finish();
 	}
 
 	@Override

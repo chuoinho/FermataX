@@ -13,6 +13,7 @@ public class CarAppsChecksConstantsMatchAidlTest {
 		assertEquals(ICarDisplayServer.CAP_VD, CarAppsChecks.CAP_VD);
 		assertEquals(ICarDisplayServer.CAP_TRUSTED, CarAppsChecks.CAP_TRUSTED);
 		assertEquals(ICarDisplayServer.CAP_INJECT, CarAppsChecks.CAP_INJECT);
+		assertEquals(ICarDisplayServer.CAP_PANEL_POWER, CarAppsChecks.CAP_PANEL_POWER);
 		assertEquals(ICarDisplayServer.CAP_IME, CarAppsChecks.CAP_IME);
 		assertEquals(ICarDisplayServer.CAP_OWN_POWER_GROUP, CarAppsChecks.CAP_OWN_POWER_GROUP);
 		assertEquals(ICarDisplayServer.CAP_TASKS, CarAppsChecks.CAP_TASKS);

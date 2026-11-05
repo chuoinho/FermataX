@@ -60,6 +60,10 @@ public class CarDisplayClient {
 
 	private volatile State state = State.IDLE;
 	private final List<Consumer<State>> stateListeners = new CopyOnWriteArrayList<>();
+	private volatile boolean panelOff;
+	private volatile boolean panelOffRequested;
+	private volatile boolean restorePanelOnReconnect;
+	private BroadcastReceiver screenOffReceiver;
 	private DisplayManager.DisplayListener displayListener;
 	private BroadcastReceiver unlockReceiver;
 	private PowerManager.WakeLock keepAwakeLock;
@@ -115,6 +119,83 @@ public class CarDisplayClient {
 		if (listener != null) {
 			stateListeners.remove(listener);
 		}
+	}
+
+	public boolean isPanelOffRequested() {
+		return panelOffRequested;
+	}
+
+	public void setPanelOffRequested(boolean requested) {
+		this.panelOffRequested = requested;
+	}
+
+	public boolean isPanelOff() {
+		return panelOff;
+	}
+
+	public void setPanelPower(boolean on) {
+		ICarDisplayServer srv = this.server;
+		if (srv == null) return;
+		try {
+			srv.setPanelPower(on);
+		} catch (RemoteException e) {
+			Log.e(e, "CarDisplayServer.setPanelPower failed");
+		}
+	}
+
+	/** Panel mode swallows touch, so a panel that cannot turn off must not stay in it. */
+	public synchronized void setPanelOff(boolean off) {
+		if (off == panelOff) return;
+		if (!off) {
+			restorePanelAndWake();
+			return;
+		}
+		if (hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
+			registerScreenOffReceiver();
+			setPanelPower(false);
+			if (hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
+				panelOff = true;
+				return;
+			}
+			unregisterScreenOffReceiver();
+		}
+		panelOffRequested = false;
+	}
+
+	/** The system sleeps on the first power press but the panel it thinks is on stays dark: bring both back. */
+	private synchronized void registerScreenOffReceiver() {
+		if (screenOffReceiver != null || lastContext == null) return;
+		screenOffReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				Log.i("CarDisplayClient received ACTION_SCREEN_OFF, restoring phone panel");
+				onScreenOffReceived();
+			}
+		};
+		lastContext.registerReceiver(screenOffReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
+	}
+
+	private synchronized void unregisterScreenOffReceiver() {
+		if (screenOffReceiver != null && lastContext != null) {
+			try {
+				lastContext.unregisterReceiver(screenOffReceiver);
+			} catch (Throwable ignored) {
+			}
+			screenOffReceiver = null;
+		}
+	}
+
+	private synchronized void onScreenOffReceived() {
+		if (panelOff) restorePanelAndWake();
+	}
+
+	private synchronized void restorePanelAndWake() {
+		PhoneDimActivity.dismiss();
+		panelOffRequested = false;
+		unregisterScreenOffReceiver();
+		panelOff = false;
+		setPanelPower(true);
+		wakeScreen();
 	}
 
 	private void setState(State newState) {
@@ -217,6 +298,14 @@ public class CarDisplayClient {
 
 		this.server = s;
 		this.serverBinder = binder;
+		if (restorePanelOnReconnect) {
+			try {
+				s.setPanelPower(true);
+			} catch (RemoteException e) {
+				Log.e(e, "Failed to restore panel on reconnect");
+			}
+			restorePanelOnReconnect = false;
+		}
 		this.retryAttempt = 0;
 		setState(State.READY);
 		Log.i("CarDisplayServer connected successfully (version " + version + ")");
@@ -258,6 +347,12 @@ public class CarDisplayClient {
 		flushTouchQueueDiagnosticsAndClear();
 		this.server = null;
 		this.serverBinder = null;
+		if (panelOff) {
+			restorePanelOnReconnect = true;
+			restorePanelAndWake();
+		} else {
+			PhoneDimActivity.dismiss();
+		}
 		setState(State.RETRYING);
 		scheduleRetry();
 	}
@@ -330,7 +425,7 @@ public class CarDisplayClient {
 
 		Su.get().onSuccess(su -> {
 			recordDiagnostic("root_grant", Map.of("result", "granted"));
-			String rootCmd = ServerCommand.buildForRoot(apkPath, appUid, versionCode, pkg);
+			String rootCmd = ServerCommand.buildForRoot(apkPath, appUid, versionCode, pkg, Build.VERSION.SDK_INT);
 			Log.i("Starting CarDisplayServer via su: " + rootCmd);
 			su.exec(rootCmd);
 		}).onFailure(err -> {
@@ -568,6 +663,9 @@ public class CarDisplayClient {
 				public void onDisplayChanged(int displayId) {
 					if (displayId != Display.DEFAULT_DISPLAY) return;
 					Display d = dm.getDisplay(displayId);
+					if (d != null && d.getState() != Display.STATE_ON && panelOff) {
+						onScreenOffReceived();
+					}
 					setPhoneState((d != null) ? (d.getState() != Display.STATE_ON) : phoneAsleep, isKeyguardHoldingPhone());
 				}
 			};
@@ -693,6 +791,11 @@ public class CarDisplayClient {
 
 	public synchronized void onCarSessionStopped() {
 		stopKeepingPhoneAwake();
+		if (panelOff) {
+			restorePanelAndWake();
+		} else {
+			PhoneDimActivity.dismiss();
+		}
 	}
 
 	public synchronized void release() {
@@ -702,6 +805,11 @@ public class CarDisplayClient {
 		flushTouchQueueDiagnosticsAndClear();
 		ownPowerGroup = false;
 		sessionUnlocked = false;
+		if (panelOff) {
+			restorePanelAndWake();
+		} else {
+			PhoneDimActivity.dismiss();
+		}
 		ICarDisplayServer srv = this.server;
 		this.server = null;
 		this.serverBinder = null;
@@ -743,6 +851,10 @@ public class CarDisplayClient {
 	}
 
 	public void resetForTesting() {
+		unregisterScreenOffReceiver();
+		panelOff = false;
+		panelOffRequested = false;
+		restorePanelOnReconnect = false;
 		stopKeepingPhoneAwake();
 		this.ownPowerGroup = false;
 		this.sessionUnlocked = false;

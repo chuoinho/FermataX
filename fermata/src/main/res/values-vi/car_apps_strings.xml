@@ -16,7 +16,7 @@
     <string name="car_apps_readiness_status_need_root">Yêu cầu quyền root</string>
     <string name="car_apps_readiness_action_grant">Cấp quyền root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Yêu cầu bật USB debugging (Security settings)</string>
-    <string name="car_apps_panel_off_pref">Màn hình đen trên điện thoại khi dùng ứng dụng xe</string>
+    <string name="car_apps_panel_off_pref">Tắt màn hình điện thoại khi dùng ứng dụng xe</string>
     <string name="car_apps_phone_dim_text">Đang dùng chế độ Car Apps trên xe\nChạm để dùng điện thoại</string>
     <string name="car_apps_phone_asleep">Màn hình điện thoại đang tắt\nChạm để tiếp tục</string>
     <string name="car_apps_phone_locked">Điện thoại đang khóa\nMở khóa điện thoại để tiếp tục</string>
@@ -45,4 +45,7 @@
     <string name="car_apps_check_focus_na">Không áp dụng cho phiên bản Android này</string>
     <string name="car_apps_check_power_group_own">Nhóm nguồn hiển thị độc lập</string>
     <string name="car_apps_check_power_group_shared">Chia sẻ nhóm nguồn với điện thoại</string>
+    <string name="car_apps_check_panel_power_ok">Tắt màn hình điện thoại khi dùng ứng dụng xe</string>
+    <string name="car_apps_check_panel_power_missing">Không thể tắt màn hình điện thoại</string>
+    <string name="car_apps_check_panel_power_fix">Không tắt được màn hình, sẽ dùng màn đen</string>
 </resources>

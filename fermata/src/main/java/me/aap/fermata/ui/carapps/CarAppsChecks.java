@@ -17,6 +17,7 @@ public final class CarAppsChecks {
 	public static final int CAP_VD = 1;
 	public static final int CAP_TRUSTED = 2;
 	public static final int CAP_INJECT = 4;
+	public static final int CAP_PANEL_POWER = 8;
 	public static final int CAP_IME = 16;
 	public static final int CAP_OWN_POWER_GROUP = 32;
 	public static final int CAP_TASKS = 64;
@@ -124,7 +125,17 @@ public final class CarAppsChecks {
 			list.add(new Check("focus", Status.NA, R.string.car_apps_check_focus_na, 0));
 		}
 
-		// 7. Own power group (informational)
+		// 7. Panel power (only shown on SDK 29..35)
+		if (sdk >= 29 && sdk <= 35) {
+			if ((capabilities & CAP_PANEL_POWER) != 0) {
+				list.add(new Check("panel_power", Status.OK, R.string.car_apps_check_panel_power_ok, 0));
+			} else {
+				list.add(new Check("panel_power", Status.WARN, R.string.car_apps_check_panel_power_missing,
+						R.string.car_apps_check_panel_power_fix));
+			}
+		}
+
+		// 8. Own power group (informational)
 		if ((capabilities & CAP_OWN_POWER_GROUP) != 0) {
 			list.add(new Check("own_power_group", Status.OK, R.string.car_apps_check_power_group_own, 0));
 		} else {

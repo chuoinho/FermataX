@@ -6,6 +6,7 @@ package me.app.fermatax.auto.carapps;
 public final class CallerPolicy {
 
 	public static final int UID_ROOT = 0;
+	public static final int UID_SYSTEM = 1000;
 	public static final int UID_SHELL = 2000;
 
 	private CallerPolicy() {
@@ -19,9 +20,10 @@ public final class CallerPolicy {
 	}
 
 	/**
-	 * Provider accepts only calls from root (UID 0) or shell / adb (UID 2000).
+	 * Provider accepts only calls from root (UID 0) or shell / adb (UID 2000), and before Android 13 from the system
+	 * uid the server runs as there: see ServerCommand. Platform-signed code of that uid can already do far more.
 	 */
-	public static boolean providerAccepts(int callingUid) {
-		return callingUid == UID_ROOT || callingUid == UID_SHELL;
+	public static boolean providerAccepts(int callingUid, int sdk) {
+		return callingUid == UID_ROOT || callingUid == UID_SHELL || (callingUid == UID_SYSTEM && sdk < 33);
 	}
 }

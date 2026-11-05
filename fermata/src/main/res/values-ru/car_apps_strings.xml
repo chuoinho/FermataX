@@ -15,7 +15,7 @@
     <string name="car_apps_readiness_status_need_root">Требуется root-доступ</string>
     <string name="car_apps_readiness_action_grant">Предоставить root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Требуется отладка по USB (настройки безопасности)</string>
-    <string name="car_apps_panel_off_pref">Затемнять экран телефона при работе приложений авто</string>
+    <string name="car_apps_panel_off_pref">Выключать экран телефона при работе приложений авто</string>
     <string name="car_apps_grant_root_blocked">Root-доступ не предоставлен. Повторите попытку и разрешите запрос в менеджере root.</string>
     <string name="car_apps_phone_dim_text">Car Apps работает в автомобиле\nКоснитесь, чтобы пользоваться телефоном</string>
     <string name="car_apps_phone_asleep">Экран телефона выключен\nКоснитесь, чтобы продолжить</string>
@@ -45,4 +45,7 @@
     <string name="car_apps_check_focus_na">Не применимо в этой версии Android</string>
     <string name="car_apps_check_power_group_own">Отдельная группа питания</string>
     <string name="car_apps_check_power_group_shared">Общая группа питания с телефоном</string>
+    <string name="car_apps_check_panel_power_ok">Экран телефона выключается при работе приложений авто</string>
+    <string name="car_apps_check_panel_power_missing">Не удается выключить экран телефона</string>
+    <string name="car_apps_check_panel_power_fix">Экран нельзя выключить; будет использоваться черный экран</string>
 </resources>

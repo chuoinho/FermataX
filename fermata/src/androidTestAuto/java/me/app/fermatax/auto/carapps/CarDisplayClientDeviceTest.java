@@ -46,6 +46,8 @@ public class CarDisplayClientDeviceTest {
 	private static final Pattern DISPLAY_LOCK =
 			Pattern.compile("(?m)^ +SCREEN_\\S+ +'fermatax:cardisplay'");
 	private static final Pattern DIM_LOCK = Pattern.compile("(?m)^ +SCREEN_\\S+ +'fermatax:carapps'");
+	/** Android 10 writes the number. */
+	private static final Pattern PANEL_OFF = Pattern.compile("powerMode=(Off|0)\\b");
 	private static final int W = 1280;
 	private static final int H = 720;
 	private static final int DPI = 160;
@@ -67,7 +69,7 @@ public class CarDisplayClientDeviceTest {
 		ctx = InstrumentationRegistry.getInstrumentation().getTargetContext().getApplicationContext();
 		client = CarDisplayClient.get();
 		client.release();
-		client.setCommandRunnerForTest(device::shell);
+		client.setCommandRunnerForTest(device::startServer);
 		thread = new HandlerThread("car-frames");
 		thread.start();
 		reader = ImageReader.newInstance(W, H, PixelFormat.RGBA_8888, 3);
@@ -102,7 +104,7 @@ public class CarDisplayClientDeviceTest {
 		int id = client.attach(surface, W, H, DPI);
 
 		assertTrue("attach=" + id, id >= 0);
-		assertTrue("own power group", client.hasOwnPowerGroup());
+		assertEquals("own power group", hasOwnGroup(), client.hasOwnPowerGroup());
 		assertEquals(lockedAtStart, client.isPhoneLocked());
 		assertFalse(client.isPhoneAsleep());
 		assertLocksDuringSession();
@@ -231,8 +233,57 @@ public class CarDisplayClientDeviceTest {
 		assertPhoneOffAndLocked();
 	}
 
+	@Test
+	public void panelOffKeepsTheCarRunningAndThePowerKeyBringsItBack() {
+		int id = startWithPanelOff();
+		assertCarShows(id, SETTINGS);
+		assertTrue("panel stays off", isPanelOff());
+
+		device.shell("input keyevent KEYCODE_POWER");
+
+		waitUntil("the panel to come back", 15_000, () -> !isPanelOff());
+		waitUntil("the phone to wake", 15_000, this::isPhoneScreenOn);
+		waitUntil("the black screen to end", 15_000,
+				() -> !device.shell("dumpsys activity activities").contains("PhoneDimActivity"));
+		assertFalse(client.isPanelOff());
+		assertCarShows(id, otherApp());
+	}
+
+	@Test
+	public void killedServerBringsThePanelBack() {
+		startWithPanelOff();
+		device.killServer();
+		waitUntil("the server to come back", 30_000, () -> client.state() == CarDisplayClient.State.READY);
+		waitUntil("the panel to come back", 15_000, () -> !isPanelOff());
+	}
+
+	@Test
+	public void releaseBringsThePanelBack() {
+		startWithPanelOff();
+		client.release();
+		waitUntil("the panel to come back", 15_000, () -> !isPanelOff());
+	}
+
+	private int startWithPanelOff() {
+		assumeTrue("Android 10-15, emulators only", TestDevice.isEmulator() && PanelPowerPolicy.sdkSupported(Build.VERSION.SDK_INT));
+		device.wakeAndOpen();
+		connect();
+		int id = attach();
+		assertTrue("CAP_PANEL_POWER", client.hasCapability(ICarDisplayServer.CAP_PANEL_POWER));
+		client.setPanelOffRequested(true);
+		client.launchOnPhone(new ComponentName(ctx, PhoneDimActivity.class),
+				Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+		waitUntil("the panel to turn off", 20_000, this::isPanelOff);
+		return id;
+	}
+
+	private boolean isPanelOff() {
+		return PANEL_OFF.matcher(device.shell("dumpsys SurfaceFlinger")).find();
+	}
+
 	private void startUnlockedWithPin() {
 		assumeTrue("sets a PIN: emulators only", TestDevice.isEmulator());
+		assumeTrue("the car runs on while the phone sleeps: own power group only", hasOwnGroup());
 		device.wakeAndOpen();
 		device.setPin();
 		pinSet = true;
@@ -247,15 +298,20 @@ public class CarDisplayClientDeviceTest {
 	private int attach() {
 		int id = client.attach(surface, W, H, DPI);
 		assertTrue("attach=" + id, id >= 0);
-		assertTrue("own power group", client.hasOwnPowerGroup());
+		assertEquals("own power group", hasOwnGroup(), client.hasOwnPowerGroup());
 		assertLocksDuringSession();
 		return id;
 	}
 
-	/** Android 16 needs no lock: a VirtualDevice gives the display its own timeout. */
+	/** Before Android 13 the display shares the phone's group: see VirtualDisplayFlags. */
+	private static boolean hasOwnGroup() {
+		return Build.VERSION.SDK_INT >= 33;
+	}
+
+	/** Android 16 needs no lock: a VirtualDevice gives the display its own timeout. A shared group needs the dim lock. */
 	private void assertLocksDuringSession() {
-		assertFalse("dim lock", DIM_LOCK.matcher(device.shell("dumpsys power")).find());
-		assertEquals("display lock", !VirtualDisplayFlags.usesVirtualDevice(Build.VERSION.SDK_INT), hasDisplayLock());
+		assertEquals("dim lock", !hasOwnGroup(), DIM_LOCK.matcher(device.shell("dumpsys power")).find());
+		assertEquals("display lock", hasOwnGroup() && !VirtualDisplayFlags.usesVirtualDevice(Build.VERSION.SDK_INT), hasDisplayLock());
 	}
 
 	private boolean hasDisplayLock() {
@@ -275,7 +331,9 @@ public class CarDisplayClientDeviceTest {
 		Intent main = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
 		for (ResolveInfo ri : ctx.getPackageManager().queryIntentActivities(main, 0)) {
 			ActivityInfo a = ri.activityInfo;
-			if (!a.packageName.equals(SETTINGS.getPackageName()) && !a.packageName.equals(ctx.getPackageName())) {
+			// a camera's preview can stay black on an emulator, which reads as no picture
+			if (!a.packageName.equals(SETTINGS.getPackageName()) && !a.packageName.equals(ctx.getPackageName())
+					&& !a.packageName.contains("camera")) {
 				return new ComponentName(a.packageName, a.name);
 			}
 		}
