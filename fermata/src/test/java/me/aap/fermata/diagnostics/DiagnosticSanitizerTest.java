@@ -28,6 +28,25 @@ public class DiagnosticSanitizerTest {
 	}
 
 	@Test
+	public void keepsHostNewIntentShapeWithoutTheData() {
+		assertTrue(DiagnosticSchema.isEvent("host_new_intent"));
+		assertTrue(DiagnosticSchema.isEvent("host_restore_discarded"));
+		Map<String, Object> attributes = new LinkedHashMap<>();
+		attributes.put("intent_action", "android.intent.action.VIEW");
+		attributes.put("has_data", true);
+		attributes.put("new_navigation", true);
+		attributes.put("data", "https://example.com/private");
+
+		Map<String, Object> clean = sanitizer.sanitizeEventAttributes("navigation", "host_new_intent",
+				attributes);
+
+		assertEquals("android.intent.action.VIEW", clean.get("intent_action"));
+		assertEquals(true, clean.get("has_data"));
+		assertEquals(true, clean.get("new_navigation"));
+		assertFalse(clean.containsKey("data"));
+	}
+
+	@Test
 	public void stripsUrlCredentialsQueryAndFragment() {
 		String clean = sanitizer.sanitize("request https://alice:hunter2@example.com/video/42" +
 				"?token=secret&id=7#private finished");

@@ -15,6 +15,10 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.diagnostics.DiagnosticEvent;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticScope;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.external.ExternalPlaybackDelegateItem;
 import me.aap.fermata.addon.web.FermataChromeClient;
@@ -313,6 +317,9 @@ public class YoutubeFragment extends WebBrowserFragment
 				youtubeOwnsPlayback);
 
 		if (decision == YoutubeHostInterruptionPolicy.Decision.DISCARD) {
+			recordHostRestoreDiscarded(YoutubeHostInterruptionPolicy.discardReason(
+					hostSuspensionRelaunchGeneration, activity.getHostRelaunchGeneration(),
+					youtubeActive, youtubeOwnsPlayback), attempt);
 			discardHostFullscreenSuspension(view);
 			return;
 		}
@@ -325,11 +332,23 @@ public class YoutubeFragment extends WebBrowserFragment
 
 		if ((attempt >= HOST_RESTORE_RETRY_MS.length) ||
 				!view.isPlaybackPresentationSuspensionCurrent(suspension)) {
+			recordHostRestoreDiscarded("retries_exhausted", attempt);
 			discardHostFullscreenSuspension(view);
 			return;
 		}
 		view.postDelayed(() -> restorePlaybackPresentation(view, operation, attempt + 1),
 				HOST_RESTORE_RETRY_MS[attempt]);
+	}
+
+	private static void recordHostRestoreDiscarded(String reason, int attempt) {
+		try {
+			FermataApplication.get().getDiagnostics().record(
+					DiagnosticEvent.builder("web_fullscreen", "host_restore_discarded")
+							.scope(DiagnosticScope.ESSENTIAL).priority(DiagnosticPriority.WARN)
+							.put("reason", reason).put("attempt", attempt).build());
+		} catch (Throwable ignored) {
+			// Diagnostics must never affect fullscreen restore.
+		}
 	}
 
 	private void discardHostFullscreenSuspension(@Nullable YoutubeWebView view) {

@@ -13,6 +13,11 @@ public class HostRelaunchPolicyTest {
 	}
 
 	@Test
+	public void mediaWidgetReturnKeepsInterruptedPresentation() {
+		assertFalse(HostRelaunchPolicy.startsNewNavigation("MEDIA_SHOW_PLAYBACK_VIEW", false));
+	}
+
+	@Test
 	public void contentOrExplicitActionStartsNewNavigation() {
 		assertTrue(HostRelaunchPolicy.startsNewNavigation("android.intent.action.MAIN", true));
 		assertTrue(HostRelaunchPolicy.startsNewNavigation("android.intent.action.VIEW", false));

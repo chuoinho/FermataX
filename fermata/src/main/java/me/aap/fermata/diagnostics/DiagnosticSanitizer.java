@@ -76,7 +76,7 @@ public final class DiagnosticSanitizer {
 					"session_active", "skip", "stack", "stale", "stalled_for_ms", "supported_actions",
 					"source", "state", "status", "surface_known", "surface_valid", "thread_dump", "title",
 					"target_id", "timestamp", "token_generation", "type", "url", "video", "visible", "web_attached",
-					"uri", "web_height", "web_visible", "web_width", "width", "_truncated")));
+					"uri", "web_height", "web_visible", "web_width", "width", "intent_action", "has_data", "new_navigation", "_truncated")));
 	private static final Set<String> FINGERPRINT_VALUE_KEYS = Collections.unmodifiableSet(
 			new HashSet<>(Arrays.asList("endpoint", "genre", "item", "process_name",
 					"provider_error", "query", "request", "source", "title", "url", "uri")));

@@ -23,6 +23,13 @@ public class YoutubeHostInterruptionPolicyTest {
 	}
 
 	@Test
+	public void discardReasonNamesTheFailedCondition() {
+		assertEquals("relaunch", YoutubeHostInterruptionPolicy.discardReason(4L, 5L, true, true));
+		assertEquals("inactive", YoutubeHostInterruptionPolicy.discardReason(4L, 4L, false, true));
+		assertEquals("owner", YoutubeHostInterruptionPolicy.discardReason(4L, 4L, true, false));
+	}
+
+	@Test
 	public void explicitRelaunchNavigationOrOwnerChangeDiscards() {
 		assertEquals(DISCARD, YoutubeHostInterruptionPolicy.resolve(
 				4L, 5L, true, true, true, true));

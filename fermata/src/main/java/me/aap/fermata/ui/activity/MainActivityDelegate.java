@@ -61,6 +61,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.BooleanSupplier;
 
+import me.aap.fermata.diagnostics.DiagnosticEvent;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
@@ -303,10 +306,25 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	protected void onActivityNewIntent(Intent intent) {
-		if (HostRelaunchPolicy.startsNewNavigation(intent.getAction(), intent.getData() != null))
-			hostRelaunchGeneration++;
+		boolean newNavigation =
+				HostRelaunchPolicy.startsNewNavigation(intent.getAction(), intent.getData() != null);
+		if (newNavigation) hostRelaunchGeneration++;
+		recordNewIntent(intent, newNavigation);
 		super.onActivityNewIntent(intent);
 		handleIntent(intent);
+	}
+
+	private static void recordNewIntent(Intent intent, boolean newNavigation) {
+		try {
+			FermataApplication.get().getDiagnostics().record(
+					DiagnosticEvent.builder("navigation", "host_new_intent")
+							.scope(DiagnosticScope.ESSENTIAL).priority(DiagnosticPriority.STATE)
+							.put("intent_action", String.valueOf(intent.getAction()))
+							.put("has_data", intent.getData() != null)
+							.put("new_navigation", newNavigation).build());
+		} catch (Throwable ignored) {
+			// Diagnostics must never affect navigation.
+		}
 	}
 
 	/** Receives relaunch intents from the hosted AA activity implementation. */
