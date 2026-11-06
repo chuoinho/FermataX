@@ -550,6 +550,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		CarDisplayClient.State clientState = client.state();
 		if (clientState != CarDisplayClient.State.READY) {
 			attached = false;
+			dimRequested = false;
 		}
 		uiState = CarAppsUiState.from(root, clientState);
 		applyToolbarVisibility();

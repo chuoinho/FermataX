@@ -395,6 +395,16 @@ public class CarAppsFragmentTest {
 		assertEquals(null, nextPhoneLaunchClass());
 	}
 
+	@Test public void reconnectingServerDimsOnceAgain() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		client.release();
+		org.robolectric.shadows.ShadowLooper.idleMainLooper();
+		client.onServerBinderReceived(serverBinder);
+		org.robolectric.shadows.ShadowLooper.idleMainLooper();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
+	}
+
 	private CarAppsFragment fragmentShowingCarDisplay() {
 		CarAppsFeature.setState(RootState.GRANTED);
 		client.ensureRunning(context); // gives the client the context it watches the phone with
