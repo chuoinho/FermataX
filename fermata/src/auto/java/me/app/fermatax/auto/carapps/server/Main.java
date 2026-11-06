@@ -53,12 +53,16 @@ public class Main {
 
 			server = new CarDisplayServerImpl(appUid, versionCode, appPackage);
 			System.out.println("SERVER_READY uid=" + appUid + " version=" + versionCode + " pkg=" + appPackage);
+			// stdout goes to /dev/null when the app starts it: logcat is where a test phone shows who runs it
+			android.util.Log.i("CarDisplayServer", "started as uid " + Process.myUid() + " on SDK " + Build.VERSION.SDK_INT
+					+ ", version " + versionCode + ", caps 0x" + Integer.toHexString(server.capabilities()));
 
 			handoffBinderToApp(appPackage, appUid, server);
 
 			Looper.loop();
 		} catch (Throwable t) {
 			t.printStackTrace();
+			android.util.Log.e("CarDisplayServer", "server failed", t);
 			if (server != null) {
 				try {
 					server.releaseInternal();
@@ -174,6 +178,7 @@ public class Main {
 			}
 		} catch (Throwable t) {
 			t.printStackTrace();
+			android.util.Log.e("CarDisplayServer", "binder handoff to " + appPackage + " failed", t);
 			System.err.println("ERROR: Binder handoff failed via getContentProviderExternal");
 			System.exit(3);
 		}

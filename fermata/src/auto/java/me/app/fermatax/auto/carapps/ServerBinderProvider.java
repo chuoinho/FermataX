@@ -36,7 +36,7 @@ public class ServerBinderProvider extends ContentProvider {
 		if (METHOD_ATTACH.equals(method) && extras != null) {
 			IBinder binder = extras.getBinder(EXTRA_BINDER);
 			if (binder != null) {
-				CarDisplayClient.get().onServerBinderReceived(binder);
+				CarDisplayClient.get().onServerBinderReceived(binder, callingUid);
 				Bundle result = new Bundle();
 				result.putBoolean(KEY_OK, true);
 				return result;

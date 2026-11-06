@@ -911,6 +911,74 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
+	public void connectionRecordsWhichUidTheServerRunsAs() {
+		java.util.Map<String, java.util.Map<String, ?>> recorded = new java.util.HashMap<>();
+		client.setDiagnosticsConsumerForTest(recorded::put);
+		client.ensureRunning(context);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false)), 1000);
+
+		assertEquals(1000, recorded.get("server_connected").get("uid"));
+		assertEquals(35, recorded.get("server_connected").get("sdk"));
+	}
+
+	@Test
+	public void panelOffAndItsRestoreAreRecorded() {
+		List<String> events = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((e, a) -> events.add(e + a.get("state") + "/" + a.get("reason")));
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+
+		client.setPanelOff(true);
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+
+		assertTrue(events.toString(), events.contains("phone_paneloff/requested"));
+		assertTrue(events.toString(), events.contains("phone_panelon/screen_off"));
+	}
+
+	@Test
+	public void panelThatCannotTurnOffIsRecorded() {
+		List<String> events = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((e, a) -> events.add(e + a.get("state")));
+		client.ensureRunning(context);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false)));
+
+		client.setPanelOff(true);
+		assertTrue(events.toString(), events.contains("phone_panelunavailable"));
+	}
+
+	@Test
+	public void lockChangesAreRecorded() {
+		List<java.util.Map<String, ?>> states = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((e, a) -> {
+			if (e.equals("phone_state")) states.add(a);
+		});
+		attachDisplay();
+		setDeviceLocked(true);
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_ON));
+		ShadowLooper.idleMainLooper();
+
+		assertEquals(true, states.get(states.size() - 1).get("locked"));
+	}
+
+	@Test
+	public void serverDeathAndPhoneSleepAreRecorded() {
+		List<String> events = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((e, a) -> events.add(e));
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		client.onServerBinderReceived(server);
+
+		client.sleepPhone();
+		server.triggerDeath();
+
+		assertTrue(events.toString(), events.contains("phone_sleep"));
+		assertTrue(events.toString(), events.contains("server_died"));
+	}
+
+	@Test
 	public void savedCapabilitiesOfAnotherAppVersionAreUnknown() {
 		android.content.Context ctx = org.robolectric.RuntimeEnvironment.getApplication();
 		android.content.SharedPreferences prefs = ctx.getSharedPreferences("fermata", android.content.Context.MODE_PRIVATE);

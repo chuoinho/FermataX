@@ -21,9 +21,12 @@ public final class ServerCommand {
 	 * Runs the server as shell, the only uid that can create a VirtualDevice; plain root if su cannot switch.
 	 * Before Android 13 shell has no ADD_TRUSTED_DISPLAY, and apps opened on an untrusted display land on the phone;
 	 * root has no package name there, which createVirtualDisplay refuses. So it runs as system.
+	 * Why su refused goes to logcat: nothing reads the root shell's output.
 	 */
 	public static String buildForRoot(String apkPath, int appUid, int versionCode, String pkg, int sdk) {
 		String cmd = build(apkPath, appUid, versionCode, pkg);
-		return "su " + ((sdk < 33) ? CallerPolicy.UID_SYSTEM : CallerPolicy.UID_SHELL) + " -c '" + cmd.replace("'", "'\\''") + "' || " + cmd;
+		int uid = (sdk < 33) ? CallerPolicy.UID_SYSTEM : CallerPolicy.UID_SHELL;
+		return "e=$(su " + uid + " -c '" + cmd.replace("'", "'\\''") + "' 2>&1) || { log -t CarDisplayServer \"su "
+				+ uid + " failed: $e\"; " + cmd + " }";
 	}
 }

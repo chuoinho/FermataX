@@ -35,14 +35,21 @@ public class ServerCommandTest {
 	public void rootStartsTheServerAsShellBecauseOnlyShellCanCreateAVirtualDevice() {
 		String plain = ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg");
 		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg", 33);
-		assertTrue(cmd.startsWith("su 2000 -c '" + plain.replace("'", "'\\''") + "' || "));
+		assertTrue(cmd.startsWith("e=$(su 2000 -c '" + plain.replace("'", "'\\''") + "' 2>&1) || "));
 	}
 
 	@Test
 	public void rootStillStartsTheServerWhenSuCannotSwitchUser() {
 		String plain = ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg");
 		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg", 36);
-		assertTrue(cmd.endsWith(" || " + plain));
+		assertTrue(cmd.endsWith("; " + plain + " }"));
+	}
+
+	/** Its output goes nowhere, so why su refused is only seen in logcat. */
+	@Test
+	public void suRefusalIsLoggedBeforeTheFallback() {
+		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg", 32);
+		assertTrue(cmd.contains(") || { log -t CarDisplayServer \"su 1000 failed: $e\"; "));
 	}
 
 	/** Measured on Android 12: as shell the display is untrusted and an app opened on the car lands on the phone. */
@@ -50,7 +57,7 @@ public class ServerCommandTest {
 	public void beforeAndroid13TheServerRunsAsSystemForATrustedDisplay() {
 		String plain = ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg");
 		String cmd = ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg", 32);
-		assertTrue(cmd.startsWith("su 1000 -c '" + plain.replace("'", "'\\''") + "' || "));
+		assertTrue(cmd.startsWith("e=$(su 1000 -c '" + plain.replace("'", "'\\''") + "' 2>&1) || "));
 	}
 
 	@Test

@@ -156,8 +156,10 @@ public class CarDisplayClient {
 		nextPhoneSleepMs = now + 2000;
 		try {
 			s.sleepPhone();
+			recordDiagnostic("phone_sleep", Map.of("ok", true));
 		} catch (RemoteException e) {
 			Log.w("Failed to sleep phone", e);
+			recordDiagnostic("phone_sleep", Map.of("ok", false));
 		}
 	}
 
@@ -165,7 +167,7 @@ public class CarDisplayClient {
 	public synchronized void setPanelOff(boolean off) {
 		if (off == panelOff) return;
 		if (!off) {
-			restorePanelAndWake();
+			restorePanelAndWake("requested");
 			return;
 		}
 		if (hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
@@ -173,11 +175,17 @@ public class CarDisplayClient {
 			setPanelPower(false);
 			if (hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
 				panelOff = true;
+				recordPanel("off", "requested");
 				return;
 			}
 			unregisterScreenOffReceiver();
 		}
 		panelOffRequested = false;
+		recordPanel("unavailable", "no_panel_power");
+	}
+
+	private void recordPanel(String state, String reason) {
+		recordDiagnostic("phone_panel", Map.of("state", state, "reason", reason));
 	}
 
 	/** The system sleeps on the first power press but the panel it thinks is on stays dark: bring both back. */
@@ -205,15 +213,17 @@ public class CarDisplayClient {
 
 	private synchronized void onScreenOffReceived() {
 		if (panelOff) {
-			restorePanelAndWake();
+			restorePanelAndWake("screen_off");
 		} else if (restorePanelOnReconnect) {
 			restorePanelOnReconnect = false;
 			unregisterScreenOffReceiver();
 			wakeScreen();
+			recordPanel("on", "screen_off_without_server");
 		}
 	}
 
-	private synchronized void restorePanelAndWake() {
+	private synchronized void restorePanelAndWake(String reason) {
+		recordPanel("on", reason);
 		PhoneDimActivity.dismiss();
 		panelOffRequested = false;
 		unregisterScreenOffReceiver();
@@ -270,7 +280,12 @@ public class CarDisplayClient {
 		}
 	};
 
-	public synchronized void onServerBinderReceived(IBinder binder) {
+	public void onServerBinderReceived(IBinder binder) {
+		onServerBinderReceived(binder, -1);
+	}
+
+	/** The uid shows on a test phone whether su switched user or the plain root fallback ran. */
+	public synchronized void onServerBinderReceived(IBinder binder, int serverUid) {
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		if (binder == null) {
 			recordDiagnostic("server_failed", Map.of("reason", "null_binder"));
@@ -335,7 +350,8 @@ public class CarDisplayClient {
 		this.nextPhoneSleepMs = 0;
 		setState(State.READY);
 		Log.i("CarDisplayServer connected successfully (version " + version + ")");
-		recordDiagnostic("server_connected", Map.of("version", version, "capabilities", caps));
+		recordDiagnostic("server_connected", Map.of("version", version, "capabilities", caps, "uid", serverUid,
+				"sdk", Build.VERSION.SDK_INT));
 		saveCapabilities(caps);
 	}
 
@@ -368,6 +384,7 @@ public class CarDisplayClient {
 	}
 
 	private synchronized void onServerDied() {
+		recordDiagnostic("server_died", Map.of("panelOff", panelOff));
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();
 		flushTouchQueueDiagnosticsAndClear();
@@ -375,7 +392,7 @@ public class CarDisplayClient {
 		this.serverBinder = null;
 		if (panelOff) {
 			restorePanelOnReconnect = true;
-			restorePanelAndWake();
+			restorePanelAndWake("server_died");
 			// No server can light the panel, but the system does when it wakes: the power key or the timeout gets it there
 			registerScreenOffReceiver();
 		} else {
@@ -779,7 +796,10 @@ public class CarDisplayClient {
 				keepAwakeLock.acquire();
 			}
 		}
-		if (changed) notifyStateListeners();
+		if (changed) {
+			recordDiagnostic("phone_state", Map.of("asleep", asleep, "locked", locked, "ownPowerGroup", ownPowerGroup));
+			notifyStateListeners();
+		}
 	}
 
 	private synchronized void releaseKeepAwakeLock() {
@@ -847,7 +867,7 @@ public class CarDisplayClient {
 	public synchronized void onCarSessionStopped() {
 		stopKeepingPhoneAwake();
 		if (panelOff) {
-			restorePanelAndWake();
+			restorePanelAndWake("session_stopped");
 		} else {
 			PhoneDimActivity.dismiss();
 		}
@@ -861,7 +881,7 @@ public class CarDisplayClient {
 		ownPowerGroup = false;
 		sessionUnlocked = false;
 		if (panelOff) {
-			restorePanelAndWake();
+			restorePanelAndWake("release");
 		} else {
 			PhoneDimActivity.dismiss();
 		}
