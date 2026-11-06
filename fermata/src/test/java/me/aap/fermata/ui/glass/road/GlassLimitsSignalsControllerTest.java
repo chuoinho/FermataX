@@ -70,6 +70,21 @@ public class GlassLimitsSignalsControllerTest {
     }
 
     @Test
+    public void phoneAndCarCardsDoNotTakeEachOthersUpdates() {
+        LocationHub hub = LocationHub.get(context);
+        int base = hub.consumerCountForTesting();
+        GlassLimitsSignalsController other = new GlassLimitsSignalsController(
+                context, new GlassLimitsSignalsView(context), fakeDataSource);
+
+        controller.setActive(true);
+        other.setActive(true);
+        assertEquals(base + 2, hub.consumerCountForTesting());
+
+        other.setActive(false);
+        assertEquals(base + 1, hub.consumerCountForTesting());
+    }
+
+    @Test
     public void fixUpdatesView() {
         controller.setActive(true);
 

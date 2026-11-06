@@ -18,6 +18,8 @@ public final class GlassLimitsSignalsController {
     private final RoadDataSource dataSource;
     private final RoadMatcher matcher = new RoadMatcher();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    // The phone and the car each have a dashboard; a shared tag lets one drop the other's updates.
+    private final String hubTag = "road_card_" + System.identityHashCode(this);
 
     private volatile boolean active = false;
     private float initialSignalDistance = -1f;
@@ -35,9 +37,9 @@ public final class GlassLimitsSignalsController {
         this.active = active;
         LocationHub hub = LocationHub.get(context);
         if (active) {
-            hub.acquire("road_card", this::onLocation);
+            hub.acquire(hubTag, this::onLocation);
         } else {
-            hub.release("road_card");
+            hub.release(hubTag);
             initialSignalDistance = -1f;
             postToMain(view::showWaiting);
         }
