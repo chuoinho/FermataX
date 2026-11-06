@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
+import android.util.Log;
 import android.view.Display;
 import android.view.InputEvent;
 import android.view.SurfaceControl;
@@ -156,6 +157,7 @@ public final class Hidden {
 		}
 	}
 
+	@SuppressLint("BlockedPrivateApi")
 	static void initPanelControl() {
 		try {
 			if (!PanelPowerPolicy.sdkSupported(Build.VERSION.SDK_INT)) {
@@ -329,6 +331,7 @@ public final class Hidden {
 			}
 			return true;
 		} catch (Throwable t) {
+			Log.e(TAG, "Failed to set physical display power mode " + mode, t);
 			clearCapability(ICarDisplayServer.CAP_PANEL_POWER);
 			return false;
 		}

@@ -296,6 +296,25 @@ public class CarDisplayClientDeviceTest {
 		waitUntil("the car to ask for an unlock", 15_000, client::isPhoneLocked);
 	}
 
+	@Test public void panelOffPowerKeyAndPinResumeTheCarApp() {
+		assumeTrue("Android 11-12, emulators only", TestDevice.isEmulator() && Build.VERSION.SDK_INT < 33);
+		device.wakeAndOpen();
+		device.setPin();
+		pinSet = true;
+		connect();
+		int id = attach();
+		assertCarShows(id, SETTINGS);
+		client.setPanelOffRequested(true);
+		client.launchOnPhone(new ComponentName(ctx, PhoneDimActivity.class),
+				Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+		waitUntil("the panel to turn off", 20_000, this::isPanelOff);
+		device.shell("input keyevent KEYCODE_POWER");
+		waitUntil("the car to ask for an unlock", 15_000, client::isPhoneLocked);
+		device.unlock();
+		waitUntil("the car to resume after PIN", 15_000, () -> !client.isPhoneLocked());
+		assertCarShows(id, SETTINGS);
+	}
+
 	@Test
 	public void killedServerBringsThePanelBack() {
 		startWithPanelOff();
@@ -338,7 +357,12 @@ public class CarDisplayClientDeviceTest {
 	public void releaseBringsThePanelBack() {
 		startWithPanelOff();
 		client.release();
-		waitUntil("the panel to come back", 15_000, () -> !isPanelOff());
+		try {
+			waitUntil("the panel to come back", 15_000, () -> !isPanelOff());
+		} catch (AssertionError e) {
+			throw new AssertionError(e.getMessage() + "\n" +
+					device.shell("dumpsys SurfaceFlinger | grep powerMode; dumpsys power | grep mWakefulness"), e);
+		}
 	}
 
 	@Test public void panelTurnsOffAgainAfterThePowerKeyBroughtItBack() {
