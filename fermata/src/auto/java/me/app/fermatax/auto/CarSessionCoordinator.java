@@ -95,12 +95,14 @@ public final class CarSessionCoordinator {
 		} catch (Throwable failure) {
 			Log.e(failure, "Failed to open mirror projection generation");
 		}
+		List<String> addonFailures = List.of("addons");
 		try {
-			List<String> failures = AddonManager.get().onAutomotiveSessionStarted();
-			if (!failures.isEmpty()) Log.w("Automotive addon restart failures: ", failures);
+			addonFailures = AddonManager.get().onAutomotiveSessionStarted();
+			if (!addonFailures.isEmpty()) Log.w("Automotive addon restart failures: ", addonFailures);
 		} catch (Throwable failure) {
 			Log.e(failure, "Failed to restart automotive addon runtime");
 		}
+		recordDiagnostic("session_started", generation, addonFailures);
 		return true;
 	}
 

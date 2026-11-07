@@ -865,7 +865,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPlayFromMediaId(String mediaId, Bundle extras) {
-		if (terminal) return; permanentFocusLoss.cancel();
+		if (terminal) {
+			recordPlaybackDiagnostic("playback_command_dropped", DiagnosticScope.ESSENTIAL,
+					DiagnosticPriority.WARN, null, null, playbackRequestRevision, "terminal", null);
+			return;
+		}
+		permanentFocusLoss.cancel();
 		invalidateAudioEffectsApply();
 		playerTask.cancel();
 		playerTask = playFromMediaId(mediaId, extras);
@@ -889,6 +894,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				String msg =
 						lib.getContext().getResources().getString(R.string.err_failed_to_play, mediaId);
 				Log.w(msg);
+				recordPlaybackDiagnostic("playback_item_unresolved", DiagnosticScope.ESSENTIAL,
+						DiagnosticPriority.WARN, null, null, playbackRequestRevision, "no_playable_item", null);
 				PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 						.setState(STATE_ERROR, 0, 1.0f)
 						.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();

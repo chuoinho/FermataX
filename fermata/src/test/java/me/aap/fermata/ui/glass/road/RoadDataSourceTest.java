@@ -176,6 +176,21 @@ public class RoadDataSourceTest {
     }
 
     @Test
+    public void failedBackgroundDownloadDoesNotBlockLiveFetch() {
+        double lat = 48.137;
+        double lon = 11.575;
+        RoadDataSource source = new RoadDataSource(store, client, Runnable::run, clock);
+
+        client.shouldThrow = true;
+        assertFalse(source.download(new TileId(1, 1)));
+
+        client.shouldThrow = false;
+        source.tilesAround(lat, lon, 0f, true);
+
+        assertNotNull(store.read(TileId.of(lat, lon)));
+    }
+
+    @Test
     public void singleInFlight() throws Exception {
         double lat = 48.137;
         double lon = 11.575;

@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -78,14 +79,21 @@ public final class TileId {
 
         for (int ty = minY; ty <= maxY; ty++) {
             for (int tx = minX; tx <= maxX; tx++) {
-                double cLon = ((double) tx + 0.5) / N * 360.0 - 180.0;
-                double cLat = Math.toDegrees(Math.atan(Math.sinh(Math.PI * (1.0 - 2.0 * ((double) ty + 0.5) / N))));
-                if (haversineKm(lat, lon, cLat, cLon) <= radiusKm) {
-                    result.add(new TileId(tx, ty));
+                TileId t = new TileId(tx, ty);
+                if (t.centerDistanceKm(lat, lon) <= radiusKm) {
+                    result.add(t);
                 }
             }
         }
+        // Downloads run in this order and may stop early, so the roads closest to home come first.
+        result.sort(Comparator.comparingDouble(t -> t.centerDistanceKm(lat, lon)));
         return result;
+    }
+
+    private double centerDistanceKm(double lat, double lon) {
+        double cLon = (x + 0.5) / N * 360.0 - 180.0;
+        double cLat = Math.toDegrees(Math.atan(Math.sinh(Math.PI * (1.0 - 2.0 * (y + 0.5) / N))));
+        return haversineKm(lat, lon, cLat, cLon);
     }
 
     private static double haversineKm(double lat1, double lon1, double lat2, double lon2) {

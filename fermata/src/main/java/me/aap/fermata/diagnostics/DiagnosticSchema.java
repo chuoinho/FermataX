@@ -5,7 +5,7 @@ import java.util.Set;
 /** Registry for non-user-authored identifiers allowed in exported diagnostic envelopes. */
 final class DiagnosticSchema {
 	private static final Set<String> CATEGORIES = Set.of(
-			"aa_startup", "addon", "application", "audiobook_source", "auto", "carapps", "content", "location", "log", "speedo",
+			"aa_startup", "addon", "application", "audiobook_source", "auto", "automotive_shutdown", "carapps", "content", "location", "log", "speedo",
 			"database", "diagnostics", "engine", "engine_exoplayer", "engine_vlc", "legacy_log",
 			"hardware_input", "lifecycle", "navigation", "network", "performance", "playback",
 			"podcast_source", "process", "radio_source", "service", "service_connection",
@@ -27,9 +27,10 @@ final class DiagnosticSchema {
 			"addon_load_cancelled", "addon_load_committed", "addon_load_failed", "addon_load_started",
 			"addon_replay_completed", "addon_service_create", "addon_service_destroy",
 			"addon_unload_completed", "addon_unload_started", "attach_rejected", "attached",
-			"carapps_checks", "phone_panel", "phone_sleep", "phone_state", "root_grant", "server_call_failed",
-			"server_connected", "server_died", "server_failed", "server_log", "server_retry", "server_starting",
-			"touch_queue",
+			"carapps_checks", "phone_panel", "phone_sleep", "phone_state", "playback_command_dropped",
+			"playback_item_unresolved", "root_grant", "server_call_failed", "server_connected", "server_died",
+			"server_failed", "server_log", "server_retry", "server_starting", "shutdown_completed",
+			"shutdown_started", "source_unavailable", "touch_queue",
 			"attach_unconfirmed", "audible_start_requested", "back_exit_requested", "browser_callback_received",
 			"browser_request_dispatched", "browser_visibility_changed", "command_routed",
 			"content_callback_ignored", "content_operation_cancelled",
@@ -42,7 +43,7 @@ final class DiagnosticSchema {
 			"engine_create_failed", "engine_create_rejected", "engine_create_requested", "engine_created",
 			"engine_error", "engine_first_frame", "engine_handoff", "engine_handoff_rejected",
 			"engine_handoff_started", "engine_provider_selected", "engine_select_started", "engine_selected",
-			"exit_history_collection_failed", "fallback_entered", "first_frame", "history_back_dispatched", "history_back_suppressed", "logged_exception",
+			"exit_history_collection_failed", "fallback_entered", "first_frame", "history_back_dispatched", "history_back_suppressed", "host_new_intent", "host_restore_discarded", "logged_exception",
 			"logged_failure", "main_frame_error", "main_frame_finished", "main_frame_http_error",
 			"main_frame_ssl_error", "main_frame_started", "mute_changed", "navigation_completed",
 			"navigation_failed", "navigation_started", "operation_cancelled", "operation_completed",

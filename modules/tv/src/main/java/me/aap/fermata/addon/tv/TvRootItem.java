@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.tv.m3u.TvM3uFile;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystemProvider;
 import me.aap.fermata.addon.tv.m3u.TvM3uEpgItem;
@@ -41,6 +42,9 @@ import me.aap.fermata.addon.tv.stalker.StalkerSeriesItem;
 import me.aap.fermata.addon.tv.stalker.StalkerSourceItem;
 import me.aap.fermata.addon.tv.stalker.StalkerTrackItem;
 import me.aap.fermata.addon.tv.stalker.StalkerVodItem;
+import me.aap.fermata.diagnostics.DiagnosticEvent;
+import me.aap.fermata.diagnostics.DiagnosticPriority;
+import me.aap.fermata.diagnostics.DiagnosticScope;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ItemContainer;
 import me.aap.fermata.media.lib.MediaLib;
@@ -144,6 +148,7 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 			failures.add(name);
 			if (failure != null) Log.e(failure, "TV source unavailable: ", name);
 			else Log.e("TV source unavailable: ", name);
+			recordSourceUnavailable(name, failure);
 			unavailable.put(id, createUnavailableSource(sources.getStore(), this, id, name, failure));
 		}).map(available -> {
 			setFailedSourceNames(failures);
@@ -363,5 +368,17 @@ public class TvRootItem extends ItemContainer<TvSourceItem> implements TvItem {
 
 	static Pref<Supplier<String>> sourceTypePref(int sourceId) {
 		return TvSourceRepository.sourceTypePref(sourceId);
+	}
+
+	private static void recordSourceUnavailable(String name, @Nullable Throwable failure) {
+		try {
+			DiagnosticEvent.Builder event = DiagnosticEvent.builder("tv_source", "source_unavailable")
+					.scope(DiagnosticScope.ESSENTIAL).priority(DiagnosticPriority.WARN)
+					.put("source", name);
+			if (failure != null) event.put("error_class", failure.getClass().getSimpleName());
+			FermataApplication.get().getDiagnostics().record(event.build());
+		} catch (Throwable ignored) {
+			// Diagnostics must never affect TV source listing.
+		}
 	}
 }

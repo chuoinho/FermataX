@@ -167,15 +167,12 @@ public class RoadDataSource {
                     lru.put(t, parsed);
                 }
                 store.removePending(t);
-                recordSuccess();
                 return true;
             } else {
-                recordFailure();
                 store.addPending(t);
                 return false;
             }
         } catch (Exception e) {
-            recordFailure();
             store.addPending(t);
             return false;
         }

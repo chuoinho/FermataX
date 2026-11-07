@@ -61,6 +61,11 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 
 	protected abstract FutureSupplier<? extends ActivityDelegate> createDelegate(AppActivity a);
 
+	/** False when createDelegate() will not finish at once: restored fragments would start before it. */
+	protected boolean canRestoreFragments() {
+		return true;
+	}
+
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static <A extends ActivityBase> FutureSupplier<A> create(
 			Context ctx, String channelId, String channelName, @DrawableRes int icon,
@@ -105,7 +110,7 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 	@CallSuper
 	@Override
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+		super.onCreate(canRestoreFragments() ? savedInstanceState : null);
 		assert delegate == NO_DELEGATE;
 		lifecycleGeneration = lifecycleGuard.begin();
 		// Activity lifecycle and delegate initialization must be serialized on the UI thread.
