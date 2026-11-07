@@ -60,7 +60,7 @@ public final class DiagnosticSanitizer {
 					"attached", "attempt", "auto", "automotive", "battery_pct", "battery_temp_c", "plugged", "thermal_status", "bound", "browser_fullscreen", "byte_count",
 					"command_type", "count", "current_engine_class", "current_engine_id",
 					"duration_ms", "endpoint", "engine_class", "engine_fingerprint", "engine_id", "epoch",
-					"error", "error_class", "error_code", "failure", "failure_class_id",
+					"error", "error_class", "error_code", "failure", "failure_class_id", "failure_count", "failures",
 					"connection", "enabled", "failure_code", "format", "from_id", "generation", "genre", "has_binder",
 					"has_callback", "height", "importance", "input_action", "input_origin",
 					"input_source", "item", "item_class", "key_code", "mapped_key",

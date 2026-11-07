@@ -28,6 +28,27 @@ public class DiagnosticSanitizerTest {
 	}
 
 	@Test
+	public void keepsAutomotiveSessionAndTvSourceEvents() {
+		assertTrue(DiagnosticSchema.isCategory("automotive_shutdown"));
+		assertTrue(DiagnosticSchema.isEvent("shutdown_started"));
+		assertTrue(DiagnosticSchema.isEvent("shutdown_completed"));
+		assertTrue(DiagnosticSchema.isEvent("session_started"));
+		assertTrue(DiagnosticSchema.isEvent("source_unavailable"));
+		assertTrue(DiagnosticSchema.isEvent("playback_command_dropped"));
+		assertTrue(DiagnosticSchema.isEvent("playback_item_unresolved"));
+
+		Map<String, Object> clean = sanitizer.sanitizeEventAttributes("automotive_shutdown",
+				"shutdown_completed", Map.of("generation", 2L, "failure_count", 1, "failures", "media"));
+		assertEquals(1, clean.get("failure_count"));
+		assertEquals("media", clean.get("failures"));
+
+		clean = sanitizer.sanitizeEventAttributes("tv_source", "source_unavailable",
+				Map.of("source", "My private list", "error_class", "IOException"));
+		assertTrue(String.valueOf(clean.get("source")).startsWith("[fingerprint:"));
+		assertEquals("IOException", clean.get("error_class"));
+	}
+
+	@Test
 	public void keepsHostNewIntentShapeWithoutTheData() {
 		assertTrue(DiagnosticSchema.isEvent("host_new_intent"));
 		assertTrue(DiagnosticSchema.isEvent("host_restore_discarded"));
