@@ -23,15 +23,21 @@ import android.view.Surface;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
@@ -93,6 +99,15 @@ public class CarDisplayClient {
 	private int retryAttempt = 0;
 	private Consumer<String> testCommandRunner;
 	private BiConsumer<String, Map<String, ?>> diagnosticsConsumerForTest;
+	private static final long CALL_FAILURE_INTERVAL_MS = 10_000;
+	private static final int SERVER_LOG_LINES = 20;
+	private final Map<String, Long> lastCallFailure = new ConcurrentHashMap<>();
+	private volatile Supplier<String> serverLogReader = CarDisplayClient::readServerLog;
+	private volatile Executor logExecutor = r -> {
+		Thread t = new Thread(r, "fermatax-server-log");
+		t.setDaemon(true);
+		t.start();
+	};
 	private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
 	private final IBinder.DeathRecipient deathRecipient = new IBinder.DeathRecipient() {
@@ -145,6 +160,7 @@ public class CarDisplayClient {
 			srv.setPanelPower(on);
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.setPanelPower failed");
+			recordCallFailure("set_panel_power", e);
 		}
 	}
 
@@ -265,6 +281,63 @@ public class CarDisplayClient {
 		this.diagnosticsConsumerForTest = consumer;
 	}
 
+	private void recordCallFailure(String call, Throwable error) {
+		recordCallFailure(call, error.getClass().getSimpleName());
+	}
+
+	/** Once per call every 10 s: a dead server fails every touch. */
+	private void recordCallFailure(String call, String error) {
+		long now = SystemClock.elapsedRealtime();
+		Long last = lastCallFailure.get(call);
+		if ((last != null) && (now - last < CALL_FAILURE_INTERVAL_MS)) return;
+		lastCallFailure.put(call, now);
+		recordDiagnostic("server_call_failed", Map.of("call", call, "error", error));
+	}
+
+	/** The server logs only to logcat, which a tester without a computer cannot read: copy its tail. */
+	private void recordServerLog(String reason) {
+		Supplier<String> reader = serverLogReader;
+		logExecutor.execute(() -> {
+			String log;
+			try {
+				log = reader.get();
+			} catch (Throwable t) {
+				return;
+			}
+			if ((log != null) && !log.trim().isEmpty()) {
+				recordDiagnostic("server_log", Map.of("reason", reason, "lines", lastLines(log, SERVER_LOG_LINES)));
+			}
+		});
+	}
+
+	static String lastLines(String text, int max) {
+		String[] lines = text.trim().split("\n");
+		int from = Math.max(0, lines.length - max);
+		return String.join("\n", Arrays.copyOfRange(lines, from, lines.length));
+	}
+
+	/** The server runs under another uid, so reading its log needs root; asked only once root was granted. */
+	@Nullable
+	private static String readServerLog() {
+		if (!CarAppsFeature.usable(CarAppsFeature.state())) return null;
+		try {
+			java.lang.Process p = new ProcessBuilder("su", "-c", "logcat -d -v time -s CarDisplayServer:*")
+					.redirectErrorStream(true).start();
+			StringBuilder out = new StringBuilder();
+			try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+				for (String line; (line = r.readLine()) != null; ) out.append(line).append('\n');
+			}
+			p.waitFor(5, TimeUnit.SECONDS);
+			return out.toString();
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	void setServerLogReaderForTest(Supplier<String> reader) {
+		this.serverLogReader = reader;
+	}
+
 	public int getExpectedVersion() {
 		return BuildConfig.VERSION_CODE;
 	}
@@ -274,6 +347,7 @@ public class CarDisplayClient {
 			if (state == State.STARTING) {
 				Log.w("CarDisplayServer startup timed out after 8000ms");
 				recordDiagnostic("server_failed", Map.of("reason", "startup_timeout"));
+				recordServerLog("startup_timeout");
 				setState(State.RETRYING);
 				scheduleRetry();
 			}
@@ -384,7 +458,8 @@ public class CarDisplayClient {
 	}
 
 	private synchronized void onServerDied() {
-		recordDiagnostic("server_died", Map.of("panelOff", panelOff));
+		recordDiagnostic("server_died", Map.of("panel_off", panelOff));
+		recordServerLog("server_died");
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();
 		flushTouchQueueDiagnosticsAndClear();
@@ -420,7 +495,7 @@ public class CarDisplayClient {
 			return;
 		}
 
-		recordDiagnostic("server_retry", Map.of("attempt", retryAttempt, "delayMs", delay));
+		recordDiagnostic("server_retry", Map.of("attempt", retryAttempt, "delay_ms", delay));
 		Log.i("Scheduling server reconnect attempt " + retryAttempt + " in " + delay + " ms");
 		mainHandler.postDelayed(() -> {
 			if (state == State.RETRYING && lastContext != null) {
@@ -460,7 +535,7 @@ public class CarDisplayClient {
 		String pkg = ctx.getPackageName();
 		String cmd = ServerCommand.build(apkPath, appUid, versionCode, pkg);
 
-		recordDiagnostic("server_starting", Map.of("apkPath", apkPath != null ? apkPath : ""));
+		recordDiagnostic("server_starting", Map.of("attempt", retryAttempt));
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		mainHandler.postDelayed(startTimeoutRunnable, 8000L);
 
@@ -525,6 +600,7 @@ public class CarDisplayClient {
 			return id;
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.attach failed");
+			recordCallFailure("attach", e);
 			return -1;
 		}
 	}
@@ -540,6 +616,7 @@ public class CarDisplayClient {
 			srv.setSurface(s, w, h, dpi);
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.setSurface failed");
+			recordCallFailure("set_surface", e);
 		}
 	}
 
@@ -576,10 +653,12 @@ public class CarDisplayClient {
 						srv.inject(ev);
 					} catch (RemoteException ex) {
 						Log.e(ex, "CarDisplayServer.inject failed");
+						recordCallFailure("inject", ex);
 						flushTouchQueueDiagnosticsAndClear();
 						break;
 					} catch (Throwable t) {
 						Log.e(t, "Unexpected error injecting touch event");
+						recordCallFailure("inject", t);
 					} finally {
 						ev.recycle();
 					}
@@ -619,7 +698,7 @@ public class CarDisplayClient {
 			recordDiagnostic("touch_queue", Map.of(
 					"merged", c.merged,
 					"dropped", c.dropped,
-					"resetOverload", c.resetOverload
+					"reset_overload", c.resetOverload
 			));
 		}
 		touchQueue.clear();
@@ -636,6 +715,7 @@ public class CarDisplayClient {
 			srv.injectKey(keyCode);
 		} catch (RemoteException ex) {
 			Log.e(ex, "CarDisplayServer.injectKey failed");
+			recordCallFailure("inject_key", ex);
 		}
 	}
 
@@ -643,9 +723,12 @@ public class CarDisplayClient {
 		ICarDisplayServer srv = this.server;
 		if (srv == null) return -1;
 		try {
-			return srv.launch(c, intentFlags);
+			int result = srv.launch(c, intentFlags);
+			if (result != 0) recordCallFailure("launch", "exit_" + result); // the exit code of am start
+			return result;
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.launch failed");
+			recordCallFailure("launch", e);
 			return -1;
 		}
 	}
@@ -657,6 +740,7 @@ public class CarDisplayClient {
 			srv.launchOnPhone(c, intentFlags);
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.launchOnPhone failed");
+			recordCallFailure("launch_on_phone", e);
 		}
 	}
 
@@ -667,6 +751,7 @@ public class CarDisplayClient {
 			return srv.closeTopApp(force);
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.closeTopApp failed");
+			recordCallFailure("close_top_app", e);
 			return "";
 		}
 	}
@@ -678,6 +763,7 @@ public class CarDisplayClient {
 			return srv.capabilities();
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.capabilities failed");
+			recordCallFailure("capabilities", e);
 			return 0;
 		}
 	}
@@ -797,7 +883,7 @@ public class CarDisplayClient {
 			}
 		}
 		if (changed) {
-			recordDiagnostic("phone_state", Map.of("asleep", asleep, "locked", locked, "ownPowerGroup", ownPowerGroup));
+			recordDiagnostic("phone_state", Map.of("asleep", asleep, "locked", locked, "own_power_group", ownPowerGroup));
 			notifyStateListeners();
 		}
 	}
@@ -823,6 +909,7 @@ public class CarDisplayClient {
 				else srv.setSurface(carSurface, carWidth, carHeight, carDpi);
 			} catch (RemoteException e) {
 				Log.e(e, "CarDisplayServer.setSurface failed");
+				recordCallFailure("set_surface", e);
 			}
 		}
 	}
@@ -893,6 +980,7 @@ public class CarDisplayClient {
 				srv.release();
 			} catch (RemoteException e) {
 				Log.e(e, "CarDisplayServer.release failed");
+				recordCallFailure("release", e);
 			}
 		}
 		setState(State.IDLE);
@@ -910,7 +998,7 @@ public class CarDisplayClient {
 			recordDiagnostic("server_failed", Map.of("reason", "max_retries_exceeded"));
 			setState(State.FAILED);
 		} else {
-			recordDiagnostic("server_retry", Map.of("attempt", retryAttempt, "delayMs", delay));
+			recordDiagnostic("server_retry", Map.of("attempt", retryAttempt, "delay_ms", delay));
 			retryAttempt++;
 			if (RetryPolicy.delayMs(retryAttempt) < 0) {
 				recordDiagnostic("server_failed", Map.of("reason", "max_retries_exceeded"));
@@ -941,6 +1029,9 @@ public class CarDisplayClient {
 		this.nextPhoneSleepMs = 0;
 		this.testCommandRunner = null;
 		this.diagnosticsConsumerForTest = null;
+		this.lastCallFailure.clear();
+		this.serverLogReader = () -> null;
+		this.logExecutor = Runnable::run;
 		this.stateListeners.clear();
 		this.lastContext = null;
 		this.sendExecutor = Runnable::run;

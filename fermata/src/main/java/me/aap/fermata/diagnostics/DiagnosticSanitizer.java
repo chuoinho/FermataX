@@ -76,7 +76,11 @@ public final class DiagnosticSanitizer {
 					"session_active", "skip", "stack", "stale", "stalled_for_ms", "supported_actions",
 					"source", "state", "status", "surface_known", "surface_valid", "thread_dump", "title",
 					"target_id", "timestamp", "token_generation", "type", "url", "video", "visible", "web_attached",
-					"uri", "web_height", "web_visible", "web_width", "width", "_truncated")));
+					"uri", "web_height", "web_visible", "web_width", "width", "_truncated",
+					// Car Apps: server lifecycle, phone screen, and the readiness check ids
+					"asleep", "call", "capabilities", "channel", "delay_ms", "dropped", "focus", "ime", "inject",
+					"lines", "locked", "merged", "ok", "own_power_group", "panel_off", "panel_power", "reset_overload",
+					"result", "tasks", "trusted", "uid", "version")));
 	private static final Set<String> FINGERPRINT_VALUE_KEYS = Collections.unmodifiableSet(
 			new HashSet<>(Arrays.asList("endpoint", "genre", "item", "process_name",
 					"provider_error", "query", "request", "source", "title", "url", "uri")));

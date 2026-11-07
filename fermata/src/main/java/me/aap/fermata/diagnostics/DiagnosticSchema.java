@@ -5,7 +5,7 @@ import java.util.Set;
 /** Registry for non-user-authored identifiers allowed in exported diagnostic envelopes. */
 final class DiagnosticSchema {
 	private static final Set<String> CATEGORIES = Set.of(
-			"aa_startup", "addon", "application", "audiobook_source", "auto", "content", "location", "log", "speedo",
+			"aa_startup", "addon", "application", "audiobook_source", "auto", "carapps", "content", "location", "log", "speedo",
 			"database", "diagnostics", "engine", "engine_exoplayer", "engine_vlc", "legacy_log",
 			"hardware_input", "lifecycle", "navigation", "network", "performance", "playback",
 			"podcast_source", "process", "radio_source", "service", "service_connection",
@@ -27,6 +27,9 @@ final class DiagnosticSchema {
 			"addon_load_cancelled", "addon_load_committed", "addon_load_failed", "addon_load_started",
 			"addon_replay_completed", "addon_service_create", "addon_service_destroy",
 			"addon_unload_completed", "addon_unload_started", "attach_rejected", "attached",
+			"carapps_checks", "phone_panel", "phone_sleep", "phone_state", "root_grant", "server_call_failed",
+			"server_connected", "server_died", "server_failed", "server_log", "server_retry", "server_starting",
+			"touch_queue",
 			"attach_unconfirmed", "audible_start_requested", "back_exit_requested", "browser_callback_received",
 			"browser_request_dispatched", "browser_visibility_changed", "command_routed",
 			"content_callback_ignored", "content_operation_cancelled",

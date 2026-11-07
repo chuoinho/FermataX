@@ -862,7 +862,7 @@ public class CarDisplayClientTest {
 		client.setCommandRunnerForTest(cmd -> {});
 		client.ensureRunning(context);
 		assertTrue(recordedEvents.contains("server_starting"));
-		assertEquals(context.getPackageCodePath(), recordedAttrs.get("server_starting").get("apkPath"));
+		assertEquals(0, recordedAttrs.get("server_starting").get("attempt"));
 
 		// 2. server_connected
 		AtomicBoolean released = new AtomicBoolean(false);
@@ -976,6 +976,101 @@ public class CarDisplayClientTest {
 
 		assertTrue(events.toString(), events.contains("phone_sleep"));
 		assertTrue(events.toString(), events.contains("server_died"));
+	}
+
+	/** The report drops unknown categories, event names and attribute keys: an unregistered event would be lost. */
+	@Test
+	public void everyCarAppsEventReachesTheReport() {
+		List<String> names = new ArrayList<>();
+		List<Map<String, ?>> attrs = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((e, a) -> {
+			names.add(e);
+			attrs.add(a);
+		});
+		client.setServerLogReaderForTest(() -> "I CarDisplayServer: su 1000 failed: denied");
+		List<Runnable> touches = new ArrayList<>();
+		client.setSendExecutorForTest(touches::add);
+		client.setCommandRunnerForTest(cmd -> {});
+
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server, 1000);
+		client.attach(null, 100, 100, 160);
+		client.setPanelOff(true);
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_OFF));
+		ShadowLooper.idleMainLooper();
+		client.sleepPhone();
+		setDeviceLocked(true);
+		context.sendBroadcast(new Intent(Intent.ACTION_SCREEN_ON));
+		ShadowLooper.idleMainLooper();
+		server.launchResult = 1;
+		client.launch(new ComponentName("a", "a.B"), 0);
+		long now = android.os.SystemClock.uptimeMillis();
+		for (int action : new int[]{MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_MOVE}) {
+			MotionEvent e = MotionEvent.obtain(now, now, action, 100f, 200f, 0);
+			client.inject(e);
+			e.recycle();
+		}
+		server.failInject = true;
+		touches.get(0).run();
+		server.triggerDeath();
+		client.release();
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(8, java.util.concurrent.TimeUnit.SECONDS);
+
+		for (String expected : new String[]{"server_starting", "server_connected", "carapps_checks", "phone_panel",
+				"phone_sleep", "phone_state", "server_call_failed", "touch_queue", "server_died", "server_log",
+				"server_retry", "server_failed"}) {
+			assertTrue(expected + " in " + names, names.contains(expected));
+		}
+		for (int i = 0; i < names.size(); i++) {
+			assertTrue(names.get(i), me.aap.fermata.diagnostics.ReportSchemaProbe.keepsName("carapps", names.get(i)));
+			assertEquals(names.get(i), attrs.get(i).keySet(),
+					me.aap.fermata.diagnostics.ReportSchemaProbe.keptAttributes("carapps", names.get(i), attrs.get(i)).keySet());
+		}
+	}
+
+	@Test
+	public void aFailingCallIsRecordedOnceEveryTenSeconds() {
+		List<Map<String, ?>> failures = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((e, a) -> {
+			if (e.equals("server_call_failed")) failures.add(a);
+		});
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.launchResult = 1;
+		client.onServerBinderReceived(server);
+
+		client.launch(new ComponentName("a", "a.B"), 0);
+		client.launch(new ComponentName("a", "a.B"), 0);
+		assertEquals(1, failures.size());
+		assertEquals("launch", failures.get(0).get("call"));
+		assertEquals("exit_1", failures.get(0).get("error"));
+
+		ShadowLooper.idleMainLooper(10, java.util.concurrent.TimeUnit.SECONDS);
+		client.launch(new ComponentName("a", "a.B"), 0);
+		assertEquals(2, failures.size());
+	}
+
+	@Test
+	public void aServerThatDoesNotStartLeavesItsLogInTheReport() {
+		Map<String, Map<String, ?>> recorded = new java.util.HashMap<>();
+		client.setDiagnosticsConsumerForTest(recorded::put);
+		client.setServerLogReaderForTest(() -> "a\nI CarDisplayServer: su 1000 failed: denied");
+		client.setCommandRunnerForTest(cmd -> {});
+
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(8, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals("startup_timeout", recorded.get("server_log").get("reason"));
+		assertTrue(String.valueOf(recorded.get("server_log").get("lines")).endsWith("su 1000 failed: denied"));
+	}
+
+	@Test
+	public void onlyTheLastServerLogLinesAreKept() {
+		assertEquals("c\nd", CarDisplayClient.lastLines("a\nb\nc\nd\n", 2));
+		assertEquals("a", CarDisplayClient.lastLines("a", 20));
 	}
 
 	@Test
@@ -1151,6 +1246,7 @@ public class CarDisplayClientTest {
 		final List<Surface> surfaces = new ArrayList<>();
 		final List<MotionEvent> injected = new ArrayList<>();
 		boolean failInject;
+		int launchResult;
 		private final int version;
 		private final AtomicBoolean released;
 		private DeathRecipient deathRecipient;
@@ -1215,7 +1311,7 @@ public class CarDisplayClientTest {
 
 		@Override
 		public int launch(ComponentName c, int intentFlags) {
-			return 0;
+			return launchResult;
 		}
 
 		@Override
