@@ -1,5 +1,6 @@
 package me.aap.fermata.ui.fragment;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -19,6 +20,16 @@ public class ReadinessPrefsBuilderTest {
 	}
 
 	/** Playback and Android Auto work without notification permission, so it is optional. */
+	@Test
+	public void notApplicableChecksAreNotShown() {
+		java.util.List<me.aap.fermata.ui.carapps.CarAppsChecks.Check> checks = me.aap.fermata.ui.carapps.CarAppsChecks
+				.from(me.aap.fermata.ui.carapps.RootState.GRANTED, me.aap.fermata.ui.carapps.CarAppsChecks.CAP_IME, 30);
+		for (me.aap.fermata.ui.carapps.CarAppsChecks.Check c : checks) {
+			assertEquals(c.id, c.status != me.aap.fermata.ui.carapps.CarAppsChecks.Status.NA, ReadinessPrefsBuilder.isShown(c));
+		}
+		assertTrue(checks.stream().anyMatch(c -> !ReadinessPrefsBuilder.isShown(c)));
+	}
+
 	@Test
 	public void notificationsAreOptional() {
 		java.util.List<me.aap.fermata.ui.control.PhoneReadiness.Check> required =

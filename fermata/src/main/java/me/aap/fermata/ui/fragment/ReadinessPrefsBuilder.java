@@ -139,6 +139,7 @@ final class ReadinessPrefsBuilder {
 
 		if (CarAppsFeature.state() == RootState.GRANTED && !model.checks.isEmpty()) {
 			for (me.aap.fermata.ui.carapps.CarAppsChecks.Check check : model.checks) {
+				if (!isShown(check)) continue;
 				int checkColor;
 				switch (check.status) {
 					case FAIL:
@@ -170,6 +171,11 @@ final class ReadinessPrefsBuilder {
 				o.title = R.string.car_apps_panel_off_pref;
 			});
 		}
+	}
+
+	/** A row saying only "not applicable" tells the user nothing; the diagnostics report still records it. */
+	static boolean isShown(me.aap.fermata.ui.carapps.CarAppsChecks.Check check) {
+		return check.status != me.aap.fermata.ui.carapps.CarAppsChecks.Status.NA;
 	}
 
 	private CharSequence carAppsSubtitle(CarAppsReadinessModel model) {
