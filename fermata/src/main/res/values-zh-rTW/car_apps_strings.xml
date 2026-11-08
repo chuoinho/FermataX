@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="car_apps_title">車載應用程式</string>
+    <string name="car_apps_title">手機應用程式</string>
     <string name="car_apps_dashboard_sub">獨立虛擬螢幕啟動器</string>
     <string name="car_apps_loading">正在啟動車載螢幕…</string>
-    <string name="car_apps_needs_root">執行獨立車載應用程式需要 Root 權限</string>
+    <string name="car_apps_needs_root">在車載螢幕上執行手機應用程式需要 Root 權限</string>
     <string name="car_apps_grant_root">授予 Root 權限</string>
     <string name="car_apps_server_error">無法啟動車載螢幕伺服器</string>
     <string name="car_apps_nav_back">返回</string>
     <string name="car_apps_nav_drawer">應用程式選單</string>
     <string name="car_apps_nav_close">關閉應用程式</string>
     <string name="car_apps_panel_off">關閉手機螢幕</string>
-    <string name="car_apps_readiness_title">獨立車載螢幕</string>
+    <string name="car_apps_readiness_title">車載螢幕上的手機應用程式</string>
     <string name="car_apps_readiness_status_ready">已就緒</string>
     <string name="car_apps_readiness_status_need_root">需要 Root 權限</string>
     <string name="car_apps_readiness_action_grant">授予 Root 權限</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">需要啟用 USB 偵錯（安全設定）</string>
     <string name="car_apps_grant_root_blocked">未取得 Root 權限。請再試一次，並在 Root 管理程式中允許該要求。</string>
-    <string name="car_apps_phone_dim_text">正在車上使用 Car Apps\n輕觸即可使用手機</string>
+    <string name="car_apps_phone_dim_text">正在車上使用手機應用程式\n輕觸即可使用手機</string>
     <string name="car_apps_phone_asleep">手機螢幕已關閉\n輕觸即可繼續</string>
     <string name="car_apps_phone_locked">手機已鎖定\n請解鎖後繼續</string>
 
@@ -24,7 +24,7 @@
     <string name="car_apps_check_channel_available">Root 可用但未授權</string>
     <string name="car_apps_check_channel_grant_fix">請在 Root 管理器中授權</string>
     <string name="car_apps_check_channel_absent">未偵測到 Root 權限</string>
-    <string name="car_apps_check_channel_root_fix">需要 Root 權限才能使用 Car Apps</string>
+    <string name="car_apps_check_channel_root_fix">需要 Root 權限才能使用手機應用程式</string>
     <string name="car_apps_check_trusted_ok">可信顯示區 (Trusted Display)</string>
     <string name="car_apps_check_trusted_missing">缺少可信顯示權限</string>
     <string name="car_apps_check_trusted_fix">無法設定 IME 策略，部分 App 可能無法輸入</string>
@@ -44,7 +44,7 @@
     <string name="car_apps_check_focus_na">不適用於此 Android 版本</string>
     <string name="car_apps_check_power_group_own">獨立電源群組</string>
     <string name="car_apps_check_power_group_shared">與手機共用電源群組</string>
-    <string name="car_apps_check_panel_power_ok">車載應用運作時關閉手機螢幕</string>
+    <string name="car_apps_check_panel_power_ok">手機應用程式運作時關閉手機螢幕</string>
     <string name="car_apps_check_panel_power_missing">無法關閉手機螢幕</string>
     <string name="car_apps_check_panel_power_fix">無法關閉螢幕，將使用黑畫面</string>
 </resources>

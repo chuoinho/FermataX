@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="car_apps_title">Apps del coche</string>
+    <string name="car_apps_title">Apps del teléfono</string>
     <string name="car_apps_dashboard_sub">Lanzador de pantalla virtual independiente</string>
     <string name="car_apps_loading">Iniciando pantalla del coche…</string>
-    <string name="car_apps_needs_root">Se requiere acceso root para ejecutar aplicaciones de coche independientes</string>
+    <string name="car_apps_needs_root">Se requiere acceso root para ejecutar apps del teléfono en la pantalla del coche</string>
     <string name="car_apps_grant_root">Conceder root</string>
     <string name="car_apps_server_error">Error al iniciar el servidor de pantalla</string>
     <string name="car_apps_nav_back">Atrás</string>
     <string name="car_apps_nav_drawer">Cajón de aplicaciones</string>
     <string name="car_apps_nav_close">Cerrar aplicación</string>
     <string name="car_apps_panel_off">Apagar pantalla del teléfono</string>
-    <string name="car_apps_readiness_title">Pantalla de coche independiente</string>
+    <string name="car_apps_readiness_title">Apps del teléfono en la pantalla del coche</string>
     <string name="car_apps_readiness_status_ready">Listo</string>
     <string name="car_apps_readiness_status_need_root">Se requiere acceso root</string>
     <string name="car_apps_readiness_action_grant">Conceder root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Requiere depuración USB (Ajustes de seguridad)</string>
     <string name="car_apps_grant_root_blocked">No se concedió root. Inténtalo de nuevo y permite la solicitud en tu gestor de root.</string>
-    <string name="car_apps_phone_dim_text">Car Apps se está usando en el coche\nToca para usar el teléfono</string>
+    <string name="car_apps_phone_dim_text">Apps del teléfono se está usando en el coche\nToca para usar el teléfono</string>
     <string name="car_apps_phone_asleep">La pantalla del teléfono está apagada\nToca para continuar</string>
     <string name="car_apps_phone_locked">El teléfono está bloqueado\nDesbloquéalo para continuar</string>
 
@@ -24,7 +24,7 @@
     <string name="car_apps_check_channel_available">Root disponible pero no otorgado</string>
     <string name="car_apps_check_channel_grant_fix">Otorgue root en su gestor de root</string>
     <string name="car_apps_check_channel_absent">Acceso root no encontrado</string>
-    <string name="car_apps_check_channel_root_fix">Se requiere root para Car Apps</string>
+    <string name="car_apps_check_channel_root_fix">Se requiere root para Apps del teléfono</string>
     <string name="car_apps_check_trusted_ok">Pantalla de confianza</string>
     <string name="car_apps_check_trusted_missing">Falta permiso de pantalla de confianza</string>
     <string name="car_apps_check_trusted_fix">No se puede definir política IME</string>
@@ -44,7 +44,7 @@
     <string name="car_apps_check_focus_na">No aplicable en esta versión de Android</string>
     <string name="car_apps_check_power_group_own">Grupo de energía de pantalla independiente</string>
     <string name="car_apps_check_power_group_shared">Grupo de energía compartido con el teléfono</string>
-    <string name="car_apps_check_panel_power_ok">La pantalla del teléfono se apaga durante las apps del coche</string>
+    <string name="car_apps_check_panel_power_ok">La pantalla del teléfono se apaga durante las apps del teléfono</string>
     <string name="car_apps_check_panel_power_missing">No se puede apagar la pantalla del teléfono</string>
     <string name="car_apps_check_panel_power_fix">No se puede apagar la pantalla; se usará pantalla negra</string>
 </resources>

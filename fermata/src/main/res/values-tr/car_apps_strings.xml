@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="car_apps_title">Araç Uygulamaları</string>
+    <string name="car_apps_title">Telefon Uygulamaları</string>
     <string name="car_apps_dashboard_sub">Bağımsız sanal ekran başlatıcı</string>
     <string name="car_apps_loading">Araç ekranı başlatılıyor…</string>
-    <string name="car_apps_needs_root">Bağımsız araç uygulamalarını çalıştırmak için root erişimi gereklidir</string>
+    <string name="car_apps_needs_root">Telefon uygulamalarını araç ekranında çalıştırmak için root erişimi gereklidir</string>
     <string name="car_apps_grant_root">Root izni ver</string>
     <string name="car_apps_server_error">Ekran sunucusu başlatılamadı</string>
     <string name="car_apps_nav_back">Geri</string>
     <string name="car_apps_nav_drawer">Uygulama çekmecesi</string>
     <string name="car_apps_nav_close">Uygulamayı kapat</string>
     <string name="car_apps_panel_off">Telefon ekranını kapat</string>
-    <string name="car_apps_readiness_title">Bağımsız araç ekranı</string>
+    <string name="car_apps_readiness_title">Araç ekranında telefon uygulamaları</string>
     <string name="car_apps_readiness_status_ready">Hazır</string>
     <string name="car_apps_readiness_status_need_root">Root erişimi gerekli</string>
     <string name="car_apps_readiness_action_grant">Root izni ver</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">USB hata ayıklama (Güvenlik ayarları) gereklidir</string>
     <string name="car_apps_grant_root_blocked">Root izni verilmedi. Tekrar deneyin ve isteği root yöneticinizde onaylayın.</string>
-    <string name="car_apps_phone_dim_text">Car Apps araçta kullanılıyor\nTelefonu kullanmak için dokunun</string>
+    <string name="car_apps_phone_dim_text">Telefon Uygulamaları araçta kullanılıyor\nTelefonu kullanmak için dokunun</string>
     <string name="car_apps_phone_asleep">Telefon ekranı kapalı\nDevam etmek için dokunun</string>
     <string name="car_apps_phone_locked">Telefon kilitli\nDevam etmek için kilidi açın</string>
 
@@ -24,7 +24,7 @@
     <string name="car_apps_check_channel_available">Root mevcut ancak izin verilmedi</string>
     <string name="car_apps_check_channel_grant_fix">Root yöneticisinden root izni verin</string>
     <string name="car_apps_check_channel_absent">Root erişimi bulunamadı</string>
-    <string name="car_apps_check_channel_root_fix">Car Apps için root gereklidir</string>
+    <string name="car_apps_check_channel_root_fix">Telefon Uygulamaları için root gereklidir</string>
     <string name="car_apps_check_trusted_ok">Güvenilir ekran</string>
     <string name="car_apps_check_trusted_missing">Güvenilir ekran izni eksik</string>
     <string name="car_apps_check_trusted_fix">IME politikası ayarlanamıyor</string>
@@ -44,7 +44,7 @@
     <string name="car_apps_check_focus_na">Bu Android sürümü için geçerli değil</string>
     <string name="car_apps_check_power_group_own">Bağımsız ekran güç grubu</string>
     <string name="car_apps_check_power_group_shared">Telefonla paylaşılan güç grubu</string>
-    <string name="car_apps_check_panel_power_ok">Araç uygulamalarında telefon ekranı kapanır</string>
+    <string name="car_apps_check_panel_power_ok">Telefon uygulamalarında telefon ekranı kapanır</string>
     <string name="car_apps_check_panel_power_missing">Telefon ekranı kapatılamıyor</string>
     <string name="car_apps_check_panel_power_fix">Ekran kapatılamıyor; siyah ekran kullanılacak</string>
 </resources>

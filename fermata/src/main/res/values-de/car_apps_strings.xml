@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="car_apps_title">Fahrzeug-Apps</string>
+    <string name="car_apps_title">Telefon-Apps</string>
     <string name="car_apps_dashboard_sub">Unabhängiger virtueller Display-Launcher</string>
     <string name="car_apps_loading">Fahrzeuganzeige wird gestartet…</string>
-    <string name="car_apps_needs_root">Root-Zugriff ist erforderlich, um unabhängige Fahrzeug-Apps auszuführen</string>
+    <string name="car_apps_needs_root">Root-Zugriff ist erforderlich, um Telefon-Apps auf dem Fahrzeugdisplay auszuführen</string>
     <string name="car_apps_grant_root">Root gewähren</string>
     <string name="car_apps_server_error">Fehler beim Starten des Display-Servers</string>
     <string name="car_apps_nav_back">Zurück</string>
     <string name="car_apps_nav_drawer">App-Übersicht</string>
     <string name="car_apps_nav_close">App schließen</string>
     <string name="car_apps_panel_off">Telefonbildschirm ausschalten</string>
-    <string name="car_apps_readiness_title">Unabhängige Fahrzeuganzeige</string>
+    <string name="car_apps_readiness_title">Telefon-Apps auf dem Fahrzeugdisplay</string>
     <string name="car_apps_readiness_status_ready">Bereit</string>
     <string name="car_apps_readiness_status_need_root">Root-Zugriff erforderlich</string>
     <string name="car_apps_readiness_action_grant">Root gewähren</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Erfordert USB-Debugging (Sicherheitseinstellungen)</string>
     <string name="car_apps_grant_root_blocked">Root wurde nicht gewährt. Versuche es erneut und erlaube die Anfrage in deiner Root-Verwaltung.</string>
-    <string name="car_apps_phone_dim_text">Car Apps läuft im Fahrzeug\nBerühren, um das Telefon zu nutzen</string>
+    <string name="car_apps_phone_dim_text">Telefon-Apps läuft im Fahrzeug\nBerühren, um das Telefon zu nutzen</string>
     <string name="car_apps_phone_asleep">Der Telefonbildschirm ist aus\nBerühren, um fortzufahren</string>
     <string name="car_apps_phone_locked">Das Telefon ist gesperrt\nEntsperren, um fortzufahren</string>
 
@@ -24,7 +24,7 @@
     <string name="car_apps_check_channel_available">Root verfügbar, aber nicht gewährt</string>
     <string name="car_apps_check_channel_grant_fix">Root-Rechte im Root-Manager gewähren</string>
     <string name="car_apps_check_channel_absent">Kein Root-Zugriff gefunden</string>
-    <string name="car_apps_check_channel_root_fix">Root für Car Apps erforderlich</string>
+    <string name="car_apps_check_channel_root_fix">Root für Telefon-Apps erforderlich</string>
     <string name="car_apps_check_trusted_ok">Vertrauenswürdiges Display</string>
     <string name="car_apps_check_trusted_missing">Keine Berechtigung für vertrauenswürdiges Display</string>
     <string name="car_apps_check_trusted_fix">IME-Richtlinie kann nicht gesetzt werden</string>
@@ -44,7 +44,7 @@
     <string name="car_apps_check_focus_na">Nicht zutreffend für diese Android-Version</string>
     <string name="car_apps_check_power_group_own">Eigene Stromversorgungsgruppe</string>
     <string name="car_apps_check_power_group_shared">Gemeinsame Stromversorgung mit Smartphone</string>
-    <string name="car_apps_check_panel_power_ok">Telefondisplay schaltet bei Fahrzeug-Apps ab</string>
+    <string name="car_apps_check_panel_power_ok">Telefondisplay schaltet bei Telefon-Apps ab</string>
     <string name="car_apps_check_panel_power_missing">Telefondisplay kann nicht ausgeschaltet werden</string>
     <string name="car_apps_check_panel_power_fix">Display kann nicht abgeschaltet werden; schwarzer Bildschirm wird verwendet</string>
 </resources>

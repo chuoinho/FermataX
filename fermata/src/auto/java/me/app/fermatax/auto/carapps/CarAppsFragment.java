@@ -160,7 +160,7 @@ public class CarAppsFragment extends MainActivityFragment {
 	@Override
 	public CharSequence getTitle() {
 		Context ctx = getContext();
-		return ctx != null ? ctx.getString(R.string.car_apps_title) : "Car Apps";
+		return ctx != null ? ctx.getString(R.string.car_apps_title) : "Phone Apps";
 	}
 
 	@Nullable

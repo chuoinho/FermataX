@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="car_apps_title">Приложения авто</string>
+    <string name="car_apps_title">Приложения телефона</string>
     <string name="car_apps_dashboard_sub">Независимый лаунчер виртуального экрана</string>
     <string name="car_apps_loading">Запуск экрана авто…</string>
-    <string name="car_apps_needs_root">Требуется root-доступ для запуска независимых приложений авто</string>
+    <string name="car_apps_needs_root">Требуется root-доступ для запуска приложений телефона на экране авто</string>
     <string name="car_apps_grant_root">Предоставить root</string>
     <string name="car_apps_server_error">Не удалось запустить сервер экрана авто</string>
     <string name="car_apps_nav_back">Назад</string>
     <string name="car_apps_nav_drawer">Список приложений</string>
     <string name="car_apps_nav_close">Закрыть приложение</string>
     <string name="car_apps_panel_off">Выключить экран телефона</string>
-    <string name="car_apps_readiness_title">Независимый экран авто</string>
+    <string name="car_apps_readiness_title">Приложения телефона на экране авто</string>
     <string name="car_apps_readiness_status_ready">Готово</string>
     <string name="car_apps_readiness_status_need_root">Требуется root-доступ</string>
     <string name="car_apps_readiness_action_grant">Предоставить root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Требуется отладка по USB (настройки безопасности)</string>
     <string name="car_apps_grant_root_blocked">Root-доступ не предоставлен. Повторите попытку и разрешите запрос в менеджере root.</string>
-    <string name="car_apps_phone_dim_text">Car Apps работает в автомобиле\nКоснитесь, чтобы пользоваться телефоном</string>
+    <string name="car_apps_phone_dim_text">Приложения телефона работают в автомобиле\nКоснитесь, чтобы пользоваться телефоном</string>
     <string name="car_apps_phone_asleep">Экран телефона выключен\nКоснитесь, чтобы продолжить</string>
     <string name="car_apps_phone_locked">Телефон заблокирован\nРазблокируйте, чтобы продолжить</string>
 
@@ -24,7 +24,7 @@
     <string name="car_apps_check_channel_available">Root доступен, но не предоставлен</string>
     <string name="car_apps_check_channel_grant_fix">Предоставьте root в менеджере root</string>
     <string name="car_apps_check_channel_absent">Root-доступ не найден</string>
-    <string name="car_apps_check_channel_root_fix">Требуется root для Car Apps</string>
+    <string name="car_apps_check_channel_root_fix">Требуется root для приложений телефона</string>
     <string name="car_apps_check_trusted_ok">Доверенный экран</string>
     <string name="car_apps_check_trusted_missing">Нет прав доверенного экрана</string>
     <string name="car_apps_check_trusted_fix">Невозможно задать политику IME</string>
@@ -44,7 +44,7 @@
     <string name="car_apps_check_focus_na">Не применимо в этой версии Android</string>
     <string name="car_apps_check_power_group_own">Отдельная группа питания</string>
     <string name="car_apps_check_power_group_shared">Общая группа питания с телефоном</string>
-    <string name="car_apps_check_panel_power_ok">Экран телефона выключается при работе приложений авто</string>
+    <string name="car_apps_check_panel_power_ok">Экран телефона выключается при работе приложений телефона</string>
     <string name="car_apps_check_panel_power_missing">Не удается выключить экран телефона</string>
     <string name="car_apps_check_panel_power_fix">Экран нельзя выключить; будет использоваться черный экран</string>
 </resources>

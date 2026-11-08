@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="car_apps_title">Ứng dụng xe</string>
+    <string name="car_apps_title">Ứng dụng điện thoại</string>
     <string name="car_apps_dashboard_sub">Màn hình xe độc lập</string>
     <string name="car_apps_loading">Đang khởi động màn hình xe…</string>
-    <string name="car_apps_needs_root">Cần quyền root để chạy ứng dụng xe độc lập</string>
+    <string name="car_apps_needs_root">Cần quyền root để chạy ứng dụng điện thoại trên màn hình xe</string>
     <string name="car_apps_grant_root">Cấp quyền root</string>
     <string name="car_apps_grant_root_blocked">Chưa cấp được quyền root. Hãy thử lại và cho phép trong ứng dụng quản lý root.</string>
     <string name="car_apps_server_error">Không thể khởi động máy chủ hiển thị xe</string>
@@ -11,12 +11,12 @@
     <string name="car_apps_nav_drawer">Ngăn ứng dụng</string>
     <string name="car_apps_nav_close">Đóng ứng dụng</string>
     <string name="car_apps_panel_off">Tắt màn hình điện thoại</string>
-    <string name="car_apps_readiness_title">Màn hình xe độc lập</string>
+    <string name="car_apps_readiness_title">Ứng dụng điện thoại trên màn hình xe</string>
     <string name="car_apps_readiness_status_ready">Sẵn sàng</string>
     <string name="car_apps_readiness_status_need_root">Yêu cầu quyền root</string>
     <string name="car_apps_readiness_action_grant">Cấp quyền root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Yêu cầu bật USB debugging (Security settings)</string>
-    <string name="car_apps_phone_dim_text">Đang dùng chế độ Car Apps trên xe\nChạm để dùng điện thoại</string>
+    <string name="car_apps_phone_dim_text">Đang dùng Ứng dụng điện thoại trên xe\nChạm để dùng điện thoại</string>
     <string name="car_apps_phone_asleep">Màn hình điện thoại đang tắt\nChạm để tiếp tục</string>
     <string name="car_apps_phone_locked">Điện thoại đang khóa\nMở khóa điện thoại để tiếp tục</string>
 
@@ -24,7 +24,7 @@
     <string name="car_apps_check_channel_available">Chưa cấp quyền Root</string>
     <string name="car_apps_check_channel_grant_fix">Cấp quyền root trong trình quản lý root</string>
     <string name="car_apps_check_channel_absent">Không tìm thấy quyền Root</string>
-    <string name="car_apps_check_channel_root_fix">Thiết bị cần được root để sử dụng Car Apps</string>
+    <string name="car_apps_check_channel_root_fix">Thiết bị cần được root để sử dụng Ứng dụng điện thoại</string>
     <string name="car_apps_check_trusted_ok">Màn hình tin cậy (Trusted Display)</string>
     <string name="car_apps_check_trusted_missing">Màn hình chưa được cấp quyền tin cậy</string>
     <string name="car_apps_check_trusted_fix">Không đặt được chính sách IME, một số app không nhận bàn phím</string>
@@ -44,7 +44,7 @@
     <string name="car_apps_check_focus_na">Không áp dụng cho phiên bản Android này</string>
     <string name="car_apps_check_power_group_own">Nhóm nguồn hiển thị độc lập</string>
     <string name="car_apps_check_power_group_shared">Chia sẻ nhóm nguồn với điện thoại</string>
-    <string name="car_apps_check_panel_power_ok">Tắt màn hình điện thoại khi dùng ứng dụng xe</string>
+    <string name="car_apps_check_panel_power_ok">Tắt màn hình điện thoại khi dùng ứng dụng điện thoại</string>
     <string name="car_apps_check_panel_power_missing">Không thể tắt màn hình điện thoại</string>
     <string name="car_apps_check_panel_power_fix">Không tắt được màn hình, sẽ dùng màn đen</string>
 </resources>
