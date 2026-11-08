@@ -29,6 +29,7 @@ import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowDisplay;
 import org.robolectric.shadows.ShadowLooper;
+import org.robolectric.shadows.ShadowSystemClock;
 import org.robolectric.shadows.ShadowPowerManager;
 
 import java.util.ArrayList;
@@ -359,6 +360,62 @@ public class CarDisplayClientTest {
 
 		assertFalse(client.isPanelOff());
 		assertFalse(client.isPanelOffRequested());
+	}
+
+	private FakeServerBinder attachWithPanelPower() {
+		client.ensureRunning(context);
+		FakeServerBinder server = new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false));
+		server.caps = 0x17 | ICarDisplayServer.CAP_PANEL_POWER;
+		client.onServerBinderReceived(server);
+		client.attach(null, 100, 100, 160);
+		return server;
+	}
+
+	@Test public void litPanelLetsThePhoneTimeOutDarkPanelKeepsItAwake() {
+		attachWithPanelPower();
+		PowerManager.WakeLock wl = latestWakeLock();
+		assertTrue("lit panel: the phone's own screen timeout applies", wl == null || !wl.isHeld()
+				|| !"fermatax:carapps".equals(Shadows.shadowOf(wl).getTag()));
+
+		client.setPanelOff(true);
+		wl = latestWakeLock();
+		assertTrue(wl.isHeld());
+		assertEquals("fermatax:carapps", Shadows.shadowOf(wl).getTag());
+
+		client.setPanelOff(false);
+		assertFalse(wl.isHeld());
+	}
+
+	@Test public void phoneTimingOutWithALitPanelIsWokenAndDarkened() {
+		setPhoneScreen(android.view.Display.STATE_ON);
+		FakeServerBinder server = attachWithPanelPower();
+		setPhoneScreen(android.view.Display.STATE_OFF);
+
+		assertEquals("fermatax:panelwake", Shadows.shadowOf(latestWakeLock()).getTag());
+		assertEquals(java.util.List.of(PhoneDimActivity.class.getName()), server.phoneLaunches);
+		assertTrue(client.isPanelOffRequested());
+	}
+
+	@Test public void lockedPhoneTimingOutIsLeftAsleep() {
+		setDeviceLocked(true);
+		FakeServerBinder server = attachWithPanelPower();
+		setPhoneScreen(android.view.Display.STATE_OFF);
+		assertPhoneNotWoken();
+		assertTrue(server.phoneLaunches.isEmpty());
+	}
+
+	@Test public void phoneTurnedOffAgainAndAgainIsLeftAsleep() {
+		setPhoneScreen(android.view.Display.STATE_ON); // the display state outlives a test
+		FakeServerBinder server = attachWithPanelPower();
+		for (int i = 0; i < 5; i++) {
+			setPhoneScreen(android.view.Display.STATE_OFF);
+			setPhoneScreen(android.view.Display.STATE_ON);
+		}
+		assertEquals("at most 3 in 60 s", 3, server.phoneLaunches.size());
+
+		ShadowSystemClock.advanceBy(java.time.Duration.ofSeconds(61));
+		setPhoneScreen(android.view.Display.STATE_OFF);
+		assertEquals(4, server.phoneLaunches.size());
 	}
 
 	private static void assertPhoneNotWoken() {
@@ -1251,6 +1308,7 @@ public class CarDisplayClientTest {
 		private final AtomicBoolean released;
 		private DeathRecipient deathRecipient;
 		int caps = 0x17;
+		final java.util.List<String> phoneLaunches = new java.util.ArrayList<>();
 		Boolean lastPanelPower;
 		boolean panelFails;
 		final AtomicInteger sleepCount = new AtomicInteger();
@@ -1316,6 +1374,7 @@ public class CarDisplayClientTest {
 
 		@Override
 		public void launchOnPhone(ComponentName c, int intentFlags) {
+			phoneLaunches.add(c.getClassName());
 		}
 
 		@Override

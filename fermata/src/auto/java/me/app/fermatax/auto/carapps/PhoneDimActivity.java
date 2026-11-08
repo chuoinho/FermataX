@@ -35,6 +35,12 @@ public final class PhoneDimActivity extends Activity {
 	protected void onCreate(Bundle b) {
 		super.onCreate(b);
 		current = new WeakReference<>(this);
+		// Woken after a timeout, a swipe lock is up at once and would pause the car apps; a secure lock stays
+		android.app.KeyguardManager km = getSystemService(android.app.KeyguardManager.class);
+		if ((km != null) && !km.isKeyguardSecure()) {
+			setShowWhenLocked(true);
+			if (km.isKeyguardLocked()) km.requestDismissKeyguard(this, null);
+		}
 		WindowManager.LayoutParams lp = getWindow().getAttributes();
 		lp.screenBrightness = 0.01f;
 		getWindow().setAttributes(lp);

@@ -78,6 +78,9 @@ public class CarDisplayClient {
 	private BroadcastReceiver screenOnReceiver;
 	private final Runnable delayedLockCheck = this::rereadLockState;
 	private PowerManager.WakeLock keepAwakeLock;
+	private static final int REWAKE_MAX = 3;
+	private static final long REWAKE_WINDOW_MS = 60_000;
+	private final java.util.ArrayDeque<Long> rewakeTimes = new java.util.ArrayDeque<>();
 	private volatile boolean phoneAsleep;
 	private volatile boolean phoneLocked;
 	private volatile boolean ownPowerGroup;
@@ -191,6 +194,7 @@ public class CarDisplayClient {
 			setPanelPower(false);
 			if (hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
 				panelOff = true;
+				updateKeepAwakeLock();
 				recordPanel("off", "requested");
 				return;
 			}
@@ -246,6 +250,7 @@ public class CarDisplayClient {
 		panelOff = false;
 		setPanelPower(true);
 		wakeScreen();
+		updateKeepAwakeLock();
 	}
 
 	private void setState(State newState) {
@@ -797,6 +802,8 @@ public class CarDisplayClient {
 					Display d = dm.getDisplay(displayId);
 					if (d != null && d.getState() != Display.STATE_ON && panelOff) {
 						onScreenOffReceived();
+					} else if (d != null && d.getState() == Display.STATE_OFF) {
+						onPhoneSlept();
 					}
 					setPhoneState((d != null) ? (d.getState() != Display.STATE_ON) : phoneAsleep, isKeyguardHoldingPhone());
 				}
@@ -833,6 +840,7 @@ public class CarDisplayClient {
 
 	private synchronized void stopKeepingPhoneAwake() {
 		releaseKeepAwakeLock();
+		rewakeTimes.clear();
 		mainHandler.removeCallbacks(delayedLockCheck);
 		if (displayListener != null && lastContext != null) {
 			DisplayManager dm = (DisplayManager) lastContext.getSystemService(Context.DISPLAY_SERVICE);
@@ -873,19 +881,54 @@ public class CarDisplayClient {
 		boolean changed = (phoneAsleep != asleep) || (phoneLocked != locked);
 		phoneAsleep = asleep;
 		setPhoneLocked(locked);
-		if (locked || ownPowerGroup) {
+		updateKeepAwakeLock();
+		if (changed) {
+			recordDiagnostic("phone_state", Map.of("asleep", asleep, "locked", locked, "own_power_group", ownPowerGroup));
+			notifyStateListeners();
+		}
+	}
+
+	/**
+	 * A dark panel keeps the phone awake. A lit one lets the phone's own screen timeout run, and onPhoneSlept
+	 * darkens it again; without panel power the phone is always kept awake.
+	 */
+	private synchronized void updateKeepAwakeLock() {
+		boolean keep = (unlockReceiver != null) && !phoneLocked && !ownPowerGroup
+				&& (panelOff || !hasCapability(ICarDisplayServer.CAP_PANEL_POWER));
+		if (!keep) {
 			releaseKeepAwakeLock();
-		} else if ((keepAwakeLock == null) && (unlockReceiver != null)) {
+		} else if (keepAwakeLock == null) {
 			PowerManager pm = (PowerManager) lastContext.getSystemService(Context.POWER_SERVICE);
 			if (pm != null) {
 				keepAwakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "fermatax:carapps");
 				keepAwakeLock.acquire();
 			}
 		}
-		if (changed) {
-			recordDiagnostic("phone_state", Map.of("asleep", asleep, "locked", locked, "own_power_group", ownPowerGroup));
-			notifyStateListeners();
+	}
+
+	/**
+	 * The phone timed out or its power key was pressed with the panel lit: wake it at once, before a delayed lock,
+	 * and darken the panel, so the car keeps running. A secure lock or repeated presses mean the user wants it asleep.
+	 */
+	private synchronized void onPhoneSlept() {
+		if (unlockReceiver == null || ownPowerGroup || server == null) return;
+		KeyguardManager km = (KeyguardManager) lastContext.getSystemService(Context.KEYGUARD_SERVICE);
+		if ((km != null) && km.isKeyguardSecure() && km.isKeyguardLocked()) return;
+		long now = SystemClock.elapsedRealtime();
+		while (!rewakeTimes.isEmpty() && (now - rewakeTimes.peekFirst() >= REWAKE_WINDOW_MS)) rewakeTimes.pollFirst();
+		if (rewakeTimes.size() >= REWAKE_MAX) {
+			recordPanel("asleep", "turned_off_repeatedly");
+			return;
 		}
+		PanelPowerPolicy.PanelMode mode = PanelPowerPolicy.forButton(capabilities(), Build.VERSION.SDK_INT, false, false);
+		// Without panel power the dim lock holds the phone awake, and a power key press is the user's to keep
+		if (mode != PanelPowerPolicy.PanelMode.PANEL_OFF) return;
+		rewakeTimes.addLast(now);
+		recordPanel("rewake", "panel_off");
+		wakeScreen();
+		setPanelOffRequested(true);
+		launchOnPhone(new ComponentName(lastContext, PhoneDimActivity.class),
+				Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
 	}
 
 	private synchronized void releaseKeepAwakeLock() {
