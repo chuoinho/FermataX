@@ -17,6 +17,7 @@ import static me.aap.utils.ui.activity.ActivityDelegate.FULLSCREEN_FLAGS;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -554,7 +555,14 @@ public class LauncherActivity extends AppCompatActivity {
 						if (!isVirtual) {
 							intent.putExtra(INTENT_EXTRA_MODE, FermataApplication.get().getMirroringMode());
 						}
-						getContext().startActivity(intent);
+						Display d = isVirtual ? getDisplay() : null;
+						if (d != null) {
+							// Without a launch display an app with a task on the phone is brought to front there
+							getContext().startActivity(intent,
+									ActivityOptions.makeBasic().setLaunchDisplayId(d.getDisplayId()).toBundle());
+						} else {
+							getContext().startActivity(intent);
+						}
 						notifyVisibility(false);
 						if (!isVirtual) {
 							MirrorDisplay.disableAccelRotation();

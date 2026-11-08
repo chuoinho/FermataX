@@ -23,6 +23,35 @@ import me.app.fermatax.auto.carapps.ICarDisplayServer;
 @Config(sdk = 33)
 public class HiddenTest {
 
+	public static class Wm12 {
+		public void setDisplayImePolicy(int displayId, int policy) {
+		}
+	}
+
+	public static class Wm11 {
+		public void setShouldShowIme(int displayId, boolean show) {
+		}
+	}
+
+	@Test
+	public void android11KeyboardUsesSetShouldShowIme() throws Exception {
+		Method m = Hidden.findImeMethod(Wm11.class);
+		assertEquals("setShouldShowIme", m.getName());
+		assertEquals(Arrays.asList(7, true), Arrays.asList(Hidden.imeArgs(m, 7, 0)));
+	}
+
+	@Test
+	public void android12KeyboardUsesSetDisplayImePolicy() throws Exception {
+		Method m = Hidden.findImeMethod(Wm12.class);
+		assertEquals("setDisplayImePolicy", m.getName());
+		assertEquals(Arrays.asList(7, 0), Arrays.asList(Hidden.imeArgs(m, 7, 0)));
+	}
+
+	@Test
+	public void noKeyboardMethodMeansNoCapability() {
+		assertNull(Hidden.findImeMethod(Object.class));
+	}
+
 	public static class FakePanel {
 		public static final List<Integer> modes = new java.util.ArrayList<>();
 		public static boolean fail;

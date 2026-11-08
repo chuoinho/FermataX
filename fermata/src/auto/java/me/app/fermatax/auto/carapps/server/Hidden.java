@@ -146,8 +146,7 @@ public final class Hidden {
 			if (b != null) {
 				windowManagerInstance = Class.forName("android.view.IWindowManager$Stub")
 						.getMethod("asInterface", IBinder.class).invoke(null, b);
-				setDisplayImePolicyMethod = windowManagerInstance.getClass()
-						.getMethod("setDisplayImePolicy", int.class, int.class);
+				setDisplayImePolicyMethod = findImeMethod(windowManagerInstance.getClass());
 				if (setDisplayImePolicyMethod != null) {
 					capabilities |= ICarDisplayServer.CAP_IME;
 				}
@@ -307,11 +306,31 @@ public final class Hidden {
 		}
 	}
 
+	/** setDisplayImePolicy is Android 12+; Android 10-11 have setShouldShowIme, without it the keyboard opens on the phone. */
+	@Nullable
+	static Method findImeMethod(Class<?> wm) {
+		try {
+			return wm.getMethod("setDisplayImePolicy", int.class, int.class);
+		} catch (NoSuchMethodException e) {
+			try {
+				return wm.getMethod("setShouldShowIme", int.class, boolean.class);
+			} catch (NoSuchMethodException e2) {
+				return null;
+			}
+		}
+	}
+
+	/** Policy 0 (LOCAL) is "show on this display" for setShouldShowIme. */
+	static Object[] imeArgs(Method m, int displayId, int policy) {
+		return "setShouldShowIme".equals(m.getName())
+				? new Object[]{displayId, policy == 0} : new Object[]{displayId, policy};
+	}
+
 	public static boolean setDisplayImePolicy(int displayId, int policy) {
 		init();
 		if (windowManagerInstance == null || setDisplayImePolicyMethod == null) return false;
 		try {
-			setDisplayImePolicyMethod.invoke(windowManagerInstance, displayId, policy);
+			setDisplayImePolicyMethod.invoke(windowManagerInstance, imeArgs(setDisplayImePolicyMethod, displayId, policy));
 			return true;
 		} catch (Throwable t) {
 			clearCapability(ICarDisplayServer.CAP_IME);
