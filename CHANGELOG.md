@@ -1,21 +1,24 @@
 # FermataX Changelog
 
-## [2.1.1] - 2026-11-02
+## [2.1.1] - 2026-11-06
 
-### What's New & Noteworthy
-- **Speed limits & traffic lights (Glass, Android Auto)**: Tap the corner icon on the Speed card to switch to the Limits & Signals card. It shows the speed limit sign of the road you are on, the distance to the next traffic light ahead, and the road name. Your speed on both cards is always the same number. Map data comes from OpenStreetMap and downloads in the background over Wi‑Fi around the places you drive; turn it off with "Speed limits & signals data" in settings. Roads without a mapped limit show a grey sign instead of a guess.
-- **Road hazard alerts**: The Glass weather card warns about ice risk, fog, heavy rain or snow and strong gusts for the next 3 hours, and refreshes every 25 km on long drives.
-- **Radio-Browser coverage**: More stations and countries, "Load more" paging, a new Languages directory, a Near you folder, search by name, and station logos.
-- **Weather or navigation, your choice**: While navigating, a corner icon on the navigation card switches between turn-by-turn and the weather. Your choice is remembered; when navigation ends (including Maps free drive after Exit) the card goes back to the weather.
-- **Units setting**: Choose km/h and °C or mph and °F for the Glass speedometer, trip and weather.
+What's New
+- Speed limits & traffic lights (Glass, Android Auto): See speed limits, next traffic light distance, and road name on the Limits & Signals card. Data from OpenStreetMap downloads over Wi-Fi near your routes; can be turned off in settings.
+- Road hazard alerts: Weather card now warns of ice, fog, heavy rain/snow, and strong gusts for the next 3 hours.
+- Radio-Browser: More stations and countries, plus a Languages directory, Near you folder, search, and station logos.
+- Weather or navigation: Switch between navigation and weather on the navigation card; your choice is remembered.
+- Units: Choose km/h + °C or mph + °F.
 
-### Improvements & Fixes
-- **Speed card**: The speed ring and digits keep the same proportions on every car screen and no longer spill outside the card on Full HD displays. The corner icons on all cards are larger. The Pause trip button is gone from the card: pause or resume from the trip notification on your phone, and tap the trip figures to reset the trip.
-- **Audiobookshelf**: Connects to real Audiobookshelf servers, re-sends listening progress the server missed while you were offline, and closes the source dialog after you add a server. Deleting a source now also deletes its downloaded audio. Fixed "Unable to load items" on some book lists.
-- **Find Car in landscape**: The info card sits beside the map instead of squeezing it.
-- **Cleaner screens**: The floating button is removed; its actions live in the toolbar, so it no longer covers page content such as TikTok's navigation. Page titles no longer touch the screen edge.
-- **Better diagnostics**: The support export now records phone temperature, battery and charging state, to explain lag on a hot phone.
-- **Lighter app**: Unused code, strings and resources removed.
+Improvements & Fixes
+- Speed card: Fixed speed display overflow on Full HD screens; larger corner icons.
+- Trip: Pause/resume moved to the phone notification; tap trip figures to reset.
+- Audiobookshelf: Improved server connection and offline progress sync; fixed some book list loading issues.D
+- Find Car: Info card no longer squeezes the map in landscape.
+- Diagnostics: Support export now includes phone temperature, battery, and charging state.
+- Performance: Removed unused code and resources for a lighter app.
+- Bug fixes: Fixed a bunch of bugs so the new ones can show up sooner. 🐛
+
+Get access & Install automatically: https://fermatax.download/ enter your Gmail -> pay -> receive the install link, automatically within minutes, no manual support needed. Payments via paypal (Ko-fi).
 
 ---
 
