@@ -95,7 +95,11 @@ public final class RotatingDiagnosticStore implements AutoCloseable {
 				}
 			}
 		}
-		for (File source : listFiles()) copy(source, new File(destination, source.getName()));
+		for (File source : listFiles()) {
+			File target = new File(destination, source.getName());
+			copy(source, target);
+			repairIncompleteTail(target);
+		}
 	}
 
 	/** Reopens the store after a transient failure and removes an incomplete JSONL tail. */

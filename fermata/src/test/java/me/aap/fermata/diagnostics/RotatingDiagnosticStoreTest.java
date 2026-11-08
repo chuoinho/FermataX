@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -25,6 +26,24 @@ public class RotatingDiagnosticStoreTest {
 	@After
 	public void tearDown() {
 		delete(directory);
+	}
+
+	@Test
+	public void snapshotTrimsInterruptedPreviousSessionWithoutChangingSource() throws Exception {
+		File interrupted = new File(directory, "diagnostics-previous-current.jsonl");
+		byte[] contents = "{\"schema_version\":1}\n{\"schema_version\":1}\n{\"schema_version\":1}\u0000".getBytes(StandardCharsets.UTF_8);
+		try (FileOutputStream out = new FileOutputStream(interrupted)) {
+			out.write(contents);
+		}
+		File snapshot = new File(directory, "snapshot");
+		try (RotatingDiagnosticStore store = new RotatingDiagnosticStore(directory,
+				DiagnosticConfig.builder().build(), "new")) {
+			store.write("{\"schema_version\":1}", System.currentTimeMillis());
+			store.snapshot(snapshot);
+		}
+		assertTrue(java.util.Arrays.equals(contents, Files.readAllBytes(interrupted.toPath())));
+		assertTrue(java.util.Arrays.equals("{\"schema_version\":1}\n{\"schema_version\":1}\n".getBytes(StandardCharsets.UTF_8),
+				Files.readAllBytes(new File(snapshot, interrupted.getName()).toPath())));
 	}
 
 	@Test
