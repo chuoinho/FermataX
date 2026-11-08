@@ -197,6 +197,7 @@ public class CarDisplayClient {
 			setPanelPower(false);
 			if (hasCapability(ICarDisplayServer.CAP_PANEL_POWER)) {
 				panelOff = true;
+				mainHandler.post(this::notifyStateListeners);
 				updateKeepAwakeLock();
 				recordPanel("off", "requested");
 				return;
@@ -251,6 +252,7 @@ public class CarDisplayClient {
 		panelOffRequested = false;
 		unregisterScreenOffReceiver();
 		panelOff = false;
+		mainHandler.post(this::notifyStateListeners);
 		panelRestoredMs = SystemClock.elapsedRealtime();
 		setPanelPower(true);
 		wakeScreen();

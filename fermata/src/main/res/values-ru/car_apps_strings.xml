@@ -8,7 +8,6 @@
     <string name="car_apps_server_error">Не удалось запустить сервер экрана авто</string>
     <string name="car_apps_nav_back">Назад</string>
     <string name="car_apps_nav_drawer">Список приложений</string>
-    <string name="car_apps_nav_close">Закрыть приложение</string>
     <string name="car_apps_panel_off">Выключить экран телефона</string>
     <string name="car_apps_readiness_title">Приложения телефона на экране авто</string>
     <string name="car_apps_readiness_status_ready">Готово</string>

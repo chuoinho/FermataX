@@ -203,7 +203,6 @@ public class CarAppsFragmentTest {
 		org.robolectric.shadows.ShadowLooper.idleMainLooper();
 		assertEquals(CarAppsNavModel.Screen.APP, fragment.getScreen());
 		assertTrue("Back button must be enabled in APP screen", fragment.getBackButton().isEnabled());
-		assertTrue("Close button must be enabled in APP screen", fragment.getCloseButton().isEnabled());
 
 		// Back button click in APP screen injects KEYCODE_BACK
 		fragment.getBackButton().performClick();
@@ -214,7 +213,6 @@ public class CarAppsFragmentTest {
 		org.robolectric.shadows.ShadowLooper.idleMainLooper();
 		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
 		assertFalse("Back button must be disabled in DRAWER screen", fragment.getBackButton().isEnabled());
-		assertFalse("Close button must be disabled in DRAWER screen", fragment.getCloseButton().isEnabled());
 	}
 
 	@Test
@@ -229,20 +227,43 @@ public class CarAppsFragmentTest {
 	}
 
 	@Test
-	public void closeButtonClosesTopApp() {
+	public void holdingTheDrawerButtonForceClosesTheOpenApp() {
 		CarAppsFragment fragment = createAndAttachFragment();
 		fragment.setScreen(CarAppsNavModel.Screen.APP);
-
-		// Click calls closeTopApp(false)
-		fragment.getCloseButton().performClick();
-		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
-		assertFalse(serverBinder.lastForceClose.get());
-
-		fragment.setScreen(CarAppsNavModel.Screen.APP);
-		// Long click calls closeTopApp(true)
-		fragment.getCloseButton().performLongClick();
+		assertTrue(fragment.getDrawerButton().performLongClick());
 		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());
 		assertTrue(serverBinder.lastForceClose.get());
+
+		serverBinder.lastForceClose.set(false);
+		fragment.getDrawerButton().performLongClick();
+		assertFalse("nothing to close on the drawer", serverBinder.lastForceClose.get());
+	}
+
+	@Test
+	public void phoneScreenButtonIsNotShownOnAndroid16AndLater() {
+		int sdk = android.os.Build.VERSION.SDK_INT;
+		org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build.VERSION.class, "SDK_INT", 36);
+		try {
+			CarAppsFragment fragment = createAndAttachFragment();
+			assertEquals(2, ((ViewGroup) fragment.getBottomBar()).getChildCount());
+			org.junit.Assert.assertNull(fragment.getPhoneScreenButton());
+		} finally {
+			org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build.VERSION.class, "SDK_INT", sdk);
+		}
+	}
+
+	@Test
+	public void phoneScreenButtonIsDimmedWhileThePhoneScreenIsOff() {
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		assertTrue(fragment.getPhoneScreenButton().isEnabled());
+		setPhoneScreen(android.view.Display.STATE_OFF);
+		fragment.updateUiState();
+		assertFalse(fragment.getPhoneScreenButton().isEnabled());
+		setPhoneScreen(android.view.Display.STATE_ON);
+		fragment.updateUiState();
+		assertTrue(fragment.getPhoneScreenButton().isEnabled());
 	}
 
 	@Test
@@ -251,11 +272,10 @@ public class CarAppsFragmentTest {
 		View bottomBar = fragment.getBottomBar();
 		assertTrue(bottomBar instanceof ViewGroup);
 		ViewGroup bar = (ViewGroup) bottomBar;
-		assertEquals("Bottom bar has 4 buttons", 4, bar.getChildCount());
+		assertEquals("Bottom bar has 3 buttons", 3, bar.getChildCount());
 		assertSame(fragment.getBackButton(), bar.getChildAt(0));
 		assertSame(fragment.getDrawerButton(), bar.getChildAt(1));
-		assertSame(fragment.getCloseButton(), bar.getChildAt(2));
-		assertSame(fragment.getPhoneScreenButton(), bar.getChildAt(3));
+		assertSame(fragment.getPhoneScreenButton(), bar.getChildAt(2));
 		assertEquals(context.getString(me.aap.fermata.R.string.car_apps_panel_off), fragment.getPhoneScreenButton().getContentDescription());
 	}
 
@@ -269,7 +289,7 @@ public class CarAppsFragmentTest {
 	@Test
 	public void bottomBarIconsFollowThemeTint() {
 		CarAppsFragment fragment = createAndAttachFragment();
-		for (ImageButton b : new ImageButton[]{fragment.getBackButton(), fragment.getDrawerButton(), fragment.getCloseButton(), fragment.getPhoneScreenButton()}) {
+		for (ImageButton b : new ImageButton[]{fragment.getBackButton(), fragment.getDrawerButton(), fragment.getPhoneScreenButton()}) {
 			assertTrue("Icon must be tinted from the active theme", b.getImageTintList() != null);
 		}
 	}

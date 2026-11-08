@@ -75,7 +75,6 @@ public class CarAppsFragment extends MainActivityFragment {
 	private LinearLayout bottomBar;
 	private ImageButton btnBack;
 	private ImageButton btnDrawer;
-	private ImageButton btnClose;
 	private ImageButton btnPhoneScreen;
 
 	private LinearLayout loadingOverlay;
@@ -388,23 +387,21 @@ public class CarAppsFragment extends MainActivityFragment {
 			}
 			setScreen(CarAppsNavModel.Screen.DRAWER);
 		});
-		bottomBar.addView(btnDrawer);
-
-		btnClose = createNavButton(ctx, R.drawable.ic_car_nav_close, R.string.car_apps_nav_close);
-		btnClose.setOnClickListener(v -> {
-			client.closeTopApp(false);
-			setScreen(CarAppsNavModel.Screen.DRAWER);
-		});
-		btnClose.setOnLongClickListener(v -> {
+		// Holding the drawer button ends an app that no longer responds to Back
+		btnDrawer.setOnLongClickListener(v -> {
+			if (screen != CarAppsNavModel.Screen.APP) return false;
 			client.closeTopApp(true);
 			setScreen(CarAppsNavModel.Screen.DRAWER);
 			return true;
 		});
-		bottomBar.addView(btnClose);
+		bottomBar.addView(btnDrawer);
 
-		btnPhoneScreen = createNavButton(ctx, R.drawable.ic_car_nav_phone_off, R.string.car_apps_panel_off);
-		btnPhoneScreen.setOnClickListener(v -> onPhoneScreenButton());
-		bottomBar.addView(btnPhoneScreen);
+		// Android 16+: the phone sleeps by itself while the car runs, so there is nothing to turn off
+		if (!VirtualDisplayFlags.usesVirtualDevice(Build.VERSION.SDK_INT)) {
+			btnPhoneScreen = createNavButton(ctx, R.drawable.ic_car_nav_phone_off, R.string.car_apps_panel_off);
+			btnPhoneScreen.setOnClickListener(v -> onPhoneScreenButton());
+			bottomBar.addView(btnPhoneScreen);
+		}
 
 		applyNavModel(CarAppsNavModel.of(screen));
 	}
@@ -509,12 +506,9 @@ public class CarAppsFragment extends MainActivityFragment {
 		int normal = themeColor(ctx, android.R.attr.textColorPrimary, Color.WHITE);
 		int accent = themeColor(ctx, androidx.appcompat.R.attr.colorPrimary, normal);
 		btnBack.setEnabled(model.backEnabled);
-		btnClose.setEnabled(model.closeEnabled);
 		btnBack.setAlpha(model.backEnabled ? 1.0f : 0.35f);
-		btnClose.setAlpha(model.closeEnabled ? 1.0f : 0.35f);
 		btnDrawer.setSelected(model.drawerHighlighted);
 		ImageViewCompat.setImageTintList(btnBack, ColorStateList.valueOf(normal));
-		ImageViewCompat.setImageTintList(btnClose, ColorStateList.valueOf(normal));
 		ImageViewCompat.setImageTintList(btnDrawer, ColorStateList.valueOf(model.drawerHighlighted ? accent : normal));
 		if (btnPhoneScreen != null) {
 			ImageViewCompat.setImageTintList(btnPhoneScreen, ColorStateList.valueOf(normal));
@@ -601,8 +595,11 @@ public class CarAppsFragment extends MainActivityFragment {
 			applyPanelPref();
 		}
 
-		boolean usable = (uiState == CarAppsUiState.State.READY) && attached;
 		if (btnPhoneScreen != null) {
+			// It only turns the phone screen off: the power key brings it back
+			Context c = btnPhoneScreen.getContext();
+			boolean usable = (uiState == CarAppsUiState.State.READY) && attached
+					&& !client.isPanelOff() && phoneScreenOn(c);
 			btnPhoneScreen.setEnabled(usable);
 			btnPhoneScreen.setAlpha(usable ? 1.0f : 0.35f);
 		}
@@ -712,10 +709,6 @@ public class CarAppsFragment extends MainActivityFragment {
 
 	public ImageButton getDrawerButton() {
 		return btnDrawer;
-	}
-
-	public ImageButton getCloseButton() {
-		return btnClose;
 	}
 
 	public ImageButton getPhoneScreenButton() {

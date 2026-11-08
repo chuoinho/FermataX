@@ -8,7 +8,6 @@
     <string name="car_apps_server_error">Falha ao iniciar o servidor de tela</string>
     <string name="car_apps_nav_back">Voltar</string>
     <string name="car_apps_nav_drawer">Gaveta de aplicativos</string>
-    <string name="car_apps_nav_close">Fechar aplicativo</string>
     <string name="car_apps_panel_off">Desligar tela do celular</string>
     <string name="car_apps_readiness_title">Apps do telefone na tela do carro</string>
     <string name="car_apps_readiness_status_ready">Pronto</string>

@@ -9,7 +9,6 @@
     <string name="car_apps_server_error">Không thể khởi động máy chủ hiển thị xe</string>
     <string name="car_apps_nav_back">Quay lại</string>
     <string name="car_apps_nav_drawer">Ngăn ứng dụng</string>
-    <string name="car_apps_nav_close">Đóng ứng dụng</string>
     <string name="car_apps_panel_off">Tắt màn hình điện thoại</string>
     <string name="car_apps_readiness_title">Ứng dụng điện thoại trên màn hình xe</string>
     <string name="car_apps_readiness_status_ready">Sẵn sàng</string>

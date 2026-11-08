@@ -8,7 +8,6 @@
     <string name="car_apps_server_error">無法啟動車載螢幕伺服器</string>
     <string name="car_apps_nav_back">返回</string>
     <string name="car_apps_nav_drawer">應用程式選單</string>
-    <string name="car_apps_nav_close">關閉應用程式</string>
     <string name="car_apps_panel_off">關閉手機螢幕</string>
     <string name="car_apps_readiness_title">車載螢幕上的手機應用程式</string>
     <string name="car_apps_readiness_status_ready">已就緒</string>

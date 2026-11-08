@@ -8,7 +8,6 @@
     <string name="car_apps_server_error">Error al iniciar el servidor de pantalla</string>
     <string name="car_apps_nav_back">Atrás</string>
     <string name="car_apps_nav_drawer">Cajón de aplicaciones</string>
-    <string name="car_apps_nav_close">Cerrar aplicación</string>
     <string name="car_apps_panel_off">Apagar pantalla del teléfono</string>
     <string name="car_apps_readiness_title">Apps del teléfono en la pantalla del coche</string>
     <string name="car_apps_readiness_status_ready">Listo</string>
