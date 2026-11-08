@@ -404,6 +404,21 @@ public class CarDisplayClientTest {
 		assertTrue(server.phoneLaunches.isEmpty());
 	}
 
+	@Test public void powerKeyThatLightsTheDarkPanelIsNotUndoneByItsOwnScreenOff() {
+		setPhoneScreen(android.view.Display.STATE_ON);
+		FakeServerBinder server = attachWithPanelPower();
+		client.setPanelOff(true);
+		setPhoneScreen(android.view.Display.STATE_OFF); // the press: panel restored
+		setPhoneScreen(android.view.Display.STATE_ON);
+		setPhoneScreen(android.view.Display.STATE_OFF); // the same press, reported again
+		assertTrue(server.phoneLaunches.isEmpty());
+
+		ShadowSystemClock.advanceBy(java.time.Duration.ofSeconds(4));
+		setPhoneScreen(android.view.Display.STATE_ON);
+		setPhoneScreen(android.view.Display.STATE_OFF); // a later press or the timeout
+		assertEquals(1, server.phoneLaunches.size());
+	}
+
 	@Test public void phoneTurnedOffAgainAndAgainIsLeftAsleep() {
 		setPhoneScreen(android.view.Display.STATE_ON); // the display state outlives a test
 		FakeServerBinder server = attachWithPanelPower();

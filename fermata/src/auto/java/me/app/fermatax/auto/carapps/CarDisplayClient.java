@@ -81,6 +81,9 @@ public class CarDisplayClient {
 	private static final int REWAKE_MAX = 3;
 	private static final long REWAKE_WINDOW_MS = 60_000;
 	private final java.util.ArrayDeque<Long> rewakeTimes = new java.util.ArrayDeque<>();
+	/** One power key press reports the screen off more than once; the later reports must not darken the panel it lit. */
+	private static final long RESTORE_SETTLE_MS = 3000;
+	private long panelRestoredMs = -RESTORE_SETTLE_MS;
 	private volatile boolean phoneAsleep;
 	private volatile boolean phoneLocked;
 	private volatile boolean ownPowerGroup;
@@ -248,6 +251,7 @@ public class CarDisplayClient {
 		panelOffRequested = false;
 		unregisterScreenOffReceiver();
 		panelOff = false;
+		panelRestoredMs = SystemClock.elapsedRealtime();
 		setPanelPower(true);
 		wakeScreen();
 		updateKeepAwakeLock();
@@ -785,6 +789,7 @@ public class CarDisplayClient {
 	 */
 	private synchronized void startKeepingPhoneAwake() {
 		if (displayListener != null || lastContext == null) return;
+		panelRestoredMs = -RESTORE_SETTLE_MS; // a restore that ended the last session says nothing about this one
 		DisplayManager dm = (DisplayManager) lastContext.getSystemService(Context.DISPLAY_SERVICE);
 		if (dm != null) {
 			displayListener = new DisplayManager.DisplayListener() {
@@ -915,6 +920,7 @@ public class CarDisplayClient {
 		KeyguardManager km = (KeyguardManager) lastContext.getSystemService(Context.KEYGUARD_SERVICE);
 		if ((km != null) && km.isKeyguardSecure() && km.isKeyguardLocked()) return;
 		long now = SystemClock.elapsedRealtime();
+		if (now - panelRestoredMs < RESTORE_SETTLE_MS) return;
 		while (!rewakeTimes.isEmpty() && (now - rewakeTimes.peekFirst() >= REWAKE_WINDOW_MS)) rewakeTimes.pollFirst();
 		if (rewakeTimes.size() >= REWAKE_MAX) {
 			recordPanel("asleep", "turned_off_repeatedly");
