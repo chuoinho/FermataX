@@ -76,8 +76,7 @@ public class CarAppsFragmentDeviceTest {
 		device.wakeAndOpen();
 		// The fragment is on the phone here, not on a car: covering the phone would stop what these tests drive.
 		// The panel itself is tested in CarDisplayClientDeviceTest.
-		ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit()
-				.putBoolean(CarAppsFeature.PREF_PANEL_OFF, false).commit();
+		CarAppsFragment.phoneDimDisabledForTest = true;
 		instrumentation.runOnMainSync(() -> CarAppsFeature.setState(RootState.GRANTED));
 		Intent main = new Intent(ctx, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		activity = (MainActivity) instrumentation.startActivitySync(main);
@@ -92,8 +91,7 @@ public class CarAppsFragmentDeviceTest {
 		device.killServer();
 		if (pinSet) device.unlockAndClearPin();
 		if (activity != null) activity.finishAndRemoveTask();
-		instrumentation.getTargetContext().getApplicationContext().getSharedPreferences("fermata", Context.MODE_PRIVATE)
-				.edit().remove(CarAppsFeature.PREF_PANEL_OFF).commit();
+		CarAppsFragment.phoneDimDisabledForTest = false;
 	}
 
 	@Test

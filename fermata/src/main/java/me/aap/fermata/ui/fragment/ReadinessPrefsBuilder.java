@@ -163,14 +163,6 @@ final class ReadinessPrefsBuilder {
 				});
 			}
 		}
-
-		if (CarAppsFeature.state() == RootState.GRANTED) {
-			target.addBooleanPref(o -> {
-				o.store = FermataApplication.get().getPreferenceStore();
-				o.pref = CarAppsFeature.PANEL_OFF;
-				o.title = R.string.car_apps_panel_off_pref;
-			});
-		}
 	}
 
 	/** A row saying only "not applicable" tells the user nothing; the diagnostics report still records it. */

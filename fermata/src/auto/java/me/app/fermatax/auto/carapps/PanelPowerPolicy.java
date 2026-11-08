@@ -28,8 +28,8 @@ public final class PanelPowerPolicy {
 		return PanelMode.DIM;
 	}
 
-	public static PanelMode decide(boolean prefPanelOff, int caps, boolean interactive, boolean keyguardLocked) {
-		if (!prefPanelOff || !interactive || keyguardLocked) {
+	public static PanelMode decide(int caps, boolean interactive, boolean keyguardLocked) {
+		if (!interactive || keyguardLocked) {
 			return PanelMode.NONE;
 		}
 

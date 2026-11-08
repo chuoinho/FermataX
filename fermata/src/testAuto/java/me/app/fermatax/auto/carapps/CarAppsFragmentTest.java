@@ -289,13 +289,6 @@ public class CarAppsFragmentTest {
 		assertTrue(client.isPanelOffRequested());
 	}
 
-	@Test public void phoneScreenButtonWorksWithTheOptionOff() {
-		setDimPref(false);
-		CarAppsFragment fragment = fragmentShowingCarDisplay();
-		fragment.getPhoneScreenButton().performClick();
-		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
-	}
-
 	@Test public void phoneScreenButtonLeavesADarkScreenAlone() {
 		CarAppsFragment fragment = fragmentShowingCarDisplay();
 		setPhoneScreen(android.view.Display.STATE_OFF);
@@ -336,11 +329,6 @@ public class CarAppsFragmentTest {
 		return c == null ? null : c.getClassName();
 	}
 
-	private void setDimPref(boolean on) {
-		context.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit()
-				.putBoolean(CarAppsFeature.PREF_PANEL_OFF, on).commit();
-	}
-
 	@Test
 	public void phoneDimScreenShownOnAttach() {
 		CarAppsFeature.setState(RootState.GRANTED);
@@ -356,15 +344,6 @@ public class CarAppsFragmentTest {
 		fragment.getSurfaceHolderCallback().surfaceChanged(new FakeSurfaceHolder(createTestSurface(), 1024, 600), 0, 1024, 600);
 		assertEquals(1, serverBinder.attachCount.get());
 		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
-	}
-
-	@Test
-	public void phoneDimScreenNotShownWhenOptionOff() {
-		setDimPref(false);
-		CarAppsFeature.setState(RootState.GRANTED);
-		CarAppsFragment fragment = createAndAttachFragment();
-		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
-		assertEquals(null, nextPhoneLaunchClass());
 	}
 
 	@Test
@@ -446,18 +425,6 @@ public class CarAppsFragmentTest {
 
 		setPhoneScreen(android.view.Display.STATE_ON);
 		assertEquals("Mid-session the driver presses the button to darken", null, nextPhoneLaunchClass());
-	}
-
-	@Test
-	public void touchingTheCarKeepsThePhoneScreenOptionOff() {
-		setDimPref(false);
-		CarAppsFragment fragment = fragmentShowingCarDisplay();
-		setPhoneScreen(android.view.Display.STATE_OFF);
-
-		fragment.getPhoneAsleepOverlay().performClick();
-		setPhoneScreen(android.view.Display.STATE_ON);
-
-		assertEquals(null, nextPhoneLaunchClass());
 	}
 
 	@Test

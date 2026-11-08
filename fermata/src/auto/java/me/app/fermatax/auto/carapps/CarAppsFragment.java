@@ -8,7 +8,6 @@ import android.os.Build;
 import android.os.PowerManager;
 import android.view.Display;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -614,6 +613,9 @@ public class CarAppsFragment extends MainActivityFragment {
 		return (defaultDisplay != null) && (defaultDisplay.getState() == Display.STATE_ON);
 	}
 
+	/** Device tests run the fragment on the phone itself, where a dark phone screen would stop them. */
+	static boolean phoneDimDisabledForTest;
+
 	private void showPhoneDim(Context c, PanelPowerPolicy.PanelMode mode) {
 		dimRequested = true;
 		client.setPanelOffRequested(mode == PanelPowerPolicy.PanelMode.PANEL_OFF);
@@ -628,16 +630,14 @@ public class CarAppsFragment extends MainActivityFragment {
 	 */
 	private void applyPanelPref() {
 		Context c = getContext();
-		if (c == null || dimRequested || isHidden()) return;
-		SharedPreferences prefs = c.getSharedPreferences("fermata", Context.MODE_PRIVATE);
-		boolean prefPanelOff = prefs.getBoolean(CarAppsFeature.PREF_PANEL_OFF, true);
+		if (c == null || dimRequested || isHidden() || phoneDimDisabledForTest) return;
 		PowerManager pm = (PowerManager) c.getSystemService(Context.POWER_SERVICE);
 		KeyguardManager km = (KeyguardManager) c.getSystemService(Context.KEYGUARD_SERVICE);
 		boolean interactive = (pm != null) && pm.isInteractive() && phoneScreenOn(c);
 		boolean locked = (km != null) && km.isKeyguardLocked();
 		int caps = client.capabilities();
 
-		PanelPowerPolicy.PanelMode mode = PanelPowerPolicy.decide(prefPanelOff, caps, interactive, locked);
+		PanelPowerPolicy.PanelMode mode = PanelPowerPolicy.decide(caps, interactive, locked);
 		if (mode == PanelPowerPolicy.PanelMode.NONE) return;
 
 		showPhoneDim(c, mode);

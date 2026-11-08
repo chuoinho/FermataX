@@ -15,7 +15,6 @@
     <string name="car_apps_readiness_status_need_root">Accesso root richiesto</string>
     <string name="car_apps_readiness_action_grant">Concedi root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Richiede debug USB (Impostazioni di sicurezza)</string>
-    <string name="car_apps_panel_off_pref">Spegni lo schermo del telefono con le app auto</string>
     <string name="car_apps_grant_root_blocked">Root non concesso. Riprova e consenti la richiesta nel tuo gestore root.</string>
     <string name="car_apps_phone_dim_text">Car Apps è in uso sull\'auto\nTocca per usare il telefono</string>
     <string name="car_apps_phone_asleep">Lo schermo del telefono è spento\nTocca per continuare</string>

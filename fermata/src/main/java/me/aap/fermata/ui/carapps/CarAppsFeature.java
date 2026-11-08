@@ -29,8 +29,6 @@ public final class CarAppsFeature {
 	}
 
 	/** Turn the phone panel off while the virtual display is in use (user option, default on). */
-	public static final String PREF_PANEL_OFF = "CAR_APPS_PANEL_OFF";
-	public static final Pref<BooleanSupplier> PANEL_OFF = Pref.b(PREF_PANEL_OFF, true);
 
 	private static volatile RootState state = RootState.ABSENT;
 	private static final List<Runnable> listeners = new CopyOnWriteArrayList<>();

@@ -15,7 +15,6 @@
     <string name="car_apps_readiness_status_need_root">Root-Zugriff erforderlich</string>
     <string name="car_apps_readiness_action_grant">Root gewähren</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Erfordert USB-Debugging (Sicherheitseinstellungen)</string>
-    <string name="car_apps_panel_off_pref">Telefondisplay bei Fahrzeug-Apps ausschalten</string>
     <string name="car_apps_grant_root_blocked">Root wurde nicht gewährt. Versuche es erneut und erlaube die Anfrage in deiner Root-Verwaltung.</string>
     <string name="car_apps_phone_dim_text">Car Apps läuft im Fahrzeug\nBerühren, um das Telefon zu nutzen</string>
     <string name="car_apps_phone_asleep">Der Telefonbildschirm ist aus\nBerühren, um fortzufahren</string>
