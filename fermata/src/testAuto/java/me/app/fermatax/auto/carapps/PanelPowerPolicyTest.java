@@ -78,5 +78,12 @@ public class PanelPowerPolicyTest {
 		org.junit.Assert.assertTrue(PanelPowerPolicy.sdkSupported(30));
 		org.junit.Assert.assertTrue(PanelPowerPolicy.sdkSupported(35));
 		org.junit.Assert.assertFalse(PanelPowerPolicy.sdkSupported(36));
+		org.junit.Assert.assertFalse(PanelPowerPolicy.sdkSupported(37));
+	}
+
+	@Test
+	public void android17ButtonSleepsLikeAndroid16() {
+		int own = ICarDisplayServer.CAP_OWN_POWER_GROUP;
+		assertEquals(PanelPowerPolicy.PanelMode.SLEEP, PanelPowerPolicy.forButton(own, 37, false, false));
 	}
 }
