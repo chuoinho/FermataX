@@ -47,6 +47,11 @@ public final class CarAppsFeature {
 		return sdk == 32;
 	}
 
+	/** Android 11–12 need root: shell displays reject drawer launches and put the keyboard on the phone. */
+	public static boolean adbSupportedSdk(int sdk) {
+		return sdk >= 33;
+	}
+
 	public static boolean usable(@Nullable RootState s) {
 		return s == RootState.GRANTED;
 	}
