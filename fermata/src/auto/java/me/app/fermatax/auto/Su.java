@@ -29,9 +29,9 @@ public class Su {
 
 	public static FutureSupplier<Su> get() {
 		var f = su;
-		if (f != null) return f;
+		if (usable(f)) return f;
 		synchronized (Su.class) {
-			if ((f = su) != null) return f;
+			if (usable(f = su)) return f;
 			var executor = Executors.newSingleThreadExecutor();
 			var promise = new Promise<Su>();
 			su = f = promise.onSuccess(instance -> Su.su = completed(instance))
@@ -63,6 +63,13 @@ public class Su {
 			});
 			return f;
 		}
+	}
+
+	// A root shell that died (killed, or root revoked in the manager) is reopened, so a revoke is reported, not hung on
+	private static boolean usable(FutureSupplier<Su> f) {
+		if (f == null) return false;
+		Su s = f.peek();
+		return (s == null) || s.isAlive();
 	}
 
 	public boolean isAlive() {
