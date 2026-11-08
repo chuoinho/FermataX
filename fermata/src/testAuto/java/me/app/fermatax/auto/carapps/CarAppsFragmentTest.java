@@ -634,6 +634,22 @@ public class CarAppsFragmentTest {
 	}
 
 	@Test
+	public void firstRootGrantStartsServerWhileFragmentIsOpen() {
+		client.resetForTesting();
+		CarAppsFeature.setState(RootState.AVAILABLE);
+		java.util.List<String> cmds = new java.util.ArrayList<>();
+		client.setCommandRunnerForTest(cmds::add);
+		CarAppsFragment fragment = createAndAttachFragment();
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+
+		CarAppsFeature.setState(RootState.GRANTED);
+
+		assertEquals(1, cmds.size());
+		assertEquals(CarDisplayClient.State.STARTING, client.state());
+		fragment.onStop();
+	}
+
+	@Test
 	public void rootGrantedAfterFailureRestartsServer() {
 		CarAppsFeature.setState(RootState.AVAILABLE);
 		CarAppsFragment fragment = createAndAttachFragment();

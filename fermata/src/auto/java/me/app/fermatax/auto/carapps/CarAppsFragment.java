@@ -428,8 +428,9 @@ public class CarAppsFragment extends MainActivityFragment {
 
 	private void onRootChanged() {
 		Context ctx = getContext();
-		// root just granted after a failed start (e.g. denied earlier): retry without a manual tap
-		if (ctx != null && client.state() == CarDisplayClient.State.FAILED
+		// The first grant can arrive while the fragment is already open and the server is still idle.
+		if (ctx != null && (client.state() == CarDisplayClient.State.IDLE
+				|| client.state() == CarDisplayClient.State.FAILED)
 				&& CarAppsFeature.state() == RootState.GRANTED) {
 			client.ensureRunning(ctx);
 		}
