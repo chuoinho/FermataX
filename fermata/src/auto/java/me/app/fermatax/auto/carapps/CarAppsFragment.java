@@ -442,8 +442,6 @@ public class CarAppsFragment extends MainActivityFragment {
 		LauncherActivity.addVisibilityListener(launcherVisibilityListener);
 		CarAppsFeature.addListener(rootListener);
 		client.addStateListener(clientListener);
-		Context watchCtx = getContext();
-		if (watchCtx != null) idleWatcher.start(watchCtx);
 		if (CarAppsFeature.usable(CarAppsFeature.state())) {
 			Context ctx = getContext();
 			if (ctx != null) {
@@ -463,7 +461,6 @@ public class CarAppsFragment extends MainActivityFragment {
 		CarAppsFeature.removeListener(rootListener);
 		client.removeStateListener(clientListener);
 		cancelActiveTouch();
-		idleWatcher.stop();
 		PhoneDimActivity.dismiss();
 		dimRequested = false;
 		mainHandler.removeCallbacks(hideToolbarTask);
@@ -646,26 +643,10 @@ public class CarAppsFragment extends MainActivityFragment {
 		showPhoneDim(c, mode);
 	}
 
-	private final PhoneIdleWatcher idleWatcher = new PhoneIdleWatcher(mainHandler, this::phoneDark, this::onPhoneIdle);
-
-	private boolean phoneDark() {
-		Context c = getContext();
-		return (c == null) || client.isPanelOff() || !phoneScreenOn(c) || PhoneDimActivity.isShowing();
-	}
-
-	/** Phone left alone with its screen on: turn it off as the car button does; a locked phone sleeps on its own. */
-	private void onPhoneIdle() {
-		Context c = getContext();
-		if (c == null || !attached || uiState != CarAppsUiState.State.READY || isHidden() || client.hasOwnPowerGroup()) return;
-		KeyguardManager km = (KeyguardManager) c.getSystemService(Context.KEYGUARD_SERVICE);
-		if ((km != null) && km.isKeyguardLocked()) return;
-		onPhoneScreenButton();
-	}
-
 	private void onPhoneScreenButton() {
 		Context c = getContext();
 		if (c == null) return;
-		boolean dark = phoneDark();
+		boolean dark = client.isPanelOff() || !phoneScreenOn(c) || PhoneDimActivity.isShowing();
 		KeyguardManager km = (KeyguardManager) c.getSystemService(Context.KEYGUARD_SERVICE);
 		boolean locked = (km != null) && km.isKeyguardLocked();
 		PanelPowerPolicy.PanelMode mode = PanelPowerPolicy.forButton(
