@@ -110,6 +110,8 @@ public class RootProbeTest {
 		assertTrue(suPaths.contains("/sbin/su"));
 		assertTrue(suPaths.contains("/product/bin/su"));
 		assertTrue(suPaths.contains("/vendor/bin/su"));
+		assertTrue("Magisk on Android 12 images without the Magisk app", suPaths.contains("/system_ext/bin/su"));
+		assertTrue(suPaths.contains("/debug_ramdisk/su"));
 
 		Set<String> managers = new HashSet<>(Arrays.asList(RootProbe.MANAGER_PACKAGES));
 		assertTrue(managers.contains("com.topjohnwu.magisk"));

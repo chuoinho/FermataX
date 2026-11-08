@@ -24,7 +24,9 @@ public final class RootProbe {
 			"/system/xbin/su",
 			"/sbin/su",
 			"/product/bin/su",
-			"/vendor/bin/su"
+			"/vendor/bin/su",
+			"/system_ext/bin/su",
+			"/debug_ramdisk/su"
 	};
 
 	public static final String[] MANAGER_PACKAGES = {
