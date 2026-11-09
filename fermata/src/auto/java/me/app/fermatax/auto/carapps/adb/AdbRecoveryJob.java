@@ -172,15 +172,17 @@ public class AdbRecoveryJob extends JobService {
 	 */
 	public static void enableAdbWifi(Context ctx) {
 		SharedPreferences prefs = prefs(ctx);
-		if (prefs.contains(PREF_RESTORE)) return; // a start still in flight owns it, and its value is the user's
 		boolean on = adbWifiOn(ctx);
 		if (next(true, false, hasWifi(ctx), on, canWriteSecure(ctx), false) != Action.ENABLE_ADB) return;
-		prefs.edit().putInt(PREF_RESTORE, on ? 1 : 0).commit();
+		// A marker already there belongs to this start (an earlier try): its value is the user's, so after a network
+		// change or a toggle in between only the setting is switched on again.
+		boolean owned = prefs.contains(PREF_RESTORE);
+		if (!owned) prefs.edit().putInt(PREF_RESTORE, on ? 1 : 0).commit();
 		try {
 			adbWifiWriter.accept(ctx, 1);
 		} catch (RuntimeException e) {
 			Log.e(e, "Cannot switch wireless debugging on");
-			prefs.edit().remove(PREF_RESTORE).commit();
+			if (!owned) prefs.edit().remove(PREF_RESTORE).commit();
 		}
 	}
 

@@ -273,6 +273,12 @@ public class CarDisplayClient {
 			return;
 		}
 		this.state = newState;
+		// A start that ends here (a late binder, no channel any more, out of retries) has no command left to give the
+		// setting back; between two retries nothing else would. A command in flight still does it itself.
+		if (newState == State.READY || newState == State.FAILED || newState == State.IDLE) {
+			Context ctx = lastContext;
+			if (ctx != null) restoreAdbWifiIfIdle(ctx);
+		}
 		notifyStateListeners();
 	}
 
@@ -583,6 +589,7 @@ public class CarDisplayClient {
 			return;
 		}
 
+		restoreAdbWifiIfIdle(ctx); // the channel changed between two ADB retries
 		armStartTimeout();
 		rootStarter.accept(ctx, ServerCommand.buildForRoot(apkPath, appUid, versionCode, pkg, Build.VERSION.SDK_INT));
 	}

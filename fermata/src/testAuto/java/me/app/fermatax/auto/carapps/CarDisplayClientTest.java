@@ -1686,6 +1686,84 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
+	public void aLateBinderBetweenRetriesGivesTheSettingBack() {
+		useChannels(() -> Completed.failed(new java.io.IOException("timed out, the server may already be up")));
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+		assertEquals(CarDisplayClient.State.RETRYING, client.state());
+		assertEquals(1, adbWifi());
+
+		serverUp();
+
+		assertEquals(CarDisplayClient.State.READY, client.state());
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void aBinderWhileACommandIsInFlightLeavesTheSettingToThatCommand() {
+		Promise<Void> run = new Promise<>();
+		useChannels(() -> run);
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+
+		serverUp();
+		assertEquals(1, adbWifi());
+		assertTrue(markerPresent());
+
+		run.complete(null);
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void losingThePairingBetweenRetriesGivesTheSettingBack() {
+		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+		assertEquals(1, adbWifi());
+
+		CarAppsFeature.setAdbPaired(false); // no channel any more
+		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void rootAppearingBetweenRetriesGivesTheSettingBack() {
+		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+		assertEquals(1, adbWifi());
+
+		CarAppsFeature.setState(RootState.GRANTED);
+		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(1, rootCommands.size());
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void noWifiEndGivesTheSettingBackEvenWithoutARetryRunning() {
+		Promise<Void> run = new Promise<>();
+		useChannels(() -> run);
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+		run.completeExceptionally(new java.io.IOException("no port")); // RETRYING, setting left on for the retry
+		assertEquals(1, adbWifi());
+		AdbRecoveryJob.wifiCheck = c -> false;
+
+		client.ensureRunning(context); // a new start without Wi-Fi
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test
 	public void jobDoesNotRestoreUnderARetryInFlight() {
 		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
 		recoveryEnv(true, 0);

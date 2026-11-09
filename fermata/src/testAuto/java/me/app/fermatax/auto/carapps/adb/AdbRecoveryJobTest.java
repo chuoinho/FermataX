@@ -144,6 +144,37 @@ public class AdbRecoveryJobTest {
 		assertEquals(0, adbWifi()); // the second call must not take our own 1 for the user's value
 	}
 
+	@Test public void aRetryTurnsItOnAgainWithoutTouchingTheSavedValue() {
+		AdbRecoveryJob.enableAdbWifi(ctx);
+		setAdbWifi(0); // switched off meanwhile: a network change, or the user
+		List<String> writes = new ArrayList<>();
+		AdbRecoveryJob.adbWifiWriter = (c, v) -> {
+			writes.add(v + ":marker=" + prefs.getInt(AdbRecoveryJob.PREF_RESTORE, -1));
+			AdbRecoveryJob.putAdbWifi(c, v);
+		};
+
+		AdbRecoveryJob.enableAdbWifi(ctx);
+
+		assertEquals(List.of("1:marker=0"), writes);
+		assertEquals(1, adbWifi());
+		AdbRecoveryJob.restoreAdbWifi(ctx);
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test public void aRetryWithoutWifiOrPermissionDoesNotTurnItOnAgain() {
+		AdbRecoveryJob.enableAdbWifi(ctx);
+		setAdbWifi(0);
+		AdbRecoveryJob.wifiCheck = c -> false;
+		AdbRecoveryJob.adbWifiWriter = (c, v) -> {
+			throw new AssertionError("must not write");
+		};
+
+		AdbRecoveryJob.enableAdbWifi(ctx);
+
+		assertTrue(markerPresent());
+	}
+
 	@Test public void restoreKeepsTheMarkerWhenTheWriteIsRefused() {
 		AdbRecoveryJob.enableAdbWifi(ctx);
 		AdbRecoveryJob.adbWifiWriter = (c, v) -> {
