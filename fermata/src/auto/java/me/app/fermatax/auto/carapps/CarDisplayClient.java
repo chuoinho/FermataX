@@ -524,9 +524,13 @@ public class CarDisplayClient {
 		recordDiagnostic("server_retry", Map.of("attempt", retryAttempt, "delay_ms", delay));
 		Log.i("Scheduling server reconnect attempt " + retryAttempt + " in " + delay + " ms");
 		mainHandler.postDelayed(() -> {
-			if (state == State.RETRYING && lastContext != null) {
-				retryAttempt++;
-				startServer(lastContext);
+			synchronized (CarDisplayClient.this) {
+				if (state == State.RETRYING && lastContext != null) {
+					retryAttempt++;
+					// the startup timeout acts only in STARTING: a retry left in RETRYING would never end
+					setState(State.STARTING);
+					startServer(lastContext);
+				}
 			}
 		}, delay);
 	}

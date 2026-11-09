@@ -199,6 +199,38 @@ public class CarDisplayClientTest {
 		assertTrue(CarAppsFeature.isAdbPaired());
 	}
 
+	/** Measured on Android 14: after the first timeout the retries ran in RETRYING, where no timer fires, so it hung. */
+	@Test
+	public void rootStartThatNeverConnectsFailsAfterTheBoundedAttempts() {
+		useChannels(new Promise<>());
+		CarAppsFeature.setState(RootState.GRANTED);
+		List<Object> diagnostics = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((event, attrs) -> {
+			if (event.equals("server_failed")) diagnostics.add(attrs.get("reason"));
+		});
+
+		client.ensureRunning(context);
+		assertEquals(CarDisplayClient.State.STARTING, client.state());
+		ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.MINUTES);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertEquals("the first attempt and the three retries", 4, rootCommands.size());
+		assertTrue(diagnostics.contains("max_retries_exceeded"));
+	}
+
+	@Test
+	public void adbStartThatNeverConnectsFailsAfterTheBoundedAttempts() {
+		useChannels(() -> Completed.completedVoid()); // delivered each time, the server never reports back
+		CarAppsFeature.setAdbPaired(true);
+
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.MINUTES);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertEquals(4, adbCommands.size());
+		assertTrue("the pairing is still good", CarAppsFeature.isAdbPaired());
+	}
+
 	@Test
 	public void revokedAuthorizationIsRecordedEvenWhenTheClientIsNoLongerStarting() {
 		Promise<Void> run = new Promise<>();
