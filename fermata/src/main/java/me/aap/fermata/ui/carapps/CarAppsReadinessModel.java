@@ -40,17 +40,20 @@ public final class CarAppsReadinessModel {
 	}
 
 	public static CarAppsReadinessModel from(@Nullable RootState rootState, int capabilities, int sdk) {
-		if (rootState == null || rootState == RootState.ABSENT || CarAppsFeature.isBlockedSdk(sdk)) {
+		boolean needsRootForKeyboard = (sdk == 30) || (sdk == 31);
+		if (rootState == null || CarAppsFeature.isBlockedSdk(sdk)
+				|| (rootState == RootState.ABSENT && !needsRootForKeyboard)) {
 			return new CarAppsReadinessModel(false, 0, 0, 0, Collections.emptyList());
 		}
 
-		if (rootState == RootState.AVAILABLE) {
+		if (rootState != RootState.GRANTED) {
 			return new CarAppsReadinessModel(
 					true,
 					R.string.car_apps_readiness_status_need_root,
-					R.string.car_apps_readiness_action_grant,
-					0,
-					CarAppsChecks.from(rootState, capabilities, sdk)
+					(rootState == RootState.AVAILABLE) ? R.string.car_apps_readiness_action_grant : 0,
+					needsRootForKeyboard ? R.string.car_apps_readiness_warn_untrusted_ime : 0,
+					(rootState == RootState.ABSENT) ? Collections.emptyList()
+							: CarAppsChecks.from(rootState, capabilities, sdk)
 			);
 		}
 

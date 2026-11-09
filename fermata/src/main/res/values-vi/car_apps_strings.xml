@@ -14,6 +14,7 @@
     <string name="car_apps_readiness_status_ready">Sẵn sàng</string>
     <string name="car_apps_readiness_status_need_root">Yêu cầu quyền root</string>
     <string name="car_apps_readiness_action_grant">Cấp quyền root</string>
+    <string name="car_apps_readiness_warn_untrusted_ime">Android 11–12 chặn bàn phím trên xe khi màn hình không được hệ thống tin cậy</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Yêu cầu bật USB debugging (Security settings)</string>
     <string name="car_apps_phone_dim_text">Đang dùng Ứng dụng điện thoại trên xe\nChạm để dùng điện thoại</string>
     <string name="car_apps_phone_asleep">Màn hình điện thoại đang tắt\nChạm để tiếp tục</string>

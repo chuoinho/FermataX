@@ -61,6 +61,49 @@ public class CarAppsReadinessModelTest {
 	}
 
 	@Test
+	public void android11And12WithoutRootExplainWhyRootIsRequired() {
+		for (int sdk : new int[]{30, 31}) {
+			CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.ABSENT, 0, sdk);
+			assertTrue("An unrooted phone needs an explanation on SDK " + sdk, model.rowVisible);
+			assertEquals(R.string.car_apps_readiness_status_need_root, model.statusStringRes);
+			assertEquals("No root manager means no grant action", 0, model.actionStringRes);
+			assertTrue(model.checks.isEmpty());
+			assertKeyboardRestriction(model);
+
+			CarAppsReadinessModel available = CarAppsReadinessModel.from(RootState.AVAILABLE, 0, sdk);
+			assertEquals(R.string.car_apps_readiness_action_grant, available.actionStringRes);
+			assertKeyboardRestriction(available);
+		}
+	}
+
+	@Test
+	public void keyboardRestrictionDoesNotChangeGrantedRootOrOtherAndroidVersions() {
+		for (int sdk : new int[]{30, 31, 33, 34, 35, 36, 37}) {
+			CarAppsReadinessModel granted = CarAppsReadinessModel.from(RootState.GRANTED,
+					CarAppsReadinessModel.CAP_INJECT, sdk);
+			assertEquals(R.string.car_apps_readiness_status_ready, granted.statusStringRes);
+			assertEquals(0, granted.actionStringRes);
+			assertEquals(0, granted.warningStringRes);
+			assertEquals(R.string.car_apps_readiness_warn_xiaomi_inject,
+					CarAppsReadinessModel.from(RootState.GRANTED, 0, sdk).warningStringRes);
+		}
+		for (int sdk : new int[]{29, 33, 34, 35, 36, 37}) {
+			assertFalse(CarAppsReadinessModel.from(RootState.ABSENT, 0, sdk).rowVisible);
+			assertEquals(0, CarAppsReadinessModel.from(RootState.AVAILABLE, 0, sdk).warningStringRes);
+		}
+		for (RootState state : RootState.values()) {
+			assertFalse("12L remains blocked", CarAppsReadinessModel.from(state, 0, 32).rowVisible);
+		}
+		assertFalse(CarAppsReadinessModel.from(null, 0, 30).rowVisible);
+	}
+
+	private static void assertKeyboardRestriction(CarAppsReadinessModel model) {
+		assertTrue("The root-required row needs the keyboard reason", model.warningStringRes != 0);
+		assertEquals("Android 11–12 blocks the car keyboard on untrusted displays",
+				RuntimeEnvironment.getApplication().getString(model.warningStringRes));
+	}
+
+	@Test
 	public void grantedWithAllCapabilitiesShowsReady() {
 		int allCaps = CarAppsReadinessModel.CAP_INJECT;
 		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.GRANTED, allCaps);
@@ -131,6 +174,8 @@ public class CarAppsReadinessModelTest {
 		CarAppsReadinessModel available = CarAppsReadinessModel.from(RootState.AVAILABLE, 0);
 		CarAppsReadinessModel granted = CarAppsReadinessModel.from(RootState.GRANTED,
 				CarAppsReadinessModel.CAP_INJECT);
+		assertTrue(CarAppsReadinessModel.from(RootState.ABSENT, 0, 30).rowVisible);
+		assertTrue(CarAppsReadinessModel.from(RootState.AVAILABLE, 0, 31).rowVisible);
 
 		assertFalse(absent.rowVisible);
 		assertTrue(available.rowVisible);

@@ -13,6 +13,7 @@
     <string name="car_apps_readiness_status_ready">Готово</string>
     <string name="car_apps_readiness_status_need_root">Требуется root-доступ</string>
     <string name="car_apps_readiness_action_grant">Предоставить root</string>
+    <string name="car_apps_readiness_warn_untrusted_ime">Android 11–12 блокирует клавиатуру в автомобиле на недоверенных дисплеях</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Требуется отладка по USB (настройки безопасности)</string>
     <string name="car_apps_grant_root_blocked">Root-доступ не предоставлен. Повторите попытку и разрешите запрос в менеджере root.</string>
     <string name="car_apps_phone_dim_text">Приложения телефона работают в автомобиле\nКоснитесь, чтобы пользоваться телефоном</string>

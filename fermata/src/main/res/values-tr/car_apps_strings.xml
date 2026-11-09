@@ -13,6 +13,7 @@
     <string name="car_apps_readiness_status_ready">Hazır</string>
     <string name="car_apps_readiness_status_need_root">Root erişimi gerekli</string>
     <string name="car_apps_readiness_action_grant">Root izni ver</string>
+    <string name="car_apps_readiness_warn_untrusted_ime">Android 11–12, güvenilmeyen ekranlarda araç klavyesini engeller</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">USB hata ayıklama (Güvenlik ayarları) gereklidir</string>
     <string name="car_apps_grant_root_blocked">Root izni verilmedi. Tekrar deneyin ve isteği root yöneticinizde onaylayın.</string>
     <string name="car_apps_phone_dim_text">Telefon Uygulamaları araçta kullanılıyor\nTelefonu kullanmak için dokunun</string>

@@ -125,14 +125,14 @@ final class ReadinessPrefsBuilder {
 
 	private void addCarAppsRow(PreferenceSet target) {
 		CarAppsReadinessModel model = CarAppsReadinessModel.from(CarAppsFeature.state(), CarAppsFeature.capabilities());
-		if (!model.rowVisible) return;
+		if (!shouldAddCarAppsRow(BuildConfig.AUTO, model)) return;
 
 		int color = (model.actionStringRes != 0) ? 0xFFEF4444 :
 				(model.warningStringRes != 0) ? 0xFFF59E0B : 0xFF22C55E;
 		String titleText = activity.getString(R.string.car_apps_readiness_title);
 		target.addButton(o -> {
 			o.ctitle = statusTitle(titleText, color);
-			o.csubtitle = carAppsSubtitle(model);
+			o.csubtitle = carAppsSubtitle(activity.getContext(), model);
 			o.hideChevron = (model.actionStringRes == 0);
 			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
 		});
@@ -170,14 +170,18 @@ final class ReadinessPrefsBuilder {
 		return check.status != me.aap.fermata.ui.carapps.CarAppsChecks.Status.NA;
 	}
 
-	private CharSequence carAppsSubtitle(CarAppsReadinessModel model) {
+	static boolean shouldAddCarAppsRow(boolean autoBuild, CarAppsReadinessModel model) {
+		return autoBuild && model.rowVisible;
+	}
+
+	static CharSequence carAppsSubtitle(Context context, CarAppsReadinessModel model) {
 		if (model.statusStringRes == 0) return "";
-		String status = activity.getString(model.statusStringRes);
-		if (model.warningStringRes != 0) {
-			return status + " · " + activity.getString(model.warningStringRes);
-		}
+		String status = context.getString(model.statusStringRes);
 		if (model.actionStringRes != 0) {
-			return status + " · " + activity.getString(model.actionStringRes);
+			status += " · " + context.getString(model.actionStringRes);
+		}
+		if (model.warningStringRes != 0) {
+			status += " · " + context.getString(model.warningStringRes);
 		}
 		return status;
 	}

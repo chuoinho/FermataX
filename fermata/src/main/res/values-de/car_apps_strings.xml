@@ -13,6 +13,7 @@
     <string name="car_apps_readiness_status_ready">Bereit</string>
     <string name="car_apps_readiness_status_need_root">Root-Zugriff erforderlich</string>
     <string name="car_apps_readiness_action_grant">Root gewähren</string>
+    <string name="car_apps_readiness_warn_untrusted_ime">Android 11–12 blockiert die Fahrzeugtastatur auf nicht vertrauenswürdigen Displays</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Erfordert USB-Debugging (Sicherheitseinstellungen)</string>
     <string name="car_apps_grant_root_blocked">Root wurde nicht gewährt. Versuche es erneut und erlaube die Anfrage in deiner Root-Verwaltung.</string>
     <string name="car_apps_phone_dim_text">Telefon-Apps läuft im Fahrzeug\nBerühren, um das Telefon zu nutzen</string>

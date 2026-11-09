@@ -13,6 +13,7 @@
     <string name="car_apps_readiness_status_ready">Pronto</string>
     <string name="car_apps_readiness_status_need_root">Acesso root necessário</string>
     <string name="car_apps_readiness_action_grant">Conceder root</string>
+    <string name="car_apps_readiness_warn_untrusted_ime">O Android 11–12 bloqueia o teclado do carro em ecrãs não fidedignos</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Requer depuração USB (Configurações de segurança)</string>
     <string name="car_apps_grant_root_blocked">O root não foi concedido. Tente novamente e permita o pedido no seu gerenciador de root.</string>
     <string name="car_apps_phone_dim_text">Apps do telefone está em uso no carro\nToque para usar o telefone</string>
