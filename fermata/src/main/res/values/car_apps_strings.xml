@@ -64,4 +64,5 @@
     <string name="car_apps_setup_notif_prompt">Type the 6-digit pairing code</string>
     <string name="car_apps_setup_notif_hint">Pairing code</string>
     <string name="car_apps_needs_setup">Set up Phone Apps once to run phone apps on the car screen</string>
+    <string name="car_apps_needs_wifi">Connect Wi-Fi once to start</string>
 </resources>

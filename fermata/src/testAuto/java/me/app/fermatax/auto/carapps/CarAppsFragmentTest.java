@@ -71,7 +71,10 @@ public class CarAppsFragmentTest {
 			}
 		}
 		testSurfaces.clear();
-		for (CarAppsFragment f : fragments) f.onStop(); // else it still hears CarAppsFeature changes in later tests
+		for (CarAppsFragment f : fragments) {
+			f.onStop(); // else it still hears CarAppsFeature changes in later tests
+			f.onStop(); // a test that calls onStart() again has registered its listener twice
+		}
 		fragments.clear();
 		client.resetForTesting();
 		CarAppsFeature.setState(RootState.ABSENT);
@@ -241,6 +244,37 @@ public class CarAppsFragmentTest {
 			org.robolectric.shadows.ShadowLooper.idleMainLooper();
 			org.junit.Assert.assertNotEquals(CarAppsUiState.State.NEEDS_ROOT, fragment.getUiState());
 		} finally {
+			CarAppsFeature.setAdbPaired(false);
+		}
+	}
+
+	@Test
+	public void noWifiOverAdbAsksForWifiAndSchedulesTheRecoveryJob() {
+		java.util.function.Predicate<Context> savedWifi = me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck;
+		try {
+			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = c -> false;
+			client.resetForTesting();
+			client.setStartersForTest((c, cmd) -> {
+			}, (c, cmd) -> new me.aap.utils.async.Promise<>());
+			CarAppsFeature.setState(RootState.ABSENT);
+			CarAppsFeature.setAdbPaired(true);
+			CarAppsFragment fragment = createAndAttachFragment();
+			String wifi = context.getString(me.aap.fermata.R.string.car_apps_needs_wifi);
+			View screen = (View) fragment.getGrantRootButton().getParent().getParent();
+
+			assertEquals(CarAppsUiState.State.NEEDS_WIFI, fragment.getUiState());
+			assertTrue(textOf(screen).contains(wifi));
+			android.app.job.JobScheduler jobs = (android.app.job.JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+			assertEquals("connecting Wi-Fi must be able to start the server", 1, jobs.getAllPendingJobs().size());
+
+			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = c -> true;
+			fragment.updateUiState();
+
+			assertEquals(CarAppsUiState.State.LOADING, fragment.getUiState());
+			assertFalse(textOf(screen).contains(wifi));
+			assertTrue(textOf(screen).contains(context.getString(me.aap.fermata.R.string.car_apps_loading)));
+		} finally {
+			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = savedWifi;
 			CarAppsFeature.setAdbPaired(false);
 		}
 	}

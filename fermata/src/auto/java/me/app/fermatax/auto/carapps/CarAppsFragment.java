@@ -49,6 +49,7 @@ import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.app.fermatax.auto.CarService;
 import me.app.fermatax.auto.LauncherActivity;
+import me.app.fermatax.auto.carapps.adb.AdbRecoveryJob;
 import me.app.fermatax.auto.carapps.adb.AdbSetupActivity;
 
 /**
@@ -80,6 +81,7 @@ public class CarAppsFragment extends MainActivityFragment {
 	private ImageButton btnPhoneScreen;
 
 	private LinearLayout loadingOverlay;
+	private TextView tvLoading;
 	private LinearLayout needsRootOverlay;
 	private LinearLayout serverErrorOverlay;
 	private LinearLayout phoneAsleepOverlay;
@@ -218,7 +220,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		loadingOverlay.setLayoutParams(new FrameLayout.LayoutParams(
 				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 		loadingOverlay.setBackgroundColor(0xFF07090D);
-		TextView tvLoading = new TextView(ctx);
+		tvLoading = new TextView(ctx);
 		tvLoading.setText(R.string.car_apps_loading);
 		tvLoading.setTextColor(0xFFE2E8F0);
 		tvLoading.setTextSize(18f);
@@ -576,7 +578,8 @@ public class CarAppsFragment extends MainActivityFragment {
 			attached = false;
 			dimRequested = false;
 		}
-		uiState = CarAppsUiState.from(root, clientState);
+		Context ctx = getContext();
+		uiState = CarAppsUiState.from(root, clientState, (ctx == null) || AdbRecoveryJob.hasWifi(ctx));
 		applyToolbarVisibility();
 
 		if (loadingOverlay == null || needsRootOverlay == null || serverErrorOverlay == null || phoneAsleepOverlay == null) {
@@ -585,6 +588,10 @@ public class CarAppsFragment extends MainActivityFragment {
 
 		switch (uiState) {
 			case LOADING:
+			case NEEDS_WIFI:
+				tvLoading.setText(uiState == CarAppsUiState.State.NEEDS_WIFI ? R.string.car_apps_needs_wifi : R.string.car_apps_loading);
+				// Connecting to Wi-Fi is then what starts the server, also with this screen closed
+				if (uiState == CarAppsUiState.State.NEEDS_WIFI) AdbRecoveryJob.schedule(ctx);
 				loadingOverlay.setVisibility(View.VISIBLE);
 				needsRootOverlay.setVisibility(View.GONE);
 				serverErrorOverlay.setVisibility(View.GONE);

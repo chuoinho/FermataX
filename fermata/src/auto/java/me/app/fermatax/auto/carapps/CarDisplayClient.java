@@ -54,6 +54,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.app.fermatax.auto.CarService;
 import me.app.fermatax.auto.Su;
+import me.app.fermatax.auto.carapps.adb.AdbRecoveryJob;
 
 /**
  * Client coordinator for CarDisplayServer lifecycle, connection retry, and command proxying.
@@ -609,6 +610,7 @@ public class CarDisplayClient {
 		Object attempt = new Object();
 		if (!adbAttempt.compareAndSet(null, attempt)) return;
 		Log.i("Starting CarDisplayServer via local ADB");
+		AdbRecoveryJob.enableAdbWifi(ctx); // undone when the command ends, whatever its result
 		FutureSupplier<Void> run;
 		try {
 			run = adbStarter.apply(ctx, cmd);
@@ -616,6 +618,7 @@ public class CarDisplayClient {
 			run = Completed.failed(t);
 		}
 		run.onCompletion((r, err) -> {
+			AdbRecoveryJob.restoreAdbWifi(ctx);
 			boolean current = adbAttempt.compareAndSet(attempt, null);
 			synchronized (this) {
 				// a revoked authorization is true whatever the client is doing now

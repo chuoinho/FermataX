@@ -6,6 +6,8 @@ import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.CarAppsReadinessModel;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.fragment.ActivityFragment;
+import me.app.fermatax.auto.carapps.adb.AdbPairing;
+import me.app.fermatax.auto.carapps.adb.AdbRecoveryJob;
 
 /**
  * Android Auto flavor backend for the Car Apps feature.
@@ -36,5 +38,7 @@ public final class AutoCarAppsBackend {
 				return CarDisplayClient.savedCapabilities(ctx, CarAppsReadinessModel.CAP_INJECT);
 			}
 		});
+		AdbPairing.recoveryScheduler = () -> AdbRecoveryJob.schedule(ctx);
+		AdbRecoveryJob.restoreAdbWifi(ctx); // a run killed with wireless debugging on left it on
 	}
 }
