@@ -15,7 +15,7 @@
 - **Không có hộp thoại xin quyền hay trang cấp quyền mới.** Chỉ thêm `RECEIVE_BOOT_COMPLETED` (hệ thống tự cấp khi cài). `WRITE_SECURE_SETTINGS` do app tự cấp qua ADB. Không gọi xin `POST_NOTIFICATIONS`, overlay, pin, hay vị trí cho tính năng này.
 - Người dùng chỉ làm một lần, và chỉ những gì Android bắt buộc: bật Developer Options, bật Wireless debugging, nhập mã 6 số.
 - Phạm vi người dùng chốt ngày 2026-11-09: root Android 11–17 (SDK 30–37), vẫn loại 12L (SDK 32) qua `CarAppsFeature.isBlockedSdk`; không root chỉ Android 13–17 (SDK 33–37).
-- Android 11–12 không root: hàng Readiness hiện "cần root" kèm lý do hệ thống chặn bàn phím xe trên màn hình không được tin cậy; không thêm hộp thoại hay trang xin quyền. Hành vi root đã được cấp quyền giữ nguyên.
+- Chỉ hiện Phone Apps và cài đặt liên quan khi được hỗ trợ. Theo chỉ đạo UI mới của người dùng, SDK 30–31 không root phải ẩn các mục này, thay cho thông báo "cần root" kèm lý do. SDK 32 vẫn ẩn; root AVAILABLE/GRANTED giữ hành vi hiện có. Không thêm hộp thoại hay trang xin quyền.
 - Không Shizuku. Không mirror. Không chế độ TCP 5555. Không giữ phiên ADB mở.
 - Đường root giữ nguyên hành vi: mọi unit test hiện có vẫn đạt.
 - Khóa ADB chỉ nằm trong thư mục riêng của app, chỉ kết nối `127.0.0.1`; không ghi khóa hay mã ghép đôi vào log và diagnostics.
@@ -39,9 +39,8 @@
 **Files:**
 - Modify: `fermata/src/main/java/me/aap/fermata/ui/carapps/CarAppsFeature.java`
 - Modify: `fermata/src/main/java/me/aap/fermata/ui/carapps/CarAppsReadinessModel.java`, `fermata/src/main/java/me/aap/fermata/ui/fragment/ReadinessPrefsBuilder.java`
-- Modify: `fermata/src/main/res/values*/car_apps_strings.xml` (đủ 9 locale)
 - Test: `fermata/src/testAuto/java/me/app/fermatax/auto/carapps/AdbSupportTest.java`
-- Test: `fermata/src/test/java/me/aap/fermata/ui/carapps/CarAppsReadinessModelTest.java`, `fermata/src/test/java/me/aap/fermata/ui/fragment/ReadinessCarAppsRowTest.java`
+- Test: `fermata/src/test/java/me/aap/fermata/ui/carapps/CarAppsReadinessModelTest.java`, `fermata/src/test/java/me/aap/fermata/ui/fragment/ReadinessPrefsBuilderTest.java`, `fermata/src/test/java/me/aap/fermata/ui/carapps/CarAppsFeatureTest.java`
 
 **Interfaces:**
 - Produces: `static boolean CarAppsFeature.adbSupportedSdk(int sdk)`.
@@ -49,7 +48,7 @@
 - [ ] **Step 1: Đo trên AA_API30, AA_API31.** Chạy lệnh của `ServerCommand.build` bằng `adb -s emulator-5554 shell`, Magisk từ chối app. Qua DHU: mở Chrome từ drawer, chạm link mở activity mới, bàn phím. Đạt khi activity mới ở lại display xe (`dumpsys activity activities`). Ghi vào `.scratchpad/phase2/sdk11-12.md`.
 - [ ] **Step 2: Viết test.** `assertTrue(adbSupportedSdk(33))` đến 37; `assertFalse` cho 29 và 32; 30, 31 theo Step 1.
 - [ ] **Step 3: Chạy, mong đợi FAIL:** `./gradlew.bat -q :fermata:testAutoDebugUnitTest --tests '*AdbSupportTest'`.
-- [ ] **Step 4: Cài hàm.** Theo phạm vi đã chốt, SDK 30–31 không root báo "cần root" kèm lý do bàn phím trên hàng Readiness hiện có; ABSENT chỉ có thông tin, AVAILABLE giữ nút cấp root. Hàng này chỉ hiện trong bản Auto; GRANTED, SDK 32 và SDK 33+ giữ hành vi hiện tại. Chưa mở luồng ADB/visibility của Task 3.
+- [ ] **Step 4: Cài hàm.** Người dùng đã thay yêu cầu "cần root" kèm lý do bằng **ẩn mục Phone Apps và cài đặt liên quan khi không được hỗ trợ**. SDK 30–31 ABSENT: ẩn tile/Readiness và không có action; AVAILABLE/GRANTED: giữ hành vi root hiện có. SDK 32 vẫn bị chặn; SDK 33+ chưa mở luồng ADB trong Task 1. Task 3 chỉ mở ABSENT 33–37 để thiết lập ADB, tiếp tục ẩn ABSENT 30–31 và SDK 32. Không thêm thông báo, hộp thoại hay trang cấp quyền.
 - [ ] **Step 5: Chạy, mong đợi PASS, commit.**
 
 ### Task 2: ADB nội bộ và cổng go/no-go

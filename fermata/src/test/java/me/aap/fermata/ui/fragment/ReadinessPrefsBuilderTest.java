@@ -10,8 +10,27 @@ import java.nio.file.Path;
 import org.junit.Test;
 
 import me.aap.fermata.ui.policy.RuntimeHostMode;
+import me.aap.fermata.ui.carapps.CarAppsReadinessModel;
+import me.aap.fermata.ui.carapps.RootState;
 
 public class ReadinessPrefsBuilderTest {
+	@Test
+	public void phoneAppsReadinessRequiresAutoBuildAndSupportedRootState() {
+		CarAppsReadinessModel rooted =
+				CarAppsReadinessModel.from(
+						RootState.GRANTED, 0, 30);
+		assertTrue(ReadinessPrefsBuilder.shouldAddCarAppsRow(true, rooted));
+		assertFalse(ReadinessPrefsBuilder.shouldAddCarAppsRow(false, rooted));
+		for (int sdk : new int[]{30, 31, 32}) {
+			assertFalse(ReadinessPrefsBuilder.shouldAddCarAppsRow(true,
+					CarAppsReadinessModel.from(
+							RootState.ABSENT, 0, sdk)));
+		}
+		assertFalse(ReadinessPrefsBuilder.shouldAddCarAppsRow(true,
+				CarAppsReadinessModel.from(
+						RootState.GRANTED, 0, 32)));
+	}
+
 	@Test
 	public void readinessIsAvailableOnlyFromThePhoneSettingsHost() {
 		assertTrue(ReadinessPrefsBuilder.shouldAdd(RuntimeHostMode.PHONE));
@@ -23,7 +42,7 @@ public class ReadinessPrefsBuilderTest {
 	@Test
 	public void notApplicableChecksAreNotShown() {
 		java.util.List<me.aap.fermata.ui.carapps.CarAppsChecks.Check> checks = me.aap.fermata.ui.carapps.CarAppsChecks
-				.from(me.aap.fermata.ui.carapps.RootState.GRANTED, me.aap.fermata.ui.carapps.CarAppsChecks.CAP_IME, 30);
+				.from(RootState.GRANTED, me.aap.fermata.ui.carapps.CarAppsChecks.CAP_IME, 30);
 		for (me.aap.fermata.ui.carapps.CarAppsChecks.Check c : checks) {
 			assertEquals(c.id, c.status != me.aap.fermata.ui.carapps.CarAppsChecks.Status.NA, ReadinessPrefsBuilder.isShown(c));
 		}

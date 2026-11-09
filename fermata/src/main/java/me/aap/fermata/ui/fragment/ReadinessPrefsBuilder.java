@@ -132,7 +132,7 @@ final class ReadinessPrefsBuilder {
 		String titleText = activity.getString(R.string.car_apps_readiness_title);
 		target.addButton(o -> {
 			o.ctitle = statusTitle(titleText, color);
-			o.csubtitle = carAppsSubtitle(activity.getContext(), model);
+			o.csubtitle = carAppsSubtitle(model);
 			o.hideChevron = (model.actionStringRes == 0);
 			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
 		});
@@ -174,14 +174,14 @@ final class ReadinessPrefsBuilder {
 		return autoBuild && model.rowVisible;
 	}
 
-	static CharSequence carAppsSubtitle(Context context, CarAppsReadinessModel model) {
+	private CharSequence carAppsSubtitle(CarAppsReadinessModel model) {
 		if (model.statusStringRes == 0) return "";
-		String status = context.getString(model.statusStringRes);
-		if (model.actionStringRes != 0) {
-			status += " · " + context.getString(model.actionStringRes);
-		}
+		String status = activity.getString(model.statusStringRes);
 		if (model.warningStringRes != 0) {
-			status += " · " + context.getString(model.warningStringRes);
+			return status + " · " + activity.getString(model.warningStringRes);
+		}
+		if (model.actionStringRes != 0) {
+			return status + " · " + activity.getString(model.actionStringRes);
 		}
 		return status;
 	}

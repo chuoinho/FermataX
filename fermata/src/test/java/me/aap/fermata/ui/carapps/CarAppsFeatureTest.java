@@ -28,7 +28,7 @@ public class CarAppsFeatureTest {
 	@Test
 	public void visibleOnlyForAutoSdk30Not12LAndRootNotAbsent() {
 		boolean[] autoBuildOptions = {false, true};
-		int[] sdkVersions = {29, 30, 32, 33, 36};
+		int[] sdkVersions = {29, 30, 31, 32, 33, 36, 37};
 		RootState[] states = RootState.values();
 
 		for (boolean autoBuild : autoBuildOptions) {

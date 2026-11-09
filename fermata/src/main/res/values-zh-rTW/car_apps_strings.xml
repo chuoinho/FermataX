@@ -13,7 +13,6 @@
     <string name="car_apps_readiness_status_ready">已就緒</string>
     <string name="car_apps_readiness_status_need_root">需要 Root 權限</string>
     <string name="car_apps_readiness_action_grant">授予 Root 權限</string>
-    <string name="car_apps_readiness_warn_untrusted_ime">Android 11–12 會在不受信任的顯示器上封鎖車用鍵盤</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">需要啟用 USB 偵錯（安全設定）</string>
     <string name="car_apps_grant_root_blocked">未取得 Root 權限。請再試一次，並在 Root 管理程式中允許該要求。</string>
     <string name="car_apps_phone_dim_text">正在車上使用手機應用程式\n輕觸即可使用手機</string>
