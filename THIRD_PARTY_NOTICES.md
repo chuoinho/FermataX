@@ -21,6 +21,9 @@ Fermata is licensed under GPL-3.0. See `LICENSE`.
 - Existing Bouncy Castle jdk18on provider/PKIX/util 1.84 retain their MIT-style
   license; AndroidX annotation 1.10.0, existing Kotlin stdlib 2.2.10 and JetBrains
   annotations 23.0.0 are Apache-2.0. No duplicate jdk15to18 provider is included.
+- Conscrypt for Android 2.8.0 (`org.conscrypt:conscrypt-android`), Copyright 2016 The Android Open Source
+  Project, Apache-2.0, with its native BoringSSL (OpenSSL/SSLeay/ISC licensed; Copyright Google Inc., Eric Young,
+  The OpenSSL Project). Used only for the pairing TLS session; not in the Mobile flavor.
 - Preserved credits include Muntashir Al-Islam, Cameron Gutman, Google Inc.,
   Sam Palmer, 南宫雪珊, the fiat-crypto authors and the Free Software Foundation.
 

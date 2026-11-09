@@ -40,6 +40,19 @@ AndroidX annotations resolve to the existing **1.10.0** catalog version.
 The existing graph's Kotlin stdlib **2.2.10** and JetBrains annotations **23.0.0**
 are not new dependencies; Apache-2.0 notices apply to these and AndroidX.
 
+## Conscrypt (TLS for pairing)
+
+No vendored Java file changed for this. Stock Android 13-15 blocks the platform Conscrypt's hidden
+`exportKeyingMaterial`, which the pairing key exchange needs, so Auto bundles
+`org.conscrypt:conscrypt-android:2.8.0` (Maven Central; Apache-2.0, Copyright 2016 The Android Open Source
+Project), as upstream libadb documents. The unmodified `SslUtils` creates the session's `SSLContext` from its
+`org.conscrypt.OpenSSLProvider` and `PairingConnectionCtx` calls its `org.conscrypt.Conscrypt`; the provider is
+not installed process-wide, so the rest of the app's TLS is unaffected, and no `hidden_api_policy` or reflection
+exemption is used. The AAR's consumer rules keep `org.conscrypt.**`. It adds native `libconscrypt_jni.so`
+(BoringSSL: OpenSSL/SSLeay/ISC licensed) for arm64-v8a, armeabi-v7a, x86 and x86_64, all with 16 KiB PT_LOAD
+alignment. Mobile does not include it. JVM unit tests run on Robolectric's `conscrypt-openjdk-uber`
+(the Android artifact is excluded from unit-test classpaths: its JNI library cannot load on a JVM).
+
 ## Corresponding source and recombination (LGPL)
 
 The original SPAKE2 Java source archive and the exact native submodule source are

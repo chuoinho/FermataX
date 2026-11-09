@@ -60,6 +60,7 @@ guava = "33.6.0-android"
 
 # Networking
 spake2 = "2.2.1"
+conscrypt = "2.8.0"
 jsch = "2.28.2"
 smbj = "0.14.0"
 
@@ -133,6 +134,7 @@ guava                             = { group = "com.google.guava",               
 
 # Networking
 spake2Android                     = { group = "com.github.MuntashirAkon.spake2-java", name = "spake2-android", version.ref = "spake2" }
+conscryptAndroid                  = { group = "org.conscrypt",                      name = "conscrypt-android",             version.ref = "conscrypt" }
 jsch                              = { group = "com.github.mwiede",                  name = "jsch",                          version.ref = "jsch" }
 smbj                              = { group = "com.hierynomus",                     name = "smbj",                          version.ref = "smbj" }
 

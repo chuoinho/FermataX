@@ -235,6 +235,11 @@ tasks.configureEach { task ->
     }
 }
 
+// localadb bundles Conscrypt for Android; a JVM unit test cannot load its JNI library and uses Robolectric's
+configurations.matching { it.name.endsWith('UnitTestRuntimeClasspath') }.configureEach {
+    exclude group: 'org.conscrypt', module: 'conscrypt-android'
+}
+
 dependencies {
     implementation project(':utils')
     implementation libs.androidxMedia

@@ -7,10 +7,17 @@ android {
     }
 }
 
+// The JVM cannot load the Android artifact's JNI library; Robolectric brings conscrypt-openjdk-uber for unit tests.
+configurations.matching { it.name.endsWith('UnitTestRuntimeClasspath') }.configureEach {
+    exclude group: 'org.conscrypt', module: 'conscrypt-android'
+}
+
 dependencies {
     implementation libs.androidxAnnotation
     implementation libs.bouncycastleProvider
     implementation libs.spake2Android
+    // Android 13-15 block the platform Conscrypt's hidden exportKeyingMaterial; SslUtils uses this one when present
+    implementation libs.conscryptAndroid
     testImplementation libs.bouncycastlePkix
     testImplementation libs.robolectric
 }
