@@ -1,0 +1,16 @@
+// Pinned libadb 3.1.1 source; see UPSTREAM.md for the small lifecycle patch.
+android {
+    namespace 'io.github.muntashirakon.adb'
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.all { jvmArgs '--add-opens=java.base/java.net=ALL-UNNAMED' }
+    }
+}
+
+dependencies {
+    implementation libs.androidxAnnotation
+    implementation libs.bouncycastleProvider
+    implementation libs.spake2Android
+    testImplementation libs.bouncycastlePkix
+    testImplementation libs.robolectric
+}

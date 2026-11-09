@@ -1,0 +1,356 @@
+diff --git a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/AbsAdbConnectionManager.java b/depends/libadb/src/main/java/io/github/muntashirakon/adb/AbsAdbConnectionManager.java
+index 967c47a4..f51612c2 100644
+--- a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/AbsAdbConnectionManager.java
++++ b/depends/libadb/src/main/java/io/github/muntashirakon/adb/AbsAdbConnectionManager.java
+@@ -269,11 +269,7 @@ public abstract class AbsAdbConnectionManager implements Closeable {
+             }
+ 
+             mHostAddress = host;
+-            mAdbConnection = new AdbConnection.Builder(host, port)
+-                    .setApi(mApi)
+-                    .setKeyPair(getAdbKeyPair())
+-                    .setDeviceName(Objects.requireNonNull(getDeviceName()))
+-                    .build();
++            mAdbConnection = createConnection(host, port);
+             return mAdbConnection.connect(mTimeout, mTimeoutUnit, mThrowOnUnauthorised);
+         }
+     }
+@@ -312,11 +308,7 @@ public abstract class AbsAdbConnectionManager implements Closeable {
+             }
+ 
+             mHostAddress = host;
+-            mAdbConnection = new AdbConnection.Builder(host, port)
+-                    .setApi(mApi)
+-                    .setKeyPair(getAdbKeyPair())
+-                    .setDeviceName(Objects.requireNonNull(getDeviceName()))
+-                    .build();
++            mAdbConnection = createConnection(host, port);
+             return mAdbConnection.connect(mTimeout, mTimeoutUnit, mThrowOnUnauthorised);
+         }
+     }
+@@ -340,11 +332,7 @@ public abstract class AbsAdbConnectionManager implements Closeable {
+             if (isConnected()) {
+                 return false;
+             }
+-            mAdbConnection = new AdbConnection.Builder(mHostAddress, port)
+-                    .setApi(mApi)
+-                    .setKeyPair(getAdbKeyPair())
+-                    .setDeviceName(Objects.requireNonNull(getDeviceName()))
+-                    .build();
++            mAdbConnection = createConnection(mHostAddress, port);
+             return mAdbConnection.connect(mTimeout, mTimeoutUnit, mThrowOnUnauthorised);
+         }
+     }
+@@ -372,11 +360,7 @@ public abstract class AbsAdbConnectionManager implements Closeable {
+                 return false;
+             }
+             mHostAddress = host;
+-            mAdbConnection = new AdbConnection.Builder(host, port)
+-                    .setApi(mApi)
+-                    .setKeyPair(getAdbKeyPair())
+-                    .setDeviceName(Objects.requireNonNull(getDeviceName()))
+-                    .build();
++            mAdbConnection = createConnection(host, port);
+             return mAdbConnection.connect(mTimeout, mTimeoutUnit, mThrowOnUnauthorised);
+         }
+     }
+@@ -473,9 +457,7 @@ public abstract class AbsAdbConnectionManager implements Closeable {
+     @RequiresApi(Build.VERSION_CODES.GINGERBREAD)
+     public boolean pair(@NonNull String host, int port, @NonNull String pairingCode) throws Exception {
+         synchronized (mLock) {
+-            KeyPair keyPair = getAdbKeyPair();
+-            try (PairingConnectionCtx pairingClient = new PairingConnectionCtx(Objects.requireNonNull(host), port,
+-                    StringCompat.getBytes(Objects.requireNonNull(pairingCode), "UTF-8"), keyPair, getDeviceName())) {
++            try (PairingConnectionCtx pairingClient = createPairingConnection(host, port, pairingCode)) {
+                 // TODO: 5/12/21 Return true/false instead of only exceptions
+                 pairingClient.start();
+             }
+@@ -493,7 +475,7 @@ public abstract class AbsAdbConnectionManager implements Closeable {
+         try {
+             getPrivateKey().destroy();
+         } catch (DestroyFailedException | NoSuchMethodError e) {
+-            e.printStackTrace();
++            // FermataX: never send credential-related exception details to logs.
+         }
+         if (mAdbConnection != null) {
+             mAdbConnection.close();
+@@ -501,6 +483,18 @@ public abstract class AbsAdbConnectionManager implements Closeable {
+         }
+     }
+ 
++    /** FermataX: subclasses supply a socket owned independently of mLock. */
++    protected AdbConnection createConnection(String host, int port) throws IOException {
++        return new AdbConnection.Builder(host, port).setApi(mApi).setKeyPair(getAdbKeyPair())
++                .setDeviceName(Objects.requireNonNull(getDeviceName())).build();
++    }
++
++    protected PairingConnectionCtx createPairingConnection(String host, int port, String code)
++            throws Exception {
++        return new PairingConnectionCtx(host, port, StringCompat.getBytes(code, "UTF-8"),
++                getAdbKeyPair(), getDeviceName());
++    }
++
+     @NonNull
+     private KeyPair getAdbKeyPair() {
+         return new KeyPair(Objects.requireNonNull(getPrivateKey()), Objects.requireNonNull(getCertificate()));
+diff --git a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/AdbConnection.java b/depends/libadb/src/main/java/io/github/muntashirakon/adb/AdbConnection.java
+index a21cb66e..0470f3bf 100644
+--- a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/AdbConnection.java
++++ b/depends/libadb/src/main/java/io/github/muntashirakon/adb/AdbConnection.java
+@@ -17,6 +17,7 @@ import java.io.OutputStream;
+ import java.io.UnsupportedEncodingException;
+ import java.net.ConnectException;
+ import java.net.Socket;
++import java.net.InetSocketAddress;
+ import java.security.PrivateKey;
+ import java.security.cert.Certificate;
+ import java.security.interfaces.RSAPublicKey;
+@@ -190,15 +191,23 @@ public class AdbConnection implements Closeable {
+      */
+     @WorkerThread
+     private AdbConnection(@NonNull String host, int port, @NonNull KeyPair keyPair, int api) throws IOException {
++        this(host, port, keyPair, api, new Socket(), 15000);
++    }
++
++    private AdbConnection(String host, int port, KeyPair keyPair, int api,
++                          Socket socket, int timeoutMillis) throws IOException {
+         this.mHost = Objects.requireNonNull(host);
+         this.mPort = port;
+         this.mApi = api;
+         this.mProtocolVersion = AdbProtocol.getProtocolVersion(mApi);
+         this.mMaxData = AdbProtocol.getMaxData(api);
+         this.mKeyPair = Objects.requireNonNull(keyPair);
++        this.mSocket = Objects.requireNonNull(socket);
+         try {
+-            this.mSocket = new Socket(host, port);
++            mSocket.connect(new InetSocketAddress(host, port), timeoutMillis);
++            mSocket.setSoTimeout(timeoutMillis);
+         } catch (Throwable th) {
++            mSocket.close();
+             //noinspection UnnecessaryInitCause
+             throw (IOException) new IOException().initCause(th);
+         }
+@@ -342,7 +351,7 @@ public class AdbConnection implements Closeable {
+                     }
+                 } catch (Exception e) {
+                     mConnectionException = e;
+-                    e.printStackTrace();
++                    Log.e(TAG, "ADB transport closed or failed");
+                     // The cleanup is taken care of by a combination of this thread and close()
+                     break;
+                 }
+@@ -582,12 +591,8 @@ public class AdbConnection implements Closeable {
+         // Closing the socket will kick the connection thread
+         mSocket.close();
+ 
+-        // Wait for the connection thread to die
++        // FermataX: close must not wait for a thread that may be unwinding a locked stream.
+         mConnectionThread.interrupt();
+-        try {
+-            mConnectionThread.join();
+-        } catch (InterruptedException ignored) {
+-        }
+ 
+         // Destroy keypair
+         try {
+@@ -618,6 +623,16 @@ public class AdbConnection implements Closeable {
+         private Certificate mCertificate;
+         private KeyPair mKeyPair;
+         private String mDeviceName;
++        private Socket mSocket;
++        private int mSocketTimeout = 15000;
++
++        /** Caller retains socket ownership so cancellation never needs a manager lock. */
++        public Builder setSocket(Socket socket, int timeoutMillis) {
++            if (timeoutMillis <= 0) throw new IllegalArgumentException("Invalid timeout");
++            mSocket = Objects.requireNonNull(socket);
++            mSocketTimeout = timeoutMillis;
++            return this;
++        }
+ 
+         public Builder() {
+         }
+@@ -698,7 +713,8 @@ public class AdbConnection implements Closeable {
+                 }
+                 mKeyPair = new KeyPair(mPrivateKey, mCertificate);
+             }
+-            AdbConnection adbConnection = create(mHost, mPort, mKeyPair, mApi);
++            AdbConnection adbConnection = new AdbConnection(mHost, mPort, mKeyPair, mApi,
++                    mSocket == null ? new Socket() : mSocket, mSocketTimeout);
+             if (mDeviceName != null) {
+                 adbConnection.setDeviceName(mDeviceName);
+             }
+diff --git a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/AdbStream.java b/depends/libadb/src/main/java/io/github/muntashirakon/adb/AdbStream.java
+index 6d24c06b..9115cbc3 100644
+--- a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/AdbStream.java
++++ b/depends/libadb/src/main/java/io/github/muntashirakon/adb/AdbStream.java
+@@ -124,10 +124,9 @@ public class AdbStream implements Closeable {
+      */
+     void notifyClose(boolean closedByPeer) {
+         // We don't call close() because it sends another CLSE
+-        if (closedByPeer && !mReadQueue.isEmpty()) {
+-            // The remote peer closed the stream, but we haven't finished reading the remaining data
+-            mPendingClose = true;
+-        } else {
++        if (closedByPeer) mPendingClose = true; // read() reports EOF once the queue is drained
++        if (!closedByPeer || mReadQueue.isEmpty()) {
++            // Closed locally, or the peer closed and there is no remaining data to read
+             mIsClosed = true;
+         }
+ 
+@@ -154,7 +153,7 @@ public class AdbStream implements Closeable {
+         synchronized (mReadQueue) {
+             byte[] data;
+             // Wait for the connection to close or data to be received
+-            while ((data = mReadQueue.poll()) == null && !mIsClosed) {
++            while ((data = mReadQueue.poll()) == null && !mIsClosed && !mPendingClose) {
+                 try {
+                     mReadQueue.wait();
+                 } catch (InterruptedException e) {
+@@ -172,13 +171,14 @@ public class AdbStream implements Closeable {
+                 }
+             }
+ 
+-            if (mIsClosed) {
+-                throw new IOException("Stream closed.");
+-            }
+-
+             if (mPendingClose && mReadQueue.isEmpty()) {
+                 // The peer closed the stream, and we've finished reading the stream data, so this stream is finished
+                 mIsClosed = true;
++                return -1;
++            }
++
++            if (mIsClosed) {
++                throw new IOException("Stream closed.");
+             }
+         }
+ 
+diff --git a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/PairingConnectionCtx.java b/depends/libadb/src/main/java/io/github/muntashirakon/adb/PairingConnectionCtx.java
+index 732a08ef..0b083e2a 100644
+--- a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/PairingConnectionCtx.java
++++ b/depends/libadb/src/main/java/io/github/muntashirakon/adb/PairingConnectionCtx.java
+@@ -16,6 +16,7 @@ import java.io.DataOutputStream;
+ import java.io.IOException;
+ import java.lang.reflect.Method;
+ import java.net.Socket;
++import java.net.InetSocketAddress;
+ import java.nio.ByteBuffer;
+ import java.nio.ByteOrder;
+ import java.security.InvalidKeyException;
+@@ -64,6 +65,8 @@ public final class PairingConnectionCtx implements Closeable {
+     private DataOutputStream mOutputStream;
+     private PairingAuthCtx mPairingAuthCtx;
+     private State mState = State.Ready;
++    private Socket mSocket = new Socket();
++    private int mTimeoutMillis = 15000;
+ 
+     public PairingConnectionCtx(@NonNull String host, int port, @NonNull byte[] pswd, @NonNull KeyPair keyPair,
+                                 @NonNull String deviceName)
+@@ -127,12 +130,15 @@ public final class PairingConnectionCtx implements Closeable {
+             socket = sslServerSocket.accept();
+             // TODO: Write automated test scripts after removing Conscrypt dependency.
+         } else { // role == Role.Client
+-            socket = new Socket(mHost, mPort);
++            socket = mSocket;
++            socket.connect(new InetSocketAddress(mHost, mPort), mTimeoutMillis);
+         }
++        socket.setSoTimeout(mTimeoutMillis);
+         socket.setTcpNoDelay(true);
+ 
+         // We use custom SSLContext to allow any SSL certificates
+         SSLSocket sslSocket = (SSLSocket) mSslContext.getSocketFactory().createSocket(socket, mHost, mPort, true);
++        sslSocket.setSoTimeout(mTimeoutMillis);
+         sslSocket.startHandshake();
+         Log.d(TAG, "Handshake succeeded.");
+ 
+@@ -259,7 +265,9 @@ public final class PairingConnectionCtx implements Closeable {
+         byte[] decryptedMsg = mPairingAuthCtx.decrypt(theirMsg);
+         if (decryptedMsg == null) {
+             Log.e(TAG, "Unsupported payload while decrypting peer info.");
+-            return false;
++            // FermataX: a peer sealing with a different PAKE key means the pairing code was wrong.
++            notifyResult();
++            throw new AdbAuthenticationFailedException();
+         }
+ 
+         // The decrypted message should contain the PeerInfo.
+@@ -269,7 +277,7 @@ public final class PairingConnectionCtx implements Closeable {
+         }
+ 
+         PeerInfo theirPeerInfo = PeerInfo.readFrom(ByteBuffer.wrap(decryptedMsg));
+-        Log.d(TAG, theirPeerInfo.toString());
++        // FermataX: never log peer credentials.
+         return true;
+     }
+ 
+@@ -277,18 +285,34 @@ public final class PairingConnectionCtx implements Closeable {
+     public void close() {
+         Arrays.fill(mPswd, (byte) 0);
+         try {
+-            mInputStream.close();
++            mSocket.close();
+         } catch (IOException ignore) {
+         }
+         try {
+-            mOutputStream.close();
++            if (mInputStream != null) mInputStream.close();
+         } catch (IOException ignore) {
+         }
+-        if (mState != State.Ready) {
++        try {
++            if (mOutputStream != null) mOutputStream.close();
++        } catch (IOException ignore) {
++        }
++        if (mPairingAuthCtx != null) {
+             mPairingAuthCtx.destroy();
++            mPairingAuthCtx = null;
+         }
+     }
+ 
++    /** Caller owns the socket before any connect/handshake/read can block. */
++    public PairingConnectionCtx(String host, int port, byte[] pswd, PrivateKey privateKey,
++                                Certificate certificate, String deviceName, Socket socket,
++                                int timeoutMillis)
++            throws NoSuchAlgorithmException, KeyManagementException, InvalidKeyException {
++        this(host, port, pswd, privateKey, certificate, deviceName);
++        if (timeoutMillis <= 0) throw new IllegalArgumentException("Invalid timeout");
++        mSocket = Objects.requireNonNull(socket);
++        mTimeoutMillis = timeoutMillis;
++    }
++
+     private static class PeerInfo {
+         public static final int MAX_PEER_INFO_SIZE = 1 << 13;
+ 
+diff --git a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/SslUtils.java b/depends/libadb/src/main/java/io/github/muntashirakon/adb/SslUtils.java
+index aea4e6f8..b0a12d23 100644
+--- a/.scratchpad/phase2/task2/libadb-android-3.1.1/libadb/src/main/java/io/github/muntashirakon/adb/SslUtils.java
++++ b/depends/libadb/src/main/java/io/github/muntashirakon/adb/SslUtils.java
+@@ -23,7 +23,6 @@ import javax.net.ssl.X509TrustManager;
+ 
+ final class SslUtils {
+     private static boolean customConscrypt = false;
+-    private static SSLContext sslContext;
+ 
+     public static boolean isCustomConscrypt() {
+         return customConscrypt;
+@@ -32,9 +31,8 @@ final class SslUtils {
+     @SuppressLint("TrulyRandom") // The users are already instructed to fix this issue
+     @NonNull
+     public static SSLContext getSslContext(KeyPair keyPair) throws NoSuchAlgorithmException, KeyManagementException {
+-        if (sslContext != null) {
+-            return sslContext;
+-        }
++        // FermataX: a forgotten/recreated identity must not reuse a cached key manager.
++        SSLContext sslContext;
+         try {
+             Class<?> providerClass = Class.forName("org.conscrypt.OpenSSLProvider");
+             Provider openSslProvder = (Provider) providerClass.getDeclaredConstructor().newInstance();
+@@ -50,7 +48,6 @@ final class SslUtils {
+             sslContext = SSLContext.getInstance("TLSv1.3");
+             customConscrypt = false;
+         }
+-        System.out.println("Using " + (customConscrypt ? "custom" : "default") + " TLSv1.3 provider...");
+         sslContext.init(new KeyManager[]{getKeyManager(keyPair)},
+                 new X509TrustManager[]{getAllAcceptingTrustManager()},
+                 new SecureRandom());

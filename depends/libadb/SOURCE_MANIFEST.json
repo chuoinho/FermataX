@@ -1,0 +1,122 @@
+[
+  {
+    "path": "io/github/muntashirakon/adb/AbsAdbConnectionManager.java",
+    "upstream_sha256": "F0C8C79EBE1F20D9486BF206F4DB9F98E49B38E1092B020A5687418B6A9071AF",
+    "current_sha256": "3651ED0E11A98EC7A8C188F2442F4875D10C0782FBF7AFD75B20E5886CB60154",
+    "modified": true
+  },
+  {
+    "path": "io/github/muntashirakon/adb/AdbAuthenticationFailedException.java",
+    "upstream_sha256": "A78FA66CAFA8A76806973B9740DAE12D2E5657D36DD15989813BB5DBB6536C5B",
+    "current_sha256": "A78FA66CAFA8A76806973B9740DAE12D2E5657D36DD15989813BB5DBB6536C5B",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/AdbConnection.java",
+    "upstream_sha256": "FCA1C2A93A044153C9C9FFD0047F8D9D83C8B656F7B88555B5B1758278E64BB1",
+    "current_sha256": "9690F08B0E0CB40A10E26A0858804BBB43D8C0D84D900B13AE6297F1C4D1FB1C",
+    "modified": true
+  },
+  {
+    "path": "io/github/muntashirakon/adb/AdbInputStream.java",
+    "upstream_sha256": "319C4519EF758AD9D774D3D52E30F343C250543FEF2D98A1B165F027309AF5B9",
+    "current_sha256": "319C4519EF758AD9D774D3D52E30F343C250543FEF2D98A1B165F027309AF5B9",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/AdbOutputStream.java",
+    "upstream_sha256": "B593961EE48D13EA35E9FA2B8F854381FE0C4F139B5CE5C6D15CF58E180FDB75",
+    "current_sha256": "B593961EE48D13EA35E9FA2B8F854381FE0C4F139B5CE5C6D15CF58E180FDB75",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/AdbPairingRequiredException.java",
+    "upstream_sha256": "ED5412B1782EBAAB9ACF36BE60B5A7E0C1C4FB4F6DBE6EA21776A1696F5914A5",
+    "current_sha256": "ED5412B1782EBAAB9ACF36BE60B5A7E0C1C4FB4F6DBE6EA21776A1696F5914A5",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/AdbProtocol.java",
+    "upstream_sha256": "80CA45B44C4BCE807F7EF22BD08A5D10A618E9054D7267E37319B7BD151D782B",
+    "current_sha256": "80CA45B44C4BCE807F7EF22BD08A5D10A618E9054D7267E37319B7BD151D782B",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/AdbStream.java",
+    "upstream_sha256": "A13FA4DAAF027DE2046DFFEFBF79E092BBC3AC67DA7B1E60AEEFB75F02B02AA1",
+    "current_sha256": "2C032B706EE06A323EFF1E400D712B6FB96D8602A2012CA191BA4FBC6CC5D5ED",
+    "modified": true
+  },
+  {
+    "path": "io/github/muntashirakon/adb/AndroidPubkey.java",
+    "upstream_sha256": "9B43262809250D16D4D9188E2160C81908D1B4FF911B1794D05370BD8B3912A8",
+    "current_sha256": "9B43262809250D16D4D9188E2160C81908D1B4FF911B1794D05370BD8B3912A8",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/ByteArrayNoThrowOutputStream.java",
+    "upstream_sha256": "60EC26142F0675140F2F4D1A3D12395B7AC734D8D9176DCFAB30E94692DDD85B",
+    "current_sha256": "60EC26142F0675140F2F4D1A3D12395B7AC734D8D9176DCFAB30E94692DDD85B",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/KeyPair.java",
+    "upstream_sha256": "9C721834E8CA7186422653F0713239B400955E820FF780C004DACEE5D93D539A",
+    "current_sha256": "9C721834E8CA7186422653F0713239B400955E820FF780C004DACEE5D93D539A",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/LocalServices.java",
+    "upstream_sha256": "9937C31AFA15F191F15394299655A8A20CFE69CD92F2324F698A6F1F4890BB49",
+    "current_sha256": "9937C31AFA15F191F15394299655A8A20CFE69CD92F2324F698A6F1F4890BB49",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/PairingAuthCtx.java",
+    "upstream_sha256": "45479417FA9244EC49EF77C89D99AB00858CFFB97E5C9E1307447FEA6B8AA7A4",
+    "current_sha256": "45479417FA9244EC49EF77C89D99AB00858CFFB97E5C9E1307447FEA6B8AA7A4",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/PairingConnectionCtx.java",
+    "upstream_sha256": "DD5F1F6086E166B4FC95684A6A3F67E8732FB101DCF9631164741D0BD58861A1",
+    "current_sha256": "2BD669248C92779DDCB74F85A0C17CAEA991B9F35BC3716B8A5777A4A05EE801",
+    "modified": true
+  },
+  {
+    "path": "io/github/muntashirakon/adb/PRNGFixes.java",
+    "upstream_sha256": "F8F17B6D350A358F0F6CE0FAEE3755317552C6D8DF42328A96C7F434B879E696",
+    "current_sha256": "F8F17B6D350A358F0F6CE0FAEE3755317552C6D8DF42328A96C7F434B879E696",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/SslUtils.java",
+    "upstream_sha256": "6123B205A1B1A57A2BF93817EDB931B0252F03BCB43E8F9760B650E1021A63F0",
+    "current_sha256": "A23161E672E1E56C89A697EC437A459297250CFA492417581215AC1E30CAC701",
+    "modified": true
+  },
+  {
+    "path": "io/github/muntashirakon/adb/StringCompat.java",
+    "upstream_sha256": "6C282874083A318EA2FB993BEB9D61EABB827BE23BE252FF621643D7D4010090",
+    "current_sha256": "6C282874083A318EA2FB993BEB9D61EABB827BE23BE252FF621643D7D4010090",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/android/AdbMdns.java",
+    "upstream_sha256": "EBC10F7DD7CC167C1129BD2F20343794E734288193BD4931C183A558E274F5C4",
+    "current_sha256": "EBC10F7DD7CC167C1129BD2F20343794E734288193BD4931C183A558E274F5C4",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/android/AndroidUtils.java",
+    "upstream_sha256": "565081E51525595C34B226BBF86644F0F514BDAA9BD542775C7E3C7A75DF27DD",
+    "current_sha256": "565081E51525595C34B226BBF86644F0F514BDAA9BD542775C7E3C7A75DF27DD",
+    "modified": false
+  },
+  {
+    "path": "io/github/muntashirakon/adb/android/package.html",
+    "upstream_sha256": "395A894DCEB60DBFFFD50CA6233ECE0573527B9648F8FED48A6FCE7B2E0CEA30",
+    "current_sha256": "395A894DCEB60DBFFFD50CA6233ECE0573527B9648F8FED48A6FCE7B2E0CEA30",
+    "modified": false
+  }
+]

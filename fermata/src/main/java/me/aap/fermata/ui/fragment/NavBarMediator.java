@@ -240,7 +240,7 @@ public class NavBarMediator extends PrefNavBarMediator
 				Context ctx = g.getContext();
 				boolean isNight = a.getPrefs().isGlassNightMode();
 				boolean isGlass = a.getPrefs().isGlassTheme(a.isCarActivity());
-				String html = ctx.getString(R.string.about_html, VERSION_NAME, VERSION_CODE);
+				String html = getAboutHtml(ctx);
 
 				if (isGlass) {
 					g.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
@@ -299,6 +299,20 @@ public class NavBarMediator extends PrefNavBarMediator
 		}
 
 		return false;
+	}
+
+	static String getAboutHtml(Context ctx) {
+		String html = ctx.getString(R.string.about_html, VERSION_NAME, VERSION_CODE);
+		try (var input = new java.io.InputStreamReader(
+				ctx.getResources().openRawResource(R.raw.phone_apps_licenses),
+				java.nio.charset.StandardCharsets.UTF_8)) {
+			StringBuilder legal = new StringBuilder();
+			char[] buffer = new char[4096];
+			for (int read; (read = input.read(buffer)) != -1; ) legal.append(buffer, 0, read);
+			return html + legal;
+		} catch (java.io.IOException error) {
+			throw new IllegalStateException("Unable to read bundled legal notices", error);
+		}
 	}
 
 	private static void openUrl(Context ctx, String url) {

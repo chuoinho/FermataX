@@ -1,12 +1,36 @@
 # Third Party Notices
 
-This file records external references considered for planned Xtream Codes support.
+This file records included Phone Apps components and external Xtream Codes references.
 
-No code from the projects below has been copied into this repository by this preparatory change. If future work ports or copies implementation code, update this file with the exact copied components, copyright notices, and license text required by the source project.
+The Xtream reference entries below describe preparatory research rather than copied code. If future Xtream work ports implementation code, update those entries with the copied components, copyright notices, and required license text.
 
 ## Project License
 
 Fermata is licensed under GPL-3.0. See `LICENSE`.
+
+## Phone Apps: local ADB (Auto only)
+
+- LibADB Android 3.1.1, commit `c849886ebc6d48e7b46d967e78a6bb65c90c3b74`:
+  original production Java source is in `depends/libadb`, under
+  GPL-3.0-or-later OR Apache-2.0, with BSD-3-Clause/MIT portions.
+  Original SPDX/copyright headers, `COPYING` and all `LICENSES` are preserved.
+- SPAKE2 Android 2.2.1, Copyright 2021 Muntashir Al-Islam, LGPL-3.0;
+  native submodule `0d15933e5ba3e662cb01245a7ac0dc9fca3eac31`, LGPL-3.0-or-later,
+  includes LGPL-2.1-or-later glibc SHA512 and MIT/Apache-2.0 portions.
+  Exact original source archives and full LGPL texts accompany this source tree.
+- Existing Bouncy Castle jdk18on provider/PKIX/util 1.84 retain their MIT-style
+  license; AndroidX annotation 1.10.0, existing Kotlin stdlib 2.2.10 and JetBrains
+  annotations 23.0.0 are Apache-2.0. No duplicate jdk15to18 provider is included.
+- Preserved credits include Muntashir Al-Islam, Cameron Gutman, Google Inc.,
+  Sam Palmer, 南宫雪珊, the fiat-crypto authors and the Free Software Foundation.
+
+See [`depends/libadb/UPSTREAM.md`](depends/libadb/UPSTREAM.md) for exact sources,
+the five-file lifecycle/credential patch, redistribution obligations and instructions
+for rebuilding/recombining with modified LGPL code. Full notices/license texts and
+source provenance are packaged in Auto's existing About screen. A future binary
+release must supply its complete corresponding app/dependency source and required
+installation information; these notices do not claim that future distribution is
+already compliant.
 
 ## Xtream References
 

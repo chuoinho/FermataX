@@ -35,6 +35,10 @@ buildscript {
 
 allprojects {
 	repositories {
+		maven {
+			url 'https://jitpack.io'
+			content { includeGroup 'com.github.MuntashirAkon.spake2-java' }
+		}
 		google()
 		mavenCentral()
 		gradlePluginPortal()

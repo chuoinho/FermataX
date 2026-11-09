@@ -59,6 +59,7 @@ transportRuntime = "4.1.1"
 guava = "33.6.0-android"
 
 # Networking
+spake2 = "2.2.1"
 jsch = "2.28.2"
 smbj = "0.14.0"
 
@@ -131,6 +132,7 @@ transportRuntime                  = { group = "com.google.android.datatransport"
 guava                             = { group = "com.google.guava",                   name = "guava",                         version.ref = "guava" }
 
 # Networking
+spake2Android                     = { group = "com.github.MuntashirAkon.spake2-java", name = "spake2-android", version.ref = "spake2" }
 jsch                              = { group = "com.github.mwiede",                  name = "jsch",                          version.ref = "jsch" }
 smbj                              = { group = "com.hierynomus",                     name = "smbj",                          version.ref = "smbj" }
 

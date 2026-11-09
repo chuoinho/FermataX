@@ -258,5 +258,8 @@ dependencies {
     implementation libs.firebaseEncoders
     implementation libs.javaxInject
     autoImplementation libs.androidxCarApp
+    autoImplementation project(':localadb')
+    autoImplementation libs.bouncycastleProvider
+    autoImplementation libs.bouncycastlePkix
 	testImplementation libs.robolectric
 }

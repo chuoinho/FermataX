@@ -55,20 +55,22 @@
 
 **Files:**
 - Create: `fermata/src/auto/java/me/app/fermatax/auto/carapps/adb/LocalAdb.java`
-- Modify: `build.gradle` (JitPack với `content { includeGroup 'com.github.MuntashirAkon' }`), `gradle/libs.versions.toml`, `fermata/build.gradle`, `proguard-rules.pro`
+- Modify: `build.gradle` (JitPack với `content { includeGroup 'com.github.MuntashirAkon.spake2-java' }`), `gradle/libs.versions.toml`, `fermata/build.gradle`, `proguard-rules.pro`
 - Test: `fermata/src/testAuto/java/me/app/fermatax/auto/carapps/adb/LocalAdbTest.java`
 
+**Controller compatibility correction (2026-11-09):** libadb 3.1.1 declares `boolean pair(int,String)`, so Java cannot also inherit the required `FutureSupplier<Void> pair(int,String)`. Composition preserves the public asynchronous API. Stock 3.1.1 has unbounded socket operations and identity-bearing TLS context caching; use its pinned original 19-file source in `depends/libadb` with four scoped lifecycle/identity patches (AbsAdbConnectionManager, AdbConnection, PairingConnectionCtx, SslUtils). Keep this module Auto-only. JitPack is filtered to the exact published transitive group `com.github.MuntashirAkon.spake2-java`; do not add an unused binary libadb dependency or repository group. Reuse existing Bouncy Castle jdk18on 1.84 rather than adding duplicate jdk15to18 1.81 classes. Ship preserved license texts, attribution, patch provenance, and corresponding source/relink instructions.
+
 **Interfaces:**
-- Produces: `class LocalAdb` extends `AbsAdbConnectionManager`, khóa RSA 2048 tạo một lần ở `getFilesDir()/adb/`, và:
+- Produces: `class LocalAdb` wraps a private `AbsAdbConnectionManager` subclass, khóa RSA 2048 tạo một lần ở `getFilesDir()/adb/`, và:
   - `FutureSupplier<Void> pair(int port, String code)`
   - `FutureSupplier<Void> runAndClose(int port, String command)`: kết nối, chạy `shell:` + lệnh, đóng
   - `boolean hasKey()`; `void forgetKey()`
 
   Mạng chạy ngoài main thread, timeout 15 s. Lỗi xác thực ném `AdbPairingRequiredException`.
 
-- [ ] **Step 1: Chọn phiên bản, đọc LICENSE, ghi vào phần giấy phép của app.**
-- [ ] **Step 2: Viết test** với connection giả: khóa giữ nguyên qua hai instance; host luôn `127.0.0.1`; `runAndClose` đóng kết nối cả khi lỗi; `AdbPairingRequiredException` được báo cho caller.
-- [ ] **Step 3: Chạy, mong đợi FAIL. Cài. Chạy, mong đợi PASS.**
+- [x] **Step 1: Chọn phiên bản, đọc LICENSE, ghi vào phần giấy phép của app.**
+- [x] **Step 2: Viết test** với connection giả: khóa giữ nguyên qua hai instance; host luôn `127.0.0.1`; `runAndClose` đóng kết nối cả khi lỗi; `AdbPairingRequiredException` được báo cho caller.
+- [x] **Step 3: Chạy, mong đợi FAIL. Cài. Chạy, mong đợi PASS.**
 - [ ] **Step 4: Spike go/no-go trên máy thật Android 16 không root**, gọi `LocalAdb` từ mã debug tạm, không commit mã này. Ghi vào `.scratchpad/phase2/spike.md`:
   1. Ghép đôi khi Settings và FermataX chia đôi màn hình: mã nhập được, Settings không đóng hộp thoại.
   2. Tìm cổng bằng mDNS, `runAndClose` chạy server, log `started as uid 2000`.

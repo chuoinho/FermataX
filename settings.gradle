@@ -111,6 +111,8 @@ rootProject.name = 'Fermata Music Player'
 include ':fermata'
 include ':utils'
 project(':utils').projectDir = file('depends/utils')
+include ':localadb'
+project(':localadb').projectDir = file('depends/libadb')
 
 file('modules').eachDir {
     def name = ':' + it.name
