@@ -136,6 +136,125 @@ public class CarDisplayClientTest {
 		});
 	}
 
+	private void useChannels(java.util.function.Supplier<FutureSupplier<Void>> adbResults) {
+		rootCommands = new ArrayList<>();
+		adbCommands = new ArrayList<>();
+		client.setStartersForTest((ctx, cmd) -> rootCommands.add(cmd), (ctx, cmd) -> {
+			adbCommands.add(cmd);
+			return adbResults.get();
+		});
+	}
+
+	/** The foreground server keeps running when the session times out, so the timeout must not stop a READY client. */
+	@Test
+	public void adbTimeoutAfterReadyChangesNothing() {
+		Promise<Void> run = new Promise<>();
+		useChannels(() -> run);
+		CarAppsFeature.setAdbPaired(true);
+		client.ensureRunning(context);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false)));
+		assertEquals(CarDisplayClient.State.READY, client.state());
+
+		run.completeExceptionally(new java.util.concurrent.TimeoutException());
+		ShadowLooper.idleMainLooper(10, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(CarDisplayClient.State.READY, client.state());
+		assertEquals(1, adbCommands.size());
+		assertTrue(CarAppsFeature.isAdbPaired());
+	}
+
+	@Test
+	public void adbTimeoutWhileStartingRetriesBoundedAndOneAtATime() {
+		int[] live = {0, 0}; // running now, most at once
+		List<Promise<Void>> runs = new ArrayList<>();
+		useChannels(() -> {
+			Promise<Void> run = new Promise<>();
+			runs.add(run);
+			live[0]++;
+			live[1] = Math.max(live[1], live[0]);
+			run.onCompletion((r, err) -> live[0]--);
+			return run;
+		});
+		CarAppsFeature.setAdbPaired(true);
+		client.ensureRunning(context);
+
+		long[] delays = {1000, 2000, 4000};
+		for (int i = 0; i < delays.length; i++) {
+			runs.get(i).completeExceptionally(new java.util.concurrent.TimeoutException());
+			assertEquals(CarDisplayClient.State.RETRYING, client.state());
+			ShadowLooper.idleMainLooper(delays[i], java.util.concurrent.TimeUnit.MILLISECONDS);
+		}
+		runs.get(runs.size() - 1).completeExceptionally(new java.util.concurrent.TimeoutException());
+		ShadowLooper.idleMainLooper(10, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertEquals(1, live[1]);
+		assertTrue(CarAppsFeature.isAdbPaired());
+	}
+
+	@Test
+	public void revokedAuthorizationIsRecordedEvenWhenTheClientIsNoLongerStarting() {
+		Promise<Void> run = new Promise<>();
+		useChannels(() -> run);
+		CarAppsFeature.setAdbPaired(true);
+		client.ensureRunning(context);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false)));
+
+		run.completeExceptionally(new AdbPairingRequiredException("revoked"));
+
+		assertFalse(CarAppsFeature.isAdbPaired());
+		assertEquals(CarDisplayClient.State.READY, client.state());
+	}
+
+	@Test
+	public void revokedAuthorizationIsRecordedAfterRelease() {
+		Promise<Void> run = new Promise<>();
+		useChannels(() -> run);
+		CarAppsFeature.setAdbPaired(true);
+		client.ensureRunning(context);
+		client.release();
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+
+		run.completeExceptionally(new AdbPairingRequiredException("revoked"));
+
+		assertFalse(CarAppsFeature.isAdbPaired());
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+	}
+
+	@Test
+	public void noChannelFailsFastWithoutAskingRoot() {
+		useChannels(new Promise<>());
+		context.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit()
+				.putBoolean(me.aap.fermata.ui.carapps.RootProbe.PREF_ROOT_GRANTED, true).commit();
+		CarAppsFeature.setState(RootState.AVAILABLE);
+
+		client.ensureRunning(context);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertTrue(rootCommands.isEmpty());
+		assertTrue(adbCommands.isEmpty());
+		assertTrue("root grant record is left alone", context.getSharedPreferences("fermata", Context.MODE_PRIVATE)
+				.getBoolean(me.aap.fermata.ui.carapps.RootProbe.PREF_ROOT_GRANTED, false));
+		context.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit().clear().commit();
+	}
+
+	@Test
+	public void releaseAndSessionStopForgetAStartInFlight() {
+		useChannels(() -> new Promise<>());
+		CarAppsFeature.setAdbPaired(true);
+		client.ensureRunning(context);
+		assertEquals(1, adbCommands.size());
+
+		client.release();
+		client.ensureRunning(context);
+		assertEquals(2, adbCommands.size());
+
+		client.onCarSessionStopped();
+		client.release();
+		client.ensureRunning(context);
+		assertEquals(3, adbCommands.size());
+	}
+
 	@Test
 	public void adbChannelStartsTheForegroundCommandAndNeverTouchesSu() {
 		useChannels(new Promise<>());

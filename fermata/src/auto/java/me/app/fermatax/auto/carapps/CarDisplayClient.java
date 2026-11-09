@@ -35,6 +35,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -110,7 +111,7 @@ public class CarDisplayClient {
 	private Consumer<String> testCommandRunner;
 	private volatile BiConsumer<Context, String> rootStarter = this::startViaRoot;
 	private volatile BiFunction<Context, String, FutureSupplier<Void>> adbStarter = ServerStarter::startViaAdb;
-	private final AtomicBoolean adbInFlight = new AtomicBoolean();
+	private final AtomicReference<Object> adbAttempt = new AtomicReference<>();
 	private BiConsumer<String, Map<String, ?>> diagnosticsConsumerForTest;
 	private static final long CALL_FAILURE_INTERVAL_MS = 10_000;
 	private static final int SERVER_LOG_LINES = 20;
@@ -559,9 +560,17 @@ public class CarDisplayClient {
 			return;
 		}
 
-		if (ServerStarter.choose(CarAppsFeature.state(), CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT)
-				== ServerStarter.Channel.ADB) {
+		ServerStarter.Channel channel = ServerStarter.choose(CarAppsFeature.state(), CarAppsFeature.isAdbPaired(),
+				Build.VERSION.SDK_INT);
+		if (channel == ServerStarter.Channel.ADB) {
+			mainHandler.removeCallbacks(startTimeoutRunnable); // a stale timer from a root start must not cut this one short
 			startViaAdb(ctx, ServerCommand.buildForAdb(apkPath, appUid, versionCode, pkg));
+			return;
+		}
+		if (channel == ServerStarter.Channel.NONE) {
+			// no root and no pairing: a background retry must not raise a root prompt
+			recordDiagnostic("server_failed", Map.of("reason", "no_channel"));
+			setState(State.FAILED);
 			return;
 		}
 
@@ -592,9 +601,13 @@ public class CarDisplayClient {
 	/**
 	 * The startup timer runs only once the command is delivered: finding the port can take longer than it, and a
 	 * second attempt while this one is in flight would start a second server.
+	 * The foreground server normally ends the session by itself: the peer closes the stream about a second after the
+	 * start and the server keeps running. A TimeoutException (the 15 s watchdog) therefore says nothing about a server
+	 * that is already up: it is ignored once the client is READY, and while still starting it takes the bounded retry.
 	 */
 	private void startViaAdb(Context ctx, String cmd) {
-		if (!adbInFlight.compareAndSet(false, true)) return;
+		Object attempt = new Object();
+		if (!adbAttempt.compareAndSet(null, attempt)) return;
 		Log.i("Starting CarDisplayServer via local ADB");
 		FutureSupplier<Void> run;
 		try {
@@ -603,18 +616,18 @@ public class CarDisplayClient {
 			run = Completed.failed(t);
 		}
 		run.onCompletion((r, err) -> {
-			adbInFlight.set(false);
+			boolean current = adbAttempt.compareAndSet(attempt, null);
 			synchronized (this) {
-				if (err == null) {
-					if (state == State.STARTING || state == State.RETRYING) armStartTimeout();
-					return;
-				}
-				if (state != State.STARTING && state != State.RETRYING) return;
-				if (isPairingRequired(err)) {
-					// the authorization was revoked: back to "not set up", not stuck starting
+				// a revoked authorization is true whatever the client is doing now
+				if ((err != null) && isPairingRequired(err)) {
 					CarAppsFeature.setAdbPaired(false);
 					recordDiagnostic("server_failed", Map.of("reason", "adb_pairing_required"));
-					setState(State.FAILED);
+					if (current && (state == State.STARTING || state == State.RETRYING)) setState(State.FAILED);
+					return;
+				}
+				if (!current || (state != State.STARTING && state != State.RETRYING)) return;
+				if (err == null) {
+					armStartTimeout();
 					return;
 				}
 				Log.e(err, "Failed to start CarDisplayServer via local ADB");
@@ -1065,6 +1078,7 @@ public class CarDisplayClient {
 	}
 
 	public synchronized void onCarSessionStopped() {
+		adbAttempt.set(null);
 		stopKeepingPhoneAwake();
 		if (panelOff) {
 			restorePanelAndWake("session_stopped");
@@ -1074,6 +1088,7 @@ public class CarDisplayClient {
 	}
 
 	public synchronized void release() {
+		adbAttempt.set(null);
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();
@@ -1148,7 +1163,7 @@ public class CarDisplayClient {
 		this.testCommandRunner = null;
 		this.rootStarter = this::startViaRoot;
 		this.adbStarter = ServerStarter::startViaAdb;
-		this.adbInFlight.set(false);
+		this.adbAttempt.set(null);
 		this.diagnosticsConsumerForTest = null;
 		this.lastCallFailure.clear();
 		this.serverLogReader = () -> null;
