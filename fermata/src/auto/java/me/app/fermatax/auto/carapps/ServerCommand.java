@@ -20,10 +20,11 @@ public final class ServerCommand {
 	/**
 	 * Over wireless ADB a server backgrounded with & dies when the shell command ends, even with nohup or setsid
 	 * (measured). In the foreground it is reparented to init and outlives the session, so the session just closes.
+	 * That session is a PTY: its hangup sends SIGHUP, which nohup makes the server ignore (measured: it killed it).
 	 */
 	public static String buildForAdb(String apkPath, int appUid, int versionCode, String pkg) {
 		String escapedPath = apkPath.replace("'", "'\\''");
-		return "CLASSPATH='" + escapedPath + "' app_process / "
+		return "CLASSPATH='" + escapedPath + "' nohup app_process / "
 				+ MAIN_CLASS + " " + appUid + " " + versionCode + " " + pkg + " >/dev/null 2>&1";
 	}
 
