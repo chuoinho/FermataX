@@ -52,7 +52,7 @@
     <string name="car_apps_setup_title">Configura App del telefono</string>
     <string name="car_apps_setup_dev_off">Le opzioni sviluppatore sono disattivate. Apri Info sul telefono, tocca 7 volte Numero build e poi torna qui.</string>
     <string name="car_apps_setup_open_about">Apri Info sul telefono</string>
-    <string name="car_apps_setup_steps">1. Apri le opzioni sviluppatore, poi Debug wireless, e attivalo.\n2. Tocca «Accoppia dispositivo con codice di accoppiamento» e lascia aperta quella finestra.\n3. Abbassa la tendina delle notifiche e scrivi il codice di 6 cifre nella notifica di accoppiamento.</string>
+    <string name="car_apps_setup_steps">1. Collegati al Wi‑Fi, apri le opzioni sviluppatore, poi Debug wireless, e attivalo.\n2. Tocca «Accoppia dispositivo con codice di accoppiamento» e lascia aperta quella finestra.\n3. Abbassa la tendina delle notifiche e scrivi il codice di 6 cifre nella notifica di accoppiamento.</string>
     <string name="car_apps_setup_open_dev">Apri opzioni sviluppatore</string>
     <string name="car_apps_setup_notif_off">Le notifiche sono disattivate per questa app. Il codice si scrive in una notifica: attivale e poi torna qui.</string>
     <string name="car_apps_setup_open_notif">Impostazioni notifiche</string>
@@ -63,4 +63,5 @@
     <string name="car_apps_setup_notif_title">Accoppiamento App del telefono</string>
     <string name="car_apps_setup_notif_prompt">Scrivi il codice di accoppiamento di 6 cifre</string>
     <string name="car_apps_setup_notif_hint">Codice di accoppiamento</string>
+    <string name="car_apps_needs_setup">Configura App del telefono una volta per usare le app del telefono sullo schermo dell’auto</string>
 </resources>

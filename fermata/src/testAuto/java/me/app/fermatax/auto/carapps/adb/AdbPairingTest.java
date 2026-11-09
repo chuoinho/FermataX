@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
+import me.aap.utils.async.FutureSupplier;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35, application = me.aap.fermata.FermataApplication.class)
@@ -55,6 +56,7 @@ public class AdbPairingTest {
 	private final AtomicInteger serverStarts = new AtomicInteger();
 	private final List<String> shell = new ArrayList<>();
 	private final List<String> codes = new ArrayList<>();
+	private final List<Boolean> pairedWhenGrantRan = new ArrayList<>();
 	private Context ctx;
 	private boolean pairResult = true;
 	private Exception grantError;
@@ -86,6 +88,7 @@ public class AdbPairingTest {
 			return pairResult;
 		}
 		public void run(int port, String destination) throws Exception {
+			pairedWhenGrantRan.add(CarAppsFeature.isAdbPaired());
 			shell.add(destination);
 			if (grantError != null) throw grantError;
 		}
@@ -173,6 +176,95 @@ public class AdbPairingTest {
 		assertEquals(1, posted.length);
 		assertFalse("The input is replaced by the result", hasReplyField(posted[0]));
 		assertEquals(ctx.getString(R.string.car_apps_setup_done), posted[0].extras.getString(Notification.EXTRA_TEXT));
+	}
+
+	@Test public void pairedIsRecordedRightAfterPairingBeforeTheGrant() throws Exception {
+		List<Boolean> pairedWhenPortLooked = new ArrayList<>();
+		AdbPairing.connectPort = c -> {
+			pairedWhenPortLooked.add(CarAppsFeature.isAdbPaired());
+			return completed(41000);
+		};
+		submit("123456");
+		assertEquals(List.of(true), pairedWhenPortLooked);
+		assertEquals(List.of(true), pairedWhenGrantRan);
+	}
+
+	@Test public void throwingRecoveryHookDoesNotStickTheFlow() throws Exception {
+		AdbPairing.recoveryScheduler = () -> { throw new IllegalStateException("scheduler down"); };
+		submit("123456");
+		assertEquals(AdbPairing.State.DONE, AdbPairing.state());
+		assertEquals("The server is still started", 1, serverStarts.get());
+		assertTrue(CarAppsFeature.isAdbPaired());
+		assertFalse(hasReplyField(notifications()[0]));
+	}
+
+	@Test public void throwingServerStarterStillEndsDone() throws Exception {
+		AdbPairing.serverStarter = c -> { throw new IllegalStateException("no client"); };
+		submit("123456");
+		assertEquals(AdbPairing.State.DONE, AdbPairing.state());
+	}
+
+	@Test public void factoryFailureEndsInFailedNotWorking() throws Exception {
+		AdbPairing.adbFactory = c -> { throw new IllegalStateException("no key store"); };
+		submit("123456");
+		assertEquals(AdbPairing.State.FAILED, AdbPairing.state());
+		assertTrue(hasReplyField(notifications()[0]));
+	}
+
+	@Test public void inputWhileWorkingIsIgnoredEvenWhenMalformed() throws Exception {
+		me.aap.utils.async.Promise<Integer> port = new me.aap.utils.async.Promise<>();
+		AdbPairing.pairingPort = c -> port;
+		FutureSupplier<Void> first = AdbPairing.submit(ctx, "123456");
+		assertEquals(AdbPairing.State.WORKING, AdbPairing.state());
+		AdbPairing.submit(ctx, "abc").get(2, TimeUnit.SECONDS);
+		assertEquals("A stray reply must not interrupt the running pairing", AdbPairing.State.WORKING, AdbPairing.state());
+		port.complete(40369);
+		first.get(5, TimeUnit.SECONDS);
+		assertEquals(AdbPairing.State.DONE, AdbPairing.state());
+	}
+
+	@Test public void replyNotificationIsNotLeftOnForever() {
+		AdbPairing.start(ctx);
+		assertTrue(notifications()[0].getTimeoutAfter() >= 60000);
+	}
+
+	private void reply(CharSequence text) {
+		android.content.Intent intent = new android.content.Intent();
+		if (text != null) {
+			android.os.Bundle results = new android.os.Bundle();
+			results.putCharSequence("code", text);
+			androidx.core.app.RemoteInput.addResultsToIntent(new androidx.core.app.RemoteInput[]{
+					new androidx.core.app.RemoteInput.Builder("code").build()}, intent, results);
+		}
+		new AdbPairing.Receiver().onReceive(ctx, intent); // direct call: goAsync() is null here
+	}
+
+	private void awaitState(AdbPairing.State wanted) throws Exception {
+		for (int i = 0; i < 100 && AdbPairing.state() != wanted; i++) Thread.sleep(50);
+		assertEquals(wanted, AdbPairing.state());
+	}
+
+	@Test public void receiverTrimsTheReplyAndPairsOnce() throws Exception {
+		reply(" 123456" + (char) 10);
+		awaitState(AdbPairing.State.DONE);
+		assertEquals(List.of("123456"), codes);
+		assertEquals(1, shell.size());
+	}
+
+	@Test public void receiverShowsErrorForEmptyMissingOrInvalidReply() throws Exception {
+		for (CharSequence text : new CharSequence[]{"", null, "12a456", "12345"}) {
+			AdbPairing.resetForTesting();
+			reply(text);
+			assertEquals(String.valueOf(text), AdbPairing.State.WRONG_CODE, AdbPairing.state());
+			assertTrue(hasReplyField(notifications()[0]));
+		}
+		assertTrue("Nothing was submitted", codes.isEmpty());
+	}
+
+	@Test public void receiverSurvivesASynchronousFailure() throws Exception {
+		AdbPairing.adbFactory = c -> { throw new IllegalStateException("boom"); };
+		reply("123456");
+		assertEquals(AdbPairing.State.FAILED, AdbPairing.state());
 	}
 
 	@Test public void failedGrantStillCountsAsPaired() throws Exception {

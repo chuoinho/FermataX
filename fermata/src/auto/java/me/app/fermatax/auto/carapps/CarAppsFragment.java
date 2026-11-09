@@ -1,5 +1,6 @@
 package me.app.fermatax.auto.carapps;
 
+import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -48,6 +49,7 @@ import me.aap.fermata.ui.glass.theme.GlassDimensions;
 import me.aap.fermata.ui.glass.theme.GlassDrawables;
 import me.app.fermatax.auto.CarService;
 import me.app.fermatax.auto.LauncherActivity;
+import me.app.fermatax.auto.carapps.adb.AdbSetupActivity;
 
 /**
  * Android Auto fragment for independent car apps.
@@ -83,6 +85,8 @@ public class CarAppsFragment extends MainActivityFragment {
 	private LinearLayout phoneAsleepOverlay;
 	private TextView phoneAsleepText;
 	private Button btnGrantRoot;
+	private Button btnRootAlt;
+	private TextView tvNeedsRoot;
 
 	private boolean dimRequested;
 	private boolean touching;
@@ -232,7 +236,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		int pad = GlassDimensions.dpToPx(ctx, 16);
 		needsRootOverlay.setPadding(pad, pad, pad, pad);
 
-		TextView tvNeedsRoot = new TextView(ctx);
+		tvNeedsRoot = new TextView(ctx);
 		tvNeedsRoot.setText(R.string.car_apps_needs_root);
 		tvNeedsRoot.setTextColor(0xFFE2E8F0);
 		tvNeedsRoot.setTextSize(18f);
@@ -248,12 +252,26 @@ public class CarAppsFragment extends MainActivityFragment {
 		btnLp.topMargin = GlassDimensions.dpToPx(ctx, 16);
 		btnGrantRoot.setLayoutParams(btnLp);
 		btnGrantRoot.setOnClickListener(v -> {
-			CarAppsFeature.Backend b = CarAppsFeature.backend();
-			if (b != null) {
-				b.requestRoot();
+			if (offersAdbSetup()) {
+				Context c = v.getContext();
+				Intent setup = new Intent(c, AdbSetupActivity.class);
+				if (!(c instanceof Activity)) setup.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+				c.startActivity(setup);
+			} else {
+				requestRoot();
 			}
 		});
 		needsRootOverlay.addView(btnGrantRoot);
+
+		// With root present but not granted, granting stays available next to the setup button
+		btnRootAlt = new Button(ctx);
+		btnRootAlt.setText(R.string.car_apps_grant_root);
+		btnRootAlt.setTextColor(Color.WHITE);
+		btnRootAlt.setBackground(GlassDrawables.createGlassPillStateDrawable(ctx, GlassDimensions.PILL_RADIUS_DP, false));
+		LinearLayout.LayoutParams altLp = new LinearLayout.LayoutParams(btnLp);
+		btnRootAlt.setLayoutParams(altLp);
+		btnRootAlt.setOnClickListener(v -> requestRoot());
+		needsRootOverlay.addView(btnRootAlt);
 		viewportContainer.addView(needsRootOverlay);
 
 		// Server error overlay
@@ -423,6 +441,18 @@ public class CarAppsFragment extends MainActivityFragment {
 		mainHandler.postDelayed(hideToolbarTask, TOOLBAR_PEEK_MS);
 	}
 
+	/** Android 13+ can be set up without root; 11-12 and 12L remain root-only (or hidden). */
+	private static boolean offersAdbSetup() {
+		return CarAppsFeature.adbSupportedSdk(Build.VERSION.SDK_INT) && !CarAppsFeature.isBlockedSdk(Build.VERSION.SDK_INT);
+	}
+
+	private static void requestRoot() {
+		CarAppsFeature.Backend b = CarAppsFeature.backend();
+		if (b != null) {
+			b.requestRoot();
+		}
+	}
+
 	private void onRootChanged() {
 		Context ctx = getContext();
 		// The first grant can arrive while the fragment is already open and the server is still idle.
@@ -565,7 +595,12 @@ public class CarAppsFragment extends MainActivityFragment {
 				serverErrorOverlay.setVisibility(View.GONE);
 				if (btnGrantRoot != null) {
 					boolean carActive = CarService.isActive();
+					boolean setup = offersAdbSetup();
+					tvNeedsRoot.setText(setup ? R.string.car_apps_needs_setup : R.string.car_apps_needs_root);
+					btnGrantRoot.setText(setup ? R.string.car_apps_setup_button : R.string.car_apps_grant_root);
 					btnGrantRoot.setVisibility(carActive ? View.GONE : View.VISIBLE);
+					btnRootAlt.setVisibility((setup && !carActive && CarAppsFeature.state() == RootState.AVAILABLE)
+							? View.VISIBLE : View.GONE);
 				}
 				break;
 			case SERVER_ERROR:

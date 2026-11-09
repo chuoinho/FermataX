@@ -198,6 +198,89 @@ public class CarAppsFragmentTest {
 	}
 
 	@Test
+	public void nonRootAndroid13UpOffersSetupInsteadOfADeadEnd() {
+		CarAppsFeature.setState(RootState.ABSENT);
+		CarAppsFragment fragment = createAndAttachFragment();
+		assertEquals(CarAppsUiState.State.NEEDS_ROOT, fragment.getUiState());
+		android.widget.Button primary = fragment.getGrantRootButton();
+		assertEquals(context.getString(me.aap.fermata.R.string.car_apps_setup_button), primary.getText().toString());
+		assertEquals(View.VISIBLE, primary.getVisibility());
+		ViewGroup overlay = (ViewGroup) primary.getParent();
+		assertTrue(textOf(overlay).contains(context.getString(me.aap.fermata.R.string.car_apps_needs_setup)));
+		assertSame("No root to grant: no second button", null, buttonWithText(overlay,
+				context.getString(me.aap.fermata.R.string.car_apps_grant_root)));
+
+		primary.performClick();
+
+		android.content.Intent started = org.robolectric.Shadows.shadowOf(
+				(android.app.Application) context).getNextStartedActivity();
+		assertEquals(me.app.fermatax.auto.carapps.adb.AdbSetupActivity.class.getName(), started.getComponent().getClassName());
+	}
+
+	@Test
+	public void rootAvailableKeepsGrantRootAsSecondaryAction() {
+		CarAppsFeature.setState(RootState.AVAILABLE);
+		CarAppsFragment fragment = createAndAttachFragment();
+		ViewGroup overlay = (ViewGroup) fragment.getGrantRootButton().getParent();
+		android.widget.Button grant = buttonWithText(overlay, context.getString(me.aap.fermata.R.string.car_apps_grant_root));
+		org.junit.Assert.assertNotNull(grant);
+		assertEquals(View.VISIBLE, grant.getVisibility());
+		setCarServiceActive(true);
+		fragment.updateUiState();
+		assertEquals(View.GONE, grant.getVisibility());
+		assertEquals(View.GONE, fragment.getGrantRootButton().getVisibility());
+	}
+
+	@Test
+	public void pairingMovesTheScreenOutOfNeedsRoot() {
+		CarAppsFeature.setState(RootState.ABSENT);
+		CarAppsFragment fragment = createAndAttachFragment();
+		assertEquals(CarAppsUiState.State.NEEDS_ROOT, fragment.getUiState());
+		try {
+			CarAppsFeature.setAdbPaired(true);
+			org.robolectric.shadows.ShadowLooper.idleMainLooper();
+			org.junit.Assert.assertNotEquals(CarAppsUiState.State.NEEDS_ROOT, fragment.getUiState());
+		} finally {
+			CarAppsFeature.setAdbPaired(false);
+		}
+	}
+
+	@Test
+	public void android11And12KeepTheRootOnlyScreen() {
+		int sdk = android.os.Build.VERSION.SDK_INT;
+		org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build.VERSION.class, "SDK_INT", 31);
+		try {
+			CarAppsFeature.setState(RootState.AVAILABLE);
+			CarAppsFragment fragment = createAndAttachFragment();
+			android.widget.Button primary = fragment.getGrantRootButton();
+			assertEquals(context.getString(me.aap.fermata.R.string.car_apps_grant_root), primary.getText().toString());
+			ViewGroup overlay = (ViewGroup) primary.getParent();
+			assertTrue(textOf(overlay).contains(context.getString(me.aap.fermata.R.string.car_apps_needs_root)));
+			int grantButtons = 0;
+			for (int i = 0; i < overlay.getChildCount(); i++) if (overlay.getChildAt(i) instanceof android.widget.Button b && b.getVisibility() == View.VISIBLE) grantButtons++;
+			assertEquals(1, grantButtons);
+		} finally {
+			org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build.VERSION.class, "SDK_INT", sdk);
+		}
+	}
+
+	private static String textOf(View v) {
+		StringBuilder sb = new StringBuilder();
+		if (v instanceof TextView t) sb.append(t.getText()).append((char) 10);
+		if (v instanceof ViewGroup g) for (int i = 0; i < g.getChildCount(); i++) sb.append(textOf(g.getChildAt(i)));
+		return sb.toString();
+	}
+
+	private static android.widget.Button buttonWithText(ViewGroup g, String text) {
+		for (int i = 0; i < g.getChildCount(); i++) {
+			View c = g.getChildAt(i);
+			if ((c instanceof android.widget.Button b) && text.contentEquals(b.getText())
+					&& b.getVisibility() == View.VISIBLE) return b;
+		}
+		return null;
+	}
+
+	@Test
 	public void launcherVisibilityChangesScreenState() {
 		CarAppsFragment fragment = createAndAttachFragment();
 		assertEquals(CarAppsNavModel.Screen.DRAWER, fragment.getScreen());

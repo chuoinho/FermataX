@@ -50,6 +50,8 @@ public final class AdbPairing {
 	private static final long CONNECT_PORT_TIMEOUT_MS = 5000;
 	/** A receiver may hold the broadcast for about 10 s; the pairing itself continues after it is released. */
 	private static final long RECEIVER_HOLD_MS = 9000;
+	/** An abandoned setup must not leave an ongoing notification behind. */
+	private static final long REPLY_TIMEOUT_MS = 10 * 60 * 1000L;
 
 	// Test seams; the defaults are the real implementations.
 	static Function<Context, LocalAdb> adbFactory = LocalAdb::new;
@@ -97,10 +99,13 @@ public final class AdbPairing {
 
 	/** Pairs with what the user typed and finishes the setup; the result is in state() and the notification. */
 	static FutureSupplier<Void> submit(Context ctx, @Nullable String input) {
-		ctx = ctx.getApplicationContext();
+		Context app = ctx.getApplicationContext();
+		synchronized (AdbPairing.class) {
+			if (state == State.WORKING) return completedVoid(); // a stray reply must not disturb the running pairing
+		}
 		if (!validCode(input)) {
 			setState(State.WRONG_CODE);
-			post(ctx, R.string.car_apps_setup_wrong_code, true);
+			post(app, R.string.car_apps_setup_wrong_code, true);
 			return completedVoid();
 		}
 		synchronized (AdbPairing.class) {
@@ -108,22 +113,37 @@ public final class AdbPairing {
 			state = State.WORKING;
 		}
 		notifyListeners();
-		post(ctx, R.string.car_apps_setup_working, false);
+		post(app, R.string.car_apps_setup_working, false);
 		Promise<Void> done = new Promise<>();
-		LocalAdb adb = adbFactory.apply(ctx);
-		Context app = ctx;
-		port(pairingPort, ctx).then(port -> adb.pair(port, input)).onCompletion((r, err) -> {
+		LocalAdb adb;
+		try {
+			adb = adbFactory.apply(app);
+		} catch (Throwable t) {
+			Log.e(t, "Cannot prepare the ADB pairing");
+			fail(app, State.FAILED);
+			return completedVoid();
+		}
+		port(pairingPort, app).then(port -> adb.pair(port, input)).onCompletion((r, err) -> {
 			if (err != null) {
 				adb.close();
-				boolean wrongCode = isPairingRequired(err);
-				setState(wrongCode ? State.WRONG_CODE : State.FAILED);
-				post(app, wrongCode ? R.string.car_apps_setup_wrong_code : R.string.car_apps_setup_failed, true);
+				fail(app, isPairingRequired(err) ? State.WRONG_CODE : State.FAILED);
 				done.complete(null);
 				return;
+			}
+			// Paired from here on, whatever the grant or the server start do
+			try {
+				RootProbe.recordAdbPaired(app, true);
+			} catch (Throwable t) {
+				Log.e(t, "Cannot record the ADB pairing");
 			}
 			grantAndFinish(app, adb, done);
 		});
 		return done;
+	}
+
+	private static void fail(Context ctx, State s) {
+		setState(s);
+		post(ctx, (s == State.WRONG_CODE) ? R.string.car_apps_setup_wrong_code : R.string.car_apps_setup_failed, true);
 	}
 
 	/** The grant lets the app switch wireless debugging on by itself later; failing it does not undo the pairing. */
@@ -133,16 +153,20 @@ public final class AdbPairing {
 						"pm grant " + ctx.getPackageName() + " android.permission.WRITE_SECURE_SETTINGS"))
 				.onCompletion((r, err) -> {
 					adb.close();
-					RootProbe.recordAdbPaired(ctx, true);
-					recoveryScheduler.run();
+					try {
+						recoveryScheduler.run();
+					} catch (Throwable t) {
+						Log.e(t, "Cannot schedule the ADB recovery");
+					}
 					try {
 						serverStarter.accept(ctx);
 					} catch (Throwable t) {
 						Log.e(t, "Cannot start the car display server after pairing");
+					} finally {
+						setState(State.DONE);
+						post(ctx, R.string.car_apps_setup_done, false);
+						done.complete(null);
 					}
-					setState(State.DONE);
-					post(ctx, R.string.car_apps_setup_done, false);
-					done.complete(null);
 				});
 	}
 
@@ -197,7 +221,7 @@ public final class AdbPairing {
 		if (replyField) {
 			PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, new Intent(ctx, Receiver.class),
 					PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE); // the system fills in the reply
-			b.setOngoing(true).addAction(new NotificationCompat.Action.Builder(R.drawable.notification,
+			b.setOngoing(true).setTimeoutAfter(REPLY_TIMEOUT_MS).addAction(new NotificationCompat.Action.Builder(R.drawable.notification,
 					ctx.getString(R.string.car_apps_setup_notif_hint), pi)
 					.addRemoteInput(new RemoteInput.Builder(KEY_CODE).setLabel(ctx.getString(R.string.car_apps_setup_notif_hint)).build())
 					.build());
@@ -213,13 +237,18 @@ public final class AdbPairing {
 		public void onReceive(Context ctx, Intent intent) {
 			Bundle reply = RemoteInput.getResultsFromIntent(intent);
 			CharSequence text = (reply == null) ? null : reply.getCharSequence(KEY_CODE);
-			PendingResult pending = goAsync();
+			PendingResult pending = goAsync(); // null when called directly
 			AtomicBoolean released = new AtomicBoolean();
 			Runnable release = () -> {
-				if (released.compareAndSet(false, true)) pending.finish();
+				if (released.compareAndSet(false, true) && pending != null) pending.finish();
 			};
-			App.get().getScheduler().schedule(release, RECEIVER_HOLD_MS, TimeUnit.MILLISECONDS);
-			submit(ctx, (text == null) ? null : text.toString().trim()).onCompletion((r, err) -> release.run());
+			try {
+				if (pending != null) App.get().getScheduler().schedule(release, RECEIVER_HOLD_MS, TimeUnit.MILLISECONDS);
+				submit(ctx, (text == null) ? null : text.toString().trim()).onCompletion((r, err) -> release.run());
+			} catch (Throwable t) {
+				Log.e(t, "ADB pairing reply failed");
+				release.run();
+			}
 		}
 	}
 }

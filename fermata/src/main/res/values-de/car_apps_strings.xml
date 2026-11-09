@@ -52,7 +52,7 @@
     <string name="car_apps_setup_title">Telefon-Apps einrichten</string>
     <string name="car_apps_setup_dev_off">Die Entwickleroptionen sind deaktiviert. Öffne „Über das Telefon“, tippe 7-mal auf die Build-Nummer und kehre dann hierher zurück.</string>
     <string name="car_apps_setup_open_about">„Über das Telefon“ öffnen</string>
-    <string name="car_apps_setup_steps">1. Öffne die Entwickleroptionen, dann „Drahtloses Debugging“, und aktiviere es.\n2. Tippe auf „Gerät mit Kopplungscode koppeln“ und lass den Dialog geöffnet.\n3. Ziehe die Benachrichtigungsleiste herunter und gib den 6-stelligen Code in der Kopplungsbenachrichtigung ein.</string>
+    <string name="car_apps_setup_steps">1. Verbinde dich mit einem WLAN, öffne die Entwickleroptionen, dann „Drahtloses Debugging“, und aktiviere es.\n2. Tippe auf „Gerät mit Kopplungscode koppeln“ und lass den Dialog geöffnet.\n3. Ziehe die Benachrichtigungsleiste herunter und gib den 6-stelligen Code in der Kopplungsbenachrichtigung ein.</string>
     <string name="car_apps_setup_open_dev">Entwickleroptionen öffnen</string>
     <string name="car_apps_setup_notif_off">Benachrichtigungen sind für diese App deaktiviert. Der Kopplungscode wird in einer Benachrichtigung eingegeben. Aktiviere Benachrichtigungen und kehre dann hierher zurück.</string>
     <string name="car_apps_setup_open_notif">Benachrichtigungseinstellungen</string>
@@ -63,4 +63,5 @@
     <string name="car_apps_setup_notif_title">Kopplung für Telefon-Apps</string>
     <string name="car_apps_setup_notif_prompt">6-stelligen Kopplungscode eingeben</string>
     <string name="car_apps_setup_notif_hint">Kopplungscode</string>
+    <string name="car_apps_needs_setup">Richte Telefon-Apps einmalig ein, um Telefon-Apps auf dem Autobildschirm zu nutzen</string>
 </resources>
