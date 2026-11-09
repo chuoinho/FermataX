@@ -263,6 +263,7 @@ public class CarAppsFragmentTest {
 			View screen = (View) fragment.getGrantRootButton().getParent().getParent();
 
 			assertEquals(CarAppsUiState.State.NEEDS_WIFI, fragment.getUiState());
+			assertEquals("no doomed port wait", CarDisplayClient.State.FAILED, client.state());
 			assertTrue(textOf(screen).contains(wifi));
 			android.app.job.JobScheduler jobs = (android.app.job.JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 			assertEquals("connecting Wi-Fi must be able to start the server", 1, jobs.getAllPendingJobs().size());
@@ -270,9 +271,7 @@ public class CarAppsFragmentTest {
 			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = c -> true;
 			fragment.updateUiState();
 
-			assertEquals(CarAppsUiState.State.LOADING, fragment.getUiState());
-			assertFalse(textOf(screen).contains(wifi));
-			assertTrue(textOf(screen).contains(context.getString(me.aap.fermata.R.string.car_apps_loading)));
+			assertEquals("Wi-Fi is back: the failed start can be tried again", CarAppsUiState.State.SERVER_ERROR, fragment.getUiState());
 		} finally {
 			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = savedWifi;
 			CarAppsFeature.setAdbPaired(false);

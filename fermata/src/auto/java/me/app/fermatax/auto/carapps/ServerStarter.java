@@ -21,8 +21,12 @@ public final class ServerStarter {
 		NONE
 	}
 
-	/** Wireless debugging announces itself within a second or two; a longer wait means it is off. */
-	private static final long PORT_TIMEOUT_MS = 5000;
+	/**
+	 * Wireless debugging that was already on announces itself within a second or two, but one the app has just switched
+	 * on may need several. The 15 s ADB watchdog starts only after the port is known, so one attempt is bounded by the
+	 * sum of the two.
+	 */
+	static final long PORT_TIMEOUT_MS = 12_000;
 
 	private ServerStarter() {
 	}

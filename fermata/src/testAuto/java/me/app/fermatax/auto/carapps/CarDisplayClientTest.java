@@ -62,6 +62,7 @@ public class CarDisplayClientTest {
 		client = CarDisplayClient.get();
 		client.resetForTesting();
 		savedWifi = AdbRecoveryJob.wifiCheck;
+		AdbRecoveryJob.wifiCheck = c -> true; // an ADB start without Wi-Fi fails at once; the real check finds none here
 	}
 
 	@After
@@ -1591,14 +1592,122 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
-	public void failedConnectStillGivesWirelessDebuggingBack() {
+	public void failedConnectKeepsWirelessDebuggingOnForTheRetry() {
 		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
 		recoveryEnv(true, 0);
 
 		client.ensureRunning(context);
 
+		assertEquals(CarDisplayClient.State.RETRYING, client.state());
+		assertEquals("a retry of the same start must not switch it off and on again", 1, adbWifi());
+		assertTrue(markerPresent());
+		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+		assertEquals(2, adbCommands.size());
+		assertEquals(1, adbWifi());
+	}
+
+	@Test
+	public void wirelessDebuggingGoesBackWhenTheRetriesRunOut() {
+		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
+		recoveryEnv(true, 0);
+
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
 		assertEquals(0, adbWifi());
 		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void releaseBetweenRetriesGivesWirelessDebuggingBack() {
+		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+		assertEquals(1, adbWifi());
+
+		client.release();
+
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void lostWifiBetweenRetriesFailsAtOnceAndGivesTheSettingBack() {
+		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+		AdbRecoveryJob.wifiCheck = c -> false;
+
+		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertEquals("no second command without Wi-Fi", 1, adbCommands.size());
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void noWifiFailsAtOnceWithoutWaitingForAPortAndQueuesTheJob() {
+		useChannels(() -> new Promise<>());
+		recoveryEnv(false, 0);
+
+		client.ensureRunning(context);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertEquals(0, adbCommands.size());
+		assertEquals("connecting Wi-Fi starts the server", 1,
+				((android.app.job.JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE)).getAllPendingJobs().size());
+	}
+
+	@Test
+	public void aStaleCompletionDoesNotRestoreUnderTheNewStart() {
+		List<Promise<Void>> runs = new ArrayList<>();
+		useChannels(() -> {
+			Promise<Void> run = new Promise<>();
+			runs.add(run);
+			return run;
+		});
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+		client.release(); // the first command is abandoned but still running
+		assertEquals(0, adbWifi());
+		client.ensureRunning(context);
+		assertEquals(2, runs.size());
+		assertEquals(1, adbWifi());
+
+		runs.get(0).complete(null);
+		assertEquals("the command in flight owns the setting", 1, adbWifi());
+		assertTrue(markerPresent());
+
+		runs.get(1).complete(null);
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void jobDoesNotRestoreUnderARetryInFlight() {
+		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
+		recoveryEnv(true, 0);
+		client.ensureRunning(context);
+		assertEquals(CarDisplayClient.State.RETRYING, client.state());
+
+		AdbRecoveryJob.start(context, finished::add);
+
+		assertEquals(1, adbWifi());
+		assertTrue("the retrying start still owns the marker", markerPresent());
+	}
+
+	@Test
+	public void jobFinishesOnlyAfterItsCallerReturned() {
+		useChannels(() -> Completed.failed(new AdbPairingRequiredException("revoked")));
+		recoveryEnv(true, 0);
+
+		AdbRecoveryJob.start(context, finished::add);
+		assertTrue("jobFinished must not run inside onStartJob", finished.isEmpty());
+
+		ShadowLooper.idleMainLooper();
+		assertEquals(List.of(false), finished);
 	}
 
 	@Test
@@ -1637,6 +1746,7 @@ public class CarDisplayClientTest {
 
 		run.complete(null);
 		serverUp();
+		ShadowLooper.idleMainLooper();
 
 		assertEquals(List.of(false), finished);
 		assertEquals(0, tries());
@@ -1716,6 +1826,7 @@ public class CarDisplayClientTest {
 		recoveryEnv(true, 0);
 
 		AdbRecoveryJob.start(context, finished::add);
+		ShadowLooper.idleMainLooper();
 
 		assertEquals(List.of(false), finished);
 		assertFalse(CarAppsFeature.isAdbPaired());
@@ -1752,9 +1863,9 @@ public class CarDisplayClientTest {
 		recoveryEnv(true, 0);
 
 		AdbRecoveryJob.start(context, finished::add);
-		ShadowLooper.idleMainLooper(60, java.util.concurrent.TimeUnit.SECONDS);
-		assertTrue(finished.isEmpty());
-		ShadowLooper.idleMainLooper(60, java.util.concurrent.TimeUnit.SECONDS);
+		ShadowLooper.idleMainLooper(100, java.util.concurrent.TimeUnit.SECONDS);
+		assertTrue("the slowest start (4 attempts of port wait and watchdog) fits", finished.isEmpty());
+		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
 
 		assertEquals(List.of(true), finished);
 		assertEquals(1, tries());

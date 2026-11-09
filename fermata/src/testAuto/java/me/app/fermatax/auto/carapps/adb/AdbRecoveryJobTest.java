@@ -2,6 +2,7 @@ package me.app.fermatax.auto.carapps.adb;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -174,14 +175,17 @@ public class AdbRecoveryJobTest {
 		assertEquals(1, pendingJobs());
 	}
 
-	@Test public void scheduleBuildsOneJobOnAnUnmeteredNetwork() {
+	@Test public void scheduleBuildsOneJobOnUnmeteredWifi() {
 		AdbRecoveryJob.schedule(ctx);
 		AdbRecoveryJob.schedule(ctx);
 
 		assertEquals(1, pendingJobs());
 		JobInfo job = jobs().getAllPendingJobs().get(0);
 		assertEquals(AdbRecoveryJob.JOB_ID, job.getId());
-		assertEquals(JobInfo.NETWORK_TYPE_UNMETERED, job.getNetworkType());
+		android.net.NetworkRequest network = job.getRequiredNetwork();
+		assertNotNull("the constraint must be the same Wi-Fi the job checks, not any unmetered network", network);
+		assertTrue(network.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI));
+		assertTrue(network.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
 		assertFalse(job.isPeriodic());
 		assertEquals(AdbRecoveryJob.class.getName(), job.getService().getClassName());
 	}

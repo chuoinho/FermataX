@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -46,8 +47,8 @@ public class AdbRecoveryJob extends JobService {
 	public static final String PREF_TRIES = "CAR_APPS_ADB_RECOVERY_TRIES";
 	private static final String ADB_WIFI = "adb_wifi_enabled";
 	private static final int MAX_TRIES = 3;
-	/** Longer than the client's own bounded retries, shorter than the 10 minutes a job may run. */
-	private static final long RUN_TIMEOUT_MS = 90_000;
+	/** Four attempts of 12 s port wait plus the 15 s ADB watchdog, and the 7 s of backoff: under 2 minutes, a job may run 10. */
+	private static final long RUN_TIMEOUT_MS = 120_000;
 
 	public static volatile Predicate<Context> wifiCheck = AdbRecoveryJob::wifiConnected;
 	static volatile ObjIntConsumer<Context> adbWifiWriter = AdbRecoveryJob::putAdbWifi;
@@ -56,7 +57,7 @@ public class AdbRecoveryJob extends JobService {
 
 	@Override
 	public boolean onStartJob(JobParameters params) {
-		run = start(getApplicationContext(), retry -> jobFinished(params, retry));
+		run = start(getApplicationContext(), retry -> jobFinished(params, retry)); // finish is always posted
 		return run != null;
 	}
 
@@ -72,8 +73,11 @@ public class AdbRecoveryJob extends JobService {
 		try {
 			JobScheduler js = ctx.getSystemService(JobScheduler.class);
 			if ((js == null) || (js.getPendingJob(JOB_ID) != null)) return;
+			// the very network hasWifi() looks for, else a job could run on another unmetered network and be spent
+			NetworkRequest wifi = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+					.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED).build();
 			js.schedule(new JobInfo.Builder(JOB_ID, new ComponentName(ctx, AdbRecoveryJob.class))
-					.setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED).build());
+					.setRequiredNetwork(wifi).build());
 		} catch (Throwable t) {
 			Log.e(t, "Cannot schedule the ADB recovery");
 		}
@@ -100,8 +104,9 @@ public class AdbRecoveryJob extends JobService {
 
 	private static Action action(Context app, CarDisplayClient client) {
 		CarDisplayClient.State state = client.state();
-		// while a start is in flight the marker is its own: that start hands the setting back when it ends
-		boolean pending = prefs(app).contains(PREF_RESTORE) && (state != CarDisplayClient.State.STARTING);
+		// from its first command to its end (also between two retries) a start owns the marker and gives the setting back
+		boolean starting = (state == CarDisplayClient.State.STARTING) || (state == CarDisplayClient.State.RETRYING);
+		boolean pending = prefs(app).contains(PREF_RESTORE) && !starting;
 		return next(true, state == CarDisplayClient.State.READY, hasWifi(app), adbWifiOn(app), canWriteSecure(app), pending);
 	}
 
@@ -133,12 +138,17 @@ public class AdbRecoveryJob extends JobService {
 			handler.removeCallbacks(timeout);
 		}
 
+		/** Posted: the outcome can be known inside the constructor, before onStartJob has returned true. */
+		private void finish(boolean retry) {
+			handler.post(() -> finish.accept(retry));
+		}
+
 		private void onState(CarDisplayClient.State state) {
 			if (state == CarDisplayClient.State.READY) {
 				if (!done.compareAndSet(false, true)) return;
 				detach();
 				prefs.edit().putInt(PREF_TRIES, 0).apply();
-				finish.accept(false);
+				finish(false);
 			} else if (state == CarDisplayClient.State.FAILED) {
 				fail();
 			}
@@ -151,7 +161,7 @@ public class AdbRecoveryJob extends JobService {
 			int tries = prefs.getInt(PREF_TRIES, 0) + 1;
 			boolean retry = CarAppsFeature.isAdbPaired() && (tries < MAX_TRIES);
 			prefs.edit().putInt(PREF_TRIES, retry ? tries : 0).apply();
-			finish.accept(retry);
+			finish(retry);
 		}
 	}
 

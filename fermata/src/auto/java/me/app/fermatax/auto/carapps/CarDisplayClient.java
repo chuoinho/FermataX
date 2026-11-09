@@ -565,6 +565,14 @@ public class CarDisplayClient {
 				Build.VERSION.SDK_INT);
 		if (channel == ServerStarter.Channel.ADB) {
 			mainHandler.removeCallbacks(startTimeoutRunnable); // a stale timer from a root start must not cut this one short
+			if (!AdbRecoveryJob.hasWifi(ctx)) {
+				// no wireless debugging without Wi-Fi: do not wait for a port that cannot come; connecting Wi-Fi runs the job
+				recordDiagnostic("server_failed", Map.of("reason", "no_wifi"));
+				restoreAdbWifiIfIdle(ctx);
+				AdbRecoveryJob.schedule(ctx);
+				setState(State.FAILED);
+				return;
+			}
 			startViaAdb(ctx, ServerCommand.buildForAdb(apkPath, appUid, versionCode, pkg));
 			return;
 		}
@@ -618,18 +626,22 @@ public class CarDisplayClient {
 			run = Completed.failed(t);
 		}
 		run.onCompletion((r, err) -> {
-			AdbRecoveryJob.restoreAdbWifi(ctx);
 			boolean current = adbAttempt.compareAndSet(attempt, null);
 			synchronized (this) {
 				// a revoked authorization is true whatever the client is doing now
 				if ((err != null) && isPairingRequired(err)) {
+					restoreAdbWifiIfIdle(ctx);
 					RootProbe.recordAdbPaired(ctx, false);
 					recordDiagnostic("server_failed", Map.of("reason", "adb_pairing_required"));
 					if (current && (state == State.STARTING || state == State.RETRYING)) setState(State.FAILED);
 					return;
 				}
-				if (!current || (state != State.STARTING && state != State.RETRYING)) return;
+				if (!current || (state != State.STARTING && state != State.RETRYING)) {
+					restoreAdbWifiIfIdle(ctx);
+					return;
+				}
 				if (err == null) {
+					restoreAdbWifiIfIdle(ctx); // delivered: the server runs on without the ADB session
 					armStartTimeout();
 					return;
 				}
@@ -637,8 +649,16 @@ public class CarDisplayClient {
 				recordDiagnostic("server_failed", Map.of("reason", "adb_failed", "error", err.getClass().getSimpleName()));
 				setState(State.RETRYING);
 				scheduleRetry();
+				// Between the retries of one start wireless debugging stays on, else every retry would switch it off and
+				// on and wait for the announcement again; only the end of the start gives it back.
+				if (state == State.FAILED) restoreAdbWifiIfIdle(ctx);
 			}
 		});
+	}
+
+	/** Never under a command in flight: that one owns the setting and gives it back itself. */
+	private void restoreAdbWifiIfIdle(Context ctx) {
+		if (adbAttempt.get() == null) AdbRecoveryJob.restoreAdbWifi(ctx);
 	}
 
 	private static boolean isPairingRequired(Throwable err) {
@@ -1092,6 +1112,7 @@ public class CarDisplayClient {
 
 	public synchronized void release() {
 		adbAttempt.set(null);
+		if (lastContext != null) AdbRecoveryJob.restoreAdbWifi(lastContext); // a start between two retries has no completion left
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();

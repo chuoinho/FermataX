@@ -14,6 +14,13 @@ import me.aap.fermata.ui.carapps.RootState;
 public class ServerStarterTest {
 
 	@Test
+	public void portWaitCoversAWirelessDebuggingTheAppJustSwitchedOn() {
+		org.junit.Assert.assertTrue(ServerStarter.PORT_TIMEOUT_MS >= 10_000);
+		// each attempt = port wait + the 15 s ADB watchdog; four attempts must stay far below the 10 minutes of a job
+		org.junit.Assert.assertTrue(4 * (ServerStarter.PORT_TIMEOUT_MS + 15_000) < 150_000);
+	}
+
+	@Test
 	public void rootWinsWhenGranted() {
 		assertEquals(Channel.ROOT, choose(RootState.GRANTED, true, 36));
 		assertEquals(Channel.ROOT, choose(RootState.GRANTED, false, 30));

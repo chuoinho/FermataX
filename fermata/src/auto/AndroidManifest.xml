@@ -164,11 +164,11 @@
             android:name="me.app.fermatax.auto.carapps.adb.AdbPairing$Receiver"
             android:exported="false" />
 
-        <!-- System broadcasts only; the receiver acts on nothing else and only schedules a job. -->
+        <!-- Not exported: BOOT_COMPLETED and MY_PACKAGE_REPLACED come from the system, which may start a
+             non-exported receiver of the app; nothing else can reach it. -->
         <receiver
             android:name="me.app.fermatax.auto.carapps.adb.AdbRecoveryReceiver"
-            android:exported="true"
-            tools:ignore="ExportedReceiver">
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
