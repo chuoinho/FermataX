@@ -620,7 +620,7 @@ public class CarDisplayClient {
 			synchronized (this) {
 				// a revoked authorization is true whatever the client is doing now
 				if ((err != null) && isPairingRequired(err)) {
-					CarAppsFeature.setAdbPaired(false);
+					RootProbe.recordAdbPaired(ctx, false);
 					recordDiagnostic("server_failed", Map.of("reason", "adb_pairing_required"));
 					if (current && (state == State.STARTING || state == State.RETRYING)) setState(State.FAILED);
 					return;

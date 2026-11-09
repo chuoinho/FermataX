@@ -36,6 +36,7 @@ public class RootProbeTest {
 	public void tearDown() {
 		context.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit().clear().commit();
 		CarAppsFeature.setState(RootState.ABSENT);
+		CarAppsFeature.setAdbPaired(false);
 	}
 
 	@Test
@@ -146,5 +147,21 @@ public class RootProbeTest {
 		RootProbe.recordGranted(context, false);
 		assertFalse(context.getSharedPreferences("fermata", Context.MODE_PRIVATE)
 				.getBoolean(RootProbe.PREF_ROOT_GRANTED, true));
+	}
+
+	@Test
+	public void adbPairedFlagSurvivesProcessDeathAndRevocationClearsIt() {
+		RootProbe.recordAdbPaired(context, true);
+		assertTrue(CarAppsFeature.isAdbPaired());
+		assertTrue(context.getSharedPreferences("fermata", Context.MODE_PRIVATE).getBoolean("CAR_APPS_ADB_PAIRED", false));
+
+		CarAppsFeature.setAdbPaired(false); // a new process starts with nothing in memory
+		RootProbe.restoreAdbPaired(context);
+		assertTrue(CarAppsFeature.isAdbPaired());
+
+		RootProbe.recordAdbPaired(context, false);
+		assertFalse(CarAppsFeature.isAdbPaired());
+		RootProbe.restoreAdbPaired(context);
+		assertFalse("A revoked authorization must not come back", CarAppsFeature.isAdbPaired());
 	}
 }

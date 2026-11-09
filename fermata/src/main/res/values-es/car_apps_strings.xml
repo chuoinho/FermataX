@@ -47,4 +47,20 @@
     <string name="car_apps_check_panel_power_ok">La pantalla del teléfono se apaga durante las apps del teléfono</string>
     <string name="car_apps_check_panel_power_missing">No se puede apagar la pantalla del teléfono</string>
     <string name="car_apps_check_panel_power_fix">No se puede apagar la pantalla; se usará pantalla negra</string>
+    <string name="car_apps_readiness_status_need_setup">Configuración necesaria</string>
+    <string name="car_apps_setup_button">Configurar sin root</string>
+    <string name="car_apps_setup_title">Configurar Apps del teléfono</string>
+    <string name="car_apps_setup_dev_off">Las opciones de desarrollador están desactivadas. Abre Acerca del teléfono, toca 7 veces el número de compilación y vuelve aquí.</string>
+    <string name="car_apps_setup_open_about">Abrir Acerca del teléfono</string>
+    <string name="car_apps_setup_steps">1. Abre las opciones de desarrollador, luego Depuración inalámbrica, y actívala.\n2. Toca «Vincular dispositivo con código de sincronización» y deja ese cuadro abierto.\n3. Baja el panel de notificaciones y escribe el código de 6 dígitos en la notificación de vinculación.</string>
+    <string name="car_apps_setup_open_dev">Abrir opciones de desarrollador</string>
+    <string name="car_apps_setup_notif_off">Las notificaciones están desactivadas para esta app. El código se escribe en una notificación: actívalas y vuelve aquí.</string>
+    <string name="car_apps_setup_open_notif">Ajustes de notificaciones</string>
+    <string name="car_apps_setup_working">Vinculando…</string>
+    <string name="car_apps_setup_done">Listo. Apps del teléfono está preparado.</string>
+    <string name="car_apps_setup_wrong_code">Ese código no funcionó. Introduce de nuevo el código de 6 dígitos.</string>
+    <string name="car_apps_setup_failed">No se pudo vincular. Deja abierto «Vincular dispositivo con código de sincronización» e introduce el código de nuevo.</string>
+    <string name="car_apps_setup_notif_title">Vinculación de Apps del teléfono</string>
+    <string name="car_apps_setup_notif_prompt">Escribe el código de vinculación de 6 dígitos</string>
+    <string name="car_apps_setup_notif_hint">Código de vinculación</string>
 </resources>

@@ -47,4 +47,20 @@
     <string name="car_apps_check_panel_power_ok">A tela do telefone desliga durante os apps do telefone</string>
     <string name="car_apps_check_panel_power_missing">Não é possível desligar a tela do telefone</string>
     <string name="car_apps_check_panel_power_fix">A tela não pode ser desligada; a tela preta será usada</string>
+    <string name="car_apps_readiness_status_need_setup">Configuração necessária</string>
+    <string name="car_apps_setup_button">Configurar sem root</string>
+    <string name="car_apps_setup_title">Configurar Apps do telefone</string>
+    <string name="car_apps_setup_dev_off">As opções do programador estão desativadas. Abra Sobre o telefone, toque 7 vezes em Número da compilação e volte aqui.</string>
+    <string name="car_apps_setup_open_about">Abrir Sobre o telefone</string>
+    <string name="car_apps_setup_steps">1. Abra as opções do programador, depois Depuração sem fios, e ative-a.\n2. Toque em “Sincronizar dispositivo com código de sincronização” e mantenha essa caixa aberta.\n3. Puxe para baixo o painel de notificações e escreva o código de 6 dígitos na notificação de sincronização.</string>
+    <string name="car_apps_setup_open_dev">Abrir opções do programador</string>
+    <string name="car_apps_setup_notif_off">As notificações estão desativadas para esta app. O código é escrito numa notificação: ative-as e volte aqui.</string>
+    <string name="car_apps_setup_open_notif">Definições de notificações</string>
+    <string name="car_apps_setup_working">A sincronizar…</string>
+    <string name="car_apps_setup_done">Concluído. Apps do telefone está pronto.</string>
+    <string name="car_apps_setup_wrong_code">Esse código não funcionou. Introduza novamente o código de 6 dígitos.</string>
+    <string name="car_apps_setup_failed">Falha na sincronização. Mantenha aberto “Sincronizar dispositivo com código de sincronização” e introduza novamente o código.</string>
+    <string name="car_apps_setup_notif_title">Sincronização de Apps do telefone</string>
+    <string name="car_apps_setup_notif_prompt">Escreva o código de sincronização de 6 dígitos</string>
+    <string name="car_apps_setup_notif_hint">Código de sincronização</string>
 </resources>

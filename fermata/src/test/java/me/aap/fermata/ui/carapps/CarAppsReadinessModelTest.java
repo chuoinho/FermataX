@@ -50,8 +50,28 @@ public class CarAppsReadinessModelTest {
 	}
 
 	@Test
+	public void setupWithoutRootIsOfferedOnlyOnAndroid13UpWithoutRootOrPairing() {
+		for (int sdk : new int[]{33, 34, 36, 37}) {
+			CarAppsReadinessModel absent = CarAppsReadinessModel.from(RootState.ABSENT, 0, sdk);
+			assertTrue(absent.rowVisible);
+			assertTrue(absent.adbSetup);
+			assertEquals(R.string.car_apps_readiness_status_need_setup, absent.statusStringRes);
+			assertTrue(CarAppsReadinessModel.from(RootState.AVAILABLE, 0, sdk).adbSetup);
+			assertFalse(CarAppsReadinessModel.from(RootState.GRANTED, 0, sdk).adbSetup);
+		}
+		for (int sdk : new int[]{30, 31, 32}) {
+			assertFalse(CarAppsReadinessModel.from(RootState.ABSENT, 0, sdk).adbSetup);
+			assertFalse(CarAppsReadinessModel.from(RootState.AVAILABLE, 0, sdk).adbSetup);
+		}
+		assertFalse(CarAppsReadinessModel.from(null, 0, 34).adbSetup);
+		CarAppsFeature.setAdbPaired(true);
+		assertFalse(CarAppsReadinessModel.from(RootState.ABSENT, 0, 34).adbSetup);
+		assertFalse(CarAppsReadinessModel.from(RootState.AVAILABLE, 0, 34).adbSetup);
+	}
+
+	@Test
 	public void absentHidesRow() {
-		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.ABSENT, 0);
+		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.ABSENT, 0, 31);
 		assertFalse(model.rowVisible);
 		assertEquals(0, model.statusStringRes);
 		assertEquals(0, model.actionStringRes);
@@ -103,8 +123,8 @@ public class CarAppsReadinessModelTest {
 			assertEquals(R.string.car_apps_readiness_warn_xiaomi_inject,
 					CarAppsReadinessModel.from(RootState.GRANTED, 0, sdk).warningStringRes);
 		}
+		assertFalse(CarAppsReadinessModel.from(RootState.ABSENT, 0, 29).rowVisible);
 		for (int sdk : new int[]{29, 33, 34, 35, 36, 37}) {
-			assertFalse(CarAppsReadinessModel.from(RootState.ABSENT, 0, sdk).rowVisible);
 			assertEquals(0, CarAppsReadinessModel.from(RootState.AVAILABLE, 0, sdk).warningStringRes);
 		}
 		for (RootState state : RootState.values()) {
@@ -180,7 +200,7 @@ public class CarAppsReadinessModelTest {
 			}
 		});
 
-		CarAppsReadinessModel absent = CarAppsReadinessModel.from(RootState.ABSENT, 0);
+		CarAppsReadinessModel absent = CarAppsReadinessModel.from(RootState.ABSENT, 0, 31);
 		CarAppsReadinessModel available = CarAppsReadinessModel.from(RootState.AVAILABLE, 0);
 		CarAppsReadinessModel granted = CarAppsReadinessModel.from(RootState.GRANTED,
 				CarAppsReadinessModel.CAP_INJECT);

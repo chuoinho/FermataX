@@ -47,4 +47,20 @@
     <string name="car_apps_check_panel_power_ok">手機應用程式運作時關閉手機螢幕</string>
     <string name="car_apps_check_panel_power_missing">無法關閉手機螢幕</string>
     <string name="car_apps_check_panel_power_fix">無法關閉螢幕，將使用黑畫面</string>
+    <string name="car_apps_readiness_status_need_setup">需要設定</string>
+    <string name="car_apps_setup_button">免 Root 設定</string>
+    <string name="car_apps_setup_title">設定手機應用程式</string>
+    <string name="car_apps_setup_dev_off">開發人員選項已關閉。請開啟「關於手機」，連按「版本號碼」7 次，然後回到這裡。</string>
+    <string name="car_apps_setup_open_about">開啟「關於手機」</string>
+    <string name="car_apps_setup_steps">1. 開啟「開發人員選項」，再開啟「無線偵錯」。\n2. 點選「使用配對碼配對裝置」，並保持該對話方塊開啟。\n3. 下拉通知欄，在配對通知中輸入 6 位數配對碼。</string>
+    <string name="car_apps_setup_open_dev">開啟開發人員選項</string>
+    <string name="car_apps_setup_notif_off">此應用程式的通知已關閉。配對碼需在通知中輸入，請開啟通知後回到這裡。</string>
+    <string name="car_apps_setup_open_notif">通知設定</string>
+    <string name="car_apps_setup_working">配對中…</string>
+    <string name="car_apps_setup_done">完成。手機應用程式已就緒。</string>
+    <string name="car_apps_setup_wrong_code">配對碼不正確，請重新輸入 6 位數配對碼。</string>
+    <string name="car_apps_setup_failed">配對失敗。請保持「使用配對碼配對裝置」對話方塊開啟，並重新輸入配對碼。</string>
+    <string name="car_apps_setup_notif_title">手機應用程式配對</string>
+    <string name="car_apps_setup_notif_prompt">輸入 6 位數配對碼</string>
+    <string name="car_apps_setup_notif_hint">配對碼</string>
 </resources>

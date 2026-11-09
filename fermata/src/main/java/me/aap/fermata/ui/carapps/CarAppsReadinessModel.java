@@ -21,6 +21,8 @@ public final class CarAppsReadinessModel {
 	public final int actionStringRes;
 	public final int warningStringRes;
 	public final List<CarAppsChecks.Check> checks;
+	/** Offer "Set up without root": Android 13+, no usable root, not paired yet. */
+	public final boolean adbSetup;
 
 	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes) {
 		this(rowVisible, statusStringRes, actionStringRes, warningStringRes, Collections.emptyList());
@@ -28,6 +30,12 @@ public final class CarAppsReadinessModel {
 
 	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes,
 			List<CarAppsChecks.Check> checks) {
+		this(rowVisible, statusStringRes, actionStringRes, warningStringRes, checks, false);
+	}
+
+	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes,
+			List<CarAppsChecks.Check> checks, boolean adbSetup) {
+		this.adbSetup = adbSetup;
 		this.rowVisible = rowVisible;
 		this.statusStringRes = statusStringRes;
 		this.actionStringRes = actionStringRes;
@@ -41,8 +49,15 @@ public final class CarAppsReadinessModel {
 
 	public static CarAppsReadinessModel from(@Nullable RootState rootState, int capabilities, int sdk) {
 		boolean canRun = CarAppsFeature.canRun(rootState, CarAppsFeature.isAdbPaired(), sdk);
-		if (rootState == null || CarAppsFeature.isBlockedSdk(sdk) || (rootState == RootState.ABSENT && !canRun)) {
+		boolean adbSetup = (rootState != null) && !CarAppsFeature.isBlockedSdk(sdk)
+				&& CarAppsFeature.adbSupportedSdk(sdk) && !canRun;
+		if (rootState == null || CarAppsFeature.isBlockedSdk(sdk) || (rootState == RootState.ABSENT && !canRun && !adbSetup)) {
 			return new CarAppsReadinessModel(false, 0, 0, 0, Collections.emptyList());
+		}
+
+		if (rootState == RootState.ABSENT && !canRun) {
+			return new CarAppsReadinessModel(true, R.string.car_apps_readiness_status_need_setup, 0, 0,
+					Collections.emptyList(), true);
 		}
 
 		if (!canRun) {
@@ -51,7 +66,8 @@ public final class CarAppsReadinessModel {
 					R.string.car_apps_readiness_status_need_root,
 					R.string.car_apps_readiness_action_grant,
 					0,
-					CarAppsChecks.from(rootState, capabilities, sdk)
+					CarAppsChecks.from(rootState, capabilities, sdk),
+					adbSetup
 			);
 		}
 

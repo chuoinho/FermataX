@@ -18,6 +18,7 @@ import java.util.function.Predicate;
 public final class RootProbe {
 
 	public static final String PREF_ROOT_GRANTED = "CAR_APPS_ROOT_GRANTED";
+	public static final String PREF_ADB_PAIRED = "CAR_APPS_ADB_PAIRED";
 
 	public static final String[] SU_PATHS = {
 			"/system/bin/su",
@@ -108,5 +109,20 @@ public final class RootProbe {
 			prefs.edit().putBoolean(PREF_ROOT_GRANTED, granted).apply();
 		}
 		refresh(ctx);
+	}
+
+	/** Remembers that this phone is paired for the local ADB channel, or that the authorization was revoked. */
+	public static void recordAdbPaired(@Nullable Context ctx, boolean paired) {
+		if (ctx != null) {
+			ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit().putBoolean(PREF_ADB_PAIRED, paired).apply();
+		}
+		CarAppsFeature.setAdbPaired(paired);
+	}
+
+	/** Restores the paired flag at startup; the in-memory flag alone would be lost with the process. */
+	public static void restoreAdbPaired(@Nullable Context ctx) {
+		if (ctx == null) return;
+		CarAppsFeature.setAdbPaired(ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE)
+				.getBoolean(PREF_ADB_PAIRED, false));
 	}
 }

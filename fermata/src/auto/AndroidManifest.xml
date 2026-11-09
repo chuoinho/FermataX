@@ -9,6 +9,10 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- Granted by the app itself through its own paired wireless debugging; there is no dialog. -->
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
 	<!-- Auto can run on TV-style head units that do not expose a touchscreen. -->
 	<uses-feature
@@ -150,6 +154,14 @@
             android:permission="android.permission.WRITE_SECURE_SETTINGS"
             android:launchMode="singleTop"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
+        <activity
+            android:name="me.app.fermatax.auto.carapps.adb.AdbSetupActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name="me.app.fermatax.auto.carapps.adb.AdbPairing$Receiver"
+            android:exported="false" />
 
         <service
             android:name="me.app.fermatax.auto.ProjectionService"

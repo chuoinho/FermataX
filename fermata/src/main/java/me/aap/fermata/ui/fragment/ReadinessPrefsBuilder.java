@@ -126,7 +126,7 @@ final class ReadinessPrefsBuilder {
 		CarAppsReadinessModel model = CarAppsReadinessModel.from(CarAppsFeature.state(), CarAppsFeature.capabilities());
 		if (!shouldAddCarAppsRow(BuildConfig.AUTO, model)) return;
 
-		int color = (model.actionStringRes != 0) ? 0xFFEF4444 :
+		int color = (model.actionStringRes != 0 || model.adbSetup) ? 0xFFEF4444 :
 				(model.warningStringRes != 0) ? 0xFFF59E0B : 0xFF22C55E;
 		String titleText = activity.getString(R.string.car_apps_readiness_title);
 		target.addButton(o -> {
@@ -135,6 +135,14 @@ final class ReadinessPrefsBuilder {
 			o.hideChevron = (model.actionStringRes == 0);
 			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
 		});
+
+		if (model.adbSetup) {
+			target.addButton(o -> {
+				o.title = R.string.car_apps_setup_button;
+				o.onClick = () -> startSettings(new Intent().setClassName(context,
+						"me.app.fermatax.auto.carapps.adb.AdbSetupActivity"));
+			});
+		}
 
 		if (CarAppsFeature.canRun() && !model.checks.isEmpty()) {
 			for (me.aap.fermata.ui.carapps.CarAppsChecks.Check check : model.checks) {

@@ -47,4 +47,20 @@
     <string name="car_apps_check_panel_power_ok">Экран телефона выключается при работе приложений телефона</string>
     <string name="car_apps_check_panel_power_missing">Не удается выключить экран телефона</string>
     <string name="car_apps_check_panel_power_fix">Экран нельзя выключить; будет использоваться черный экран</string>
+    <string name="car_apps_readiness_status_need_setup">Требуется настройка</string>
+    <string name="car_apps_setup_button">Настроить без root</string>
+    <string name="car_apps_setup_title">Настройка приложений телефона</string>
+    <string name="car_apps_setup_dev_off">Параметры разработчика отключены. Откройте «О телефоне», 7 раз нажмите на номер сборки и вернитесь сюда.</string>
+    <string name="car_apps_setup_open_about">Открыть «О телефоне»</string>
+    <string name="car_apps_setup_steps">1. Откройте «Для разработчиков», затем «Отладка по Wi‑Fi» и включите её.\n2. Нажмите «Подключить устройство по коду подключения» и не закрывайте это окно.\n3. Опустите шторку уведомлений и введите 6-значный код в уведомлении о подключении.</string>
+    <string name="car_apps_setup_open_dev">Открыть «Для разработчиков»</string>
+    <string name="car_apps_setup_notif_off">Уведомления для этого приложения отключены. Код вводится в уведомлении: включите уведомления и вернитесь сюда.</string>
+    <string name="car_apps_setup_open_notif">Настройки уведомлений</string>
+    <string name="car_apps_setup_working">Подключение…</string>
+    <string name="car_apps_setup_done">Готово. Приложения телефона готовы к работе.</string>
+    <string name="car_apps_setup_wrong_code">Этот код не подошёл. Введите 6-значный код ещё раз.</string>
+    <string name="car_apps_setup_failed">Не удалось подключиться. Не закрывайте окно «Подключить устройство по коду подключения» и введите код ещё раз.</string>
+    <string name="car_apps_setup_notif_title">Подключение приложений телефона</string>
+    <string name="car_apps_setup_notif_prompt">Введите 6-значный код подключения</string>
+    <string name="car_apps_setup_notif_hint">Код подключения</string>
 </resources>

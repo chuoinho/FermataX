@@ -47,4 +47,20 @@
     <string name="car_apps_check_panel_power_ok">Telefon uygulamalarında telefon ekranı kapanır</string>
     <string name="car_apps_check_panel_power_missing">Telefon ekranı kapatılamıyor</string>
     <string name="car_apps_check_panel_power_fix">Ekran kapatılamıyor; siyah ekran kullanılacak</string>
+    <string name="car_apps_readiness_status_need_setup">Kurulum gerekli</string>
+    <string name="car_apps_setup_button">Root olmadan kur</string>
+    <string name="car_apps_setup_title">Telefon Uygulamalarını kur</string>
+    <string name="car_apps_setup_dev_off">Geliştirici seçenekleri kapalı. Telefon hakkında bölümünü açın, Yapı numarasına 7 kez dokunun ve buraya dönün.</string>
+    <string name="car_apps_setup_open_about">Telefon hakkını aç</string>
+    <string name="car_apps_setup_steps">1. Geliştirici seçeneklerini, ardından Kablosuz hata ayıklamayı açın ve etkinleştirin.\n2. “Cihazı eşleştirme koduyla eşleştir”e dokunun ve bu pencereyi açık tutun.\n3. Bildirim panelini aşağı çekin ve eşleştirme bildiriminde 6 haneli kodu yazın.</string>
+    <string name="car_apps_setup_open_dev">Geliştirici seçeneklerini aç</string>
+    <string name="car_apps_setup_notif_off">Bu uygulama için bildirimler kapalı. Kod bir bildirime yazılır: bildirimleri açın ve buraya dönün.</string>
+    <string name="car_apps_setup_open_notif">Bildirim ayarları</string>
+    <string name="car_apps_setup_working">Eşleştiriliyor…</string>
+    <string name="car_apps_setup_done">Tamam. Telefon Uygulamaları hazır.</string>
+    <string name="car_apps_setup_wrong_code">Bu kod işe yaramadı. 6 haneli kodu yeniden girin.</string>
+    <string name="car_apps_setup_failed">Eşleştirme başarısız. “Cihazı eşleştirme koduyla eşleştir” penceresini açık tutun ve kodu yeniden girin.</string>
+    <string name="car_apps_setup_notif_title">Telefon Uygulamaları eşleştirmesi</string>
+    <string name="car_apps_setup_notif_prompt">6 haneli eşleştirme kodunu yazın</string>
+    <string name="car_apps_setup_notif_hint">Eşleştirme kodu</string>
 </resources>
