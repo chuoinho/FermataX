@@ -428,7 +428,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		// The first grant can arrive while the fragment is already open and the server is still idle.
 		if (ctx != null && (client.state() == CarDisplayClient.State.IDLE
 				|| client.state() == CarDisplayClient.State.FAILED)
-				&& CarAppsFeature.state() == RootState.GRANTED) {
+				&& CarAppsFeature.canRun()) {
 			client.ensureRunning(ctx);
 		}
 		updateUiState();
@@ -440,7 +440,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		LauncherActivity.addVisibilityListener(launcherVisibilityListener);
 		CarAppsFeature.addListener(rootListener);
 		client.addStateListener(clientListener);
-		if (CarAppsFeature.usable(CarAppsFeature.state())) {
+		if (CarAppsFeature.canRun()) {
 			Context ctx = getContext();
 			if (ctx != null) {
 				client.ensureRunning(ctx);

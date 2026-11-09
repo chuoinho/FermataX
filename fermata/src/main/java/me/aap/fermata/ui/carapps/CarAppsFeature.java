@@ -31,6 +31,7 @@ public final class CarAppsFeature {
 	/** Turn the phone panel off while the virtual display is in use (user option, default on). */
 
 	private static volatile RootState state = RootState.ABSENT;
+	private static volatile boolean adbPaired;
 	private static final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 	private static volatile Backend backend;
 	private static volatile boolean fullscreen;
@@ -39,7 +40,8 @@ public final class CarAppsFeature {
 	}
 
 	public static boolean visible(boolean autoBuild, int sdk, @Nullable RootState s) {
-		return autoBuild && (sdk >= 30) && !isBlockedSdk(sdk) && (s != null) && (s != RootState.ABSENT);
+		return autoBuild && (sdk >= 30) && !isBlockedSdk(sdk) && (s != null)
+				&& ((s != RootState.ABSENT) || adbSupportedSdk(sdk));
 	}
 
 	/** 12L: as uid 1000, which the server needs below 33, am start exits 255, so no app can open. */
@@ -54,6 +56,27 @@ public final class CarAppsFeature {
 
 	public static boolean usable(@Nullable RootState s) {
 		return s == RootState.GRANTED;
+	}
+
+	/** True when the server can be started: by root, or by the paired ADB channel on a supported Android. */
+	public static boolean canRun() {
+		return canRun(state, adbPaired, Build.VERSION.SDK_INT);
+	}
+
+	public static boolean canRun(@Nullable RootState root, boolean adbPaired, int sdk) {
+		return usable(root) || (adbPaired && adbSupportedSdk(sdk));
+	}
+
+	public static boolean isAdbPaired() {
+		return adbPaired;
+	}
+
+	public static void setAdbPaired(boolean paired) {
+		if (adbPaired == paired) {
+			return;
+		}
+		adbPaired = paired;
+		notifyListeners();
 	}
 
 	/** True while the virtual display owns the screen; the top bar is hidden meanwhile. */
@@ -81,6 +104,10 @@ public final class CarAppsFeature {
 			return;
 		}
 		state = newState;
+		notifyListeners();
+	}
+
+	private static void notifyListeners() {
 		for (Runnable listener : listeners) {
 			listener.run();
 		}

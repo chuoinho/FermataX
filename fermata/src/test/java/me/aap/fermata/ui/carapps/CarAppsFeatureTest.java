@@ -22,11 +22,12 @@ public class CarAppsFeatureTest {
 	@After
 	public void resetState() {
 		CarAppsFeature.setState(RootState.ABSENT);
+		CarAppsFeature.setAdbPaired(false);
 		CarAppsFeature.setBackend(null);
 	}
 
 	@Test
-	public void visibleOnlyForAutoSdk30Not12LAndRootNotAbsent() {
+	public void visibleOnlyForAutoSdk30Not12LAndRootOrAdbSupportedSdk() {
 		boolean[] autoBuildOptions = {false, true};
 		int[] sdkVersions = {29, 30, 31, 32, 33, 36, 37};
 		RootState[] states = RootState.values();
@@ -34,7 +35,8 @@ public class CarAppsFeatureTest {
 		for (boolean autoBuild : autoBuildOptions) {
 			for (int sdk : sdkVersions) {
 				for (RootState state : states) {
-					boolean expected = autoBuild && (sdk >= 30) && (sdk != 32) && (state != RootState.ABSENT);
+					boolean expected = autoBuild && (sdk >= 30) && (sdk != 32)
+							&& ((state != RootState.ABSENT) || (sdk >= 33));
 					boolean actual = CarAppsFeature.visible(autoBuild, sdk, state);
 					assertEquals(
 							"Failed for autoBuild=" + autoBuild + ", sdk=" + sdk + ", state=" + state,
@@ -53,6 +55,18 @@ public class CarAppsFeatureTest {
 		assertFalse(CarAppsFeature.usable(RootState.AVAILABLE));
 		assertTrue(CarAppsFeature.usable(RootState.GRANTED));
 		assertFalse(CarAppsFeature.usable(null));
+	}
+
+	@Test
+	public void canRunWithGrantedRootOrPairedAdbOnSupportedSdk() {
+		assertTrue(CarAppsFeature.canRun(RootState.GRANTED, false, 30));
+		assertFalse(CarAppsFeature.canRun(RootState.AVAILABLE, false, 36));
+		assertFalse(CarAppsFeature.canRun(RootState.ABSENT, false, 36));
+		assertTrue(CarAppsFeature.canRun(RootState.ABSENT, true, 33));
+		assertTrue(CarAppsFeature.canRun(RootState.AVAILABLE, true, 36));
+		assertFalse(CarAppsFeature.canRun(RootState.ABSENT, true, 31));
+		assertFalse(CarAppsFeature.canRun(RootState.ABSENT, true, 32));
+		assertFalse(CarAppsFeature.canRun(null, true, 30));
 	}
 
 	@Test

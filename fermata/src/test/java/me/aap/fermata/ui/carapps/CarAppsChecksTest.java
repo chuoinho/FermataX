@@ -146,6 +146,21 @@ public class CarAppsChecksTest {
 	}
 
 	@Test
+	public void pairedAdbIsAnOkChannelWithoutRoot() {
+		CarAppsFeature.setAdbPaired(true);
+		try {
+			CarAppsChecks.Check absent = checksMap(RootState.ABSENT, 0, 34).get("channel");
+			assertEquals(CarAppsChecks.Status.OK, absent.status);
+			assertEquals(R.string.car_apps_check_channel_adb, absent.summaryRes);
+			assertEquals(CarAppsChecks.Status.OK, checksMap(RootState.AVAILABLE, 0, 34).get("channel").status);
+			assertEquals(R.string.car_apps_check_channel_root, checksMap(RootState.GRANTED, 0, 34).get("channel").summaryRes);
+			assertEquals(CarAppsChecks.Status.FAIL, checksMap(RootState.ABSENT, 0, 31).get("channel").status);
+		} finally {
+			CarAppsFeature.setAdbPaired(false);
+		}
+	}
+
+	@Test
 	public void channelReflectsRootState() {
 		int caps = CarAppsChecks.CAP_INJECT;
 		Map<String, CarAppsChecks.Check> granted = checksMap(RootState.GRANTED, caps, 34);

@@ -38,8 +38,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.github.muntashirakon.adb.AdbPairingRequiredException;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootState;
+import me.aap.utils.async.Completed;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35, application = me.aap.fermata.FermataApplication.class)
@@ -59,6 +63,7 @@ public class CarDisplayClientTest {
 	public void tearDown() {
 		client.resetForTesting();
 		CarAppsFeature.setState(RootState.ABSENT);
+		CarAppsFeature.setAdbPaired(false);
 	}
 
 	@Test
@@ -116,6 +121,102 @@ public class CarDisplayClientTest {
 		assertEquals(CarDisplayClient.State.IDLE, client.state());
 		assertEquals(0, runCount.get());
 		assertEquals(RootState.AVAILABLE, CarAppsFeature.state());
+	}
+
+	private List<String> rootCommands = new ArrayList<>();
+	private List<String> adbCommands = new ArrayList<>();
+
+	/** Installed before the feature state changes: a fragment left by another test starts the client when it does. */
+	private void useChannels(FutureSupplier<Void> adbResult) {
+		rootCommands = new ArrayList<>();
+		adbCommands = new ArrayList<>();
+		client.setStartersForTest((ctx, cmd) -> rootCommands.add(cmd), (ctx, cmd) -> {
+			adbCommands.add(cmd);
+			return adbResult;
+		});
+	}
+
+	@Test
+	public void adbChannelStartsTheForegroundCommandAndNeverTouchesSu() {
+		useChannels(new Promise<>());
+		CarAppsFeature.setState(RootState.AVAILABLE);
+		CarAppsFeature.setAdbPaired(true);
+
+		client.ensureRunning(context);
+
+		assertEquals(CarDisplayClient.State.STARTING, client.state());
+		assertEquals(List.of(ServerCommand.buildForAdb(context.getPackageCodePath(),
+				android.os.Process.myUid(), client.getExpectedVersion(), context.getPackageName())), adbCommands);
+		assertTrue("su must not be asked", rootCommands.isEmpty());
+	}
+
+	@Test
+	public void rootChannelKeepsTheRootCommand() {
+		useChannels(new Promise<>());
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFeature.setAdbPaired(true);
+
+		client.ensureRunning(context);
+
+		assertEquals(List.of(ServerCommand.buildForRoot(context.getPackageCodePath(), android.os.Process.myUid(),
+				client.getExpectedVersion(), context.getPackageName(), 35)), rootCommands);
+		assertTrue(adbCommands.isEmpty());
+	}
+
+	@Test
+	public void concurrentEnsureRunningStartsOneCommand() throws Exception {
+		useChannels(new Promise<>());
+		CarAppsFeature.setAdbPaired(true);
+		int threads = 8;
+		java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(threads);
+		java.util.concurrent.CountDownLatch go = new java.util.concurrent.CountDownLatch(1);
+		List<java.util.concurrent.Future<?>> done = new ArrayList<>();
+		for (int i = 0; i < threads; i++) {
+			done.add(pool.submit(() -> {
+				go.await();
+				client.ensureRunning(context);
+				return null;
+			}));
+		}
+		go.countDown();
+		for (java.util.concurrent.Future<?> f : done) f.get(10, java.util.concurrent.TimeUnit.SECONDS);
+		pool.shutdown();
+
+		assertEquals(1, adbCommands.size());
+		assertEquals(CarDisplayClient.State.STARTING, client.state());
+	}
+
+	@Test
+	public void revokedAdbAuthorizationFailsTheClientAndForgetsThePairing() {
+		useChannels(Completed.failed(new AdbPairingRequiredException("revoked")));
+		CarAppsFeature.setAdbPaired(true);
+
+		client.ensureRunning(context);
+
+		assertFalse(CarAppsFeature.isAdbPaired());
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+	}
+
+	@Test
+	public void otherAdbFailuresRetryInsteadOfForgettingThePairing() {
+		useChannels(Completed.failed(new java.io.IOException("no wifi")));
+		CarAppsFeature.setAdbPaired(true);
+
+		client.ensureRunning(context);
+
+		assertTrue(CarAppsFeature.isAdbPaired());
+		assertEquals(CarDisplayClient.State.RETRYING, client.state());
+	}
+
+	@Test
+	public void autoStartAlsoWorksOverAdb() {
+		assertFalse(AutoStartPolicy.shouldStart(true, RootState.ABSENT, true, 34));
+		CarAppsFeature.setAdbPaired(true);
+		assertTrue(AutoStartPolicy.shouldStart(true, RootState.ABSENT, true, 34));
+		assertTrue(AutoStartPolicy.shouldStart(true, RootState.AVAILABLE, true, 34));
+		assertFalse("12L is hidden", AutoStartPolicy.shouldStart(true, RootState.ABSENT, true, 32));
+		assertFalse(AutoStartPolicy.shouldStart(false, RootState.ABSENT, true, 34));
+		assertFalse(AutoStartPolicy.shouldStart(true, RootState.ABSENT, false, 34));
 	}
 
 	@Test

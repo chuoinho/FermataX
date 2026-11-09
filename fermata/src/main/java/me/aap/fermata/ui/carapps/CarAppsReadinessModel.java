@@ -40,11 +40,12 @@ public final class CarAppsReadinessModel {
 	}
 
 	public static CarAppsReadinessModel from(@Nullable RootState rootState, int capabilities, int sdk) {
-		if (rootState == null || rootState == RootState.ABSENT || CarAppsFeature.isBlockedSdk(sdk)) {
+		boolean canRun = CarAppsFeature.canRun(rootState, CarAppsFeature.isAdbPaired(), sdk);
+		if (rootState == null || CarAppsFeature.isBlockedSdk(sdk) || (rootState == RootState.ABSENT && !canRun)) {
 			return new CarAppsReadinessModel(false, 0, 0, 0, Collections.emptyList());
 		}
 
-		if (rootState == RootState.AVAILABLE) {
+		if (!canRun) {
 			return new CarAppsReadinessModel(
 					true,
 					R.string.car_apps_readiness_status_need_root,

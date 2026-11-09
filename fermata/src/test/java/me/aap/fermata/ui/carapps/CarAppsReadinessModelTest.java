@@ -32,7 +32,21 @@ public class CarAppsReadinessModelTest {
 	@After
 	public void resetState() {
 		CarAppsFeature.setState(RootState.ABSENT);
+		CarAppsFeature.setAdbPaired(false);
 		CarAppsFeature.setBackend(null);
+	}
+
+	@Test
+	public void pairedAdbMakesTheRowReadyWithoutRoot() {
+		CarAppsFeature.setAdbPaired(true);
+		for (RootState state : new RootState[]{RootState.ABSENT, RootState.AVAILABLE}) {
+			CarAppsReadinessModel model = CarAppsReadinessModel.from(state, CarAppsReadinessModel.CAP_INJECT, 34);
+			assertTrue(model.rowVisible);
+			assertEquals(R.string.car_apps_readiness_status_ready, model.statusStringRes);
+			assertEquals(0, model.actionStringRes);
+		}
+		assertFalse("Android 11-12 cannot use ADB", CarAppsReadinessModel.from(RootState.ABSENT, 0, 31).rowVisible);
+		assertFalse("12L remains blocked", CarAppsReadinessModel.from(RootState.ABSENT, 0, 32).rowVisible);
 	}
 
 	@Test

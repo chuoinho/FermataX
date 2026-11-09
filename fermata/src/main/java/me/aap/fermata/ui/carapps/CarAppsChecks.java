@@ -69,8 +69,9 @@ public final class CarAppsChecks {
 		List<Check> list = new ArrayList<>(7);
 
 		// 1. Channel (root/shell)
-		if (root == RootState.GRANTED) {
-			list.add(new Check("channel", Status.OK, R.string.car_apps_check_channel_root, 0));
+		if (CarAppsFeature.canRun(root, CarAppsFeature.isAdbPaired(), sdk)) {
+			list.add(new Check("channel", Status.OK, CarAppsFeature.usable(root)
+					? R.string.car_apps_check_channel_root : R.string.car_apps_check_channel_adb, 0));
 		} else if (root == RootState.AVAILABLE) {
 			list.add(new Check("channel", Status.WARN, R.string.car_apps_check_channel_available,
 					R.string.car_apps_check_channel_grant_fix));

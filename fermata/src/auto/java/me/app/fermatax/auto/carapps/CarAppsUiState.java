@@ -1,7 +1,10 @@
 package me.app.fermatax.auto.carapps;
 
+import android.os.Build;
+
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootState;
 
 /**
@@ -20,7 +23,7 @@ public final class CarAppsUiState {
 	}
 
 	public static State from(@Nullable RootState root, @Nullable CarDisplayClient.State clientState) {
-		if (root != RootState.GRANTED) {
+		if (!CarAppsFeature.canRun(root, CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT)) {
 			return State.NEEDS_ROOT;
 		}
 		if (clientState == CarDisplayClient.State.READY) {

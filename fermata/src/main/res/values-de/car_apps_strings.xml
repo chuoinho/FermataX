@@ -20,6 +20,7 @@
     <string name="car_apps_phone_locked">Das Telefon ist gesperrt\nEntsperren, um fortzufahren</string>
 
     <string name="car_apps_check_channel_root">Root-Kanal</string>
+    <string name="car_apps_check_channel_adb">ADB-Kanal (Kabelloses Debugging)</string>
     <string name="car_apps_check_channel_available">Root verfügbar, aber nicht gewährt</string>
     <string name="car_apps_check_channel_grant_fix">Root-Rechte im Root-Manager gewähren</string>
     <string name="car_apps_check_channel_absent">Kein Root-Zugriff gefunden</string>

@@ -1,6 +1,7 @@
 package me.app.fermatax.auto.carapps;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -65,5 +66,15 @@ public class ServerCommandTest {
 		String cmd = ServerCommand.buildForRoot("/data/app/foo'bar/base.apk", 10150, 21000, "pkg", 33);
 		// one more level of quoting for the inner shell
 		assertTrue(cmd.contains("CLASSPATH='\\''/data/app/foo'\\''\\'\\'''\\''bar/base.apk'\\''"));
+	}
+
+	/** Measured on wireless ADB: a server backgrounded with & dies with the shell command; the foreground one survives. */
+	@Test
+	public void adbRunsTheServerInTheForeground() {
+		assertEquals("CLASSPATH='/data/app/base.apk' app_process / me.app.fermatax.auto.carapps.server.Main 10150 21000 pkg"
+				+ " >/dev/null 2>&1", ServerCommand.buildForAdb("/data/app/base.apk", 10150, 21000, "pkg"));
+		assertFalse(ServerCommand.buildForAdb("/data/app/base.apk", 10150, 21000, "pkg").endsWith("&"));
+		assertTrue(ServerCommand.buildForAdb("/data/app/foo'bar/base.apk", 10150, 21000, "pkg")
+				.startsWith("CLASSPATH='/data/app/foo'\\''bar/base.apk' "));
 	}
 }

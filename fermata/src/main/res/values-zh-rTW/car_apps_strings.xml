@@ -20,6 +20,7 @@
     <string name="car_apps_phone_locked">手機已鎖定\n請解鎖後繼續</string>
 
     <string name="car_apps_check_channel_root">Root 啟動通道</string>
+    <string name="car_apps_check_channel_adb">ADB 通道（無線偵錯）</string>
     <string name="car_apps_check_channel_available">Root 可用但未授權</string>
     <string name="car_apps_check_channel_grant_fix">請在 Root 管理器中授權</string>
     <string name="car_apps_check_channel_absent">未偵測到 Root 權限</string>

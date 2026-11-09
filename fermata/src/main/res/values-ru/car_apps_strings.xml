@@ -20,6 +20,7 @@
     <string name="car_apps_phone_locked">Телефон заблокирован\nРазблокируйте, чтобы продолжить</string>
 
     <string name="car_apps_check_channel_root">Канал Root</string>
+    <string name="car_apps_check_channel_adb">Канал ADB (беспроводная отладка)</string>
     <string name="car_apps_check_channel_available">Root доступен, но не предоставлен</string>
     <string name="car_apps_check_channel_grant_fix">Предоставьте root в менеджере root</string>
     <string name="car_apps_check_channel_absent">Root-доступ не найден</string>

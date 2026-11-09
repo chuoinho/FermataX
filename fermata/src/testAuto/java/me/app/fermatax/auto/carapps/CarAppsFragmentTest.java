@@ -51,6 +51,7 @@ public class CarAppsFragmentTest {
 	private CarDisplayClient client;
 	private TestServerBinder serverBinder;
 	private final List<Surface> testSurfaces = new ArrayList<>();
+	private final List<CarAppsFragment> fragments = new ArrayList<>();
 
 	@Before
 	public void setUp() {
@@ -70,6 +71,8 @@ public class CarAppsFragmentTest {
 			}
 		}
 		testSurfaces.clear();
+		for (CarAppsFragment f : fragments) f.onStop(); // else it still hears CarAppsFeature changes in later tests
+		fragments.clear();
 		client.resetForTesting();
 		CarAppsFeature.setState(RootState.ABSENT);
 		setCarServiceActive(false);
@@ -91,6 +94,7 @@ public class CarAppsFragmentTest {
 		activity.getSupportFragmentManager().beginTransaction()
 				.add(fragment, "car_apps")
 				.commitNow();
+		fragments.add(fragment);
 		return fragment;
 	}
 

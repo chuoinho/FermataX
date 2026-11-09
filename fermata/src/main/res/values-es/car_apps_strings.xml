@@ -20,6 +20,7 @@
     <string name="car_apps_phone_locked">El teléfono está bloqueado\nDesbloquéalo para continuar</string>
 
     <string name="car_apps_check_channel_root">Canal Root</string>
+    <string name="car_apps_check_channel_adb">Canal ADB (depuración inalámbrica)</string>
     <string name="car_apps_check_channel_available">Root disponible pero no otorgado</string>
     <string name="car_apps_check_channel_grant_fix">Otorgue root en su gestor de root</string>
     <string name="car_apps_check_channel_absent">Acceso root no encontrado</string>

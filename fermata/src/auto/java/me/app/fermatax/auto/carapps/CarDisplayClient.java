@@ -36,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -46,6 +47,9 @@ import me.aap.fermata.ui.carapps.CarAppsChecks;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootProbe;
 import me.aap.fermata.ui.carapps.RootState;
+import io.github.muntashirakon.adb.AdbPairingRequiredException;
+import me.aap.utils.async.Completed;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.app.fermatax.auto.CarService;
 import me.app.fermatax.auto.Su;
@@ -104,6 +108,9 @@ public class CarDisplayClient {
 	private Context lastContext;
 	private int retryAttempt = 0;
 	private Consumer<String> testCommandRunner;
+	private volatile BiConsumer<Context, String> rootStarter = this::startViaRoot;
+	private volatile BiFunction<Context, String, FutureSupplier<Void>> adbStarter = ServerStarter::startViaAdb;
+	private final AtomicBoolean adbInFlight = new AtomicBoolean();
 	private BiConsumer<String, Map<String, ?>> diagnosticsConsumerForTest;
 	private static final long CALL_FAILURE_INTERVAL_MS = 10_000;
 	private static final int SERVER_LOG_LINES = 20;
@@ -544,20 +551,32 @@ public class CarDisplayClient {
 		int appUid = android.os.Process.myUid();
 		int versionCode = getExpectedVersion();
 		String pkg = ctx.getPackageName();
-		String cmd = ServerCommand.build(apkPath, appUid, versionCode, pkg);
-
 		recordDiagnostic("server_starting", Map.of("attempt", retryAttempt));
-		mainHandler.removeCallbacks(startTimeoutRunnable);
-		mainHandler.postDelayed(startTimeoutRunnable, 8000L);
 
 		if (testCommandRunner != null) {
-			testCommandRunner.accept(cmd);
+			armStartTimeout();
+			testCommandRunner.accept(ServerCommand.build(apkPath, appUid, versionCode, pkg));
 			return;
 		}
 
+		if (ServerStarter.choose(CarAppsFeature.state(), CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT)
+				== ServerStarter.Channel.ADB) {
+			startViaAdb(ctx, ServerCommand.buildForAdb(apkPath, appUid, versionCode, pkg));
+			return;
+		}
+
+		armStartTimeout();
+		rootStarter.accept(ctx, ServerCommand.buildForRoot(apkPath, appUid, versionCode, pkg, Build.VERSION.SDK_INT));
+	}
+
+	private void armStartTimeout() {
+		mainHandler.removeCallbacks(startTimeoutRunnable);
+		mainHandler.postDelayed(startTimeoutRunnable, 8000L);
+	}
+
+	private void startViaRoot(Context ctx, String rootCmd) {
 		Su.get().onSuccess(su -> {
 			recordDiagnostic("root_grant", Map.of("result", "granted"));
-			String rootCmd = ServerCommand.buildForRoot(apkPath, appUid, versionCode, pkg, Build.VERSION.SDK_INT);
 			Log.i("Starting CarDisplayServer via su: " + rootCmd);
 			su.exec(rootCmd);
 		}).onFailure(err -> {
@@ -568,6 +587,49 @@ public class CarDisplayClient {
 				RootProbe.recordGranted(ctx, false);
 			setState(State.FAILED);
 		});
+	}
+
+	/**
+	 * The startup timer runs only once the command is delivered: finding the port can take longer than it, and a
+	 * second attempt while this one is in flight would start a second server.
+	 */
+	private void startViaAdb(Context ctx, String cmd) {
+		if (!adbInFlight.compareAndSet(false, true)) return;
+		Log.i("Starting CarDisplayServer via local ADB");
+		FutureSupplier<Void> run;
+		try {
+			run = adbStarter.apply(ctx, cmd);
+		} catch (Throwable t) {
+			run = Completed.failed(t);
+		}
+		run.onCompletion((r, err) -> {
+			adbInFlight.set(false);
+			synchronized (this) {
+				if (err == null) {
+					if (state == State.STARTING || state == State.RETRYING) armStartTimeout();
+					return;
+				}
+				if (state != State.STARTING && state != State.RETRYING) return;
+				if (isPairingRequired(err)) {
+					// the authorization was revoked: back to "not set up", not stuck starting
+					CarAppsFeature.setAdbPaired(false);
+					recordDiagnostic("server_failed", Map.of("reason", "adb_pairing_required"));
+					setState(State.FAILED);
+					return;
+				}
+				Log.e(err, "Failed to start CarDisplayServer via local ADB");
+				recordDiagnostic("server_failed", Map.of("reason", "adb_failed", "error", err.getClass().getSimpleName()));
+				setState(State.RETRYING);
+				scheduleRetry();
+			}
+		});
+	}
+
+	private static boolean isPairingRequired(Throwable err) {
+		for (int depth = 0; (err != null) && (depth < 8); depth++, err = err.getCause()) {
+			if (err instanceof AdbPairingRequiredException) return true;
+		}
+		return false;
 	}
 
 	public void onCarSessionStarted() {
@@ -1043,6 +1105,11 @@ public class CarDisplayClient {
 		this.testCommandRunner = runner;
 	}
 
+	void setStartersForTest(BiConsumer<Context, String> root, BiFunction<Context, String, FutureSupplier<Void>> adb) {
+		this.rootStarter = root;
+		this.adbStarter = adb;
+	}
+
 	void retryConnectionForTesting() {
 		long delay = RetryPolicy.delayMs(retryAttempt);
 		if (delay < 0) {
@@ -1079,6 +1146,9 @@ public class CarDisplayClient {
 		this.retryAttempt = 0;
 		this.nextPhoneSleepMs = 0;
 		this.testCommandRunner = null;
+		this.rootStarter = this::startViaRoot;
+		this.adbStarter = ServerStarter::startViaAdb;
+		this.adbInFlight.set(false);
 		this.diagnosticsConsumerForTest = null;
 		this.lastCallFailure.clear();
 		this.serverLogReader = () -> null;

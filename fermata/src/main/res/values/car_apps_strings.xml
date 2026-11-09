@@ -20,6 +20,7 @@
     <string name="car_apps_phone_locked">The phone is locked\nUnlock it to continue</string>
 
     <string name="car_apps_check_channel_root">Root channel</string>
+    <string name="car_apps_check_channel_adb">ADB channel (wireless debugging)</string>
     <string name="car_apps_check_channel_available">Root available but not granted</string>
     <string name="car_apps_check_channel_grant_fix">Grant root in your root manager</string>
     <string name="car_apps_check_channel_absent">Root access not found</string>

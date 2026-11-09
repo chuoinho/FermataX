@@ -45,6 +45,13 @@ public class DashboardItemsCarAppsTest {
 	}
 
 	@Test
+	public void itemOfferedWithoutRootOnAdbSupportedAndroid() {
+		CarAppsFeature.setState(RootState.ABSENT);
+		assertEquals(BuildConfig.AUTO, DashboardItems.getItem(context, DashboardItems.CAR_APPS, false) != null);
+	}
+
+	@Test
+	@Config(sdk = 31)
 	public void itemAbsentWhenRootAbsent() {
 		CarAppsFeature.setState(RootState.ABSENT);
 

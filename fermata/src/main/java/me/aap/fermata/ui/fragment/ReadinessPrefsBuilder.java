@@ -31,7 +31,6 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.CarAppsReadinessModel;
-import me.aap.fermata.ui.carapps.RootState;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.ui.control.PhoneReadiness;
 import me.aap.fermata.ui.control.PhoneReadiness.Action;
@@ -137,7 +136,7 @@ final class ReadinessPrefsBuilder {
 			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
 		});
 
-		if (CarAppsFeature.state() == RootState.GRANTED && !model.checks.isEmpty()) {
+		if (CarAppsFeature.canRun() && !model.checks.isEmpty()) {
 			for (me.aap.fermata.ui.carapps.CarAppsChecks.Check check : model.checks) {
 				if (!isShown(check)) continue;
 				int checkColor;

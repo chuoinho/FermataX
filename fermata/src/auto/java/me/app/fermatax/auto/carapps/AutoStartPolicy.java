@@ -14,6 +14,6 @@ public final class AutoStartPolicy {
 	}
 
 	public static boolean shouldStart(boolean carServiceActive, RootState s, boolean autoStartPref, int sdk) {
-		return carServiceActive && (s == RootState.GRANTED) && autoStartPref && !CarAppsFeature.isBlockedSdk(sdk);
+		return carServiceActive && CarAppsFeature.canRun(s, CarAppsFeature.isAdbPaired(), sdk) && autoStartPref && !CarAppsFeature.isBlockedSdk(sdk);
 	}
 }
