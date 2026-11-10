@@ -568,8 +568,10 @@ public class CarDisplayClientTest {
 		});
 		recoveryEnv(true, 0);
 		useStop();
+		usePing(false); // counts: no ping answered, so the command runs at once
 		client.ensureRunning(context);
 		assertEquals(1, adbWifi());
+		int pinged = pings;
 
 		setEnabled(false);
 		assertEquals("the recovery job is cancelled", 0,
@@ -580,6 +582,7 @@ public class CarDisplayClientTest {
 		assertTrue(released.get());
 		assertEquals(CarDisplayClient.State.IDLE, client.state());
 		assertEquals("told to exit at the switch and again when it came up", 2, stops);
+		assertEquals("never pinged while off, so it cannot hand over again: no loop", pinged, pings);
 
 		runs.get(0).complete(null);
 		assertEquals(0, adbWifi());
@@ -608,14 +611,16 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
-	public void theStopIsTheSamePingFileWithStopInIt() throws Exception {
-		java.io.File f = new java.io.File(context.getExternalFilesDir(null),
-				me.app.fermatax.auto.carapps.server.AppPing.FILE);
-		assertTrue(CarDisplayClient.stopServer(context));
-		assertEquals(me.app.fermatax.auto.carapps.server.AppPing.STOP,
-				new String(java.nio.file.Files.readAllBytes(f.toPath())));
+	public void theStopIsASecondFileAndThePingIsLeftAlone() throws Exception {
+		java.io.File dir = context.getExternalFilesDir(null);
+		java.io.File ping = new java.io.File(dir, me.app.fermatax.auto.carapps.server.AppPing.FILE);
+		java.io.File stop = new java.io.File(dir, me.app.fermatax.auto.carapps.server.AppPing.STOP_FILE);
 		assertTrue(CarDisplayClient.pingServer(context));
-		assertEquals("1", new String(java.nio.file.Files.readAllBytes(f.toPath())));
+		assertTrue(ping.setLastModified(1000L));
+		assertTrue(stop.delete() || !stop.exists());
+		assertTrue(CarDisplayClient.stopServer(context));
+		assertTrue(stop.isFile());
+		assertEquals("a stop never looks like a ping (no handoff, no loop)", 1000L, ping.lastModified());
 	}
 
 	@Test

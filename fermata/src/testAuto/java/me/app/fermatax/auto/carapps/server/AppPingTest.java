@@ -47,35 +47,55 @@ public class AppPingTest {
 				AppPing.fileFor(1010512, "p").getPath().replace('\\', '/'));
 	}
 
-	/** Phone Apps was turned off: the app wrote STOP, and the server exits instead of handing its binder over. */
+	private static File tempDir() throws Exception {
+		File d = Files.createTempDirectory("carapps").toFile();
+		d.deleteOnExit();
+		return d;
+	}
+
+	/**
+	 * The server takes its baselines before the startup handoff; the app, turned off, writes the stop file inside that
+	 * very handoff call. That stop is newer than the baseline, so it wins.
+	 */
 	@Test
-	public void aStopPingEndsTheServerInsteadOfAHandoff() throws Exception {
-		File f = Files.createTempFile("carapps", ".ping").toFile();
-		try {
-			f.setLastModified(1_000_000L);
-			AppPing ping = new AppPing(f);
-			java.util.List<String> ran = new java.util.ArrayList<>();
-			Runnable handoff = () -> ran.add("handoff");
-			Runnable stop = () -> ran.add("stop");
+	public void aStopWrittenDuringTheStartupHandoffEndsTheServer() throws Exception {
+		File dir = tempDir();
+		File ping = new File(dir, AppPing.FILE);
+		File stop = new File(dir, AppPing.STOP_FILE);
+		AppPing p = new AppPing(ping);
+		java.util.List<String> ran = new java.util.ArrayList<>();
 
-			Files.write(f.toPath(), AppPing.STOP.getBytes());
-			f.setLastModified(2_000_000L);
-			ping.check(handoff, stop);
-			ping.check(handoff, stop);
-			assertEquals(java.util.List.of("stop"), ran);
+		Files.write(stop.toPath(), new byte[0]); // no content is ever read: an empty or unreadable file stops too
+		stop.setLastModified(2_000_000L);
+		p.check(() -> ran.add("handoff"), () -> ran.add("stop"));
+		assertEquals(java.util.List.of("stop"), ran);
+	}
 
-			Files.write(f.toPath(), "1".getBytes());
-			f.setLastModified(3_000_000L);
-			ping.check(handoff, stop);
-			assertEquals(java.util.List.of("stop", "handoff"), ran);
+	@Test
+	public void aStopFromBeforeTheStartIsNotThisServers() throws Exception {
+		File dir = tempDir();
+		File stop = new File(dir, AppPing.STOP_FILE);
+		Files.write(stop.toPath(), new byte[]{1});
+		stop.setLastModified(1_000_000L);
+		AppPing p = new AppPing(new File(dir, AppPing.FILE));
+		java.util.List<String> ran = new java.util.ArrayList<>();
+		p.check(() -> ran.add("handoff"), () -> ran.add("stop"));
+		assertTrue(ran.isEmpty());
+	}
 
-			Files.write(f.toPath(), AppPing.STOP.getBytes());
-			f.setLastModified(4_000_000L);
-			AppPing late = new AppPing(f);
-			late.check(handoff, stop);
-			assertEquals("a stop from before the start is not this server's", 2, ran.size());
-		} finally {
-			f.delete();
-		}
+	/** The ping is for the handoff only, whatever it holds (an older app wrote "stop" into it): no content is read. */
+	@Test
+	public void thePingStillHandsOverAndItsContentMeansNothing() throws Exception {
+		File dir = tempDir();
+		File ping = new File(dir, AppPing.FILE);
+		AppPing p = new AppPing(ping);
+		java.util.List<String> ran = new java.util.ArrayList<>();
+		Files.write(ping.toPath(), "stop".getBytes());
+		ping.setLastModified(2_000_000L);
+		p.check(() -> ran.add("handoff"), () -> ran.add("stop"));
+		Files.write(ping.toPath(), "1".getBytes());
+		ping.setLastModified(3_000_000L);
+		p.check(() -> ran.add("handoff"), () -> ran.add("stop"));
+		assertEquals(java.util.List.of("handoff", "handoff"), ran);
 	}
 }

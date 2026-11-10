@@ -57,6 +57,8 @@ public class Main {
 			android.util.Log.i("CarDisplayServer", "started as uid " + Process.myUid() + " on SDK " + Build.VERSION.SDK_INT
 					+ ", version " + versionCode + ", caps 0x" + Integer.toHexString(server.capabilities()));
 
+			// before the handoff: a stop the app writes during it (it is turned off) must be newer than the baseline
+			AppPing ping = persists(args) ? new AppPing(AppPing.fileFor(appUid, appPackage)) : null;
 			try {
 				handoffBinderToApp(appPackage, appUid, server);
 			} catch (Throwable t) {
@@ -65,7 +67,7 @@ public class Main {
 				System.err.println("ERROR: Binder handoff failed via getContentProviderExternal");
 				System.exit(3);
 			}
-			if (persists(args)) watchAppPing(appPackage, appUid, server);
+			if (ping != null) watchAppPing(ping, appPackage, appUid, server);
 
 			Looper.loop();
 		} catch (Throwable t) {
@@ -87,11 +89,11 @@ public class Main {
 	}
 
 	/**
-	 * The app asks again after its process was restarted (AppPing); a failed handoff then is only logged. A STOP ping
+	 * The app asks again after its process was restarted (AppPing); a failed handoff then is only logged. The stop file
 	 * (Phone Apps turned off) frees the display and ends the server; the shutdown hook restores the panel.
 	 */
-	private static void watchAppPing(String appPackage, int appUid, CarDisplayServerImpl server) {
-		new AppPing(AppPing.fileFor(appUid, appPackage)).watch(new android.os.Handler(Looper.getMainLooper()), () -> {
+	private static void watchAppPing(AppPing ping, String appPackage, int appUid, CarDisplayServerImpl server) {
+		ping.watch(new android.os.Handler(Looper.getMainLooper()), () -> {
 			try {
 				handoffBinderToApp(appPackage, appUid, server);
 			} catch (Throwable t) {

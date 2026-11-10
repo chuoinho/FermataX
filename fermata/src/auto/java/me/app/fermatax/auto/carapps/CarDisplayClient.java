@@ -629,22 +629,26 @@ public class CarDisplayClient {
 
 	/** Seen by an ADB-started server (AppPing), which then hands its binder over again. False when not written. */
 	static boolean pingServer(Context ctx) {
-		return writePing(ctx, "1");
+		return touch(ctx, AppPing.FILE);
 	}
 
-	/** Phone Apps was turned off: an ADB-started server exits on its next poll (AppPing.STOP). */
+	/**
+	 * Phone Apps was turned off: an ADB-started server exits on its next poll (AppPing.STOP_FILE). A file of its own, so
+	 * a stop never reads as a ping: it cannot make a server hand over again.
+	 */
 	static boolean stopServer(Context ctx) {
-		return writePing(ctx, AppPing.STOP);
+		return touch(ctx, AppPing.STOP_FILE);
 	}
 
-	private static boolean writePing(Context ctx, String content) {
+	/** The server watches the time only. */
+	private static boolean touch(Context ctx, String name) {
 		File dir = ctx.getExternalFilesDir(null);
 		if (dir == null) return false;
-		try (FileOutputStream out = new FileOutputStream(new File(dir, AppPing.FILE))) {
-			out.write(content.getBytes(java.nio.charset.StandardCharsets.UTF_8)); // the write changes the time the server watches
+		try (FileOutputStream out = new FileOutputStream(new File(dir, name))) {
+			out.write('1'); // the write changes the time the server watches
 			return true;
 		} catch (IOException e) {
-			Log.w("Cannot ping the car display server: ", e);
+			Log.w("Cannot signal the car display server: ", e);
 			return false;
 		}
 	}

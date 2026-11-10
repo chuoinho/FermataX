@@ -3,9 +3,6 @@ package me.app.fermatax.auto.carapps.server;
 import android.os.Handler;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 
 /**
  * The app cannot signal a shell-uid server, and its process (with the binder it was given) is usually gone between two
@@ -15,16 +12,23 @@ import java.nio.file.Files;
  */
 public final class AppPing {
 	public static final String FILE = "carapps.ping";
-	/** Its content when Phone Apps was turned off: the server exits instead of handing its binder over. */
-	public static final String STOP = "stop";
+	/** Written when Phone Apps is turned off: the server exits. Seen by its time only, so no content is ever read. */
+	public static final String STOP_FILE = "carapps.stop";
 	static final long POLL_MS = 2000;
 	private final File file;
+	private final File stopFile;
 	private long seen;
+	private long seenStop;
 
-	/** A ping from before the start is the start's own: its handoff answers it. */
+	/**
+	 * Taken before the startup handoff: a ping from before it is the start's own (its handoff answers it), while a stop
+	 * the app writes during that handoff (it is turned off) is newer and ends the server.
+	 */
 	AppPing(File file) {
 		this.file = file;
+		stopFile = new File(file.getParentFile(), STOP_FILE);
 		seen = file.lastModified();
+		seenStop = stopFile.lastModified();
 	}
 
 	/** shortcut: the user's primary storage path, as Context.getExternalFilesDir gives it; an adopted storage is not seen. */
@@ -40,7 +44,14 @@ public final class AppPing {
 		return m != 0;
 	}
 
-	/** Runs handoff, or stop for a STOP ping, on the handler's thread at each ping; they must not throw. */
+	private boolean stopped() {
+		long m = stopFile.lastModified();
+		if (m == seenStop) return false;
+		seenStop = m;
+		return m != 0;
+	}
+
+	/** Runs handoff at each ping, or stop once the stop file changed, on the handler's thread; they must not throw. */
 	void watch(Handler handler, Runnable handoff, Runnable stop) {
 		handler.postDelayed(new Runnable() {
 			@Override
@@ -52,14 +63,7 @@ public final class AppPing {
 	}
 
 	void check(Runnable handoff, Runnable stop) {
-		if (pinged()) (stopRequested() ? stop : handoff).run();
-	}
-
-	private boolean stopRequested() {
-		try {
-			return STOP.equals(new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8));
-		} catch (IOException e) {
-			return false; // unreadable: the old meaning, hand the binder over
-		}
+		if (stopped()) stop.run();
+		else if (pinged()) handoff.run();
 	}
 }
