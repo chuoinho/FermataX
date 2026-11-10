@@ -79,6 +79,11 @@ packaged. Not packaged: the LICENSE file of that exact BoringSSL revision, and l
 `third_party/` code other than those named in these two texts. The AAR's own `META-INF/LICENSE`/`NOTICE` are
 excluded from the APK by `packagingOptions`; the copies above replace them.
 
+The About page (`fermata/src/auto/res/raw/phone_apps_licenses.html`) is generated from these files, `COPYING`,
+`LICENSES/`, this file and the native headers in `third-party-sources/`: run
+`powershell -ExecutionPolicy Bypass -File depends/libadb/package-legal.ps1` after changing any of them. The script
+is saved as UTF-8 with BOM; without it Windows PowerShell 5.1 would corrupt non-ASCII author names.
+
 ## Corresponding source and recombination (LGPL)
 
 The original SPAKE2 Java source archive and the exact native submodule source are
