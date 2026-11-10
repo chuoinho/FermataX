@@ -1,5 +1,7 @@
 package me.app.fermatax.auto.carapps.server;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.ProviderInfo;
 import android.graphics.PixelFormat;
 import android.media.ImageReader;
 import android.os.Binder;
@@ -96,6 +98,11 @@ public class Main {
 		ping.watch(new android.os.Handler(Looper.getMainLooper()), () -> {
 			try {
 				handoffBinderToApp(appPackage, appUid, server);
+			} catch (StaleAppException e) {
+				// not answered: the app's wait for this server ends in one normal start, whose killStale would end it anyway
+				android.util.Log.i("CarDisplayServer", "app reinstalled, exiting: " + e.getMessage());
+				server.releaseInternal();
+				System.exit(0);
 			} catch (Throwable t) {
 				android.util.Log.e("CarDisplayServer", "binder handoff to " + appPackage + " on its ping failed", t);
 			}
@@ -150,6 +157,13 @@ public class Main {
 		if (holder == null) {
 			throw new IllegalStateException("getContentProviderExternal returned null for authority " + authority);
 		}
+		if (isOtherApp(appUid, holder)) {
+			try {
+				am.getClass().getMethod("removeContentProviderExternal", String.class, IBinder.class).invoke(am, authority, token);
+			} catch (Throwable ignored) {
+			}
+			throw new StaleAppException(appPackage + " no longer has uid " + appUid);
+		}
 
 		Field providerField = holder.getClass().getDeclaredField("provider");
 		providerField.setAccessible(true);
@@ -202,6 +216,24 @@ public class Main {
 			Method removeMethod = am.getClass().getMethod("removeContentProviderExternal", String.class, IBinder.class);
 			removeMethod.invoke(am, authority, token);
 		} catch (Throwable ignored) {
+		}
+	}
+
+	/** True when the app now has another uid (reinstalled): this server's caller check refuses all of its calls. */
+	static boolean isOtherApp(int appUid, Object holder) {
+		try {
+			Object info = holder.getClass().getField("info").get(holder);
+			ApplicationInfo app = (info instanceof ProviderInfo) ? ((ProviderInfo) info).applicationInfo : null;
+			return (app != null) && (app.uid != appUid);
+		} catch (Throwable t) {
+			return false; // unknown: hand over as before
+		}
+	}
+
+	/** Thrown by the handoff when the app was reinstalled: the server must make way for a new start. */
+	static final class StaleAppException extends Exception {
+		StaleAppException(String msg) {
+			super(msg);
 		}
 	}
 
