@@ -520,6 +520,34 @@ public class CarDisplayClientTest {
 		assertTrue("the server watches its time", f.lastModified() > 1000L);
 	}
 
+	/** Readiness offers "Set up again" (a new pairing) only for a failure Wi-Fi does not explain, and not in the car. */
+	@Test
+	public void readinessOffersSettingUpAgainOnlyForAFailureWifiDoesNotExplain() throws Exception {
+		AutoCarAppsBackend.install(context);
+		useChannels(() -> Completed.failed(new java.io.IOException("Connection failed")));
+		CarAppsFeature.setAdbPaired(true);
+		AdbRecoveryJob.wifiCheck = c -> false;
+		client.ensureRunning(context);
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertFalse("no Wi-Fi says nothing about the pairing", CarAppsFeature.serverFailed());
+
+		AdbRecoveryJob.wifiCheck = c -> true;
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.MINUTES);
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertFalse(client.failedForWifi());
+		assertTrue(CarAppsFeature.serverFailed());
+
+		java.lang.reflect.Field active = me.app.fermatax.auto.CarService.class.getDeclaredField("active");
+		active.setAccessible(true);
+		active.setBoolean(null, true);
+		try {
+			assertFalse("not during a car session", CarAppsFeature.serverFailed());
+		} finally {
+			active.setBoolean(null, false);
+		}
+	}
+
 	@Test
 	public void concurrentEnsureRunningStartsOneCommand() throws Exception {
 		useChannels(new Promise<>());
@@ -1864,6 +1892,7 @@ public class CarDisplayClientTest {
 		assertEquals(0, adbWifi());
 		assertFalse(markerPresent());
 		assertFalse("shown as no Wi-Fi", AdbRecoveryJob.hasWifi(context));
+		assertTrue("the pairing is fine: no Set up again", client.failedForWifi());
 
 		client.ensureRunning(context);
 		assertEquals("the next start does not write it again there", 1, adbCommands.size());

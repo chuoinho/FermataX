@@ -115,6 +115,7 @@ public class CarDisplayClient {
 	private static final long SERVER_PING_WAIT_MS = 5000;
 	private volatile Predicate<Context> serverPing = CarDisplayClient::pingServer;
 	private volatile boolean askingRunningServer;
+	private volatile boolean failedForWifi;
 	private final Runnable serverPingTimeout = () -> {
 		synchronized (CarDisplayClient.this) {
 			askingRunningServer = false;
@@ -299,6 +300,7 @@ public class CarDisplayClient {
 		if (this.state == newState) {
 			return;
 		}
+		if (newState != State.FAILED) failedForWifi = false;
 		this.state = newState;
 		// A start that ends here (a late binder, no channel any more, out of retries) has no command left to give the
 		// setting back; between two retries nothing else would. A command in flight still does it itself.
@@ -659,6 +661,7 @@ public class CarDisplayClient {
 				recordDiagnostic("server_failed", Map.of("reason", "no_wifi"));
 				restoreAdbWifiIfIdle(ctx);
 				AdbRecoveryJob.schedule(ctx);
+				failedForWifi = true;
 				setState(State.FAILED);
 				return;
 			}
@@ -740,6 +743,7 @@ public class CarDisplayClient {
 				if (switchedOn && AdbRecoveryJob.refusedOnThisWifi(ctx)) {
 					// a retry would switch it on again and show Android's dialog again: wait for another or a trusted Wi-Fi
 					recordDiagnostic("server_failed", Map.of("reason", "adb_wifi_refused"));
+					failedForWifi = true;
 					setState(State.FAILED);
 					return;
 				}
@@ -1249,6 +1253,11 @@ public class CarDisplayClient {
 	void setStartersForTest(BiConsumer<Context, String> root, BiFunction<Context, String, FutureSupplier<Void>> adb) {
 		this.rootStarter = root;
 		this.adbStarter = adb;
+	}
+
+	/** FAILED only for want of a (trusted) Wi-Fi: the pairing is fine, so setting it up again is no remedy. */
+	public boolean failedForWifi() {
+		return failedForWifi && (state == State.FAILED);
 	}
 
 	void setServerPingForTest(Predicate<Context> ping) {

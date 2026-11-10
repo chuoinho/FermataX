@@ -40,7 +40,10 @@ public final class AutoCarAppsBackend {
 
 			@Override
 			public boolean serverFailed() {
-				return CarDisplayClient.get().state() == CarDisplayClient.State.FAILED;
+				// offers a new pairing: not for a missing Wi-Fi, and not while driving
+				CarDisplayClient client = CarDisplayClient.get();
+				return (client.state() == CarDisplayClient.State.FAILED) && !client.failedForWifi()
+						&& !me.app.fermatax.auto.CarService.isActive();
 			}
 		});
 		AdbPairing.recoveryScheduler = () -> AdbRecoveryJob.schedule(ctx);
