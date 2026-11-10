@@ -50,9 +50,34 @@ every session's `SSLContext`, for pairing and for the loopback ADB connection, f
 `org.conscrypt.OpenSSLProvider`, and `PairingConnectionCtx` calls its `org.conscrypt.Conscrypt`; the provider is
 not installed process-wide, so the rest of the app's TLS is unaffected, and no `hidden_api_policy` or reflection
 exemption is used. The AAR's consumer rules keep `org.conscrypt.**`. It adds native `libconscrypt_jni.so`
-(BoringSSL: OpenSSL/SSLeay/ISC licensed) for arm64-v8a, armeabi-v7a, x86 and x86_64, all with 16 KiB PT_LOAD
+(containing BoringSSL) for arm64-v8a, armeabi-v7a, x86 and x86_64, all with 16 KiB PT_LOAD
 alignment. Mobile does not include it. JVM unit tests run on Robolectric's `conscrypt-openjdk-uber`
 (the Android artifact is excluded from unit-test classpaths: its JNI library cannot load on a JVM).
+
+Licence texts packaged in Auto's About screen, copied unmodified into `third-party-licenses/`
+(downloaded 2026-11-10; SHA-256):
+
+- `conscrypt-2.8.0-LICENSE.txt` (Apache-2.0, plus the Chromium BSD and NIST terms of its generated/test files),
+  https://raw.githubusercontent.com/google/conscrypt/2.8.0/LICENSE,
+  `eebc1e08d5edeea3b0866243385c0ec20bda335a1e4adaed3874525ede3d6e0c`
+- `conscrypt-2.8.0-NOTICE.txt` (Netty and Apache Harmony portions),
+  https://raw.githubusercontent.com/google/conscrypt/2.8.0/NOTICE,
+  `378a858f72823759ec0cff19b32e70b7d355dbf8f5810df484dc5e3d60ea8dbd`
+- `conscrypt-2.8.0-LICENSE.netty.txt` and `conscrypt-2.8.0-LICENSE.harmony.txt` (Apache-2.0, byte-identical,
+  so About shows the text once), https://raw.githubusercontent.com/google/conscrypt/2.8.0/licenses/LICENSE.netty.txt
+  and .../licenses/LICENSE.harmony.txt, both
+  `58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd`
+- `boringssl-main-LICENSE.txt` (current BoringSSL: Apache-2.0),
+  https://raw.githubusercontent.com/google/boringssl/main/LICENSE,
+  `827c8d8fc207c2392794eef9e00fe246f9f61fdcc132556c275be3dd8c3cd97f`
+- `boringssl-fips-20220613-LICENSE.txt` (earlier BoringSSL: OpenSSL License, original SSLeay License, ISC, and MIT
+  for third_party/fiat), https://raw.githubusercontent.com/google/boringssl/fips-20220613/LICENSE,
+  `60bd7c54856bf9387221bde5ab55d516d7cea15870d0fed69406bcd1c8ec7c9d`
+
+The BoringSSL revision built into conscrypt-android 2.8.0 is not known, so both BoringSSL licence texts are
+packaged. Not packaged: the LICENSE file of that exact BoringSSL revision, and licences of BoringSSL
+`third_party/` code other than those named in these two texts. The AAR's own `META-INF/LICENSE`/`NOTICE` are
+excluded from the APK by `packagingOptions`; the copies above replace them.
 
 ## Corresponding source and recombination (LGPL)
 

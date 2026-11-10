@@ -22,16 +22,19 @@ Fermata is licensed under GPL-3.0. See `LICENSE`.
   license; AndroidX annotation 1.10.0, existing Kotlin stdlib 2.2.10 and JetBrains
   annotations 23.0.0 are Apache-2.0. No duplicate jdk15to18 provider is included.
 - Conscrypt for Android 2.8.0 (`org.conscrypt:conscrypt-android`), Copyright 2016 The Android Open Source
-  Project, Apache-2.0, with its native BoringSSL (OpenSSL/SSLeay/ISC licensed; Copyright Google Inc., Eric Young,
-  The OpenSSL Project). Used for every TLS session of the app's own ADB (pairing and the loopback connection);
-  not in the Mobile flavor.
+  Project, Apache-2.0, with its native BoringSSL (Copyright Google Inc., Eric Young, The OpenSSL Project).
+  Used for every TLS session of the app's own ADB (pairing and the loopback connection); not in the Mobile
+  flavor. Conscrypt's LICENSE, NOTICE and Netty/Harmony licence texts are packaged. The BoringSSL revision it
+  contains is not known, so both BoringSSL licence texts are packaged (current: Apache-2.0; earlier: OpenSSL,
+  original SSLeay, ISC and MIT); the exact revision's own LICENSE is not. Sources and SHA-256 are in UPSTREAM.md.
 - Preserved credits include Muntashir Al-Islam, Cameron Gutman, Google Inc.,
   Sam Palmer, 南宫雪珊, the fiat-crypto authors and the Free Software Foundation.
 
 See [`depends/libadb/UPSTREAM.md`](depends/libadb/UPSTREAM.md) for exact sources,
 the five-file lifecycle/credential patch, redistribution obligations and instructions
-for rebuilding/recombining with modified LGPL code. Full notices/license texts and
-source provenance are packaged in Auto's existing About screen. A future binary
+for rebuilding/recombining with modified LGPL code. The notices, the license texts in
+`depends/libadb/LICENSES` and `depends/libadb/third-party-licenses`, and source provenance
+are packaged in Auto's existing About screen. A future binary
 release must supply its complete corresponding app/dependency source and required
 installation information; these notices do not claim that future distribution is
 already compliant.

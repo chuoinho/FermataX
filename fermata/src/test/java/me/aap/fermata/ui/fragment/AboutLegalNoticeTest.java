@@ -25,6 +25,17 @@ public class AboutLegalNoticeTest {
             assertTrue(rendered.contains("Corresponding source"));
             assertFalse("Conscrypt serves every ADB TLS session, not only the pairing", rendered.contains("pairing TLS only"));
             assertFalse("SslUtils is one of the patched files", rendered.contains("The unmodified `SslUtils`"));
+            // Conscrypt 2.8.0 LICENSE/NOTICE and licenses/ texts, and both BoringSSL licence texts, verbatim.
+            assertTrue("Conscrypt LICENSE NIST terms", rendered.contains("National Institute of Standards"));
+            assertTrue("Conscrypt NOTICE", rendered.contains("This product contains a modified portion of `Netty`"));
+            assertTrue("Conscrypt NOTICE", rendered.contains("This product contains a modified portion of `Apache Harmony`"));
+            assertTrue("Netty/Harmony licence text", rendered.contains("LICENSE.netty.txt and LICENSE.harmony.txt"));
+            assertTrue("BoringSSL legacy licence", rendered.contains("OpenSSL License"));
+            assertTrue("BoringSSL legacy licence", rendered.contains("Original SSLeay License"));
+            assertTrue("BoringSSL legacy licence", rendered.contains("ISC license used for completely new code in BoringSSL"));
+            assertTrue("BoringSSL current licence", rendered.contains("Parts of the TLS test suite are under the Go license"));
+            assertTrue("Honest revision note", rendered.contains("BoringSSL revision built into conscrypt-android 2.8.0 is not known"));
+            assertTrue("Page size stays reasonable", html.length() < 250_000);
         } else {
             assertEquals("Mobile About content stays unchanged", original, html);
         }
