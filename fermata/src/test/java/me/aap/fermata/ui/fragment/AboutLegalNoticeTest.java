@@ -23,6 +23,8 @@ public class AboutLegalNoticeTest {
             assertTrue("Auto About must actually display libadb attribution", rendered.contains("LibADB Android 3.1.1"));
             assertTrue(rendered.contains("GNU LESSER GENERAL PUBLIC LICENSE"));
             assertTrue(rendered.contains("Corresponding source"));
+            assertFalse("Conscrypt serves every ADB TLS session, not only the pairing", rendered.contains("pairing TLS only"));
+            assertFalse("SslUtils is one of the patched files", rendered.contains("The unmodified `SslUtils`"));
         } else {
             assertEquals("Mobile About content stays unchanged", original, html);
         }

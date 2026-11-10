@@ -40,13 +40,14 @@ AndroidX annotations resolve to the existing **1.10.0** catalog version.
 The existing graph's Kotlin stdlib **2.2.10** and JetBrains annotations **23.0.0**
 are not new dependencies; Apache-2.0 notices apply to these and AndroidX.
 
-## Conscrypt (TLS for pairing)
+## Conscrypt (TLS for pairing and the ADB connection)
 
 No vendored Java file changed for this. Stock Android 13-15 blocks the platform Conscrypt's hidden
 `exportKeyingMaterial`, which the pairing key exchange needs, so Auto bundles
 `org.conscrypt:conscrypt-android:2.8.0` (Maven Central; Apache-2.0, Copyright 2016 The Android Open Source
-Project), as upstream libadb documents. The unmodified `SslUtils` creates the session's `SSLContext` from its
-`org.conscrypt.OpenSSLProvider` and `PairingConnectionCtx` calls its `org.conscrypt.Conscrypt`; the provider is
+Project), as upstream libadb documents. `SslUtils` (patched above; its provider choice is upstream code) creates
+every session's `SSLContext`, for pairing and for the loopback ADB connection, from its
+`org.conscrypt.OpenSSLProvider`, and `PairingConnectionCtx` calls its `org.conscrypt.Conscrypt`; the provider is
 not installed process-wide, so the rest of the app's TLS is unaffected, and no `hidden_api_policy` or reflection
 exemption is used. The AAR's consumer rules keep `org.conscrypt.**`. It adds native `libconscrypt_jni.so`
 (BoringSSL: OpenSSL/SSLeay/ISC licensed) for arm64-v8a, armeabi-v7a, x86 and x86_64, all with 16 KiB PT_LOAD
