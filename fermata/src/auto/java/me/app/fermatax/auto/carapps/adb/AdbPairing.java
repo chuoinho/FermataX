@@ -149,8 +149,7 @@ public final class AdbPairing {
 	/** The grant lets the app switch wireless debugging on by itself later; failing it does not undo the pairing. */
 	private static void grantAndFinish(Context ctx, LocalAdb adb, Promise<Void> done) {
 		port(connectPort, ctx)
-				.then(port -> adb.runAndClose(port,
-						"pm grant " + ctx.getPackageName() + " android.permission.WRITE_SECURE_SETTINGS"))
+				.then(port -> adb.runAndClose(port, grantCommand(ctx.getPackageName())))
 				.onCompletion((r, err) -> {
 					adb.close();
 					AdbRecoveryJob.ensureUsbDebugging(ctx); // with the permission, grant or not: the server must outlive wireless debugging
@@ -169,6 +168,11 @@ public final class AdbPairing {
 						done.complete(null);
 					}
 				});
+	}
+
+	/** What lets the app switch wireless debugging on by itself; also retried by the server start if this one failed. */
+	public static String grantCommand(String pkg) {
+		return "pm grant " + pkg + " android.permission.WRITE_SECURE_SETTINGS";
 	}
 
 	private static FutureSupplier<Integer> port(Function<Context, FutureSupplier<Integer>> finder, Context ctx) {
