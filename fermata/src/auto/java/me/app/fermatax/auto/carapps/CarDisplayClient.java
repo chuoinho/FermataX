@@ -637,7 +637,7 @@ public class CarDisplayClient {
 		if (!adbAttempt.compareAndSet(null, attempt)) return;
 		Log.i("Starting CarDisplayServer via local ADB");
 		AdbRecoveryJob.ensureUsbDebugging(ctx); // never undone: it keeps adbd, and so the server, alive without wireless debugging
-		AdbRecoveryJob.enableAdbWifi(ctx); // undone when the command ends, whatever its result
+		boolean switchedOn = AdbRecoveryJob.enableAdbWifi(ctx); // undone when the command ends, whatever its result
 		FutureSupplier<Void> run;
 		try {
 			run = adbStarter.apply(ctx, cmd);
@@ -665,6 +665,12 @@ public class CarDisplayClient {
 					return;
 				}
 				Log.e(err, "Failed to start CarDisplayServer via local ADB");
+				if (switchedOn && AdbRecoveryJob.refusedOnThisWifi(ctx)) {
+					// a retry would switch it on again and show Android's dialog again: wait for another or a trusted Wi-Fi
+					recordDiagnostic("server_failed", Map.of("reason", "adb_wifi_refused"));
+					setState(State.FAILED);
+					return;
+				}
 				recordDiagnostic("server_failed", Map.of("reason", "adb_failed", "error", err.getClass().getSimpleName()));
 				setState(State.RETRYING);
 				scheduleRetry();

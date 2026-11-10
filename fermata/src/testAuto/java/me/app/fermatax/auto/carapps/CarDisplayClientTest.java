@@ -55,6 +55,7 @@ public class CarDisplayClientTest {
 	private Context context;
 	private CarDisplayClient client;
 	private java.util.function.Predicate<Context> savedWifi;
+	private java.util.function.Function<Context, Object> savedNetwork;
 	private final List<String> usbEvents = new ArrayList<>();
 	private java.util.function.ObjIntConsumer<Context> savedUsbWriter;
 
@@ -64,6 +65,7 @@ public class CarDisplayClientTest {
 		client = CarDisplayClient.get();
 		client.resetForTesting();
 		savedWifi = AdbRecoveryJob.wifiCheck;
+		savedNetwork = AdbRecoveryJob.wifiNetwork;
 		AdbRecoveryJob.wifiCheck = c -> true; // an ADB start without Wi-Fi fails at once; the real check finds none here
 		savedUsbWriter = AdbRecoveryJob.usbDebuggingWriter;
 		usbEvents.clear();
@@ -75,6 +77,8 @@ public class CarDisplayClientTest {
 		assertFalse("the app never turns USB debugging off", usbEvents.contains("usb=0"));
 		AdbRecoveryJob.usbDebuggingWriter = savedUsbWriter;
 		AdbRecoveryJob.wifiCheck = savedWifi;
+		AdbRecoveryJob.wifiNetwork = savedNetwork;
+		AdbRecoveryJob.refusedWifi = null;
 		client.resetForTesting();
 		CarAppsFeature.setState(RootState.ABSENT);
 		CarAppsFeature.setAdbPaired(false);
@@ -1643,6 +1647,47 @@ public class CarDisplayClientTest {
 		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
 		assertEquals(2, adbCommands.size());
 		assertEquals(1, adbWifi());
+	}
+
+	/**
+	 * On a Wi-Fi it does not trust yet Android switches wireless debugging off again and shows its own dialog: a retry,
+	 * or the next start, would show it again. So that network counts as no Wi-Fi ("Connect Wi-Fi once to start").
+	 */
+	@Test
+	public void wirelessDebuggingRefusedOnThisWifiIsNotWrittenThereAgain() {
+		useChannels(() -> {
+			android.provider.Settings.Global.putInt(context.getContentResolver(), ADB_WIFI, 0); // what Android does
+			return Completed.failed(new java.util.concurrent.TimeoutException("no port"));
+		});
+		recoveryEnv(true, 0);
+		Object[] network = {"cafe"};
+		AdbRecoveryJob.wifiNetwork = c -> network[0];
+		List<Object> reasons = new ArrayList<>();
+		client.setDiagnosticsConsumerForTest((event, attrs) -> {
+			if (event.equals("server_failed")) reasons.add(attrs.get("reason"));
+		});
+
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertEquals("no retry", 1, adbCommands.size());
+		assertEquals(List.of("adb_wifi_refused"), reasons);
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+		assertFalse("shown as no Wi-Fi", AdbRecoveryJob.hasWifi(context));
+
+		client.ensureRunning(context);
+		assertEquals("the next start does not write it again there", 1, adbCommands.size());
+		assertEquals(0, adbWifi());
+
+		android.provider.Settings.Global.putInt(context.getContentResolver(), ADB_WIFI, 1); // the user allowed it
+		assertTrue(AdbRecoveryJob.hasWifi(context));
+		android.provider.Settings.Global.putInt(context.getContentResolver(), ADB_WIFI, 0);
+		network[0] = "home";
+		assertTrue("another network is tried", AdbRecoveryJob.hasWifi(context));
+		client.ensureRunning(context);
+		assertEquals(2, adbCommands.size());
 	}
 
 	@Test

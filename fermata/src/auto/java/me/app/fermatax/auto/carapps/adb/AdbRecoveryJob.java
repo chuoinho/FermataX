@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ObjIntConsumer;
 
@@ -51,7 +52,14 @@ public class AdbRecoveryJob extends JobService {
 	/** Four attempts of 12 s port wait plus the 15 s ADB watchdog, and the 7 s of backoff: under 2 minutes, a job may run 10. */
 	private static final long RUN_TIMEOUT_MS = 120_000;
 
-	public static volatile Predicate<Context> wifiCheck = AdbRecoveryJob::wifiConnected;
+	public static volatile Function<Context, Object> wifiNetwork = AdbRecoveryJob::currentWifi;
+	public static volatile Predicate<Context> wifiCheck = c -> wifiNetwork.apply(c) != null;
+	/**
+	 * The Wi-Fi network on which Android switched wireless debugging off again right after the app turned it on: one it
+	 * does not trust yet, where it shows its own dialog. Not written again there, so no start or retry shows it twice.
+	 * shortcut: kept in memory per connection, so a reconnect or a new process may show the dialog once more.
+	 */
+	public static volatile Object refusedWifi;
 	static volatile ObjIntConsumer<Context> adbWifiWriter = AdbRecoveryJob::putAdbWifi;
 	public static volatile ObjIntConsumer<Context> usbDebuggingWriter = AdbRecoveryJob::putAdbEnabled;
 
@@ -172,20 +180,33 @@ public class AdbRecoveryJob extends JobService {
 	 * app may. The marker (the user's value) is on disk before the setting changes, so a kill in between is repaired by
 	 * the next startup.
 	 */
-	public static void enableAdbWifi(Context ctx) {
+	public static boolean enableAdbWifi(Context ctx) {
 		SharedPreferences prefs = prefs(ctx);
 		boolean on = adbWifiOn(ctx);
-		if (next(true, false, hasWifi(ctx), on, canWriteSecure(ctx), false) != Action.ENABLE_ADB) return;
+		if (next(true, false, hasWifi(ctx), on, canWriteSecure(ctx), false) != Action.ENABLE_ADB) return false;
 		// A marker already there belongs to this start (an earlier try): its value is the user's, so after a network
 		// change or a toggle in between only the setting is switched on again.
 		boolean owned = prefs.contains(PREF_RESTORE);
 		if (!owned) prefs.edit().putInt(PREF_RESTORE, on ? 1 : 0).commit();
 		try {
 			adbWifiWriter.accept(ctx, 1);
+			return true;
 		} catch (RuntimeException e) {
 			Log.e(e, "Cannot switch wireless debugging on");
 			if (!owned) prefs.edit().remove(PREF_RESTORE).commit();
+			return false;
 		}
+	}
+
+	/**
+	 * For a start that switched wireless debugging on and then failed: still on Wi-Fi with the setting off again means
+	 * Android refused it on this network (and showed its own dialog). Remembers that network and returns true.
+	 */
+	public static boolean refusedOnThisWifi(Context ctx) {
+		Object net = wifiNetwork.apply(ctx);
+		if ((net == null) || adbWifiOn(ctx)) return false;
+		refusedWifi = net;
+		return true;
 	}
 
 	/**
@@ -217,8 +238,11 @@ public class AdbRecoveryJob extends JobService {
 		prefs.edit().remove(PREF_RESTORE).commit();
 	}
 
+	/** A network where Android refused wireless debugging counts as none, until the user allows it there. */
 	public static boolean hasWifi(Context ctx) {
-		return wifiCheck.test(ctx);
+		if (!wifiCheck.test(ctx)) return false;
+		Object refused = refusedWifi;
+		return (refused == null) || adbWifiOn(ctx) || !refused.equals(wifiNetwork.apply(ctx));
 	}
 
 	private static SharedPreferences prefs(Context ctx) {
@@ -244,13 +268,14 @@ public class AdbRecoveryJob extends JobService {
 
 	/** Wireless debugging needs a Wi-Fi connection, so only Wi-Fi counts; a VPN on top must not hide it. */
 	@SuppressWarnings("deprecation")
-	private static boolean wifiConnected(Context ctx) {
+	@Nullable
+	private static Network currentWifi(Context ctx) {
 		ConnectivityManager cm = ctx.getSystemService(ConnectivityManager.class);
-		if (cm == null) return false;
+		if (cm == null) return null;
 		for (Network n : cm.getAllNetworks()) {
 			NetworkCapabilities caps = cm.getNetworkCapabilities(n);
-			if ((caps != null) && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return true;
+			if ((caps != null) && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return n;
 		}
-		return false;
+		return null;
 	}
 }
