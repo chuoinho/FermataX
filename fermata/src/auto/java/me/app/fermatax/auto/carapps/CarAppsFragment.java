@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
+import me.aap.fermata.ui.carapps.RootProbe;
 import me.aap.fermata.ui.carapps.RootState;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
@@ -89,6 +90,7 @@ public class CarAppsFragment extends MainActivityFragment {
 	private TextView phoneAsleepText;
 	private Button btnGrantRoot;
 	private Button btnRootAlt;
+	private Button btnSetupAgain;
 	private TextView tvNeedsRoot;
 
 	private boolean dimRequested;
@@ -292,6 +294,21 @@ public class CarAppsFragment extends MainActivityFragment {
 		tvServerError.setTextSize(18f);
 		tvServerError.setGravity(Gravity.CENTER);
 		serverErrorOverlay.addView(tvServerError);
+
+		// A revoked authorization may not be recognised as such: the only way out is a new pairing
+		btnSetupAgain = new Button(ctx);
+		btnSetupAgain.setText(R.string.car_apps_setup_again);
+		btnSetupAgain.setTextColor(Color.WHITE);
+		btnSetupAgain.setBackground(GlassDrawables.createGlassPillStateDrawable(ctx, GlassDimensions.PILL_RADIUS_DP, true));
+		btnSetupAgain.setLayoutParams(new LinearLayout.LayoutParams(btnLp));
+		btnSetupAgain.setOnClickListener(v -> {
+			Context c = v.getContext();
+			RootProbe.recordAdbPaired(c, false); // the setup screen then runs the pairing again
+			Intent setup = new Intent(c, AdbSetupActivity.class);
+			if (!(c instanceof Activity)) setup.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			c.startActivity(setup);
+		});
+		serverErrorOverlay.addView(btnSetupAgain);
 		serverErrorOverlay.setOnClickListener(v -> {
 			Context c = getContext();
 			if (c != null) {
@@ -618,6 +635,9 @@ public class CarAppsFragment extends MainActivityFragment {
 				loadingOverlay.setVisibility(View.GONE);
 				needsRootOverlay.setVisibility(View.GONE);
 				serverErrorOverlay.setVisibility(View.VISIBLE);
+				boolean adb = ServerStarter.choose(root, CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT)
+						== ServerStarter.Channel.ADB;
+				if (btnSetupAgain != null) btnSetupAgain.setVisibility((adb && !CarService.isActive()) ? View.VISIBLE : View.GONE);
 				break;
 			case READY:
 				loadingOverlay.setVisibility(View.GONE);

@@ -65,4 +65,5 @@
     <string name="car_apps_setup_notif_hint">Mã ghép nối</string>
     <string name="car_apps_needs_setup">Thiết lập Ứng dụng điện thoại một lần để dùng ứng dụng điện thoại trên màn hình xe</string>
     <string name="car_apps_needs_wifi">Kết nối Wi-Fi một lần để khởi động</string>
+    <string name="car_apps_setup_again">Thiết lập lại</string>
 </resources>

@@ -69,6 +69,42 @@ public class CarAppsReadinessModelTest {
 		assertFalse(CarAppsReadinessModel.from(RootState.AVAILABLE, 0, 34).adbSetup);
 	}
 
+	/** With the ADB pairing recorded but no start working (authorization revoked), a new pairing must be reachable. */
+	@Test
+	public void failedAdbStartOffersSettingUpAgain() {
+		boolean[] failed = {true};
+		CarAppsFeature.setBackend(new CarAppsFeature.Backend() {
+			@Override
+			public FutureSupplier<Boolean> requestRoot() {
+				return Completed.completed(false);
+			}
+
+			@Override
+			public ActivityFragment createFragment() {
+				return null;
+			}
+
+			@Override
+			public boolean serverFailed() {
+				return failed[0];
+			}
+		});
+		CarAppsFeature.setAdbPaired(true);
+		for (RootState state : new RootState[]{RootState.ABSENT, RootState.AVAILABLE}) {
+			CarAppsReadinessModel model = CarAppsReadinessModel.from(state, CarAppsReadinessModel.CAP_INJECT, 34);
+			assertTrue(model.rowVisible);
+			assertTrue(model.adbSetupAgain);
+			assertEquals(R.string.car_apps_server_error, model.statusStringRes);
+		}
+		assertFalse("root starts it, not ADB", CarAppsReadinessModel.from(RootState.GRANTED, 0, 34).adbSetupAgain);
+		failed[0] = false;
+		assertFalse(CarAppsReadinessModel.from(RootState.ABSENT, 0, 34).adbSetupAgain);
+		assertEquals(R.string.car_apps_readiness_status_ready, CarAppsReadinessModel.from(RootState.ABSENT, 0, 34).statusStringRes);
+		CarAppsFeature.setAdbPaired(false);
+		failed[0] = true;
+		assertFalse("not paired: the first setup is offered", CarAppsReadinessModel.from(RootState.ABSENT, 0, 34).adbSetupAgain);
+	}
+
 	@Test
 	public void absentHidesRow() {
 		CarAppsReadinessModel model = CarAppsReadinessModel.from(RootState.ABSENT, 0, 31);

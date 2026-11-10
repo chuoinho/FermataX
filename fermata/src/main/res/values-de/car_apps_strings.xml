@@ -65,4 +65,5 @@
     <string name="car_apps_setup_notif_hint">Kopplungscode</string>
     <string name="car_apps_needs_setup">Richte Telefon-Apps einmalig ein, um Telefon-Apps auf dem Autobildschirm zu nutzen</string>
     <string name="car_apps_needs_wifi">Einmal mit WLAN verbinden, um zu starten</string>
+    <string name="car_apps_setup_again">Erneut einrichten</string>
 </resources>

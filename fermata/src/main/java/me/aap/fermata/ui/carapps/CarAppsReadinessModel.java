@@ -23,6 +23,8 @@ public final class CarAppsReadinessModel {
 	public final List<CarAppsChecks.Check> checks;
 	/** Offer "Set up without root": Android 13+, no usable root, not paired yet. */
 	public final boolean adbSetup;
+	/** Offer "Set up again": the paired ADB channel failed to start the server (its authorization may be revoked). */
+	public final boolean adbSetupAgain;
 
 	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes) {
 		this(rowVisible, statusStringRes, actionStringRes, warningStringRes, Collections.emptyList());
@@ -35,7 +37,13 @@ public final class CarAppsReadinessModel {
 
 	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes,
 			List<CarAppsChecks.Check> checks, boolean adbSetup) {
+		this(rowVisible, statusStringRes, actionStringRes, warningStringRes, checks, adbSetup, false);
+	}
+
+	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes,
+			List<CarAppsChecks.Check> checks, boolean adbSetup, boolean adbSetupAgain) {
 		this.adbSetup = adbSetup;
+		this.adbSetupAgain = adbSetupAgain;
 		this.rowVisible = rowVisible;
 		this.statusStringRes = statusStringRes;
 		this.actionStringRes = actionStringRes;
@@ -79,6 +87,10 @@ public final class CarAppsReadinessModel {
 		// Every real server reports CAP_VD: without it no server was seen yet, and nothing is known to be missing
 		List<CarAppsChecks.Check> checks = ((capabilities & CarAppsChecks.CAP_VD) == 0)
 				? Collections.emptyList() : CarAppsChecks.from(rootState, capabilities, sdk);
+
+		if (!CarAppsFeature.usable(rootState) && CarAppsFeature.serverFailed()) {
+			return new CarAppsReadinessModel(true, R.string.car_apps_server_error, 0, warning, checks, false, true);
+		}
 
 		return new CarAppsReadinessModel(
 				true,

@@ -350,6 +350,33 @@ public class AdbPairingTest {
 		assertEquals(1, notifications().length);
 	}
 
+	/** The reply notification times out and can be swiped away: coming back to the screen posts it again. */
+	@Test public void returningToTheSetupPostsTheNotificationAgain() throws Exception {
+		Settings.Global.putInt(ctx.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
+		org.robolectric.android.controller.ActivityController<AdbSetupActivity> controller =
+				Robolectric.buildActivity(AdbSetupActivity.class).setup();
+		NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+		assertEquals(AdbPairing.State.WAITING, AdbPairing.state());
+
+		Runnable[] reach = {
+				() -> { }, // WAITING
+				() -> AdbPairing.submit(ctx, "12a"), // WRONG_CODE
+				() -> {
+					AdbPairing.pairingPort = c -> failed(new java.io.IOException("gone"));
+					AdbPairing.submit(ctx, "123456"); // FAILED
+				}};
+		AdbPairing.State[] reached = {AdbPairing.State.WAITING, AdbPairing.State.WRONG_CODE, AdbPairing.State.FAILED};
+		for (int i = 0; i < reach.length; i++) {
+			reach[i].run();
+			assertEquals(reached[i], AdbPairing.state());
+			nm.cancelAll(); // timed out or swiped away
+			controller.pause().resume();
+			assertEquals(1, notifications().length);
+			assertTrue(hasReplyField(notifications()[0]));
+		}
+		assertFalse(CarAppsFeature.isAdbPaired());
+	}
+
 	@Test public void pairedPhoneShowsDone() {
 		CarAppsFeature.setAdbPaired(true);
 		AdbSetupActivity activity = Robolectric.buildActivity(AdbSetupActivity.class).setup().get();

@@ -37,6 +37,11 @@ public final class AutoCarAppsBackend {
 				}
 				return CarDisplayClient.savedCapabilities(ctx, CarAppsReadinessModel.CAP_INJECT);
 			}
+
+			@Override
+			public boolean serverFailed() {
+				return CarDisplayClient.get().state() == CarDisplayClient.State.FAILED;
+			}
 		});
 		AdbPairing.recoveryScheduler = () -> AdbRecoveryJob.schedule(ctx);
 		AdbRecoveryJob.restoreAdbWifi(ctx); // a run killed with wireless debugging on left it on

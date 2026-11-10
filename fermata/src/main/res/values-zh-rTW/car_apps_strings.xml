@@ -65,4 +65,5 @@
     <string name="car_apps_setup_notif_hint">配對碼</string>
     <string name="car_apps_needs_setup">只需設定一次手機應用程式，即可在車用螢幕上使用手機應用程式</string>
     <string name="car_apps_needs_wifi">請連線 Wi-Fi 一次以啟動</string>
+    <string name="car_apps_setup_again">重新設定</string>
 </resources>

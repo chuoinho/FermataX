@@ -278,6 +278,72 @@ public class CarAppsFragmentTest {
 		}
 	}
 
+	/** A revoked authorization that is not recognised ends FAILED with the pairing still recorded: offer a new one. */
+	@Test
+	public void failedAdbStartOffersSettingUpAgain() {
+		java.util.function.Predicate<Context> savedWifi = me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck;
+		try {
+			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = c -> true;
+			client.resetForTesting();
+			client.setStartersForTest((c, cmd) -> {
+			}, (c, cmd) -> me.aap.utils.async.Completed.failed(new java.io.IOException("Connection failed")));
+			CarAppsFeature.setState(RootState.ABSENT);
+			CarAppsFeature.setAdbPaired(true);
+			CarAppsFragment fragment = createAndAttachFragment();
+			org.robolectric.shadows.ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+			fragment.updateUiState();
+			assertEquals(CarAppsUiState.State.SERVER_ERROR, fragment.getUiState());
+			View screen = (View) fragment.getGrantRootButton().getParent().getParent();
+			String label = context.getString(me.aap.fermata.R.string.car_apps_setup_again);
+
+			setCarServiceActive(true);
+			fragment.updateUiState();
+			assertSame("not while driving", null, findButton(screen, label));
+			setCarServiceActive(false);
+			fragment.updateUiState();
+			android.widget.Button again = findButton(screen, label);
+			org.junit.Assert.assertNotNull(again);
+
+			again.performClick();
+
+			assertFalse(CarAppsFeature.isAdbPaired());
+			assertFalse(context.getSharedPreferences("fermata", Context.MODE_PRIVATE)
+					.getBoolean(me.aap.fermata.ui.carapps.RootProbe.PREF_ADB_PAIRED, true));
+			android.content.Intent started = org.robolectric.Shadows.shadowOf(
+					(android.app.Application) context).getNextStartedActivity();
+			assertEquals(me.app.fermatax.auto.carapps.adb.AdbSetupActivity.class.getName(), started.getComponent().getClassName());
+		} finally {
+			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = savedWifi;
+			CarAppsFeature.setAdbPaired(false);
+		}
+	}
+
+	@Test
+	public void failedRootStartOffersNoAdbSetup() {
+		client.resetForTesting();
+		client.setStartersForTest((c, cmd) -> {
+		}, (c, cmd) -> new me.aap.utils.async.Promise<>());
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFragment fragment = createAndAttachFragment();
+		org.robolectric.shadows.ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.MINUTES);
+		fragment.updateUiState();
+		assertEquals(CarAppsUiState.State.SERVER_ERROR, fragment.getUiState());
+		assertSame(null, findButton((View) fragment.getGrantRootButton().getParent().getParent(),
+				context.getString(me.aap.fermata.R.string.car_apps_setup_again)));
+	}
+
+	private static android.widget.Button findButton(View v, String text) {
+		if (v.getVisibility() != View.VISIBLE) return null;
+		if ((v instanceof android.widget.Button b) && text.contentEquals(b.getText())) return b;
+		if (v instanceof ViewGroup g) {
+			for (int i = 0; i < g.getChildCount(); i++) {
+				android.widget.Button b = findButton(g.getChildAt(i), text);
+				if (b != null) return b;
+			}
+		}
+		return null;
+	}
+
 	@Test
 	public void android11And12KeepTheRootOnlyScreen() {
 		int sdk = android.os.Build.VERSION.SDK_INT;

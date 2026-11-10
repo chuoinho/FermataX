@@ -65,4 +65,5 @@
     <string name="car_apps_setup_notif_hint">Codice di accoppiamento</string>
     <string name="car_apps_needs_setup">Configura App del telefono una volta per usare le app del telefono sullo schermo dell’auto</string>
     <string name="car_apps_needs_wifi">Collegati una volta al Wi-Fi per avviare</string>
+    <string name="car_apps_setup_again">Configura di nuovo</string>
 </resources>

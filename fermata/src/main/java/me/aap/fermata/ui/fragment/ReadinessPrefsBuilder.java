@@ -126,7 +126,7 @@ final class ReadinessPrefsBuilder {
 		CarAppsReadinessModel model = CarAppsReadinessModel.from(CarAppsFeature.state(), CarAppsFeature.capabilities());
 		if (!shouldAddCarAppsRow(BuildConfig.AUTO, model)) return;
 
-		int color = (model.actionStringRes != 0 || model.adbSetup) ? 0xFFEF4444 :
+		int color = (model.actionStringRes != 0 || model.adbSetup || model.adbSetupAgain) ? 0xFFEF4444 :
 				(model.warningStringRes != 0) ? 0xFFF59E0B : 0xFF22C55E;
 		String titleText = activity.getString(R.string.car_apps_readiness_title);
 		target.addButton(o -> {
@@ -136,11 +136,14 @@ final class ReadinessPrefsBuilder {
 			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
 		});
 
-		if (model.adbSetup) {
+		if (model.adbSetup || model.adbSetupAgain) {
 			target.addButton(o -> {
-				o.title = R.string.car_apps_setup_button;
-				o.onClick = () -> startSettings(new Intent().setClassName(context,
-						"me.app.fermatax.auto.carapps.adb.AdbSetupActivity"));
+				o.title = model.adbSetup ? R.string.car_apps_setup_button : R.string.car_apps_setup_again;
+				o.onClick = () -> {
+					// forgetting the pairing makes the setup screen run the pairing again
+					if (model.adbSetupAgain) me.aap.fermata.ui.carapps.RootProbe.recordAdbPaired(context, false);
+					startSettings(new Intent().setClassName(context, "me.app.fermatax.auto.carapps.adb.AdbSetupActivity"));
+				};
 			});
 		}
 

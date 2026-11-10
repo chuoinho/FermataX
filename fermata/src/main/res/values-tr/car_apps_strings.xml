@@ -65,4 +65,5 @@
     <string name="car_apps_setup_notif_hint">Eşleştirme kodu</string>
     <string name="car_apps_needs_setup">Telefon uygulamalarını araç ekranında kullanmak için Telefon Uygulamalarını bir kez kurun</string>
     <string name="car_apps_needs_wifi">Başlatmak için bir kez Wi-Fi’ye bağlanın</string>
+    <string name="car_apps_setup_again">Yeniden kur</string>
 </resources>

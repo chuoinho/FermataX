@@ -63,9 +63,8 @@ public final class AdbSetupActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		AdbPairing.State state = AdbPairing.state();
-		boolean again = (state == AdbPairing.State.IDLE) || (state == AdbPairing.State.NOTIFICATIONS_OFF)
-				|| (state == AdbPairing.State.DONE);
+		// The reply notification times out and can be swiped away: post it again (it replaces the old one)
+		boolean again = AdbPairing.state() != AdbPairing.State.WORKING;
 		if (again && !CarAppsFeature.isAdbPaired() && developerOptionsOn()) AdbPairing.start(this);
 		render();
 	}

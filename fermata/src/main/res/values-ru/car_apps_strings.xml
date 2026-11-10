@@ -65,4 +65,5 @@
     <string name="car_apps_setup_notif_hint">Код подключения</string>
     <string name="car_apps_needs_setup">Один раз настройте приложения телефона, чтобы использовать их на экране автомобиля</string>
     <string name="car_apps_needs_wifi">Подключитесь к Wi-Fi один раз, чтобы запустить</string>
+    <string name="car_apps_setup_again">Настроить заново</string>
 </resources>

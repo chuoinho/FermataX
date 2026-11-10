@@ -26,6 +26,11 @@ public final class CarAppsFeature {
 		default int capabilities() {
 			return CarAppsReadinessModel.CAP_INJECT;
 		}
+
+		/** True when the last start of the server ended in failure. */
+		default boolean serverFailed() {
+			return false;
+		}
 	}
 
 	/** Turn the phone panel off while the virtual display is in use (user option, default on). */
@@ -132,6 +137,11 @@ public final class CarAppsFeature {
 	@Nullable
 	public static Backend backend() {
 		return backend;
+	}
+
+	public static boolean serverFailed() {
+		Backend b = backend;
+		return (b != null) && b.serverFailed();
 	}
 
 	public static int capabilities() {

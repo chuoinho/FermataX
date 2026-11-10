@@ -65,4 +65,5 @@
     <string name="car_apps_setup_notif_hint">Código de vinculación</string>
     <string name="car_apps_needs_setup">Configura Apps del teléfono una vez para usar las apps del teléfono en la pantalla del coche</string>
     <string name="car_apps_needs_wifi">Conéctate una vez a Wi-Fi para iniciar</string>
+    <string name="car_apps_setup_again">Volver a configurar</string>
 </resources>

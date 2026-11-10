@@ -65,4 +65,5 @@
     <string name="car_apps_setup_notif_hint">Código de sincronização</string>
     <string name="car_apps_needs_setup">Configure as Apps do telefone uma vez para usar as apps do telefone no ecrã do carro</string>
     <string name="car_apps_needs_wifi">Ligue-se uma vez ao Wi-Fi para iniciar</string>
+    <string name="car_apps_setup_again">Configurar novamente</string>
 </resources>
