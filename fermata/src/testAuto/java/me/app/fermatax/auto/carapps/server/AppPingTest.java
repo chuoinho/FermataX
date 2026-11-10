@@ -46,4 +46,36 @@ public class AppPingTest {
 		assertEquals("/storage/emulated/10/Android/data/p/files/" + AppPing.FILE,
 				AppPing.fileFor(1010512, "p").getPath().replace('\\', '/'));
 	}
+
+	/** Phone Apps was turned off: the app wrote STOP, and the server exits instead of handing its binder over. */
+	@Test
+	public void aStopPingEndsTheServerInsteadOfAHandoff() throws Exception {
+		File f = Files.createTempFile("carapps", ".ping").toFile();
+		try {
+			f.setLastModified(1_000_000L);
+			AppPing ping = new AppPing(f);
+			java.util.List<String> ran = new java.util.ArrayList<>();
+			Runnable handoff = () -> ran.add("handoff");
+			Runnable stop = () -> ran.add("stop");
+
+			Files.write(f.toPath(), AppPing.STOP.getBytes());
+			f.setLastModified(2_000_000L);
+			ping.check(handoff, stop);
+			ping.check(handoff, stop);
+			assertEquals(java.util.List.of("stop"), ran);
+
+			Files.write(f.toPath(), "1".getBytes());
+			f.setLastModified(3_000_000L);
+			ping.check(handoff, stop);
+			assertEquals(java.util.List.of("stop", "handoff"), ran);
+
+			Files.write(f.toPath(), AppPing.STOP.getBytes());
+			f.setLastModified(4_000_000L);
+			AppPing late = new AppPing(f);
+			late.check(handoff, stop);
+			assertEquals("a stop from before the start is not this server's", 2, ran.size());
+		} finally {
+			f.delete();
+		}
+	}
 }

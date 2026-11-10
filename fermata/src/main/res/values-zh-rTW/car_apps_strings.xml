@@ -2,6 +2,7 @@
 <resources>
     <string name="car_apps_title">手機應用程式</string>
     <string name="car_apps_dashboard_sub">獨立虛擬螢幕啟動器</string>
+    <string name="car_apps_addon_desc">在車機螢幕上使用手機應用程式。關閉後即停止；USB 偵錯仍保持開啟。</string>
     <string name="car_apps_loading">正在啟動車載螢幕…</string>
     <string name="car_apps_needs_root">在車載螢幕上執行手機應用程式需要 Root 權限</string>
     <string name="car_apps_grant_root">授予 Root 權限</string>

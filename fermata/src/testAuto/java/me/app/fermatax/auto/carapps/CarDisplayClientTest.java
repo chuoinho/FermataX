@@ -82,6 +82,7 @@ public class CarDisplayClientTest {
 		client.resetForTesting();
 		CarAppsFeature.setState(RootState.ABSENT);
 		CarAppsFeature.setAdbPaired(false);
+		CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), true);
 	}
 
 	@Test
@@ -506,6 +507,115 @@ public class CarDisplayClientTest {
 		assertEquals(0, pings);
 		assertEquals("root starts again as before", 2, rootCommands.size());
 		assertEquals(CarDisplayClient.State.STARTING, client.state());
+	}
+
+	private int stops;
+
+	/** Counts the stop requests to an ADB-started server (the STOP ping). */
+	private void useStop() {
+		stops = 0;
+		client.setServerStopForTest(c -> {
+			stops++;
+			return true;
+		});
+	}
+
+	private static void setEnabled(boolean enabled) {
+		CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), enabled); // the app's backend reacts
+	}
+
+	/** Phone Apps is an addon: turned off, its server stops and no trigger starts one; on again, the pairing serves. */
+	@Test
+	public void turnedOffTheAdoptedServerStopsAndNothingStartsOneUntilItIsOnAgain() {
+		useChannels(() -> Completed.completedVoid());
+		CarAppsFeature.setAdbPaired(true);
+		usePing(true);
+		useStop();
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(6, java.util.concurrent.TimeUnit.SECONDS);
+		AtomicBoolean released = new AtomicBoolean(false);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), released), 2000);
+		assertEquals(CarDisplayClient.State.READY, client.state());
+
+		setEnabled(false);
+		assertTrue("the display is freed through the live binder", released.get());
+		assertEquals("the persistent server is told to exit", 1, stops);
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+
+		int pinged = pings;
+		client.ensureRunning(context);
+		client.onCarSessionStarted(context);
+		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+		assertEquals("no command", 1, adbCommands.size());
+		assertEquals("the stopped server is not asked back", pinged, pings);
+		assertTrue("the pairing is kept", CarAppsFeature.isAdbPaired());
+
+		setEnabled(true);
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(6, java.util.concurrent.TimeUnit.SECONDS);
+		assertEquals("on again: the existing pairing starts it, no setup", 2, adbCommands.size());
+	}
+
+	/** A command in flight when turned off may still start a server: it is stopped, not adopted, and the setting given back. */
+	@Test
+	public void aServerFromACommandInFlightWhenTurnedOffIsStoppedAndTheSettingGivenBack() {
+		List<Promise<Void>> runs = new ArrayList<>();
+		useChannels(() -> {
+			Promise<Void> run = new Promise<>();
+			runs.add(run);
+			return run;
+		});
+		recoveryEnv(true, 0);
+		useStop();
+		client.ensureRunning(context);
+		assertEquals(1, adbWifi());
+
+		setEnabled(false);
+		assertEquals("the recovery job is cancelled", 0,
+				((android.app.job.JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE)).getAllPendingJobs().size());
+		assertEquals("the command in flight owns the setting", 1, adbWifi());
+		AtomicBoolean released = new AtomicBoolean(false);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), released), 2000);
+		assertTrue(released.get());
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+		assertEquals("told to exit at the switch and again when it came up", 2, stops);
+
+		runs.get(0).complete(null);
+		assertEquals(0, adbWifi());
+		assertFalse(markerPresent());
+		assertEquals(1, runs.size());
+	}
+
+	@Test
+	public void rootPhonesStopStartingWhenTurnedOff() {
+		useChannels(new Promise<>());
+		CarAppsFeature.setState(RootState.GRANTED);
+		useStop();
+		client.ensureRunning(context);
+		AtomicBoolean released = new AtomicBoolean(false);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), released));
+
+		setEnabled(false);
+		assertTrue("released: a root server then exits when idle", released.get());
+		client.ensureRunning(context);
+		assertEquals(1, rootCommands.size());
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+
+		setEnabled(true);
+		client.ensureRunning(context);
+		assertEquals(2, rootCommands.size());
+	}
+
+	@Test
+	public void theStopIsTheSamePingFileWithStopInIt() throws Exception {
+		java.io.File f = new java.io.File(context.getExternalFilesDir(null),
+				me.app.fermatax.auto.carapps.server.AppPing.FILE);
+		assertTrue(CarDisplayClient.stopServer(context));
+		assertEquals(me.app.fermatax.auto.carapps.server.AppPing.STOP,
+				new String(java.nio.file.Files.readAllBytes(f.toPath())));
+		assertTrue(CarDisplayClient.pingServer(context));
+		assertEquals("1", new String(java.nio.file.Files.readAllBytes(f.toPath())));
 	}
 
 	@Test

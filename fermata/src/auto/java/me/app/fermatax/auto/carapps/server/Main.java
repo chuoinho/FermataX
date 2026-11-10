@@ -86,14 +86,25 @@ public class Main {
 		return (args.length > 3) && "persist".equals(args[3]);
 	}
 
-	/** The app asks again after its process was restarted (AppPing); a failed handoff then is only logged. */
-	private static void watchAppPing(String appPackage, int appUid, IBinder serverBinder) {
+	/**
+	 * The app asks again after its process was restarted (AppPing); a failed handoff then is only logged. A STOP ping
+	 * (Phone Apps turned off) frees the display and ends the server; the shutdown hook restores the panel.
+	 */
+	private static void watchAppPing(String appPackage, int appUid, CarDisplayServerImpl server) {
 		new AppPing(AppPing.fileFor(appUid, appPackage)).watch(new android.os.Handler(Looper.getMainLooper()), () -> {
 			try {
-				handoffBinderToApp(appPackage, appUid, serverBinder);
+				handoffBinderToApp(appPackage, appUid, server);
 			} catch (Throwable t) {
 				android.util.Log.e("CarDisplayServer", "binder handoff to " + appPackage + " on its ping failed", t);
 			}
+		}, () -> {
+			android.util.Log.i("CarDisplayServer", "Phone Apps was turned off: exiting");
+			try {
+				server.releaseInternal();
+			} catch (Throwable t) {
+				android.util.Log.e("CarDisplayServer", "release before exit failed", t);
+			}
+			System.exit(0);
 		});
 	}
 

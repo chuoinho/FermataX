@@ -45,6 +45,14 @@ public final class AutoCarAppsBackend {
 				return (client.state() == CarDisplayClient.State.FAILED) && !client.failedForWifi()
 						&& !me.app.fermatax.auto.CarService.isActive();
 			}
+
+			/** Off: the job and the server stop; the pairing and USB debugging stay. On: the usual triggers start it. */
+			@Override
+			public void onEnabledChanged(boolean enabled) {
+				if (enabled) return;
+				AdbRecoveryJob.cancel(ctx);
+				CarDisplayClient.get().stop(ctx);
+			}
 		});
 		AdbPairing.recoveryScheduler = () -> AdbRecoveryJob.schedule(ctx);
 		AdbRecoveryJob.restoreAdbWifi(ctx); // a run killed with wireless debugging on left it on

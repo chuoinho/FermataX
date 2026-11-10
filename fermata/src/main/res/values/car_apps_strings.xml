@@ -2,6 +2,7 @@
 <resources>
     <string name="car_apps_title">Phone Apps</string>
     <string name="car_apps_dashboard_sub">Independent virtual display launcher</string>
+    <string name="car_apps_addon_desc">Phone apps on the car screen. Turned off, they stop; USB debugging stays on.</string>
     <string name="car_apps_loading">Starting car display…</string>
     <string name="car_apps_needs_root">Root access is required to run phone apps on the car screen</string>
     <string name="car_apps_grant_root">Grant root</string>

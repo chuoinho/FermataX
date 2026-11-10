@@ -48,14 +48,44 @@ public class GlassAddonsCatalogFragmentTest {
     public void carAppsEntryOnlyWhenVisible() {
         android.content.Context ctx = org.robolectric.RuntimeEnvironment.getApplication();
         java.util.List<GlassAddonsCatalogFragment.CatalogItem> hidden = new java.util.ArrayList<>();
-        GlassAddonsCatalogFragment.addCarApps(hidden, ctx, false);
+        GlassAddonsCatalogFragment.addCarApps(hidden, ctx, false, true);
         assertTrue(hidden.isEmpty());
 
         java.util.List<GlassAddonsCatalogFragment.CatalogItem> shown = new java.util.ArrayList<>();
-        GlassAddonsCatalogFragment.addCarApps(shown, ctx, true);
+        GlassAddonsCatalogFragment.addCarApps(shown, ctx, true, true);
         assertEquals(1, shown.size());
         assertEquals(R.id.car_apps_fragment, shown.get(0).id);
         assertTrue(shown.get(0).isEnabled);
+        assertEquals(ctx.getString(R.string.car_apps_addon_desc), shown.get(0).description);
+    }
+
+    /** Phone Apps toggles like a real addon: off it is listed only in edit mode, and the switch is the feature's. */
+    @Test
+    public void carAppsToggleTurnsTheFeatureOffAndOn() {
+        android.content.Context ctx = org.robolectric.RuntimeEnvironment.getApplication();
+        me.aap.utils.pref.BasicPreferenceStore store = new me.aap.utils.pref.BasicPreferenceStore();
+        try {
+            java.util.List<GlassAddonsCatalogFragment.CatalogItem> off = new java.util.ArrayList<>();
+            GlassAddonsCatalogFragment.addCarApps(off, ctx, true, false);
+            assertEquals("listed for edit mode", 1, off.size());
+            assertFalse(off.get(0).isEnabled);
+
+            GlassAddonsCatalogFragment.CatalogItem item = off.get(0);
+            assertTrue(GlassAddonsCatalogFragment.toggle(item, store));
+            assertTrue(item.isEnabled);
+            assertTrue(me.aap.fermata.ui.carapps.CarAppsFeature.isEnabled());
+            assertTrue(GlassAddonsCatalogFragment.toggle(item, store));
+            assertFalse(item.isEnabled);
+            assertFalse(store.getBooleanPref(me.aap.fermata.ui.carapps.CarAppsFeature.PREF_ENABLED));
+            assertFalse(me.aap.fermata.ui.carapps.CarAppsFeature.isEnabled());
+
+            GlassAddonsCatalogFragment.CatalogItem core = new GlassAddonsCatalogFragment.CatalogItem(
+                    R.id.folders_fragment, "Folders", "", 0, 0, false);
+            assertFalse("core destinations have no switch", GlassAddonsCatalogFragment.toggle(core, store));
+            assertTrue(core.isEnabled);
+        } finally {
+            me.aap.fermata.ui.carapps.CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), true);
+        }
     }
 
     public static class TestHostActivity extends ActivityBase {

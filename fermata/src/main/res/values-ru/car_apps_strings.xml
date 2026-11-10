@@ -2,6 +2,7 @@
 <resources>
     <string name="car_apps_title">Приложения телефона</string>
     <string name="car_apps_dashboard_sub">Независимый лаунчер виртуального экрана</string>
+    <string name="car_apps_addon_desc">Приложения телефона на экране автомобиля. При выключении они останавливаются; отладка по USB остаётся включённой.</string>
     <string name="car_apps_loading">Запуск экрана авто…</string>
     <string name="car_apps_needs_root">Требуется root-доступ для запуска приложений телефона на экране авто</string>
     <string name="car_apps_grant_root">Предоставить root</string>

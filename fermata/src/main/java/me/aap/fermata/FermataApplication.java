@@ -67,6 +67,7 @@ public class FermataApplication extends NetSplitCompatApp {
 		if (me.aap.fermata.BuildConfig.AUTO) {
 			me.aap.fermata.ui.carapps.RootProbe.refresh(this);
 			me.aap.fermata.ui.carapps.RootProbe.restoreAdbPaired(this);
+			me.aap.fermata.ui.carapps.CarAppsFeature.restoreEnabled(getPreferenceStore());
 			try {
 				Class<?> cls = Class.forName("me.app.fermatax.auto.carapps.AutoCarAppsBackend");
 				cls.getMethod("install", Context.class).invoke(null, this);

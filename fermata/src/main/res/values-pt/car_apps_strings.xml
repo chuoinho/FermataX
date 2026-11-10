@@ -2,6 +2,7 @@
 <resources>
     <string name="car_apps_title">Apps do telefone</string>
     <string name="car_apps_dashboard_sub">Iniciador de tela virtual independente</string>
+    <string name="car_apps_addon_desc">Apps do telefone na tela do carro. Desativado, elas param; a depuração USB continua ativada.</string>
     <string name="car_apps_loading">Iniciando tela do carro…</string>
     <string name="car_apps_needs_root">O acesso root é necessário para executar apps do telefone na tela do carro</string>
     <string name="car_apps_grant_root">Conceder root</string>

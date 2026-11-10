@@ -114,6 +114,7 @@ public class CarDisplayClient {
 	/** Covers the poll of the server (AppPing.POLL_MS) and its handoff. */
 	private static final long SERVER_PING_WAIT_MS = 5000;
 	private volatile Predicate<Context> serverPing = CarDisplayClient::pingServer;
+	private volatile Predicate<Context> serverStop = CarDisplayClient::stopServer;
 	private volatile boolean askingRunningServer;
 	private volatile boolean failedForWifi;
 	private final Runnable serverPingTimeout = () -> {
@@ -428,6 +429,16 @@ public class CarDisplayClient {
 		// a server answered the ping: no start, or a stale one is replaced by the one start below
 		mainHandler.removeCallbacks(serverPingTimeout);
 		askingRunningServer = false;
+		if (!CarAppsFeature.isEnabled()) {
+			// started by a command in flight when Phone Apps was turned off: not adopted, told to exit
+			recordDiagnostic("server_failed", Map.of("reason", "turned_off"));
+			try {
+				s.release();
+			} catch (Throwable ignored) {
+			}
+			if (lastContext != null) serverStop.test(lastContext);
+			return;
+		}
 
 		int version = -1;
 		try {
@@ -574,6 +585,7 @@ public class CarDisplayClient {
 		if (ctx != null) {
 			this.lastContext = ctx.getApplicationContext();
 		}
+		if (!CarAppsFeature.isEnabled()) return; // turned off: no trigger starts a server
 		if (state == State.READY && serverBinder != null && serverBinder.pingBinder()) {
 			return;
 		}
@@ -617,15 +629,35 @@ public class CarDisplayClient {
 
 	/** Seen by an ADB-started server (AppPing), which then hands its binder over again. False when not written. */
 	static boolean pingServer(Context ctx) {
+		return writePing(ctx, "1");
+	}
+
+	/** Phone Apps was turned off: an ADB-started server exits on its next poll (AppPing.STOP). */
+	static boolean stopServer(Context ctx) {
+		return writePing(ctx, AppPing.STOP);
+	}
+
+	private static boolean writePing(Context ctx, String content) {
 		File dir = ctx.getExternalFilesDir(null);
 		if (dir == null) return false;
 		try (FileOutputStream out = new FileOutputStream(new File(dir, AppPing.FILE))) {
-			out.write('1'); // the write changes the time the server watches
+			out.write(content.getBytes(java.nio.charset.StandardCharsets.UTF_8)); // the write changes the time the server watches
 			return true;
 		} catch (IOException e) {
 			Log.w("Cannot ping the car display server: ", e);
 			return false;
 		}
+	}
+
+	/**
+	 * Phone Apps was turned off: the session is released as usual (a command in flight still gives wireless debugging
+	 * back), the server is not kept to be taken back, and an ADB-started one is told to exit. A root-started one exits
+	 * by itself once idle. Nothing starts one again while it is off (ensureRunning).
+	 */
+	public synchronized void stop(Context ctx) {
+		release();
+		idleBinder = null;
+		serverStop.test(ctx.getApplicationContext());
 	}
 
 	/** True while a running server is asked for its binder: the car must wait, not ask for Wi-Fi. */
@@ -1260,6 +1292,10 @@ public class CarDisplayClient {
 		return failedForWifi && (state == State.FAILED);
 	}
 
+	void setServerStopForTest(Predicate<Context> stop) {
+		this.serverStop = stop;
+	}
+
 	void setServerPingForTest(Predicate<Context> ping) {
 		this.serverPing = ping;
 	}
@@ -1301,6 +1337,7 @@ public class CarDisplayClient {
 		mainHandler.removeCallbacks(serverPingTimeout);
 		this.askingRunningServer = false;
 		this.serverPing = c -> false; // tests that start over ADB expect the command at once; ping tests set their own
+		this.serverStop = c -> false;
 		this.state = State.IDLE;
 		this.retryAttempt = 0;
 		this.nextPhoneSleepMs = 0;

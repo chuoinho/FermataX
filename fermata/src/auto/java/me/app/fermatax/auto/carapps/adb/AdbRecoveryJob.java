@@ -78,7 +78,7 @@ public class AdbRecoveryJob extends JobService {
 		return true; // the constraint was lost: run again when it is back
 	}
 
-	/** Only for a paired phone without usable root; root phones start the server through su and never need this. */
+	/** Only for a paired phone without usable root, with Phone Apps on; root phones start it through su instead. */
 	public static void schedule(Context ctx) {
 		if (!eligible()) return;
 		try {
@@ -94,8 +94,18 @@ public class AdbRecoveryJob extends JobService {
 		}
 	}
 
+	/** Phone Apps was turned off: a queued job would start the server again. */
+	public static void cancel(Context ctx) {
+		try {
+			JobScheduler js = ctx.getSystemService(JobScheduler.class);
+			if (js != null) js.cancel(JOB_ID);
+		} catch (Throwable t) {
+			Log.e(t, "Cannot cancel the ADB recovery");
+		}
+	}
+
 	private static boolean eligible() {
-		return ServerStarter.choose(CarAppsFeature.state(), CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT)
+		return CarAppsFeature.isEnabled() && ServerStarter.choose(CarAppsFeature.state(), CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT)
 				== ServerStarter.Channel.ADB;
 	}
 

@@ -10,6 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import me.aap.fermata.BuildConfig;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
@@ -31,15 +32,21 @@ public final class CarAppsFeature {
 		default boolean serverFailed() {
 			return false;
 		}
+
+		/** The user turned Phone Apps off or on again (Addons catalog); off, a running server is stopped. */
+		default void onEnabledChanged(boolean enabled) {
+		}
 	}
 
-	/** Turn the phone panel off while the virtual display is in use (user option, default on). */
+	/** Phone Apps is an addon the user can turn off; on by default, so existing users are unchanged. */
+	public static final Pref<BooleanSupplier> PREF_ENABLED = Pref.b("CAR_APPS_ENABLED", true);
 
 	private static volatile RootState state = RootState.ABSENT;
 	private static volatile boolean adbPaired;
 	private static final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 	private static volatile Backend backend;
 	private static volatile boolean fullscreen;
+	private static volatile boolean enabled = true;
 
 	private CarAppsFeature() {
 	}
@@ -63,9 +70,28 @@ public final class CarAppsFeature {
 		return s == RootState.GRANTED;
 	}
 
-	/** True when the server can be started: by root, or by the paired ADB channel on a supported Android. */
+	/** True when the server can be started: turned on, and by root or the paired ADB channel on a supported Android. */
 	public static boolean canRun() {
-		return canRun(state, adbPaired, Build.VERSION.SDK_INT);
+		return enabled && canRun(state, adbPaired, Build.VERSION.SDK_INT);
+	}
+
+	public static boolean isEnabled() {
+		return enabled;
+	}
+
+	/** Restores the switch at startup, before any receiver or job can start a server. */
+	public static void restoreEnabled(PreferenceStore store) {
+		enabled = store.getBooleanPref(PREF_ENABLED);
+	}
+
+	/** Persists the switch; a change is told to the backend (which stops the server when off) and the listeners. */
+	public static void setEnabled(PreferenceStore store, boolean value) {
+		store.applyBooleanPref(PREF_ENABLED, value);
+		if (enabled == value) return;
+		enabled = value;
+		Backend b = backend;
+		if (b != null) b.onEnabledChanged(value);
+		notifyListeners();
 	}
 
 	public static boolean canRun(@Nullable RootState root, boolean adbPaired, int sdk) {
@@ -93,7 +119,13 @@ public final class CarAppsFeature {
 		fullscreen = value;
 	}
 
+	/** Shown in the dashboard and navigation: supported here and turned on. */
 	public static boolean isVisible() {
+		return enabled && isSupported();
+	}
+
+	/** Supported here, on or off: the Addons catalog lists it so it can be turned on again. */
+	public static boolean isSupported() {
 		return visible(BuildConfig.AUTO, Build.VERSION.SDK_INT, state());
 	}
 

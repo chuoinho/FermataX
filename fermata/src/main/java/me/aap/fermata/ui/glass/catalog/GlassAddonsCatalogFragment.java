@@ -42,6 +42,7 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment implements 
 
     public static final PreferenceStore.Pref<me.aap.utils.function.Supplier<String[]>> PREF_ADDONS_ORDER =
             PreferenceStore.Pref.sa("GLASS_ADDONS_ORDER", (String[]) null);
+    private static final String CAR_APPS_KEY = "car_apps";
 
     public static class CatalogItem {
         public final String key;
@@ -219,10 +220,7 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment implements 
 
     private void onItemClicked(CatalogItem item) {
         if (isEditMode) {
-            if (item.addonInfo != null && item.addonInfo.enabledPref != null) {
-                item.isEnabled = !item.isEnabled;
-                PreferenceStore store = FermataApplication.get().getPreferenceStore();
-                store.applyBooleanPref(item.addonInfo.enabledPref, item.isEnabled);
+            if (toggle(item, FermataApplication.get().getPreferenceStore())) {
                 int pos = items.indexOf(item);
                 if (pos >= 0 && adapter != null) {
                     adapter.notifyItemChanged(pos);
@@ -294,7 +292,8 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment implements 
                 safeGetString(ctx, R.string.glass_addon_desc_recent, "Recently played history"),
                 R.drawable.timer, 0xFFFFA000, false, null, true));
 
-        addCarApps(allItems, ctx, me.aap.fermata.ui.carapps.CarAppsFeature.isVisible());
+        addCarApps(allItems, ctx, me.aap.fermata.ui.carapps.CarAppsFeature.isSupported(),
+                me.aap.fermata.ui.carapps.CarAppsFeature.isEnabled());
 
         // 3. Sort according to saved order
         String[] savedOrder = store.getStringArrayPref(PREF_ADDONS_ORDER);
@@ -318,13 +317,23 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment implements 
         }
     }
 
-    /** Root-gated "Car apps" entry, so the Glass catalog offers it like the classic navigation does. */
-    static void addCarApps(List<CatalogItem> out, Context ctx, boolean visible) {
-        if (!visible) return;
-        out.add(new CatalogItem("car_apps", R.id.car_apps_fragment,
+    /** Phone Apps, where supported: an addon the user turns off and on like the others. */
+    static void addCarApps(List<CatalogItem> out, Context ctx, boolean supported, boolean enabled) {
+        if (!supported) return;
+        out.add(new CatalogItem(CAR_APPS_KEY, R.id.car_apps_fragment,
                 ctx.getString(R.string.car_apps_title),
-                ctx.getString(R.string.car_apps_dashboard_sub),
-                R.drawable.ic_car_apps, GlassThemeColors.ACCENT_CYAN, false, null, true));
+                ctx.getString(R.string.car_apps_addon_desc),
+                R.drawable.ic_car_apps, GlassThemeColors.ACCENT_CYAN, false, null, enabled));
+    }
+
+    /** Flips and persists an item's switch in edit mode; false for items without one. */
+    static boolean toggle(CatalogItem item, PreferenceStore store) {
+        boolean carApps = CAR_APPS_KEY.equals(item.key);
+        if (!carApps && ((item.addonInfo == null) || (item.addonInfo.enabledPref == null))) return false;
+        item.isEnabled = !item.isEnabled;
+        if (carApps) me.aap.fermata.ui.carapps.CarAppsFeature.setEnabled(store, item.isEnabled);
+        else store.applyBooleanPref(item.addonInfo.enabledPref, item.isEnabled);
+        return true;
     }
 
     private void saveOrder() {

@@ -3,6 +3,8 @@ package me.app.fermatax.auto.carapps.adb;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -65,6 +67,7 @@ public class AdbRecoveryJobTest {
 		AdbRecoveryJob.adbWifiWriter = AdbRecoveryJob::putAdbWifi;
 		CarAppsFeature.setState(RootState.ABSENT);
 		CarAppsFeature.setAdbPaired(false);
+		CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), true);
 		AdbPairing.recoveryScheduler = () -> {
 		};
 	}
@@ -341,5 +344,24 @@ public class AdbRecoveryJobTest {
 		new AdbRecoveryReceiver().onReceive(ctx, new Intent());
 		new AdbRecoveryReceiver().onReceive(ctx, null);
 		assertEquals(0, pendingJobs());
+	}
+
+	/** Phone Apps turned off: the queued job is cancelled, and neither a broadcast nor a queued run starts anything. */
+	@Test public void turnedOffTheJobIsCancelledAndNothingSchedulesOrRunsIt() {
+		AdbRecoveryJob.schedule(ctx);
+		assertEquals(1, pendingJobs());
+
+		CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), false);
+		assertEquals("cancelled", 0, pendingJobs());
+		AdbRecoveryJob.schedule(ctx);
+		broadcast(Intent.ACTION_BOOT_COMPLETED);
+		broadcast(Intent.ACTION_MY_PACKAGE_REPLACED);
+		assertEquals(0, pendingJobs());
+		assertNull("a run already queued does nothing", AdbRecoveryJob.start(ctx, retry -> fail("no run")));
+		assertTrue("the pairing is kept", CarAppsFeature.isAdbPaired());
+
+		CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), true);
+		broadcast(Intent.ACTION_BOOT_COMPLETED);
+		assertEquals("on again, the same pairing recovers", 1, pendingJobs());
 	}
 }

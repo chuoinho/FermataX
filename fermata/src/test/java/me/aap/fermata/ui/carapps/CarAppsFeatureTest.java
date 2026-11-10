@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
 public class CarAppsFeatureTest {
@@ -24,6 +25,7 @@ public class CarAppsFeatureTest {
 		CarAppsFeature.setState(RootState.ABSENT);
 		CarAppsFeature.setAdbPaired(false);
 		CarAppsFeature.setBackend(null);
+		CarAppsFeature.setEnabled(new BasicPreferenceStore(), true);
 	}
 
 	@Test
@@ -131,5 +133,58 @@ public class CarAppsFeatureTest {
 
 		CarAppsFeature.setBackend(backend);
 		assertSame(backend, CarAppsFeature.backend());
+	}
+
+	/** Phone Apps is an addon: off, nothing runs it, whatever the root or pairing state; on by default. */
+	@Test
+	public void turnedOffItCannotRunNorShowAndTheBackendHearsEachChangeOnce() {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+		CarAppsFeature.restoreEnabled(store);
+		assertTrue("existing users keep it on", CarAppsFeature.isEnabled());
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFeature.setAdbPaired(true);
+		assertTrue(CarAppsFeature.canRun());
+		java.util.List<Boolean> heard = new java.util.ArrayList<>();
+		AtomicInteger notified = new AtomicInteger();
+		Runnable listener = notified::incrementAndGet;
+		CarAppsFeature.addListener(listener);
+		CarAppsFeature.setBackend(new CarAppsFeature.Backend() {
+			@Override
+			public FutureSupplier<Boolean> requestRoot() {
+				return Completed.completed(true);
+			}
+
+			@Override
+			public ActivityFragment createFragment() {
+				return null;
+			}
+
+			@Override
+			public void onEnabledChanged(boolean enabled) {
+				heard.add(enabled);
+			}
+		});
+		try {
+			CarAppsFeature.setEnabled(store, false);
+			CarAppsFeature.setEnabled(store, false);
+			assertFalse(CarAppsFeature.isEnabled());
+			assertFalse("persisted", store.getBooleanPref(CarAppsFeature.PREF_ENABLED));
+			assertFalse(CarAppsFeature.canRun());
+			assertFalse(CarAppsFeature.isVisible());
+			assertTrue("the pairing is kept", CarAppsFeature.isAdbPaired());
+			assertEquals(java.util.List.of(false), heard);
+			assertEquals(1, notified.get());
+
+			CarAppsFeature.setEnabled(store, true);
+			assertTrue(CarAppsFeature.canRun());
+			assertEquals(java.util.List.of(false, true), heard);
+
+			store.applyBooleanPref(CarAppsFeature.PREF_ENABLED, false);
+			CarAppsFeature.restoreEnabled(store);
+			assertFalse("restored at startup, silently", CarAppsFeature.isEnabled());
+			assertEquals(java.util.List.of(false, true), heard);
+		} finally {
+			CarAppsFeature.removeListener(listener);
+		}
 	}
 }

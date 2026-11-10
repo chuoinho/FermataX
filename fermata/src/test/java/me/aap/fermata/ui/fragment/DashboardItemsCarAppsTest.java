@@ -42,6 +42,21 @@ public class DashboardItemsCarAppsTest {
 	public void tearDown() {
 		CarAppsFeature.setState(RootState.ABSENT);
 		CarAppsFeature.setBackend(null);
+		CarAppsFeature.setEnabled(new BasicPreferenceStore(), true);
+	}
+
+	/** Turned off, it is hidden like a disabled addon; the layout editor (includeDisabled) still lists it. */
+	@Test
+	public void turnedOffItIsHiddenLikeADisabledAddon() {
+		CarAppsFeature.setState(RootState.GRANTED);
+		CarAppsFeature.setEnabled(new BasicPreferenceStore(), false);
+		assertNull(DashboardItems.getItem(context, DashboardItems.CAR_APPS, false));
+		assertNotNull(DashboardItems.getItem(context, DashboardItems.CAR_APPS, true));
+		for (DashboardItems.Item item : DashboardItems.getDashboardItems(context, new BasicPreferenceStore())) {
+			assertFalse(DashboardItems.CAR_APPS.equals(item.name));
+		}
+		CarAppsFeature.setEnabled(new BasicPreferenceStore(), true);
+		assertEquals(BuildConfig.AUTO, DashboardItems.getItem(context, DashboardItems.CAR_APPS, false) != null);
 	}
 
 	@Test
