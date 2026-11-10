@@ -634,7 +634,7 @@ public class CarDisplayClient {
 	 */
 	private void startViaAdb(Context ctx, String cmd) {
 		Object attempt = new Object();
-		if (!adbAttempt.compareAndSet(null, attempt)) return;
+		if (!adbAttempt.compareAndSet(null, attempt)) return; // one in flight, also from before a release(), decides this start
 		Log.i("Starting CarDisplayServer via local ADB");
 		AdbRecoveryJob.ensureUsbDebugging(ctx); // never undone: it keeps adbd, and so the server, alive without wireless debugging
 		boolean switchedOn = AdbRecoveryJob.enableAdbWifi(ctx); // undone when the command ends, whatever its result
@@ -1126,7 +1126,6 @@ public class CarDisplayClient {
 	}
 
 	public synchronized void onCarSessionStopped() {
-		adbAttempt.set(null);
 		stopKeepingPhoneAwake();
 		if (panelOff) {
 			restorePanelAndWake("session_stopped");
@@ -1135,9 +1134,12 @@ public class CarDisplayClient {
 		}
 	}
 
+	/**
+	 * A command still in flight is not forgotten: it may yet start a server, so a new start waits for its outcome (at most
+	 * the port wait plus the ADB watchdog) instead of running a second one, and it gives wireless debugging back itself.
+	 */
 	public synchronized void release() {
-		adbAttempt.set(null);
-		if (lastContext != null) AdbRecoveryJob.restoreAdbWifi(lastContext); // a start between two retries has no completion left
+		if (lastContext != null) restoreAdbWifiIfIdle(lastContext); // a start between two retries has no completion left
 		mainHandler.removeCallbacks(startTimeoutRunnable);
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();

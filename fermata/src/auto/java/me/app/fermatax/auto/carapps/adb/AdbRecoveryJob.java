@@ -36,8 +36,9 @@ import me.app.fermatax.auto.carapps.adb.AdbRecoveryPolicy.Action;
 import static me.app.fermatax.auto.carapps.adb.AdbRecoveryPolicy.next;
 
 /**
- * Starts the server again after a reboot or an app update, on a phone without root: once the phone is on an unmetered
- * network it asks CarDisplayClient to start it, which switches wireless debugging on for the command and hands it back.
+ * Starts the server again after a reboot or an app update, on a phone without root: once the phone is on Wi-Fi (metered
+ * or not: the command only runs over loopback) it asks CarDisplayClient to start it, which switches wireless debugging
+ * on for the command and hands it back.
  * The start itself stays in CarDisplayClient, so a car session and this job can only ever run one command between them.
  * No permission is requested; WRITE_SECURE_SETTINGS was granted by the pairing.
  */
@@ -83,9 +84,9 @@ public class AdbRecoveryJob extends JobService {
 		try {
 			JobScheduler js = ctx.getSystemService(JobScheduler.class);
 			if ((js == null) || (js.getPendingJob(JOB_ID) != null)) return;
-			// the very network hasWifi() looks for, else a job could run on another unmetered network and be spent
-			NetworkRequest wifi = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-					.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED).build();
+			// the very network hasWifi() looks for, else a job could run on another network and be spent; a home Wi-Fi
+			// flagged metered counts too, since nothing leaves the phone
+			NetworkRequest wifi = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build();
 			js.schedule(new JobInfo.Builder(JOB_ID, new ComponentName(ctx, AdbRecoveryJob.class))
 					.setRequiredNetwork(wifi).build());
 		} catch (Throwable t) {

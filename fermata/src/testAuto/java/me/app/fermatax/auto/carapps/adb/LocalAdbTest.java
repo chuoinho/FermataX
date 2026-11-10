@@ -173,9 +173,12 @@ public class LocalAdbTest {
         succeeds(adb.runAndClose(32123, "true")); // Generate identity before the short network deadline.
         ExecutorService peerWorker = Executors.newSingleThreadExecutor();
         java.util.concurrent.atomic.AtomicReference<Socket> owned = new java.util.concurrent.atomic.AtomicReference<>();
+        // OPEN: a real 700 ms deadline raced connect, CNXN and OPEN; it fires only once the peer has read OPEN
+        ManualDeadline manual = (mode == 2) ? new ManualDeadline() : null;
+        CountDownLatch openRead = new CountDownLatch(1);
         try (java.net.ServerSocket server = new java.net.ServerSocket(0, 1,
                 java.net.InetAddress.getByName("127.0.0.1"));
-             LocalAdb real = new LocalAdb(files, executor, scheduler, (host, socket, key, cert, timeout) -> {
+             LocalAdb real = new LocalAdb(files, executor, (manual != null) ? manual : scheduler, (host, socket, key, cert, timeout) -> {
                  owned.set(socket);
                  return LocalAdb.DEFAULT_TRANSPORT_FACTORY.create(host, socket, key, cert, timeout);
              }, 700)) {
@@ -194,6 +197,7 @@ public class LocalAdbTest {
                         peer.getOutputStream().write(header.array());
                         peer.getOutputStream().flush();
                         assertEquals("Fake peer must stall after an actual OPEN", 0x4e45504f, readPacket(input));
+                        openRead.countDown();
                     }
                     while (input.read() != -1) { }
                     return true;
@@ -201,10 +205,31 @@ public class LocalAdbTest {
             });
             FutureSupplier<Void> result = mode == 1 ? real.pair(server.getLocalPort(), "000000")
                     : real.runAndClose(server.getLocalPort(), "true");
+            if (manual != null) {
+                assertTrue("The client must send OPEN", openRead.await(5, TimeUnit.SECONDS));
+                manual.fire();
+            }
             assertTrue("Deadline must remain a timeout after socket shutdown", failure(result) instanceof TimeoutException);
             assertTrue("The watchdog must close the actual transport", owned.get().isClosed());
             assertTrue("The local peer must observe disconnection", disconnected.get(4, TimeUnit.SECONDS));
-        } finally { peerWorker.shutdownNow(); }
+        } finally {
+            peerWorker.shutdownNow();
+            if (manual != null) manual.shutdownNow();
+        }
+    }
+
+    /** Holds the deadline LocalAdb schedules until the test fires it; its own timer is a day away, only cancelled. */
+    private static final class ManualDeadline extends ScheduledThreadPoolExecutor {
+        private volatile Runnable deadline;
+
+        ManualDeadline() { super(1); }
+
+        @Override public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+            deadline = command;
+            return super.schedule(() -> { }, 1, TimeUnit.DAYS);
+        }
+
+        void fire() { deadline.run(); }
     }
 
     private static int readPacket(java.io.InputStream input) throws IOException {

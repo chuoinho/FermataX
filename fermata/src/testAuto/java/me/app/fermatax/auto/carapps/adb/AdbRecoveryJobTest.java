@@ -279,7 +279,7 @@ public class AdbRecoveryJobTest {
 		assertEquals(1, pendingJobs());
 	}
 
-	@Test public void scheduleBuildsOneJobOnUnmeteredWifi() {
+	@Test public void scheduleBuildsOneJobOnAnyWifiMeteredOrNot() {
 		AdbRecoveryJob.schedule(ctx);
 		AdbRecoveryJob.schedule(ctx);
 
@@ -287,9 +287,10 @@ public class AdbRecoveryJobTest {
 		JobInfo job = jobs().getAllPendingJobs().get(0);
 		assertEquals(AdbRecoveryJob.JOB_ID, job.getId());
 		android.net.NetworkRequest network = job.getRequiredNetwork();
-		assertNotNull("the constraint must be the same Wi-Fi the job checks, not any unmetered network", network);
+		assertNotNull("the constraint must be the same Wi-Fi the job checks", network);
 		assertTrue(network.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI));
-		assertTrue(network.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+		assertFalse("the command is loopback only: a home Wi-Fi flagged metered must recover too",
+				network.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
 		assertFalse(job.isPeriodic());
 		assertEquals(AdbRecoveryJob.class.getName(), job.getService().getClassName());
 	}

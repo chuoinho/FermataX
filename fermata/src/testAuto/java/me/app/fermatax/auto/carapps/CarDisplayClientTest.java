@@ -288,21 +288,48 @@ public class CarDisplayClientTest {
 		context.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit().clear().commit();
 	}
 
+	/** A command still running after release() may start a server: a new start waits for it, never runs a second. */
 	@Test
-	public void releaseAndSessionStopForgetAStartInFlight() {
-		useChannels(() -> new Promise<>());
+	public void aStartAfterReleaseWaitsForTheCommandStillInFlight() {
+		List<Promise<Void>> runs = new ArrayList<>();
+		useChannels(() -> {
+			Promise<Void> run = new Promise<>();
+			runs.add(run);
+			return run;
+		});
 		CarAppsFeature.setAdbPaired(true);
 		client.ensureRunning(context);
 		assertEquals(1, adbCommands.size());
 
 		client.release();
 		client.ensureRunning(context);
+		assertEquals("one command at a time", 1, adbCommands.size());
+		assertEquals(CarDisplayClient.State.STARTING, client.state());
+
+		runs.get(0).completeExceptionally(new java.io.IOException("no port"));
+		assertEquals("its outcome is the new start's", CarDisplayClient.State.RETRYING, client.state());
+		ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
 		assertEquals(2, adbCommands.size());
+	}
+
+	@Test
+	public void sessionStopNeverLeavesTheClientStarting() {
+		List<Promise<Void>> runs = new ArrayList<>();
+		useChannels(() -> {
+			if (!runs.isEmpty()) return Completed.failed(new java.io.IOException("no port")); // the retries
+			Promise<Void> run = new Promise<>();
+			runs.add(run);
+			return run;
+		});
+		CarAppsFeature.setAdbPaired(true);
+		client.ensureRunning(context);
 
 		client.onCarSessionStopped();
-		client.release();
-		client.ensureRunning(context);
-		assertEquals(3, adbCommands.size());
+		runs.get(0).completeExceptionally(new java.io.IOException("no port"));
+
+		assertEquals(CarDisplayClient.State.RETRYING, client.state());
+		ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.MINUTES);
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
 	}
 
 	@Test
@@ -1745,7 +1772,7 @@ public class CarDisplayClientTest {
 	}
 
 	@Test
-	public void aStaleCompletionDoesNotRestoreUnderTheNewStart() {
+	public void releaseLeavesTheSettingToTheCommandInFlight() {
 		List<Promise<Void>> runs = new ArrayList<>();
 		useChannels(() -> {
 			Promise<Void> run = new Promise<>();
@@ -1754,17 +1781,12 @@ public class CarDisplayClientTest {
 		});
 		recoveryEnv(true, 0);
 		client.ensureRunning(context);
-		client.release(); // the first command is abandoned but still running
-		assertEquals(0, adbWifi());
-		client.ensureRunning(context);
-		assertEquals(2, runs.size());
+		client.release(); // the command still runs and owns the setting
 		assertEquals(1, adbWifi());
+		client.ensureRunning(context);
+		assertEquals(1, runs.size());
 
 		runs.get(0).complete(null);
-		assertEquals("the command in flight owns the setting", 1, adbWifi());
-		assertTrue(markerPresent());
-
-		runs.get(1).complete(null);
 		assertEquals(0, adbWifi());
 		assertFalse(markerPresent());
 	}
