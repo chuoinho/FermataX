@@ -39,6 +39,8 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	private final int appUid;
 	private final int versionCode;
 	private final String appPackage;
+	/** Started over ADB: nothing can start it again without Wi-Fi, so it never leaves on its own. */
+	private final boolean persist;
 
 	private volatile VirtualDisplay virtualDisplay;
 	private volatile CarVirtualDevice carDevice;
@@ -56,9 +58,14 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	};
 
 	public CarDisplayServerImpl(int appUid, int versionCode, String appPackage) {
+		this(appUid, versionCode, appPackage, false);
+	}
+
+	public CarDisplayServerImpl(int appUid, int versionCode, String appPackage, boolean persist) {
 		this.appUid = appUid;
 		this.versionCode = versionCode;
 		this.appPackage = appPackage;
+		this.persist = persist;
 		scheduleIdleExit();
 	}
 
@@ -414,6 +421,7 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 
 	/** One timer from the last detach (or process start): exit only if still without a client. */
 	private void scheduleIdleExit() {
+		if (persist) return;
 		Looper l = Looper.getMainLooper();
 		if (l == null) return;
 		Handler h = new Handler(l);

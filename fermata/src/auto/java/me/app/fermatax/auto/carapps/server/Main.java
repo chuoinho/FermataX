@@ -31,7 +31,7 @@ public class Main {
 		}
 
 		if (args.length < 3) {
-			System.err.println("Usage: app_process / me.app.fermatax.auto.carapps.server.Main <appUid> <versionCode> <appPackage> | --selftest");
+			System.err.println("Usage: app_process / me.app.fermatax.auto.carapps.server.Main <appUid> <versionCode> <appPackage> [persist] | --selftest");
 			System.exit(1);
 			return;
 		}
@@ -51,7 +51,7 @@ public class Main {
 
 			Runtime.getRuntime().addShutdownHook(new Thread(Hidden::restorePanelIfForcedOff));
 
-			server = new CarDisplayServerImpl(appUid, versionCode, appPackage);
+			server = new CarDisplayServerImpl(appUid, versionCode, appPackage, persists(args));
 			System.out.println("SERVER_READY uid=" + appUid + " version=" + versionCode + " pkg=" + appPackage);
 			// stdout goes to /dev/null when the app starts it: logcat is where a test phone shows who runs it
 			android.util.Log.i("CarDisplayServer", "started as uid " + Process.myUid() + " on SDK " + Build.VERSION.SDK_INT
@@ -71,6 +71,11 @@ public class Main {
 			}
 			System.exit(2);
 		}
+	}
+
+	/** The ADB channel adds "persist": the server must not idle-exit, see CarDisplayServerImpl. */
+	static boolean persists(String[] args) {
+		return (args.length > 3) && "persist".equals(args[3]);
 	}
 
 	private static void handoffBinderToApp(String appPackage, int appUid, IBinder serverBinder) {

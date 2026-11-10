@@ -20,6 +20,12 @@ public class ServerCommandTest {
 	}
 
 	@Test
+	public void rootServerIsNotAskedToPersist() {
+		assertFalse(ServerCommand.build("/data/app/base.apk", 10150, 21000, "pkg").contains("persist"));
+		assertFalse(ServerCommand.buildForRoot("/data/app/base.apk", 10150, 21000, "pkg", 34).contains("persist"));
+	}
+
+	@Test
 	public void ServerCommandContainsMainClassAndArgs() {
 		String apkPath = "/data/app/base.apk";
 		int appUid = 10150;
@@ -75,7 +81,7 @@ public class ServerCommandTest {
 	@Test
 	public void adbRunsTheServerInTheForegroundIgnoringHangup() {
 		assertEquals("CLASSPATH='/data/app/base.apk' nohup app_process / me.app.fermatax.auto.carapps.server.Main 10150 21000 pkg"
-				+ " >/dev/null 2>&1", ServerCommand.buildForAdb("/data/app/base.apk", 10150, 21000, "pkg"));
+				+ " persist >/dev/null 2>&1", ServerCommand.buildForAdb("/data/app/base.apk", 10150, 21000, "pkg"));
 		assertFalse(ServerCommand.buildForAdb("/data/app/base.apk", 10150, 21000, "pkg").endsWith("&"));
 		assertTrue(ServerCommand.buildForAdb("/data/app/foo'bar/base.apk", 10150, 21000, "pkg")
 				.startsWith("CLASSPATH='/data/app/foo'\\''bar/base.apk' "));

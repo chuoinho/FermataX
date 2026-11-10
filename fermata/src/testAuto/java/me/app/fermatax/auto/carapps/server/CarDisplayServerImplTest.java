@@ -66,6 +66,36 @@ public class CarDisplayServerImplTest {
 		assertTrue(HiddenTest.FakePanel.modes.isEmpty());
 	}
 
+	/** The root channel can start a server again at any time, so an idle one leaves (the timer is never run here). */
+	@Test
+	public void rootServerArmsTheIdleExit() {
+		CarDisplayServerImpl server = new CarDisplayServerImpl(android.os.Binder.getCallingUid(), 1, "p");
+		assertTrue(idleTimerArmed());
+		server.releaseInternal();
+		assertTrue(idleTimerArmed());
+	}
+
+	/** Without Wi-Fi an ADB-started server cannot be started again: it must outlive the end of a car session. */
+	@Test
+	public void adbStartedServerNeverArmsTheIdleExit() {
+		CarDisplayServerImpl server = new CarDisplayServerImpl(android.os.Binder.getCallingUid(), 1, "p", true);
+		assertFalse(idleTimerArmed());
+		server.releaseInternal();
+		assertFalse(idleTimerArmed());
+	}
+
+	@Test
+	public void onlyThePersistArgumentKeepsTheServer() {
+		assertTrue(Main.persists(new String[]{"10150", "1", "p", "persist"}));
+		assertFalse(Main.persists(new String[]{"10150", "1", "p"}));
+		assertFalse(Main.persists(new String[]{"10150", "1", "p", "other"}));
+	}
+
+	private static boolean idleTimerArmed() {
+		return !org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).getNextScheduledTaskTime()
+				.equals(java.time.Duration.ZERO);
+	}
+
 	/** Android 10: a display resized to 0 kills system_server, divide by zero in configureDisplayPolicy. */
 	@Test
 	public void aLostSurfaceDoesNotResizeTheDisplay() {
