@@ -268,6 +268,10 @@ public class CarAppsFragmentTest {
 			android.app.job.JobScheduler jobs = (android.app.job.JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 			assertEquals("connecting Wi-Fi must be able to start the server", 1, jobs.getAllPendingJobs().size());
 
+			jobs.cancelAll(); // it ran (on a refused Wi-Fi the constraint holds at once) and ended
+			fragment.updateUiState();
+			assertEquals("scheduled on entering NEEDS_WIFI, not on every update", 0, jobs.getAllPendingJobs().size());
+
 			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = c -> true;
 			fragment.updateUiState();
 

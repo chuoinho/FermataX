@@ -601,6 +601,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		dropStaleAttach();
 		Context ctx = getContext();
 		// a running server needs no Wi-Fi: while it is asked for its binder the car shows the loading screen
+		CarAppsUiState.State previous = uiState;
 		uiState = CarAppsUiState.from(root, clientState,
 				(ctx == null) || client.isAskingRunningServer() || AdbRecoveryJob.hasWifi(ctx));
 		applyToolbarVisibility();
@@ -613,8 +614,9 @@ public class CarAppsFragment extends MainActivityFragment {
 			case LOADING:
 			case NEEDS_WIFI:
 				tvLoading.setText(uiState == CarAppsUiState.State.NEEDS_WIFI ? R.string.car_apps_needs_wifi : R.string.car_apps_loading);
-				// Connecting to Wi-Fi is then what starts the server, also with this screen closed
-				if (uiState == CarAppsUiState.State.NEEDS_WIFI) AdbRecoveryJob.schedule(ctx);
+				// Connecting to Wi-Fi is then what starts the server, also with this screen closed; once per entry, since
+				// on a refused Wi-Fi the job's constraint holds at once and each update would run it again
+				if ((uiState == CarAppsUiState.State.NEEDS_WIFI) && (previous != uiState)) AdbRecoveryJob.schedule(ctx);
 				loadingOverlay.setVisibility(View.VISIBLE);
 				needsRootOverlay.setVisibility(View.GONE);
 				serverErrorOverlay.setVisibility(View.GONE);
