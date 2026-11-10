@@ -613,7 +613,9 @@ public class CarAppsFragment extends MainActivityFragment {
 		switch (uiState) {
 			case LOADING:
 			case NEEDS_WIFI:
-				tvLoading.setText(uiState == CarAppsUiState.State.NEEDS_WIFI ? R.string.car_apps_needs_wifi : R.string.car_apps_loading);
+			case OFF:
+				tvLoading.setText((uiState == CarAppsUiState.State.OFF) ? R.string.car_apps_turned_off
+						: (uiState == CarAppsUiState.State.NEEDS_WIFI) ? R.string.car_apps_needs_wifi : R.string.car_apps_loading);
 				// Connecting to Wi-Fi is then what starts the server, also with this screen closed; once per entry, since
 				// on a refused Wi-Fi the job's constraint holds at once and each update would run it again
 				if ((uiState == CarAppsUiState.State.NEEDS_WIFI) && (previous != uiState)) AdbRecoveryJob.schedule(ctx);

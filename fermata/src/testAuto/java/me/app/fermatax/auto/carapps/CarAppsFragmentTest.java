@@ -249,6 +249,27 @@ public class CarAppsFragmentTest {
 	}
 
 	@Test
+	public void turningOffWithTheScreenOpenShowsItIsOff() {
+		client.resetForTesting();
+		client.setStartersForTest((c, cmd) -> {
+		}, (c, cmd) -> new me.aap.utils.async.Promise<>());
+		CarAppsFeature.setState(RootState.ABSENT);
+		CarAppsFeature.setAdbPaired(true);
+		CarAppsFragment fragment = createAndAttachFragment();
+		try {
+			CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), false);
+			org.robolectric.shadows.ShadowLooper.idleMainLooper();
+			assertEquals(CarAppsUiState.State.OFF, fragment.getUiState());
+			View screen = (View) fragment.getGrantRootButton().getParent().getParent();
+			assertTrue(textOf(screen).contains(context.getString(me.aap.fermata.R.string.car_apps_turned_off)));
+			assertFalse(textOf(screen).contains(context.getString(me.aap.fermata.R.string.car_apps_loading)));
+		} finally {
+			CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), true);
+			CarAppsFeature.setAdbPaired(false);
+		}
+	}
+
+	@Test
 	public void noWifiOverAdbAsksForWifiAndSchedulesTheRecoveryJob() {
 		java.util.function.Predicate<Context> savedWifi = me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck;
 		try {

@@ -17,7 +17,9 @@ public final class CarAppsUiState {
 		NEEDS_ROOT,
 		NEEDS_WIFI,
 		SERVER_ERROR,
-		READY
+		READY,
+		/** Phone Apps was turned off in the Addons catalog. */
+		OFF
 	}
 
 	private CarAppsUiState() {
@@ -25,6 +27,7 @@ public final class CarAppsUiState {
 
 	/** Without root the server is started over the phone's wireless debugging, which exists only on Wi-Fi. */
 	public static State from(@Nullable RootState root, @Nullable CarDisplayClient.State clientState, boolean wifi) {
+		if (!CarAppsFeature.isEnabled()) return State.OFF;
 		if (!CarAppsFeature.canRun(root, CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT)) {
 			return State.NEEDS_ROOT;
 		}

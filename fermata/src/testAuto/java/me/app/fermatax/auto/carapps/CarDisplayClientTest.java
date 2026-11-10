@@ -426,6 +426,25 @@ public class CarDisplayClientTest {
 		assertTrue("a live server answered: no start command", adbCommands.isEmpty());
 	}
 
+	/** The session ended before the pinged server answered: its binder is kept for the next session, not made READY. */
+	@Test
+	public void aLatePingAnswerAfterReleaseIsKeptNotAdopted() {
+		useChannels(() -> new Promise<>());
+		CarAppsFeature.setAdbPaired(true);
+		usePing(true);
+		client.ensureRunning(context);
+		client.release();
+
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false)), 2000);
+		assertEquals("no session: not READY", CarDisplayClient.State.IDLE, client.state());
+
+		int pinged = pings;
+		client.ensureRunning(context);
+		assertEquals("the next session takes it at once", CarDisplayClient.State.READY, client.state());
+		assertEquals(pinged, pings);
+		assertTrue(adbCommands.isEmpty());
+	}
+
 	@Test
 	public void nobodyAnswersThePingSoTheServerIsStartedOnce() {
 		useChannels(() -> new Promise<>());

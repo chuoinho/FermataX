@@ -116,6 +116,8 @@ public class CarDisplayClient {
 	private volatile Predicate<Context> serverPing = CarDisplayClient::pingServer;
 	private volatile Predicate<Context> serverStop = CarDisplayClient::stopServer;
 	private volatile boolean askingRunningServer;
+	/** A ping was sent and not yet answered; a release in between does not clear it (the answer may still come). */
+	private boolean pingUnanswered;
 	private volatile boolean failedForWifi;
 	private final Runnable serverPingTimeout = () -> {
 		synchronized (CarDisplayClient.this) {
@@ -429,6 +431,8 @@ public class CarDisplayClient {
 		// a server answered the ping: no start, or a stale one is replaced by the one start below
 		mainHandler.removeCallbacks(serverPingTimeout);
 		askingRunningServer = false;
+		boolean lateAnswer = pingUnanswered && (state == State.IDLE);
+		pingUnanswered = false;
 		if (!CarAppsFeature.isEnabled()) {
 			// started by a command in flight when Phone Apps was turned off: not adopted, told to exit
 			recordDiagnostic("server_failed", Map.of("reason", "turned_off"));
@@ -457,6 +461,11 @@ public class CarDisplayClient {
 			if (lastContext != null && state == State.STARTING) {
 				startServer(lastContext);
 			}
+			return;
+		}
+
+		if (lateAnswer) {
+			idleBinder = binder; // the session ended meanwhile: the next one takes it back, nothing is READY without one
 			return;
 		}
 
@@ -620,6 +629,7 @@ public class CarDisplayClient {
 		}
 		if (!serverPing.test(ctx)) return false;
 		recordDiagnostic("server_ping", Map.of("state", "sent"));
+		pingUnanswered = true;
 		askingRunningServer = true; // before STARTING: its listeners must not ask for Wi-Fi meanwhile
 		setState(State.STARTING);
 		mainHandler.removeCallbacks(serverPingTimeout);
@@ -1340,6 +1350,7 @@ public class CarDisplayClient {
 		this.serverUid = -1;
 		mainHandler.removeCallbacks(serverPingTimeout);
 		this.askingRunningServer = false;
+		this.pingUnanswered = false;
 		this.serverPing = c -> false; // tests that start over ADB expect the command at once; ping tests set their own
 		this.serverStop = c -> false;
 		this.state = State.IDLE;

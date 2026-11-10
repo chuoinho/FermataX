@@ -3,6 +3,7 @@
     <string name="car_apps_title">Apps del teléfono</string>
     <string name="car_apps_dashboard_sub">Lanzador de pantalla virtual independiente</string>
     <string name="car_apps_addon_desc">Apps del teléfono en la pantalla del coche. Al desactivarlo se detienen; la depuración USB sigue activada.</string>
+    <string name="car_apps_turned_off">Apps del teléfono está desactivado. Actívalo en Complementos.</string>
     <string name="car_apps_loading">Iniciando pantalla del coche…</string>
     <string name="car_apps_needs_root">Se requiere acceso root para ejecutar apps del teléfono en la pantalla del coche</string>
     <string name="car_apps_grant_root">Conceder root</string>

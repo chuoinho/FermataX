@@ -3,6 +3,7 @@
     <string name="car_apps_title">Telefon-Apps</string>
     <string name="car_apps_dashboard_sub">Unabhängiger virtueller Display-Launcher</string>
     <string name="car_apps_addon_desc">Telefon-Apps auf dem Autobildschirm. Ausgeschaltet werden sie beendet; USB-Debugging bleibt an.</string>
+    <string name="car_apps_turned_off">Telefon-Apps ist ausgeschaltet. In Addons einschalten.</string>
     <string name="car_apps_loading">Fahrzeuganzeige wird gestartet…</string>
     <string name="car_apps_needs_root">Root-Zugriff ist erforderlich, um Telefon-Apps auf dem Fahrzeugdisplay auszuführen</string>
     <string name="car_apps_grant_root">Root gewähren</string>

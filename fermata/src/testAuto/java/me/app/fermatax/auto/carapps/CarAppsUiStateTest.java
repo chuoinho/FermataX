@@ -18,6 +18,18 @@ public class CarAppsUiStateTest {
 	@After
 	public void tearDown() {
 		CarAppsFeature.setAdbPaired(false);
+		CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), true);
+	}
+
+	/** Turned off with the screen open: it says so, it does not wait for a server that never comes. */
+	@Test
+	public void turnedOffIsItsOwnStateWhateverTheClient() {
+		CarAppsFeature.setAdbPaired(true);
+		CarAppsFeature.setEnabled(new me.aap.utils.pref.BasicPreferenceStore(), false);
+		for (CarDisplayClient.State s : CarDisplayClient.State.values()) {
+			assertEquals(CarAppsUiState.State.OFF, CarAppsUiState.from(RootState.GRANTED, s, true));
+			assertEquals(CarAppsUiState.State.OFF, CarAppsUiState.from(RootState.ABSENT, s, false));
+		}
 	}
 
 	@Test
