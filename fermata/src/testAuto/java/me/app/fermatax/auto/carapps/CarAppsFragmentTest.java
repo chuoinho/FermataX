@@ -524,6 +524,35 @@ public class CarAppsFragmentTest {
 		assertEquals(PhoneDimActivity.class.getName(), nextPhoneLaunchClass());
 	}
 
+	/** The server died while FermataX was in the background on the car: the new one has no display yet. */
+	@Test public void serverRestartedWhileStoppedGetsAFreshAttach() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		fragment.getSurfaceHolderCallback().surfaceDestroyed(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		fragment.onStop();
+		client.release(); // the fragment no longer hears the client
+		TestServerBinder restarted = new TestServerBinder();
+		client.onServerBinderReceived(restarted);
+
+		fragment.onStart();
+		assertEquals("no display exists yet: nothing to darken the phone for", null, restarted.lastPhoneLaunch);
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+
+		assertEquals(1, restarted.attachCount.get());
+		assertEquals(PhoneDimActivity.class.getName(), restarted.lastPhoneLaunch.getClassName());
+	}
+
+	/** Coming back to the same server keeps the display and the app on it: no second attach. */
+	@Test public void sameServerAfterStopKeepsItsDisplay() {
+		CarAppsFragment fragment = fragmentShowingCarDisplay();
+		fragment.getSurfaceHolderCallback().surfaceDestroyed(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+		fragment.onStop();
+
+		fragment.onStart();
+		fragment.getSurfaceHolderCallback().surfaceCreated(new FakeSurfaceHolder(createTestSurface(), 1024, 600));
+
+		assertEquals(1, serverBinder.attachCount.get());
+	}
+
 	private CarAppsFragment fragmentShowingCarDisplay() {
 		CarAppsFeature.setState(RootState.GRANTED);
 		client.ensureRunning(context); // gives the client the context it watches the phone with

@@ -63,6 +63,7 @@ public class CarAppsFragment extends MainActivityFragment {
 	private CarAppsNavModel.Screen screen = CarAppsNavModel.Screen.DRAWER;
 	private CarAppsUiState.State uiState = CarAppsUiState.State.LOADING;
 	private boolean attached = false;
+	private int attachedEpoch;
 	private boolean barsHidden = false;
 	private static final long TOOLBAR_PEEK_MS = 4000;
 	private boolean peeking;
@@ -115,10 +116,11 @@ public class CarAppsFragment extends MainActivityFragment {
 					(surfaceView != null && surfaceView.getHeight() > 0 ? surfaceView.getHeight() : 720);
 			int dpi = getDensityDpi();
 
+			dropStaleAttach();
 			if (!attached) {
 				int res = client.attach(surface, w, h, dpi);
 				if (res >= 0) {
-					attached = true;
+					markAttached();
 					onDisplayAttached();
 					updateUiState();
 				}
@@ -130,10 +132,11 @@ public class CarAppsFragment extends MainActivityFragment {
 		@Override
 		public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
 			int dpi = getDensityDpi();
+			dropStaleAttach();
 			if (!attached) {
 				int res = client.attach(holder.getSurface(), width, height, dpi);
 				if (res >= 0) {
-					attached = true;
+					markAttached();
 					onDisplayAttached();
 					updateUiState();
 				}
@@ -578,6 +581,7 @@ public class CarAppsFragment extends MainActivityFragment {
 			attached = false;
 			dimRequested = false;
 		}
+		dropStaleAttach();
 		Context ctx = getContext();
 		uiState = CarAppsUiState.from(root, clientState, (ctx == null) || AdbRecoveryJob.hasWifi(ctx));
 		applyToolbarVisibility();
@@ -712,8 +716,21 @@ public class CarAppsFragment extends MainActivityFragment {
 		int dpi = getDensityDpi();
 		int res = client.attach(surface, w, h, dpi);
 		if (res >= 0) {
-			attached = true;
+			markAttached();
 			onDisplayAttached();
+		}
+	}
+
+	private void markAttached() {
+		attached = true;
+		attachedEpoch = client.serverEpoch();
+	}
+
+	/** A server that restarted while this page was stopped has no display: attach again, and dim the phone again. */
+	private void dropStaleAttach() {
+		if (attached && attachedEpoch != client.serverEpoch()) {
+			attached = false;
+			dimRequested = false;
 		}
 	}
 

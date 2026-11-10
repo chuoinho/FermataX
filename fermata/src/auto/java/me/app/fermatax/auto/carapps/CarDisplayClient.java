@@ -101,6 +101,8 @@ public class CarDisplayClient {
 
 	private volatile ICarDisplayServer server;
 	private volatile IBinder serverBinder;
+	/** Counts connected servers: a display belongs to one of them, and a new one starts without any. */
+	private volatile int serverEpoch;
 	private final IBinder clientToken = new Binder();
 
 	private final TouchQueue touchQueue = new TouchQueue(64, 250_000_000L);
@@ -142,6 +144,10 @@ public class CarDisplayClient {
 
 	public State state() {
 		return state;
+	}
+
+	int serverEpoch() {
+		return serverEpoch;
 	}
 
 	public void addStateListener(Consumer<State> listener) {
@@ -437,6 +443,7 @@ public class CarDisplayClient {
 
 		this.server = s;
 		this.serverBinder = binder;
+		this.serverEpoch++;
 		if (restorePanelOnReconnect) {
 			try {
 				s.setPanelPower(true);
