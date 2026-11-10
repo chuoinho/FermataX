@@ -243,7 +243,23 @@ public final class LocalAdb implements Closeable {
                          int timeoutMillis) throws Exception;
     }
 
-    private static final class ManagerTransport extends AbsAdbConnectionManager implements Transport {
+    /**
+     * The label Android lists under Wireless debugging > Paired devices: model plus 4 hex chars of the public key hash,
+     * so several installs can be told apart. It is only a label (pairing trusts the key), and at most 40 ASCII chars.
+     */
+    static String deviceName(Certificate certificate, String model) {
+        String id;
+        try {
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(certificate.getPublicKey().getEncoded());
+            id = String.format("%02x%02x", hash[0], hash[1]);
+        } catch (java.security.NoSuchAlgorithmException error) { throw new IllegalStateException(error); }
+        String clean = model == null ? "" : model.replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("^-+|-+$", "");
+        if (clean.length() > 26) clean = clean.substring(0, 26);
+        return clean.isEmpty() ? "FermataX " + id : "FermataX " + clean + " " + id;
+    }
+
+    static final class ManagerTransport extends AbsAdbConnectionManager implements Transport {
         private final Socket socket;
         private final PrivateKey key;
         private final Certificate certificate;
@@ -262,7 +278,7 @@ public final class LocalAdb implements Closeable {
 
         @Override protected PrivateKey getPrivateKey() { return key; }
         @Override protected Certificate getCertificate() { return certificate; }
-        @Override protected String getDeviceName() { return "FermataX"; }
+        @Override protected String getDeviceName() { return deviceName(certificate, Build.MODEL); }
         @Override protected AdbConnection createConnection(String host, int port) throws IOException {
             return new AdbConnection.Builder(HOST, port).setSocket(socket, timeout).setApi(getApi())
                     .setPrivateKey(key).setCertificate(certificate).setDeviceName(getDeviceName()).build();
