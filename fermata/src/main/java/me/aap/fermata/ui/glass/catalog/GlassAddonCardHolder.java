@@ -124,7 +124,7 @@ public class GlassAddonCardHolder extends RecyclerView.ViewHolder {
         if (isEditMode) {
             if (item.isEnabled) {
                 itemView.setAlpha(1.0f);
-                if (item.isAddon) {
+                if (item.hasSwitch()) {
                     descView.setText(safeGetString(ctx, R.string.glass_addon_enabled_hint, "Enabled · Tap to disable"));
                     descView.setTextColor(colors.getTextSecondary());
                 } else {

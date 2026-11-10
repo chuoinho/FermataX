@@ -72,6 +72,11 @@ public class GlassAddonsCatalogFragment extends MainActivityFragment implements 
             this.addonInfo = addonInfo;
             this.isEnabled = isEnabled;
         }
+
+        /** True for items the user can switch on and off in edit mode: addons and Phone Apps. */
+        public boolean hasSwitch() {
+            return isAddon || CAR_APPS_KEY.equals(key);
+        }
     }
 
     private RecyclerView recyclerView;

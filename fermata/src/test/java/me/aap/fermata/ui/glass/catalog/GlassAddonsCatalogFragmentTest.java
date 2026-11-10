@@ -88,6 +88,25 @@ public class GlassAddonsCatalogFragmentTest {
         }
     }
 
+    /** In edit mode Phone Apps says what a tap does, like the real addons; core destinations still say drag. */
+    @Test
+    public void carAppsEditModeLabelMatchesAddons() {
+        android.content.Context ctx = org.robolectric.RuntimeEnvironment.getApplication();
+        GlassAddonCardHolder holder = GlassAddonCardHolder.create(ctx, false);
+        java.util.List<GlassAddonsCatalogFragment.CatalogItem> on = new java.util.ArrayList<>();
+        java.util.List<GlassAddonsCatalogFragment.CatalogItem> off = new java.util.ArrayList<>();
+        GlassAddonsCatalogFragment.addCarApps(on, ctx, true, true);
+        GlassAddonsCatalogFragment.addCarApps(off, ctx, true, false);
+        holder.bind(on.get(0), false, true);
+        assertEquals(ctx.getString(R.string.glass_addon_enabled_hint), holder.descView.getText().toString());
+        holder.bind(off.get(0), false, true);
+        assertEquals(ctx.getString(R.string.glass_addon_disabled_hint), holder.descView.getText().toString());
+        GlassAddonsCatalogFragment.CatalogItem core = new GlassAddonsCatalogFragment.CatalogItem(
+                "folders", R.id.folders_fragment, "Folders", "", 0, 0, false, null, true);
+        holder.bind(core, false, true);
+        assertEquals(ctx.getString(R.string.glass_addon_drag_hint), holder.descView.getText().toString());
+    }
+
     public static class TestHostActivity extends ActivityBase {
         private boolean delegateReady;
         private MainActivityDelegate testDelegate;
