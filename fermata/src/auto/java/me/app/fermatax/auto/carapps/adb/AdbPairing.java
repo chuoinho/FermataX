@@ -153,6 +153,7 @@ public final class AdbPairing {
 						"pm grant " + ctx.getPackageName() + " android.permission.WRITE_SECURE_SETTINGS"))
 				.onCompletion((r, err) -> {
 					adb.close();
+					AdbRecoveryJob.ensureUsbDebugging(ctx); // with the permission, grant or not: the server must outlive wireless debugging
 					try {
 						recoveryScheduler.run();
 					} catch (Throwable t) {

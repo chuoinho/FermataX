@@ -57,6 +57,7 @@ public class AdbPairingTest {
 	private final List<String> shell = new ArrayList<>();
 	private final List<String> codes = new ArrayList<>();
 	private final List<Boolean> pairedWhenGrantRan = new ArrayList<>();
+	private final List<String> events = new ArrayList<>();
 	private Context ctx;
 	private boolean pairResult = true;
 	private Exception grantError;
@@ -71,10 +72,17 @@ public class AdbPairingTest {
 		AdbPairing.pairingPort = c -> completed(40369);
 		AdbPairing.connectPort = c -> completed(41000);
 		AdbPairing.recoveryScheduler = recovery::incrementAndGet;
-		AdbPairing.serverStarter = c -> serverStarts.incrementAndGet();
+		AdbPairing.serverStarter = c -> {
+			events.add("server");
+			serverStarts.incrementAndGet();
+		};
+		AdbRecoveryJob.usbDebuggingWriter = (c, v) -> events.add("usb=" + v);
+		shadowOf((android.app.Application) ctx).grantPermissions("android.permission.WRITE_SECURE_SETTINGS");
+		Settings.Global.putInt(ctx.getContentResolver(), "adb_enabled", 0);
 	}
 
 	@After public void tearDown() throws Exception {
+		AdbRecoveryJob.usbDebuggingWriter = AdbRecoveryJob::putAdbEnabled;
 		AdbPairing.resetForTesting();
 		CarAppsFeature.setAdbPaired(false);
 		executor.shutdownNow();
@@ -90,6 +98,7 @@ public class AdbPairingTest {
 		public void run(int port, String destination) throws Exception {
 			pairedWhenGrantRan.add(CarAppsFeature.isAdbPaired());
 			shell.add(destination);
+			events.add("grant");
 			if (grantError != null) throw grantError;
 		}
 		public void close() { }
@@ -265,6 +274,25 @@ public class AdbPairingTest {
 		AdbPairing.adbFactory = c -> { throw new IllegalStateException("boom"); };
 		reply("123456");
 		assertEquals(AdbPairing.State.FAILED, AdbPairing.state());
+	}
+
+	@Test public void pairedTurnsUsbDebuggingOnAfterTheGrantAndBeforeTheServerStart() throws Exception {
+		submit("123456");
+		assertEquals(List.of("grant", "usb=1", "server"), events);
+	}
+
+	@Test public void failedGrantWithThePermissionStillTurnsUsbDebuggingOn() throws Exception {
+		grantError = new java.io.IOException("shell failed");
+		submit("123456");
+		assertEquals(List.of("grant", "usb=1", "server"), events);
+	}
+
+	@Test public void withoutThePermissionPairingDoesNotTouchUsbDebugging() throws Exception {
+		grantError = new java.io.IOException("shell failed");
+		shadowOf((android.app.Application) ctx).denyPermissions("android.permission.WRITE_SECURE_SETTINGS");
+		submit("123456");
+		assertEquals(List.of("grant", "server"), events);
+		assertEquals(AdbPairing.State.DONE, AdbPairing.state());
 	}
 
 	@Test public void failedGrantStillCountsAsPaired() throws Exception {

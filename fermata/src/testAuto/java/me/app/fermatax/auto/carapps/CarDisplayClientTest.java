@@ -55,6 +55,8 @@ public class CarDisplayClientTest {
 	private Context context;
 	private CarDisplayClient client;
 	private java.util.function.Predicate<Context> savedWifi;
+	private final List<String> usbEvents = new ArrayList<>();
+	private java.util.function.ObjIntConsumer<Context> savedUsbWriter;
 
 	@Before
 	public void setUp() {
@@ -63,10 +65,15 @@ public class CarDisplayClientTest {
 		client.resetForTesting();
 		savedWifi = AdbRecoveryJob.wifiCheck;
 		AdbRecoveryJob.wifiCheck = c -> true; // an ADB start without Wi-Fi fails at once; the real check finds none here
+		savedUsbWriter = AdbRecoveryJob.usbDebuggingWriter;
+		usbEvents.clear();
+		AdbRecoveryJob.usbDebuggingWriter = (c, v) -> usbEvents.add("usb=" + v);
 	}
 
 	@After
 	public void tearDown() {
+		assertFalse("the app never turns USB debugging off", usbEvents.contains("usb=0"));
+		AdbRecoveryJob.usbDebuggingWriter = savedUsbWriter;
 		AdbRecoveryJob.wifiCheck = savedWifi;
 		client.resetForTesting();
 		CarAppsFeature.setState(RootState.ABSENT);
@@ -1831,6 +1838,69 @@ public class CarDisplayClientTest {
 
 		assertEquals(1, adbWifi());
 		assertFalse(markerPresent());
+	}
+
+	@Test
+	public void adbStartTurnsUsbDebuggingOnBeforeWirelessDebuggingAndTheCommand() {
+		Promise<Void> run = new Promise<>();
+		recoveryEnv(true, 0);
+		client.setStartersForTest((ctx, cmd) -> { }, (ctx, cmd) -> {
+			usbEvents.add("command wifi=" + adbWifi());
+			return run;
+		});
+		AdbRecoveryJob.usbDebuggingWriter = (c, v) -> usbEvents.add("usb=" + v + " wifi=" + adbWifi());
+
+		client.ensureRunning(context);
+
+		assertEquals(List.of("usb=1 wifi=0", "command wifi=1"), usbEvents);
+		run.complete(null);
+		AdbRecoveryJob.usbDebuggingWriter = (c, v) -> usbEvents.add("usb=" + v);
+	}
+
+	@Test
+	public void everyRetryAsksAgainButWritesOnlyWhenItIsOff() {
+		useChannels(() -> Completed.failed(new java.io.IOException("no port")));
+		recoveryEnv(true, 0);
+
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals("the test writer leaves the store alone, so each attempt asks once", adbCommands.size(), usbEvents.size());
+		assertTrue(adbCommands.size() > 1);
+	}
+
+	@Test
+	public void usbDebuggingTheUserLeftOnIsNotWritten() {
+		useChannels(() -> new Promise<>());
+		recoveryEnv(true, 0);
+		android.provider.Settings.Global.putInt(context.getContentResolver(), "adb_enabled", 1);
+
+		client.ensureRunning(context);
+
+		assertTrue(usbEvents.isEmpty());
+	}
+
+	@Test
+	public void rootPhonesNeverTouchUsbDebugging() {
+		useChannels(() -> new Promise<>());
+		recoveryEnv(true, 0);
+		CarAppsFeature.setState(RootState.GRANTED);
+
+		client.ensureRunning(context);
+
+		assertEquals(1, rootCommands.size());
+		assertTrue(usbEvents.isEmpty());
+	}
+
+	@Test
+	public void anUnpairedPhoneNeverTouchesUsbDebugging() {
+		useChannels(() -> new Promise<>());
+		recoveryEnv(true, 0);
+		CarAppsFeature.setAdbPaired(false);
+
+		client.ensureRunning(context);
+
+		assertTrue(usbEvents.isEmpty());
 	}
 
 	@Test

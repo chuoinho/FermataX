@@ -46,12 +46,14 @@ public class AdbRecoveryJob extends JobService {
 	public static final String PREF_RESTORE = "CAR_APPS_ADB_WIFI_RESTORE";
 	public static final String PREF_TRIES = "CAR_APPS_ADB_RECOVERY_TRIES";
 	private static final String ADB_WIFI = "adb_wifi_enabled";
+	private static final String ADB_ENABLED = "adb_enabled";
 	private static final int MAX_TRIES = 3;
 	/** Four attempts of 12 s port wait plus the 15 s ADB watchdog, and the 7 s of backoff: under 2 minutes, a job may run 10. */
 	private static final long RUN_TIMEOUT_MS = 120_000;
 
 	public static volatile Predicate<Context> wifiCheck = AdbRecoveryJob::wifiConnected;
 	static volatile ObjIntConsumer<Context> adbWifiWriter = AdbRecoveryJob::putAdbWifi;
+	public static volatile ObjIntConsumer<Context> usbDebuggingWriter = AdbRecoveryJob::putAdbEnabled;
 
 	private Run run;
 
@@ -186,6 +188,22 @@ public class AdbRecoveryJob extends JobService {
 		}
 	}
 
+	/**
+	 * Turns USB debugging on when it is off (or unreadable) and the app may. It is never turned off again, by design: with
+	 * it on, adbd outlives wireless debugging, so the server started over ADB is not killed when that is switched off or the
+	 * phone leaves Wi-Fi. Never throws. shortcut: on Android 17 adb_enabled may read as off while adbd runs, so this can
+	 * write 1 again; harmless, and reading init.svc.adbd (adbRunning) would need a hidden-API call the app does not make.
+	 */
+	public static void ensureUsbDebugging(Context ctx) {
+		if (!canWriteSecure(ctx)) return;
+		try {
+			if (Settings.Global.getInt(ctx.getContentResolver(), ADB_ENABLED, -1) == 1) return;
+			usbDebuggingWriter.accept(ctx, 1);
+		} catch (RuntimeException e) {
+			Log.e(e, "Cannot switch USB debugging on");
+		}
+	}
+
 	/** Gives the user's value back and only then removes the marker; with the write refused the marker stays. */
 	public static void restoreAdbWifi(Context ctx) {
 		SharedPreferences prefs = prefs(ctx);
@@ -217,6 +235,11 @@ public class AdbRecoveryJob extends JobService {
 
 	static void putAdbWifi(Context ctx, int value) {
 		Settings.Global.putInt(ctx.getContentResolver(), ADB_WIFI, value);
+	}
+
+	/** The only writer of adb_enabled, and only ever called with 1. */
+	static void putAdbEnabled(Context ctx, int value) {
+		Settings.Global.putInt(ctx.getContentResolver(), ADB_ENABLED, value);
 	}
 
 	/** Wireless debugging needs a Wi-Fi connection, so only Wi-Fi counts; a VPN on top must not hide it. */

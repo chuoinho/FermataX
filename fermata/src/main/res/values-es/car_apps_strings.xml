@@ -52,7 +52,7 @@
     <string name="car_apps_setup_title">Configurar Apps del teléfono</string>
     <string name="car_apps_setup_dev_off">Las opciones de desarrollador están desactivadas. Abre Acerca del teléfono, toca 7 veces el número de compilación y vuelve aquí.</string>
     <string name="car_apps_setup_open_about">Abrir Acerca del teléfono</string>
-    <string name="car_apps_setup_steps">1. Conéctate a una red Wi‑Fi, abre las opciones de desarrollador, luego Depuración inalámbrica, y actívala.\n2. Toca «Vincular dispositivo con código de sincronización» y deja ese cuadro abierto.\n3. Baja el panel de notificaciones y escribe el código de 6 dígitos en la notificación de vinculación.</string>
+    <string name="car_apps_setup_steps">1. Conéctate a una red Wi‑Fi, abre las opciones de desarrollador, luego Depuración inalámbrica, y actívala.\n2. Toca «Vincular dispositivo con código de sincronización» y deja ese cuadro abierto.\n3. Baja el panel de notificaciones y escribe el código de 6 dígitos en la notificación de vinculación.\n\nApps del teléfono activa la depuración por USB para que siga funcionando al salir de la red Wi‑Fi. Un ordenador sigue necesitando tu permiso en el teléfono antes de poder conectarse.</string>
     <string name="car_apps_setup_open_dev">Abrir opciones de desarrollador</string>
     <string name="car_apps_setup_notif_off">Las notificaciones están desactivadas para esta app. El código se escribe en una notificación: actívalas y vuelve aquí.</string>
     <string name="car_apps_setup_open_notif">Ajustes de notificaciones</string>

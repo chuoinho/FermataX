@@ -34,9 +34,11 @@ import me.app.fermatax.auto.carapps.AutoCarAppsBackend;
 @Config(sdk = 35, application = me.aap.fermata.FermataApplication.class)
 public class AdbRecoveryJobTest {
 	private static final String ADB_WIFI = "adb_wifi_enabled";
+	private static final String ADB_ENABLED = "adb_enabled";
 	private Context ctx;
 	private Predicate<Context> wifi;
 	private SharedPreferences prefs;
+	private final List<Integer> usbWrites = new ArrayList<>();
 
 	@Before public void setUp() {
 		ctx = RuntimeEnvironment.getApplication();
@@ -46,12 +48,19 @@ public class AdbRecoveryJobTest {
 		AdbRecoveryJob.wifiCheck = c -> true;
 		shadowOf((Application) ctx).grantPermissions("android.permission.WRITE_SECURE_SETTINGS");
 		setAdbWifi(0);
+		usbWrites.clear();
+		AdbRecoveryJob.usbDebuggingWriter = (c, v) -> {
+			usbWrites.add(v);
+			Settings.Global.putInt(c.getContentResolver(), ADB_ENABLED, v);
+		};
 		CarAppsFeature.setState(RootState.ABSENT);
 		CarAppsFeature.setAdbPaired(true);
 		jobs().cancelAll();
 	}
 
 	@After public void tearDown() {
+		assertFalse("the app never turns USB debugging off", usbWrites.contains(0));
+		AdbRecoveryJob.usbDebuggingWriter = AdbRecoveryJob::putAdbEnabled;
 		AdbRecoveryJob.wifiCheck = wifi;
 		AdbRecoveryJob.adbWifiWriter = AdbRecoveryJob::putAdbWifi;
 		CarAppsFeature.setState(RootState.ABSENT);
@@ -76,8 +85,72 @@ public class AdbRecoveryJobTest {
 		Settings.Global.putInt(ctx.getContentResolver(), ADB_WIFI, value);
 	}
 
+	private void setUsb(int value) {
+		Settings.Global.putInt(ctx.getContentResolver(), ADB_ENABLED, value);
+	}
+
+	private int usb() {
+		return Settings.Global.getInt(ctx.getContentResolver(), ADB_ENABLED, -1);
+	}
+
 	private boolean markerPresent() {
 		return prefs.contains(AdbRecoveryJob.PREF_RESTORE);
+	}
+
+	@Test public void usbDebuggingIsTurnedOnWhenItIsOff() {
+		setUsb(0);
+
+		AdbRecoveryJob.ensureUsbDebugging(ctx);
+
+		assertEquals(List.of(1), usbWrites);
+		assertEquals(1, usb());
+		assertFalse("no marker: it is never given back", markerPresent());
+	}
+
+	@Test public void usbDebuggingIsTurnedOnWhenUnreadable() {
+		assertEquals("absent, as Android 17 hides it from apps", -1, usb());
+
+		AdbRecoveryJob.ensureUsbDebugging(ctx);
+
+		assertEquals(List.of(1), usbWrites);
+	}
+
+	@Test public void usbDebuggingAlreadyOnIsNotWritten() {
+		setUsb(1);
+
+		AdbRecoveryJob.ensureUsbDebugging(ctx);
+
+		assertTrue(usbWrites.isEmpty());
+		assertEquals(1, usb());
+	}
+
+	@Test public void usbDebuggingIsNotWrittenWithoutThePermission() {
+		shadowOf((Application) ctx).denyPermissions("android.permission.WRITE_SECURE_SETTINGS");
+
+		AdbRecoveryJob.ensureUsbDebugging(ctx);
+
+		assertTrue(usbWrites.isEmpty());
+		assertEquals(-1, usb());
+	}
+
+	@Test public void aRefusedUsbDebuggingWriteIsSwallowed() {
+		AdbRecoveryJob.usbDebuggingWriter = (c, v) -> {
+			throw new SecurityException("not granted");
+		};
+
+		AdbRecoveryJob.ensureUsbDebugging(ctx);
+
+		assertEquals(-1, usb());
+	}
+
+	@Test public void theAppNeverWritesUsbDebuggingOffAcrossEnableAndRestore() {
+		AdbRecoveryJob.ensureUsbDebugging(ctx);
+		AdbRecoveryJob.enableAdbWifi(ctx);
+		AdbRecoveryJob.restoreAdbWifi(ctx);
+		setUsb(0);
+		AdbRecoveryJob.ensureUsbDebugging(ctx);
+
+		assertEquals(List.of(1, 1), usbWrites); // tearDown asserts no 0 anywhere
 	}
 
 	@Test public void markerIsWrittenBeforeTheSettingIsEnabled() {

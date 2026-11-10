@@ -52,7 +52,7 @@
     <string name="car_apps_setup_title">Thiết lập Ứng dụng điện thoại</string>
     <string name="car_apps_setup_dev_off">Tùy chọn nhà phát triển đang tắt. Mở Giới thiệu điện thoại, chạm 7 lần vào Số bản dựng rồi quay lại đây.</string>
     <string name="car_apps_setup_open_about">Mở Giới thiệu điện thoại</string>
-    <string name="car_apps_setup_steps">1. Kết nối Wi‑Fi, mở Tùy chọn nhà phát triển, rồi Gỡ lỗi không dây và bật lên.\n2. Chạm “Ghép nối thiết bị bằng mã ghép nối” và giữ hộp thoại đó mở.\n3. Kéo thanh thông báo xuống và nhập mã 6 số vào thông báo ghép nối.</string>
+    <string name="car_apps_setup_steps">1. Kết nối Wi‑Fi, mở Tùy chọn nhà phát triển, rồi Gỡ lỗi không dây và bật lên.\n2. Chạm “Ghép nối thiết bị bằng mã ghép nối” và giữ hộp thoại đó mở.\n3. Kéo thanh thông báo xuống và nhập mã 6 số vào thông báo ghép nối.\n\nỨng dụng điện thoại bật gỡ lỗi USB để tiếp tục hoạt động sau khi bạn rời khỏi Wi‑Fi. Máy tính vẫn cần bạn cho phép trên điện thoại trước khi kết nối được.</string>
     <string name="car_apps_setup_open_dev">Mở Tùy chọn nhà phát triển</string>
     <string name="car_apps_setup_notif_off">Thông báo của ứng dụng này đang tắt. Mã được nhập trong một thông báo: hãy bật thông báo rồi quay lại đây.</string>
     <string name="car_apps_setup_open_notif">Cài đặt thông báo</string>

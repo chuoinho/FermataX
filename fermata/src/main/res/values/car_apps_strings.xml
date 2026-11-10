@@ -52,7 +52,7 @@
     <string name="car_apps_setup_title">Set up Phone Apps</string>
     <string name="car_apps_setup_dev_off">Developer options are off. Open About phone, tap Build number 7 times, then come back here.</string>
     <string name="car_apps_setup_open_about">Open About phone</string>
-    <string name="car_apps_setup_steps">1. Connect to Wi‑Fi, open Developer options, then Wireless debugging, and turn it on.\n2. Tap “Pair device with pairing code” and keep that dialog open.\n3. Pull down the notification shade and type the 6-digit code in the pairing notification.</string>
+    <string name="car_apps_setup_steps">1. Connect to Wi‑Fi, open Developer options, then Wireless debugging, and turn it on.\n2. Tap “Pair device with pairing code” and keep that dialog open.\n3. Pull down the notification shade and type the 6-digit code in the pairing notification.\n\nPhone Apps turns on USB debugging so it keeps working after you leave Wi‑Fi. A computer still needs your permission on the phone before it can connect.</string>
     <string name="car_apps_setup_open_dev">Open developer options</string>
     <string name="car_apps_setup_notif_off">Notifications are off for this app. The pairing code is typed into a notification, so turn notifications on, then come back here.</string>
     <string name="car_apps_setup_open_notif">Notification settings</string>

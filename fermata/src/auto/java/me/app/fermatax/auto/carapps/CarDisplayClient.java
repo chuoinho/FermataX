@@ -629,6 +629,7 @@ public class CarDisplayClient {
 		Object attempt = new Object();
 		if (!adbAttempt.compareAndSet(null, attempt)) return;
 		Log.i("Starting CarDisplayServer via local ADB");
+		AdbRecoveryJob.ensureUsbDebugging(ctx); // never undone: it keeps adbd, and so the server, alive without wireless debugging
 		AdbRecoveryJob.enableAdbWifi(ctx); // undone when the command ends, whatever its result
 		FutureSupplier<Void> run;
 		try {
