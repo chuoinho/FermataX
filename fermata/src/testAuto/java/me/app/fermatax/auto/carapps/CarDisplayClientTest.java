@@ -359,6 +359,167 @@ public class CarDisplayClientTest {
 		assertTrue(adbCommands.isEmpty());
 	}
 
+	private int pings;
+
+	/** Counts the pings; true: the ping file could be written, so the client waits for a running server. */
+	private void usePing(boolean written) {
+		pings = 0;
+		client.setServerPingForTest(c -> {
+			pings++;
+			return written;
+		});
+	}
+
+	/** The ADB-started server outlives the session: the next one, off Wi-Fi, takes it back without any command. */
+	@Test
+	public void aLiveAdbServerIsTakenBackAfterReleaseWithoutACommand() {
+		useChannels(() -> Completed.completedVoid());
+		CarAppsFeature.setAdbPaired(true);
+		usePing(true);
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(6, java.util.concurrent.TimeUnit.SECONDS);
+		assertEquals(1, adbCommands.size());
+		AtomicBoolean released = new AtomicBoolean(false);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), released), 2000);
+		int epoch = client.serverEpoch();
+
+		client.release();
+		assertTrue("release still frees the display", released.get());
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+
+		AdbRecoveryJob.wifiCheck = c -> false; // the next trip, away from home
+		int pinged = pings;
+		client.ensureRunning(context);
+
+		assertEquals(CarDisplayClient.State.READY, client.state());
+		assertEquals("no command", 1, adbCommands.size());
+		assertEquals("no ping needed", pinged, pings);
+		assertTrue("the released display is gone: the car attaches again", client.serverEpoch() > epoch);
+	}
+
+	/** The app process was killed between two trips: the ping makes the running server hand its binder over again. */
+	@Test
+	public void afterAProcessRestartThePingedServerAnswersAndNoCommandRuns() {
+		useChannels(() -> Completed.completedVoid());
+		CarAppsFeature.setAdbPaired(true);
+		AdbRecoveryJob.wifiCheck = c -> false;
+		usePing(true);
+		List<Boolean> askingWhenStarting = new ArrayList<>();
+		client.addStateListener(s -> {
+			if (s == CarDisplayClient.State.STARTING) askingWhenStarting.add(client.isAskingRunningServer());
+		});
+
+		client.ensureRunning(context);
+		assertEquals(CarDisplayClient.State.STARTING, client.state());
+		assertEquals("the car never sees 'Connect Wi-Fi' meanwhile", List.of(true), askingWhenStarting);
+		assertEquals(1, pings);
+		assertTrue("waiting for the running server, not for Wi-Fi", client.isAskingRunningServer());
+
+		ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.SECONDS);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false)), 2000);
+		assertEquals(CarDisplayClient.State.READY, client.state());
+		assertFalse(client.isAskingRunningServer());
+
+		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+		assertEquals(CarDisplayClient.State.READY, client.state());
+		assertTrue("a live server answered: no start command", adbCommands.isEmpty());
+	}
+
+	@Test
+	public void nobodyAnswersThePingSoTheServerIsStartedOnce() {
+		useChannels(() -> new Promise<>());
+		CarAppsFeature.setAdbPaired(true);
+		usePing(true);
+
+		client.ensureRunning(context);
+		client.ensureRunning(context); // single flight while waiting
+		assertEquals(1, pings);
+		ShadowLooper.idleMainLooper(4, java.util.concurrent.TimeUnit.SECONDS);
+		assertTrue(adbCommands.isEmpty());
+
+		ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.SECONDS);
+		assertEquals(1, adbCommands.size());
+		assertEquals(CarDisplayClient.State.STARTING, client.state());
+		assertFalse(client.isAskingRunningServer());
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(10, java.util.concurrent.TimeUnit.SECONDS);
+		assertEquals(1, adbCommands.size());
+	}
+
+	@Test
+	public void nobodyAnswersOffWifiEndsAskingForWifi() {
+		useChannels(() -> new Promise<>());
+		CarAppsFeature.setAdbPaired(true);
+		AdbRecoveryJob.wifiCheck = c -> false;
+		usePing(true);
+
+		client.ensureRunning(context);
+		ShadowLooper.idleMainLooper(6, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(CarDisplayClient.State.FAILED, client.state());
+		assertTrue(adbCommands.isEmpty());
+	}
+
+	/** An older server left from before an app update answers too: it is replaced by one start, not two. */
+	@Test
+	public void aStaleServerAnsweringThePingIsReplacedByOneStart() {
+		useChannels(() -> new Promise<>());
+		CarAppsFeature.setAdbPaired(true);
+		usePing(true);
+		AtomicBoolean released = new AtomicBoolean(false);
+
+		client.ensureRunning(context);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion() - 1, released), 2000);
+
+		assertTrue(released.get());
+		assertEquals(1, adbCommands.size());
+		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+		assertEquals("the ping timer was cancelled", 1, adbCommands.size());
+	}
+
+	@Test
+	public void releaseWhileAskingCancelsTheFallbackStart() {
+		useChannels(() -> new Promise<>());
+		CarAppsFeature.setAdbPaired(true);
+		usePing(true);
+
+		client.ensureRunning(context);
+		client.release();
+		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+
+		assertEquals(CarDisplayClient.State.IDLE, client.state());
+		assertTrue(adbCommands.isEmpty());
+		assertFalse(client.isAskingRunningServer());
+	}
+
+	@Test
+	public void rootChannelNeverPingsNorKeepsAServer() {
+		useChannels(new Promise<>());
+		CarAppsFeature.setState(RootState.GRANTED);
+		usePing(true);
+		client.ensureRunning(context);
+		client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false)));
+		client.release();
+
+		client.ensureRunning(context);
+
+		assertEquals(0, pings);
+		assertEquals("root starts again as before", 2, rootCommands.size());
+		assertEquals(CarDisplayClient.State.STARTING, client.state());
+	}
+
+	@Test
+	public void thePingIsAFileInTheAppsExternalFilesDir() throws Exception {
+		java.io.File f = new java.io.File(context.getExternalFilesDir(null),
+				me.app.fermatax.auto.carapps.server.AppPing.FILE);
+		f.delete();
+		assertTrue(CarDisplayClient.pingServer(context));
+		assertTrue(f.isFile());
+		assertTrue(f.setLastModified(1000L));
+		assertTrue(CarDisplayClient.pingServer(context));
+		assertTrue("the server watches its time", f.lastModified() > 1000L);
+	}
+
 	@Test
 	public void concurrentEnsureRunningStartsOneCommand() throws Exception {
 		useChannels(new Promise<>());

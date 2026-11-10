@@ -57,7 +57,15 @@ public class Main {
 			android.util.Log.i("CarDisplayServer", "started as uid " + Process.myUid() + " on SDK " + Build.VERSION.SDK_INT
 					+ ", version " + versionCode + ", caps 0x" + Integer.toHexString(server.capabilities()));
 
-			handoffBinderToApp(appPackage, appUid, server);
+			try {
+				handoffBinderToApp(appPackage, appUid, server);
+			} catch (Throwable t) {
+				t.printStackTrace();
+				android.util.Log.e("CarDisplayServer", "binder handoff to " + appPackage + " failed", t);
+				System.err.println("ERROR: Binder handoff failed via getContentProviderExternal");
+				System.exit(3);
+			}
+			if (persists(args)) watchAppPing(appPackage, appUid, server);
 
 			Looper.loop();
 		} catch (Throwable t) {
@@ -78,114 +86,109 @@ public class Main {
 		return (args.length > 3) && "persist".equals(args[3]);
 	}
 
-	private static void handoffBinderToApp(String appPackage, int appUid, IBinder serverBinder) {
+	/** The app asks again after its process was restarted (AppPing); a failed handoff then is only logged. */
+	private static void watchAppPing(String appPackage, int appUid, IBinder serverBinder) {
+		new AppPing(AppPing.fileFor(appUid, appPackage)).watch(new android.os.Handler(Looper.getMainLooper()), () -> {
+			try {
+				handoffBinderToApp(appPackage, appUid, serverBinder);
+			} catch (Throwable t) {
+				android.util.Log.e("CarDisplayServer", "binder handoff to " + appPackage + " on its ping failed", t);
+			}
+		});
+	}
+
+	/** Throws on any failure: at the start it ends the server, on a ping it is only logged. */
+	private static void handoffBinderToApp(String appPackage, int appUid, IBinder serverBinder) throws Exception {
 		String authority = appPackage + ".cardisplay";
 		int userId = appUid / 100000;
 		IBinder token = new Binder();
 
+		Class<?> amClass = Class.forName("android.app.ActivityManager");
+		Method getServiceMethod;
 		try {
-			Class<?> amClass = Class.forName("android.app.ActivityManager");
-			Method getServiceMethod;
-			try {
-				getServiceMethod = amClass.getMethod("getService");
-			} catch (NoSuchMethodException e) {
-				getServiceMethod = Class.forName("android.app.ActivityManagerNative").getMethod("getDefault");
-			}
-			Object am = getServiceMethod.invoke(null);
-			if (am == null) {
-				System.err.println("ERROR: ActivityManager service is null");
-				System.exit(3);
-				return;
-			}
+			getServiceMethod = amClass.getMethod("getService");
+		} catch (NoSuchMethodException e) {
+			getServiceMethod = Class.forName("android.app.ActivityManagerNative").getMethod("getDefault");
+		}
+		Object am = getServiceMethod.invoke(null);
+		if (am == null) {
+			throw new IllegalStateException("ActivityManager service is null");
+		}
 
-			Method getContentProviderExternalMethod = null;
-			for (Method m : am.getClass().getMethods()) {
-				if ("getContentProviderExternal".equals(m.getName())) {
-					getContentProviderExternalMethod = m;
-					break;
-				}
+		Method getContentProviderExternalMethod = null;
+		for (Method m : am.getClass().getMethods()) {
+			if ("getContentProviderExternal".equals(m.getName())) {
+				getContentProviderExternalMethod = m;
+				break;
 			}
+		}
 
-			if (getContentProviderExternalMethod == null) {
-				System.err.println("ERROR: getContentProviderExternal method not found");
-				System.exit(3);
-				return;
+		if (getContentProviderExternalMethod == null) {
+			throw new IllegalStateException("getContentProviderExternal method not found");
+		}
+
+		Object holder;
+		if (getContentProviderExternalMethod.getParameterCount() == 4) {
+			holder = getContentProviderExternalMethod.invoke(am, authority, userId, token, null);
+		} else {
+			holder = getContentProviderExternalMethod.invoke(am, authority, userId, token);
+		}
+
+		if (holder == null) {
+			throw new IllegalStateException("getContentProviderExternal returned null for authority " + authority);
+		}
+
+		Field providerField = holder.getClass().getDeclaredField("provider");
+		providerField.setAccessible(true);
+		Object provider = providerField.get(holder);
+		if (provider == null) {
+			throw new IllegalStateException("provider is null in ContentProviderHolder");
+		}
+
+		Bundle extras = new Bundle();
+		extras.putBinder("binder", serverBinder);
+
+		Method callMethod = null;
+		for (Method m : provider.getClass().getMethods()) {
+			if (!"call".equals(m.getName())) continue;
+			Class<?>[] types = m.getParameterTypes();
+			if (Build.VERSION.SDK_INT >= 31 && types.length > 0 && types[0].getName().contains("AttributionSource")) {
+				callMethod = m;
+				break;
 			}
-
-			Object holder;
-			if (getContentProviderExternalMethod.getParameterCount() == 4) {
-				holder = getContentProviderExternalMethod.invoke(am, authority, userId, token, null);
-			} else {
-				holder = getContentProviderExternalMethod.invoke(am, authority, userId, token);
+			if (types.length >= 3) {
+				callMethod = m;
 			}
+		}
 
-			if (holder == null) {
-				System.err.println("ERROR: getContentProviderExternal returned null for authority " + authority);
-				System.exit(3);
-				return;
+		if (callMethod == null) {
+			throw new IllegalStateException("call method not found on IContentProvider");
+		}
+
+		Class<?>[] pTypes = callMethod.getParameterTypes();
+		Bundle result = null;
+		if (pTypes.length == 5 && pTypes[0].getName().contains("AttributionSource")) {
+			Object attrSource = null;
+			if (Build.VERSION.SDK_INT >= 31) {
+				attrSource = new android.content.AttributionSource.Builder(Process.myUid()).build();
 			}
+			result = (Bundle) callMethod.invoke(provider, attrSource, authority, "attach", null, extras);
+		} else if (pTypes.length == 6) {
+			result = (Bundle) callMethod.invoke(provider, appPackage, null, authority, "attach", null, extras);
+		} else if (pTypes.length == 5) {
+			result = (Bundle) callMethod.invoke(provider, appPackage, authority, "attach", null, extras);
+		} else if (pTypes.length == 4) {
+			result = (Bundle) callMethod.invoke(provider, appPackage, "attach", null, extras);
+		} else if (pTypes.length == 3) {
+			result = (Bundle) callMethod.invoke(provider, "attach", null, extras);
+		}
 
-			Field providerField = holder.getClass().getDeclaredField("provider");
-			providerField.setAccessible(true);
-			Object provider = providerField.get(holder);
-			if (provider == null) {
-				System.err.println("ERROR: provider is null in ContentProviderHolder");
-				System.exit(3);
-				return;
-			}
+		System.out.println("BINDER_HANDOFF_SUCCESS authority=" + authority + " ok=" + (result != null && result.getBoolean("ok")));
 
-			Bundle extras = new Bundle();
-			extras.putBinder("binder", serverBinder);
-
-			Method callMethod = null;
-			for (Method m : provider.getClass().getMethods()) {
-				if (!"call".equals(m.getName())) continue;
-				Class<?>[] types = m.getParameterTypes();
-				if (Build.VERSION.SDK_INT >= 31 && types.length > 0 && types[0].getName().contains("AttributionSource")) {
-					callMethod = m;
-					break;
-				}
-				if (types.length >= 3) {
-					callMethod = m;
-				}
-			}
-
-			if (callMethod == null) {
-				System.err.println("ERROR: call method not found on IContentProvider");
-				System.exit(3);
-				return;
-			}
-
-			Class<?>[] pTypes = callMethod.getParameterTypes();
-			Bundle result = null;
-			if (pTypes.length == 5 && pTypes[0].getName().contains("AttributionSource")) {
-				Object attrSource = null;
-				if (Build.VERSION.SDK_INT >= 31) {
-					attrSource = new android.content.AttributionSource.Builder(Process.myUid()).build();
-				}
-				result = (Bundle) callMethod.invoke(provider, attrSource, authority, "attach", null, extras);
-			} else if (pTypes.length == 6) {
-				result = (Bundle) callMethod.invoke(provider, appPackage, null, authority, "attach", null, extras);
-			} else if (pTypes.length == 5) {
-				result = (Bundle) callMethod.invoke(provider, appPackage, authority, "attach", null, extras);
-			} else if (pTypes.length == 4) {
-				result = (Bundle) callMethod.invoke(provider, appPackage, "attach", null, extras);
-			} else if (pTypes.length == 3) {
-				result = (Bundle) callMethod.invoke(provider, "attach", null, extras);
-			}
-
-			System.out.println("BINDER_HANDOFF_SUCCESS authority=" + authority + " ok=" + (result != null && result.getBoolean("ok")));
-
-			try {
-				Method removeMethod = am.getClass().getMethod("removeContentProviderExternal", String.class, IBinder.class);
-				removeMethod.invoke(am, authority, token);
-			} catch (Throwable ignored) {
-			}
-		} catch (Throwable t) {
-			t.printStackTrace();
-			android.util.Log.e("CarDisplayServer", "binder handoff to " + appPackage + " failed", t);
-			System.err.println("ERROR: Binder handoff failed via getContentProviderExternal");
-			System.exit(3);
+		try {
+			Method removeMethod = am.getClass().getMethod("removeContentProviderExternal", String.class, IBinder.class);
+			removeMethod.invoke(am, authority, token);
+		} catch (Throwable ignored) {
 		}
 	}
 

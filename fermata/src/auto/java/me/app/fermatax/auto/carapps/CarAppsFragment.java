@@ -600,7 +600,9 @@ public class CarAppsFragment extends MainActivityFragment {
 		}
 		dropStaleAttach();
 		Context ctx = getContext();
-		uiState = CarAppsUiState.from(root, clientState, (ctx == null) || AdbRecoveryJob.hasWifi(ctx));
+		// a running server needs no Wi-Fi: while it is asked for its binder the car shows the loading screen
+		uiState = CarAppsUiState.from(root, clientState,
+				(ctx == null) || client.isAskingRunningServer() || AdbRecoveryJob.hasWifi(ctx));
 		applyToolbarVisibility();
 
 		if (loadingOverlay == null || needsRootOverlay == null || serverErrorOverlay == null || phoneAsleepOverlay == null) {

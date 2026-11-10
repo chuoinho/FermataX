@@ -24,6 +24,9 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -39,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import me.aap.fermata.BuildConfig;
@@ -55,6 +59,7 @@ import me.aap.utils.log.Log;
 import me.app.fermatax.auto.CarService;
 import me.app.fermatax.auto.Su;
 import me.app.fermatax.auto.carapps.adb.AdbRecoveryJob;
+import me.app.fermatax.auto.carapps.server.AppPing;
 
 /**
  * Client coordinator for CarDisplayServer lifecycle, connection retry, and command proxying.
@@ -103,6 +108,22 @@ public class CarDisplayClient {
 	private volatile IBinder serverBinder;
 	/** Counts connected servers: a display belongs to one of them, and a new one starts without any. */
 	private volatile int serverEpoch;
+	private volatile int serverUid = -1;
+	/** The server of the last session, its display released: an ADB-started one still runs and is taken back. */
+	private IBinder idleBinder;
+	/** Covers the poll of the server (AppPing.POLL_MS) and its handoff. */
+	private static final long SERVER_PING_WAIT_MS = 5000;
+	private volatile Predicate<Context> serverPing = CarDisplayClient::pingServer;
+	private volatile boolean askingRunningServer;
+	private final Runnable serverPingTimeout = () -> {
+		synchronized (CarDisplayClient.this) {
+			askingRunningServer = false;
+			Context ctx = CarDisplayClient.this.lastContext;
+			if ((state != State.STARTING) || (ctx == null)) return;
+			recordDiagnostic("server_ping", Map.of("state", "unanswered"));
+			startServer(ctx);
+		}
+	};
 	private final IBinder clientToken = new Binder();
 
 	private final TouchQueue touchQueue = new TouchQueue(64, 250_000_000L);
@@ -402,6 +423,9 @@ public class CarDisplayClient {
 			recordDiagnostic("server_failed", Map.of("reason", "null_interface"));
 			return;
 		}
+		// a server answered the ping: no start, or a stale one is replaced by the one start below
+		mainHandler.removeCallbacks(serverPingTimeout);
+		askingRunningServer = false;
 
 		int version = -1;
 		try {
@@ -443,6 +467,8 @@ public class CarDisplayClient {
 
 		this.server = s;
 		this.serverBinder = binder;
+		this.serverUid = serverUid;
+		this.idleBinder = null;
 		this.serverEpoch++;
 		if (restorePanelOnReconnect) {
 			try {
@@ -555,8 +581,54 @@ public class CarDisplayClient {
 
 		this.retryAttempt = 0;
 		this.nextPhoneSleepMs = 0;
+		Context c = (ctx != null) ? ctx : lastContext;
+		if (adoptRunningServer(c)) return;
 		setState(State.STARTING);
-		startServer(ctx != null ? ctx : lastContext);
+		startServer(c);
+	}
+
+	/**
+	 * An ADB-started server never exits and needs Wi-Fi to be started again, so it is taken back without a command:
+	 * the binder of the last session in this process, else (the process was restarted) the server is pinged and hands
+	 * it over again (AppPing). Only when none answers in time is a new one started.
+	 */
+	private boolean adoptRunningServer(@Nullable Context ctx) {
+		if ((ctx == null) || (testCommandRunner != null) || (ServerStarter.choose(CarAppsFeature.state(),
+				CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT) != ServerStarter.Channel.ADB)) {
+			return false;
+		}
+		IBinder idle = idleBinder;
+		idleBinder = null;
+		if ((idle != null) && idle.pingBinder()) {
+			setState(State.STARTING);
+			onServerBinderReceived(idle, serverUid); // a version mismatch there starts the replacement itself
+			return true;
+		}
+		if (!serverPing.test(ctx)) return false;
+		recordDiagnostic("server_ping", Map.of("state", "sent"));
+		askingRunningServer = true; // before STARTING: its listeners must not ask for Wi-Fi meanwhile
+		setState(State.STARTING);
+		mainHandler.removeCallbacks(serverPingTimeout);
+		mainHandler.postDelayed(serverPingTimeout, SERVER_PING_WAIT_MS);
+		return true;
+	}
+
+	/** Seen by an ADB-started server (AppPing), which then hands its binder over again. False when not written. */
+	static boolean pingServer(Context ctx) {
+		File dir = ctx.getExternalFilesDir(null);
+		if (dir == null) return false;
+		try (FileOutputStream out = new FileOutputStream(new File(dir, AppPing.FILE))) {
+			out.write('1'); // the write changes the time the server watches
+			return true;
+		} catch (IOException e) {
+			Log.w("Cannot ping the car display server: ", e);
+			return false;
+		}
+	}
+
+	/** True while a running server is asked for its binder: the car must wait, not ask for Wi-Fi. */
+	public boolean isAskingRunningServer() {
+		return askingRunningServer;
 	}
 
 	private void startServer(@Nullable Context ctx) {
@@ -1141,6 +1213,8 @@ public class CarDisplayClient {
 	public synchronized void release() {
 		if (lastContext != null) restoreAdbWifiIfIdle(lastContext); // a start between two retries has no completion left
 		mainHandler.removeCallbacks(startTimeoutRunnable);
+		mainHandler.removeCallbacks(serverPingTimeout);
+		askingRunningServer = false;
 		unlinkServerBinder();
 		stopKeepingPhoneAwake();
 		flushTouchQueueDiagnosticsAndClear();
@@ -1152,6 +1226,7 @@ public class CarDisplayClient {
 			PhoneDimActivity.dismiss();
 		}
 		ICarDisplayServer srv = this.server;
+		if (srv != null) idleBinder = serverBinder; // unlinked: its death later is no failure of a session
 		this.server = null;
 		this.serverBinder = null;
 		if (srv != null) {
@@ -1174,6 +1249,10 @@ public class CarDisplayClient {
 	void setStartersForTest(BiConsumer<Context, String> root, BiFunction<Context, String, FutureSupplier<Void>> adb) {
 		this.rootStarter = root;
 		this.adbStarter = adb;
+	}
+
+	void setServerPingForTest(Predicate<Context> ping) {
+		this.serverPing = ping;
 	}
 
 	void retryConnectionForTesting() {
@@ -1208,6 +1287,11 @@ public class CarDisplayClient {
 		unlinkServerBinder();
 		this.server = null;
 		this.serverBinder = null;
+		this.idleBinder = null;
+		this.serverUid = -1;
+		mainHandler.removeCallbacks(serverPingTimeout);
+		this.askingRunningServer = false;
+		this.serverPing = c -> false; // tests that start over ADB expect the command at once; ping tests set their own
 		this.state = State.IDLE;
 		this.retryAttempt = 0;
 		this.nextPhoneSleepMs = 0;
