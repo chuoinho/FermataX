@@ -37,7 +37,6 @@ final class InterfacePrefsBuilder {
 		PreferenceStore store = activity.getPrefs();
 
 		normalizeTheme(store);
-		if (BuildConfig.AUTO) normalizeThemeAA(store);
 		set.addListPref(o -> {
 			o.store = store;
 			o.pref = MainActivityPrefs.THEME_MAIN;
@@ -48,8 +47,7 @@ final class InterfacePrefsBuilder {
 			o.valuesMap = new int[]{MainActivityPrefs.THEME_CLASSIC, MainActivityPrefs.THEME_MATERIAL_YOU, MainActivityPrefs.THEME_GLASS};
 		});
 		normalizeGlassAppearance(store);
-		if (store.getIntPref(MainActivityPrefs.THEME_MAIN) == MainActivityPrefs.THEME_GLASS
-				|| (BuildConfig.AUTO && store.getIntPref(MainActivityPrefs.THEME_AA) == MainActivityPrefs.THEME_GLASS)) {
+		if (showsGlassOptions(store)) {
 			set.addListPref(o -> {
 				o.store = store;
 				o.pref = MainActivityPrefs.GLASS_APPEARANCE;
@@ -383,21 +381,16 @@ final class InterfacePrefsBuilder {
 		d.show();
 	}
 
+	static boolean showsGlassOptions(PreferenceStore store) {
+		return store.getIntPref(MainActivityPrefs.THEME_MAIN) == MainActivityPrefs.THEME_GLASS;
+	}
+
 	private static void normalizeTheme(PreferenceStore store) {
 		int theme = store.getIntPref(MainActivityPrefs.THEME_MAIN);
 		if (theme != MainActivityPrefs.THEME_CLASSIC &&
 				theme != MainActivityPrefs.THEME_MATERIAL_YOU &&
 				theme != MainActivityPrefs.THEME_GLASS) {
 			store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_GLASS);
-		}
-	}
-
-	private static void normalizeThemeAA(PreferenceStore store) {
-		int theme = store.getIntPref(MainActivityPrefs.THEME_AA);
-		if (theme != MainActivityPrefs.THEME_CLASSIC &&
-				theme != MainActivityPrefs.THEME_MATERIAL_YOU &&
-				theme != MainActivityPrefs.THEME_GLASS) {
-			store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_GLASS);
 		}
 	}
 

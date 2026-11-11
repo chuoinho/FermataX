@@ -48,31 +48,29 @@ public class GlassThemePreferencesTest {
 	}
 
 	@Test
-	public void testAutomotiveDefaultsToGlassAndSupportsExplicitChoice() {
+	public void testAutomotiveFollowsTheSingleSharedTheme() {
 		BasicPreferenceStore store = new BasicPreferenceStore();
 		TestMainActivityPrefs prefs = new TestMainActivityPrefs(store);
 
-		// Fresh install AA theme defaults to Glass
+		// Fresh install: car theme defaults to Glass
 		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(true));
 		assertTrue(prefs.isGlassTheme(true));
 
-		// Can explicitly select Classic on AA
-		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_CLASSIC);
+		// The car uses the one theme chosen in Settings > Interface (THEME_MAIN)
+		store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_CLASSIC);
 		assertEquals(MainActivityPrefs.THEME_CLASSIC, prefs.getThemePref(true));
 		assertFalse(prefs.isGlassTheme(true));
 
-		// Can explicitly select Material You on AA
-		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_MATERIAL_YOU);
+		store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_MATERIAL_YOU);
 		assertEquals(MainActivityPrefs.THEME_MATERIAL_YOU, prefs.getThemePref(true));
 		assertFalse(prefs.isGlassTheme(true));
 
-		// Can opt in to Glass on AA
-		store.applyIntPref(MainActivityPrefs.THEME_AA, MainActivityPrefs.THEME_GLASS);
+		store.applyIntPref(MainActivityPrefs.THEME_MAIN, MainActivityPrefs.THEME_GLASS);
 		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(true));
 		assertTrue(prefs.isGlassTheme(true));
 
-		// Invalid AA theme falls back to Glass
-		store.applyIntPref(MainActivityPrefs.THEME_AA, 999);
+		// Invalid theme falls back to Glass
+		store.applyIntPref(MainActivityPrefs.THEME_MAIN, 999);
 		assertEquals(MainActivityPrefs.THEME_GLASS, prefs.getThemePref(true));
 		assertTrue(prefs.isGlassTheme(true));
 	}

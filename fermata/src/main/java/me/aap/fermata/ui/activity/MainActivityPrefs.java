@@ -91,7 +91,6 @@ public interface MainActivityPrefs
 	Pref<IntSupplier> GLASS_APPEARANCE = Pref.i("GLASS_APPEARANCE", GLASS_APPEARANCE_NIGHT);
 	Pref<DoubleSupplier> GLASS_RAIL_Y_RATIO = Pref.f("GLASS_RAIL_Y_RATIO", 0.5f);
 
-	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_GLASS);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
 	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
@@ -107,22 +106,44 @@ public interface MainActivityPrefs
 		return MainActivityPreferenceStore.INSTANCE;
 	}
 
-	static boolean hasThemePref(MainActivityDelegate a, List<Pref<?>> prefs) {
-		return prefs.contains(THEME_MAIN) || prefs.contains(THEME_AA) || prefs.contains(GLASS_APPEARANCE);
+	/** Legacy keys, read only by migrateTheme: phone and car share one theme, THEME_MAIN. */
+	Pref<IntSupplier> LEGACY_THEME = Pref.i("THEME", THEME_DARK);
+	Pref<IntSupplier> LEGACY_THEME_AA = Pref.i("THEME_AA", THEME_GLASS);
+
+	static boolean isValidTheme(int theme) {
+		return theme == THEME_CLASSIC || theme == THEME_MATERIAL_YOU || theme == THEME_GLASS;
 	}
 
-	default int getThemePref(boolean auto) {
-		if (auto) {
-			if (hasPref(THEME_MAIN)) return getThemePref(false);
-			int aaTheme = getIntPref(THEME_AA);
-			if (aaTheme == THEME_CLASSIC || aaTheme == THEME_MATERIAL_YOU || aaTheme == THEME_GLASS) {
-				return aaTheme;
-			}
-			return THEME_GLASS;
+	/**
+	 * Idempotent: resolves one theme (valid THEME_MAIN, else valid THEME_AA, else valid legacy
+	 * THEME, else Glass), stores it in THEME_MAIN and removes the legacy keys.
+	 * Runs at store creation, so also after a restore (which exits the process).
+	 */
+	static void migrateTheme(PreferenceStore store) {
+		boolean hasAa = store.hasPref(LEGACY_THEME_AA);
+		boolean hasOld = store.hasPref(LEGACY_THEME);
+		int main = store.getIntPref(THEME_MAIN);
+		int theme;
+		if (store.hasPref(THEME_MAIN) && isValidTheme(main)) theme = main;
+		else if (hasAa && isValidTheme(store.getIntPref(LEGACY_THEME_AA))) theme = store.getIntPref(LEGACY_THEME_AA);
+		else if (hasOld && isValidTheme(store.getIntPref(LEGACY_THEME))) theme = store.getIntPref(LEGACY_THEME);
+		else theme = THEME_GLASS;
+		if ((main == theme) && !hasAa && !hasOld) return;
+		try (PreferenceStore.Edit e = store.editPreferenceStore()) {
+			if (main != theme) e.setIntPref(THEME_MAIN, theme);
+			if (hasAa) e.removePref(LEGACY_THEME_AA);
+			if (hasOld) e.removePref(LEGACY_THEME);
 		}
+	}
+
+	static boolean hasThemePref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		return prefs.contains(THEME_MAIN) || prefs.contains(GLASS_APPEARANCE);
+	}
+
+	/** Phone and car use the same theme; {@code auto} is kept for callers. */
+	default int getThemePref(boolean auto) {
 		int theme = getIntPref(THEME_MAIN);
-		if (theme != THEME_CLASSIC && theme != THEME_MATERIAL_YOU && theme != THEME_GLASS) return THEME_GLASS;
-		return theme;
+		return isValidTheme(theme) ? theme : THEME_GLASS;
 	}
 
 	default int getGlassAppearancePref() {
@@ -145,7 +166,7 @@ public interface MainActivityPrefs
 	}
 
 	default boolean isGlassTheme(boolean auto) {
-		return auto ? (getThemePref(true) == THEME_GLASS) : (getThemePref(false) == THEME_GLASS);
+		return getThemePref(auto) == THEME_GLASS;
 	}
 
 	default float getGlassRailYRatioPref() {

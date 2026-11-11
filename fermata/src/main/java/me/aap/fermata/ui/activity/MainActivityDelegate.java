@@ -1388,7 +1388,7 @@ public class MainActivityDelegate extends ActivityDelegate
 				glassRailController.refreshAppearance(this);
 				refreshPhoneBottomMenu();
 				refreshPhonePlaybackCarHeader();
-				if (prefs.contains(MainActivityPrefs.GLASS_APPEARANCE) && !prefs.contains(MainActivityPrefs.THEME_AA) && !prefs.contains(MainActivityPrefs.THEME_MAIN)) {
+				if (prefs.contains(MainActivityPrefs.GLASS_APPEARANCE) && !prefs.contains(MainActivityPrefs.THEME_MAIN)) {
 					fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 				} else recreate();
 			} else recreate();
