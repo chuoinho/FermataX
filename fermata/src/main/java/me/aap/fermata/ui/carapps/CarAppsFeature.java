@@ -46,6 +46,10 @@ public final class CarAppsFeature {
 		/** Clear diagnostic data: drops the Phone Apps event journal. */
 		default void clearDiagnostics() {
 		}
+
+		/** Opens a Phone Apps guide on the phone. */
+		default void openGuide(android.content.Context ctx, PhoneAppsGuide.Page page) {
+		}
 	}
 
 	/** Phone Apps is an addon the user can turn off; on by default, so existing users are unchanged. */
@@ -97,6 +101,12 @@ public final class CarAppsFeature {
 	/** Persists the switch; a change is told to the backend (which stops the server when off) and the listeners. */
 	public static void setEnabled(PreferenceStore store, boolean value) {
 		store.applyBooleanPref(PREF_ENABLED, value);
+		syncEnabled(store);
+	}
+
+	/** Applies the stored switch, which the Settings page writes itself; a change is told once, as in setEnabled. */
+	public static void syncEnabled(PreferenceStore store) {
+		boolean value = store.getBooleanPref(PREF_ENABLED);
 		if (enabled == value) return;
 		enabled = value;
 		Backend b = backend;

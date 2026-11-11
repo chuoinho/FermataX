@@ -42,8 +42,12 @@ import androidx.core.widget.ImageViewCompat;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
+import me.aap.fermata.ui.carapps.PhoneAppsGuide;
+import me.aap.fermata.ui.policy.RuntimeHostMode;
+import me.aap.utils.pref.PreferenceStore;
 import me.aap.fermata.ui.carapps.RootProbe;
 import me.aap.fermata.ui.carapps.RootState;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
@@ -504,6 +508,24 @@ public class CarAppsFragment extends MainActivityFragment {
 		}
 		updateUiState();
 		applyToolbarVisibility();
+		showGuideOnFirstOpen();
+	}
+
+	/** The first time the phone opens Phone Apps: setup if still needed, then How to use. Never on the car. */
+	private void showGuideOnFirstOpen() {
+		Context c = getContext();
+		if (c == null) return;
+		boolean phoneHost;
+		try {
+			phoneHost = getActivityDelegate().getRuntimeHostMode() == RuntimeHostMode.PHONE;
+		} catch (RuntimeException ignored) {
+			return; // no MainActivityDelegate host (unit tests): not known to be the phone
+		}
+		PreferenceStore store = FermataApplication.get().getPreferenceStore();
+		if (!PhoneAppsGuide.shouldShowFirstOpen(store.getBooleanPref(PhoneAppsGuide.PREF_SEEN),
+				CarAppsFeature.isSupported(), phoneHost, CarService.isActive())) return;
+		store.applyBooleanPref(PhoneAppsGuide.PREF_SEEN, true);
+		PhoneAppsGuide.open(c, PhoneAppsGuide.firstOpenPage(CarAppsFeature.canRun()));
 	}
 
 	@Override
