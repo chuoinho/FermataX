@@ -36,9 +36,7 @@
 	<string name="readiness_nav_notification_access">Navigation from Maps/Waze</string>
 	<string name="readiness_nav_notification_access_granted">Enabled. Allows turn-by-turn navigation mirroring on the Glass dashboard.</string>
 	<string name="readiness_nav_notification_access_not_granted">Disabled. Tap to allow notification access for turn-by-turn navigation.</string>
-	<string name="readiness_group_required">REQUIRED</string>
 	<string name="readiness_group_stability">FOR RELIABLE USE IN THE CAR</string>
-	<string name="readiness_group_optional">OPTIONAL</string>
 	<string name="readiness_all_ready">Everything is ready</string>
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
@@ -53,4 +51,11 @@
 	<string name="readiness_background_oem_open_vendor">Open %1$s settings</string>
 	<string name="readiness_background_oem_open_android">Android battery settings</string>
 	<string name="readiness_background_oem_later">Later</string>
+	<string name="readiness_group_playback">Playback and library</string>
+	<string name="readiness_group_android_auto">Android Auto connection</string>
+	<string name="readiness_group_location">Location and navigation</string>
+	<string name="readiness_group_ok">All set</string>
+	<string name="readiness_group_optional_off">Ready. Some optional items are off.</string>
+	<string name="readiness_needs_attention">Needs attention. Tap an item below to fix it.</string>
+	<string name="readiness_some_issues">Some items need attention</string>
 </resources>

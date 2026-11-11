@@ -37,9 +37,7 @@
 	<string name="readiness_nav_notification_access">Maps/Waze navigasyonu</string>
     <string name="readiness_nav_notification_access_granted">Etkin. Glass panosunda navigasyon yönergelerini yansıtır.</string>
 	<string name="readiness_nav_notification_access_not_granted">Devre dışı. Adım adım navigasyon için bildirim erişimine izin vermek üzere dokunun.</string>
-	<string name="readiness_group_required">GEREKLİ</string>
 	<string name="readiness_group_stability">ARAÇTA KARARLI ÇALIŞMASI İÇİN</string>
-	<string name="readiness_group_optional">İSTEĞE BAĞLI</string>
 	<string name="readiness_all_ready">Her şey hazır</string>
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
@@ -54,4 +52,11 @@
     <string name="readiness_background_oem_open_vendor">%1$s ayarlarını aç</string>
     <string name="readiness_background_oem_open_android">Android pil ayarları</string>
     <string name="readiness_background_oem_later">Daha sonra</string>
+	<string name="readiness_group_playback">Oynatma ve kitaplık</string>
+	<string name="readiness_group_android_auto">Android Auto bağlantısı</string>
+	<string name="readiness_group_location">Konum ve navigasyon</string>
+	<string name="readiness_group_ok">Her şey yolunda</string>
+	<string name="readiness_group_optional_off">Hazır. Bazı isteğe bağlı öğeler kapalı.</string>
+	<string name="readiness_needs_attention">İlgilenilmesi gerekiyor. Düzeltmek için aşağıdaki bir öğeye dokunun.</string>
+	<string name="readiness_some_issues">Bazı öğelerin ilgilenilmesi gerekiyor</string>
 </resources>

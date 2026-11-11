@@ -37,9 +37,7 @@
 	<string name="readiness_nav_notification_access">Navigation von Maps/Waze</string>
     <string name="readiness_nav_notification_access_granted">Aktiviert. Ermöglicht die Anzeige von Abbiegehinweisen auf dem Glass-Dashboard.</string>
     <string name="readiness_nav_notification_access_not_granted">Deaktiviert. Tippen, um den Benachrichtigungszugriff für Abbiegehinweise zu erlauben.</string>
-    <string name="readiness_group_required">ERFORDERLICH</string>
     <string name="readiness_group_stability">FÜR ZUVERLÄSSIGEN BETRIEB IM AUTO</string>
-	<string name="readiness_group_optional">FREIWILLIG</string>
     <string name="readiness_all_ready">Alles ist bereit</string>
     <string name="readiness_android_auto">Android Auto</string>
     <string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
@@ -54,4 +52,11 @@
     <string name="readiness_background_oem_open_vendor">%1$s-Einstellungen öffnen</string>
     <string name="readiness_background_oem_open_android">Android-Akkueinstellungen</string>
     <string name="readiness_background_oem_later">Später</string>
+	<string name="readiness_group_playback">Wiedergabe und Mediathek</string>
+	<string name="readiness_group_android_auto">Android-Auto-Verbindung</string>
+	<string name="readiness_group_location">Standort und Navigation</string>
+	<string name="readiness_group_ok">Alles in Ordnung</string>
+	<string name="readiness_group_optional_off">Bereit. Einige optionale Punkte sind aus.</string>
+	<string name="readiness_needs_attention">Handlungsbedarf. Tippe unten auf einen Punkt, um ihn zu beheben.</string>
+	<string name="readiness_some_issues">Einige Punkte brauchen Aufmerksamkeit</string>
 </resources>

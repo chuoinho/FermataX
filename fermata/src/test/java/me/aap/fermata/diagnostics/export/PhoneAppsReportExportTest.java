@@ -97,7 +97,8 @@ public class PhoneAppsReportExportTest {
 	/** Mobile builds the same main code: it must reach Phone Apps only through the backend, never by name. */
 	@Test public void mainCodeNeverNamesThePhoneAppsImplementation() throws Exception {
 		for (String file : new String[]{"diagnostics/export/DiagnosticReportExporter.java",
-				"ui/fragment/SettingsDiagnosticsManager.java", "ui/fragment/ReadinessPrefsBuilder.java"}) {
+				"ui/fragment/SettingsDiagnosticsManager.java", "ui/fragment/ReadinessPrefsBuilder.java",
+				"ui/fragment/PhoneAppsPrefsBuilder.java", "ui/fragment/SettingsFragment.java"}) {
 			String src = source(file);
 			assertFalse(file, src.contains("me.app.fermatax.auto.carapps.PhoneApps"));
 		}

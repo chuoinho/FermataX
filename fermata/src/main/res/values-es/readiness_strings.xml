@@ -36,9 +36,7 @@
 	<string name="readiness_nav_notification_access">Navegación de Maps/Waze</string>
 	<string name="readiness_nav_notification_access_granted">Habilitado. Permite reflejar la navegación paso a paso en el panel Glass.</string>
 	<string name="readiness_nav_notification_access_not_granted">Deshabilitado. Toque para permitir el acceso a notificaciones para la navegación paso a paso.</string>
-	<string name="readiness_group_required">NECESARIO</string>
 	<string name="readiness_group_stability">PARA UN FUNCIONAMIENTO ESTABLE EN EL COCHE</string>
-	<string name="readiness_group_optional">OPCIONAL</string>
 	<string name="readiness_all_ready">Todo está listo</string>
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
@@ -53,4 +51,11 @@
 	<string name="readiness_background_oem_open_vendor">Abrir ajustes de %1$s</string>
 	<string name="readiness_background_oem_open_android">Ajustes de batería de Android</string>
 	<string name="readiness_background_oem_later">Más tarde</string>
+	<string name="readiness_group_playback">Reproducción y biblioteca</string>
+	<string name="readiness_group_android_auto">Conexión con Android Auto</string>
+	<string name="readiness_group_location">Ubicación y navegación</string>
+	<string name="readiness_group_ok">Todo correcto</string>
+	<string name="readiness_group_optional_off">Listo. Algunas opciones opcionales están desactivadas.</string>
+	<string name="readiness_needs_attention">Requiere atención. Toca un elemento de abajo para corregirlo.</string>
+	<string name="readiness_some_issues">Algunos elementos requieren atención</string>
 </resources>

@@ -102,8 +102,7 @@ public class LanguagesAcceptanceTest {
 				"readiness_connection_disconnected", "readiness_connection_connected",
 				"readiness_connection_visible", "readiness_control_available",
 				"readiness_control_unavailable", "readiness_nav_notification_access",
-				"readiness_group_required", "readiness_group_stability", "readiness_group_optional",
-				"readiness_all_ready", "readiness_android_auto_status", "readiness_connection_unknown",
+				"readiness_group_stability", "readiness_all_ready", "readiness_android_auto_status", "readiness_connection_unknown",
 				"readiness_background_prompt_title", "readiness_background_prompt_message",
 				"readiness_background_open_settings", "readiness_background_skip",
 				"readiness_background_oem_title", "readiness_background_oem_guide",
@@ -119,6 +118,42 @@ public class LanguagesAcceptanceTest {
 							!strings.get(key).texts().equals(english.get(key).texts()));
 				}
 			}
+		}
+	}
+
+	/** Phone Apps page, guides and Readiness groups: every key in every language, translated, same placeholders. */
+	@Test public void phoneAppsGuidesAndReadinessGroupsAreTranslatedForEverySupportedLanguage() throws Exception {
+		String[] locales = {"values", "values-vi", "values-ru", "values-es", "values-pt",
+				"values-zh-rTW", "values-tr", "values-de", "values-it"};
+		String[] required = {"readiness_group_playback", "readiness_group_android_auto", "readiness_group_location",
+				"readiness_group_ok", "readiness_group_optional_off", "readiness_needs_attention",
+				"readiness_some_issues", "car_apps_settings_enable", "car_apps_status_ready_root",
+				"car_apps_status_ready_adb", "car_apps_status_off", "car_apps_status_unsupported",
+				"car_apps_settings_setup", "car_apps_settings_setup_sub", "car_apps_settings_fix",
+				"car_apps_settings_fix_sub", "car_apps_settings_how_to", "car_apps_settings_how_to_sub",
+				"car_apps_settings_details", "car_apps_settings_details_sub", "car_apps_settings_details_empty",
+				"car_apps_readiness_open", "car_apps_step_done", "car_apps_step_current", "car_apps_step_todo",
+				"car_apps_step_dev_options", "car_apps_step_wireless_debugging", "car_apps_step_pair_dialog",
+				"car_apps_step_type_code", "car_apps_step_allow_root", "car_apps_step_connect_car",
+				"car_apps_step_open_on_car", "car_apps_setup_adb_note", "car_apps_setup_root_note",
+				"car_apps_guide_title", "car_apps_guide_got_it", "car_apps_guide_open_title", "car_apps_guide_open_body",
+				"car_apps_guide_drawer_title", "car_apps_guide_drawer_body", "car_apps_guide_keyboard_title",
+				"car_apps_guide_keyboard_body", "car_apps_guide_buttons_title", "car_apps_guide_buttons_body",
+				"car_apps_guide_screen_title", "car_apps_guide_screen_body_dark", "car_apps_guide_screen_body_sleep",
+				"car_apps_guide_wifi_title", "car_apps_guide_wifi_body", "car_apps_guide_off_title",
+				"car_apps_guide_off_body", "car_apps_guide_report_title", "car_apps_guide_report_body",
+				"car_apps_needs_setup"};
+		Map<String, Entry> english = load(new File(root(), "fermata/src/main/res/values"));
+		for (String locale : locales) {
+			Map<String, Entry> strings = load(new File(root(), "fermata/src/main/res/" + locale));
+			for (String key : required) {
+				assertTrue(locale + " missing " + key, strings.containsKey(key));
+				String en = english.get(key).texts().get(0), text = strings.get(key).texts().get(0);
+				checkText(locale + " " + key, en, text);
+				if (!locale.equals("values")) assertTrue(locale + " leaves " + key + " in English", !text.equals(en));
+			}
+			assertTrue(locale + " keeps the replaced setup text", !strings.containsKey("car_apps_setup_steps"));
+			assertTrue(locale + " keeps an unused group", !strings.containsKey("readiness_group_required"));
 		}
 	}
 

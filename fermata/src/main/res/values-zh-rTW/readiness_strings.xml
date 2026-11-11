@@ -36,9 +36,7 @@
 	<string name="readiness_nav_notification_access">Maps/Waze 導航</string>
 	<string name="readiness_nav_notification_access_granted">已啟用。允許在 Glass 儀表板上鏡像逐向導航。</string>
 	<string name="readiness_nav_notification_access_not_granted">已停用。輕觸以允許逐向導航的通知存取權限。</string>
-	<string name="readiness_group_required">必要</string>
 	<string name="readiness_group_stability">讓車上使用更穩定</string>
-	<string name="readiness_group_optional">選用</string>
 	<string name="readiness_all_ready">一切就緒</string>
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s：%2$s · %3$s</string>
@@ -53,4 +51,11 @@
 	<string name="readiness_background_oem_open_vendor">開啟 %1$s 設定</string>
 	<string name="readiness_background_oem_open_android">Android 電池設定</string>
 	<string name="readiness_background_oem_later">稍後</string>
+	<string name="readiness_group_playback">播放與媒體庫</string>
+	<string name="readiness_group_android_auto">Android Auto 連線</string>
+	<string name="readiness_group_location">位置與導航</string>
+	<string name="readiness_group_ok">一切正常</string>
+	<string name="readiness_group_optional_off">已就緒。部分選用項目已關閉。</string>
+	<string name="readiness_needs_attention">需要處理。點選下方項目即可修正。</string>
+	<string name="readiness_some_issues">部分項目需要處理</string>
 </resources>

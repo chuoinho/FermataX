@@ -44,6 +44,7 @@ import me.aap.fermata.pref.DiagnosticsPreferences;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.misc.ChangeableCondition;
@@ -68,6 +69,10 @@ public class SettingsFragment extends MainActivityFragment
 	private AudioEffectsProfileRepository audioEffectsProfiles;
 	@Nullable
 	private ReadinessPrefsBuilder readinessPrefsBuilder;
+	@Nullable
+	private PhoneAppsPrefsBuilder phoneAppsPrefsBuilder;
+	@Nullable
+	private PreferenceSet phoneAppsSet;
 
 	@Override
 	public int getFragmentId() {
@@ -176,6 +181,9 @@ public class SettingsFragment extends MainActivityFragment
 		diagnosticsPreferences = null;
 		if (readinessPrefsBuilder != null) readinessPrefsBuilder.close();
 		readinessPrefsBuilder = null;
+		if (phoneAppsPrefsBuilder != null) phoneAppsPrefsBuilder.close();
+		phoneAppsPrefsBuilder = null;
+		phoneAppsSet = null;
 	}
 
 	@Override
@@ -325,15 +333,16 @@ public class SettingsFragment extends MainActivityFragment
 		audioEffectsDraft = new AudioEffectsDraft(audioEffectsProfiles);
 		PlaybackPrefsBuilder.add(a, set, mediaPrefs, audioEffectsProfiles, audioEffectsDraft);
 
+		long generation = viewGeneration;
+		BooleanSupplier pageUiActive = () -> viewActive && !isHidden() &&
+				(viewGeneration == generation) && (activityDelegate == a) && isAdded();
+
 		addSectionHeader(set, ctx, R.string.addons);
-		addAddons(set);
+		addAddons(a, set, pageUiActive);
 
 		if (ReadinessPrefsBuilder.shouldAdd(a.getRuntimeHostMode())) {
 			addSectionHeader(set, ctx, R.string.readiness_title);
-			long readinessGeneration = viewGeneration;
-			BooleanSupplier readinessUiActive = () -> viewActive && !isHidden() &&
-					(viewGeneration == readinessGeneration) && (activityDelegate == a) && isAdded();
-			readinessPrefsBuilder = new ReadinessPrefsBuilder(a, readinessUiActive);
+			readinessPrefsBuilder = new ReadinessPrefsBuilder(a, pageUiActive, this::openPhoneApps);
 			readinessPrefsBuilder.addTo(set);
 		}
 
@@ -367,6 +376,14 @@ public class SettingsFragment extends MainActivityFragment
 			o.subtitle = R.string.export_diagnostic_report_sub;
 			o.onClick = () -> SettingsDiagnosticsManager.exportReport(a, diagnosticsUiActive);
 		});
+		if (PhoneAppsPrefsBuilder.shouldAddReport(BuildConfig.AUTO, CarAppsFeature.isSupported(),
+				CarAppsFeature.backend() != null, a.getRuntimeHostMode())) {
+			set.addButton(o -> {
+				o.title = R.string.car_apps_share_report;
+				o.subtitle = R.string.car_apps_share_report_sub;
+				o.onClick = () -> SettingsDiagnosticsManager.sharePhoneAppsReport(a, diagnosticsUiActive);
+			});
+		}
 		set.addButton(o -> {
 			o.title = R.string.clear_diagnostic_data;
 			o.subtitle = R.string.clear_diagnostic_data_sub;
@@ -438,7 +455,7 @@ public class SettingsFragment extends MainActivityFragment
 		return state;
 	}
 
-	private void addAddons(PreferenceSet set) {
+	private void addAddons(MainActivityDelegate a, PreferenceSet set, BooleanSupplier uiActive) {
 		AddonManager amgr = FermataApplication.get().getAddonManager();
 		PreferenceSet sub = set.subSet(o -> o.title = R.string.addons);
 		PreferenceStore store = FermataApplication.get().getPreferenceStore();
@@ -450,6 +467,18 @@ public class SettingsFragment extends MainActivityFragment
 			PreferenceSet sub1 = sub.subSet(b);
 			sub1.configure(b::configure);
 		}
+
+		// Phone Apps is built in, not a registry addon: its page sits with the addons, on the phone where supported
+		if (PhoneAppsPrefsBuilder.shouldAdd(BuildConfig.AUTO, CarAppsFeature.isSupported(), a.getRuntimeHostMode())) {
+			phoneAppsPrefsBuilder = new PhoneAppsPrefsBuilder(a, store, uiActive);
+			phoneAppsSet = sub.subSet(phoneAppsPrefsBuilder);
+			phoneAppsSet.configure(phoneAppsPrefsBuilder::configure);
+		}
+	}
+
+	/** The Readiness Phone Apps row opens the page; Back then returns to Addons. */
+	private void openPhoneApps() {
+		if ((adapter != null) && (phoneAppsSet != null)) adapter.setPreferenceSet(phoneAppsSet);
 	}
 
 	private static void addSectionHeader(PreferenceSet set, Context ctx, @StringRes int titleRes) {

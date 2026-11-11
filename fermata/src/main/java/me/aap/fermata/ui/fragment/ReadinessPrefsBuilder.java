@@ -30,8 +30,7 @@ import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
-import me.aap.fermata.ui.carapps.CarAppsReadinessModel;
-import me.aap.fermata.FermataApplication;
+import me.aap.fermata.ui.carapps.PhoneAppsStatus;
 import me.aap.fermata.ui.control.PhoneReadiness;
 import me.aap.fermata.ui.control.PhoneReadiness.Action;
 import me.aap.fermata.ui.control.PhoneReadiness.Check;
@@ -44,15 +43,30 @@ import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.ui.UiUtils;
 
-/** Phone-settings collector for connection and system-permission readiness. */
+/** Phone-settings collector for connection and system-permission readiness, grouped by what each check serves. */
 final class ReadinessPrefsBuilder {
 	static final Check[] REQUIRED_CHECKS = {Check.STORAGE, Check.LOCATION};
 	// Playback and Android Auto work without the notification permission.
 	static final Check[] OPTIONAL_CHECKS = {Check.NOTIFICATIONS, Check.MICROPHONE,
 			Check.NAVIGATION, Check.ACCESSIBILITY, Check.OVERLAY};
+	private static final int GREEN = 0xFF22C55E;
+	private static final int RED = 0xFFEF4444;
+	private static final int AMBER = 0xFFF59E0B;
+	private static final int GREY = 0xFF94A3B8;
+
+	enum Group {PLAYBACK, ANDROID_AUTO, PHONE_APPS, STABILITY}
+
+	enum Kind {OVERALL, HEADER, CONNECTION, SUMMARY, DETAIL, PHONE_APPS}
+
+	enum Summary {OK, OPTIONAL_OFF, ATTENTION}
+
+	record Item(Kind kind, @Nullable Group group, @Nullable Row row, @Nullable Summary summary) {
+	}
+
 	private final MainActivityDelegate activity;
 	private final Context context;
 	private final BooleanSupplier uiActive;
+	private final Runnable openPhoneApps;
 	private final AutomotiveConnectionState connection = AutomotiveConnectionState.get();
 	private final FermataServiceUiBinder binder;
 	private final AutomotiveConnectionState.Listener connectionListener = state -> scheduleRefresh();
@@ -63,10 +77,11 @@ final class ReadinessPrefsBuilder {
 	private PreferenceSet set;
 	private boolean closed;
 
-	ReadinessPrefsBuilder(MainActivityDelegate activity, BooleanSupplier uiActive) {
+	ReadinessPrefsBuilder(MainActivityDelegate activity, BooleanSupplier uiActive, Runnable openPhoneApps) {
 		this.activity = activity;
 		this.context = activity.getContext().getApplicationContext();
 		this.uiActive = uiActive;
+		this.openPhoneApps = openPhoneApps;
 		this.binder = activity.getMediaServiceBinder();
 		this.snapshot = collect();
 		connection.addListener(connectionListener);
@@ -112,117 +127,106 @@ final class ReadinessPrefsBuilder {
 		});
 
 		Snapshot current = snapshot;
-		Row connectionRow = current.rows().stream()
-				.filter(row -> row.check() == Check.CONNECTION).findFirst().orElse(null);
-		if (connectionRow != null) addConnectionRow(target, connectionRow, current.input());
-
-		addSection(target, R.string.readiness_group_required, current, REQUIRED_CHECKS);
-		addSection(target, R.string.readiness_group_stability, current, Check.BATTERY);
-		addSection(target, R.string.readiness_group_optional, current, OPTIONAL_CHECKS);
-		addCarAppsRow(target);
-	}
-
-	private void addCarAppsRow(PreferenceSet target) {
-		CarAppsReadinessModel model = CarAppsReadinessModel.from(CarAppsFeature.state(), CarAppsFeature.capabilities());
-		if (!shouldAddCarAppsRow(BuildConfig.AUTO, model)) return;
-
-		int color = (model.actionStringRes != 0 || model.adbSetup || model.adbSetupAgain) ? 0xFFEF4444 :
-				(model.warningStringRes != 0) ? 0xFFF59E0B : 0xFF22C55E;
-		String titleText = activity.getString(R.string.car_apps_readiness_title);
-		target.addButton(o -> {
-			o.ctitle = statusTitle(titleText, color);
-			o.csubtitle = carAppsSubtitle(model);
-			o.hideChevron = (model.actionStringRes == 0);
-			o.onClick = (model.actionStringRes == 0) ? null : this::performCarAppsAction;
-		});
-
-		if (model.adbSetup || model.adbSetupAgain) {
-			target.addButton(o -> {
-				o.title = model.adbSetup ? R.string.car_apps_setup_button : R.string.car_apps_setup_again;
-				o.onClick = () -> {
-					// forgetting the pairing makes the setup screen run the pairing again
-					if (model.adbSetupAgain) me.aap.fermata.ui.carapps.RootProbe.recordAdbPaired(context, false);
-					startSettings(new Intent().setClassName(context, "me.app.fermatax.auto.carapps.adb.AdbSetupActivity"));
-				};
-			});
-		}
-
-		if (shouldAddPhoneAppsReport(BuildConfig.AUTO, model, CarAppsFeature.backend() != null)) {
-			target.addButton(o -> {
-				o.title = R.string.car_apps_share_report;
-				o.subtitle = R.string.car_apps_share_report_sub;
-				o.onClick = () -> {
-					if (isRefreshAllowed(uiActive, closed)) SettingsDiagnosticsManager.sharePhoneAppsReport(activity, uiActive);
-				};
-			});
-		}
-
-		if (CarAppsFeature.canRun() && !model.checks.isEmpty()) {
-			for (me.aap.fermata.ui.carapps.CarAppsChecks.Check check : model.checks) {
-				if (!isShown(check)) continue;
-				int checkColor;
-				switch (check.status) {
-					case FAIL:
-						checkColor = 0xFFEF4444;
-						break;
-					case WARN:
-						checkColor = 0xFFF59E0B;
-						break;
-					case OK:
-						checkColor = 0xFF22C55E;
-						break;
-					case NA:
-					default:
-						checkColor = 0xFF9CA3AF;
-						break;
-				}
-				target.addButton(o -> {
-					o.ctitle = statusTitle(activity.getString(check.summaryRes), checkColor);
-					o.csubtitle = (check.fixRes != 0) ? activity.getString(check.fixRes) : null; // "" would keep an empty subtitle line
-					o.hideChevron = true;
-				});
+		PhoneAppsStatus phoneApps = shouldAddPhoneAppsRow(BuildConfig.AUTO, CarAppsFeature.isSupported())
+				? PhoneAppsStatus.current() : null;
+		for (Item item : plan(current.rows(), phoneApps)) {
+			switch (item.kind()) {
+				case OVERALL -> addStatusLine(target, (item.summary() == Summary.OK) ?
+						R.string.readiness_all_ready : R.string.readiness_some_issues, item.summary());
+				case HEADER -> addSectionHeader(target, groupTitle(item.group()));
+				case CONNECTION -> addConnectionRow(target, item.row(), current.input());
+				case SUMMARY -> addStatusLine(target, switch (item.summary()) {
+					case OK -> R.string.readiness_group_ok;
+					case OPTIONAL_OFF -> R.string.readiness_group_optional_off;
+					case ATTENTION -> R.string.readiness_needs_attention;
+				}, item.summary());
+				case DETAIL -> addReadinessRow(target, item.row(), current.input());
+				case PHONE_APPS -> addPhoneAppsRow(target, phoneApps);
 			}
 		}
 	}
 
-	/** A row saying only "not applicable" tells the user nothing; the diagnostics report still records it. */
-	static boolean isShown(me.aap.fermata.ui.carapps.CarAppsChecks.Check check) {
-		return check.status != me.aap.fermata.ui.carapps.CarAppsChecks.Status.NA;
+	static Group group(Check check) {
+		return switch (check) {
+			case STORAGE, NOTIFICATIONS, MICROPHONE -> Group.PLAYBACK;
+			case BATTERY -> Group.STABILITY;
+			case CONNECTION, CONTROL_SESSION, LOCATION, NAVIGATION, ACCESSIBILITY, OVERLAY, SCREEN_CAPTURE ->
+					Group.ANDROID_AUTO;
+		};
 	}
 
-	/** Next to the Phone Apps row: only where that row shows and the Auto backend can write the report. */
-	static boolean shouldAddPhoneAppsReport(boolean autoBuild, CarAppsReadinessModel model, boolean hasBackend) {
-		return shouldAddCarAppsRow(autoBuild, model) && hasBackend;
+	/** A row worth showing: not fine and not the connection, which is a status, not something to fix. */
+	static boolean isDetail(Row row) {
+		return (row.check() != Check.CONNECTION) && (row.status() != Status.OK)
+				&& (row.status() != Status.NOT_APPLICABLE);
 	}
 
-	static boolean shouldAddCarAppsRow(boolean autoBuild, CarAppsReadinessModel model) {
-		return autoBuild && model.rowVisible;
+	/** Optional items never break "Everything is ready"; nor does location allowed only while in use. */
+	static boolean needsAttention(Row row) {
+		return isDetail(row) && !contains(OPTIONAL_CHECKS, row.check())
+				&& !((row.check() == Check.LOCATION) && (row.status() == Status.INFO));
 	}
 
-	private CharSequence carAppsSubtitle(CarAppsReadinessModel model) {
-		if (model.statusStringRes == 0) return "";
-		String status = activity.getString(model.statusStringRes);
-		if (model.warningStringRes != 0) {
-			return status + " · " + activity.getString(model.warningStringRes);
+	/** Overall line, then per group: header, connection status, one summary line, and only the rows not fine. */
+	static List<Item> plan(List<Row> rows, @Nullable PhoneAppsStatus phoneApps) {
+		List<Item> out = new ArrayList<>();
+		boolean attention = (phoneApps != null) && phoneApps.needsAction;
+		for (Group g : Group.values()) {
+			if (g == Group.PHONE_APPS) {
+				if (phoneApps == null) continue;
+				out.add(new Item(Kind.HEADER, g, null, null));
+				out.add(new Item(Kind.PHONE_APPS, g, null, phoneApps.needsAction ? Summary.ATTENTION : Summary.OK));
+				continue;
+			}
+			List<Row> groupRows = new ArrayList<>();
+			for (Row r : rows) if (group(r.check()) == g) groupRows.add(r);
+			if (groupRows.isEmpty()) continue;
+			out.add(new Item(Kind.HEADER, g, null, null));
+			for (Row r : groupRows) if (r.check() == Check.CONNECTION) out.add(new Item(Kind.CONNECTION, g, r, null));
+			Summary s = groupRows.stream().anyMatch(ReadinessPrefsBuilder::needsAttention) ? Summary.ATTENTION :
+					groupRows.stream().anyMatch(ReadinessPrefsBuilder::isDetail) ? Summary.OPTIONAL_OFF : Summary.OK;
+			attention |= (s == Summary.ATTENTION);
+			out.add(new Item(Kind.SUMMARY, g, null, s));
+			for (Row r : groupRows) if (isDetail(r)) out.add(new Item(Kind.DETAIL, g, r, null));
 		}
-		if (model.actionStringRes != 0) {
-			return status + " · " + activity.getString(model.actionStringRes);
-		}
-		return status;
+		out.add(0, new Item(Kind.OVERALL, null, null, attention ? Summary.ATTENTION : Summary.OK));
+		return out;
 	}
 
-	private void performCarAppsAction() {
-		if (!isRefreshAllowed(uiActive, closed)) return;
-		CarAppsFeature.Backend b = CarAppsFeature.backend();
-		if (b != null) {
-			b.requestRoot().onCompletion((granted, err) -> {
-				if (!Boolean.TRUE.equals(granted)) {
-					android.widget.Toast.makeText(activity.getContext(), R.string.car_apps_grant_root_blocked,
-							android.widget.Toast.LENGTH_LONG).show();
-				}
-				scheduleRefresh();
-			});
-		}
+	static boolean shouldAddPhoneAppsRow(boolean autoBuild, boolean supported) {
+		return autoBuild && supported;
+	}
+
+	private int groupTitle(Group g) {
+		return switch (g) {
+			case PLAYBACK -> R.string.readiness_group_playback;
+			// Mobile has no Android Auto: there, location and navigation serve the phone's own driving screens
+			case ANDROID_AUTO -> BuildConfig.AUTO ? R.string.readiness_group_android_auto :
+					R.string.readiness_group_location;
+			case PHONE_APPS -> R.string.car_apps_title;
+			case STABILITY -> R.string.readiness_group_stability;
+		};
+	}
+
+	private void addStatusLine(PreferenceSet target, int text, Summary summary) {
+		boolean ok = summary != Summary.ATTENTION;
+		target.addButton(o -> {
+			o.ctitle = statusTitle(activity.getString(text), ok ? GREEN : AMBER, ok ? "✓ " : "● ");
+			o.hideChevron = true;
+		});
+	}
+
+	/** One row: the status, and a tap opens the Phone Apps page in Addons, where setup, the guide and the switch are. */
+	private void addPhoneAppsRow(PreferenceSet target, PhoneAppsStatus status) {
+		int color = status.needsAction ? RED :
+				((status == PhoneAppsStatus.OFF) || (status == PhoneAppsStatus.NOT_SUPPORTED)) ? GREY : GREEN;
+		target.addButton(o -> {
+			o.ctitle = statusTitle(activity.getString(status.textRes), color);
+			o.subtitle = R.string.car_apps_readiness_open;
+			o.onClick = () -> {
+				if (isRefreshAllowed(uiActive, closed)) openPhoneApps.run();
+			};
+		});
 	}
 
 	private void addConnectionRow(PreferenceSet target, Row row, Input input) {
@@ -234,21 +238,6 @@ final class ReadinessPrefsBuilder {
 			o.ctitle = statusTitle(text, statusColor(row.status()));
 			o.hideChevron = true;
 		});
-	}
-
-	private void addSection(PreferenceSet target, int title, Snapshot current, Check... checks) {
-		List<Row> rows = current.rows().stream().filter(row -> contains(checks, row.check())).toList();
-		if (rows.isEmpty()) return;
-		addSectionHeader(target, title);
-		if (PhoneReadiness.isSectionReady(rows)) {
-			target.addButton(o -> {
-				o.ctitle = statusTitle(activity.getString(R.string.readiness_all_ready), 0xFF22C55E,
-						"✓ ");
-				o.hideChevron = true;
-			});
-			return;
-		}
-		for (Row row : rows) addReadinessRow(target, row, current.input());
 	}
 
 	private static boolean contains(Check[] checks, Check check) {

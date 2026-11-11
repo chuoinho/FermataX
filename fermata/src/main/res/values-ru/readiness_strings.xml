@@ -36,9 +36,7 @@
 	<string name="readiness_nav_notification_access">Навигация из Maps/Waze</string>
 	<string name="readiness_nav_notification_access_granted">Включено. Позволяет отображать пошаговую навигацию на панели Glass.</string>
 	<string name="readiness_nav_notification_access_not_granted">Отключено. Нажмите, чтобы разрешить доступ к уведомлениям для пошаговой навигации.</string>
-	<string name="readiness_group_required">ОБЯЗАТЕЛЬНО</string>
 	<string name="readiness_group_stability">ДЛЯ СТАБИЛЬНОЙ РАБОТЫ В АВТОМОБИЛЕ</string>
-	<string name="readiness_group_optional">ДОПОЛНИТЕЛЬНО</string>
 	<string name="readiness_all_ready">Всё готово</string>
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
@@ -53,4 +51,11 @@
 	<string name="readiness_background_oem_open_vendor">Открыть настройки %1$s</string>
 	<string name="readiness_background_oem_open_android">Настройки батареи Android</string>
 	<string name="readiness_background_oem_later">Позже</string>
+	<string name="readiness_group_playback">Воспроизведение и медиатека</string>
+	<string name="readiness_group_android_auto">Подключение к Android Auto</string>
+	<string name="readiness_group_location">Геолокация и навигация</string>
+	<string name="readiness_group_ok">Всё в порядке</string>
+	<string name="readiness_group_optional_off">Готово. Некоторые необязательные пункты выключены.</string>
+	<string name="readiness_needs_attention">Требует внимания. Нажмите на пункт ниже, чтобы исправить.</string>
+	<string name="readiness_some_issues">Некоторые пункты требуют внимания</string>
 </resources>

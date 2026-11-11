@@ -37,9 +37,7 @@
 	<string name="readiness_nav_notification_access">Navigazione da Maps/Waze</string>
     <string name="readiness_nav_notification_access_granted">Abilitato. Consente il mirroring della navigazione passo-passo sulla dashboard Glass.</string>
     <string name="readiness_nav_notification_access_not_granted">Disabilitato. Tocca per consentire l\'accesso alle notifiche per la navigazione passo-passo.</string>
-    <string name="readiness_group_required">NECESSARIO</string>
     <string name="readiness_group_stability">PER UN FUNZIONAMENTO STABILE IN AUTO</string>
-    <string name="readiness_group_optional">OPZIONALE</string>
     <string name="readiness_all_ready">Tutto è pronto</string>
     <string name="readiness_android_auto">Android Auto</string>
     <string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
@@ -54,4 +52,11 @@
     <string name="readiness_background_oem_open_vendor">Apri impostazioni %1$s</string>
     <string name="readiness_background_oem_open_android">Impostazioni batteria Android</string>
     <string name="readiness_background_oem_later">Più tardi</string>
+	<string name="readiness_group_playback">Riproduzione e libreria</string>
+	<string name="readiness_group_android_auto">Connessione Android Auto</string>
+	<string name="readiness_group_location">Posizione e navigazione</string>
+	<string name="readiness_group_ok">Tutto a posto</string>
+	<string name="readiness_group_optional_off">Pronto. Alcune voci facoltative sono disattivate.</string>
+	<string name="readiness_needs_attention">Richiede attenzione. Tocca una voce qui sotto per sistemarla.</string>
+	<string name="readiness_some_issues">Alcune voci richiedono attenzione</string>
 </resources>

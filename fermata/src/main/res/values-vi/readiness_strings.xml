@@ -36,9 +36,7 @@
 	<string name="readiness_nav_notification_access">Chỉ đường từ Maps/Waze</string>
 	<string name="readiness_nav_notification_access_granted">Đang bật. Cho phép phản chiếu dẫn đường từng bước trên bảng điều khiển Kính.</string>
 	<string name="readiness_nav_notification_access_not_granted">Đang tắt. Chạm để cấp quyền truy cập thông báo cho dẫn đường.</string>
-	<string name="readiness_group_required">CẦN THIẾT</string>
 	<string name="readiness_group_stability">ĐỂ CHẠY ỔN ĐỊNH TRÊN XE</string>
-	<string name="readiness_group_optional">TUỲ CHỌN</string>
 	<string name="readiness_all_ready">Tất cả đã sẵn sàng</string>
 	<string name="readiness_android_auto">Android Auto</string>
 	<string name="readiness_android_auto_status">%1$s: %2$s · %3$s</string>
@@ -53,4 +51,11 @@
 	<string name="readiness_background_oem_open_vendor">Mở cài đặt %1$s</string>
 	<string name="readiness_background_oem_open_android">Cài đặt pin Android</string>
 	<string name="readiness_background_oem_later">Để sau</string>
+	<string name="readiness_group_playback">Phát nhạc và thư viện</string>
+	<string name="readiness_group_android_auto">Kết nối Android Auto</string>
+	<string name="readiness_group_location">Vị trí và dẫn đường</string>
+	<string name="readiness_group_ok">Mọi thứ ổn</string>
+	<string name="readiness_group_optional_off">Sẵn sàng. Một số mục tùy chọn đang tắt.</string>
+	<string name="readiness_needs_attention">Cần xử lý. Chạm vào một mục bên dưới để sửa.</string>
+	<string name="readiness_some_issues">Một số mục cần xử lý</string>
 </resources>
