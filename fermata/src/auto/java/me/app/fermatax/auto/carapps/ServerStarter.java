@@ -9,8 +9,10 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootState;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.app.fermatax.auto.carapps.adb.AdbConnectPort;
 import me.app.fermatax.auto.carapps.adb.AdbPairing;
+import me.app.fermatax.auto.carapps.adb.AdbRecoveryJob;
 import me.app.fermatax.auto.carapps.adb.LocalAdb;
 
 /**
@@ -30,6 +32,20 @@ public final class ServerStarter {
 	 * sum of the two.
 	 */
 	static final long PORT_TIMEOUT_MS = 12_000;
+
+	/** After one re-registration of wireless debugging that was already on: the gap to switch it on again plus its announcement. */
+	static final long REREGISTER_TIMEOUT_MS = 10_000;
+
+	interface Runner {
+		FutureSupplier<Void> run(Context ctx, int port, String command);
+	}
+
+	// replaced by the tests: there is no NSD and no loopback adbd on the host
+	static volatile java.util.function.BiFunction<Context, Long, FutureSupplier<Integer>> portFinder = AdbConnectPort::find;
+	static volatile Runner runner = (ctx, port, command) -> {
+		LocalAdb adb = new LocalAdb(ctx);
+		return adb.runAndClose(port, command).onCompletion((r, err) -> adb.close());
+	};
 
 	private ServerStarter() {
 	}
@@ -52,10 +68,35 @@ public final class ServerStarter {
 
 	/** One short ADB session: find the connect port, run the command, close. */
 	static FutureSupplier<Void> startViaAdb(Context ctx, String command) {
-		LocalAdb adb = new LocalAdb(ctx);
 		String start = withGrant(ctx, command);
-		return AdbConnectPort.find(ctx, PORT_TIMEOUT_MS)
-				.then(port -> adb.runAndClose(port, start))
-				.onCompletion((r, err) -> adb.close());
+		return findPort(ctx).then(port -> runner.run(ctx, port, start));
+	}
+
+	/**
+	 * A stale mdns record (wireless debugging that was already on) shows as a port that never appears: then, once, wireless
+	 * debugging is switched off and on again so adbd announces itself, and the port is awaited again. The discovery is
+	 * running before the first write, so mdnsd is up when adbd announces. Never more than once per start.
+	 */
+	private static FutureSupplier<Integer> findPort(Context ctx) {
+		Promise<Integer> result = new Promise<>();
+		portFinder.apply(ctx, PORT_TIMEOUT_MS).onCompletion((port, err) -> {
+			if (err == null) {
+				result.complete(port);
+			} else if (!AdbRecoveryJob.canReRegisterAdbWifi(ctx)) {
+				result.completeExceptionally(err);
+			} else {
+				FutureSupplier<Integer> again = portFinder.apply(ctx, REREGISTER_TIMEOUT_MS);
+				AdbRecoveryJob.reRegisterAdbWifi(ctx);
+				again.onCompletion((port2, err2) -> {
+					if (err2 == null) {
+						result.complete(port2);
+					} else {
+						AdbRecoveryJob.reRegisterFailed(ctx);
+						result.completeExceptionally(err2);
+					}
+				});
+			}
+		});
+		return result;
 	}
 }

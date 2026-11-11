@@ -17,7 +17,7 @@ public class ServerStarterTest {
 	public void portWaitCoversAWirelessDebuggingTheAppJustSwitchedOn() {
 		org.junit.Assert.assertTrue(ServerStarter.PORT_TIMEOUT_MS >= 10_000);
 		// each attempt = port wait + the 15 s ADB watchdog; four attempts must stay far below the 10 minutes of a job
-		org.junit.Assert.assertTrue(4 * (ServerStarter.PORT_TIMEOUT_MS + 15_000) < 150_000);
+		org.junit.Assert.assertTrue(4 * (ServerStarter.PORT_TIMEOUT_MS + 15_000) + ServerStarter.REREGISTER_TIMEOUT_MS < 150_000);
 	}
 
 	@Test

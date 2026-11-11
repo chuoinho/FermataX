@@ -50,8 +50,8 @@ public class AdbRecoveryJob extends JobService {
 	private static final String ADB_WIFI = "adb_wifi_enabled";
 	private static final String ADB_ENABLED = "adb_enabled";
 	private static final int MAX_TRIES = 3;
-	/** Four attempts of 12 s port wait plus the 15 s ADB watchdog, and the 7 s of backoff: under 2 minutes, a job may run 10. */
-	private static final long RUN_TIMEOUT_MS = 120_000;
+	/** Four attempts of 12 s port wait plus the 15 s ADB watchdog, and the 7 s of backoff: plus one 10 s re-registration: under 2.5 minutes, a job may run 10. */
+	private static final long RUN_TIMEOUT_MS = 150_000;
 
 	public static volatile Function<Context, Object> wifiNetwork = AdbRecoveryJob::currentWifi;
 	public static volatile Predicate<Context> wifiCheck = c -> wifiNetwork.apply(c) != null;
@@ -207,6 +207,50 @@ public class AdbRecoveryJob extends JobService {
 			if (!owned) prefs.edit().remove(PREF_RESTORE).commit();
 			return false;
 		}
+	}
+
+	/** adbd needs a moment to stop before it is switched on again, else the settings observer sees one change at most. */
+	static final long REREGISTER_GAP_MS = 1_500;
+
+	/**
+	 * Wireless debugging that was on when the start began, whose connect service nobody finds: Android stops mdnsd while
+	 * no one uses it and adbd may have announced itself to the old one. Only for a setting the user left on (no marker:
+	 * one we switched on just announced itself) and only where the app may write it and Wi-Fi is there.
+	 */
+	public static boolean canReRegisterAdbWifi(Context ctx) {
+		return adbWifiOn(ctx) && !prefs(ctx).contains(PREF_RESTORE) && canWriteSecure(ctx) && hasWifi(ctx);
+	}
+
+	/**
+	 * Switches wireless debugging off and, after a short gap, on again so adbd announces itself anew. The marker holds the
+	 * user's 1 before the first write, so the usual restore (or the repair after a kill) ends on their value.
+	 * Call only after canReRegisterAdbWifi; never more than once per start.
+	 */
+	public static void reRegisterAdbWifi(Context ctx) {
+		SharedPreferences prefs = prefs(ctx);
+		prefs.edit().putInt(PREF_RESTORE, 1).commit();
+		try {
+			adbWifiWriter.accept(ctx, 0);
+		} catch (RuntimeException e) {
+			Log.e(e, "Cannot restart wireless debugging");
+			prefs.edit().remove(PREF_RESTORE).commit();
+			return;
+		}
+		new Handler(Looper.getMainLooper()).postDelayed(() -> {
+			try {
+				adbWifiWriter.accept(ctx, 1);
+			} catch (RuntimeException e) {
+				Log.e(e, "Cannot switch wireless debugging on again"); // the marker still gives the user's 1 back
+			}
+		}, REREGISTER_GAP_MS);
+	}
+
+	/**
+	 * The port was still not found after re-registering. If Android turned wireless debugging off on this Wi-Fi it refused
+	 * it: remember that (no retry shows its dialog again) and drop the marker, else the restore would ask for it once more.
+	 */
+	public static void reRegisterFailed(Context ctx) {
+		if (refusedOnThisWifi(ctx)) prefs(ctx).edit().remove(PREF_RESTORE).commit();
 	}
 
 	/**

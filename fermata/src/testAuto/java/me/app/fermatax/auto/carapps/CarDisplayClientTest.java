@@ -2435,8 +2435,8 @@ public class CarDisplayClientTest {
 
 		AdbRecoveryJob.start(context, finished::add);
 		ShadowLooper.idleMainLooper(100, java.util.concurrent.TimeUnit.SECONDS);
-		assertTrue("the slowest start (4 attempts of port wait and watchdog) fits", finished.isEmpty());
-		ShadowLooper.idleMainLooper(30, java.util.concurrent.TimeUnit.SECONDS);
+		assertTrue("the slowest start (4 attempts of port wait and watchdog, one re-registration) fits", finished.isEmpty());
+		ShadowLooper.idleMainLooper(55, java.util.concurrent.TimeUnit.SECONDS);
 
 		assertEquals(List.of(true), finished);
 		assertEquals(1, tries());
