@@ -17,14 +17,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** The always-on Phone Apps journal: bounded, ordered, kept across a process death, safe to share. */
+/** The Phone Apps journal: only while Detailed diagnostics is on; then a 1 MB ring kept across a process death. */
 public class PhoneAppsJournalTest {
 	private final AtomicLong clock = new AtomicLong(1_700_000_000_000L);
+	private final AtomicBoolean detailed = new AtomicBoolean(true);
 
 	private PhoneAppsJournal journal(File file) {
-		return new PhoneAppsJournal(file, Runnable::run, clock::incrementAndGet, () -> 42L);
+		return new PhoneAppsJournal(file, Runnable::run, clock::incrementAndGet, () -> 42L, detailed::get);
 	}
 
 	private static File tempFile() throws Exception {
@@ -32,28 +34,87 @@ public class PhoneAppsJournalTest {
 		return new File(dir, "carapps_journal.txt");
 	}
 
-	@Test public void keepsTheNewestEventsWithinItsBounds() throws Exception {
-		PhoneAppsJournal j = journal(tempFile());
-		for (int i = 0; i < 500; i++) j.add("server_retry", Map.of("attempt", i));
-
-		List<String> lines = j.lines();
-		assertEquals(PhoneAppsJournal.MAX_EVENTS, lines.size());
-		assertTrue(lines.get(0), lines.get(0).endsWith("server_retry attempt=200"));
-		assertTrue(lines.get(lines.size() - 1).endsWith("server_retry attempt=499"));
-		int bytes = 0;
-		for (String l : lines) bytes += l.length() + 1;
-		assertTrue("at most 64 KB", bytes <= PhoneAppsJournal.MAX_BYTES);
+	private static int bytes(List<String> lines) {
+		int n = 0;
+		for (String l : lines) n += l.length() + 1;
+		return n;
 	}
 
-	@Test public void bigEventsAreBoundedByBytesToo() throws Exception {
-		PhoneAppsJournal j = journal(tempFile());
-		Map<String, Object> wide = new LinkedHashMap<>();
-		for (int k = 0; k < 20; k++) wide.put("reason" + (char) ('a' + k), "x".repeat(200));
-		for (int i = 0; i < 300; i++) j.add("server_failed", wide);
-		int bytes = 0;
-		for (String l : j.lines()) bytes += l.length() + 1;
-		assertTrue(bytes <= PhoneAppsJournal.MAX_BYTES);
-		assertTrue(j.lines().size() < PhoneAppsJournal.MAX_EVENTS);
+	/** Runs the queued background writes only when told, so a big test does not open the file per event. */
+	private static final class Queue implements java.util.concurrent.Executor {
+		final List<Runnable> tasks = new ArrayList<>();
+
+		@Override public synchronized void execute(Runnable r) {
+			tasks.add(r);
+		}
+
+		synchronized void drain() {
+			while (!tasks.isEmpty()) tasks.remove(0).run();
+		}
+	}
+
+	@Test public void keepsTheNewestEventsWithinOneMegabyte() throws Exception {
+		File file = tempFile();
+		Queue io = new Queue();
+		PhoneAppsJournal j = new PhoneAppsJournal(file, io, clock::incrementAndGet, () -> 42L, detailed::get);
+		int n = 25_000; // about 70 bytes each: well over 1 MB
+		for (int i = 0; i < n; i++) {
+			j.add("server_retry", Map.of("attempt", i));
+			if (i % 1000 == 0) io.drain();
+		}
+		io.drain();
+
+		List<String> lines = j.lines();
+		assertTrue(bytes(lines) + " bytes", bytes(lines) <= PhoneAppsJournal.MAX_BYTES);
+		assertTrue("close to the bound, not far under it", bytes(lines) > PhoneAppsJournal.MAX_BYTES - 200);
+		assertTrue(lines.get(lines.size() - 1).endsWith("server_retry attempt=" + (n - 1)));
+		assertFalse("the oldest are gone", lines.get(0).endsWith("attempt=0"));
+		assertEquals(1024 * 1024, PhoneAppsJournal.MAX_BYTES);
+		assertTrue(file.length() + " bytes on disk", file.length() <= 3L * PhoneAppsJournal.MAX_BYTES);
+		assertEquals("the file holds the same ring", lines, journal(file).lines());
+	}
+
+	@Test public void offRecordsNothingAndTouchesNoFile() throws Exception {
+		File file = tempFile();
+		detailed.set(false);
+		AtomicLong ioTasks = new AtomicLong();
+		PhoneAppsJournal j = new PhoneAppsJournal(file, r -> {
+			ioTasks.incrementAndGet();
+			r.run();
+		}, clock::incrementAndGet, () -> 42L, detailed::get);
+		for (int i = 0; i < 100; i++) j.add("server_starting", Map.of("attempt", i));
+
+		assertTrue(j.lines().isEmpty());
+		assertFalse("no file is created", file.exists());
+		assertEquals("no background write", 0, ioTasks.get());
+		assertFalse(j.isRecording());
+	}
+
+	@Test public void turningItOnAndOffAtRuntimeStartsAndStopsRecording() throws Exception {
+		File file = tempFile();
+		PhoneAppsJournal j = journal(file);
+		detailed.set(false);
+		j.add("server_ping", Map.of("state", "sent"));
+		detailed.set(true);
+		j.add("server_ping", Map.of("state", "unanswered"));
+		detailed.set(false);
+		j.add("server_starting", Map.of("attempt", 0));
+
+		List<String> lines = j.lines();
+		assertEquals(1, lines.size());
+		assertTrue(lines.get(0).endsWith("state=unanswered"));
+		assertEquals("turning it off keeps what was recorded, like the detailed journal", lines, journal(file).lines());
+	}
+
+	@Test public void clearRemovesTheJournalAndItsFile() throws Exception {
+		File file = tempFile();
+		PhoneAppsJournal j = journal(file);
+		j.add("server_died", Map.of("panel_off", false));
+		assertTrue(file.exists());
+		j.clear();
+		assertTrue(j.lines().isEmpty());
+		assertFalse(file.exists());
+		assertTrue(journal(file).lines().isEmpty());
 	}
 
 	@Test public void eachLineHasWallClockUptimeEventAndSortedAttributes() throws Exception {
@@ -78,14 +139,6 @@ public class PhoneAppsJournalTest {
 		assertTrue(lines.get(1).endsWith("state=unanswered"));
 		assertTrue(lines.get(2).endsWith("server_starting attempt=0"));
 		assertEquals(lines, journal(file).lines());
-	}
-
-	@Test public void theFileStaysBoundedOnDisk() throws Exception {
-		File file = tempFile();
-		PhoneAppsJournal j = journal(file);
-		for (int i = 0; i < 5000; i++) j.add("server_retry", Map.of("attempt", i));
-		assertTrue(file.length() + " bytes", file.length() <= 3L * PhoneAppsJournal.MAX_BYTES);
-		assertEquals(j.lines(), journal(file).lines());
 	}
 
 	@Test public void aCorruptFileKeepsOnlyItsValidLines() throws Exception {
@@ -114,7 +167,7 @@ public class PhoneAppsJournalTest {
 	@Test public void concurrentWritersLoseNothingAndKeepTheirOrder() throws Exception {
 		File file = tempFile();
 		ExecutorService io = Executors.newSingleThreadExecutor();
-		PhoneAppsJournal j = new PhoneAppsJournal(file, io, System::currentTimeMillis, () -> 1L);
+		PhoneAppsJournal j = new PhoneAppsJournal(file, io, System::currentTimeMillis, () -> 1L, () -> true);
 		int threads = 6, each = 40;
 		CountDownLatch go = new CountDownLatch(1);
 		List<Thread> writers = new ArrayList<>();

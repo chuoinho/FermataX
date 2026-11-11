@@ -42,6 +42,10 @@ public final class CarAppsFeature {
 		default String report(android.content.Context ctx) {
 			return null;
 		}
+
+		/** Clear diagnostic data: drops the Phone Apps event journal. */
+		default void clearDiagnostics() {
+		}
 	}
 
 	/** Phone Apps is an addon the user can turn off; on by default, so existing users are unchanged. */
@@ -187,6 +191,11 @@ public final class CarAppsFeature {
 	public static String report(android.content.Context ctx) {
 		Backend b = backend;
 		return (b == null) ? null : b.report(ctx);
+	}
+
+	public static void clearDiagnostics() {
+		Backend b = backend;
+		if (b != null) b.clearDiagnostics();
 	}
 
 	public static int capabilities() {

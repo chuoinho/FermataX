@@ -83,6 +83,7 @@ final class SettingsDiagnosticsManager {
 						boolean cleared = runtime.clear(3000L);
 						DiagnosticReportExporter.clearCachedReports(FermataApplication.get());
 						DiagnosticReportExporter.clearTripLogs(FermataApplication.get());
+						me.aap.fermata.ui.carapps.CarAppsFeature.clearDiagnostics();
 						return cleared;
 					}).main(activity.getHandler())
 							.onCompletion((cleared, error) -> {

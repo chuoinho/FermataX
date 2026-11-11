@@ -84,10 +84,17 @@ public final class PhoneAppsReport {
 				+ " epoch=" + client.serverEpoch() + " capabilities=0x" + Integer.toHexString(client.capabilities())
 				+ " saved_capabilities=0x" + Integer.toHexString(CarDisplayClient.savedCapabilities(ctx, 0)));
 
+		boolean detailed = PhoneAppsJournal.recording();
+		line(r, "detailed_diagnostics", detailed ? "on" : "off");
+
 		r.append("--- OEM notes ---\n").append(oemNotes(Build.MANUFACTURER, Build.BRAND));
 
 		List<String> events = PhoneAppsJournal.snapshot();
 		r.append("--- Events (newest last, ").append(events.size()).append(") ---\n");
+		if (!detailed) r.append(events.isEmpty() ? "Detailed diagnostics is off, so no events were recorded."
+				: "Detailed diagnostics is off: these events are from when it was on.")
+				.append(" Turn it on in Settings > Diagnostics > Detailed diagnostics, reproduce the problem, then share"
+						+ " this report again.\n");
 		for (String e : events) r.append(e).append('\n');
 		return r.toString();
 	}

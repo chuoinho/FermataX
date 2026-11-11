@@ -8,7 +8,7 @@ public final class JournalAssert {
 	}
 
 	public static PhoneAppsJournal install() {
-		PhoneAppsJournal j = new PhoneAppsJournal(null, Runnable::run, System::currentTimeMillis, () -> 0L);
+		PhoneAppsJournal j = new PhoneAppsJournal(null, Runnable::run, System::currentTimeMillis, () -> 0L, () -> true);
 		PhoneAppsJournal.setForTest(j);
 		return j;
 	}

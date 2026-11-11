@@ -37,6 +37,7 @@ import me.app.fermatax.auto.carapps.adb.AdbRecoveryJob;
 public class PhoneAppsReportTest {
 	private Context ctx;
 	private PhoneAppsJournal journal;
+	private final java.util.concurrent.atomic.AtomicBoolean detailed = new java.util.concurrent.atomic.AtomicBoolean(true);
 	private Predicate<Context> savedWifi;
 	private Function<String, String> savedProps;
 
@@ -44,7 +45,7 @@ public class PhoneAppsReportTest {
 		ctx = RuntimeEnvironment.getApplication();
 		ctx.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit().clear().commit();
 		File file = new File(Files.createTempDirectory("report").toFile(), "carapps_journal.txt");
-		journal = new PhoneAppsJournal(file, Runnable::run, System::currentTimeMillis, () -> 7L);
+		journal = new PhoneAppsJournal(file, Runnable::run, System::currentTimeMillis, () -> 7L, detailed::get);
 		PhoneAppsJournal.setForTest(journal);
 		CarDisplayClient.get().resetForTesting();
 		savedWifi = AdbRecoveryJob.wifiCheck;
@@ -97,6 +98,50 @@ public class PhoneAppsReportTest {
 				"start_requested trigger=car_session", "server_starting attempt=0 channel=adb", "server_failed reason=no_wifi"}) {
 			assertTrue(line + " in\n" + r, r.contains(line));
 		}
+	}
+
+	/** Detailed diagnostics off: no events, but the report still explains the failure from live state and says what to do. */
+	@Test public void withDetailedDiagnosticsOffTheReportStillWorksAndSaysHowToGetEvents() throws Exception {
+		detailed.set(false);
+		CarAppsFeature.setAdbPaired(true);
+		AdbRecoveryJob.wifiCheck = c -> false;
+		CarDisplayClient.get().ensureRunning(ctx, "car_session");
+
+		String r = PhoneAppsReport.build(ctx);
+
+		for (String line : new String[]{"channel: adb", "client: state=FAILED", "last_failure=no_wifi",
+				"detailed_diagnostics: off", "--- Events (newest last, 0) ---",
+				"Detailed diagnostics is off, so no events were recorded. Turn it on in Settings > Diagnostics > "
+						+ "Detailed diagnostics, reproduce the problem, then share this report again."}) {
+			assertTrue(line + " in\n" + r, r.contains(line));
+		}
+		assertFalse(r, r.contains("server_failed reason=no_wifi"));
+
+		AutoCarAppsBackend.install(ctx); // the app's backend: the export asks it for the report
+		File zip = me.aap.fermata.diagnostics.export.DiagnosticReportExporter.create(ctx, null);
+		try (java.util.zip.ZipFile z = new java.util.zip.ZipFile(zip)) {
+			java.util.zip.ZipEntry e = z.getEntry("phone_apps_report.txt");
+			String inZip = new String(z.getInputStream(e).readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+			assertTrue(inZip, inZip.contains("last_failure=no_wifi") && inZip.contains("Detailed diagnostics is off"));
+		}
+		File shared = me.aap.fermata.diagnostics.export.DiagnosticReportExporter.createPhoneAppsReport(ctx);
+		assertTrue(new String(Files.readAllBytes(shared.toPath()), java.nio.charset.StandardCharsets.UTF_8)
+				.contains("Detailed diagnostics is off"));
+	}
+
+	@Test public void withDetailedDiagnosticsOnTheReportSaysSo() {
+		String r = PhoneAppsReport.build(ctx);
+		assertTrue(r, r.contains("detailed_diagnostics: on"));
+		assertFalse(r, r.contains("Detailed diagnostics is off"));
+	}
+
+	/** Settings > Diagnostics > Clear diagnostic data reaches the Phone Apps journal through the backend. */
+	@Test public void clearDiagnosticDataClearsTheJournal() {
+		PhoneAppsJournal.record("server_died", java.util.Map.of("panel_off", false));
+		assertEquals(1, PhoneAppsJournal.snapshot().size());
+		AutoCarAppsBackend.install(ctx);
+		CarAppsFeature.clearDiagnostics();
+		assertTrue(PhoneAppsJournal.snapshot().isEmpty());
 	}
 
 	@Test public void oemNotesFollowTheManufacturer() {
