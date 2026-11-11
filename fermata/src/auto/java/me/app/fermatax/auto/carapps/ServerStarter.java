@@ -10,7 +10,6 @@ import android.os.SystemClock;
 import androidx.annotation.Nullable;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 import me.aap.fermata.ui.carapps.CarAppsFeature;
@@ -81,8 +80,7 @@ public final class ServerStarter {
 	static FutureSupplier<Void> startViaAdb(Context ctx, String command) {
 		String start = withGrant(ctx, command);
 		Promise<Void> result = new Promise<>();
-		AtomicBoolean toggled = new AtomicBoolean(); // one re-registration per start, whichever failure asks for it
-		findPort(ctx, toggled).onCompletion((port, err) -> {
+		findPort(ctx).onCompletion((port, err) -> {
 			if (err != null) {
 				result.complete(null, err);
 				return;
@@ -93,12 +91,10 @@ public final class ServerStarter {
 				recordCommand(runErr, refused, t0);
 				// A refused loopback connection: the port came from a stale mdns cache while adbd listens elsewhere. The
 				// command never ran, so one fresh port and one more run do not start anything twice.
-				if ((runErr == null) || toggled.get() || !refused || !AdbRecoveryJob.canReRegisterAdbWifi(ctx)) {
+				if ((runErr == null) || !refused || !mayReRegister(ctx, "refused")) {
 					result.complete(r, runErr);
 					return;
 				}
-				toggled.set(true);
-				PhoneAppsJournal.record("adb_reregister", Map.of("reason", "refused"));
 				reRegisterAndFind(ctx, port).onCompletion((port2, err2) -> {
 					if (err2 != null) {
 						result.complete(null, err2);
@@ -144,22 +140,28 @@ public final class ServerStarter {
 	 * A stale mdns record (wireless debugging that was already on) shows as a port that never appears: then, once, wireless
 	 * debugging is switched off and on again so adbd announces itself, and the port is awaited again.
 	 */
-	private static FutureSupplier<Integer> findPort(Context ctx, AtomicBoolean toggled) {
+	private static FutureSupplier<Integer> findPort(Context ctx) {
 		Promise<Integer> result = new Promise<>();
 		long t0 = SystemClock.elapsedRealtime();
 		portFinder.apply(ctx, PORT_TIMEOUT_MS).onCompletion((port, err) -> {
 			recordPort(err, port, -1, "first_look", t0);
 			if (err == null) {
 				result.complete(port);
-			} else if (!AdbRecoveryJob.canReRegisterAdbWifi(ctx)) {
+			} else if (!mayReRegister(ctx, "not_found")) {
 				result.completeExceptionally(err);
 			} else {
-				toggled.set(true);
-				PhoneAppsJournal.record("adb_reregister", Map.of("reason", "not_found"));
 				reRegisterAndFind(ctx, -1).onCompletion((port2, err2) -> result.complete(port2, err2));
 			}
 		});
 		return result;
+	}
+
+	/** Whether the one re-registration of this start may run now; journaled either way, with the trigger and what blocked it ("skip": a key the diagnostics sanitizer keeps). */
+	private static boolean mayReRegister(Context ctx, String reason) {
+		String blocker = AdbRecoveryJob.reRegisterBlocker(ctx);
+		PhoneAppsJournal.record("adb_reregister", (blocker == null) ? Map.of("reason", reason, "result", "started")
+				: Map.of("reason", reason, "result", "skipped", "skip", blocker));
+		return blocker == null;
 	}
 
 	/**

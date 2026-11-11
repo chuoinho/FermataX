@@ -50,6 +50,8 @@ public class AdbRecoveryJob extends JobService {
 	/** Holds the user's adb_wifi_enabled while we have changed it; written before the setting, removed after the restore. */
 	public static final String PREF_RESTORE = "CAR_APPS_ADB_WIFI_RESTORE";
 	public static final String PREF_TRIES = "CAR_APPS_ADB_RECOVERY_TRIES";
+	/** Set by the one re-registration of a start, removed with the marker when the start gives the setting back. */
+	static final String PREF_REREGISTERED = "CAR_APPS_ADB_WIFI_REREGISTERED";
 	private static final String ADB_WIFI = "adb_wifi_enabled";
 	private static final String ADB_ENABLED = "adb_enabled";
 	private static final int MAX_TRIES = 3;
@@ -224,7 +226,7 @@ public class AdbRecoveryJob extends JobService {
 		} catch (RuntimeException e) {
 			Log.e(e, "Cannot switch wireless debugging on");
 			recordAdbWifi("enable", on ? 1 : 0, 1, "failed");
-			if (!owned) prefs.edit().remove(PREF_RESTORE).commit();
+			if (!owned) prefs.edit().remove(PREF_RESTORE).remove(PREF_REREGISTERED).commit();
 			return false;
 		}
 	}
@@ -238,32 +240,45 @@ public class AdbRecoveryJob extends JobService {
 	static final long REREGISTER_GAP_MS = 1_500;
 
 	/**
-	 * Wireless debugging that was on when the start began, whose connect service nobody finds: Android stops mdnsd while
-	 * no one uses it and adbd may have announced itself to the old one. Only for a setting the user left on (no marker:
-	 * one we switched on just announced itself) and only where the app may write it and Wi-Fi is there.
+	 * Wireless debugging that is on, whose connect service nobody finds or whose port refuses: Android stops mdnsd while
+	 * no one uses it and adbd may have announced itself to the old one, also right after the app switched it on. Once per
+	 * start (all its retries), only where the app may write it and Wi-Fi is there. Null when allowed, else why not.
 	 */
+	@Nullable
+	public static String reRegisterBlocker(Context ctx) {
+		if (!adbWifiOn(ctx)) return "setting_off";
+		if (prefs(ctx).contains(PREF_REREGISTERED)) return "once_per_start";
+		if (!canWriteSecure(ctx)) return "no_permission";
+		return hasWifi(ctx) ? null : "no_wifi";
+	}
+
 	public static boolean canReRegisterAdbWifi(Context ctx) {
-		return adbWifiOn(ctx) && !prefs(ctx).contains(PREF_RESTORE) && canWriteSecure(ctx) && hasWifi(ctx);
+		return reRegisterBlocker(ctx) == null;
 	}
 
 	/**
 	 * Switches wireless debugging off and, after a short gap, on again so adbd announces itself anew. The marker holds the
-	 * user's 1 before the first write, so the usual restore (or the repair after a kill) ends on their value.
-	 * Call only after canReRegisterAdbWifi; never more than once per start.
+	 * user's value before the first write (their 1, or the one this start already saved, left as it is), so the usual
+	 * restore (or the repair after a kill) ends on their value. Call only after canReRegisterAdbWifi.
 	 */
 	public static void reRegisterAdbWifi(Context ctx) {
 		SharedPreferences prefs = prefs(ctx);
-		prefs.edit().putInt(PREF_RESTORE, 1).commit();
+		boolean owned = prefs.contains(PREF_RESTORE);
+		SharedPreferences.Editor once = prefs.edit().putBoolean(PREF_REREGISTERED, true);
+		if (!owned) once.putInt(PREF_RESTORE, 1);
+		once.commit();
 		try {
 			adbWifiWriter.accept(ctx, 0);
 			recordAdbWifi("reregister_off", 1, 0, "written");
 		} catch (RuntimeException e) {
 			Log.e(e, "Cannot restart wireless debugging");
 			recordAdbWifi("reregister_off", 1, 0, "failed");
-			prefs.edit().remove(PREF_RESTORE).commit();
+			if (!owned) prefs.edit().remove(PREF_RESTORE).remove(PREF_REREGISTERED).commit();
 			return;
 		}
 		new Handler(Looper.getMainLooper()).postDelayed(() -> {
+			// the start ended inside the gap and gave the user's value back: a 1 now would overwrite their 0
+			if (!prefs.contains(PREF_RESTORE)) return;
 			try {
 				adbWifiWriter.accept(ctx, 1);
 				recordAdbWifi("reregister_on", 0, 1, "written");
@@ -281,7 +296,7 @@ public class AdbRecoveryJob extends JobService {
 	public static void reRegisterFailed(Context ctx) {
 		boolean refused = refusedOnThisWifi(ctx);
 		PhoneAppsJournal.record("adb_reregister", Map.of("result", "no_port", "reason", refused ? "refused_wifi" : "unknown"));
-		if (refused) prefs(ctx).edit().remove(PREF_RESTORE).commit();
+		if (refused) prefs(ctx).edit().remove(PREF_RESTORE).remove(PREF_REREGISTERED).commit();
 	}
 
 	/**
@@ -330,7 +345,7 @@ public class AdbRecoveryJob extends JobService {
 			return;
 		}
 		recordAdbWifi("restore", from, to, "written");
-		prefs.edit().remove(PREF_RESTORE).commit();
+		prefs.edit().remove(PREF_RESTORE).remove(PREF_REREGISTERED).commit();
 	}
 
 	/** A network where Android refused wireless debugging counts as none, until the user allows it there. */

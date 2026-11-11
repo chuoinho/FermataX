@@ -2084,6 +2084,8 @@ public class CarDisplayClientTest {
 		assertEquals(CarDisplayClient.State.FAILED, client.state());
 		assertEquals(0, adbWifi());
 		assertFalse(markerPresent());
+		assertEquals("D5: the job starts it again a little later instead of FAILED until the next car session", 1,
+				((android.app.job.JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE)).getAllPendingJobs().size());
 	}
 
 	@Test

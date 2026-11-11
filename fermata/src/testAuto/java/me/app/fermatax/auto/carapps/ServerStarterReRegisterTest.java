@@ -121,7 +121,7 @@ public class ServerStarterReRegisterTest {
 
 			JournalAssert.has(j, "adb_port", "result=found");
 			JournalAssert.has(j, "adb_command", "result=refused", "error=ConnectException");
-			JournalAssert.has(j, "adb_reregister", "reason=refused");
+			JournalAssert.has(j, "adb_reregister", "reason=refused", "result=started");
 			JournalAssert.has(j, "adb_command", "result=ok");
 			String text = String.join("\n", j.lines());
 			assertFalse(text, text.contains("40000") || text.contains("41000"));
@@ -203,20 +203,115 @@ public class ServerStarterReRegisterTest {
 		assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
 	}
 
-	@Test public void aSettingWeSwitchedOnOurselvesOrAnOffOneIsNotToggled() {
-		prefs.edit().putInt(AdbRecoveryJob.PREF_RESTORE, 0).commit(); // owned by this start: it is a fresh registration
+	/** D5: a stale record also when the app switched it on itself (marker 0): one toggle, and the marker is left alone. */
+	@Test public void aSettingWeSwitchedOnOurselvesIsToggledOnceAndTheUsersOffComesBack() {
+		prefs.edit().putInt(AdbRecoveryJob.PREF_RESTORE, 0).commit(); // enableAdbWifi of this start wrote it
 		answers.add(miss());
-		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
-		assertEquals(1, events.size());
-		assertEquals(1, adbWifi());
-		assertEquals(0, prefs.getInt(AdbRecoveryJob.PREF_RESTORE, -1));
+		answers.add(Completed.completed(41000));
 
-		prefs.edit().clear().commit();
+		FutureSupplier<Void> run = ServerStarter.startViaAdb(ctx, START);
+
+		assertTrue(run.isDone() && !run.isFailed());
+		assertEquals(List.of("find 12000 adb_wifi=1", "find 10000 adb_wifi=1", "run 41000 true"), events);
+		assertEquals(0, adbWifi());
+		assertEquals("the user's value is kept", 0, prefs.getInt(AdbRecoveryJob.PREF_RESTORE, -1));
+		idle(2_000);
+		assertEquals(1, adbWifi());
+		AdbRecoveryJob.restoreAdbWifi(ctx);
+		assertEquals(0, adbWifi());
+		assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
+	}
+
+	@Test public void anOffSettingIsNotToggled() {
 		setAdbWifi(0);
 		answers.add(miss());
 		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
-		assertEquals(2, events.size());
+		assertEquals(1, events.size());
 		assertEquals(0, adbWifi());
+	}
+
+	/** D4: the app switched it on, the mdns cache answers with a port adbd no longer listens on. */
+	@Test public void aRefusedPortWithTheMarkerSetIsFixedByOneToggle() {
+		prefs.edit().putInt(AdbRecoveryJob.PREF_RESTORE, 0).commit();
+		answers.add(Completed.completed(43507));
+		answers.add(Completed.completed(37041));
+		runResults.add(refused());
+
+		FutureSupplier<Void> run = ServerStarter.startViaAdb(ctx, START);
+
+		assertTrue(run.isDone() && !run.isFailed());
+		assertEquals(List.of("find 12000 adb_wifi=1", "run 43507 true", "find 10000 adb_wifi=1", "run 37041 true"), events);
+		assertEquals(0, prefs.getInt(AdbRecoveryJob.PREF_RESTORE, -1));
+		idle(2_000);
+		assertEquals(1, adbWifi());
+		AdbRecoveryJob.restoreAdbWifi(ctx);
+		assertEquals("the original value, not the toggle's", 0, adbWifi());
+	}
+
+	/** One toggle for the whole start (all retries of the client) also with the marker set; the next start may toggle again. */
+	@Test public void withTheMarkerSetASecondFailureFailsWithoutAnotherToggleUntilTheStartEnds() {
+		prefs.edit().putInt(AdbRecoveryJob.PREF_RESTORE, 0).commit();
+		answers.add(Completed.completed(43507));
+		answers.add(Completed.completed(37041));
+		runResults.add(refused());
+		runResults.add(refused());
+		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
+		idle(2_000);
+		assertEquals(4, events.size());
+
+		answers.add(miss()); // the client's next retry: neither not_found nor refused toggles again
+		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
+		answers.add(Completed.completed(37041));
+		runResults.add(refused());
+		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
+		assertEquals("no second toggle", 7, events.size());
+
+		AdbRecoveryJob.restoreAdbWifi(ctx); // the start ends
+		assertEquals(0, adbWifi());
+		setAdbWifi(1);
+		answers.add(miss());
+		answers.add(Completed.completed(41000));
+		assertFalse("a new start may toggle once again", ServerStarter.startViaAdb(ctx, START).isFailed());
+	}
+
+	/** The start ends inside the gap: the restore of the user's 0 is not overwritten by the toggle's 1. */
+	@Test public void aRestoreInsideTheGapIsNotUndoneByTheSecondWrite() {
+		prefs.edit().putInt(AdbRecoveryJob.PREF_RESTORE, 0).commit();
+		answers.add(miss());
+		answers.add(Completed.completed(41000));
+		ServerStarter.startViaAdb(ctx, START);
+
+		AdbRecoveryJob.restoreAdbWifi(ctx);
+		idle(2_000);
+
+		assertEquals(0, adbWifi());
+		assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
+	}
+
+	@Test public void withTheMarkerSetARefusedNetworkIsStillRemembered() {
+		prefs.edit().putInt(AdbRecoveryJob.PREF_RESTORE, 0).commit();
+		AdbRecoveryJob.wifiNetwork = c -> "home";
+		answers.add(miss());
+		answers.add(miss());
+
+		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed()); // the setting is still 0 when the second wait ends
+
+		assertEquals("home", AdbRecoveryJob.refusedWifi);
+		assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
+		assertFalse(AdbRecoveryJob.hasWifi(ctx));
+	}
+
+	/** Why a re-registration did not happen is in the journal too (D5: no permission after a failed pm grant). */
+	@Test public void aSkippedReRegistrationIsJournaledWithItsReason() {
+		PhoneAppsJournal j = JournalAssert.install();
+		try {
+			shadowOf((Application) ctx).denyPermissions(PERMISSION);
+			answers.add(miss());
+			ServerStarter.startViaAdb(ctx, START);
+			JournalAssert.has(j, "adb_reregister", "reason=not_found", "result=skipped", "skip=no_permission");
+		} finally {
+			JournalAssert.uninstall();
+		}
 	}
 
 	@Test public void noWifiMeansNoToggle() {

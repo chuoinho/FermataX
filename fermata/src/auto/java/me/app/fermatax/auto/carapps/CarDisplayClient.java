@@ -827,7 +827,12 @@ public class CarDisplayClient {
 				scheduleRetry();
 				// Between the retries of one start wireless debugging stays on, else every retry would switch it off and
 				// on and wait for the announcement again; only the end of the start gives it back.
-				if (state == State.FAILED) restoreAdbWifiIfIdle(ctx);
+				if (state == State.FAILED) {
+					restoreAdbWifiIfIdle(ctx);
+					// a stale mdns record can outlast the retries (35-55 s measured): the job starts it again a little later.
+					// No loop: a running job is still pending, so its own failed start queues nothing; it has MAX_TRIES.
+					AdbRecoveryJob.schedule(ctx);
+				}
 			}
 		});
 	}
