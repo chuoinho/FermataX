@@ -256,7 +256,7 @@ public final class LocalAdb implements Closeable {
         } catch (java.security.NoSuchAlgorithmException error) { throw new IllegalStateException(error); }
         String clean = model == null ? "" : model.replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("^-+|-+$", "");
         if (clean.length() > 26) clean = clean.substring(0, 26);
-        return clean.isEmpty() ? "FermataX " + id : "FermataX " + clean + " " + id;
+        return clean.isEmpty() ? "FermataX-" + id : "FermataX-" + clean + "-" + id;
     }
 
     static final class ManagerTransport extends AbsAdbConnectionManager implements Transport {

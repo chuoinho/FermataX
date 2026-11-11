@@ -83,7 +83,7 @@ public class LocalAdbTest {
         org.robolectric.shadows.ShadowBuild.setModel("Pixel 7");
         succeeds(adb.runAndClose(32123, "true"));
         String name = nameOf(transport);
-        assertTrue(name, name.matches("FermataX Pixel-7 [0-9a-f]{4}"));
+        assertTrue(name, name.matches("FermataX-Pixel-7-[0-9a-f]{4}"));
         Fake second = new Fake();
         try (LocalAdb other = create(second, 3000)) {
             succeeds(other.runAndClose(32123, "true"));
@@ -102,9 +102,10 @@ public class LocalAdbTest {
         String hostile = "Mo\u0000del \u00e9\n" + "x".repeat(200);
         String name = LocalAdb.deviceName(transport.certificate, hostile);
         assertTrue(name, name.length() <= 40);
-        assertTrue(name, name.matches("FermataX [A-Za-z0-9._-]+ [0-9a-f]{4}"));
-        assertTrue(LocalAdb.deviceName(transport.certificate, null).matches("FermataX [0-9a-f]{4}"));
-        assertTrue(LocalAdb.deviceName(transport.certificate, "\u00e9\u00e9").matches("FermataX [0-9a-f]{4}"));
+        assertTrue(name, name.matches("FermataX-[A-Za-z0-9._-]+-[0-9a-f]{4}"));
+        assertFalse("Settings shows only the first word", name.matches(".*\s.*"));
+        assertTrue(LocalAdb.deviceName(transport.certificate, null).matches("FermataX-[0-9a-f]{4}"));
+        assertTrue(LocalAdb.deviceName(transport.certificate, "\u00e9\u00e9").matches("FermataX-[0-9a-f]{4}"));
     }
 
     private static String nameOf(Fake fake) throws Exception {
