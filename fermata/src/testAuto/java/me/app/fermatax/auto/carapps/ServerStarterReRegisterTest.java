@@ -49,6 +49,7 @@ public class ServerStarterReRegisterTest {
 	private ServerStarter.Runner runner;
 	private final List<String> events = new ArrayList<>();
 	private final List<FutureSupplier<Integer>> answers = new ArrayList<>();
+	private final List<FutureSupplier<Void>> runResults = new ArrayList<>();
 
 	@Before public void setUp() {
 		ctx = RuntimeEnvironment.getApplication();
@@ -69,7 +70,7 @@ public class ServerStarterReRegisterTest {
 		};
 		ServerStarter.runner = (c, port, command) -> {
 			events.add("run " + port + " " + command.endsWith(START));
-			return Completed.completedVoid();
+			return runResults.isEmpty() ? Completed.completedVoid() : runResults.remove(0);
 		};
 	}
 
@@ -205,5 +206,111 @@ public class ServerStarterReRegisterTest {
 
 		assertEquals(1, events.size());
 		assertEquals(1, adbWifi());
+	}
+
+	private static FutureSupplier<Void> refused() {
+		return Completed.failed(new java.io.IOException("wrapped",
+				new java.net.ConnectException("failed to connect to /127.0.0.1 (port 43507): connect failed: ECONNREFUSED")));
+	}
+
+	@Test public void aRefusedPortIsFixedByOneToggleAndOneMoreRun() {
+		answers.add(Completed.completed(43507));
+		answers.add(Completed.completed(37041));
+		runResults.add(refused());
+
+		FutureSupplier<Void> run = ServerStarter.startViaAdb(ctx, START);
+
+		assertTrue(run.isDone() && !run.isFailed());
+		assertEquals(List.of("find 12000 adb_wifi=1", "run 43507 true", "find 10000 adb_wifi=1", "run 37041 true"), events);
+		assertEquals(0, adbWifi());
+		assertEquals(1, prefs.getInt(AdbRecoveryJob.PREF_RESTORE, -1));
+		idle(2_000);
+		assertEquals(1, adbWifi());
+		AdbRecoveryJob.restoreAdbWifi(ctx);
+		assertEquals(1, adbWifi());
+		assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
+	}
+
+	@Test public void theSystemCacheAnsweringWithTheRefusedPortGetsOneMoreLookAfterAPause() {
+		answers.add(Completed.completed(43507));
+		answers.add(Completed.completed(43507)); // the stale cache answers first
+		answers.add(Completed.completed(37041));
+		runResults.add(refused());
+
+		FutureSupplier<Void> run = ServerStarter.startViaAdb(ctx, START);
+
+		assertFalse(run.isDone());
+		idle(3_000);
+		assertTrue(run.isDone() && !run.isFailed());
+		assertEquals(List.of("find 12000 adb_wifi=1", "run 43507 true", "find 10000 adb_wifi=1", "find 8000 adb_wifi=1",
+				"run 37041 true"), events);
+	}
+
+	@Test public void refusedAgainFailsNormallyWithOneToggleOnly() {
+		answers.add(Completed.completed(43507));
+		answers.add(Completed.completed(37041));
+		runResults.add(refused());
+		runResults.add(refused());
+
+		FutureSupplier<Void> run = ServerStarter.startViaAdb(ctx, START);
+
+		assertTrue(run.isFailed());
+		assertEquals(4, events.size());
+		// the next attempt of the same start owns the marker: no second toggle
+		answers.add(Completed.completed(37041));
+		runResults.add(refused());
+		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
+		assertEquals(6, events.size());
+	}
+
+	@Test public void oneToggleForTheWholeStartEvenWhenTheNewPortIsRefusedToo() {
+		answers.add(miss());
+		answers.add(Completed.completed(37041));
+		runResults.add(refused());
+
+		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
+
+		assertEquals(List.of("find 12000 adb_wifi=1", "find 10000 adb_wifi=1", "run 37041 true"), events);
+	}
+
+	@Test public void refusedWithoutThePermissionOrWifiFailsNormallyWithoutToggle() {
+		answers.add(Completed.completed(43507));
+		runResults.add(refused());
+		shadowOf((Application) ctx).denyPermissions(PERMISSION);
+		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
+		assertEquals(2, events.size());
+		assertEquals(1, adbWifi());
+		assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
+
+		shadowOf((Application) ctx).grantPermissions(PERMISSION);
+		AdbRecoveryJob.wifiCheck = c -> false;
+		answers.add(Completed.completed(43507));
+		runResults.add(refused());
+		assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
+		assertEquals(4, events.size());
+		assertEquals(1, adbWifi());
+		assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
+	}
+
+	@Test public void otherFailuresAreNotTreatedAsRefused() {
+		FutureSupplier<?>[] others = {
+				Completed.failed(new io.github.muntashirakon.adb.AdbPairingRequiredException("pairing")),
+				Completed.failed(new RuntimeException("wrapped", new io.github.muntashirakon.adb.AdbPairingRequiredException("p"))),
+				Completed.failed(new TimeoutException()),
+				Completed.failed(new javax.net.ssl.SSLException("handshake")),
+		};
+		for (FutureSupplier<?> other : others) {
+			events.clear();
+			answers.add(Completed.completed(43507));
+			@SuppressWarnings("unchecked") FutureSupplier<Void> failure = (FutureSupplier<Void>) other;
+			runResults.add(failure);
+
+			assertTrue(ServerStarter.startViaAdb(ctx, START).isFailed());
+
+			assertEquals(2, events.size());
+			assertEquals(1, adbWifi());
+			assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
+		}
+		assertFalse(ServerStarter.isRefused(new io.github.muntashirakon.adb.AdbPairingRequiredException("x")));
 	}
 }
