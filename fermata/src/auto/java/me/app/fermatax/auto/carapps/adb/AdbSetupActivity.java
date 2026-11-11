@@ -3,6 +3,8 @@ package me.app.fermatax.auto.carapps.adb;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
@@ -11,6 +13,11 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
@@ -47,11 +54,28 @@ public final class AdbSetupActivity extends Activity {
 
 		primary = new Button(this);
 		primary.setMinHeight(Math.round(48 * dp));
+		styleButton(primary);
 		column.addView(primary);
 
 		ScrollView scroll = new ScrollView(this);
 		scroll.addView(column);
+		// Edge-to-edge (forced from Android 15): keep the content clear of the status, navigation bars and cutout
+		ViewCompat.setOnApplyWindowInsetsListener(scroll, (v, insets) -> {
+			Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+			v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+			return WindowInsetsCompat.CONSUMED;
+		});
 		setContentView(scroll);
+	}
+
+	/** The default grey button with the theme's light text is unreadable: fill it with the theme accent and pick the text. */
+	private void styleButton(Button button) {
+		android.util.TypedValue accent = new android.util.TypedValue();
+		if (!getTheme().resolveAttribute(androidx.appcompat.R.attr.colorAccent, accent, true)) return;
+		int fill = accent.data | 0xFF000000;
+		button.setBackgroundTintList(ColorStateList.valueOf(fill));
+		button.setTextColor((ColorUtils.calculateContrast(Color.BLACK, fill) >= ColorUtils.calculateContrast(Color.WHITE, fill))
+				? Color.BLACK : Color.WHITE);
 	}
 
 	@Override
