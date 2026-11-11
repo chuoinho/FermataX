@@ -56,7 +56,9 @@ public class PhoneAppsGuideScreenTest {
 		CarAppsFeature.setState(RootState.ABSENT);
 	}
 
+	/** Android 11-12 with root offered: root is the only way, so it is the main action. */
 	@Test
+	@Config(sdk = 31)
 	public void rootChannelShowsTheRootStepsWithGrantRootAsTheCurrentAction() {
 		CarAppsFeature.setState(RootState.AVAILABLE);
 		AdbSetupActivity a = open(Page.SETUP);
@@ -67,6 +69,89 @@ public class PhoneAppsGuideScreenTest {
 		assertNotNull(findButton(root, a.getString(R.string.car_apps_grant_root)));
 		assertNull("no pairing for root", findButton(root, a.getString(R.string.car_apps_setup_open_dev)));
 		assertNull("no permission prompt", shadowOf(a).getLastRequestedPermission());
+	}
+
+	/** Android 13+ with root offered but not granted: the setup without root, and root as the alternative. */
+	@Test
+	public void rootNotGrantedOnAndroid13UpKeepsTheSetupWithoutRootAndOffersRootInstead() {
+		Settings.Global.putInt(ctx.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
+		CarAppsFeature.setState(RootState.AVAILABLE);
+		CarAppsFeature.Backend saved = CarAppsFeature.backend();
+		int[] rootRequests = {0};
+		CarAppsFeature.setBackend(new CarAppsFeature.Backend() {
+			@Override
+			public me.aap.utils.async.FutureSupplier<Boolean> requestRoot() {
+				rootRequests[0]++;
+				return me.aap.utils.async.Completed.completed(false);
+			}
+
+			@Override
+			public me.aap.utils.ui.fragment.ActivityFragment createFragment() {
+				return null;
+			}
+		});
+		try {
+			AdbSetupActivity a = open(Page.SETUP);
+			View root = a.getWindow().getDecorView();
+			assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_done, a.getString(R.string.car_apps_step_dev_options))));
+			assertNotNull(findButton(root, a.getString(R.string.car_apps_setup_open_dev)));
+			Button useRoot = findButton(root, a.getString(R.string.car_apps_setup_use_root));
+			assertNotNull(useRoot);
+			assertTrue(useRoot.getMinHeight() >= Math.round(48 * a.getResources().getDisplayMetrics().density));
+			assertEquals(AdbPairing.State.WAITING, AdbPairing.state());
+			useRoot.performClick();
+			assertEquals(1, rootRequests[0]);
+		} finally {
+			CarAppsFeature.setBackend(saved);
+		}
+	}
+
+	@Test
+	public void noRootInsteadButtonWithoutRoot() {
+		Settings.Global.putInt(ctx.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
+		AdbSetupActivity a = open(Page.SETUP);
+		assertNull(findButton(a.getWindow().getDecorView(), a.getString(R.string.car_apps_setup_use_root)));
+	}
+
+	/** Fix pairs again without forgetting a pairing on opening: backing out keeps it; a new pairing replaces it. */
+	@Test
+	public void setUpAgainKeepsThePairingUntilANewOneIsMade() {
+		Settings.Global.putInt(ctx.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
+		RootProbe.recordAdbPaired(ctx, true);
+		org.robolectric.android.controller.ActivityController<AdbSetupActivity> c = Robolectric.buildActivity(
+				AdbSetupActivity.class, AdbSetupActivity.intent(ctx, Page.SETUP_AGAIN)).setup();
+		AdbSetupActivity a = c.get();
+		View root = a.getWindow().getDecorView();
+		assertTrue("still paired after opening", CarAppsFeature.isAdbPaired());
+		assertFalse("the pairing steps, not Done", textOf(root).contains(a.getString(R.string.car_apps_setup_done)));
+		assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_todo, a.getString(R.string.car_apps_step_type_code))));
+		assertEquals("the code notification is posted again", AdbPairing.State.WAITING, AdbPairing.state());
+		c.pause().stop().destroy();
+		assertTrue("backing out keeps a working pairing", CarAppsFeature.isAdbPaired());
+	}
+
+	@Test
+	public void setUpAgainOnARootedPhoneShowsTheRootStepsAndKeepsThePairing() {
+		CarAppsFeature.setState(RootState.GRANTED);
+		RootProbe.recordAdbPaired(ctx, true);
+		AdbSetupActivity a = open(Page.SETUP_AGAIN);
+		assertNotNull(findDescribed(a.getWindow().getDecorView(),
+				a.getString(R.string.car_apps_step_done, a.getString(R.string.car_apps_step_allow_root))));
+		assertTrue(CarAppsFeature.isAdbPaired());
+		assertEquals(AdbPairing.State.IDLE, AdbPairing.state());
+	}
+
+	@Test
+	public void rotationKeepsTheUsagePage() {
+		CarAppsFeature.setAdbPaired(true);
+		Intent i = new Intent(ctx, AdbSetupActivity.class).putExtra(AdbSetupActivity.EXTRA_PAGE, Page.SETUP.name());
+		org.robolectric.android.controller.ActivityController<AdbSetupActivity> c =
+				Robolectric.buildActivity(AdbSetupActivity.class, i).setup();
+		findButton(c.get().getWindow().getDecorView(), c.get().getString(R.string.car_apps_settings_how_to)).performClick();
+		c.recreate();
+		AdbSetupActivity a = c.get();
+		assertNotNull(findButton(a.getWindow().getDecorView(), a.getString(R.string.car_apps_guide_got_it)));
+		assertTrue(textOf(a.getWindow().getDecorView()).contains(a.getString(R.string.car_apps_guide_title)));
 	}
 
 	@Test
@@ -151,13 +236,13 @@ public class PhoneAppsGuideScreenTest {
 	}
 
 	@Test
-	public void setUpAgainForgetsThePairingAndOpensTheSetupPage() {
+	public void setUpAgainOpensTheSetupPageWithoutForgettingThePairing() {
 		RootProbe.recordAdbPaired(ctx, true);
 		CarAppsFeature.backend().openGuide(ctx, Page.SETUP_AGAIN);
 		Intent i = shadowOf((android.app.Application) ctx).getNextStartedActivity();
-		assertFalse(CarAppsFeature.isAdbPaired());
+		assertTrue("opening forgets nothing", CarAppsFeature.isAdbPaired());
 		assertEquals(AdbSetupActivity.class.getName(), i.getComponent().getClassName());
-		assertEquals(Page.SETUP.name(), i.getStringExtra(AdbSetupActivity.EXTRA_PAGE));
+		assertEquals(Page.SETUP_AGAIN.name(), i.getStringExtra(AdbSetupActivity.EXTRA_PAGE));
 		assertTrue("started from the application context", (i.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != 0);
 		assertArrayEquals(new Page[]{Page.USAGE}, new Page[]{AdbSetupActivity.page(
 				AdbSetupActivity.intent(ctx, Page.USAGE))});

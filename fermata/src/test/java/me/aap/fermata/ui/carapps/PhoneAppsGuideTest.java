@@ -32,11 +32,22 @@ public class PhoneAppsGuideTest {
 		CarAppsFeature.setEnabled(new BasicPreferenceStore(), true);
 	}
 
-	/** Root granted or offered: the root steps; else Android 13+ pairs without root; 11-12 and 12L have no way. */
+	/**
+	 * Root granted: the root steps. Root only offered: Android 13+ keeps the setup without root (with root as the
+	 * alternative), Android 11-12 can only grant root. 11-12 without root and 12L have no way.
+	 */
 	@Test
 	public void channelFollowsRootThenTheAndroidVersion() {
 		assertEquals(Channel.ROOT, PhoneAppsGuide.channel(RootState.GRANTED, 30));
-		assertEquals(Channel.ROOT, PhoneAppsGuide.channel(RootState.AVAILABLE, 34));
+		assertEquals(Channel.ROOT, PhoneAppsGuide.channel(RootState.GRANTED, 34));
+		assertEquals(Channel.ROOT, PhoneAppsGuide.channel(RootState.AVAILABLE, 30));
+		assertEquals(Channel.ROOT, PhoneAppsGuide.channel(RootState.AVAILABLE, 31));
+		assertEquals("not granted on 13+: the setup without root", Channel.ADB, PhoneAppsGuide.channel(RootState.AVAILABLE, 33));
+		assertEquals(Channel.ADB, PhoneAppsGuide.channel(RootState.AVAILABLE, 34));
+		assertTrue(PhoneAppsGuide.offersRootInstead(RootState.AVAILABLE, 34));
+		assertFalse(PhoneAppsGuide.offersRootInstead(RootState.ABSENT, 34));
+		assertFalse(PhoneAppsGuide.offersRootInstead(RootState.GRANTED, 34));
+		assertFalse("11-12: root is the main action already", PhoneAppsGuide.offersRootInstead(RootState.AVAILABLE, 31));
 		assertEquals(Channel.ADB, PhoneAppsGuide.channel(RootState.ABSENT, 33));
 		assertEquals(Channel.ADB, PhoneAppsGuide.channel(RootState.ABSENT, 36));
 		assertEquals(Channel.NONE, PhoneAppsGuide.channel(RootState.ABSENT, 30));
@@ -58,11 +69,12 @@ public class PhoneAppsGuideTest {
 
 	@Test
 	public void firstOpenShowsOnceOnThePhoneOnlyAndOnlyWhereSupported() {
-		assertTrue(PhoneAppsGuide.shouldShowFirstOpen(false, true, true, false));
-		assertFalse("already seen", PhoneAppsGuide.shouldShowFirstOpen(true, true, true, false));
-		assertFalse("unsupported", PhoneAppsGuide.shouldShowFirstOpen(false, false, true, false));
-		assertFalse("car display host", PhoneAppsGuide.shouldShowFirstOpen(false, true, false, false));
-		assertFalse("car session running", PhoneAppsGuide.shouldShowFirstOpen(false, true, true, true));
+		assertTrue(PhoneAppsGuide.shouldShowFirstOpen(false, true, true, true, false));
+		assertFalse("already seen", PhoneAppsGuide.shouldShowFirstOpen(true, true, true, true, false));
+		assertFalse("unsupported", PhoneAppsGuide.shouldShowFirstOpen(false, false, true, true, false));
+		assertFalse("turned off", PhoneAppsGuide.shouldShowFirstOpen(false, true, false, true, false));
+		assertFalse("car display host", PhoneAppsGuide.shouldShowFirstOpen(false, true, true, false, false));
+		assertFalse("car session running", PhoneAppsGuide.shouldShowFirstOpen(false, true, true, true, true));
 		assertEquals(Page.SETUP_THEN_USAGE, PhoneAppsGuide.firstOpenPage(false));
 		assertEquals(Page.USAGE, PhoneAppsGuide.firstOpenPage(true));
 		assertFalse("not seen by default", new BasicPreferenceStore().getBooleanPref(PhoneAppsGuide.PREF_SEEN));
@@ -88,7 +100,9 @@ public class PhoneAppsGuideTest {
 		assertEquals(PhoneAppsStatus.FAILED, PhoneAppsStatus.of(true, true, RootState.ABSENT, true, true, 34));
 		assertEquals("a root server failure is retried, not re-paired",
 				PhoneAppsStatus.READY_ROOT, PhoneAppsStatus.of(true, true, RootState.GRANTED, false, true, 34));
-		assertEquals(PhoneAppsStatus.NEEDS_ROOT_GRANT, PhoneAppsStatus.of(true, true, RootState.AVAILABLE, false, false, 34));
+		assertEquals(PhoneAppsStatus.NEEDS_ROOT_GRANT, PhoneAppsStatus.of(true, true, RootState.AVAILABLE, false, false, 31));
+		assertEquals("13+: setup without root, or root", PhoneAppsStatus.NEEDS_SETUP,
+				PhoneAppsStatus.of(true, true, RootState.AVAILABLE, false, false, 34));
 		assertEquals(PhoneAppsStatus.NEEDS_SETUP, PhoneAppsStatus.of(true, true, RootState.ABSENT, false, false, 34));
 
 		assertEquals(R.string.car_apps_status_ready_root, PhoneAppsStatus.READY_ROOT.textRes);

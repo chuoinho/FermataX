@@ -142,7 +142,7 @@ public class LanguagesAcceptanceTest {
 				"car_apps_guide_screen_title", "car_apps_guide_screen_body_dark", "car_apps_guide_screen_body_sleep",
 				"car_apps_guide_wifi_title", "car_apps_guide_wifi_body", "car_apps_guide_off_title",
 				"car_apps_guide_off_body", "car_apps_guide_report_title", "car_apps_guide_report_body",
-				"car_apps_needs_setup"};
+				"car_apps_needs_setup", "car_apps_setup_use_root"};
 		Map<String, Entry> english = load(new File(root(), "fermata/src/main/res/values"));
 		for (String locale : locales) {
 			Map<String, Entry> strings = load(new File(root(), "fermata/src/main/res/" + locale));

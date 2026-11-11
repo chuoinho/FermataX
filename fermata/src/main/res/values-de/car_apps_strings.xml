@@ -57,6 +57,7 @@
     <string name="car_apps_setup_dev_off">Die Entwickleroptionen sind deaktiviert. Öffne „Über das Telefon“, tippe 7-mal auf die Build-Nummer und kehre dann hierher zurück.</string>
     <string name="car_apps_setup_open_about">„Über das Telefon“ öffnen</string>
     <string name="car_apps_setup_open_dev">Entwickleroptionen öffnen</string>
+    <string name="car_apps_setup_use_root">Stattdessen Root verwenden</string>
     <string name="car_apps_setup_notif_off">Benachrichtigungen sind für diese App deaktiviert. Der Kopplungscode wird in einer Benachrichtigung eingegeben. Aktiviere Benachrichtigungen und kehre dann hierher zurück.</string>
     <string name="car_apps_setup_open_notif">Benachrichtigungseinstellungen</string>
     <string name="car_apps_setup_working">Kopplung läuft…</string>

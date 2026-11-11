@@ -22,10 +22,17 @@ public final class PhoneAppsGuide {
 	private PhoneAppsGuide() {
 	}
 
+	/** Root once granted; root merely offered leads to it only where there is no setup without root (11-12). */
 	public static Channel channel(@Nullable RootState root, int sdk) {
 		if ((root == null) || (sdk < 30) || CarAppsFeature.isBlockedSdk(sdk)) return Channel.NONE;
-		if ((root == RootState.GRANTED) || (root == RootState.AVAILABLE)) return Channel.ROOT;
-		return CarAppsFeature.adbSupportedSdk(sdk) ? Channel.ADB : Channel.NONE;
+		if (root == RootState.GRANTED) return Channel.ROOT;
+		if (CarAppsFeature.adbSupportedSdk(sdk)) return Channel.ADB;
+		return (root == RootState.AVAILABLE) ? Channel.ROOT : Channel.NONE;
+	}
+
+	/** Android 13+ with a root manager that has not granted yet: the setup without root offers root as well. */
+	public static boolean offersRootInstead(@Nullable RootState root, int sdk) {
+		return (root == RootState.AVAILABLE) && (channel(root, sdk) == Channel.ADB);
 	}
 
 	/** The last step done means all are; otherwise the first open step is the current one. */
@@ -46,9 +53,10 @@ public final class PhoneAppsGuide {
 		return s;
 	}
 
-	/** Once, on the phone, never while the car runs a session, and only where Phone Apps exists. */
-	public static boolean shouldShowFirstOpen(boolean seen, boolean supported, boolean phoneHost, boolean carActive) {
-		return !seen && supported && phoneHost && !carActive;
+	/** Once, on the phone, never while the car runs a session, and only where Phone Apps exists and is turned on. */
+	public static boolean shouldShowFirstOpen(boolean seen, boolean supported, boolean enabled, boolean phoneHost,
+			boolean carActive) {
+		return !seen && supported && enabled && phoneHost && !carActive;
 	}
 
 	public static Page firstOpenPage(boolean canRun) {

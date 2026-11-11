@@ -57,6 +57,7 @@
     <string name="car_apps_setup_dev_off">Tùy chọn nhà phát triển đang tắt. Mở Giới thiệu điện thoại, chạm 7 lần vào Số bản dựng rồi quay lại đây.</string>
     <string name="car_apps_setup_open_about">Mở Giới thiệu điện thoại</string>
     <string name="car_apps_setup_open_dev">Mở Tùy chọn nhà phát triển</string>
+    <string name="car_apps_setup_use_root">Dùng root thay thế</string>
     <string name="car_apps_setup_notif_off">Thông báo của ứng dụng này đang tắt. Mã được nhập trong một thông báo: hãy bật thông báo rồi quay lại đây.</string>
     <string name="car_apps_setup_open_notif">Cài đặt thông báo</string>
     <string name="car_apps_setup_working">Đang ghép nối…</string>

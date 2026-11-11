@@ -57,6 +57,7 @@
     <string name="car_apps_setup_dev_off">As opções do programador estão desativadas. Abra Sobre o telefone, toque 7 vezes em Número da compilação e volte aqui.</string>
     <string name="car_apps_setup_open_about">Abrir Sobre o telefone</string>
     <string name="car_apps_setup_open_dev">Abrir opções do programador</string>
+    <string name="car_apps_setup_use_root">Usar root em vez disso</string>
     <string name="car_apps_setup_notif_off">As notificações estão desativadas para esta app. O código é escrito numa notificação: ative-as e volte aqui.</string>
     <string name="car_apps_setup_open_notif">Definições de notificações</string>
     <string name="car_apps_setup_working">A sincronizar…</string>

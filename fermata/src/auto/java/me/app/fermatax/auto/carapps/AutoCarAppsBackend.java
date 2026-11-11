@@ -5,7 +5,6 @@ import android.content.Context;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.CarAppsReadinessModel;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide;
-import me.aap.fermata.ui.carapps.RootProbe;
 import me.app.fermatax.auto.carapps.adb.AdbSetupActivity;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -72,8 +71,6 @@ public final class AutoCarAppsBackend {
 			@Override
 			public void openGuide(Context c, PhoneAppsGuide.Page page) {
 				Context from = (c != null) ? c : ctx;
-				// forgetting the pairing makes the setup screen run the pairing again
-				if (page == PhoneAppsGuide.Page.SETUP_AGAIN) RootProbe.recordAdbPaired(from, false);
 				from.startActivity(AdbSetupActivity.intent(from, page));
 			}
 		});

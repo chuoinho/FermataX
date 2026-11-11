@@ -48,7 +48,6 @@ import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide;
 import me.aap.fermata.ui.policy.RuntimeHostMode;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.fermata.ui.carapps.RootProbe;
 import me.aap.fermata.ui.carapps.RootState;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.glass.theme.GlassDimensions;
@@ -308,10 +307,8 @@ public class CarAppsFragment extends MainActivityFragment {
 		btnSetupAgain.setLayoutParams(new LinearLayout.LayoutParams(btnLp));
 		btnSetupAgain.setOnClickListener(v -> {
 			Context c = v.getContext();
-			RootProbe.recordAdbPaired(c, false); // the setup screen then runs the pairing again
-			Intent setup = new Intent(c, AdbSetupActivity.class);
-			if (!(c instanceof Activity)) setup.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			c.startActivity(setup);
+			// the setup screen runs the pairing again; the old one stays until a new one replaces it
+			c.startActivity(AdbSetupActivity.intent(c, PhoneAppsGuide.Page.SETUP_AGAIN));
 		});
 		serverErrorOverlay.addView(btnSetupAgain);
 		serverErrorOverlay.setOnClickListener(v -> {
@@ -523,7 +520,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		}
 		PreferenceStore store = FermataApplication.get().getPreferenceStore();
 		if (!PhoneAppsGuide.shouldShowFirstOpen(store.getBooleanPref(PhoneAppsGuide.PREF_SEEN),
-				CarAppsFeature.isSupported(), phoneHost, CarService.isActive())) return;
+				CarAppsFeature.isSupported(), CarAppsFeature.isEnabled(), phoneHost, CarService.isActive())) return;
 		store.applyBooleanPref(PhoneAppsGuide.PREF_SEEN, true);
 		PhoneAppsGuide.open(c, PhoneAppsGuide.firstOpenPage(CarAppsFeature.canRun()));
 	}

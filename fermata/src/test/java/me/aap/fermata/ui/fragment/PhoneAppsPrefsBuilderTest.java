@@ -60,6 +60,9 @@ public class PhoneAppsPrefsBuilderTest {
 		assertTrue(shown.stream().noneMatch(c -> c.status == CarAppsChecks.Status.NA));
 		assertEquals(checks.stream().filter(c -> c.status != CarAppsChecks.Status.NA).count(), shown.size());
 		assertTrue("empty state when it cannot run", PhoneAppsPrefsBuilder.detailChecks(false, checks).isEmpty());
+		assertEquals(R.string.car_apps_settings_details_empty, PhoneAppsPrefsBuilder.detailsEmptyText(true));
+		assertEquals("turned off, not 'open it on the car'", R.string.car_apps_turned_off,
+				PhoneAppsPrefsBuilder.detailsEmptyText(false));
 	}
 
 	/** The enable switch is the car catalog's pref; the report moved to Diagnostics; Readiness opens this page. */

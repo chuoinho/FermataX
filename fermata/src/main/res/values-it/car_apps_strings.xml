@@ -57,6 +57,7 @@
     <string name="car_apps_setup_dev_off">Le opzioni sviluppatore sono disattivate. Apri Info sul telefono, tocca 7 volte Numero build e poi torna qui.</string>
     <string name="car_apps_setup_open_about">Apri Info sul telefono</string>
     <string name="car_apps_setup_open_dev">Apri opzioni sviluppatore</string>
+    <string name="car_apps_setup_use_root">Usa invece il root</string>
     <string name="car_apps_setup_notif_off">Le notifiche sono disattivate per questa app. Il codice si scrive in una notifica: attivale e poi torna qui.</string>
     <string name="car_apps_setup_open_notif">Impostazioni notifiche</string>
     <string name="car_apps_setup_working">Accoppiamento…</string>

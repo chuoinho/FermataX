@@ -57,6 +57,7 @@
     <string name="car_apps_setup_dev_off">Las opciones de desarrollador están desactivadas. Abre Acerca del teléfono, toca 7 veces el número de compilación y vuelve aquí.</string>
     <string name="car_apps_setup_open_about">Abrir Acerca del teléfono</string>
     <string name="car_apps_setup_open_dev">Abrir opciones de desarrollador</string>
+    <string name="car_apps_setup_use_root">Usar root en su lugar</string>
     <string name="car_apps_setup_notif_off">Las notificaciones están desactivadas para esta app. El código se escribe en una notificación: actívalas y vuelve aquí.</string>
     <string name="car_apps_setup_open_notif">Ajustes de notificaciones</string>
     <string name="car_apps_setup_working">Vinculando…</string>

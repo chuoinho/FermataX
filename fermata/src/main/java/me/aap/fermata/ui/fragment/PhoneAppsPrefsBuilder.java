@@ -59,7 +59,7 @@ final class PhoneAppsPrefsBuilder implements Consumer<PreferenceView.Opts> {
 		return (s == PhoneAppsStatus.FAILED) ? R.string.car_apps_settings_fix : R.string.car_apps_settings_setup;
 	}
 
-	/** Fix forgets the pairing first, as "Set up again" did: a revoked authorization is only cured by pairing again. */
+	/** Fix pairs again (a revoked authorization is only cured that way); the old pairing stays until replaced. */
 	static PhoneAppsGuide.Page setupPage(PhoneAppsStatus s) {
 		return (s == PhoneAppsStatus.FAILED) ? PhoneAppsGuide.Page.SETUP_AGAIN : PhoneAppsGuide.Page.SETUP;
 	}
@@ -70,6 +70,10 @@ final class PhoneAppsPrefsBuilder implements Consumer<PreferenceView.Opts> {
 		if (!canRun) return out;
 		for (CarAppsChecks.Check c : checks) if (c.status != CarAppsChecks.Status.NA) out.add(c);
 		return out;
+	}
+
+	static int detailsEmptyText(boolean enabled) {
+		return enabled ? R.string.car_apps_settings_details_empty : R.string.car_apps_turned_off;
 	}
 
 	@Override
@@ -129,7 +133,7 @@ final class PhoneAppsPrefsBuilder implements Consumer<PreferenceView.Opts> {
 		List<CarAppsChecks.Check> checks = detailChecks(CarAppsFeature.canRun(), model.checks);
 		if (checks.isEmpty()) {
 			target.addButton(o -> {
-				o.title = R.string.car_apps_settings_details_empty;
+				o.title = detailsEmptyText(CarAppsFeature.isEnabled());
 				o.hideChevron = true;
 			});
 			return;

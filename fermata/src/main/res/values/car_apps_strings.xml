@@ -57,6 +57,7 @@
     <string name="car_apps_setup_dev_off">Developer options are off. Open About phone, tap Build number 7 times, then come back here.</string>
     <string name="car_apps_setup_open_about">Open About phone</string>
     <string name="car_apps_setup_open_dev">Open developer options</string>
+    <string name="car_apps_setup_use_root">Use root instead</string>
     <string name="car_apps_setup_notif_off">Notifications are off for this app. The pairing code is typed into a notification, so turn notifications on, then come back here.</string>
     <string name="car_apps_setup_open_notif">Notification settings</string>
     <string name="car_apps_setup_working">Pairing…</string>

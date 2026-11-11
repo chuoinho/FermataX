@@ -331,12 +331,12 @@ public class CarAppsFragmentTest {
 
 			again.performClick();
 
-			assertFalse(CarAppsFeature.isAdbPaired());
-			assertFalse(context.getSharedPreferences("fermata", Context.MODE_PRIVATE)
-					.getBoolean(me.aap.fermata.ui.carapps.RootProbe.PREF_ADB_PAIRED, true));
+			assertTrue("opening the setup forgets nothing: a new pairing replaces the old one", CarAppsFeature.isAdbPaired());
 			android.content.Intent started = org.robolectric.Shadows.shadowOf(
 					(android.app.Application) context).getNextStartedActivity();
 			assertEquals(me.app.fermatax.auto.carapps.adb.AdbSetupActivity.class.getName(), started.getComponent().getClassName());
+			assertEquals(me.aap.fermata.ui.carapps.PhoneAppsGuide.Page.SETUP_AGAIN.name(),
+					started.getStringExtra(me.app.fermatax.auto.carapps.adb.AdbSetupActivity.EXTRA_PAGE));
 		} finally {
 			me.app.fermatax.auto.carapps.adb.AdbRecoveryJob.wifiCheck = savedWifi;
 			CarAppsFeature.setAdbPaired(false);

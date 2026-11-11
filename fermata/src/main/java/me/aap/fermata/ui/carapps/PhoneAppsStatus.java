@@ -31,7 +31,8 @@ public enum PhoneAppsStatus {
 		if (!enabled) return OFF;
 		if (CarAppsFeature.usable(root)) return READY_ROOT;
 		if (CarAppsFeature.canRun(root, adbPaired, sdk)) return serverFailed ? FAILED : READY_ADB;
-		return (root == RootState.AVAILABLE) ? NEEDS_ROOT_GRANT : NEEDS_SETUP;
+		// 13+: the setup offers both ways, so "root required" would be wrong there
+		return ((root == RootState.AVAILABLE) && !CarAppsFeature.adbSupportedSdk(sdk)) ? NEEDS_ROOT_GRANT : NEEDS_SETUP;
 	}
 
 	public static PhoneAppsStatus current() {

@@ -57,6 +57,7 @@
     <string name="car_apps_setup_dev_off">Geliştirici seçenekleri kapalı. Telefon hakkında bölümünü açın, Yapı numarasına 7 kez dokunun ve buraya dönün.</string>
     <string name="car_apps_setup_open_about">Telefon hakkını aç</string>
     <string name="car_apps_setup_open_dev">Geliştirici seçeneklerini aç</string>
+    <string name="car_apps_setup_use_root">Bunun yerine root kullan</string>
     <string name="car_apps_setup_notif_off">Bu uygulama için bildirimler kapalı. Kod bir bildirime yazılır: bildirimleri açın ve buraya dönün.</string>
     <string name="car_apps_setup_open_notif">Bildirim ayarları</string>
     <string name="car_apps_setup_working">Eşleştiriliyor…</string>

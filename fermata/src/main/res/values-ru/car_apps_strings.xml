@@ -57,6 +57,7 @@
     <string name="car_apps_setup_dev_off">Параметры разработчика отключены. Откройте «О телефоне», 7 раз нажмите на номер сборки и вернитесь сюда.</string>
     <string name="car_apps_setup_open_about">Открыть «О телефоне»</string>
     <string name="car_apps_setup_open_dev">Открыть «Для разработчиков»</string>
+    <string name="car_apps_setup_use_root">Использовать root</string>
     <string name="car_apps_setup_notif_off">Уведомления для этого приложения отключены. Код вводится в уведомлении: включите уведомления и вернитесь сюда.</string>
     <string name="car_apps_setup_open_notif">Настройки уведомлений</string>
     <string name="car_apps_setup_working">Подключение…</string>

@@ -16,35 +16,14 @@ public final class CarAppsReadinessModel {
 
 	public static final int CAP_INJECT = CarAppsChecks.CAP_INJECT;
 
-	public final boolean rowVisible;
+	/** 0 where Phone Apps is not offered. */
 	public final int statusStringRes;
 	public final int actionStringRes;
 	public final int warningStringRes;
 	public final List<CarAppsChecks.Check> checks;
-	/** Offer "Set up without root": Android 13+, no usable root, not paired yet. */
-	public final boolean adbSetup;
-	/** Offer "Set up again": the paired ADB channel failed to start the server (its authorization may be revoked). */
-	public final boolean adbSetupAgain;
 
-	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes) {
-		this(rowVisible, statusStringRes, actionStringRes, warningStringRes, Collections.emptyList());
-	}
-
-	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes,
+	public CarAppsReadinessModel(int statusStringRes, int actionStringRes, int warningStringRes,
 			List<CarAppsChecks.Check> checks) {
-		this(rowVisible, statusStringRes, actionStringRes, warningStringRes, checks, false);
-	}
-
-	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes,
-			List<CarAppsChecks.Check> checks, boolean adbSetup) {
-		this(rowVisible, statusStringRes, actionStringRes, warningStringRes, checks, adbSetup, false);
-	}
-
-	public CarAppsReadinessModel(boolean rowVisible, int statusStringRes, int actionStringRes, int warningStringRes,
-			List<CarAppsChecks.Check> checks, boolean adbSetup, boolean adbSetupAgain) {
-		this.adbSetup = adbSetup;
-		this.adbSetupAgain = adbSetupAgain;
-		this.rowVisible = rowVisible;
 		this.statusStringRes = statusStringRes;
 		this.actionStringRes = actionStringRes;
 		this.warningStringRes = warningStringRes;
@@ -60,22 +39,20 @@ public final class CarAppsReadinessModel {
 		boolean adbSetup = (rootState != null) && !CarAppsFeature.isBlockedSdk(sdk)
 				&& CarAppsFeature.adbSupportedSdk(sdk) && !canRun;
 		if (rootState == null || CarAppsFeature.isBlockedSdk(sdk) || (rootState == RootState.ABSENT && !canRun && !adbSetup)) {
-			return new CarAppsReadinessModel(false, 0, 0, 0, Collections.emptyList());
+			return new CarAppsReadinessModel(0, 0, 0, Collections.emptyList());
 		}
 
 		if (rootState == RootState.ABSENT && !canRun) {
-			return new CarAppsReadinessModel(true, R.string.car_apps_readiness_status_need_setup, 0, 0,
-					Collections.emptyList(), true);
+			return new CarAppsReadinessModel(R.string.car_apps_readiness_status_need_setup, 0, 0,
+					Collections.emptyList());
 		}
 
 		if (!canRun) {
 			return new CarAppsReadinessModel(
-					true,
 					R.string.car_apps_readiness_status_need_root,
 					R.string.car_apps_readiness_action_grant,
 					0,
-					CarAppsChecks.from(rootState, capabilities, sdk),
-					adbSetup
+					CarAppsChecks.from(rootState, capabilities, sdk)
 			);
 		}
 
@@ -89,11 +66,10 @@ public final class CarAppsReadinessModel {
 				? Collections.emptyList() : CarAppsChecks.from(rootState, capabilities, sdk);
 
 		if (!CarAppsFeature.usable(rootState) && CarAppsFeature.serverFailed()) {
-			return new CarAppsReadinessModel(true, R.string.car_apps_server_error, 0, warning, checks, false, true);
+			return new CarAppsReadinessModel(R.string.car_apps_server_error, 0, warning, checks);
 		}
 
 		return new CarAppsReadinessModel(
-				true,
 				R.string.car_apps_readiness_status_ready,
 				0,
 				warning,

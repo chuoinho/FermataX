@@ -39,6 +39,7 @@ import me.app.fermatax.auto.carapps.VirtualDisplayFlags;
  */
 public final class AdbSetupActivity extends Activity {
 	public static final String EXTRA_PAGE = "page";
+	private static final String STATE_REPAIR_STARTED = "repairStarted";
 	private static final String ADB_WIFI = "adb_wifi_enabled";
 	private final Runnable stateListener = () -> runOnUiThread(this::render);
 	private Page page;
@@ -47,11 +48,13 @@ public final class AdbSetupActivity extends Activity {
 	private TextView body;
 	private LinearLayout sections;
 	private Button primary;
+	private Button rootInstead;
+	/** Set up again: a new pairing was started here; the old one stays recorded until the new one replaces it. */
+	private boolean repairStarted;
 
-	/** Set up again is the setup page; the caller forgets the pairing first. */
+	/** Set up again pairs anew without forgetting the old pairing: backing out keeps a working one. */
 	public static Intent intent(Context ctx, Page page) {
-		Page p = (page == Page.SETUP_AGAIN) ? Page.SETUP : page;
-		Intent i = new Intent(ctx, AdbSetupActivity.class).putExtra(EXTRA_PAGE, p.name());
+		Intent i = new Intent(ctx, AdbSetupActivity.class).putExtra(EXTRA_PAGE, page.name());
 		if (!(ctx instanceof Activity)) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		return i;
 	}
@@ -88,6 +91,10 @@ public final class AdbSetupActivity extends Activity {
 	protected void onCreate(Bundle b) {
 		super.onCreate(b);
 		page = page(getIntent());
+		if (b != null) {
+			page = page(new Intent().putExtra(EXTRA_PAGE, b.getString(EXTRA_PAGE)));
+			repairStarted = b.getBoolean(STATE_REPAIR_STARTED);
+		}
 		float dp = getResources().getDisplayMetrics().density;
 		int pad = Math.round(24 * dp);
 		LinearLayout column = new LinearLayout(this);
@@ -120,6 +127,14 @@ public final class AdbSetupActivity extends Activity {
 		styleButton(primary);
 		column.addView(primary);
 
+		rootInstead = new Button(this);
+		rootInstead.setMinHeight(Math.round(48 * dp));
+		rootInstead.setText(R.string.car_apps_setup_use_root);
+		styleButton(rootInstead);
+		rootInstead.setVisibility(View.GONE);
+		rootInstead.setOnClickListener(v -> requestRoot());
+		column.addView(rootInstead);
+
 		ScrollView scroll = new ScrollView(this);
 		scroll.addView(column);
 		// Edge-to-edge (forced from Android 15): keep the content clear of the status, navigation bars and cutout
@@ -142,6 +157,13 @@ public final class AdbSetupActivity extends Activity {
 	}
 
 	@Override
+	protected void onSaveInstanceState(Bundle out) {
+		super.onSaveInstanceState(out);
+		out.putString(EXTRA_PAGE, page.name());
+		out.putBoolean(STATE_REPAIR_STARTED, repairStarted);
+	}
+
+	@Override
 	protected void onStart() {
 		super.onStart();
 		AdbPairing.addListener(stateListener);
@@ -153,9 +175,9 @@ public final class AdbSetupActivity extends Activity {
 		super.onResume();
 		// The reply notification times out and can be swiped away: post it again (it replaces the old one)
 		boolean again = AdbPairing.state() != AdbPairing.State.WORKING;
-		if ((page != Page.USAGE) && (channel() == Channel.ADB) && again && !CarAppsFeature.isAdbPaired()
-				&& developerOptionsOn()) {
+		if ((page != Page.USAGE) && (channel() == Channel.ADB) && again && !adbPaired() && developerOptionsOn()) {
 			AdbPairing.start(this);
+			if (page == Page.SETUP_AGAIN) repairStarted = true;
 		}
 		render();
 	}
@@ -171,6 +193,12 @@ public final class AdbSetupActivity extends Activity {
 		return PhoneAppsGuide.channel(CarAppsFeature.state(), Build.VERSION.SDK_INT);
 	}
 
+	/** Set up again counts only the pairing made here; an earlier one may have its authorization revoked. */
+	private boolean adbPaired() {
+		if (page != Page.SETUP_AGAIN) return CarAppsFeature.isAdbPaired();
+		return repairStarted && (AdbPairing.state() == AdbPairing.State.DONE) && CarAppsFeature.isAdbPaired();
+	}
+
 	private boolean developerOptionsOn() {
 		return Settings.Global.getInt(getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1;
 	}
@@ -183,6 +211,7 @@ public final class AdbSetupActivity extends Activity {
 		title.setText(R.string.car_apps_setup_title);
 		sections.setVisibility(View.GONE);
 		body.setVisibility(View.VISIBLE);
+		rootInstead.setVisibility(View.GONE);
 		switch (channel()) {
 			case ROOT -> renderRoot();
 			case ADB -> renderAdb();
@@ -210,17 +239,19 @@ public final class AdbSetupActivity extends Activity {
 		CarAppsFeature.Backend b = CarAppsFeature.backend();
 		if (b == null) return;
 		primary.setEnabled(false); // one su prompt at a time
+		rootInstead.setEnabled(false);
 		b.requestRoot().onCompletion((granted, err) -> runOnUiThread(() -> {
 			if (!Boolean.TRUE.equals(granted) && !isFinishing()) {
 				Toast.makeText(this, R.string.car_apps_grant_root_blocked, Toast.LENGTH_LONG).show();
 			}
+			rootInstead.setEnabled(true);
 			render();
 		}));
 	}
 
 	private void renderAdb() {
 		AdbPairing.State state = AdbPairing.state();
-		boolean paired = CarAppsFeature.isAdbPaired();
+		boolean paired = adbPaired();
 		boolean dev = developerOptionsOn();
 		boolean typed = (state == AdbPairing.State.WORKING) || (state == AdbPairing.State.WRONG_CODE)
 				|| (state == AdbPairing.State.FAILED);
@@ -246,6 +277,8 @@ public final class AdbSetupActivity extends Activity {
 			show((error == 0) ? note : getString(error) + "\n\n" + note, getString(R.string.car_apps_setup_open_dev),
 					() -> open(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)));
 		}
+		boolean offerRoot = !paired && PhoneAppsGuide.offersRootInstead(CarAppsFeature.state(), Build.VERSION.SDK_INT);
+		rootInstead.setVisibility(offerRoot ? View.VISIBLE : View.GONE);
 	}
 
 	private void showDone() {
@@ -259,6 +292,7 @@ public final class AdbSetupActivity extends Activity {
 		title.setText(R.string.car_apps_guide_title);
 		steps.setVisibility(View.GONE);
 		body.setVisibility(View.GONE);
+		rootInstead.setVisibility(View.GONE);
 		if (sections.getChildCount() == 0) {
 			int[] s = usageSections(channel(), Build.VERSION.SDK_INT);
 			float dp = getResources().getDisplayMetrics().density;
