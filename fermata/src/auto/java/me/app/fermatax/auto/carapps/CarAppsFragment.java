@@ -39,6 +39,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.widget.ImageViewCompat;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 import me.aap.fermata.R;
@@ -312,7 +313,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		serverErrorOverlay.setOnClickListener(v -> {
 			Context c = getContext();
 			if (c != null) {
-				client.ensureRunning(c);
+				client.ensureRunning(c, "tap_retry");
 			}
 		});
 		viewportContainer.addView(serverErrorOverlay);
@@ -481,7 +482,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		if (ctx != null && (client.state() == CarDisplayClient.State.IDLE
 				|| client.state() == CarDisplayClient.State.FAILED)
 				&& CarAppsFeature.canRun()) {
-			client.ensureRunning(ctx);
+			client.ensureRunning(ctx, "root_changed");
 		}
 		updateUiState();
 	}
@@ -495,7 +496,7 @@ public class CarAppsFragment extends MainActivityFragment {
 		if (CarAppsFeature.canRun()) {
 			Context ctx = getContext();
 			if (ctx != null) {
-				client.ensureRunning(ctx);
+				client.ensureRunning(ctx, "open");
 			}
 		}
 		if (LauncherActivity.getActiveInstance() != null) {
@@ -687,6 +688,7 @@ public class CarAppsFragment extends MainActivityFragment {
 	static boolean phoneDimDisabledForTest;
 
 	private void showPhoneDim(Context c, PanelPowerPolicy.PanelMode mode) {
+		PhoneAppsJournal.record("phone_dim", Map.of("state", mode.name().toLowerCase(java.util.Locale.ROOT)));
 		dimRequested = true;
 		client.setPanelOffRequested(mode == PanelPowerPolicy.PanelMode.PANEL_OFF);
 		client.launchOnPhone(new ComponentName(c, PhoneDimActivity.class),
@@ -755,7 +757,9 @@ public class CarAppsFragment extends MainActivityFragment {
 	/** A server that restarted while this page was stopped has no display: attach again, and dim the phone again. */
 	private void dropStaleAttach() {
 		if (attached && attachedEpoch != client.serverEpoch()) {
+			PhoneAppsJournal.record("attach_reset", Map.of("from", attachedEpoch, "to", client.serverEpoch()));
 			attached = false;
+
 			dimRequested = false;
 		}
 	}

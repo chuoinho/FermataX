@@ -18,6 +18,7 @@ public final class AutoCarAppsBackend {
 	}
 
 	public static void install(Context ctx) {
+		PhoneAppsJournal.install(new java.io.File(ctx.getFilesDir(), "carapps_journal.txt"));
 		CarAppsFeature.setBackend(new CarAppsFeature.Backend() {
 			@Override
 			public FutureSupplier<Boolean> requestRoot() {
@@ -49,6 +50,7 @@ public final class AutoCarAppsBackend {
 			/** Off: the job and the server stop; the pairing and USB debugging stay. On: the usual triggers start it. */
 			@Override
 			public void onEnabledChanged(boolean enabled) {
+				PhoneAppsJournal.record("addon_switch", java.util.Map.of("enabled", enabled));
 				if (enabled) return;
 				AdbRecoveryJob.cancel(ctx);
 				CarDisplayClient.get().stop(ctx);

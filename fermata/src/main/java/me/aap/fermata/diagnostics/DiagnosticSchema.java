@@ -31,6 +31,10 @@ final class DiagnosticSchema {
 			"playback_item_unresolved", "root_grant", "server_call_failed", "server_connected", "server_died",
 			"server_failed", "server_log", "server_retry", "server_starting", "shutdown_completed",
 			"shutdown_started", "source_unavailable", "touch_queue",
+			// Phone Apps, also kept in its always-on journal
+			"server_ping", "start_requested", "server_adopted", "server_stop", "display_attach", "attach_reset",
+			"phone_dim", "car_session", "adb_port", "adb_command", "adb_reregister", "adb_wifi", "usb_debugging",
+			"pairing", "pm_grant", "recovery_job", "receiver", "addon_switch",
 			"attach_unconfirmed", "audible_start_requested", "back_exit_requested", "browser_callback_received",
 			"browser_request_dispatched", "browser_visibility_changed", "command_routed",
 			"content_callback_ignored", "content_operation_cancelled",

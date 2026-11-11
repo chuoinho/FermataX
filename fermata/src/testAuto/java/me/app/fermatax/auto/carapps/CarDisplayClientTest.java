@@ -398,6 +398,38 @@ public class CarDisplayClientTest {
 		assertTrue("the released display is gone: the car attaches again", client.serverEpoch() > epoch);
 	}
 
+	/** Testers leave Detailed diagnostics off: the always-on journal still tells how the server was found, kept and stopped. */
+	@Test
+	public void theAlwaysOnJournalTellsHowTheServerWasFoundKeptAndStopped() {
+		PhoneAppsJournal j = JournalAssert.install();
+		try {
+			useChannels(() -> Completed.completedVoid());
+			CarAppsFeature.setAdbPaired(true);
+			AdbRecoveryJob.wifiCheck = c -> false;
+			usePing(true);
+			useStop();
+			client.onCarSessionStarted(context); // no CarService here: recorded, nothing started
+			client.ensureRunning(context, "car_session");
+			ShadowLooper.idleMainLooper(2, java.util.concurrent.TimeUnit.SECONDS);
+			client.onServerBinderReceived(new FakeServerBinder(client.getExpectedVersion(), new AtomicBoolean(false)), 2000);
+			client.release();
+			client.ensureRunning(context, "open");
+			client.stop(context);
+
+			JournalAssert.has(j, "car_session", "state=started", "auto_start=false");
+			JournalAssert.has(j, "start_requested", "trigger=car_session");
+			JournalAssert.has(j, "server_ping", "state=sent");
+			JournalAssert.has(j, "server_ping", "state=answered");
+			JournalAssert.has(j, "server_adopted", "source=ping");
+			JournalAssert.has(j, "server_connected", "uid=2000");
+			JournalAssert.has(j, "start_requested", "trigger=open");
+			JournalAssert.has(j, "server_adopted", "source=idle_binder");
+			JournalAssert.has(j, "server_stop", "written=true");
+		} finally {
+			JournalAssert.uninstall();
+		}
+	}
+
 	/** The app process was killed between two trips: the ping makes the running server hand its binder over again. */
 	@Test
 	public void afterAProcessRestartThePingedServerAnswersAndNoCommandRuns() {

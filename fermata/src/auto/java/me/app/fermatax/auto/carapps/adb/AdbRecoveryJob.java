@@ -20,6 +20,7 @@ import android.provider.Settings;
 
 import androidx.annotation.Nullable;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -29,6 +30,8 @@ import java.util.function.ObjIntConsumer;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.utils.log.Log;
 import me.app.fermatax.auto.carapps.CarDisplayClient;
+import me.app.fermatax.auto.carapps.PhoneAppsJournal;
+
 import me.app.fermatax.auto.carapps.ServerStarter;
 
 import me.app.fermatax.auto.carapps.adb.AdbRecoveryPolicy.Action;
@@ -74,6 +77,7 @@ public class AdbRecoveryJob extends JobService {
 
 	@Override
 	public boolean onStopJob(JobParameters params) {
+		PhoneAppsJournal.record("recovery_job", Map.of("state", "stopped", "reason", "constraint_lost"));
 		if (run != null) run.cancel();
 		return true; // the constraint was lost: run again when it is back
 	}
@@ -83,14 +87,19 @@ public class AdbRecoveryJob extends JobService {
 		if (!eligible()) return;
 		try {
 			JobScheduler js = ctx.getSystemService(JobScheduler.class);
-			if ((js == null) || (js.getPendingJob(JOB_ID) != null)) return;
+			if ((js == null) || (js.getPendingJob(JOB_ID) != null)) {
+				PhoneAppsJournal.record("recovery_job", Map.of("state", "pending"));
+				return;
+			}
 			// the very network hasWifi() looks for, else a job could run on another network and be spent; a home Wi-Fi
 			// flagged metered counts too, since nothing leaves the phone
 			NetworkRequest wifi = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build();
 			js.schedule(new JobInfo.Builder(JOB_ID, new ComponentName(ctx, AdbRecoveryJob.class))
 					.setRequiredNetwork(wifi).build());
+			PhoneAppsJournal.record("recovery_job", Map.of("state", "scheduled", "reason", "wifi_network"));
 		} catch (Throwable t) {
 			Log.e(t, "Cannot schedule the ADB recovery");
+			PhoneAppsJournal.record("recovery_job", Map.of("state", "schedule_failed", "error", t.getClass().getSimpleName()));
 		}
 	}
 
@@ -114,13 +123,20 @@ public class AdbRecoveryJob extends JobService {
 	public static Run start(Context ctx, Consumer<Boolean> finish) {
 		Context app = ctx.getApplicationContext();
 		CarDisplayClient client = CarDisplayClient.get();
-		if (!eligible()) return null;
+		if (!eligible()) {
+			PhoneAppsJournal.record("recovery_job", Map.of("state", "skipped", "reason", "not_eligible"));
+			return null;
+		}
 		Action action = action(app, client);
 		if (action == Action.RESTORE_ADB_SETTING) {
 			restoreAdbWifi(app);
 			action = action(app, client);
 		}
-		return (action == Action.ENABLE_ADB || action == Action.CONNECT) ? new Run(app, client, finish) : null;
+		boolean runs = (action == Action.ENABLE_ADB) || (action == Action.CONNECT);
+		PhoneAppsJournal.record("recovery_job", runs
+				? Map.of("state", "ran", "attempt", prefs(app).getInt(PREF_TRIES, 0) + 1, "result", action.name().toLowerCase(java.util.Locale.ROOT))
+				: Map.of("state", "skipped", "reason", action.name().toLowerCase(java.util.Locale.ROOT)));
+		return runs ? new Run(app, client, finish) : null;
 	}
 
 	private static Action action(Context app, CarDisplayClient client) {
@@ -139,7 +155,7 @@ public class AdbRecoveryJob extends JobService {
 		private final Handler handler = new Handler(Looper.getMainLooper());
 		private final AtomicBoolean done = new AtomicBoolean();
 		private final Consumer<CarDisplayClient.State> listener = this::onState;
-		private final Runnable timeout = this::fail;
+		private final Runnable timeout = () -> fail("timeout");
 
 		private Run(Context app, CarDisplayClient client, Consumer<Boolean> finish) {
 			this.client = client;
@@ -147,7 +163,7 @@ public class AdbRecoveryJob extends JobService {
 			this.prefs = prefs(app);
 			client.addStateListener(listener);
 			handler.postDelayed(timeout, RUN_TIMEOUT_MS);
-			client.ensureRunning(app);
+			client.ensureRunning(app, "recovery_job");
 		}
 
 		public void cancel() {
@@ -169,19 +185,21 @@ public class AdbRecoveryJob extends JobService {
 				if (!done.compareAndSet(false, true)) return;
 				detach();
 				prefs.edit().putInt(PREF_TRIES, 0).apply();
+				PhoneAppsJournal.record("recovery_job", Map.of("state", "finished", "result", "ready"));
 				finish(false);
 			} else if (state == CarDisplayClient.State.FAILED) {
-				fail();
+				fail("failed");
 			}
 		}
 
 		/** A revoked authorization has already cleared the pairing (and the client is FAILED): do not try again. */
-		private void fail() {
+		private void fail(String why) {
 			if (!done.compareAndSet(false, true)) return;
 			detach();
 			int tries = prefs.getInt(PREF_TRIES, 0) + 1;
 			boolean retry = CarAppsFeature.isAdbPaired() && (tries < MAX_TRIES);
 			prefs.edit().putInt(PREF_TRIES, retry ? tries : 0).apply();
+			PhoneAppsJournal.record("recovery_job", Map.of("state", "finished", "result", why, "attempt", tries, "retry", retry));
 			finish(retry);
 		}
 	}
@@ -201,12 +219,19 @@ public class AdbRecoveryJob extends JobService {
 		if (!owned) prefs.edit().putInt(PREF_RESTORE, on ? 1 : 0).commit();
 		try {
 			adbWifiWriter.accept(ctx, 1);
+			recordAdbWifi("enable", on ? 1 : 0, 1, "written");
 			return true;
 		} catch (RuntimeException e) {
 			Log.e(e, "Cannot switch wireless debugging on");
+			recordAdbWifi("enable", on ? 1 : 0, 1, "failed");
 			if (!owned) prefs.edit().remove(PREF_RESTORE).commit();
 			return false;
 		}
+	}
+
+	/** adb_wifi_enabled before and after each write of the app; the user's value is the marker until it is given back. */
+	private static void recordAdbWifi(String state, int from, int to, String result) {
+		PhoneAppsJournal.record("adb_wifi", Map.of("state", state, "from", from, "to", to, "result", result));
 	}
 
 	/** adbd needs a moment to stop before it is switched on again, else the settings observer sees one change at most. */
@@ -231,16 +256,20 @@ public class AdbRecoveryJob extends JobService {
 		prefs.edit().putInt(PREF_RESTORE, 1).commit();
 		try {
 			adbWifiWriter.accept(ctx, 0);
+			recordAdbWifi("reregister_off", 1, 0, "written");
 		} catch (RuntimeException e) {
 			Log.e(e, "Cannot restart wireless debugging");
+			recordAdbWifi("reregister_off", 1, 0, "failed");
 			prefs.edit().remove(PREF_RESTORE).commit();
 			return;
 		}
 		new Handler(Looper.getMainLooper()).postDelayed(() -> {
 			try {
 				adbWifiWriter.accept(ctx, 1);
+				recordAdbWifi("reregister_on", 0, 1, "written");
 			} catch (RuntimeException e) {
 				Log.e(e, "Cannot switch wireless debugging on again"); // the marker still gives the user's 1 back
+				recordAdbWifi("reregister_on", 0, 1, "failed");
 			}
 		}, REREGISTER_GAP_MS);
 	}
@@ -250,7 +279,9 @@ public class AdbRecoveryJob extends JobService {
 	 * it: remember that (no retry shows its dialog again) and drop the marker, else the restore would ask for it once more.
 	 */
 	public static void reRegisterFailed(Context ctx) {
-		if (refusedOnThisWifi(ctx)) prefs(ctx).edit().remove(PREF_RESTORE).commit();
+		boolean refused = refusedOnThisWifi(ctx);
+		PhoneAppsJournal.record("adb_reregister", Map.of("result", "no_port", "reason", refused ? "refused_wifi" : "unknown"));
+		if (refused) prefs(ctx).edit().remove(PREF_RESTORE).commit();
 	}
 
 	/**
@@ -271,12 +302,17 @@ public class AdbRecoveryJob extends JobService {
 	 * write 1 again; harmless, and reading init.svc.adbd (adbRunning) would need a hidden-API call the app does not make.
 	 */
 	public static void ensureUsbDebugging(Context ctx) {
-		if (!canWriteSecure(ctx)) return;
+		if (!canWriteSecure(ctx)) {
+			PhoneAppsJournal.record("usb_debugging", Map.of("result", "no_permission"));
+			return;
+		}
 		try {
-			if (Settings.Global.getInt(ctx.getContentResolver(), ADB_ENABLED, -1) == 1) return;
+			if (Settings.Global.getInt(ctx.getContentResolver(), ADB_ENABLED, -1) == 1) return; // on: nothing to note
 			usbDebuggingWriter.accept(ctx, 1);
+			PhoneAppsJournal.record("usb_debugging", Map.of("result", "written"));
 		} catch (RuntimeException e) {
 			Log.e(e, "Cannot switch USB debugging on");
+			PhoneAppsJournal.record("usb_debugging", Map.of("result", "failed", "error", e.getClass().getSimpleName()));
 		}
 	}
 
@@ -284,12 +320,16 @@ public class AdbRecoveryJob extends JobService {
 	public static void restoreAdbWifi(Context ctx) {
 		SharedPreferences prefs = prefs(ctx);
 		if (!prefs.contains(PREF_RESTORE) || !canWriteSecure(ctx)) return;
+		int from = adbWifiOn(ctx) ? 1 : 0;
+		int to = prefs.getInt(PREF_RESTORE, 0);
 		try {
-			adbWifiWriter.accept(ctx, prefs.getInt(PREF_RESTORE, 0));
+			adbWifiWriter.accept(ctx, to);
 		} catch (RuntimeException e) {
 			Log.e(e, "Cannot restore wireless debugging");
+			recordAdbWifi("restore", from, to, "failed");
 			return;
 		}
+		recordAdbWifi("restore", from, to, "written");
 		prefs.edit().remove(PREF_RESTORE).commit();
 	}
 

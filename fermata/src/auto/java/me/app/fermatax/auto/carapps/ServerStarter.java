@@ -5,10 +5,13 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 
 import androidx.annotation.Nullable;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootState;
@@ -84,24 +87,46 @@ public final class ServerStarter {
 				result.complete(null, err);
 				return;
 			}
+			long t0 = SystemClock.elapsedRealtime();
 			runner.run(ctx, port, start).onCompletion((r, runErr) -> {
+				boolean refused = (runErr != null) && isRefused(runErr);
+				recordCommand(runErr, refused, t0);
 				// A refused loopback connection: the port came from a stale mdns cache while adbd listens elsewhere. The
 				// command never ran, so one fresh port and one more run do not start anything twice.
-				if ((runErr == null) || toggled.get() || !isRefused(runErr) || !AdbRecoveryJob.canReRegisterAdbWifi(ctx)) {
+				if ((runErr == null) || toggled.get() || !refused || !AdbRecoveryJob.canReRegisterAdbWifi(ctx)) {
 					result.complete(r, runErr);
 					return;
 				}
 				toggled.set(true);
+				PhoneAppsJournal.record("adb_reregister", Map.of("reason", "refused"));
 				reRegisterAndFind(ctx, port).onCompletion((port2, err2) -> {
 					if (err2 != null) {
 						result.complete(null, err2);
 						return;
 					}
-					runner.run(ctx, port2, start).onCompletion((r2, runErr2) -> result.complete(r2, runErr2));
+					long t1 = SystemClock.elapsedRealtime();
+					runner.run(ctx, port2, start).onCompletion((r2, runErr2) -> {
+						recordCommand(runErr2, (runErr2 != null) && isRefused(runErr2), t1);
+						result.complete(r2, runErr2);
+					});
 				});
 			});
 		});
 		return result;
+	}
+
+	/** The outcome of one command over the loopback connection: the error's class only, never its message. */
+	private static void recordCommand(@Nullable Throwable err, boolean refused, long since) {
+		long ms = SystemClock.elapsedRealtime() - since;
+		PhoneAppsJournal.record("adb_command", (err == null) ? Map.of("result", "ok", "duration_ms", ms)
+				: Map.of("result", refused ? "refused" : "failed", "error", err.getClass().getSimpleName(), "duration_ms", ms));
+	}
+
+	/** Found or not and how long it took; the port number itself is not recorded. */
+	private static void recordPort(@Nullable Throwable err, @Nullable Integer port, int stale, String after, long since) {
+		String result = (err != null) ? "not_found" : ((port != null) && (port == stale)) ? "stale" : "found";
+		PhoneAppsJournal.record("adb_port", Map.of("result", result, "source", after,
+				"duration_ms", SystemClock.elapsedRealtime() - since));
 	}
 
 	/** Connection refused (not a pairing, TLS or timeout failure) anywhere in the chain. */
@@ -121,13 +146,16 @@ public final class ServerStarter {
 	 */
 	private static FutureSupplier<Integer> findPort(Context ctx, AtomicBoolean toggled) {
 		Promise<Integer> result = new Promise<>();
+		long t0 = SystemClock.elapsedRealtime();
 		portFinder.apply(ctx, PORT_TIMEOUT_MS).onCompletion((port, err) -> {
+			recordPort(err, port, -1, "first_look", t0);
 			if (err == null) {
 				result.complete(port);
 			} else if (!AdbRecoveryJob.canReRegisterAdbWifi(ctx)) {
 				result.completeExceptionally(err);
 			} else {
 				toggled.set(true);
+				PhoneAppsJournal.record("adb_reregister", Map.of("reason", "not_found"));
 				reRegisterAndFind(ctx, -1).onCompletion((port2, err2) -> result.complete(port2, err2));
 			}
 		});
@@ -140,12 +168,17 @@ public final class ServerStarter {
 	 */
 	private static FutureSupplier<Integer> reRegisterAndFind(Context ctx, int stale) {
 		Promise<Integer> result = new Promise<>();
+		long t0 = SystemClock.elapsedRealtime();
 		FutureSupplier<Integer> again = portFinder.apply(ctx, REREGISTER_TIMEOUT_MS);
 		AdbRecoveryJob.reRegisterAdbWifi(ctx);
 		again.onCompletion((port, err) -> {
+			recordPort(err, port, stale, "reregister", t0);
 			if ((err == null) && (port == stale)) {
 				new Handler(Looper.getMainLooper()).postDelayed(() -> portFinder.apply(ctx, REREGISTER_TIMEOUT_MS - 2_000)
-						.onCompletion((port2, err2) -> finish(ctx, result, port2, err2, stale)), REREGISTER_GAP_AFTER_MS);
+						.onCompletion((port2, err2) -> {
+							recordPort(err2, port2, stale, "second_look", t0);
+							finish(ctx, result, port2, err2, stale);
+						}), REREGISTER_GAP_AFTER_MS);
 			} else {
 				finish(ctx, result, port, err, stale);
 			}

@@ -109,6 +109,27 @@ public class ServerStarterReRegisterTest {
 		assertFalse(prefs.contains(AdbRecoveryJob.PREF_RESTORE));
 	}
 
+	/** Port lookup, the one re-registration and the command result reach the journal; no port number does. */
+	@Test public void theJournalShowsTheLookupTheReRegistrationAndTheResult() {
+		PhoneAppsJournal j = JournalAssert.install();
+		try {
+			answers.add(Completed.completed(40000));
+			answers.add(Completed.completed(41000));
+			runResults.add(Completed.failed(new java.net.ConnectException("ECONNREFUSED")));
+			ServerStarter.startViaAdb(ctx, START);
+			idle(2000);
+
+			JournalAssert.has(j, "adb_port", "result=found");
+			JournalAssert.has(j, "adb_command", "result=refused", "error=ConnectException");
+			JournalAssert.has(j, "adb_reregister", "reason=refused");
+			JournalAssert.has(j, "adb_command", "result=ok");
+			String text = String.join("\n", j.lines());
+			assertFalse(text, text.contains("40000") || text.contains("41000"));
+		} finally {
+			JournalAssert.uninstall();
+		}
+	}
+
 	@Test public void aStaleRecordIsFixedByOneToggleAndTheUsersValueComesBack() {
 		answers.add(miss());
 		answers.add(Completed.completed(41000));

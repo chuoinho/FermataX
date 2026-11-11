@@ -80,7 +80,8 @@ public final class DiagnosticSanitizer {
 					// Car Apps: server lifecycle, phone screen, and the readiness check ids
 					"asleep", "call", "capabilities", "channel", "delay_ms", "dropped", "focus", "ime", "inject",
 					"lines", "locked", "merged", "ok", "own_power_group", "panel_off", "panel_power", "reset_overload",
-					"result", "tasks", "trusted", "uid", "version")));
+					"result", "tasks", "trusted", "uid", "version",
+					"auto_start", "granted", "retry", "trigger", "written")));
 	private static final Set<String> FINGERPRINT_VALUE_KEYS = Collections.unmodifiableSet(
 			new HashSet<>(Arrays.asList("endpoint", "genre", "item", "process_name",
 					"provider_error", "query", "request", "source", "title", "url", "uri")));

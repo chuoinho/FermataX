@@ -15,6 +15,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.RemoteInput;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,6 +31,8 @@ import me.aap.utils.app.App;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
 import me.app.fermatax.auto.carapps.CarDisplayClient;
+import me.app.fermatax.auto.carapps.PhoneAppsJournal;
+
 
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
@@ -58,7 +61,7 @@ public final class AdbPairing {
 	static Function<Context, FutureSupplier<Integer>> pairingPort =
 			c -> AdbConnectPort.find(c, AdbMdns.SERVICE_TYPE_TLS_PAIRING, PAIRING_PORT_TIMEOUT_MS);
 	static Function<Context, FutureSupplier<Integer>> connectPort = c -> AdbConnectPort.find(c, CONNECT_PORT_TIMEOUT_MS);
-	static Consumer<Context> serverStarter = c -> CarDisplayClient.get().ensureRunning(c);
+	static Consumer<Context> serverStarter = c -> CarDisplayClient.get().ensureRunning(c, "pairing");
 	/** Task 5 sets this to schedule the recovery job; nothing to do until then. */
 	public static volatile Runnable recoveryScheduler = () -> {
 	};
@@ -104,6 +107,7 @@ public final class AdbPairing {
 			if (state == State.WORKING) return completedVoid(); // a stray reply must not disturb the running pairing
 		}
 		if (!validCode(input)) {
+			PhoneAppsJournal.record("pairing", Map.of("result", "invalid_input")); // never the input itself
 			setState(State.WRONG_CODE);
 			post(app, R.string.car_apps_setup_wrong_code, true);
 			return completedVoid();
@@ -126,10 +130,14 @@ public final class AdbPairing {
 		port(pairingPort, app).then(port -> adb.pair(port, input)).onCompletion((r, err) -> {
 			if (err != null) {
 				adb.close();
-				fail(app, isPairingRequired(err) ? State.WRONG_CODE : State.FAILED);
+				boolean wrong = isPairingRequired(err);
+				PhoneAppsJournal.record("pairing", wrong ? Map.of("result", "wrong_code")
+						: Map.of("result", "failed", "error", err.getClass().getSimpleName()));
+				fail(app, wrong ? State.WRONG_CODE : State.FAILED);
 				done.complete(null);
 				return;
 			}
+			PhoneAppsJournal.record("pairing", Map.of("result", "ok"));
 			// Paired from here on, whatever the grant or the server start do
 			try {
 				RootProbe.recordAdbPaired(app, true);
@@ -152,6 +160,10 @@ public final class AdbPairing {
 				.then(port -> adb.runAndClose(port, grantCommand(ctx.getPackageName())))
 				.onCompletion((r, err) -> {
 					adb.close();
+					boolean granted = ctx.checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
+							== android.content.pm.PackageManager.PERMISSION_GRANTED;
+					PhoneAppsJournal.record("pm_grant", (err == null) ? Map.of("result", "ok", "granted", granted)
+							: Map.of("result", "failed", "error", err.getClass().getSimpleName(), "granted", granted));
 					AdbRecoveryJob.ensureUsbDebugging(ctx); // with the permission, grant or not: the server must outlive wireless debugging
 					try {
 						recoveryScheduler.run();
@@ -203,7 +215,7 @@ public final class AdbPairing {
 		adbFactory = LocalAdb::new;
 		pairingPort = c -> AdbConnectPort.find(c, AdbMdns.SERVICE_TYPE_TLS_PAIRING, PAIRING_PORT_TIMEOUT_MS);
 		connectPort = c -> AdbConnectPort.find(c, CONNECT_PORT_TIMEOUT_MS);
-		serverStarter = c -> CarDisplayClient.get().ensureRunning(c);
+		serverStarter = c -> CarDisplayClient.get().ensureRunning(c, "pairing");
 		recoveryScheduler = () -> {
 		};
 		listeners.clear();

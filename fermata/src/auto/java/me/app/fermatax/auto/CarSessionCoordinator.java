@@ -26,6 +26,7 @@ import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.log.Log;
 import me.app.fermatax.auto.carapps.CarDisplayClient;
+import me.app.fermatax.auto.carapps.PhoneAppsJournal;
 
 /**
  * Unified coordinator for automotive projection lifecycle, connection monitoring, and safe teardown.
@@ -154,7 +155,10 @@ public final class CarSessionCoordinator {
 					new AutoShutdownSequence.Step("mirror_surface",
 							MirrorServiceFS::shutdownForAutoDisconnect),
 					new AutoShutdownSequence.Step("car_display",
-							() -> CarDisplayClient.get().release()),
+							() -> {
+								PhoneAppsJournal.record("car_session", java.util.Map.of("state", "stopped"));
+								CarDisplayClient.get().release();
+							}),
 					new AutoShutdownSequence.Step("mirror_display", MirrorDisplay::close),
 					new AutoShutdownSequence.Step("projection_service", ProjectionService::stop),
 					new AutoShutdownSequence.Step("addons",

@@ -100,6 +100,34 @@ public class AdbRecoveryJobTest {
 		return prefs.contains(AdbRecoveryJob.PREF_RESTORE);
 	}
 
+	/** Boot and update delivery, the job and every settings write reach the always-on journal with their values. */
+	@Test public void theJournalFollowsTheReceiverTheJobAndTheSettings() {
+		me.app.fermatax.auto.carapps.PhoneAppsJournal j = me.app.fermatax.auto.carapps.JournalAssert.install();
+		try {
+			new AdbRecoveryReceiver().onReceive(ctx, new Intent(Intent.ACTION_BOOT_COMPLETED));
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "receiver", "type=boot");
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "recovery_job", "state=scheduled");
+			new AdbRecoveryReceiver().onReceive(ctx, new Intent(Intent.ACTION_MY_PACKAGE_REPLACED));
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "receiver", "type=update");
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "recovery_job", "state=pending");
+
+			assertTrue(AdbRecoveryJob.enableAdbWifi(ctx));
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "adb_wifi", "state=enable", "from=0", "to=1", "result=written");
+			AdbRecoveryJob.restoreAdbWifi(ctx);
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "adb_wifi", "state=restore", "from=1", "to=0", "result=written");
+
+			Settings.Global.putInt(ctx.getContentResolver(), ADB_ENABLED, 0);
+			AdbRecoveryJob.ensureUsbDebugging(ctx);
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "usb_debugging", "result=written");
+
+			CarAppsFeature.setAdbPaired(false);
+			assertNull(AdbRecoveryJob.start(ctx, retry -> { }));
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "recovery_job", "state=skipped", "reason=not_eligible");
+		} finally {
+			me.app.fermatax.auto.carapps.JournalAssert.uninstall();
+		}
+	}
+
 	@Test public void usbDebuggingIsTurnedOnWhenItIsOff() {
 		setUsb(0);
 

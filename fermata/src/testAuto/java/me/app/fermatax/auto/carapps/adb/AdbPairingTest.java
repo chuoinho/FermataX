@@ -163,6 +163,37 @@ public class AdbPairingTest {
 		assertEquals(2, codes.size());
 	}
 
+	@Test public void theJournalTellsThePairingOutcomeButNeverTheCode() throws Exception {
+		me.app.fermatax.auto.carapps.PhoneAppsJournal j = me.app.fermatax.auto.carapps.JournalAssert.install();
+		try {
+			pairResult = false;
+			submit("246813");
+			submit("12a");
+			pairResult = true;
+			submit("135792");
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "pairing", "result=wrong_code");
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "pairing", "result=invalid_input");
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "pairing", "result=ok");
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "pm_grant", "result=ok", "granted=true");
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "usb_debugging", "result=written");
+			String text = String.join("\n", j.lines());
+			assertFalse(text, text.contains("246813") || text.contains("135792") || text.contains("12a"));
+		} finally {
+			me.app.fermatax.auto.carapps.JournalAssert.uninstall();
+		}
+	}
+
+	@Test public void aMissingPairingServiceIsATimeoutInTheJournal() throws Exception {
+		me.app.fermatax.auto.carapps.PhoneAppsJournal j = me.app.fermatax.auto.carapps.JournalAssert.install();
+		try {
+			AdbPairing.pairingPort = c -> failed(new TimeoutException());
+			submit("123456");
+			me.app.fermatax.auto.carapps.JournalAssert.has(j, "pairing", "result=failed", "error=TimeoutException");
+		} finally {
+			me.app.fermatax.auto.carapps.JournalAssert.uninstall();
+		}
+	}
+
 	@Test public void missingPairingServiceAllowsRetry() throws Exception {
 		AdbPairing.pairingPort = c -> failed(new TimeoutException());
 		submit("123456");

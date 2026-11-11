@@ -47,7 +47,6 @@ import java.util.function.Supplier;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
-import me.aap.fermata.diagnostics.android.AndroidDiagnosticsRuntime;
 import me.aap.fermata.ui.carapps.CarAppsChecks;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.RootProbe;
@@ -119,6 +118,9 @@ public class CarDisplayClient {
 	/** A ping was sent and not yet answered; a release in between does not clear it (the answer may still come). */
 	private boolean pingUnanswered;
 	private volatile boolean failedForWifi;
+	private volatile String lastFailure = "none";
+	/** When the current start began (uptime), for the time a server took to answer. */
+	private volatile long startedAtMs;
 	private final Runnable serverPingTimeout = () -> {
 		synchronized (CarDisplayClient.this) {
 			askingRunningServer = false;
@@ -329,10 +331,17 @@ public class CarDisplayClient {
 		if (diagnosticsConsumerForTest != null) {
 			diagnosticsConsumerForTest.accept(event, attributes);
 		}
-		try {
-			AndroidDiagnosticsRuntime.get().recordDetailed("carapps", event, attributes);
-		} catch (Throwable ignored) {
-		}
+		if ("server_failed".equals(event)) lastFailure = String.valueOf(attributes.get("reason"));
+		PhoneAppsJournal.record(event, attributes); // always-on journal, and Detailed diagnostics while that is on
+	}
+
+	/** The reason of the last server_failed, for the Phone Apps report. */
+	String lastFailure() {
+		return lastFailure;
+	}
+
+	int serverUid() {
+		return serverUid;
 	}
 
 	public void setDiagnosticsConsumerForTest(BiConsumer<String, Map<String, ?>> consumer) {
@@ -430,6 +439,7 @@ public class CarDisplayClient {
 		}
 		// a server answered the ping: no start, or a stale one is replaced by the one start below
 		mainHandler.removeCallbacks(serverPingTimeout);
+		boolean answeredPing = askingRunningServer;
 		askingRunningServer = false;
 		boolean lateAnswer = pingUnanswered && (state == State.IDLE);
 		pingUnanswered = false;
@@ -440,7 +450,7 @@ public class CarDisplayClient {
 				s.release();
 			} catch (Throwable ignored) {
 			}
-			if (lastContext != null) serverStop.test(lastContext);
+			if (lastContext != null) recordDiagnostic("server_stop", Map.of("written", serverStop.test(lastContext)));
 			return;
 		}
 
@@ -453,7 +463,7 @@ public class CarDisplayClient {
 
 		if (version != getExpectedVersion()) {
 			Log.w("Server version mismatch: expected " + getExpectedVersion() + ", got " + version + "; releasing");
-			recordDiagnostic("server_failed", Map.of("reason", "version_mismatch"));
+			recordDiagnostic("server_failed", Map.of("reason", "version_mismatch", "version", version));
 			try {
 				s.release();
 			} catch (Throwable ignored) {
@@ -465,6 +475,7 @@ public class CarDisplayClient {
 		}
 
 		if (lateAnswer) {
+			recordDiagnostic("server_adopted", Map.of("source", "late_ping_kept"));
 			idleBinder = binder; // the session ended meanwhile: the next one takes it back, nothing is READY without one
 			return;
 		}
@@ -505,8 +516,13 @@ public class CarDisplayClient {
 		this.nextPhoneSleepMs = 0;
 		setState(State.READY);
 		Log.i("CarDisplayServer connected successfully (version " + version + ")");
+		long elapsed = SystemClock.elapsedRealtime() - startedAtMs;
+		if (answeredPing) {
+			recordDiagnostic("server_ping", Map.of("state", "answered", "duration_ms", elapsed));
+			recordDiagnostic("server_adopted", Map.of("source", "ping"));
+		}
 		recordDiagnostic("server_connected", Map.of("version", version, "capabilities", caps, "uid", serverUid,
-				"sdk", Build.VERSION.SDK_INT));
+				"sdk", Build.VERSION.SDK_INT, "duration_ms", elapsed));
 		saveCapabilities(caps);
 	}
 
@@ -590,7 +606,12 @@ public class CarDisplayClient {
 		}, delay);
 	}
 
-	public synchronized void ensureRunning(Context ctx) {
+	public void ensureRunning(Context ctx) {
+		ensureRunning(ctx, "other");
+	}
+
+	/** The trigger (car_session, open, recovery_job, pairing, ...) only names the start in the journal. */
+	public synchronized void ensureRunning(Context ctx, String trigger) {
 		if (ctx != null) {
 			this.lastContext = ctx.getApplicationContext();
 		}
@@ -604,6 +625,7 @@ public class CarDisplayClient {
 
 		this.retryAttempt = 0;
 		this.nextPhoneSleepMs = 0;
+		recordDiagnostic("start_requested", Map.of("trigger", trigger));
 		Context c = (ctx != null) ? ctx : lastContext;
 		if (adoptRunningServer(c)) return;
 		setState(State.STARTING);
@@ -623,12 +645,18 @@ public class CarDisplayClient {
 		IBinder idle = idleBinder;
 		idleBinder = null;
 		if ((idle != null) && idle.pingBinder()) {
+			recordDiagnostic("server_adopted", Map.of("source", "idle_binder"));
+			startedAtMs = SystemClock.elapsedRealtime();
 			setState(State.STARTING);
 			onServerBinderReceived(idle, serverUid); // a version mismatch there starts the replacement itself
 			return true;
 		}
-		if (!serverPing.test(ctx)) return false;
+		if (!serverPing.test(ctx)) {
+			recordDiagnostic("server_ping", Map.of("state", "not_written"));
+			return false;
+		}
 		recordDiagnostic("server_ping", Map.of("state", "sent"));
+		startedAtMs = SystemClock.elapsedRealtime();
 		pingUnanswered = true;
 		askingRunningServer = true; // before STARTING: its listeners must not ask for Wi-Fi meanwhile
 		setState(State.STARTING);
@@ -671,7 +699,7 @@ public class CarDisplayClient {
 	public synchronized void stop(Context ctx) {
 		release();
 		idleBinder = null;
-		serverStop.test(ctx.getApplicationContext());
+		recordDiagnostic("server_stop", Map.of("written", serverStop.test(ctx.getApplicationContext())));
 	}
 
 	/** True while a running server is asked for its binder: the car must wait, not ask for Wi-Fi. */
@@ -690,16 +718,17 @@ public class CarDisplayClient {
 		int appUid = android.os.Process.myUid();
 		int versionCode = getExpectedVersion();
 		String pkg = ctx.getPackageName();
-		recordDiagnostic("server_starting", Map.of("attempt", retryAttempt));
+		ServerStarter.Channel channel = ServerStarter.choose(CarAppsFeature.state(), CarAppsFeature.isAdbPaired(),
+				Build.VERSION.SDK_INT);
+		if (retryAttempt == 0) startedAtMs = SystemClock.elapsedRealtime();
+		recordDiagnostic("server_starting", Map.of("attempt", retryAttempt,
+				"channel", channel.name().toLowerCase(java.util.Locale.ROOT)));
 
 		if (testCommandRunner != null) {
 			armStartTimeout();
 			testCommandRunner.accept(ServerCommand.build(apkPath, appUid, versionCode, pkg));
 			return;
 		}
-
-		ServerStarter.Channel channel = ServerStarter.choose(CarAppsFeature.state(), CarAppsFeature.isAdbPaired(),
-				Build.VERSION.SDK_INT);
 		if (channel == ServerStarter.Channel.ADB) {
 			mainHandler.removeCallbacks(startTimeoutRunnable); // a stale timer from a root start must not cut this one short
 			if (!AdbRecoveryJob.hasWifi(ctx)) {
@@ -737,7 +766,7 @@ public class CarDisplayClient {
 			Log.i("Starting CarDisplayServer via su: " + rootCmd);
 			su.exec(rootCmd);
 		}).onFailure(err -> {
-			recordDiagnostic("root_grant", Map.of("result", "failed"));
+			recordDiagnostic("root_grant", Map.of("result", "failed", "error", err.getClass().getSimpleName()));
 			recordDiagnostic("server_failed", Map.of("reason", "root_failed"));
 			Log.e(err, "Failed to obtain root shell to launch CarDisplayServer");
 				// root was revoked since the grant was recorded: show the grant UI, not a generic failure
@@ -831,9 +860,9 @@ public class CarDisplayClient {
 		boolean carActive = CarService.isActive();
 		RootState rootState = CarAppsFeature.state();
 
-		if (AutoStartPolicy.shouldStart(carActive, rootState, autoStartPref, Build.VERSION.SDK_INT)) {
-			ensureRunning(ctx);
-		}
+		boolean start = AutoStartPolicy.shouldStart(carActive, rootState, autoStartPref, Build.VERSION.SDK_INT);
+		recordDiagnostic("car_session", Map.of("state", "started", "auto_start", start));
+		if (start) ensureRunning(ctx, "car_session");
 	}
 
 	// AIDL proxy methods
@@ -849,6 +878,7 @@ public class CarDisplayClient {
 				int caps = srv.capabilities();
 				ownPowerGroup = (caps & ICarDisplayServer.CAP_OWN_POWER_GROUP) != 0;
 				saveCapabilities(caps);
+				recordDiagnostic("display_attach", Map.of("result", "ok", "epoch", serverEpoch));
 				recordChecks(caps);
 				rememberCarSurface(s, w, h, dpi);
 				startKeepingPhoneAwake();
@@ -857,6 +887,8 @@ public class CarDisplayClient {
 		} catch (RemoteException e) {
 			Log.e(e, "CarDisplayServer.attach failed");
 			recordCallFailure("attach", e);
+			recordDiagnostic("display_attach", Map.of("result", "failed", "epoch", serverEpoch));
+
 			return -1;
 		}
 	}
