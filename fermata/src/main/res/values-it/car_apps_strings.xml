@@ -4,6 +4,8 @@
     <string name="car_apps_dashboard_sub">Launcher display virtuale indipendente</string>
     <string name="car_apps_addon_desc">App del telefono sullo schermo dell\'auto. Se disattivato si fermano; il debug USB resta attivo.</string>
     <string name="car_apps_turned_off">App del telefono è disattivato. Attivalo in Addon.</string>
+    <string name="car_apps_share_report">Condividi rapporto App del telefono</string>
+    <string name="car_apps_share_report_sub">Testo semplice per gli sviluppatori, senza dati personali. Scegli tu dove inviarlo.</string>
     <string name="car_apps_loading">Avvio display auto…</string>
     <string name="car_apps_needs_root">L\'accesso root è richiesto per eseguire le app del telefono sullo schermo dell\'auto</string>
     <string name="car_apps_grant_root">Concedi root</string>

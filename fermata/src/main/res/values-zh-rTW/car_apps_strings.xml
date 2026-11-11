@@ -4,6 +4,8 @@
     <string name="car_apps_dashboard_sub">獨立虛擬螢幕啟動器</string>
     <string name="car_apps_addon_desc">在車機螢幕上使用手機應用程式。關閉後即停止；USB 偵錯仍保持開啟。</string>
     <string name="car_apps_turned_off">手機應用程式已關閉。請在擴充功能中開啟。</string>
+    <string name="car_apps_share_report">分享手機應用程式報告</string>
+    <string name="car_apps_share_report_sub">給開發者的純文字，不含個人資料。由您選擇傳送位置。</string>
     <string name="car_apps_loading">正在啟動車載螢幕…</string>
     <string name="car_apps_needs_root">在車載螢幕上執行手機應用程式需要 Root 權限</string>
     <string name="car_apps_grant_root">授予 Root 權限</string>

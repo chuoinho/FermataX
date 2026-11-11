@@ -44,6 +44,7 @@ import java.util.zip.ZipOutputStream;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.diagnostics.android.DiagnosticStateSnapshot;
 import me.aap.fermata.diagnostics.DiagnosticRecorder;
+import me.aap.fermata.ui.carapps.CarAppsFeature;
 
 /** Creates a local, explicitly user-exported support bundle without legacy logs or raw traces. */
 public final class DiagnosticReportExporter {
@@ -57,6 +58,7 @@ public final class DiagnosticReportExporter {
 	private static final long REPORT_MAX_AGE_MILLIS = 24L * 60L * 60L * 1000L;
 	private static final String REPORT_PREFIX = "FermataX-Diagnostics-v";
 	private static final String REPORT_SUFFIX = ".zip";
+	static final String PHONE_APPS_REPORT_NAME = "FermataX-PhoneApps-report.txt";
 	private static final Pattern REPORT_NAME = Pattern.compile(
 			"FermataX-Diagnostics-v[A-Za-z0-9._-]+-[0-9]{8}-[0-9]{6}(?:-[0-9]+)?\\.zip");
 	private static final Pattern JOURNAL_NAME = Pattern.compile(
@@ -95,6 +97,8 @@ public final class DiagnosticReportExporter {
 					new BufferedOutputStream(new FileOutputStream(stagedReport)), UTF_8)) {
 				writeText(zip, "manifest.json", manifest(context, recorder));
 				writeText(zip, "state.json", DiagnosticStateSnapshot.toJson(context));
+				String phoneApps = phoneAppsReport(context);
+				if (phoneApps != null) writeText(zip, "phone_apps_report.txt", phoneApps);
 				for (File source : snapshotFiles(staging)) {
 					validateSafePayload(source);
 					String parent = source.getParentFile().getName();
@@ -165,6 +169,32 @@ public final class DiagnosticReportExporter {
 			}
 		}
 		return name;
+	}
+
+	/**
+	 * The Phone Apps report alone, for Readiness to share as text: one file in the shared reports directory, replaced on
+	 * each share and removed by Clear diagnostic data.
+	 */
+	public static File createPhoneAppsReport(Context context) throws IOException {
+		String text = phoneAppsReport(context);
+		if (text == null) throw new IOException("Phone Apps report unavailable");
+		File cacheRoot = requireRootDirectory(context.getCacheDir());
+		File reportDir = requireSafeDirectory(cacheRoot, new File(cacheRoot, "diagnostics/reports"), true);
+		File report = new File(reportDir, PHONE_APPS_REPORT_NAME);
+		Files.deleteIfExists(report.toPath()); // a link planted there is removed, not followed
+		Files.write(createSafeFile(reportDir, report).toPath(), text.getBytes(UTF_8));
+		return report;
+	}
+
+	/** Null without Phone Apps (Mobile) or when the text fails the privacy check, which then leaves it out. */
+	private static String phoneAppsReport(Context context) {
+		String text;
+		try {
+			text = CarAppsFeature.report(context);
+		} catch (RuntimeException e) {
+			return null; // the report is an extra: it must never break the export
+		}
+		return ((text == null) || FORBIDDEN_PAYLOAD.matcher(text).find()) ? null : text;
 	}
 
 	public static boolean supportsDirectDownloads() {
@@ -382,6 +412,7 @@ public final class DiagnosticReportExporter {
 		if (!Files.exists(directory.toPath(), LinkOption.NOFOLLOW_LINKS)) return;
 		File safeDirectory = requireSafeDirectory(root, directory, false);
 		for (File report : cachedReports(safeDirectory)) Files.delete(report.toPath());
+		Files.deleteIfExists(new File(safeDirectory, PHONE_APPS_REPORT_NAME).toPath());
 	}
 
 	static void pruneCachedReports(File root, File directory, long now, int maxCount,

@@ -55,6 +55,11 @@ public final class AutoCarAppsBackend {
 				AdbRecoveryJob.cancel(ctx);
 				CarDisplayClient.get().stop(ctx);
 			}
+
+			@Override
+			public String report(Context c) {
+				return PhoneAppsReport.build(c);
+			}
 		});
 		AdbPairing.recoveryScheduler = () -> AdbRecoveryJob.schedule(ctx);
 		AdbRecoveryJob.restoreAdbWifi(ctx); // a run killed with wireless debugging on left it on

@@ -4,6 +4,8 @@
     <string name="car_apps_dashboard_sub">Bağımsız sanal ekran başlatıcı</string>
     <string name="car_apps_addon_desc">Telefon uygulamaları araç ekranında. Kapatıldığında durur; USB hata ayıklama açık kalır.</string>
     <string name="car_apps_turned_off">Telefon Uygulamaları kapalı. Eklentiler bölümünden açın.</string>
+    <string name="car_apps_share_report">Telefon Uygulamaları raporunu paylaş</string>
+    <string name="car_apps_share_report_sub">Geliştiriciler için düz metin, kişisel veri içermez. Nereye göndereceğinizi siz seçersiniz.</string>
     <string name="car_apps_loading">Araç ekranı başlatılıyor…</string>
     <string name="car_apps_needs_root">Telefon uygulamalarını araç ekranında çalıştırmak için root erişimi gereklidir</string>
     <string name="car_apps_grant_root">Root izni ver</string>

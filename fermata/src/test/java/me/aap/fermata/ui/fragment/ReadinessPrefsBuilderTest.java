@@ -32,6 +32,16 @@ public class ReadinessPrefsBuilderTest {
 	}
 
 	@Test
+	public void phoneAppsReportButtonOnlyWithThePhoneAppsRowOnAuto() {
+		CarAppsReadinessModel rooted = CarAppsReadinessModel.from(RootState.GRANTED, 0, 30);
+		CarAppsReadinessModel hidden = CarAppsReadinessModel.from(RootState.ABSENT, 0, 31);
+		assertTrue(ReadinessPrefsBuilder.shouldAddPhoneAppsReport(true, rooted, true));
+		assertFalse("Mobile flavor", ReadinessPrefsBuilder.shouldAddPhoneAppsReport(false, rooted, true));
+		assertFalse("no Phone Apps backend", ReadinessPrefsBuilder.shouldAddPhoneAppsReport(true, rooted, false));
+		assertFalse("Phone Apps not shown", ReadinessPrefsBuilder.shouldAddPhoneAppsReport(true, hidden, true));
+	}
+
+	@Test
 	public void readinessIsAvailableOnlyFromThePhoneSettingsHost() {
 		assertTrue(ReadinessPrefsBuilder.shouldAdd(RuntimeHostMode.PHONE));
 		assertFalse(ReadinessPrefsBuilder.shouldAdd(RuntimeHostMode.AA_PROJECTION));

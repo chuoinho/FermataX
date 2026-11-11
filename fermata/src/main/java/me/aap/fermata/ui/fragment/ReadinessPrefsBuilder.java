@@ -147,6 +147,16 @@ final class ReadinessPrefsBuilder {
 			});
 		}
 
+		if (shouldAddPhoneAppsReport(BuildConfig.AUTO, model, CarAppsFeature.backend() != null)) {
+			target.addButton(o -> {
+				o.title = R.string.car_apps_share_report;
+				o.subtitle = R.string.car_apps_share_report_sub;
+				o.onClick = () -> {
+					if (isRefreshAllowed(uiActive, closed)) SettingsDiagnosticsManager.sharePhoneAppsReport(activity, uiActive);
+				};
+			});
+		}
+
 		if (CarAppsFeature.canRun() && !model.checks.isEmpty()) {
 			for (me.aap.fermata.ui.carapps.CarAppsChecks.Check check : model.checks) {
 				if (!isShown(check)) continue;
@@ -178,6 +188,11 @@ final class ReadinessPrefsBuilder {
 	/** A row saying only "not applicable" tells the user nothing; the diagnostics report still records it. */
 	static boolean isShown(me.aap.fermata.ui.carapps.CarAppsChecks.Check check) {
 		return check.status != me.aap.fermata.ui.carapps.CarAppsChecks.Status.NA;
+	}
+
+	/** Next to the Phone Apps row: only where that row shows and the Auto backend can write the report. */
+	static boolean shouldAddPhoneAppsReport(boolean autoBuild, CarAppsReadinessModel model, boolean hasBackend) {
+		return shouldAddCarAppsRow(autoBuild, model) && hasBackend;
 	}
 
 	static boolean shouldAddCarAppsRow(boolean autoBuild, CarAppsReadinessModel model) {

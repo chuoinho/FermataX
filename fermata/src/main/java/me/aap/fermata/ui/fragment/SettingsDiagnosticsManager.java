@@ -52,6 +52,25 @@ final class SettingsDiagnosticsManager {
 				});
 	}
 
+	/** The Phone Apps report as one text file, through the same provider and chooser as the ZIP; the user picks where. */
+	static void sharePhoneAppsReport(MainActivityDelegate activity, BooleanSupplier uiActive) {
+		if (activity.isCarActivityNotMirror()) {
+			UiUtils.showInfo(activity.getContext(), R.string.diagnostics_phone_only);
+			return;
+		}
+		FermataApplication app = FermataApplication.get();
+		App.get().execute(() -> DiagnosticReportExporter.createPhoneAppsReport(app))
+				.main(activity.getHandler()).onCompletion((report, error) -> {
+					if (error != null) {
+						recordFailure(app.getDiagnostics(), "report_create_failed", error);
+						if (canUseUi(activity, uiActive)) showAlert(activity.getContext(),
+								activity.getString(R.string.diagnostic_report_failed, error.getClass().getSimpleName()));
+						return;
+					}
+					share(activity, report, "text/plain", R.string.car_apps_share_report, uiActive);
+				});
+	}
+
 	static void clear(MainActivityDelegate activity, BooleanSupplier uiActive) {
 		Context context = activity.getContext();
 		var dialog = new MaterialAlertDialogBuilder(context)
@@ -120,7 +139,7 @@ final class SettingsDiagnosticsManager {
 				.setTitle(R.string.export_diagnostic_report)
 				.setItems(actions, (d, which) -> {
 					if (!canUseUi(activity, uiActive)) return;
-					if (which == 0) share(activity, report, uiActive);
+					if (which == 0) share(activity, report, "application/zip", R.string.share_diagnostic_report, uiActive);
 					else save(activity, report, uiActive);
 				})
 				.setNegativeButton(android.R.string.cancel, null)
@@ -131,7 +150,7 @@ final class SettingsDiagnosticsManager {
 		dialog.show();
 	}
 
-	private static void share(MainActivityDelegate activity, File report,
+	private static void share(MainActivityDelegate activity, File report, String type, int title,
 			BooleanSupplier uiActive) {
 		if (!canUseUi(activity, uiActive)) return;
 		try {
@@ -139,12 +158,11 @@ final class SettingsDiagnosticsManager {
 			Uri uri = FileProvider.getUriForFile(context,
 					context.getPackageName() + ".DiagnosticsFileProvider", report);
 			Intent send = new Intent(Intent.ACTION_SEND)
-					.setType("application/zip")
+					.setType(type)
 					.putExtra(Intent.EXTRA_STREAM, uri)
 					.addFlags(FLAG_GRANT_READ_URI_PERMISSION);
 			send.setClipData(ClipData.newRawUri("FermataX diagnostics", uri));
-			activity.startActivity(Intent.createChooser(send,
-					context.getText(R.string.share_diagnostic_report)));
+			activity.startActivity(Intent.createChooser(send, context.getText(title)));
 		} catch (RuntimeException error) {
 			recordFailure(FermataApplication.get().getDiagnostics(), "report_share_failed", error);
 			if (canUseUi(activity, uiActive)) showAlert(activity.getContext(), activity.getString(

@@ -36,6 +36,12 @@ public final class CarAppsFeature {
 		/** The user turned Phone Apps off or on again (Addons catalog); off, a running server is stopped. */
 		default void onEnabledChanged(boolean enabled) {
 		}
+
+		/** The plain-text Phone Apps report a tester shares; null where there is none. */
+		@Nullable
+		default String report(android.content.Context ctx) {
+			return null;
+		}
 	}
 
 	/** Phone Apps is an addon the user can turn off; on by default, so existing users are unchanged. */
@@ -174,6 +180,13 @@ public final class CarAppsFeature {
 	public static boolean serverFailed() {
 		Backend b = backend;
 		return (b != null) && b.serverFailed();
+	}
+
+	/** Null without Phone Apps (the Mobile flavor installs no backend). */
+	@Nullable
+	public static String report(android.content.Context ctx) {
+		Backend b = backend;
+		return (b == null) ? null : b.report(ctx);
 	}
 
 	public static int capabilities() {

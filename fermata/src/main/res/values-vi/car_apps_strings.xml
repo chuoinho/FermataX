@@ -4,6 +4,8 @@
     <string name="car_apps_dashboard_sub">Màn hình xe độc lập</string>
     <string name="car_apps_addon_desc">Ứng dụng điện thoại trên màn hình xe. Khi tắt, chúng dừng lại; gỡ lỗi USB vẫn bật.</string>
     <string name="car_apps_turned_off">Ứng dụng điện thoại đang tắt. Hãy bật trong Tiện ích.</string>
+    <string name="car_apps_share_report">Chia sẻ báo cáo Ứng dụng điện thoại</string>
+    <string name="car_apps_share_report_sub">Văn bản thuần cho nhà phát triển, không có dữ liệu cá nhân. Bạn chọn nơi gửi.</string>
     <string name="car_apps_loading">Đang khởi động màn hình xe…</string>
     <string name="car_apps_needs_root">Cần quyền root để chạy ứng dụng điện thoại trên màn hình xe</string>
     <string name="car_apps_grant_root">Cấp quyền root</string>

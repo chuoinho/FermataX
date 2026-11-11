@@ -4,6 +4,8 @@
     <string name="car_apps_dashboard_sub">Iniciador de tela virtual independente</string>
     <string name="car_apps_addon_desc">Apps do telefone na tela do carro. Desativado, elas param; a depuração USB continua ativada.</string>
     <string name="car_apps_turned_off">Apps do telefone está desativado. Ative em Extras.</string>
+    <string name="car_apps_share_report">Compartilhar relatório de Apps do telefone</string>
+    <string name="car_apps_share_report_sub">Texto simples para os desenvolvedores, sem dados pessoais. Você escolhe para onde enviar.</string>
     <string name="car_apps_loading">Iniciando tela do carro…</string>
     <string name="car_apps_needs_root">O acesso root é necessário para executar apps do telefone na tela do carro</string>
     <string name="car_apps_grant_root">Conceder root</string>
