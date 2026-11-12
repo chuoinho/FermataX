@@ -18,7 +18,7 @@
     <string name="car_apps_readiness_status_need_root">Root erişimi gerekli</string>
     <string name="car_apps_readiness_action_grant">Root izni ver</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">USB hata ayıklama (Güvenlik ayarları) gereklidir</string>
-    <string name="car_apps_grant_root_blocked">Root izni verilmedi. Tekrar deneyin ve isteği root yöneticinizde onaylayın.</string>
+    <string name="car_apps_grant_root_blocked">Root izni verilmedi. Root yöneticinizde FermataX\'e izin verin. Root\'u gizliyorsanız FermataX\'i gizleme listesinden çıkarın. Sonra tekrar deneyin.</string>
     <string name="car_apps_phone_dim_text">Telefon Uygulamaları araçta kullanılıyor\nTelefonu kullanmak için dokunun</string>
     <string name="car_apps_phone_asleep">Telefon ekranı kapalı\nDevam etmek için dokunun</string>
     <string name="car_apps_phone_locked">Telefon kilitli\nDevam etmek için kilidi açın</string>
@@ -57,7 +57,6 @@
     <string name="car_apps_setup_dev_off">Geliştirici seçenekleri kapalı. Telefon hakkında bölümünü açın, Yapı numarasına 7 kez dokunun ve buraya dönün.</string>
     <string name="car_apps_setup_open_about">Telefon hakkını aç</string>
     <string name="car_apps_setup_open_dev">Geliştirici seçeneklerini aç</string>
-    <string name="car_apps_setup_use_root">Bunun yerine root kullan</string>
     <string name="car_apps_setup_notif_off">Bu uygulama için bildirimler kapalı. Kod bir bildirime yazılır: bildirimleri açın ve buraya dönün.</string>
     <string name="car_apps_setup_open_notif">Bildirim ayarları</string>
     <string name="car_apps_setup_working">Eşleştiriliyor…</string>
@@ -96,7 +95,7 @@
     <string name="car_apps_step_connect_car">Telefonu Android Auto’ya bağlayın</string>
     <string name="car_apps_step_open_on_car">Araçta Eklentiler &gt; Telefon Uygulamaları’nı açın</string>
     <string name="car_apps_setup_adb_note">Wi‑Fi yalnızca bir kez, bu kurulum için gerekir. Bilgisayar kullanılmaz. FermataX USB hata ayıklamayı açar ve açık tutar, böylece Telefon Uygulamaları Wi‑Fi’den ayrıldığınızda da çalışmaya devam eder.</string>
-    <string name="car_apps_setup_root_note">Root yöneticiniz bir kez sorar. FermataX için izin verin.</string>
+    <string name="car_apps_setup_root_note">Magisk bir kez sorar: FermataX\'e izin verin. KernelSU veya APatch kullanıyorsanız önce root yöneticisinin Superuser listesinde FermataX\'i açın, ardından Root izni ver\'e dokunun.</string>
     <string name="car_apps_guide_title">Telefon Uygulamaları nasıl kullanılır</string>
     <string name="car_apps_guide_got_it">Anladım</string>
     <string name="car_apps_guide_open_title">Araçta açın</string>
@@ -116,4 +115,9 @@
     <string name="car_apps_guide_off_body">Ayarlar &gt; Eklentiler &gt; Telefon Uygulamaları’ndaki anahtarı kullanın. Kapalıyken uygulamalar durur.</string>
     <string name="car_apps_guide_report_title">Sorun bildirmek</string>
     <string name="car_apps_guide_report_body">Ayarlar &gt; Tanılama’da Ayrıntılı tanılamayı açın, sorunu tekrarlayın, ardından Telefon Uygulamaları raporunu paylaş’a dokunun.</string>
+    <string name="car_apps_mode_question">Bu telefon Telefon Uygulamalarını nasıl çalıştıracak?\n\nRoot ile: root\'lu telefonlar için (Magisk, KernelSU, APatch veya başka bir root).\n\nRoot olmadan: Kablosuz hata ayıklamayı kullanır. Android 13 veya üstü gerekir.</string>
+    <string name="car_apps_mode_root">Root ile</string>
+    <string name="car_apps_mode_no_root">Root olmadan</string>
+    <string name="car_apps_mode_change">Başka bir yol seç</string>
+    <string name="car_apps_mode_no_root_unsupported">Root olmadan Telefon Uygulamaları Android 13 veya üstü gerektirir; bu telefonda daha eski bir Android var. Telefon Uygulamaları kapatıldı. Telefonu root\'ladıktan sonra Ayarlar &gt; Eklentiler bölümünden yeniden açın ve root\'u seçin.</string>
 </resources>

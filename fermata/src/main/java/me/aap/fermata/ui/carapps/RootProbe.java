@@ -42,6 +42,8 @@ public final class RootProbe {
 	public static RootState detect(@Nullable Predicate<String> fileExists,
 	                               @Nullable Predicate<String> packageInstalled,
 	                               boolean grantedBefore) {
+		// A grant that worked is proof even with root hidden; a later failed start clears it (CarDisplayClient)
+		if (grantedBefore) return RootState.GRANTED;
 		boolean rootDetected = false;
 		if (fileExists != null) {
 			for (String path : SU_PATHS) {
@@ -59,10 +61,7 @@ public final class RootProbe {
 				}
 			}
 		}
-		if (!rootDetected) {
-			return RootState.ABSENT;
-		}
-		return grantedBefore ? RootState.GRANTED : RootState.AVAILABLE;
+		return rootDetected ? RootState.AVAILABLE : RootState.ABSENT;
 	}
 
 	public static void refresh(@Nullable Context ctx) {

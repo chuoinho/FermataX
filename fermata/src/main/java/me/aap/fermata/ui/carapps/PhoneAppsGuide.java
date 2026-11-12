@@ -5,6 +5,8 @@ import android.content.Context;
 import androidx.annotation.Nullable;
 
 import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
+import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 
 /** Which Phone Apps guide to show and when; the guide screens themselves are in the Auto flavor (backend). */
@@ -19,7 +21,41 @@ public final class PhoneAppsGuide {
 
 	public enum StepState {DONE, CURRENT, TODO}
 
+	/** The way the user picks at the start of the setup: root or without root. */
+	public enum Mode {ROOT, NO_ROOT}
+
+	/** The picked Mode's ordinal; absent until the user picks one. */
+	public static final Pref<IntSupplier> PREF_MODE = Pref.i("CAR_APPS_MODE", -1);
+
+	/** What the setup page shows. */
+	public enum SetupStep {CHOOSE, ROOT, ADB, NO_ROOT_UNSUPPORTED, NONE}
+
 	private PhoneAppsGuide() {
+	}
+
+	@Nullable
+	public static Mode mode(PreferenceStore store) {
+		int m = store.getIntPref(PREF_MODE);
+		return ((m >= 0) && (m < Mode.values().length)) ? Mode.values()[m] : null;
+	}
+
+	/** A way already set up wins; otherwise the user's pick, and the pick itself while there is none. */
+	public static SetupStep setupStep(@Nullable RootState root, boolean adbPaired, int sdk, @Nullable Mode mode) {
+		if ((root == null) || (sdk < 30) || CarAppsFeature.isBlockedSdk(sdk)) return SetupStep.NONE;
+		if (root == RootState.GRANTED) return SetupStep.ROOT;
+		if (adbPaired && CarAppsFeature.adbSupportedSdk(sdk)) return SetupStep.ADB;
+		if (mode == null) return SetupStep.CHOOSE;
+		if (mode == Mode.ROOT) return SetupStep.ROOT;
+		return CarAppsFeature.adbSupportedSdk(sdk) ? SetupStep.ADB : SetupStep.NO_ROOT_UNSUPPORTED;
+	}
+
+	/**
+	 * Stores the pick. Without root on Android 11-12 there is no way to run, so the addon is turned off: it stays in
+	 * Settings > Addons to be turned on again once the phone is rooted. Any other pick turns it on.
+	 */
+	public static void choose(PreferenceStore store, Mode mode, int sdk) {
+		store.applyIntPref(PREF_MODE, mode.ordinal());
+		CarAppsFeature.setEnabled(store, (mode == Mode.ROOT) || CarAppsFeature.adbSupportedSdk(sdk));
 	}
 
 	/** Root once granted; root merely offered leads to it only where there is no setup without root (11-12). */
@@ -28,11 +64,6 @@ public final class PhoneAppsGuide {
 		if (root == RootState.GRANTED) return Channel.ROOT;
 		if (CarAppsFeature.adbSupportedSdk(sdk)) return Channel.ADB;
 		return (root == RootState.AVAILABLE) ? Channel.ROOT : Channel.NONE;
-	}
-
-	/** Android 13+ with a root manager that has not granted yet: the setup without root offers root as well. */
-	public static boolean offersRootInstead(@Nullable RootState root, int sdk) {
-		return (root == RootState.AVAILABLE) && (channel(root, sdk) == Channel.ADB);
 	}
 
 	/** The last step done means all are; otherwise the first open step is the current one. */

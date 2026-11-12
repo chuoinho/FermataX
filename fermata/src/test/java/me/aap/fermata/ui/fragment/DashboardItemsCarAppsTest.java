@@ -65,10 +65,16 @@ public class DashboardItemsCarAppsTest {
 		assertEquals(BuildConfig.AUTO, DashboardItems.getItem(context, DashboardItems.CAR_APPS, false) != null);
 	}
 
+	/**
+	 * Android 11-12 without root seen: offered (root may be hidden, the setup lets the user pick root). Picking
+	 * without root there turns the addon off, which hides it like any disabled addon.
+	 */
 	@Test
 	@Config(sdk = 31)
-	public void itemAbsentWhenRootAbsent() {
+	public void android12WithoutRootSeenIsOfferedUntilTurnedOff() {
 		CarAppsFeature.setState(RootState.ABSENT);
+		assertEquals(BuildConfig.AUTO, DashboardItems.getItem(context, DashboardItems.CAR_APPS, false) != null);
+		CarAppsFeature.setEnabled(new BasicPreferenceStore(), false);
 
 		// getItem with includeDisabled=false returns null
 		assertNull(DashboardItems.getItem(context, DashboardItems.CAR_APPS, false));

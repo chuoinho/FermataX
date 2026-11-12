@@ -5,16 +5,14 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.pref.BasicPreferenceStore;
 
-/** The Glass appearance option follows the single shared theme only (Auto build included). */
+/** The Glass appearance option follows the single shared theme only, on the Auto and the Mobile build alike. */
 public class GlassOptionsVisibilityTest {
 
 	@Test
 	public void glassOptionsShowOnlyForGlassTheme() {
-		assertTrue("runs on the Auto build", BuildConfig.AUTO);
 		assertTrue(InterfacePrefsBuilder.showsGlassOptions(store(MainActivityPrefs.THEME_GLASS)));
 		assertFalse(InterfacePrefsBuilder.showsGlassOptions(store(MainActivityPrefs.THEME_CLASSIC)));
 		assertFalse(InterfacePrefsBuilder.showsGlassOptions(store(MainActivityPrefs.THEME_MATERIAL_YOU)));

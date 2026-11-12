@@ -29,7 +29,7 @@ public class CarAppsFeatureTest {
 	}
 
 	@Test
-	public void visibleOnlyForAutoSdk30Not12LAndRootOrAdbSupportedSdk() {
+	public void visibleForAutoSdk30Not12LAlsoWithoutRootSeen() {
 		boolean[] autoBuildOptions = {false, true};
 		int[] sdkVersions = {29, 30, 31, 32, 33, 36, 37};
 		RootState[] states = RootState.values();
@@ -37,8 +37,8 @@ public class CarAppsFeatureTest {
 		for (boolean autoBuild : autoBuildOptions) {
 			for (int sdk : sdkVersions) {
 				for (RootState state : states) {
-					boolean expected = autoBuild && (sdk >= 30) && (sdk != 32)
-							&& ((state != RootState.ABSENT) || (sdk >= 33));
+					// 11-12 without root seen too: root may be hidden, and the setup lets the user pick root
+					boolean expected = autoBuild && (sdk >= 30) && (sdk != 32);
 					boolean actual = CarAppsFeature.visible(autoBuild, sdk, state);
 					assertEquals(
 							"Failed for autoBuild=" + autoBuild + ", sdk=" + sdk + ", state=" + state,

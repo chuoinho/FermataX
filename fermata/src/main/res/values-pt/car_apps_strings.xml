@@ -18,7 +18,7 @@
     <string name="car_apps_readiness_status_need_root">Acesso root necessário</string>
     <string name="car_apps_readiness_action_grant">Conceder root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Requer depuração USB (Configurações de segurança)</string>
-    <string name="car_apps_grant_root_blocked">O root não foi concedido. Tente novamente e permita o pedido no seu gerenciador de root.</string>
+    <string name="car_apps_grant_root_blocked">O root não foi concedido. Permita o FermataX no gestor de root. Se oculta o root, retire o FermataX da lista de ocultação. Depois tente novamente.</string>
     <string name="car_apps_phone_dim_text">Apps do telefone está em uso no carro\nToque para usar o telefone</string>
     <string name="car_apps_phone_asleep">A tela do telefone está desligada\nToque para continuar</string>
     <string name="car_apps_phone_locked">O telefone está bloqueado\nDesbloqueie para continuar</string>
@@ -57,7 +57,6 @@
     <string name="car_apps_setup_dev_off">As opções do programador estão desativadas. Abra Sobre o telefone, toque 7 vezes em Número da compilação e volte aqui.</string>
     <string name="car_apps_setup_open_about">Abrir Sobre o telefone</string>
     <string name="car_apps_setup_open_dev">Abrir opções do programador</string>
-    <string name="car_apps_setup_use_root">Usar root em vez disso</string>
     <string name="car_apps_setup_notif_off">As notificações estão desativadas para esta app. O código é escrito numa notificação: ative-as e volte aqui.</string>
     <string name="car_apps_setup_open_notif">Definições de notificações</string>
     <string name="car_apps_setup_working">A sincronizar…</string>
@@ -96,7 +95,7 @@
     <string name="car_apps_step_connect_car">Ligue o telefone ao Android Auto</string>
     <string name="car_apps_step_open_on_car">No carro, abra Extras &gt; Apps do telefone</string>
     <string name="car_apps_setup_adb_note">O Wi‑Fi só é preciso uma vez, para esta configuração. Nenhum computador é usado. O FermataX ativa a depuração USB e mantém-na ativa, para que Apps do telefone continue a funcionar quando sair do Wi‑Fi.</string>
-    <string name="car_apps_setup_root_note">O gestor de root pede uma vez. Permita-o para o FermataX.</string>
+    <string name="car_apps_setup_root_note">O Magisk pede uma vez: permita o FermataX. Com KernelSU ou APatch, ative primeiro o FermataX na lista Superuser do gestor de root e depois toque em Conceder root.</string>
     <string name="car_apps_guide_title">Como usar Apps do telefone</string>
     <string name="car_apps_guide_got_it">Entendi</string>
     <string name="car_apps_guide_open_title">Abrir no carro</string>
@@ -116,4 +115,9 @@
     <string name="car_apps_guide_off_body">Use o interruptor em Definições &gt; Extras &gt; Apps do telefone. Desligado, as apps param.</string>
     <string name="car_apps_guide_report_title">Comunicar um problema</string>
     <string name="car_apps_guide_report_body">Em Definições &gt; Diagnóstico, ative Diagnóstico detalhado, repita o problema e toque em Compartilhar relatório de Apps do telefone.</string>
+    <string name="car_apps_mode_question">Como este telefone executa as Apps do telefone?\n\nCom root: para um telefone com root (Magisk, KernelSU, APatch ou outro root).\n\nSem root: usa a depuração sem fio. Requer Android 13 ou superior.</string>
+    <string name="car_apps_mode_root">Com root</string>
+    <string name="car_apps_mode_no_root">Sem root</string>
+    <string name="car_apps_mode_change">Escolher outra forma</string>
+    <string name="car_apps_mode_no_root_unsupported">Sem root, as Apps do telefone requerem Android 13 ou superior, e este telefone tem um Android mais antigo. As Apps do telefone foram desativadas. Depois de fazer root no telefone, ative-as de novo em Definições &gt; Extras e escolha root.</string>
 </resources>

@@ -3,6 +3,7 @@ package me.aap.fermata.ui.carapps;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import static me.aap.fermata.ui.carapps.PhoneAppsGuide.StepState.CURRENT;
@@ -17,7 +18,9 @@ import java.util.List;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide.Channel;
+import me.aap.fermata.ui.carapps.PhoneAppsGuide.Mode;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide.Page;
+import me.aap.fermata.ui.carapps.PhoneAppsGuide.SetupStep;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.pref.BasicPreferenceStore;
@@ -44,16 +47,51 @@ public class PhoneAppsGuideTest {
 		assertEquals(Channel.ROOT, PhoneAppsGuide.channel(RootState.AVAILABLE, 31));
 		assertEquals("not granted on 13+: the setup without root", Channel.ADB, PhoneAppsGuide.channel(RootState.AVAILABLE, 33));
 		assertEquals(Channel.ADB, PhoneAppsGuide.channel(RootState.AVAILABLE, 34));
-		assertTrue(PhoneAppsGuide.offersRootInstead(RootState.AVAILABLE, 34));
-		assertFalse(PhoneAppsGuide.offersRootInstead(RootState.ABSENT, 34));
-		assertFalse(PhoneAppsGuide.offersRootInstead(RootState.GRANTED, 34));
-		assertFalse("11-12: root is the main action already", PhoneAppsGuide.offersRootInstead(RootState.AVAILABLE, 31));
 		assertEquals(Channel.ADB, PhoneAppsGuide.channel(RootState.ABSENT, 33));
 		assertEquals(Channel.ADB, PhoneAppsGuide.channel(RootState.ABSENT, 36));
 		assertEquals(Channel.NONE, PhoneAppsGuide.channel(RootState.ABSENT, 30));
 		assertEquals(Channel.NONE, PhoneAppsGuide.channel(RootState.ABSENT, 31));
 		assertEquals("12L stays hidden even with root", Channel.NONE, PhoneAppsGuide.channel(RootState.GRANTED, 32));
 		assertEquals(Channel.NONE, PhoneAppsGuide.channel(null, 34));
+	}
+
+	/** The user picks the way first; a way already set up skips the pick; without root needs Android 13. */
+	@Test
+	public void setupStepFollowsTheWaySetUpThenTheUsersPick() {
+		for (RootState root : new RootState[]{RootState.ABSENT, RootState.AVAILABLE}) {
+			for (int sdk : new int[]{30, 31, 33, 36}) {
+				String c = root + " sdk " + sdk;
+				assertEquals(c, SetupStep.CHOOSE, PhoneAppsGuide.setupStep(root, false, sdk, null));
+				assertEquals("root seen or hidden: " + c, SetupStep.ROOT, PhoneAppsGuide.setupStep(root, false, sdk, Mode.ROOT));
+				assertEquals(c, (sdk >= 33) ? SetupStep.ADB : SetupStep.NO_ROOT_UNSUPPORTED,
+						PhoneAppsGuide.setupStep(root, false, sdk, Mode.NO_ROOT));
+			}
+		}
+		assertEquals("granted: no pick", SetupStep.ROOT, PhoneAppsGuide.setupStep(RootState.GRANTED, false, 31, null));
+		assertEquals(SetupStep.ROOT, PhoneAppsGuide.setupStep(RootState.GRANTED, false, 34, Mode.NO_ROOT));
+		assertEquals("paired: no pick", SetupStep.ADB, PhoneAppsGuide.setupStep(RootState.ABSENT, true, 34, null));
+		assertEquals(SetupStep.ADB, PhoneAppsGuide.setupStep(RootState.ABSENT, true, 34, Mode.ROOT));
+		assertEquals("12L", SetupStep.NONE, PhoneAppsGuide.setupStep(RootState.GRANTED, false, 32, Mode.ROOT));
+		assertEquals(SetupStep.NONE, PhoneAppsGuide.setupStep(RootState.ABSENT, false, 29, Mode.ROOT));
+		assertEquals(SetupStep.NONE, PhoneAppsGuide.setupStep(null, false, 34, null));
+	}
+
+	/** Without root on 11-12 turns the addon off (it stays in Addons to turn on again); any other pick turns it on. */
+	@Test
+	public void pickingStoresTheWayAndWithoutRootOnAndroid11Or12TurnsTheAddonOff() {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+		assertNull("no pick by default", PhoneAppsGuide.mode(store));
+		PhoneAppsGuide.choose(store, Mode.NO_ROOT, 31);
+		assertEquals(Mode.NO_ROOT, PhoneAppsGuide.mode(store));
+		assertFalse(CarAppsFeature.isEnabled());
+		assertFalse(store.getBooleanPref(CarAppsFeature.PREF_ENABLED));
+		PhoneAppsGuide.choose(store, Mode.ROOT, 31);
+		assertEquals(Mode.ROOT, PhoneAppsGuide.mode(store));
+		assertTrue(CarAppsFeature.isEnabled());
+		PhoneAppsGuide.choose(store, Mode.NO_ROOT, 34);
+		assertTrue("13+: without root works", CarAppsFeature.isEnabled());
+		store.applyIntPref(PhoneAppsGuide.PREF_MODE, 99);
+		assertNull("an unknown value is no pick", PhoneAppsGuide.mode(store));
 	}
 
 	@Test

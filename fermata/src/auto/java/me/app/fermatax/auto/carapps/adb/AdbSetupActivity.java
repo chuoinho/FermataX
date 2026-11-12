@@ -22,6 +22,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.auto.AutomotiveConnectionState;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -29,8 +30,11 @@ import me.aap.fermata.ui.carapps.CarAppsChecks;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide.Channel;
+import me.aap.fermata.ui.carapps.PhoneAppsGuide.Mode;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide.Page;
+import me.aap.fermata.ui.carapps.PhoneAppsGuide.SetupStep;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide.StepState;
+import me.aap.utils.pref.PreferenceStore;
 import me.app.fermatax.auto.carapps.VirtualDisplayFlags;
 
 /**
@@ -49,7 +53,8 @@ public final class AdbSetupActivity extends Activity {
 	private TextView body;
 	private LinearLayout sections;
 	private Button primary;
-	private Button rootInstead;
+	/** The second way on the choice, then "Choose another way" on the steps. */
+	private Button secondary;
 	/** Set up again: a new pairing was started here; the old one stays recorded until the new one replaces it. */
 	private boolean repairStarted;
 
@@ -134,13 +139,11 @@ public final class AdbSetupActivity extends Activity {
 		styleButton(primary);
 		column.addView(primary);
 
-		rootInstead = new Button(this);
-		rootInstead.setMinHeight(Math.round(48 * dp));
-		rootInstead.setText(R.string.car_apps_setup_use_root);
-		styleButton(rootInstead);
-		rootInstead.setVisibility(View.GONE);
-		rootInstead.setOnClickListener(v -> requestRoot());
-		column.addView(rootInstead);
+		secondary = new Button(this);
+		secondary.setMinHeight(Math.round(48 * dp));
+		styleButton(secondary);
+		secondary.setVisibility(View.GONE);
+		column.addView(secondary);
 
 		ScrollView scroll = new ScrollView(this);
 		scroll.addView(column);
@@ -180,13 +183,17 @@ public final class AdbSetupActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		// The reply notification times out and can be swiped away: post it again (it replaces the old one)
+		postPairingIfNeeded();
+		render();
+	}
+
+	/** The reply notification times out and can be swiped away: post it again (it replaces the old one). */
+	private void postPairingIfNeeded() {
 		boolean again = AdbPairing.state() != AdbPairing.State.WORKING;
-		if ((page != Page.USAGE) && (channel() == Channel.ADB) && again && !adbPaired() && developerOptionsOn()) {
+		if ((page != Page.USAGE) && (step() == SetupStep.ADB) && again && !adbPaired() && developerOptionsOn()) {
 			AdbPairing.start(this);
 			if (page == Page.SETUP_AGAIN) repairStarted = true;
 		}
-		render();
 	}
 
 	@Override
@@ -196,8 +203,38 @@ public final class AdbSetupActivity extends Activity {
 		super.onStop();
 	}
 
+	/** Leaving the "not supported" page forgets the pick: once rooted, the setup asks again. Rotation keeps it. */
+	@Override
+	protected void onDestroy() {
+		if (isFinishing() && (page != Page.USAGE) && (step() == SetupStep.NO_ROOT_UNSUPPORTED)) {
+			store().removePref(PhoneAppsGuide.PREF_MODE);
+		}
+		super.onDestroy();
+	}
+
 	private static Channel channel() {
 		return PhoneAppsGuide.channel(CarAppsFeature.state(), Build.VERSION.SDK_INT);
+	}
+
+	private PreferenceStore store() {
+		return ((FermataApplication) getApplication()).getPreferenceStore();
+	}
+
+	/** A pairing on record keeps the setup without root, also while Set up again pairs anew. */
+	private SetupStep step() {
+		return PhoneAppsGuide.setupStep(CarAppsFeature.state(), CarAppsFeature.isAdbPaired(), Build.VERSION.SDK_INT,
+				PhoneAppsGuide.mode(store()));
+	}
+
+	private void choose(Mode mode) {
+		PhoneAppsGuide.choose(store(), mode, Build.VERSION.SDK_INT);
+		postPairingIfNeeded();
+		render();
+	}
+
+	private void chooseAgain() {
+		store().removePref(PhoneAppsGuide.PREF_MODE);
+		render();
 	}
 
 	/** Set up again counts only the pairing made here; an earlier one may have its authorization revoked. */
@@ -218,15 +255,37 @@ public final class AdbSetupActivity extends Activity {
 		title.setText(R.string.car_apps_setup_title);
 		sections.setVisibility(View.GONE);
 		body.setVisibility(View.VISIBLE);
-		rootInstead.setVisibility(View.GONE);
-		switch (channel()) {
+		secondary.setVisibility(View.GONE);
+		switch (step()) {
+			case CHOOSE -> renderChoice();
 			case ROOT -> renderRoot();
 			case ADB -> renderAdb();
+			case NO_ROOT_UNSUPPORTED -> {
+				steps.setVisibility(View.GONE);
+				show(getString(R.string.car_apps_mode_no_root_unsupported), getString(android.R.string.ok), this::finish);
+				showSecondary(R.string.car_apps_mode_change, this::chooseAgain);
+			}
 			case NONE -> {
 				steps.setVisibility(View.GONE);
 				show(getString(R.string.car_apps_status_unsupported), getString(android.R.string.ok), this::finish);
 			}
 		}
+	}
+
+	/** The first step: the user says how the phone runs Phone Apps; nothing is asked of the system yet. */
+	private void renderChoice() {
+		steps.setVisibility(View.GONE);
+		show(getString(R.string.car_apps_mode_question), getString(R.string.car_apps_mode_root), () -> choose(Mode.ROOT));
+		showSecondary(R.string.car_apps_mode_no_root, () -> choose(Mode.NO_ROOT));
+	}
+
+	private void showSecondary(int label, Runnable action) {
+		String text = getString(label);
+		secondary.setEnabled(true);
+		secondary.setText(text);
+		secondary.setContentDescription(text);
+		secondary.setOnClickListener(v -> action.run());
+		secondary.setVisibility(View.VISIBLE);
 	}
 
 	private void renderRoot() {
@@ -238,20 +297,23 @@ public final class AdbSetupActivity extends Activity {
 		boolean opened = (CarAppsFeature.capabilities() & CarAppsChecks.CAP_VD) != 0;
 		showSteps(new int[]{R.string.car_apps_step_allow_root, R.string.car_apps_step_connect_car,
 				R.string.car_apps_step_open_on_car}, PhoneAppsGuide.progress(granted, granted && connected, granted && opened));
-		if (granted) showDone();
-		else show(getString(R.string.car_apps_setup_root_note), getString(R.string.car_apps_grant_root), this::requestRoot);
+		if (granted) {
+			showDone();
+		} else {
+			show(getString(R.string.car_apps_setup_root_note), getString(R.string.car_apps_grant_root), this::requestRoot);
+			showSecondary(R.string.car_apps_mode_change, this::chooseAgain);
+		}
 	}
 
 	private void requestRoot() {
 		CarAppsFeature.Backend b = CarAppsFeature.backend();
 		if (b == null) return;
 		primary.setEnabled(false); // one su prompt at a time
-		rootInstead.setEnabled(false);
+		secondary.setEnabled(false);
 		b.requestRoot().onCompletion((granted, err) -> runOnUiThread(() -> {
 			if (!Boolean.TRUE.equals(granted) && !isFinishing()) {
 				Toast.makeText(this, R.string.car_apps_grant_root_blocked, Toast.LENGTH_LONG).show();
 			}
-			rootInstead.setEnabled(true);
 			render();
 		}));
 	}
@@ -284,8 +346,7 @@ public final class AdbSetupActivity extends Activity {
 			show((error == 0) ? note : getString(error) + "\n\n" + note, getString(R.string.car_apps_setup_open_dev),
 					() -> open(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)));
 		}
-		boolean offerRoot = !paired && PhoneAppsGuide.offersRootInstead(CarAppsFeature.state(), Build.VERSION.SDK_INT);
-		rootInstead.setVisibility(offerRoot ? View.VISIBLE : View.GONE);
+		if (!paired && (state != AdbPairing.State.WORKING)) showSecondary(R.string.car_apps_mode_change, this::chooseAgain);
 	}
 
 	private void showDone() {
@@ -299,7 +360,7 @@ public final class AdbSetupActivity extends Activity {
 		title.setText(R.string.car_apps_guide_title);
 		steps.setVisibility(View.GONE);
 		body.setVisibility(View.GONE);
-		rootInstead.setVisibility(View.GONE);
+		secondary.setVisibility(View.GONE);
 		if (sections.getChildCount() == 0) {
 			int[] s = usageSections(channel(), Build.VERSION.SDK_INT);
 			float dp = getResources().getDisplayMetrics().density;

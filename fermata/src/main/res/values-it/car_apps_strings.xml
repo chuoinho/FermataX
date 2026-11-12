@@ -18,7 +18,7 @@
     <string name="car_apps_readiness_status_need_root">Accesso root richiesto</string>
     <string name="car_apps_readiness_action_grant">Concedi root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Richiede debug USB (Impostazioni di sicurezza)</string>
-    <string name="car_apps_grant_root_blocked">Root non concesso. Riprova e consenti la richiesta nel tuo gestore root.</string>
+    <string name="car_apps_grant_root_blocked">Root non concesso. Consenti FermataX nel tuo gestore root. Se nascondi il root, togli FermataX dall\'elenco di occultamento. Poi riprova.</string>
     <string name="car_apps_phone_dim_text">App del telefono è in uso sull\'auto\nTocca per usare il telefono</string>
     <string name="car_apps_phone_asleep">Lo schermo del telefono è spento\nTocca per continuare</string>
     <string name="car_apps_phone_locked">Il telefono è bloccato\nSbloccalo per continuare</string>
@@ -57,7 +57,6 @@
     <string name="car_apps_setup_dev_off">Le opzioni sviluppatore sono disattivate. Apri Info sul telefono, tocca 7 volte Numero build e poi torna qui.</string>
     <string name="car_apps_setup_open_about">Apri Info sul telefono</string>
     <string name="car_apps_setup_open_dev">Apri opzioni sviluppatore</string>
-    <string name="car_apps_setup_use_root">Usa invece il root</string>
     <string name="car_apps_setup_notif_off">Le notifiche sono disattivate per questa app. Il codice si scrive in una notifica: attivale e poi torna qui.</string>
     <string name="car_apps_setup_open_notif">Impostazioni notifiche</string>
     <string name="car_apps_setup_working">Accoppiamento…</string>
@@ -96,7 +95,7 @@
     <string name="car_apps_step_connect_car">Collega il telefono ad Android Auto</string>
     <string name="car_apps_step_open_on_car">In auto, apri Addon &gt; App del telefono</string>
     <string name="car_apps_setup_adb_note">Il Wi‑Fi serve solo una volta, per questa configurazione. Nessun computer è coinvolto. FermataX attiva il debug USB e lo lascia attivo, così App del telefono continua a funzionare quando esci dal Wi‑Fi.</string>
-    <string name="car_apps_setup_root_note">Il gestore root lo chiede una volta. Consentilo a FermataX.</string>
+    <string name="car_apps_setup_root_note">Magisk lo chiede una volta: consenti FermataX. Con KernelSU o APatch, attiva prima FermataX nell\'elenco Superuser del gestore root, poi tocca Concedi root.</string>
     <string name="car_apps_guide_title">Come usare App del telefono</string>
     <string name="car_apps_guide_got_it">Ho capito</string>
     <string name="car_apps_guide_open_title">Aprilo in auto</string>
@@ -116,4 +115,9 @@
     <string name="car_apps_guide_off_body">Usa l’interruttore in Impostazioni &gt; Addon &gt; App del telefono. Disattivato, le app si fermano.</string>
     <string name="car_apps_guide_report_title">Segnalare un problema</string>
     <string name="car_apps_guide_report_body">In Impostazioni &gt; Diagnostica attiva Diagnostica dettagliata, ripeti il problema, poi tocca Condividi rapporto App del telefono.</string>
+    <string name="car_apps_mode_question">Come esegue questo telefono le App del telefono?\n\nCon root: per un telefono con root (Magisk, KernelSU, APatch o un altro root).\n\nSenza root: usa il debug wireless. Richiede Android 13 o successivo.</string>
+    <string name="car_apps_mode_root">Con root</string>
+    <string name="car_apps_mode_no_root">Senza root</string>
+    <string name="car_apps_mode_change">Scegli un altro modo</string>
+    <string name="car_apps_mode_no_root_unsupported">Senza root le App del telefono richiedono Android 13 o successivo, e questo telefono ha un Android più vecchio. Le App del telefono sono state disattivate. Dopo aver fatto il root del telefono, riattivale in Impostazioni &gt; Addon e scegli root.</string>
 </resources>

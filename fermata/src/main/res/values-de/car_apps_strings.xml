@@ -18,7 +18,7 @@
     <string name="car_apps_readiness_status_need_root">Root-Zugriff erforderlich</string>
     <string name="car_apps_readiness_action_grant">Root gewähren</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Erfordert USB-Debugging (Sicherheitseinstellungen)</string>
-    <string name="car_apps_grant_root_blocked">Root wurde nicht gewährt. Versuche es erneut und erlaube die Anfrage in deiner Root-Verwaltung.</string>
+    <string name="car_apps_grant_root_blocked">Root wurde nicht gewährt. Erlaube FermataX in deiner Root-Verwaltung. Wenn du Root versteckst, nimm FermataX von der Versteckliste. Versuche es dann erneut.</string>
     <string name="car_apps_phone_dim_text">Telefon-Apps läuft im Fahrzeug\nBerühren, um das Telefon zu nutzen</string>
     <string name="car_apps_phone_asleep">Der Telefonbildschirm ist aus\nBerühren, um fortzufahren</string>
     <string name="car_apps_phone_locked">Das Telefon ist gesperrt\nEntsperren, um fortzufahren</string>
@@ -57,7 +57,6 @@
     <string name="car_apps_setup_dev_off">Die Entwickleroptionen sind deaktiviert. Öffne „Über das Telefon“, tippe 7-mal auf die Build-Nummer und kehre dann hierher zurück.</string>
     <string name="car_apps_setup_open_about">„Über das Telefon“ öffnen</string>
     <string name="car_apps_setup_open_dev">Entwickleroptionen öffnen</string>
-    <string name="car_apps_setup_use_root">Stattdessen Root verwenden</string>
     <string name="car_apps_setup_notif_off">Benachrichtigungen sind für diese App deaktiviert. Der Kopplungscode wird in einer Benachrichtigung eingegeben. Aktiviere Benachrichtigungen und kehre dann hierher zurück.</string>
     <string name="car_apps_setup_open_notif">Benachrichtigungseinstellungen</string>
     <string name="car_apps_setup_working">Kopplung läuft…</string>
@@ -96,7 +95,7 @@
     <string name="car_apps_step_connect_car">Telefon mit Android Auto verbinden</string>
     <string name="car_apps_step_open_on_car">Im Auto Addons &gt; Telefon-Apps öffnen</string>
     <string name="car_apps_setup_adb_note">WLAN ist nur einmal für diese Einrichtung nötig. Kein Computer ist beteiligt. FermataX aktiviert das USB-Debugging und lässt es an, damit Telefon-Apps auch ohne WLAN weiter funktioniert.</string>
-    <string name="car_apps_setup_root_note">Deine Root-Verwaltung fragt einmal. Erlaube es für FermataX.</string>
+    <string name="car_apps_setup_root_note">Magisk fragt einmal: Erlaube FermataX. Bei KernelSU oder APatch schalte FermataX zuerst in der Superuser-Liste der Root-Verwaltung ein und tippe dann auf Root gewähren.</string>
     <string name="car_apps_guide_title">So funktionieren Telefon-Apps</string>
     <string name="car_apps_guide_got_it">Verstanden</string>
     <string name="car_apps_guide_open_title">Im Auto öffnen</string>
@@ -116,4 +115,9 @@
     <string name="car_apps_guide_off_body">Nutze den Schalter unter Einstellungen &gt; Addons &gt; Telefon-Apps. Ausgeschaltet stoppen die Apps.</string>
     <string name="car_apps_guide_report_title">Ein Problem melden</string>
     <string name="car_apps_guide_report_body">Schalte unter Einstellungen &gt; Diagnose die Detaillierte Diagnose ein, wiederhole das Problem und tippe dann auf „Bericht zu Telefon-Apps teilen“.</string>
+    <string name="car_apps_mode_question">Wie soll dieses Telefon die Telefon-Apps ausführen?\n\nMit Root: für ein gerootetes Telefon (Magisk, KernelSU, APatch oder anderes Root).\n\nOhne Root: nutzt kabelloses Debugging. Erfordert Android 13 oder neuer.</string>
+    <string name="car_apps_mode_root">Mit Root</string>
+    <string name="car_apps_mode_no_root">Ohne Root</string>
+    <string name="car_apps_mode_change">Anderen Weg wählen</string>
+    <string name="car_apps_mode_no_root_unsupported">Ohne Root brauchen Telefon-Apps Android 13 oder neuer, und auf diesem Telefon läuft eine ältere Version. Telefon-Apps wurden ausgeschaltet. Nachdem du das Telefon gerootet hast, schalte sie unter Einstellungen &gt; Addons wieder ein und wähle Root.</string>
 </resources>

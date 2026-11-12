@@ -142,7 +142,8 @@ public class LanguagesAcceptanceTest {
 				"car_apps_guide_screen_title", "car_apps_guide_screen_body_dark", "car_apps_guide_screen_body_sleep",
 				"car_apps_guide_wifi_title", "car_apps_guide_wifi_body", "car_apps_guide_off_title",
 				"car_apps_guide_off_body", "car_apps_guide_report_title", "car_apps_guide_report_body",
-				"car_apps_needs_setup", "car_apps_setup_use_root"};
+				"car_apps_needs_setup", "car_apps_mode_question", "car_apps_mode_root", "car_apps_mode_no_root",
+				"car_apps_mode_change", "car_apps_mode_no_root_unsupported", "car_apps_grant_root_blocked"};
 		Map<String, Entry> english = load(new File(root(), "fermata/src/main/res/values"));
 		for (String locale : locales) {
 			Map<String, Entry> strings = load(new File(root(), "fermata/src/main/res/" + locale));
@@ -154,6 +155,7 @@ public class LanguagesAcceptanceTest {
 			}
 			assertTrue(locale + " keeps the replaced setup text", !strings.containsKey("car_apps_setup_steps"));
 			assertTrue(locale + " keeps an unused group", !strings.containsKey("readiness_group_required"));
+			assertTrue(locale + " keeps the replaced root button", !strings.containsKey("car_apps_setup_use_root"));
 		}
 	}
 

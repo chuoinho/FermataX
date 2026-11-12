@@ -30,6 +30,7 @@ import java.util.List;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
+import me.aap.fermata.ui.carapps.PhoneAppsGuide;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide.Channel;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide.Page;
 import me.aap.fermata.ui.carapps.RootProbe;
@@ -47,6 +48,8 @@ public class PhoneAppsGuideScreenTest {
 		AdbPairing.resetForTesting();
 		CarAppsFeature.setAdbPaired(false);
 		CarAppsFeature.setState(RootState.ABSENT);
+		store().removePref(PhoneAppsGuide.PREF_MODE);
+		CarAppsFeature.setEnabled(store(), true);
 	}
 
 	@After
@@ -54,28 +57,40 @@ public class PhoneAppsGuideScreenTest {
 		AdbPairing.resetForTesting();
 		CarAppsFeature.setAdbPaired(false);
 		CarAppsFeature.setState(RootState.ABSENT);
+		store().removePref(PhoneAppsGuide.PREF_MODE);
+		CarAppsFeature.setEnabled(store(), true);
 	}
 
-	/** Android 11-12 with root offered: root is the only way, so it is the main action. */
+	/** Nothing set up yet: the setup starts with the pick, and asks nothing of the system before it. */
 	@Test
-	@Config(sdk = 31)
-	public void rootChannelShowsTheRootStepsWithGrantRootAsTheCurrentAction() {
+	public void setupStartsWithThePickBetweenRootAndWithoutRoot() {
+		Settings.Global.putInt(ctx.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
 		CarAppsFeature.setState(RootState.AVAILABLE);
 		AdbSetupActivity a = open(Page.SETUP);
 		View root = a.getWindow().getDecorView();
-		assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_current, a.getString(R.string.car_apps_step_allow_root))));
-		assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_todo, a.getString(R.string.car_apps_step_connect_car))));
-		assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_todo, a.getString(R.string.car_apps_step_open_on_car))));
-		assertNotNull(findButton(root, a.getString(R.string.car_apps_grant_root)));
-		assertNull("no pairing for root", findButton(root, a.getString(R.string.car_apps_setup_open_dev)));
-		assertNull("no permission prompt", shadowOf(a).getLastRequestedPermission());
+		assertTrue(textOf(root).contains(a.getString(R.string.car_apps_mode_question)));
+		Button withRoot = findButton(root, a.getString(R.string.car_apps_mode_root));
+		Button withoutRoot = findButton(root, a.getString(R.string.car_apps_mode_no_root));
+		assertNotNull(withRoot);
+		assertNotNull(withoutRoot);
+		assertTrue(withoutRoot.getMinHeight() >= Math.round(48 * a.getResources().getDisplayMetrics().density));
+		assertNull("no steps before the pick", findDescribed(root, a.getString(R.string.car_apps_step_current,
+				a.getString(R.string.car_apps_step_dev_options))));
+		assertEquals("no pairing notification before the pick", AdbPairing.State.IDLE, AdbPairing.state());
+
+		withoutRoot.performClick();
+		assertEquals(PhoneAppsGuide.Mode.NO_ROOT, PhoneAppsGuide.mode(store()));
+		assertNotNull(findButton(root, a.getString(R.string.car_apps_setup_open_dev)));
+		assertEquals("the pick leads to pairing", AdbPairing.State.WAITING, AdbPairing.state());
+
+		findButton(root, a.getString(R.string.car_apps_mode_change)).performClick();
+		assertNull(PhoneAppsGuide.mode(store()));
+		assertNotNull(findButton(root, a.getString(R.string.car_apps_mode_root)));
 	}
 
-	/** Android 13+ with root offered but not granted: the setup without root, and root as the alternative. */
+	/** Root may be hidden from the app: the user's pick leads to the root steps anyway. */
 	@Test
-	public void rootNotGrantedOnAndroid13UpKeepsTheSetupWithoutRootAndOffersRootInstead() {
-		Settings.Global.putInt(ctx.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
-		CarAppsFeature.setState(RootState.AVAILABLE);
+	public void pickingRootWithNoRootSeenShowsTheRootStepsAndGrantRootAsksTheRootManager() {
 		CarAppsFeature.Backend saved = CarAppsFeature.backend();
 		int[] rootRequests = {0};
 		CarAppsFeature.setBackend(new CarAppsFeature.Backend() {
@@ -93,24 +108,66 @@ public class PhoneAppsGuideScreenTest {
 		try {
 			AdbSetupActivity a = open(Page.SETUP);
 			View root = a.getWindow().getDecorView();
-			assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_done, a.getString(R.string.car_apps_step_dev_options))));
-			assertNotNull(findButton(root, a.getString(R.string.car_apps_setup_open_dev)));
-			Button useRoot = findButton(root, a.getString(R.string.car_apps_setup_use_root));
-			assertNotNull(useRoot);
-			assertTrue(useRoot.getMinHeight() >= Math.round(48 * a.getResources().getDisplayMetrics().density));
-			assertEquals(AdbPairing.State.WAITING, AdbPairing.state());
-			useRoot.performClick();
+			findButton(root, a.getString(R.string.car_apps_mode_root)).performClick();
+			assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_current, a.getString(R.string.car_apps_step_allow_root))));
+			assertTrue(textOf(root).contains(a.getString(R.string.car_apps_setup_root_note)));
+			assertNotNull(findButton(root, a.getString(R.string.car_apps_mode_change)));
+			findButton(root, a.getString(R.string.car_apps_grant_root)).performClick();
 			assertEquals(1, rootRequests[0]);
+			assertEquals("no pairing for root", AdbPairing.State.IDLE, AdbPairing.state());
 		} finally {
 			CarAppsFeature.setBackend(saved);
 		}
 	}
 
+	/** Android 11-12 without root: not supported; the addon is turned off and stays in Addons to turn on again. */
 	@Test
-	public void noRootInsteadButtonWithoutRoot() {
-		Settings.Global.putInt(ctx.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
+	@Config(sdk = 31)
+	public void withoutRootOnAndroid12SaysNotSupportedAndTurnsTheAddonOff() {
+		org.robolectric.android.controller.ActivityController<AdbSetupActivity> c = Robolectric.buildActivity(
+				AdbSetupActivity.class, AdbSetupActivity.intent(ctx, Page.SETUP)).setup();
+		AdbSetupActivity a = c.get();
+		View root = a.getWindow().getDecorView();
+		findButton(root, a.getString(R.string.car_apps_mode_no_root)).performClick();
+		assertTrue(textOf(root).contains(a.getString(R.string.car_apps_mode_no_root_unsupported)));
+		assertFalse(CarAppsFeature.isEnabled());
+		assertTrue("still listed in Addons", CarAppsFeature.isSupported());
+		assertEquals("nothing is posted", AdbPairing.State.IDLE, AdbPairing.state());
+		assertNotNull("a wrong tap can be undone", findButton(root, a.getString(R.string.car_apps_mode_change)));
+
+		findButton(root, a.getString(android.R.string.ok)).performClick();
+		assertTrue(a.isFinishing());
+		c.pause().stop().destroy();
+		assertNull("once rooted and turned on again, the setup asks again", PhoneAppsGuide.mode(store()));
+	}
+
+	/** A wrong tap on Android 11-12: picking root afterwards turns the addon on again. */
+	@Test
+	@Config(sdk = 31)
+	public void pickingRootAfterWithoutRootTurnsTheAddonOnAgain() {
 		AdbSetupActivity a = open(Page.SETUP);
-		assertNull(findButton(a.getWindow().getDecorView(), a.getString(R.string.car_apps_setup_use_root)));
+		View root = a.getWindow().getDecorView();
+		findButton(root, a.getString(R.string.car_apps_mode_no_root)).performClick();
+		findButton(root, a.getString(R.string.car_apps_mode_change)).performClick();
+		findButton(root, a.getString(R.string.car_apps_mode_root)).performClick();
+		assertTrue(CarAppsFeature.isEnabled());
+		assertNotNull(findButton(root, a.getString(R.string.car_apps_grant_root)));
+	}
+
+	/** Android 11-12 with root picked: root is the main action. */
+	@Test
+	@Config(sdk = 31)
+	public void rootChannelShowsTheRootStepsWithGrantRootAsTheCurrentAction() {
+		CarAppsFeature.setState(RootState.AVAILABLE);
+		pick(PhoneAppsGuide.Mode.ROOT);
+		AdbSetupActivity a = open(Page.SETUP);
+		View root = a.getWindow().getDecorView();
+		assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_current, a.getString(R.string.car_apps_step_allow_root))));
+		assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_todo, a.getString(R.string.car_apps_step_connect_car))));
+		assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_todo, a.getString(R.string.car_apps_step_open_on_car))));
+		assertNotNull(findButton(root, a.getString(R.string.car_apps_grant_root)));
+		assertNull("no pairing for root", findButton(root, a.getString(R.string.car_apps_setup_open_dev)));
+		assertNull("no permission prompt", shadowOf(a).getLastRequestedPermission());
 	}
 
 	/** Fix pairs again without forgetting a pairing on opening: backing out keeps it; a new pairing replaces it. */
@@ -172,6 +229,7 @@ public class PhoneAppsGuideScreenTest {
 	public void adbChannelShowsWhichPairingStepIsCurrentAndTheOneTimeWifiNote() {
 		Settings.Global.putInt(ctx.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
 		Settings.Global.putInt(ctx.getContentResolver(), "adb_wifi_enabled", 0);
+		pick(PhoneAppsGuide.Mode.NO_ROOT);
 		AdbSetupActivity a = open(Page.SETUP);
 		View root = a.getWindow().getDecorView();
 		assertNotNull(findDescribed(root, a.getString(R.string.car_apps_step_done, a.getString(R.string.car_apps_step_dev_options))));
@@ -192,15 +250,6 @@ public class PhoneAppsGuideScreenTest {
 		assertTrue(textOf(root).contains(a.getString(R.string.car_apps_guide_title)));
 		findButton(root, a.getString(R.string.car_apps_guide_got_it)).performClick();
 		assertTrue(a.isFinishing());
-	}
-
-	@Test
-	@Config(sdk = 31)
-	public void android12WithoutRootIsNotSupported() {
-		AdbSetupActivity a = open(Page.SETUP);
-		View root = a.getWindow().getDecorView();
-		assertTrue(textOf(root).contains(a.getString(R.string.car_apps_status_unsupported)));
-		assertEquals("nothing is posted", AdbPairing.State.IDLE, AdbPairing.state());
 	}
 
 	@Test
@@ -247,6 +296,14 @@ public class PhoneAppsGuideScreenTest {
 		assertArrayEquals(new Page[]{Page.USAGE}, new Page[]{AdbSetupActivity.page(
 				AdbSetupActivity.intent(ctx, Page.USAGE))});
 		assertEquals("unknown extra falls back to setup", Page.SETUP, AdbSetupActivity.page(new Intent()));
+	}
+
+	private static me.aap.utils.pref.PreferenceStore store() {
+		return me.aap.fermata.FermataApplication.get().getPreferenceStore();
+	}
+
+	private static void pick(PhoneAppsGuide.Mode mode) {
+		store().applyIntPref(PhoneAppsGuide.PREF_MODE, mode.ordinal());
 	}
 
 	private AdbSetupActivity open(Page page) {

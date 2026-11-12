@@ -93,14 +93,15 @@ public class RootProbeTest {
 		assertEquals(RootState.GRANTED, state);
 	}
 
+	/** Root hidden from the app (no su file, no manager seen) but a grant worked: that is proof of root. */
 	@Test
-	public void absentEvenIfGrantedBeforeWhenNothingPresent() {
+	public void grantedWhenGrantedBeforeEvenWithRootHidden() {
 		RootState state = RootProbe.detect(
 				path -> false,
 				pkg -> false,
 				true
 		);
-		assertEquals(RootState.ABSENT, state);
+		assertEquals(RootState.GRANTED, state);
 	}
 
 	@Test
@@ -141,12 +142,13 @@ public class RootProbeTest {
 		assertTrue(context.getSharedPreferences("fermata", Context.MODE_PRIVATE)
 				.getBoolean(RootProbe.PREF_ROOT_GRANTED, false));
 
-		// Since neither su nor manager is installed on this test environment, state will be ABSENT
-		assertEquals(RootState.ABSENT, CarAppsFeature.state());
+		// No su file nor manager here, as with hidden root: the grant itself counts
+		assertEquals(RootState.GRANTED, CarAppsFeature.state());
 
 		RootProbe.recordGranted(context, false);
 		assertFalse(context.getSharedPreferences("fermata", Context.MODE_PRIVATE)
 				.getBoolean(RootProbe.PREF_ROOT_GRANTED, true));
+		assertEquals("a failed start clears it", RootState.ABSENT, CarAppsFeature.state());
 	}
 
 	@Test

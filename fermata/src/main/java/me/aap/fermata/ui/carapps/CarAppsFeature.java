@@ -65,9 +65,9 @@ public final class CarAppsFeature {
 	private CarAppsFeature() {
 	}
 
+	/** Also on Android 11-12 without root seen: root may be hidden, and the setup lets the user pick root. */
 	public static boolean visible(boolean autoBuild, int sdk, @Nullable RootState s) {
-		return autoBuild && (sdk >= 30) && !isBlockedSdk(sdk) && (s != null)
-				&& ((s != RootState.ABSENT) || adbSupportedSdk(sdk));
+		return autoBuild && (sdk >= 30) && !isBlockedSdk(sdk) && (s != null);
 	}
 
 	/** 12L: as uid 1000, which the server needs below 33, am start exits 255, so no app can open. */

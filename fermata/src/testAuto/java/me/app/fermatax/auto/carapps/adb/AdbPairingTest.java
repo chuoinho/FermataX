@@ -79,10 +79,14 @@ public class AdbPairingTest {
 		AdbRecoveryJob.usbDebuggingWriter = (c, v) -> events.add("usb=" + v);
 		shadowOf((android.app.Application) ctx).grantPermissions("android.permission.WRITE_SECURE_SETTINGS");
 		Settings.Global.putInt(ctx.getContentResolver(), "adb_enabled", 0);
+		// the setup screen tests here start after the user picked the way without root
+		me.aap.fermata.FermataApplication.get().getPreferenceStore().applyIntPref(
+				me.aap.fermata.ui.carapps.PhoneAppsGuide.PREF_MODE, me.aap.fermata.ui.carapps.PhoneAppsGuide.Mode.NO_ROOT.ordinal());
 	}
 
 	@After public void tearDown() throws Exception {
 		AdbRecoveryJob.usbDebuggingWriter = AdbRecoveryJob::putAdbEnabled;
+		me.aap.fermata.FermataApplication.get().getPreferenceStore().removePref(me.aap.fermata.ui.carapps.PhoneAppsGuide.PREF_MODE);
 		AdbPairing.resetForTesting();
 		CarAppsFeature.setAdbPaired(false);
 		executor.shutdownNow();

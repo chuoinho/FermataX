@@ -18,7 +18,7 @@
     <string name="car_apps_readiness_status_need_root">需要 Root 權限</string>
     <string name="car_apps_readiness_action_grant">授予 Root 權限</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">需要啟用 USB 偵錯（安全設定）</string>
-    <string name="car_apps_grant_root_blocked">未取得 Root 權限。請再試一次，並在 Root 管理程式中允許該要求。</string>
+    <string name="car_apps_grant_root_blocked">未取得 Root 權限。請在 Root 管理程式中允許 FermataX。若你隱藏了 Root，請將 FermataX 從隱藏清單中移除，然後再試一次。</string>
     <string name="car_apps_phone_dim_text">正在車上使用手機應用程式\n輕觸即可使用手機</string>
     <string name="car_apps_phone_asleep">手機螢幕已關閉\n輕觸即可繼續</string>
     <string name="car_apps_phone_locked">手機已鎖定\n請解鎖後繼續</string>
@@ -57,7 +57,6 @@
     <string name="car_apps_setup_dev_off">開發人員選項已關閉。請開啟「關於手機」，連按「版本號碼」7 次，然後回到這裡。</string>
     <string name="car_apps_setup_open_about">開啟「關於手機」</string>
     <string name="car_apps_setup_open_dev">開啟開發人員選項</string>
-    <string name="car_apps_setup_use_root">改用 Root</string>
     <string name="car_apps_setup_notif_off">此應用程式的通知已關閉。配對碼需在通知中輸入，請開啟通知後回到這裡。</string>
     <string name="car_apps_setup_open_notif">通知設定</string>
     <string name="car_apps_setup_working">配對中…</string>
@@ -96,7 +95,7 @@
     <string name="car_apps_step_connect_car">將手機連線到 Android Auto</string>
     <string name="car_apps_step_open_on_car">在車上開啟「擴充功能 &gt; 手機應用程式」</string>
     <string name="car_apps_setup_adb_note">只有這次設定需要 Wi‑Fi，完全不需要電腦。FermataX 會開啟並保持 USB 偵錯，讓你離開 Wi‑Fi 後手機應用程式仍能運作。</string>
-    <string name="car_apps_setup_root_note">Root 管理程式只會詢問一次，請允許 FermataX。</string>
+    <string name="car_apps_setup_root_note">Magisk 只會詢問一次：請允許 FermataX。若使用 KernelSU 或 APatch，請先在 Root 管理程式的 Superuser 清單中開啟 FermataX，再點按「授予 Root 權限」。</string>
     <string name="car_apps_guide_title">手機應用程式使用方式</string>
     <string name="car_apps_guide_got_it">我知道了</string>
     <string name="car_apps_guide_open_title">在車上開啟</string>
@@ -116,4 +115,9 @@
     <string name="car_apps_guide_off_body">使用「設定 &gt; 擴充功能 &gt; 手機應用程式」中的開關。關閉後，應用程式會停止。</string>
     <string name="car_apps_guide_report_title">回報問題</string>
     <string name="car_apps_guide_report_body">在「設定 &gt; 診斷」中開啟「詳細診斷」，重現問題後，點選「分享手機應用程式報告」。</string>
+    <string name="car_apps_mode_question">這支手機要如何執行手機應用程式？\n\n使用 Root：適用已 Root 的手機（Magisk、KernelSU、APatch 或其他 Root 方案）。\n\n不使用 Root：使用無線偵錯，需要 Android 13 以上版本。</string>
+    <string name="car_apps_mode_root">使用 Root</string>
+    <string name="car_apps_mode_no_root">不使用 Root</string>
+    <string name="car_apps_mode_change">選擇其他方式</string>
+    <string name="car_apps_mode_no_root_unsupported">不使用 Root 時，手機應用程式需要 Android 13 以上版本，而這支手機的 Android 版本較舊。手機應用程式已關閉。手機 Root 之後，請到「設定 &gt; 擴充功能」重新開啟，並選擇使用 Root。</string>
 </resources>

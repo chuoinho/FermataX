@@ -9,7 +9,7 @@
     <string name="car_apps_loading">Starting car display…</string>
     <string name="car_apps_needs_root">Root access is required to run phone apps on the car screen</string>
     <string name="car_apps_grant_root">Grant root</string>
-    <string name="car_apps_grant_root_blocked">Root was not granted. Try again and allow the request in your root manager.</string>
+    <string name="car_apps_grant_root_blocked">Root was not granted. Allow FermataX in your root manager. If you hide root, take FermataX off the hide list. Then try again.</string>
     <string name="car_apps_server_error">Failed to start car display server</string>
     <string name="car_apps_nav_back">Back</string>
     <string name="car_apps_nav_drawer">App drawer</string>
@@ -57,7 +57,6 @@
     <string name="car_apps_setup_dev_off">Developer options are off. Open About phone, tap Build number 7 times, then come back here.</string>
     <string name="car_apps_setup_open_about">Open About phone</string>
     <string name="car_apps_setup_open_dev">Open developer options</string>
-    <string name="car_apps_setup_use_root">Use root instead</string>
     <string name="car_apps_setup_notif_off">Notifications are off for this app. The pairing code is typed into a notification, so turn notifications on, then come back here.</string>
     <string name="car_apps_setup_open_notif">Notification settings</string>
     <string name="car_apps_setup_working">Pairing…</string>
@@ -96,7 +95,7 @@
     <string name="car_apps_step_connect_car">Connect the phone to Android Auto</string>
     <string name="car_apps_step_open_on_car">On the car, open Addons &gt; Phone Apps</string>
     <string name="car_apps_setup_adb_note">Wi‑Fi is needed only once, for this setup. No computer is involved. FermataX turns on USB debugging and keeps it on, so Phone Apps keeps working when you leave Wi‑Fi.</string>
-    <string name="car_apps_setup_root_note">Your root manager asks once. Allow it for FermataX.</string>
+    <string name="car_apps_setup_root_note">Magisk asks once: allow FermataX. With KernelSU or APatch, first turn on FermataX in the Superuser list of the root manager, then tap Grant root.</string>
     <string name="car_apps_guide_title">How to use Phone Apps</string>
     <string name="car_apps_guide_got_it">Got it</string>
     <string name="car_apps_guide_open_title">Open it on the car</string>
@@ -116,4 +115,9 @@
     <string name="car_apps_guide_off_body">Use the switch in Settings &gt; Addons &gt; Phone Apps. Turned off, the apps stop.</string>
     <string name="car_apps_guide_report_title">Reporting a problem</string>
     <string name="car_apps_guide_report_body">In Settings &gt; Diagnostics, turn on Detailed diagnostics, repeat the problem, then tap Share Phone Apps report.</string>
+    <string name="car_apps_mode_question">How does this phone run Phone Apps?\n\nWith root: for a rooted phone (Magisk, KernelSU, APatch or another root).\n\nWithout root: uses Wireless debugging. Needs Android 13 or newer.</string>
+    <string name="car_apps_mode_root">With root</string>
+    <string name="car_apps_mode_no_root">Without root</string>
+    <string name="car_apps_mode_change">Choose another way</string>
+    <string name="car_apps_mode_no_root_unsupported">Without root, Phone Apps needs Android 13 or newer, and this phone runs an older Android. Phone Apps is now turned off. After you root this phone, turn it on again in Settings &gt; Addons and choose root.</string>
 </resources>

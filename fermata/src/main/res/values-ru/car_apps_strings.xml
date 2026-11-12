@@ -18,7 +18,7 @@
     <string name="car_apps_readiness_status_need_root">Требуется root-доступ</string>
     <string name="car_apps_readiness_action_grant">Предоставить root</string>
     <string name="car_apps_readiness_warn_xiaomi_inject">Требуется отладка по USB (настройки безопасности)</string>
-    <string name="car_apps_grant_root_blocked">Root-доступ не предоставлен. Повторите попытку и разрешите запрос в менеджере root.</string>
+    <string name="car_apps_grant_root_blocked">Root-доступ не предоставлен. Разрешите FermataX в менеджере root. Если вы скрываете root, уберите FermataX из списка скрытия. Затем повторите попытку.</string>
     <string name="car_apps_phone_dim_text">Приложения телефона работают в автомобиле\nКоснитесь, чтобы пользоваться телефоном</string>
     <string name="car_apps_phone_asleep">Экран телефона выключен\nКоснитесь, чтобы продолжить</string>
     <string name="car_apps_phone_locked">Телефон заблокирован\nРазблокируйте, чтобы продолжить</string>
@@ -57,7 +57,6 @@
     <string name="car_apps_setup_dev_off">Параметры разработчика отключены. Откройте «О телефоне», 7 раз нажмите на номер сборки и вернитесь сюда.</string>
     <string name="car_apps_setup_open_about">Открыть «О телефоне»</string>
     <string name="car_apps_setup_open_dev">Открыть «Для разработчиков»</string>
-    <string name="car_apps_setup_use_root">Использовать root</string>
     <string name="car_apps_setup_notif_off">Уведомления для этого приложения отключены. Код вводится в уведомлении: включите уведомления и вернитесь сюда.</string>
     <string name="car_apps_setup_open_notif">Настройки уведомлений</string>
     <string name="car_apps_setup_working">Подключение…</string>
@@ -96,7 +95,7 @@
     <string name="car_apps_step_connect_car">Подключите телефон к Android Auto</string>
     <string name="car_apps_step_open_on_car">В машине откройте Дополнения &gt; Приложения телефона</string>
     <string name="car_apps_setup_adb_note">Wi‑Fi нужен только один раз, для этой настройки. Компьютер не используется. FermataX включает отладку по USB и оставляет её включённой, чтобы приложения телефона работали и без Wi‑Fi.</string>
-    <string name="car_apps_setup_root_note">Менеджер root спросит один раз. Разрешите доступ для FermataX.</string>
+    <string name="car_apps_setup_root_note">Magisk спросит один раз: разрешите FermataX. В KernelSU или APatch сначала включите FermataX в списке Superuser менеджера root, затем нажмите «Предоставить root».</string>
     <string name="car_apps_guide_title">Как пользоваться приложениями телефона</string>
     <string name="car_apps_guide_got_it">Понятно</string>
     <string name="car_apps_guide_open_title">Откройте в машине</string>
@@ -116,4 +115,9 @@
     <string name="car_apps_guide_off_body">Используйте переключатель в Настройки &gt; Дополнения &gt; Приложения телефона. Когда выключено, приложения останавливаются.</string>
     <string name="car_apps_guide_report_title">Как сообщить о проблеме</string>
     <string name="car_apps_guide_report_body">В Настройки &gt; Диагностика включите «Подробная диагностика», повторите проблему, затем нажмите «Поделиться отчётом».</string>
+    <string name="car_apps_mode_question">Как этот телефон будет запускать приложения телефона?\n\nС root: для телефона с root (Magisk, KernelSU, APatch или другой root).\n\nБез root: использует отладку по Wi-Fi. Нужен Android 13 или новее.</string>
+    <string name="car_apps_mode_root">С root</string>
+    <string name="car_apps_mode_no_root">Без root</string>
+    <string name="car_apps_mode_change">Выбрать другой способ</string>
+    <string name="car_apps_mode_no_root_unsupported">Без root приложениям телефона нужен Android 13 или новее, а на этом телефоне более старая версия. Приложения телефона отключены. Получив root, включите их снова в Настройки &gt; Дополнения и выберите root.</string>
 </resources>
