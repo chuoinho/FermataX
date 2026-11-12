@@ -25,6 +25,7 @@ import java.util.function.Function;
 import io.github.muntashirakon.adb.AdbPairingRequiredException;
 import io.github.muntashirakon.adb.android.AdbMdns;
 import me.aap.fermata.R;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.carapps.RootProbe;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.app.App;
@@ -227,6 +228,7 @@ public final class AdbPairing {
 	private static void post(Context ctx, int textRes, boolean replyField) {
 		NotificationManagerCompat nm = NotificationManagerCompat.from(ctx);
 		if (!nm.areNotificationsEnabled()) return;
+		ctx = MainActivityDelegate.attachBaseContext(ctx); // texts in the app's language, also from the reply receiver
 		nm.createNotificationChannel(new NotificationChannel(CHANNEL, ctx.getString(R.string.car_apps_title),
 				NotificationManager.IMPORTANCE_LOW));
 		NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL)

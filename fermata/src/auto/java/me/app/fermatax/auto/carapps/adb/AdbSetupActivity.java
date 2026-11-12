@@ -24,6 +24,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import me.aap.fermata.R;
 import me.aap.fermata.auto.AutomotiveConnectionState;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.carapps.CarAppsChecks;
 import me.aap.fermata.ui.carapps.CarAppsFeature;
 import me.aap.fermata.ui.carapps.PhoneAppsGuide;
@@ -85,6 +86,12 @@ public final class AdbSetupActivity extends Activity {
 		System.arraycopy(wifi, 0, all, common.length, wifi.length);
 		System.arraycopy(end, 0, all, common.length + wifi.length, end.length);
 		return all;
+	}
+
+	/** The guide follows the language chosen in the app, not the phone's. */
+	@Override
+	protected void attachBaseContext(Context base) {
+		super.attachBaseContext(MainActivityDelegate.attachBaseContext(base));
 	}
 
 	@Override

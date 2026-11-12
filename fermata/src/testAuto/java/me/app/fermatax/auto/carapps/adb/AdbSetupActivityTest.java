@@ -19,6 +19,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import me.aap.fermata.R;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 
 /** Edge-to-edge (enforced from Android 15 for targetSdk 35): the setup screens must stay clear of the system bars. */
 @RunWith(RobolectricTestRunner.class)
@@ -54,6 +55,22 @@ public class AdbSetupActivityTest {
 				activity.getString(R.string.car_apps_setup_title));
 		assertNotNull(title);
 		assertEquals(button.getText().toString(), button.getContentDescription().toString());
+	}
+
+	@Test
+	public void theGuideFollowsTheAppLanguageNotThePhoneLanguage() {
+		// The phone is English here; the app language is set to Russian.
+		java.util.Locale defaultLocale = java.util.Locale.getDefault(); // the app's locale context also sets the default
+		MainActivityPrefs prefs = MainActivityPrefs.get();
+		prefs.applyIntPref(MainActivityPrefs.LOCALE, MainActivityPrefs.Lang.RU.ordinal());
+		try {
+			AdbSetupActivity activity = Robolectric.buildActivity(AdbSetupActivity.class).setup().get();
+			assertEquals("ru", activity.getResources().getConfiguration().getLocales().get(0).getLanguage());
+			assertNotNull(findText(activity.findViewById(android.R.id.content), "Настройка приложений телефона"));
+		} finally {
+			prefs.removePref(MainActivityPrefs.LOCALE);
+			java.util.Locale.setDefault(defaultLocale);
+		}
 	}
 
 	private static Button findButton(View v) {
