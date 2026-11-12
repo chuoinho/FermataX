@@ -74,7 +74,8 @@ public final class DashboardPlayableNavigator {
 		if ((current == null) || !isSamePlayable(current, item) ||
 				!activity.getMediaServiceBinder().isPlaying() ||
 				activity.getMediaSessionCallback().getVideoOutputCoordinator().getHost() != admission.target()) {
-			activity.getMediaServiceBinder().playRoutedItem(item, -1, admission);
+			// The body enters VIDEO and waits for the surface first, as a list tap does
+			activity.getBody().playRoutedItem(item, -1, admission);
 		}
 	}
 
