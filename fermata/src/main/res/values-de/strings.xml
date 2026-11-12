@@ -251,7 +251,6 @@
     <string name="use_phone_to_grant_perm">Bitte verwenden Sie Ihr Telefon, um die erforderlichen Berechtigungen zu erteilen.</string>
     <string name="vfs_content">SD-Card / System</string>
     <string name="vfs_file_system">Dateisystem</string>
-    <string name="vfs_gdrive">Google Drive</string>
     <string name="m3u_playlist">M3U Playlist</string>
     <string name="m3u_playlist_name">Name</string>
     <string name="m3u_playlist_location">Speicherort</string>

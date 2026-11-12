@@ -261,7 +261,6 @@
 
     <string name="vfs_content">內容</string>
     <string name="vfs_file_system">檔案系統</string>
-    <string name="vfs_gdrive">Google雲端硬碟</string>
     
     
     <string name="m3u_playlist">M3U 播放列表</string>

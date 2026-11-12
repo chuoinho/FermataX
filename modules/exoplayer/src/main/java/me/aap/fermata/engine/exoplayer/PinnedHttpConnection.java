@@ -256,6 +256,7 @@ final class PinnedHttpConnection implements AutoCloseable {
 			} catch (NumberFormatException error) {
 				throw new IOException("Invalid chunk size", error);
 			}
+			if (remaining < 0) throw new IOException("Invalid chunk size");
 			if (remaining == 0) {
 				while (!readLine(input).isEmpty()) {
 				}

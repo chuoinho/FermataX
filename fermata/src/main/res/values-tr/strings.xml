@@ -251,7 +251,6 @@
     <string name="use_phone_to_grant_perm">Lütfen gerekli izinleri vermek için telefonunuzu kullanın.</string>
     <string name="vfs_content">İçerik</string>
     <string name="vfs_file_system">Dosyalar</string>
-    <string name="vfs_gdrive">Google drive</string>
     <string name="m3u_playlist">M3U oynatma listesi</string>
     <string name="m3u_playlist_name">Adı</string>
     <string name="m3u_playlist_location">Konum</string>

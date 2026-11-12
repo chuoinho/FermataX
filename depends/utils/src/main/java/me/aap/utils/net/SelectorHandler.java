@@ -41,7 +41,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import javax.annotation.Nonnull;
 import javax.net.ssl.SSLEngine;
 
 import me.aap.utils.BuildConfig;
@@ -516,7 +515,7 @@ class SelectorHandler implements NetHandler, Runnable {
 			}
 		}
 
-		@Nonnull
+		@NonNull
 		@Override
 		public String toString() {
 			return channel.toString();
@@ -836,7 +835,7 @@ class SelectorHandler implements NetHandler, Runnable {
 			selector.wakeup();
 		}
 
-		@Nonnull
+		@NonNull
 		@Override
 		public String toString() {
 			return channel().toString();

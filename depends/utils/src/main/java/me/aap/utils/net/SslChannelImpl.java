@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import javax.annotation.Nonnull;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
@@ -127,7 +126,7 @@ class SslChannelImpl extends ConcurrentQueueBase<SslChannelImpl.Write, SslChanne
 		getChannel().setCloseListener(listener);
 	}
 
-	@Nonnull
+	@NonNull
 	@Override
 	public String toString() {
 		return "SslChannel: " + getChannel();

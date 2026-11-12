@@ -120,6 +120,16 @@ public class AdbStream implements Closeable {
     }
 
     /**
+     * Blocks until the peer accepts or rejects the OPEN. FermataX: a loopback adbd can answer before the opener
+     * starts waiting, so the state is checked, not only the notification.
+     */
+    void awaitOpen() throws InterruptedException {
+        synchronized (this) {
+            while (!mWriteReady.get() && !mIsClosed) wait();
+        }
+    }
+
+    /**
      * Called by the connection thread to notify that the stream was closed by the peer.
      */
     void notifyClose(boolean closedByPeer) {

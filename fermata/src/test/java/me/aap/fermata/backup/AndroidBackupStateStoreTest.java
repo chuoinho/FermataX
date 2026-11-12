@@ -48,6 +48,28 @@ public class AndroidBackupStateStoreTest {
 	}
 
 	@Test
+	public void phoneAppsDeviceStateIsNeitherExportedNorRestored() throws Exception {
+		context.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit()
+				.putString("theme", "dark")
+				.putInt("CAR_APPS_ADB_WIFI_RESTORE", 0)
+				.putBoolean("CAR_APPS_ADB_PAIRED", true).commit();
+		AndroidBackupStateStore state = new AndroidBackupStateStore(context, secureStores);
+
+		Map<String, Object> exported = state.snapshot().preferences().get("fermata");
+		assertEquals("dark", exported.get("theme"));
+		assertFalse(exported.containsKey("CAR_APPS_ADB_WIFI_RESTORE"));
+		assertFalse(exported.containsKey("CAR_APPS_ADB_PAIRED"));
+
+		// a backup from another phone, made before these keys were left out
+		state.replace(new BackupData(Map.of("fermata", Map.of("theme", "light",
+				"CAR_APPS_ADB_WIFI_RESTORE", 1, "CAR_APPS_ROOT_GRANTED", true)), Map.of(), Map.of()));
+
+		Map<String, ?> restored = context.getSharedPreferences("fermata", Context.MODE_PRIVATE).getAll();
+		assertEquals(Map.of("theme", "light", "CAR_APPS_ADB_WIFI_RESTORE", 0,
+				"CAR_APPS_ADB_PAIRED", true), restored);
+	}
+
+	@Test
 	public void replaceClearsOldValuesAndReencryptsLogicalSecrets() throws Exception {
 		context.getSharedPreferences("fermata", Context.MODE_PRIVATE).edit()
 				.putString("old", "value").commit();

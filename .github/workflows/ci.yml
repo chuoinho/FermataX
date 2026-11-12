@@ -18,10 +18,6 @@ jobs:
     name: Verify FermataX source, lint, architecture, and universal package
     runs-on: ubuntu-latest
     timeout-minutes: 75
-    env:
-      # Keep the module graph identical to build.sh, which always builds without
-      # optional Google-services features.
-      NO_GS: true
 
     steps:
       - name: Check out source and PR base history
@@ -62,7 +58,7 @@ jobs:
 
       - name: Mobile unit suite
         run: >-
-          ./gradlew testMobileDebugUnitTest :whisper:testMobileDebugUnitTest
+          ./gradlew testMobileDebugUnitTest
           --no-daemon --no-parallel --stacktrace
 
       - name: Auto unit suite

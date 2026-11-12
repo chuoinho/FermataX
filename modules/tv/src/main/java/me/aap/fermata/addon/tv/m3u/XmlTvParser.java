@@ -53,9 +53,12 @@ final class XmlTvParser {
 		}
 	}
 
-	private static final class Handler extends DefaultHandler {
+	static final class Handler extends DefaultHandler {
 		private final SimpleDateFormat timeFormat =
-				new SimpleDateFormat("yyyyMMddHHmmss Z", Locale.getDefault());
+				new SimpleDateFormat("yyyyMMddHHmmss Z", Locale.US);
+		// No offset in the value: the provider's local listing, read in the phone's time zone
+		private final SimpleDateFormat localTimeFormat =
+				new SimpleDateFormat("yyyyMMddHHmmss", Locale.US);
 		private final long currentTime = System.currentTimeMillis();
 		private final SQLiteDatabase database;
 		private final Map<String, List<TvM3uTrackItem>> byId;
@@ -296,10 +299,12 @@ final class XmlTvParser {
 			else statement.bindString(index, value);
 		}
 
-		private long toTime(String value) {
+		long toTime(String value) {
 			if (value == null) return 0;
+			value = value.trim();
 			try {
-				Date date = timeFormat.parse(value);
+				// parse() ignores trailing text, so a value with an offset must never reach the local format
+				Date date = (value.indexOf(' ') > 0) ? timeFormat.parse(value) : localTimeFormat.parse(value);
 				return (date != null) ? (date.getTime() + epgShift) : 0;
 			} catch (ParseException ex) {
 				Log.e(ex, "Failed to parse time: ", value);

@@ -521,9 +521,7 @@ public class AdbConnection implements Closeable {
         sendPacket(AdbProtocol.generateOpen(localId, Objects.requireNonNull(destination)));
 
         // Wait for the connection thread to receive the OKAY
-        synchronized (stream) {
-            stream.wait();
-        }
+        stream.awaitOpen();
 
         // Check if the OPEN request was rejected
         if (stream.isClosed()) {
@@ -717,47 +715,6 @@ public class AdbConnection implements Closeable {
                     mSocket == null ? new Socket() : mSocket, mSocketTimeout);
             if (mDeviceName != null) {
                 adbConnection.setDeviceName(mDeviceName);
-            }
-            return adbConnection;
-        }
-
-        /**
-         * Same as {@link #connect(long, TimeUnit, boolean)} without throwing anything if the first authentication
-         * attempt fails.
-         *
-         * @return The underlying {@link AdbConnection}
-         * @throws IOException                 If the socket fails while connecting
-         * @throws InterruptedException        If timeout has reached
-         * @throws AdbPairingRequiredException If ADB lacks pairing
-         */
-        public AdbConnection connect() throws IOException, InterruptedException, AdbPairingRequiredException {
-            AdbConnection adbConnection = build();
-            if (adbConnection.connect()) {
-                throw new IOException("Unable to establish a new connection.");
-            }
-            return adbConnection;
-        }
-
-        /**
-         * Connects to the remote device. This routine will block until the connection completes or the timeout elapses.
-         *
-         * @param timeout             the time to wait for the lock
-         * @param unit                the time unit of the timeout argument
-         * @param throwOnUnauthorised Whether to throw an {@link AdbAuthenticationFailedException}
-         *                            if the peer rejects out first authentication attempt
-         * @return {@code true} if the connection was established, or {@code false} if the connection timed out
-         * @throws IOException                      If the socket fails while connecting
-         * @throws InterruptedException             If timeout has reached
-         * @throws AdbAuthenticationFailedException If {@code throwOnUnauthorised} is {@code true} and the peer rejects
-         *                                          the first authentication attempt, which indicates that the peer has
-         *                                          not saved the public key from a previous connection
-         * @throws AdbPairingRequiredException      If ADB lacks pairing
-         */
-        public AdbConnection connect(long timeout, @NonNull TimeUnit unit, boolean throwOnUnauthorised)
-                throws IOException, InterruptedException, AdbPairingRequiredException {
-            AdbConnection adbConnection = build();
-            if (adbConnection.connect(timeout, unit, throwOnUnauthorised)) {
-                throw new IOException("Unable to establish a new connection.");
             }
             return adbConnection;
         }

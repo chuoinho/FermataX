@@ -4,7 +4,6 @@
 -keep class org.videolan.libvlc.** { *; }
 -keep class me.aap.fermata.vfs.sftp.** { *; }
 -keep class me.aap.fermata.vfs.smb.** { *; }
--keep class me.aap.fermata.vfs.gdrive.** { *; }
 -keep class androidx.car.app.** { *; }
 -keep class io.github.muntashirakon.** { *; }
 -keep class org.chromium.net.impl.NativeCronetEngineBuilderImpl { *; }

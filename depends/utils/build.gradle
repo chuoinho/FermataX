@@ -69,17 +69,6 @@ dependencies {
     implementation libs.bouncycastleProvider
     implementation libs.bouncycastlePkix
 
-    implementation libs.googlePlayServicesAuth
-    implementation libs.googlePlayServicesBase
-    implementation libs.googleHttpClientGson
-    implementation(libs.googleApiClientAndroid) {
-        exclude group: 'org.apache.httpcomponents'
-    }
-    implementation(libs.googleApiServicesDrive) {
-        exclude group: 'org.apache.httpcomponents'
-        exclude group: 'com.google.guava'
-    }
-
     testImplementation libs.junit5Api
     testImplementation libs.junit5Engine
     testImplementation libs.junit5Params

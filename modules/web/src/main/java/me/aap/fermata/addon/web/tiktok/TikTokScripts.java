@@ -388,8 +388,7 @@ public final class TikTokScripts {
       dbg('dump duong mo ta: ' + chain.join('  <  '));
     }
   };
-
-  setTimeout(window.__cntTtDump, 4000);
+  // Diagnostics only: call window.__cntTtDump() from DevTools; it is not run on every page load.
 })();
 
 	""";

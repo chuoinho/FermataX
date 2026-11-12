@@ -15,7 +15,7 @@ import androidx.core.content.ContextCompat;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.Nonnull;
+import androidx.annotation.NonNull;
 
 import me.aap.utils.function.Function;
 import me.aap.utils.net.http.HttpFileDownloader;
@@ -59,7 +59,7 @@ public class HttpDownloadStatusListener implements HttpFileDownloader.StatusList
 		builder.setSmallIcon(icon);
 	}
 
-	public void setTitle(@Nonnull String title) {
+	public void setTitle(@NonNull String title) {
 		builder.setContentTitle(title);
 	}
 

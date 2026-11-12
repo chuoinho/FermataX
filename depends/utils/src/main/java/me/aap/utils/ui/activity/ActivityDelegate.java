@@ -49,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import javax.annotation.Nonnull;
 
 import me.aap.utils.R;
 import me.aap.utils.app.App;
@@ -86,7 +85,7 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 			SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
 	private static Function<Context, ActivityDelegate> contextToDelegate;
 	private final Collection<ListenerRef<ActivityListener>> listeners = new LinkedList<>();
-	@Nonnull
+	@NonNull
 	private final AppActivity activity;
 	private OverlayMenu activeMenu;
 	private boolean fullScreen;
@@ -97,7 +96,7 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 	@Nullable
 	private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
 
-	public ActivityDelegate(@Nonnull AppActivity activity) {
+	public ActivityDelegate(@NonNull AppActivity activity) {
 		this.activity = activity;
 	}
 
@@ -144,18 +143,18 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 		return failed(ex);
 	}
 
-	@Nonnull
+	@NonNull
 	public AppActivity getAppActivity() {
 		return activity;
 	}
 
-	@Nonnull
+	@NonNull
 	public Context getContext() {
 		return getAppActivity().getContext();
 	}
 
-	@Nonnull
-	public Context getLocalizedContext(@Nonnull Context ctx) {
+	@NonNull
+	public Context getLocalizedContext(@NonNull Context ctx) {
 		return ctx;
 	}
 

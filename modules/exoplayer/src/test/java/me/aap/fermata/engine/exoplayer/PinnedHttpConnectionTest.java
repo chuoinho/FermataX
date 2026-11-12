@@ -1,9 +1,11 @@
 package me.aap.fermata.engine.exoplayer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -49,6 +51,32 @@ public class PinnedHttpConnectionTest {
 			String sent = request.get(2, TimeUnit.SECONDS);
 			assertTrue(sent.contains("Host: media.example:" + port));
 			assertTrue(sent.contains("Range: bytes=10-20"));
+		}
+	}
+
+	@Test
+	public void negativeChunkSizeIsAnIoError() throws Exception {
+		try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+			int port = server.getLocalPort();
+			CompletableFuture.runAsync(() -> {
+				try (var socket = server.accept()) {
+					BufferedReader reader = new BufferedReader(new InputStreamReader(
+							socket.getInputStream(), StandardCharsets.ISO_8859_1));
+					for (String line; (line = reader.readLine()) != null && !line.isEmpty(); ) {
+					}
+					socket.getOutputStream().write(("HTTP/1.1 200 OK\r\n" +
+							"Transfer-Encoding: chunked\r\n\r\n-1\r\n")
+							.getBytes(StandardCharsets.ISO_8859_1));
+				} catch (Exception error) {
+					throw new RuntimeException(error);
+				}
+			});
+			URI uri = URI.create("http://media.example:" + port + "/video.ts");
+			try (PinnedHttpConnection connection = PinnedHttpConnection.open(
+					new ValidatedPlaybackEndpoint(uri, InetAddress.getLoopbackAddress()),
+					"GET", Map.of(), 2_000, 2_000)) {
+				assertThrows(IOException.class, () -> connection.body().read(new byte[16], 0, 16));
+			}
 		}
 	}
 }

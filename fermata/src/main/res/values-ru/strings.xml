@@ -254,7 +254,6 @@
 
     <string name="vfs_content">Контент</string>
     <string name="vfs_file_system">Файловая система</string>
-    <string name="vfs_gdrive">Google диск</string>
     
     
     <string name="m3u_playlist">M3U плейлист</string>

@@ -195,7 +195,8 @@ public final class GlassRadarView extends View {
 		float arrowLen = innerR * 0.76f;
 		float arrowWidth = arrowLen * 0.46f;
 
-		// Halo
+		// Halo; the stationary beacon pulses the same paint's alpha
+		arrowGlowPaint.setAlpha(nightMode ? 0x40 : 0x30); // alpha of glowColor in setNightMode
 		arrowPath.reset();
 		arrowPath.moveTo(cx, cy - arrowLen - 4);
 		arrowPath.lineTo(cx + arrowWidth + 4, cy + arrowLen * 0.6f + 3);

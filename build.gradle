@@ -6,14 +6,6 @@ ext {
     SDK_COMPILE_VERSION = libs.versions.sdkCompile.get().toInteger()
     localProps = gradle.ext.localProps
 
-    ANDROID_MATERIAL_VERSION = libs.versions.androidMaterial.get()
-    ANDROID_PLAY_CORE_FD_VERSION = libs.versions.googlePlayFeatureDelivery.get()
-    ANDROIDX_CORE_VERSION = libs.versions.androidxCore.get()
-    ANDROIDX_ANNOTATION_VERSION = libs.versions.androidxAnnotation.get()
-    ANDROIDX_MEDIA_VERSION = libs.versions.androidxMedia.get()
-    ANDROIDX_APPCOMPAT_VERSION = libs.versions.androidxAppcompat.get()
-    ANDROIDX_CONSTRAINTLAYOUT_VERSION = libs.versions.androidxConstraintlayout.get()
-    ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = libs.versions.androidxSwiperefreshlayout.get()
     GUAVA_VERSION = libs.versions.guava.get()
 
     addons = []
@@ -29,7 +21,6 @@ buildscript {
 
     dependencies {
         classpath "com.android.tools.build:gradle:${libs.versions.agp.get()}"
-        classpath "com.google.gms:google-services:${libs.versions.googleServices.get()}"
     }
 }
 
@@ -66,8 +57,8 @@ subprojects {
             targetSdkVersion SDK_TARGET_VERSION
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-            resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt', 'vi', 'pl', 'hr', 'ja', 'zh_TW', 'ko',
-                    'fr', 'ro', 'ar', 'es', 'km'
+            // only the languages the app is translated to: a library string in any other would mix languages
+            resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt', 'vi', 'zh_TW', 'es'
         }
 
         if (isDynFeature) {

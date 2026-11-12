@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -19,6 +20,15 @@ import me.aap.fermata.ui.policy.VideoRenderPlan;
 import me.aap.fermata.ui.policy.VideoViewport;
 
 public class VlcEngineProviderTest {
+	@Test
+	public void leavesItemsWithHeadersItCannotSendToOtherEngines() {
+		assertTrue(VlcEngineProvider.sendsAll(Map.of()));
+		assertTrue(VlcEngineProvider.sendsAll(Map.of("User-Agent", "Fermata",
+				"Authorization", "Basic dXNlcjpwYXNz")));
+		assertFalse(VlcEngineProvider.sendsAll(Map.of("Authorization", "Bearer token")));
+		assertFalse(VlcEngineProvider.sendsAll(Map.of("Referer", "https://example.com/")));
+	}
+
 	@Test
 	public void libVlcReceivesMutableDefensiveOptionsCopy() {
 		List<String> source = List.of("--network-caching=60000");

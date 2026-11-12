@@ -24,6 +24,16 @@ public class TripEngineTest {
         assertEquals(36, e.state().getAverageSpeedKmh(), 0.001);
     }
 
+    @Test public void dopplerHeldByHysteresisCountsOnceASparseFixProvesMovement() {
+        TripEngine e = engine();
+        feed(e, 1_000, 0, 5);
+        feed(e, 2_000, 5, 5);
+        feed(e, 3_000, 10, 5);
+        feed(e, 7_000, 30, 5); // 4 s later: chord estimate proves we were moving
+        assertEquals(30, e.state().distanceMeters(), 0.001);
+        assertEquals(6_000, e.state().movingTimeMs());
+    }
+
     @Test public void totalAverageIncludesRedLightWithoutAddingStationaryDrift() {
         TripEngine e = engine();
         for (int i = 0; i <= 10; i++) feed(e, 1_000 + i * 1_000, i * 5, 5);

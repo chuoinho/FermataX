@@ -156,7 +156,7 @@ public final class Hidden {
 		}
 	}
 
-	@SuppressLint("BlockedPrivateApi")
+	@SuppressLint({"BlockedPrivateApi", "NewApi"}) // the server only runs on Android 11+ (CarAppsFeature.visible)
 	static void initPanelControl() {
 		try {
 			if (!PanelPowerPolicy.sdkSupported(Build.VERSION.SDK_INT)) {
@@ -404,6 +404,7 @@ public final class Hidden {
 
 	/** Android 10-11 and early 13 list the tasks of every display, most recent first. */
 	@Nullable
+	@SuppressLint("NewApi") // the server only runs on Android 11+ (CarAppsFeature.visible)
 	static ActivityManager.RunningTaskInfo topOnDisplay(List<?> tasks, int displayId) throws ReflectiveOperationException {
 		Field display = TaskInfo.class.getField("displayId");
 		for (Object t : tasks) {

@@ -1,6 +1,10 @@
 package me.aap.fermata.addon.web.yt;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import me.aap.fermata.addon.web.FermataJsInterface;
+import me.aap.fermata.addon.web.FermataWebClient;
 import me.aap.fermata.addon.web.FermataWebView;
 import me.aap.utils.async.Completable;
 import me.aap.utils.async.Promise;
@@ -113,7 +117,8 @@ public class YoutubeJsInterface extends FermataJsInterface {
 				engine.fullscreenTapped(data);
 				break;
 			case JS_PLAYBACK_INTENT:
-				((YoutubeWebView) getWebView()).loadExplicitUrl(data);
+				if (isYoutubePageUrl(data)) ((YoutubeWebView) getWebView()).loadExplicitUrl(data);
+				else Log.w("Rejected a playback intent for a non-YouTube URL");
 				break;
 			case JS_NAVIGATION:
 				((YoutubeWebView) getWebView()).onSpaNavigation(data);
@@ -135,6 +140,19 @@ public class YoutubeJsInterface extends FermataJsInterface {
 				break;
 			default:
 				super.handleEvent(event, data);
+		}
+	}
+
+	/** The bridge is visible to every frame, ad iframes included: only YouTube pages may be loaded through it. */
+	static boolean isYoutubePageUrl(String url) {
+		if (url == null) return false;
+		try {
+			URI uri = new URI(url);
+			String scheme = uri.getScheme();
+			return ("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme)) &&
+					FermataWebClient.isYoutubeHost(uri.getHost());
+		} catch (URISyntaxException ignored) {
+			return false;
 		}
 	}
 

@@ -24,6 +24,12 @@ public final class AndroidBackupStateStore implements BackupStateStore {
 			"__androidx_security_crypto_encrypted_prefs_value_keyset__";
 	private static final Set<String> EXCLUDED_NORMAL_STORES = Set.of(
 			"image-cache", "diagnostics", SecurePreferenceStore.REGISTRY_PREFERENCES);
+	// Phone Apps state of this phone (AdbRecoveryJob, RootProbe, CarDisplayClient): never exported, and a restore keeps
+	// this phone's values. Another phone's wireless-debugging marker would rewrite a system setting here.
+	static final Set<String> DEVICE_ONLY_KEYS = Set.of(
+			"CAR_APPS_ADB_WIFI_RESTORE", "CAR_APPS_ADB_WIFI_REREGISTERED", "CAR_APPS_ADB_PAIRED",
+			"CAR_APPS_ADB_RECOVERY_TRIES", "CAR_APPS_ROOT_GRANTED", "CAR_APPS_CAPABILITIES",
+			"CAR_APPS_CAPABILITIES_VERSION");
 	private final Context context;
 	private final SecureStoreAccess secureStores;
 
@@ -157,6 +163,7 @@ public final class AndroidBackupStateStore implements BackupStateStore {
 			throws BackupException {
 		Map<String, Object> result = new LinkedHashMap<>();
 		for (Map.Entry<String, ?> entry : source.entrySet()) {
+			if (DEVICE_ONLY_KEYS.contains(entry.getKey())) continue;
 			Object value = entry.getValue();
 			if ((value instanceof Boolean) || (value instanceof Float) ||
 					(value instanceof Integer) || (value instanceof Long) ||
@@ -176,22 +183,29 @@ public final class AndroidBackupStateStore implements BackupStateStore {
 		return Map.copyOf(result);
 	}
 
-	@SuppressWarnings("unchecked")
 	private static boolean replace(SharedPreferences preferences, Map<String, Object> values)
 			throws BackupException {
 		SharedPreferences.Editor edit = preferences.edit().clear();
+		for (Map.Entry<String, ?> entry : preferences.getAll().entrySet()) {
+			if (DEVICE_ONLY_KEYS.contains(entry.getKey())) put(edit, entry.getKey(), entry.getValue());
+		}
 		for (Map.Entry<String, Object> entry : values.entrySet()) {
-			String key = entry.getKey();
-			Object value = entry.getValue();
-			if (value instanceof Boolean v) edit.putBoolean(key, v);
-			else if (value instanceof Float v) edit.putFloat(key, v);
-			else if (value instanceof Integer v) edit.putInt(key, v);
-			else if (value instanceof Long v) edit.putLong(key, v);
-			else if (value instanceof String v) edit.putString(key, v);
-			else if (value instanceof Set<?> v) edit.putStringSet(key, (Set<String>) v);
-			else throw unsupported();
+			// backups made before DEVICE_ONLY_KEYS existed still carry them
+			if (!DEVICE_ONLY_KEYS.contains(entry.getKey())) put(edit, entry.getKey(), entry.getValue());
 		}
 		return edit.commit();
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void put(SharedPreferences.Editor edit, String key, Object value)
+			throws BackupException {
+		if (value instanceof Boolean v) edit.putBoolean(key, v);
+		else if (value instanceof Float v) edit.putFloat(key, v);
+		else if (value instanceof Integer v) edit.putInt(key, v);
+		else if (value instanceof Long v) edit.putLong(key, v);
+		else if (value instanceof String v) edit.putString(key, v);
+		else if (value instanceof Set<?> v) edit.putStringSet(key, (Set<String>) v);
+		else throw unsupported();
 	}
 
 	private static void validateName(String name) throws BackupException {

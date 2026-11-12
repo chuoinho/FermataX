@@ -27,9 +27,26 @@ import static me.aap.utils.text.TextUtils.hexToBytes;
  * @author Andrey Pavlenko
  */
 public abstract class NetFileSystemBase implements VirtualFileSystem {
+	/** Where passwords are kept. Without one installed they stay hex-encoded in the preference store. */
+	public interface Secrets {
+		@Nullable
+		String get(String key);
+
+		/** False when the value could not be stored. */
+		boolean put(String key, String value);
+
+		void remove(String key);
+	}
+
+	private static volatile Secrets secrets;
 	private final Provider provider;
 	private final PreferenceStore ps;
 	private volatile List<VirtualFolder> roots;
+
+	/** The app installs its encrypted store before any network file system is created. */
+	public static void setSecrets(@Nullable Secrets s) {
+		secrets = s;
+	}
 
 	protected NetFileSystemBase(Provider provider, PreferenceStore ps) {
 		this.provider = provider;
@@ -76,16 +93,38 @@ public abstract class NetFileSystemBase implements VirtualFileSystem {
 			int len = tb.length();
 
 			tb.append('P');
-			password = ps.getStringPref(Pref.s(tb.toString(), () -> null));
+			password = readSecret(tb.toString());
 			tb.setLength(len);
 			tb.append('F');
 			keyFile = ps.getStringPref(Pref.s(tb.toString(), () -> null));
 			tb.setLength(len);
 			tb.append('K');
-			keyPass = ps.getStringPref(Pref.s(tb.toString(), () -> null));
+			keyPass = readSecret(tb.toString());
 		}
 
-		return createRoot(user, host, port, path, decrypt(password), keyFile, decrypt(keyPass));
+		return createRoot(user, host, port, path, password, keyFile, keyPass);
+	}
+
+	@Nullable
+	private String readSecret(String key) {
+		Pref<Supplier<String>> legacy = Pref.s(key, () -> null);
+		String hex = ps.getStringPref(legacy);
+		Secrets s = secrets;
+		if (s == null) return fromHex(hex);
+		if (hex == null) return s.get(key);
+		// saved before the encrypted store existed: move it there and drop the plain copy
+		String value = fromHex(hex);
+		if (s.put(key, value)) ps.removePref(legacy);
+		return value;
+	}
+
+	private void writeSecret(PreferenceStore.Edit e, String key, @Nullable String value) {
+		if (value == null) return;
+		Pref<Supplier<String>> legacy = Pref.s(key, () -> null);
+		Secrets s = secrets;
+		if (s == null) e.setStringPref(legacy, toHex(value));
+		else if (s.put(key, value)) e.removePref(legacy);
+		else Log.e("Secure storage is unavailable: a network share password is kept only until restart");
 	}
 
 	protected abstract VirtualFolder createRoot(
@@ -258,6 +297,12 @@ public abstract class NetFileSystemBase implements VirtualFileSystem {
 			e.removePref(keyPass);
 		}
 
+		Secrets s = secrets;
+		if (s != null) {
+			s.remove(password.getName());
+			s.remove(keyPass.getName());
+		}
+
 		setRoots(newRoots.isEmpty() ? Collections.emptyList() : newRoots);
 		return true;
 	}
@@ -286,13 +331,8 @@ public abstract class NetFileSystemBase implements VirtualFileSystem {
 			tb.append('#');
 			int len = tb.length();
 
-			if (password != null) {
-				encrypt(password, tb);
-				String pwd = tb.substring(len);
-				tb.setLength(len);
-				tb.append('P');
-				e.setStringPref(Pref.s(tb.toString(), () -> null), pwd);
-			}
+			tb.append('P');
+			writeSecret(e, tb.toString(), password);
 
 			if (keyFile != null) {
 				tb.setLength(len);
@@ -300,14 +340,9 @@ public abstract class NetFileSystemBase implements VirtualFileSystem {
 				e.setStringPref(Pref.s(tb.toString(), () -> null), keyFile);
 			}
 
-			if (keyPass != null) {
-				tb.setLength(len);
-				encrypt(keyPass, tb);
-				String pwd = tb.substring(len);
-				tb.setLength(len);
-				tb.append('K');
-				e.setStringPref(Pref.s(tb.toString(), () -> null), pwd);
-			}
+			tb.setLength(len);
+			tb.append('K');
+			writeSecret(e, tb.toString(), keyPass);
 		}
 	}
 
@@ -320,12 +355,16 @@ public abstract class NetFileSystemBase implements VirtualFileSystem {
 		if (port != getDefaultPort()) tb.append(':').append(port);
 	}
 
-	// Weak encryption
-	private static void encrypt(@NonNull String v, SharedTextBuilder tb) {
-		appendHexString(tb, v.getBytes(UTF_16BE));
+	// Encoding only, not encryption: the format of passwords saved before Secrets
+	private static String toHex(@NonNull String v) {
+		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+			appendHexString(tb, v.getBytes(UTF_16BE));
+			return tb.toString();
+		}
 	}
 
-	private static String decrypt(@Nullable String v) {
+	@Nullable
+	private static String fromHex(@Nullable String v) {
 		if (v == null) return v;
 		return new String(hexToBytes(v), UTF_16BE);
 	}

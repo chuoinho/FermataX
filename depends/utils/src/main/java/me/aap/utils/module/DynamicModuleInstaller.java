@@ -28,7 +28,6 @@ import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 
 import java.util.Collections;
 
-import javax.annotation.Nonnull;
 
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
@@ -42,15 +41,15 @@ public class DynamicModuleInstaller {
 	private final Activity activity;
 	@DrawableRes
 	int smallIcon;
-	@Nonnull
+	@NonNull
 	private String title = "";
-	@Nonnull
+	@NonNull
 	private String pendingMessage = "Pending";
-	@Nonnull
+	@NonNull
 	private String downloadingMessage = "Downloading";
-	@Nonnull
+	@NonNull
 	private String installingMessage = "Installing";
-	@Nonnull
+	@NonNull
 	private String notificationChannel = TAG;
 
 	public DynamicModuleInstaller(Activity activity) {
@@ -61,19 +60,19 @@ public class DynamicModuleInstaller {
 		this.smallIcon = smallIcon;
 	}
 
-	public void setTitle(@Nonnull String title) {
+	public void setTitle(@NonNull String title) {
 		this.title = title;
 	}
 
-	public void setPendingMessage(@Nonnull String pendingMessage) {
+	public void setPendingMessage(@NonNull String pendingMessage) {
 		this.pendingMessage = pendingMessage;
 	}
 
-	public void setDownloadingMessage(@Nonnull String downloadingMessage) {
+	public void setDownloadingMessage(@NonNull String downloadingMessage) {
 		this.downloadingMessage = downloadingMessage;
 	}
 
-	public void setInstallingMessage(@Nonnull String installingMessage) {
+	public void setInstallingMessage(@NonNull String installingMessage) {
 		this.installingMessage = installingMessage;
 	}
 

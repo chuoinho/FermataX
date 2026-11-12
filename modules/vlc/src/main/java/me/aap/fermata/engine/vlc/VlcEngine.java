@@ -223,7 +223,7 @@ public class VlcEngine extends MediaEngineBase
 				media = new Media(vlc, uri);
 
 				if ((scheme != null) && scheme.startsWith("http")) {
-					String agent = userAgent;
+					String agent = (userAgent != null) ? userAgent : requestHeaders.get("User-Agent");
 					if (agent != null) media.addOption(":http-user-agent='" + agent + "'");
 					String authorization = requestHeaders.get("Authorization");
 					if ((authorization != null) && authorization.regionMatches(true, 0,
@@ -524,9 +524,7 @@ public class VlcEngine extends MediaEngineBase
 			List<AudioStreamInfo> streams = new ArrayList<>(tracks.length);
 			for (TrackDescription td : tracks) {
 				if (td.id == -1) continue;
-				IMedia.Track t = m.getTrack(td.id);
-				if (!(t instanceof AudioTrack a)) continue;
-				streams.add(new AudioStreamInfo(a.id, a.language, td.name));
+				streams.add(new AudioStreamInfo(td.id, trackLanguage(m, td.id, AudioTrack.class), td.name));
 			}
 			return streams;
 		} finally {
@@ -582,9 +580,8 @@ public class VlcEngine extends MediaEngineBase
 				streams.addAll(subFiles);
 				for (TrackDescription td : tracks) {
 					if (td.id == -1) continue;
-					IMedia.Track t = m.getTrack(td.id);
-					if (!(t instanceof SubtitleTrack s)) continue;
-					streams.add(new SubtitleStreamInfo(s.id, s.language, td.name));
+					streams.add(new SubtitleStreamInfo(td.id, trackLanguage(m, td.id, SubtitleTrack.class),
+							td.name));
 				}
 				return streams;
 			} finally {
@@ -599,20 +596,35 @@ public class VlcEngine extends MediaEngineBase
 		var i = super.getCurrentSubtitleStreamInfo();
 		if (i != null) return i;
 
-		IMedia m = player.getMedia();
-		if (m == null) return null;
 		int id = player.getSpuTrack();
 		if (id == -1) return null;
 		TrackDescription[] tracks = player.getSpuTracks();
 		if ((tracks == null) || (tracks.length == 0)) return null;
+		IMedia m = player.getMedia();
+		if (m == null) return null;
 
-		for (TrackDescription td : tracks) {
-			if (td.id != id) continue;
-			IMedia.Track t = m.getTrack(id);
-			if (!(t instanceof SubtitleTrack s)) return null;
-			return new SubtitleStreamInfo(id, s.language, td.name);
+		try {
+			for (TrackDescription td : tracks) {
+				if (td.id != id) continue;
+				return new SubtitleStreamInfo(id, trackLanguage(m, id, SubtitleTrack.class), td.name);
+			}
+			return null;
+		} finally {
+			m.release(); // getMedia() retains it
 		}
+	}
 
+	/**
+	 * IMedia.getTrack takes a list position, not an ES id. The ids match in MP4, but in MPEG-TS the
+	 * player reports PIDs while the media numbers its tracks 0, 1, 2: then the language is unknown
+	 * and the track keeps only VLC's own name, which already names the language.
+	 */
+	@Nullable
+	static String trackLanguage(IMedia m, int id, Class<? extends IMedia.Track> type) {
+		for (int i = 0, n = m.getTrackCount(); i < n; i++) {
+			IMedia.Track t = m.getTrack(i);
+			if ((t != null) && (t.id == id)) return type.isInstance(t) ? t.language : null;
+		}
 		return null;
 	}
 

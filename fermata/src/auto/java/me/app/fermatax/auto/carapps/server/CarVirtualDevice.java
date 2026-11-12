@@ -1,5 +1,6 @@
 package me.app.fermatax.auto.carapps.server;
 
+import android.annotation.SuppressLint;
 import android.content.AttributionSource;
 import android.hardware.display.VirtualDisplay;
 import android.os.Binder;
@@ -101,6 +102,7 @@ final class CarVirtualDevice {
 		return out.toString();
 	}
 
+	@SuppressLint("NewApi") // reached only on SDK 36+, see create()
 	private static Object createDevice(int association) throws Exception {
 		IBinder service = (IBinder) Class.forName("android.os.ServiceManager")
 				.getMethod("getService", String.class).invoke(null, "virtualdevice");

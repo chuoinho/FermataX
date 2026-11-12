@@ -453,8 +453,8 @@ class VoiceCommandHandler {
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
 				int idx = l.indexOf(':');
 				if (idx < 0) continue;
-				subst.put(l.substring(0, idx).trim().toLowerCase(),
-						l.substring(idx + 1).trim().toLowerCase());
+				subst.put(l.substring(0, idx).trim().toLowerCase(Locale.ROOT),
+						l.substring(idx + 1).trim().toLowerCase(Locale.ROOT));
 			}
 		} catch (IOException ignore) {
 		}
@@ -462,12 +462,16 @@ class VoiceCommandHandler {
 	}
 
 	private String subst(String cmd) {
-		Map<String, String> subst = this.subst;
+		return subst(cmd, this.subst);
+	}
+
+	static String subst(String cmd, Map<String, String> subst) {
 		int start = -1;
 
 		try (SharedTextBuilder b = SharedTextBuilder.get()) {
-			for (int i = 0, n = cmd.codePointCount(0, cmd.length()); i < n; i++) {
+			for (int i = 0, n = cmd.length(); i < n; ) {
 				int c = cmd.codePointAt(i);
+				i += Character.charCount(c);
 
 				if (Character.isWhitespace(c)) {
 					if (start == -1) continue;

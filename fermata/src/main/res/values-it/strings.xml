@@ -251,7 +251,6 @@
     <string name="use_phone_to_grant_perm">Concedi le autorizzazioni richieste dal telefono</string>
     <string name="vfs_content">Contenuto</string>
     <string name="vfs_file_system">Sistema di file</string>
-    <string name="vfs_gdrive">Google drive</string>
     <string name="m3u_playlist">Playlist M3U</string>
     <string name="m3u_playlist_name">Nome</string>
     <string name="m3u_playlist_location">Posizione</string>

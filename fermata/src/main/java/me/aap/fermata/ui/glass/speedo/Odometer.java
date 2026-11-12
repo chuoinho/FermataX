@@ -167,7 +167,10 @@ final class Odometer {
         distance += meters;
         estimated += meters;
         if (meters > 0) {
-            movingMs += span;
+            // Movement is proven: Doppler intervals still held back by hysteresis count too.
+            distance += pendingDistance;
+            movingMs += span + pendingMovingMs;
+            pendingDistance = pendingMovingMs = 0;
             moving = true;
             movingCount = Math.max(movingCount, 3);
         }

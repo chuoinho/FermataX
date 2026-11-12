@@ -2,6 +2,7 @@ package me.app.fermatax.auto;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -13,6 +14,8 @@ import android.view.MotionEvent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import java.util.Arrays;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.utils.log.Log;
@@ -28,6 +31,11 @@ public class XposedEventDispatcherService extends Service {
 	private final Messenger messenger = new Messenger(new Handler(Looper.getMainLooper()) {
 		@Override
 		public void handleMessage(@NonNull Message msg) {
+			// exported for the hook inside Android Auto: any other app would receive the car screen's touches
+			if (!isAndroidAuto(getPackageManager(), msg.sendingUid)) {
+				Log.w("Rejected dispatcher message from uid ", msg.sendingUid);
+				return;
+			}
 			if (msg.what == MSG_REGISTER) {
 				activityMessenger = msg.replyTo;
 				registrationKey = msg.arg1;
@@ -83,5 +91,10 @@ public class XposedEventDispatcherService extends Service {
 			activityMessenger = null;
 			return false;
 		}
+	}
+
+	static boolean isAndroidAuto(PackageManager pm, int uid) {
+		String[] packages = (uid < 0) ? null : pm.getPackagesForUid(uid);
+		return (packages != null) && Arrays.asList(packages).contains(Xposed.AA_PKG);
 	}
 }

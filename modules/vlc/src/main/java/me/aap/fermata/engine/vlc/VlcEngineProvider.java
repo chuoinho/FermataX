@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import me.aap.fermata.BuildConfig;
@@ -110,8 +111,24 @@ public class VlcEngineProvider implements MediaEngineProvider {
 
 	@Override
 	public boolean supportsPlayback(PlayableItem item) {
-		if (!(item instanceof RemotePlaybackItem remote)) return true;
+		if (!(item instanceof RemotePlaybackItem remote)) return sendsAll(item.getRequestHeaders());
 		return capabilitiesFor(remote.getPlaybackRequestProfile()) != null;
+	}
+
+	/**
+	 * VlcEngine passes on only the user agent and Basic credentials, so an item needing any other
+	 * header (an Audiobookshelf Bearer token, say) goes to an engine that sends it.
+	 */
+	static boolean sendsAll(Map<String, String> headers) {
+		for (Map.Entry<String, String> h : headers.entrySet()) {
+			String name = h.getKey();
+			String value = h.getValue();
+			if ("User-Agent".equals(name)) continue;
+			if ("Authorization".equals(name) && (value != null) &&
+					value.regionMatches(true, 0, "Basic ", 0, 6)) continue;
+			return false;
+		}
+		return true;
 	}
 
 	Set<EngineCapability> capabilitiesFor(PlaybackRequestProfile profile) {

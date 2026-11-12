@@ -7,8 +7,6 @@ def abi = gradle.startParameter.projectProperties.get('ABI')
 gradle.ext.abiFilters = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86_64']
 
 gradle.ext.localProps = new Properties()
-gradle.ext.enableGoogleServices = (System.getenv('NO_GS') == null)
-        && file('fermata/google-services.json').isFile()
 gradle.ext.legacyUploadCertificateSha256 =
         '6bd055aeedbc13a67b05310f1e3fe0f1aa1dd690e1b7c2637aa5d31ea1ba910e'
 gradle.ext.approvedUploadCertificatesSha256 = [
@@ -116,7 +114,6 @@ project(':localadb').projectDir = file('depends/libadb')
 
 file('modules').eachDir {
     def name = ':' + it.name
-    if ((':gdrive' == name) && !gradle.ext.enableGoogleServices) return
     if (gradle.ext.retiredProductionModules.contains(name)) return
     gradle.ext.modules.add(name)
     include name

@@ -52,7 +52,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  * @author Andrey Pavlenko
  */
 public class Xposed implements IXposedHookLoadPackage {
-	private static final String AA_PKG = "com.google.android.projection.gearhead";
+	static final String AA_PKG = "com.google.android.projection.gearhead";
 	private static final String GPLAY_PKG = "com.android.vending";
 	private static final String EV_SRV_CON_FIELD = "__fermata_event_dispatcher_service__";
 	private static final String PKG_MGR_CLASS = "android.content.pm.IPackageManager.Stub.Proxy";

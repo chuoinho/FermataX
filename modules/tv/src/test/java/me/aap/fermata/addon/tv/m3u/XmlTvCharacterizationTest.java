@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import me.aap.fermata.FermataApplication;
 
@@ -76,6 +77,26 @@ public class XmlTvCharacterizationTest {
 		assertEquals(0, rowCount("Channels"));
 		assertEquals(0, rowCount("Prog"));
 		assertTrue(XmlTvSchema.hasProgrammeIndex(database));
+	}
+
+	@Test
+	public void programmeTimeWithoutOffsetUsesPhoneTimeZone() {
+		TimeZone saved = TimeZone.getDefault();
+		try {
+			TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+			XmlTvSchema.rebuild(database);
+			XmlTvParser.Handler handler =
+					new XmlTvParser.Handler(database, new HashMap<>(), new HashMap<>(), 0F);
+			long utc = 1893456000000L; // 2030-01-01T00:00:00Z
+
+			assertEquals(utc, handler.toTime("20300101000000 +0000"));
+			assertEquals(utc, handler.toTime("20300101070000 +0700"));
+			assertEquals(utc, handler.toTime("20300101070000"));
+			assertEquals(utc, handler.toTime(" 20300101070000 "));
+			assertEquals(0, handler.toTime("not a time"));
+		} finally {
+			TimeZone.setDefault(saved);
+		}
 	}
 
 	private int schemaObjectCount(String type, String name) {

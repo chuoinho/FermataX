@@ -261,7 +261,6 @@
 
     <string name="vfs_content">Contenido</string>
     <string name="vfs_file_system">Sistema de archivos</string>
-    <string name="vfs_gdrive">Unidad de Google</string>
     
     
     <string name="m3u_playlist">Lista de reproducción M3U</string>

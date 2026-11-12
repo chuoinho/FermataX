@@ -8,7 +8,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
+import androidx.annotation.NonNull;
 
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.PromiseQueue;
@@ -104,7 +104,7 @@ public class SQLite implements Closeable {
 		close();
 	}
 
-	@Nonnull
+	@NonNull
 	@Override
 	public String toString() {
 		return "SQLite{" +

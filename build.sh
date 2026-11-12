@@ -4,7 +4,6 @@ set -e
 DIR="$(cd "$(dirname "$0")"; pwd -P)"
 DEST_DIR="$DIR/dist"
 mkdir -p "$DEST_DIR"
-export NO_GS=true
 TASK='apk'
 BUILD_TYPE='Release'
 

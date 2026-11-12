@@ -304,7 +304,6 @@
 
     <string name="vfs_content">Content</string>
     <string name="vfs_file_system">File system</string>
-    <string name="vfs_gdrive">Google drive</string>
     <string name="vfs_sftp" translatable="false">SFTP</string>
     <string name="vfs_smb" translatable="false">LAN (SMB)</string>
     <string name="m3u_playlist">M3U playlist</string>

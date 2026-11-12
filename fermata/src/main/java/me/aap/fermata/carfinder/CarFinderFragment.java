@@ -1160,7 +1160,7 @@ public class CarFinderFragment extends MainActivityFragment
 
 	private void captureParkingLocationPhoto() {
 		try {
-			File photoDir = new File(requireContext().getExternalFilesDir("parking_photos"), "");
+			File photoDir = CarFinderPrefs.getPhotoDir(requireContext());
 			if (!photoDir.exists()) photoDir.mkdirs();
 			File photoFile = new File(photoDir, "spot_" + System.currentTimeMillis() + ".jpg");
 

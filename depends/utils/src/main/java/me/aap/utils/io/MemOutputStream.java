@@ -8,7 +8,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import javax.annotation.Nonnull;
 
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
@@ -124,7 +123,7 @@ public class MemOutputStream extends OutputStream {
 	public void close() {
 	}
 
-	@Nonnull
+	@NonNull
 	@Override
 	public String toString() {
 		return "count: " + getCount() + ", capacity: " + ((buf == null) ? 0 : buf.length);

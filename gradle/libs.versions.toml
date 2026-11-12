@@ -5,7 +5,6 @@ appVersionName = "2.2"
 
 # Build tooling
 agp = "9.2.1"
-googleServices = "4.4.4"
 
 # SDK
 sdkMin = "28"
@@ -19,8 +18,6 @@ ndkVersion = "29.0.14206865"
 androidxAnnotation = "1.10.0"
 androidxAppcompat = "1.7.1"
 androidxConstraintlayout = "2.2.1"
-androidxCore = "1.19.0"
-androidxFragment = "1.8.9"
 androidxLegacySupport = "1.0.0"
 androidxLocalbroadcastmanager = "1.1.0"
 androidxMedia = "1.8.0"
@@ -39,14 +36,9 @@ androidxCar = "1.7.0"
 androidMaterial = "1.14.0"
 googlePlayFeatureDelivery = "2.1.0"
 googlePlayAppUpdate = "2.1.0"
-googlePlayServicesAuth = "21.6.0"
-googlePlayServicesBase = "18.10.0"
 googlePlayServicesLocation = "21.3.0"
 
 # Google APIs
-googleHttpClientGson = "2.1.0"
-googleApiClientAndroid = "2.9.0"
-googleApiServicesDrive = "v3-rev197-1.25.0"
 
 # Firebase / Transport
 firebaseEncodersJson = "18.0.1"
@@ -90,8 +82,6 @@ googlePlayServicesLocation = { group = "com.google.android.gms", name = "play-se
 androidxAnnotation                = { group = "androidx.annotation",               name = "annotation",                    version.ref = "androidxAnnotation" }
 androidxAppcompat                 = { group = "androidx.appcompat",                 name = "appcompat",                     version.ref = "androidxAppcompat" }
 androidxConstraintlayout          = { group = "androidx.constraintlayout",          name = "constraintlayout",              version.ref = "androidxConstraintlayout" }
-androidxCore                      = { group = "androidx.core",                      name = "core",                          version.ref = "androidxCore" }
-androidxFragment                  = { group = "androidx.fragment",                  name = "fragment",                      version.ref = "androidxFragment" }
 androidxLegacySupportCore         = { group = "androidx.legacy",                    name = "legacy-support-core-utils",     version.ref = "androidxLegacySupport" }
 androidxLocalbroadcastmanager     = { group = "androidx.localbroadcastmanager",     name = "localbroadcastmanager",         version.ref = "androidxLocalbroadcastmanager" }
 androidxMedia                     = { group = "androidx.media",                     name = "media",                         version.ref = "androidxMedia" }
@@ -114,13 +104,8 @@ media3Transformer                 = { group = "androidx.media3",                
 androidMaterial                   = { group = "com.google.android.material",        name = "material",                      version.ref = "androidMaterial" }
 googlePlayFeatureDelivery         = { group = "com.google.android.play",            name = "feature-delivery",              version.ref = "googlePlayFeatureDelivery" }
 googlePlayAppUpdate               = { group = "com.google.android.play",            name = "app-update",                    version.ref = "googlePlayAppUpdate" }
-googlePlayServicesAuth            = { group = "com.google.android.gms",             name = "play-services-auth",            version.ref = "googlePlayServicesAuth" }
-googlePlayServicesBase            = { group = "com.google.android.gms",             name = "play-services-base",            version.ref = "googlePlayServicesBase" }
 
 # Google APIs
-googleHttpClientGson              = { group = "com.google.http-client",             name = "google-http-client-gson",       version.ref = "googleHttpClientGson" }
-googleApiClientAndroid            = { group = "com.google.api-client",              name = "google-api-client-android",     version.ref = "googleApiClientAndroid" }
-googleApiServicesDrive            = { group = "com.google.apis",                    name = "google-api-services-drive",     version.ref = "googleApiServicesDrive" }
 
 # Firebase / Transport
 firebaseEncodersJson              = { group = "com.google.firebase",                name = "firebase-encoders-json",        version.ref = "firebaseEncodersJson" }
@@ -130,7 +115,6 @@ transportBackendCct               = { group = "com.google.android.datatransport"
 transportRuntime                  = { group = "com.google.android.datatransport",   name = "transport-runtime",             version.ref = "transportRuntime" }
 
 # Guava
-guava                             = { group = "com.google.guava",                   name = "guava",                         version.ref = "guava" }
 
 # Networking
 spake2Android                     = { group = "com.github.MuntashirAkon.spake2-java", name = "spake2-android", version.ref = "spake2" }
@@ -166,5 +150,4 @@ androidxTestEspresso              = { group = "androidx.test.espresso",         
 android-application  = { id = "com.android.application",         version.ref = "agp" }
 android-library      = { id = "com.android.library",             version.ref = "agp" }
 android-dynamic      = { id = "com.android.dynamic-feature",     version.ref = "agp" }
-google-services      = { id = "com.google.gms.google-services",  version.ref = "googleServices" }
 

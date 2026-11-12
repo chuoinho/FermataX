@@ -8,7 +8,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import javax.annotation.Nonnull;
+import androidx.annotation.NonNull;
 
 import me.aap.utils.app.App;
 import me.aap.utils.concurrent.ConcurrentQueueBase;
@@ -35,7 +35,7 @@ public class PromiseQueue {
 		this.exec = exec;
 	}
 
-	@Nonnull
+	@NonNull
 	public Executor getExecutor() {
 		return (exec != null) ? exec : App.get().getExecutor();
 	}

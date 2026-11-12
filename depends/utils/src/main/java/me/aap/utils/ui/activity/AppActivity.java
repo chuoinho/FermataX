@@ -19,7 +19,6 @@ import androidx.fragment.app.FragmentManager;
 
 import com.google.android.material.textfield.TextInputEditText;
 
-import javax.annotation.Nonnull;
 
 import me.aap.utils.R;
 import me.aap.utils.async.FutureSupplier;
@@ -32,7 +31,7 @@ import me.aap.utils.ui.view.DialogBuilder;
 public interface AppActivity {
 	FutureSupplier<? extends ActivityDelegate> NO_DELEGATE = failed(new ActivityDestroyedException());
 
-	@Nonnull
+	@NonNull
 	FutureSupplier<? extends ActivityDelegate> getActivityDelegate();
 
 	Theme getTheme();

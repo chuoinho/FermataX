@@ -1,5 +1,6 @@
 package me.app.fermatax.auto.carapps.server;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.hardware.display.DisplayManager;
@@ -322,6 +323,7 @@ public class CarDisplayServerImpl extends ICarDisplayServer.Stub {
 	}
 
 	@Override
+	@SuppressLint("NewApi") // the server only runs on Android 11+ (CarAppsFeature.visible)
 	public String closeTopApp(boolean force) {
 		if (!CallerPolicy.serverAccepts(Binder.getCallingUid(), appUid)) {
 			return "";

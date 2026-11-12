@@ -1,5 +1,3 @@
-if (gradle.ext.enableGoogleServices) apply plugin: 'com.google.gms.google-services'
-
 def defaultApplicationId = 'me.app.fermataX'
 def configuredApplicationId = (rootProject.findProperty('APP_ID') ?: defaultApplicationId).toString()
 def configuredAutoIdSuffix = (rootProject.findProperty('APP_ID_SFX') ?: '').toString()
@@ -96,7 +94,6 @@ android {
             resValue "string", "media_service_name", "@string/media_service_name_mobile"
             resValue "drawable", "media_service_icon", "@drawable/launcher"
             buildConfigField "boolean", 'AUTO', 'false'
-            buildConfigField "boolean", 'ENABLE_GS', "${gradle.ext.enableGoogleServices}"
         }
 
         auto {
@@ -107,7 +104,6 @@ android {
             resValue "string", "media_service_name", "@string/media_service_name_auto"
             resValue "drawable", "media_service_icon", "@drawable/media_service"
             buildConfigField "boolean", 'AUTO', 'true'
-            buildConfigField "boolean", 'ENABLE_GS', "${gradle.ext.enableGoogleServices}"
 
             dependencies {
                 implementation files('lib/auto/aauto.aar')
