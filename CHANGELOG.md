@@ -1,5 +1,26 @@
 # FermataX Changelog
 
+## [2.2] - 2026-11-13
+
+What's New
+- Phone Apps: Run any phone app directly on your car screen (gaming, manga, streaming).
+  - No-Root (Android 13+): One-tap wireless pairing via notification (no PC needed).
+  - Full Root Support: Works out of the box with KernelSU, APatch, and Magisk.
+  - In-Car Controls: Dedicated 52dp flat bottom bar (Back, Drawer, Phone screen off).
+  - Power Saving: Phone screen turns black/sleeps automatically while running on car.
+
+Improvements & Fixes
+- Unified Theme: Single theme setting for phone and car — no reload glitches when connecting.
+- Resume Video Fix: Fixed blank screen when resuming recent videos from Glass dashboard.
+- VLC Audio & Subtitles: Fixed missing audio and subtitle tracks on live IPTV streams.
+- Faster Web Addons: Removed background overhead on TikTok; improved YouTube stability.
+- Security & Privacy: Encrypted SMB/SFTP credentials; parking photos kept private.
+- New Readiness Page: Reorganized into 4 clean groups with one-click fix shortcuts.
+
+Get access & Install automatically: https://fermatax.download/ enter your Gmail -> pay -> receive the install link, automatically within minutes, no manual support needed. Payments via paypal (Ko-fi).
+
+---
+
 ## [2.1.1] - 2026-11-06
 
 What's New
